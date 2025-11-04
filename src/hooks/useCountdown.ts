@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 export interface TimeRemaining {
   days: number;
@@ -19,7 +19,7 @@ export function useCountdown(targetDate: string | Date): TimeRemaining {
     typeof targetDate === 'string' ? new Date(targetDate).getTime() : targetDate.getTime()
   ).current;
 
-  const calculateTimeRemaining = (): TimeRemaining => {
+  const calculateTimeRemaining = useCallback((): TimeRemaining => {
     const now = Date.now();
     const total = targetTime - now;
 
@@ -47,7 +47,7 @@ export function useCountdown(targetDate: string | Date): TimeRemaining {
       total,
       isComplete: false,
     };
-  };
+  }, [targetTime]);
 
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>(() => {
     // Initialize on mount to avoid SSR/client mismatch
@@ -73,7 +73,7 @@ export function useCountdown(targetDate: string | Date): TimeRemaining {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [targetTime]);
+  }, [calculateTimeRemaining]);
 
   return timeRemaining;
 }

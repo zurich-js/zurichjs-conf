@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useMotion } from '@/contexts/MotionContext';
 
@@ -56,10 +57,12 @@ export const SpeakerCard: React.FC<SpeakerCardProps> = ({
       <div className="relative bg-yellow-400 rounded-lg overflow-hidden shadow-md w-[240px] h-[320px] transition-shadow duration-300 group-hover:shadow-xl">
         {/* Speaker Image or Silhouette */}
         {imageSrc ? (
-          <img
+          <Image
             src={imageSrc}
             alt={name || 'Speaker'}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="240px"
           />
         ) : (
           <div className="w-full h-full flex items-end justify-center pb-4 bg-gradient-to-b from-yellow-300 to-yellow-400">
