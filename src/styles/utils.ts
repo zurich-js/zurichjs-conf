@@ -19,24 +19,24 @@ export const cn = (...classes: (string | undefined | null | false)[]): string =>
  */
 export const stylePatterns = {
   // Section backgrounds
-  sectionDark: 'bg-[#19191B] text-slate-200',
-  sectionLight: 'bg-white text-gray-900',
-  sectionCard: 'bg-[#242528]',
+  sectionDark: 'bg-surface-section text-slate-200',
+  sectionLight: 'bg-gray-0 text-gray-900',
+  sectionCard: 'bg-surface-card',
 
   // Card styles
-  card: 'bg-[#242528] rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.25)]',
-  cardHover: 'hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] hover:-translate-y-0.5',
+  card: 'bg-surface-card rounded-2xl shadow-card',
+  cardHover: 'hover:shadow-card-hover hover:-translate-y-0.5',
   cardInteractive: 'transition-all duration-300 cursor-pointer',
 
   // Focus styles
-  focusRing: 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F1E271] focus-visible:ring-offset-2',
-  focusRingDark: 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F1E271] focus-visible:ring-offset-2 focus-visible:ring-offset-[#19191B]',
+  focusRing: 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2',
+  focusRingDark: 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-section',
 
   // Text styles
-  kicker: 'text-base md:text-lg xl:text-xl uppercase tracking-wider font-bold text-white/90',
-  headingXl: 'text-4xl md:text-5xl lg:text-6xl font-bold text-white',
-  headingLg: 'text-3xl md:text-4xl lg:text-5xl font-bold text-white',
-  headingMd: 'text-2xl md:text-3xl lg:text-4xl font-bold text-white',
+  kicker: 'text-base md:text-lg xl:text-xl uppercase tracking-wider font-bold text-text-primary/90',
+  headingXl: 'text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary',
+  headingLg: 'text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary',
+  headingMd: 'text-2xl md:text-3xl lg:text-4xl font-bold text-text-primary',
   body: 'text-base md:text-lg leading-relaxed text-slate-300',
   bodyMuted: 'text-sm md:text-base text-slate-400',
 
@@ -48,7 +48,7 @@ export const stylePatterns = {
   // Grid layouts
   gridTwoCol: 'grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16',
   gridThreeCol: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8',
-  
+
   // Flex layouts
   flexBetween: 'flex items-center justify-between',
   flexCenter: 'flex items-center justify-center',
@@ -61,10 +61,10 @@ export const stylePatterns = {
 
   // Interactive states
   interactiveLift: 'transition-transform duration-150 hover:-translate-y-0.5 active:translate-y-0',
-  
+
   // Dividers
-  divider: 'border-t border-[rgba(255,255,255,0.08)]',
-  dividerStrong: 'border-t border-[rgba(255,255,255,0.12)]',
+  divider: 'border-t border-divider',
+  dividerStrong: 'border-t border-divider-strong',
 } as const;
 
 /**

@@ -15,6 +15,7 @@ export { Tag } from './Tag';
 export { Input } from './Input';
 export { SocialIcon } from './SocialIcon';
 export { Separator } from './Separator';
+export { AddToCalendar } from './AddToCalendar';
 
 export type { LogoProps } from './Logo';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
@@ -33,4 +34,5 @@ export type { TagProps, TagTone } from './Tag';
 export type { InputProps } from './Input';
 export type { SocialIconProps, SocialIconType } from './SocialIcon';
 export type { SeparatorProps, SeparatorVariant, SeparatorColor } from './Separator';
+export type { AddToCalendarProps } from './AddToCalendar';
 

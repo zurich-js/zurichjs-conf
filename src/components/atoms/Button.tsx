@@ -34,11 +34,11 @@ const sizeStyles: Record<ButtonSize, string> = {
 };
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-yellow-400 text-black font-semibold hover:bg-yellow-300 shadow-lg hover:shadow-xl',
-  ghost: 'bg-transparent text-white border-2 border-white font-medium hover:bg-white hover:text-black',
-  accent: 'bg-[#F26A3C] text-white font-semibold hover:bg-[#E55A2C] shadow-lg hover:shadow-xl',
-  outline: 'bg-transparent text-[#F1E271] border-2 border-[#F1E271] font-semibold hover:bg-[#F1E271] hover:text-black',
-  dark: 'bg-gray-800 text-white font-semibold hover:bg-gray-700 shadow-md hover:shadow-lg',
+  primary: 'bg-brand-primary text-text-dark font-semibold hover:bg-brand-dark shadow-lg hover:shadow-xl',
+  ghost: 'bg-transparent text-text-primary border-2 border-text-primary font-medium hover:bg-text-primary hover:text-text-dark',
+  accent: 'bg-vip text-text-primary font-semibold hover:bg-vip/90 shadow-lg hover:shadow-xl',
+  outline: 'bg-transparent text-brand-primary border-2 border-brand-primary font-semibold hover:bg-brand-primary hover:text-text-dark',
+  dark: 'bg-gray-800 text-text-primary font-semibold hover:bg-gray-700 shadow-md hover:shadow-lg',
 };
 
 /**
@@ -61,7 +61,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || loading;
-    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
     
     const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
 

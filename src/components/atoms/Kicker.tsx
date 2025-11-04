@@ -29,7 +29,7 @@ export const Kicker: React.FC<KickerProps> = ({
   
   // Variant-specific styles
   const variantStyles = {
-    dark: 'text-base md:text-lg xl:text-xl text-white/90',
+    dark: 'text-base md:text-lg xl:text-xl text-text-primary/90',
     light: 'text-xs md:text-sm text-gray-500 tracking-widest',
   };
   

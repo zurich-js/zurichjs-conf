@@ -291,7 +291,7 @@ export const tokens = {
       accentVip: colors.special.accentVip,
     },
     countdown: {
-      surface: '#0B0F14',
+      surface: '#000000',
       textPrimary: '#F8FAFC',
       textMuted: '#A8B1BD',
       divider: colors.special.dividerStrong,

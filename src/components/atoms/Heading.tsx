@@ -34,7 +34,7 @@ export const Heading: React.FC<HeadingProps> = ({
   
   // Variant-specific styles
   const variantStyles = {
-    dark: 'text-white',
+    dark: 'text-text-primary',
     light: 'text-gray-900',
   };
   

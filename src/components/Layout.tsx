@@ -1,24 +1,24 @@
 import React from 'react';
 import Head from 'next/head';
-import { SiteFooter, SiteFooterProps } from '@/components/organisms/SiteFooter';
+import { SiteFooter } from '@/components/organisms/SiteFooter';
+import { footerData } from '@/data';
 
 export interface LayoutProps {
   children: React.ReactNode;
   title?: string;
   description?: string;
-  footerProps: SiteFooterProps;
 }
 
 /**
  * Layout template component
  * Wraps page content with common elements including footer
  * Follows atomic design pattern as a template composing organisms
+ * Footer data is consistent across all pages
  */
 export const Layout: React.FC<LayoutProps> = ({
   children,
   title = 'ZurichJS Conference 2026',
   description = 'Join us for an amazing JavaScript conference in Zurich',
-  footerProps,
 }) => {
   return (
     <>
@@ -33,7 +33,7 @@ export const Layout: React.FC<LayoutProps> = ({
         {children}
       </main>
       
-      <SiteFooter {...footerProps} />
+      <SiteFooter {...footerData} />
     </>
   );
 };

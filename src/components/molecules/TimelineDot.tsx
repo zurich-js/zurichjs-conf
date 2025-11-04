@@ -34,14 +34,14 @@ export const TimelineDot: React.FC<TimelineDotProps> = ({
   const dotClasses = `
     relative flex items-center justify-center
     w-10 h-10 rounded-full
-    ${emphasis || isCurrent ? 'bg-[#F1E271]/20 ring-2 ring-[#F1E271]/40' : 'bg-[#242528]'}
-    border-2 border-[#19191B]
+    ${emphasis || isCurrent ? 'bg-brand-primary/20 ring-2 ring-brand-primary/40' : 'bg-surface-card'}
+    border-2 border-surface-section
     transition-all duration-300
   `;
 
   const iconClasses = `
     w-5 h-5
-    ${emphasis || isCurrent ? 'text-[#F1E271]' : 'text-slate-400'}
+    ${emphasis || isCurrent ? 'text-brand-primary' : 'text-slate-400'}
   `;
 
   const DotContent = () => (

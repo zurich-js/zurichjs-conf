@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Tag, TagTone } from '@/components/atoms/Tag';
+import { AddToCalendar } from '@/components/atoms/AddToCalendar';
 import { useMotion } from '@/contexts/MotionContext';
 
 export interface TimelineTag {
@@ -57,40 +58,61 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
     `;
 
     const CardContent = () => (
-      <>
-        {/* Date Column */}
-        <time
-          dateTime={dateISO}
-          className="flex-shrink-0 w-16 sm:w-20 pt-1 text-sm text-slate-400 font-medium"
-        >
-          {dateFormatted}
-        </time>
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex items-start gap-3 sm:gap-4">
+          {/* Date Column */}
+          <time
+            dateTime={dateISO}
+            className="shrink-0 w-16 sm:w-20 pt-1 text-sm text-slate-400 font-medium"
+          >
+            {dateFormatted}
+          </time>
 
-        {/* Content Column */}
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base sm:text-lg font-semibold text-white mb-1 group-hover:text-[#F1E271] transition-colors">
-            {title}
-          </h3>
+          {/* Content Column */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base sm:text-lg font-semibold text-white group-hover:text-brand-primary transition-colors mb-1">
+              {title}
+            </h3>
 
-          {body && (
-            <p className="text-sm text-slate-300 leading-relaxed mb-2">
-              {body}
-            </p>
-          )}
+            {body && (
+              <p className="text-sm text-slate-300 leading-relaxed mb-2">
+                {body}
+              </p>
+            )}
 
-          {tags && tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {tags.map((tag, index) => (
-                <Tag
-                  key={`${tag.label}-${index}`}
-                  label={tag.label}
-                  tone={tag.tone}
-                />
-              ))}
-            </div>
-          )}
+            {tags && tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {tags.map((tag, index) => (
+                  <Tag
+                    key={`${tag.label}-${index}`}
+                    label={tag.label}
+                    tone={tag.tone}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </>
+
+        {/* Calendar Button Row - Aligned with Date Column */}
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className="shrink-0">
+            <div 
+              className="relative z-20 pl-0" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AddToCalendar
+                name={title}
+                description={body || ''}
+                startDate={dateISO}
+                location="Zurich, Switzerland"
+                size="small"
+                buttonStyle="text"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     );
 
     const cardElement = (

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type IconType = 'check' | 'dot' | 'star';
+export type IconType = 'check' | 'dot' | 'star' | 'minus';
 export type IconColor = 'success' | 'warning' | 'accent' | 'muted';
 
 export interface IconProps {
@@ -27,10 +27,10 @@ export interface IconProps {
 }
 
 const colorClasses: Record<IconColor, string> = {
-  success: 'text-green-500',
-  warning: 'text-orange-500',
-  accent: 'text-[#F26A3C]',
-  muted: 'text-gray-400',
+  success: 'text-success',
+  warning: 'text-warning',
+  accent: 'text-vip',
+  muted: 'text-text-muted',
 };
 
 /**
@@ -88,6 +88,25 @@ const StarIcon: React.FC<{ size: number; className: string }> = ({ size, classNa
 );
 
 /**
+ * Minus icon (for excluded features)
+ */
+const MinusIcon: React.FC<{ size: number; className: string }> = ({ size, className }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M19 13H5v-2h14v2z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+/**
  * Icon component for rendering feature status icons
  * Supports check marks, dots, and stars with color variants
  */
@@ -105,6 +124,7 @@ export const Icon: React.FC<IconProps> = ({
     check: CheckIcon,
     dot: DotIcon,
     star: StarIcon,
+    minus: MinusIcon,
   };
 
   const IconComponent = iconMap[type];

@@ -74,14 +74,14 @@ export const Price: React.FC<PriceProps> = ({
     <div className={`flex flex-col gap-2 ${className}`}>
       {compareAmount && formattedComparePrice && (
         <div className="flex items-center gap-2">
-          <span 
-            className="text-gray-400 line-through text-lg"
+          <span
+            className="text-text-muted line-through text-lg"
             aria-label={`Original price: ${formattedComparePrice}`}
           >
             {formattedComparePrice}
           </span>
           {savingsPercent > 0 && (
-            <span className="text-green-400 text-sm font-semibold bg-green-400/10 px-2 py-1 rounded">
+            <span className="text-success-light text-sm font-semibold bg-success/10 px-2 py-1 rounded">
               Save {savingsPercent}%
             </span>
           )}
@@ -89,14 +89,14 @@ export const Price: React.FC<PriceProps> = ({
       )}
       
       <div className="flex items-baseline gap-2">
-        <span 
-          className={`font-bold text-white ${priceSize}`}
+        <span
+          className={`font-bold text-text-primary ${priceSize}`}
           aria-label={`Current price: ${formattedPrice}${suffix || ''}`}
         >
           {formattedPrice}
         </span>
         {suffix && (
-          <span className={`text-gray-400 ${suffixSize}`}>
+          <span className={`text-text-muted ${suffixSize}`}>
             {suffix}
           </span>
         )}

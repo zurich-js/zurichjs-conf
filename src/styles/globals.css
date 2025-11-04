@@ -15,11 +15,37 @@
   --color-brand-primary: #F1E271;
   --color-brand-dark: #E8D54E;
   --color-brand-light: #F5EC9A;
-  
+
   /* Blue Brand */
   --color-blue-primary: #258BCC;
   --color-blue-dark: #1E6FA3;
   --color-blue-light: #3BA0E0;
+
+  /* Gray Scale - Full spectrum for design system */
+  --color-gray-0: #FFFFFF;
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* Slate Scale - For text on dark backgrounds */
+  --color-slate-50: #F8FAFC;
+  --color-slate-100: #F1F5F9;
+  --color-slate-200: #E2E8F0;
+  --color-slate-300: #CBD5E1;
+  --color-slate-400: #94A3B8;
+  --color-slate-500: #64748B;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1E293B;
+  --color-slate-900: #0F172A;
 
   /* Surfaces */
   --color-surface-page: #0A0A0A;
@@ -31,10 +57,13 @@
   /* Semantic Colors */
   --color-success: #22C55E;
   --color-success-muted: #16A34A;
+  --color-success-light: #4ADE80;
   --color-warning: #F97316;
   --color-warning-muted: #EA580C;
+  --color-warning-light: #FB923C;
   --color-error: #EF4444;
   --color-error-muted: #DC2626;
+  --color-error-light: #F87171;
   --color-info: #3B82F6;
   --color-info-muted: #2563EB;
 
@@ -44,6 +73,7 @@
   --color-text-tertiary: #CBD5E1;
   --color-text-muted: #94A3B8;
   --color-text-disabled: #64748B;
+  --color-text-dark: #111827;
 
   /* Special */
   --color-vip: #F26A3C;

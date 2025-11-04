@@ -25,10 +25,10 @@ export interface PillProps {
 }
 
 const variantStyles: Record<NonNullable<PillProps['variant']>, string> = {
-  default: 'bg-gray-800 text-white border-gray-700',
-  warning: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  success: 'bg-green-500/10 text-green-500 border-green-500/20',
-  accent: 'bg-[#F1E271]/20 text-[#F1E271] border-[#F1E271]/30',
+  default: 'bg-gray-800 text-text-primary border-gray-700',
+  warning: 'bg-warning/10 text-warning border-warning/20',
+  success: 'bg-success/10 text-success border-success/20',
+  accent: 'bg-brand-primary/20 text-brand-primary border-brand-primary/30',
 };
 
 const sizeStyles: Record<NonNullable<PillProps['size']>, string> = {

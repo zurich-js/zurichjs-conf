@@ -12,6 +12,7 @@ export { TimelineDot } from './TimelineDot';
 export { TimelineCard } from './TimelineCard';
 export { LinkGroup } from './LinkGroup';
 export { NewsletterForm } from './NewsletterForm';
+export { FAQAccordion } from './FAQAccordion';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -27,4 +28,5 @@ export type { TimelineDotProps, TimelineIconType } from './TimelineDot';
 export type { TimelineCardProps, TimelineTag } from './TimelineCard';
 export type { LinkGroupProps, NavLink } from './LinkGroup';
 export type { NewsletterFormProps } from './NewsletterForm';
+export type { FAQAccordionProps, FAQItem } from './FAQAccordion';
 

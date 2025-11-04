@@ -121,7 +121,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 
   return (
     <section
-      className="relative bg-[#19191B] text-slate-200 overflow-hidden"
+      className="relative bg-surface-section text-slate-200 overflow-hidden"
       aria-label="Timeline"
     >
       {/* Top Diagonal Separator */}

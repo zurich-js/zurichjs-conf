@@ -106,7 +106,7 @@ export const Hero: React.FC<HeroProps> = ({
                   <p className="text-base md:text-lg xl:text-xl text-white/90">
                     {formattedDate}
                   </p>
-                  <p className="text-base md:text-lg xl:text-xl text-gray-400">
+                  <p className="text-base md:text-lg xl:text-xl text-text-muted">
                     {venue}, {city}
                   </p>
                 </div>

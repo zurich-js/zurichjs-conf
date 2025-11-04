@@ -7,9 +7,9 @@ export interface Feature {
    */
   label: string;
   /**
-   * Feature kind: included (green check) or extra (orange dot)
+   * Feature kind: included (green check), extra (orange dot), or excluded (gray minus)
    */
-  kind?: 'included' | 'extra';
+  kind?: 'included' | 'extra' | 'excluded';
 }
 
 export interface FeatureListProps {
@@ -25,7 +25,7 @@ export interface FeatureListProps {
 
 /**
  * FeatureList component displays a list of features with appropriate icons
- * Green check for included features, orange dot for extra/premium features
+ * Green check for included features, orange dot for extra/premium features, gray minus for excluded
  */
 export const FeatureList: React.FC<FeatureListProps> = ({
   features,
@@ -38,20 +38,24 @@ export const FeatureList: React.FC<FeatureListProps> = ({
   return (
     <ul className={`flex flex-col gap-3 ${className}`} role="list">
       {features.map((feature, index) => {
-        const isExtra = feature.kind === 'extra';
-        const iconType = isExtra ? 'dot' : 'check';
-        const iconColor = isExtra ? 'accent' : 'success';
+        const kind = feature.kind || 'included';
+        const isExtra = kind === 'extra';
+        const isExcluded = kind === 'excluded';
+        
+        const iconType = isExcluded ? 'minus' : isExtra ? 'dot' : 'check';
+        const iconColor = isExcluded ? 'muted' : isExtra ? 'accent' : 'success';
+        const textColor = isExcluded ? 'text-gray-500' : 'text-gray-200';
         
         return (
           <li
             key={`${feature.label}-${index}`}
-            className="flex items-start gap-3 text-gray-200"
+            className={`flex items-start gap-3 ${textColor}`}
           >
             <Icon
               type={iconType}
               color={iconColor}
               size={20}
-              aria-label={isExtra ? 'Premium feature' : 'Included feature'}
+              aria-label={isExcluded ? 'Not included' : isExtra ? 'Premium feature' : 'Included feature'}
             />
             <span className="text-sm md:text-base leading-relaxed flex-1">
               {feature.label}

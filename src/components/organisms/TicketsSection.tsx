@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { PriceCard, CTA } from '@/components/molecules/PriceCard';
 import { DiscountCountdown } from '@/components/molecules/DiscountCountdown';
 import { Feature } from '@/components/molecules/FeatureList';
+import { FAQAccordion, FAQItem } from '@/components/molecules/FAQAccordion';
 
 export interface Plan {
   /**
@@ -43,9 +44,13 @@ export interface Plan {
    */
   variant?: 'standard' | 'vip' | 'member';
   /**
-   * Optional tax/fees footnote
+   * Optional tax/fees footnote (supports text or React nodes)
    */
-  footnote?: string;
+  footnote?: React.ReactNode;
+  /**
+   * Optional badge text (e.g., "Most Popular", "Best Value")
+   */
+  badge?: string;
 }
 
 export interface TicketsSectionProps {
@@ -77,6 +82,10 @@ export interface TicketsSectionProps {
     href: string;
   };
   /**
+   * Optional FAQ items to display below pricing
+   */
+  faq?: FAQItem[];
+  /**
    * Additional CSS classes
    */
   className?: string;
@@ -94,8 +103,17 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
   plans,
   discountEndsAt,
   helpLine,
+  faq,
   className = '',
 }) => {
+  // Reorder plans: Standard (left), VIP (center), Super Saver (right)
+  const reorderedPlans = React.useMemo(() => {
+    const standard = plans.find(p => p.variant === 'standard');
+    const vip = plans.find(p => p.variant === 'vip');
+    const superSaver = plans.find(p => p.variant === 'member');
+    return [standard, vip, superSaver].filter(Boolean) as Plan[];
+  }, [plans]);
+
   return (
     <section
       className={`relative bg-brand-primary py-24 md:py-32 lg:py-40 ${className}`}
@@ -132,25 +150,48 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
           )}
         </motion.div>
 
-        {/* Price cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12 md:mb-16">
-          {plans.map((plan, index) => (
-            <PriceCard
-              key={plan.id}
-              id={plan.id}
-              title={plan.title}
-              blurb={plan.blurb}
-              comparePrice={plan.comparePrice}
-              price={plan.price}
-              currency={plan.currency}
-              features={plan.features}
-              cta={plan.cta}
-              variant={plan.variant}
-              footnote={plan.footnote}
-              delay={index * 0.06}
-            />
-          ))}
+        {/* Price cards - Custom layout with VIP centered and larger */}
+        <div className="flex flex-col lg:flex-row gap-6 md:gap-8 mb-8 items-center lg:items-stretch justify-center max-w-7xl mx-auto">
+          {reorderedPlans.map((plan, index) => {
+            const isVip = plan.variant === 'vip';
+            return (
+              <div
+                key={plan.id}
+                className={`w-full ${
+                  isVip
+                    ? 'lg:w-[420px] lg:scale-110 lg:z-10'
+                    : 'lg:w-[360px]'
+                }`}
+              >
+                <PriceCard
+                  id={plan.id}
+                  title={plan.title}
+                  blurb={plan.blurb}
+                  comparePrice={plan.comparePrice}
+                  price={plan.price}
+                  currency={plan.currency}
+                  features={plan.features}
+                  cta={plan.cta}
+                  variant={plan.variant}
+                  footnote={plan.footnote}
+                  badge={plan.badge}
+                  delay={index * 0.06}
+                />
+              </div>
+            );
+          })}
         </div>
+
+        {/* VAT transparency - directly under cards */}
+        <motion.p
+          className="text-xs md:text-sm text-black/70 text-center mt-12 mb-8 md:mt-16 md:mb-10"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          All prices include 8.1% Swiss VAT. Business invoices provided at checkout.
+        </motion.p>
 
         {/* Footer: Help line and countdown */}
         <div className="flex flex-col items-center gap-6">
@@ -160,12 +201,12 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
               {helpLine.text}{' '}
               <Link
                 href={helpLine.href}
-                className="font-bold text-black underline hover:text-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                className="font-bold text-text-dark underline hover:text-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-text-dark focus:ring-offset-2"
               >
                 Reach out to us
               </Link>
@@ -179,6 +220,24 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
             />
           )}
         </div>
+
+        {/* FAQ Section */}
+        {faq && faq.length > 0 && (
+          <motion.div
+            className="mt-16 md:mt-20 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-black text-center mb-8 md:mb-12">
+              Frequently Asked Questions
+            </h2>
+            <div className="bg-black rounded-[28px] p-6 md:p-8 shadow-card">
+              <FAQAccordion items={faq} />
+            </div>
+          </motion.div>
+        )}
       </div>
     </section>
   );

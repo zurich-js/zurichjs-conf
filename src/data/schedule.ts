@@ -17,6 +17,8 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       id: 'community',
       label: 'Community day',
       date: 'September 9, 2026',
+      description: 'Kick off the conference with a day dedicated to community building. Connect with local JavaScript user groups, participate in informal meetups, and engage in lightning talks. This day is all about bringing together developers from diverse backgrounds to share knowledge and build lasting connections.',
+      tbaMode: false, // Set to true to show TBA mode for this day
       events: [
         {
           time: '09:00 – 10:00',
@@ -54,6 +56,8 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       id: 'warmup',
       label: 'Warm-up day',
       date: 'September 10, 2026',
+      description: 'Prepare for the main conference with intensive hands-on workshops. Learn the latest TypeScript features and modern React patterns from expert instructors. The day concludes with a pre-conference party where you can unwind and network with fellow attendees.',
+      tbaMode: true, // Set to true to show TBA mode for this day
       events: [
         {
           time: '09:00 – 09:30',
@@ -91,6 +95,8 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       id: 'conference',
       label: 'Conference day',
       date: 'September 11, 2026',
+      description: 'The main conference day featuring keynote presentations, parallel track sessions, and panel discussions. Choose from multiple tracks covering frameworks, runtimes, testing, WebAssembly, AI/ML, accessibility, and more. Network with sponsors during extended breaks and celebrate at the official after-party.',
+      tbaMode: true, // Set to true to show TBA mode for this day
       events: [
         {
           time: '08:30 – 09:30',

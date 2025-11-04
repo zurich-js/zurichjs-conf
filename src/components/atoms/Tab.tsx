@@ -54,7 +54,7 @@ export const Tab: React.FC<TabProps> = ({
       onKeyDown={handleKeyDown}
       className={`
         relative px-4 py-3 text-sm md:text-base font-medium transition-colors duration-200
-        focus:outline-none focus:ring-2 focus:ring-[#258BCC] focus:ring-offset-2 focus:ring-offset-white
+        focus:outline-none focus:ring-2 focus:ring-blue-primary focus:ring-offset-2 focus:ring-offset-gray-0
         ${isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}
       `}
     >
@@ -62,7 +62,7 @@ export const Tab: React.FC<TabProps> = ({
       {isActive && (
         <motion.div
           layoutId="activeTabIndicator"
-          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F1E271]"
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary"
           initial={false}
           transition={{
             type: 'spring',

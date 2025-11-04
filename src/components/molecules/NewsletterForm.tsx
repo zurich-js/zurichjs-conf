@@ -89,12 +89,12 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
             autoComplete="email"
             aria-label="Email address for newsletter"
             aria-invalid={error ? true : undefined}
-            className="w-full h-10 pl-4 pr-24 text-sm bg-transparent border border-white rounded-full text-white placeholder:text-[#64748B] focus:outline-none focus:ring-2 focus:ring-[rgba(241,226,113,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-10 pl-4 pr-24 text-sm bg-transparent border border-text-primary rounded-full text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-brand-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             type="submit"
             disabled={isSubmitting || isSuccess}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-4 bg-[#F1E271] text-black text-sm font-semibold rounded-full hover:bg-[#E8D54E] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[rgba(241,226,113,0.8)] focus:ring-offset-1"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-4 bg-brand-primary text-text-dark text-sm font-semibold rounded-full hover:bg-brand-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-primary/80 focus:ring-offset-1"
           >
             {isSubmitting ? (
               <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -109,25 +109,25 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
 
         
         {error && (
-          <p className="text-sm text-red-400 mt-2" role="alert">
+          <p className="text-sm text-error-light mt-2" role="alert">
             {error}
           </p>
         )}
         
         {isSuccess && (
-          <p className="text-sm text-[#22C55E] mt-2" role="status">
+          <p className="text-sm text-success mt-2" role="status">
             ✓ Successfully subscribed! Check your inbox.
           </p>
         )}
         
         {privacyHref && (
-          <p className="text-xs text-[#A8B1BD] mt-2">
+          <p className="text-xs text-text-muted mt-2">
             By subscribing, you agree to our{' '}
             <a
               href={privacyHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#258BCC] hover:text-[#1E6FA3] underline decoration-1 underline-offset-2 focus:outline-none focus:ring-2 focus:ring-[rgba(241,226,113,0.5)] rounded-sm"
+              className="text-blue-primary hover:text-blue-dark underline decoration-1 underline-offset-2 focus:outline-none focus:ring-2 focus:ring-brand-primary/50 rounded-sm"
             >
               Privacy Policy
             </a>

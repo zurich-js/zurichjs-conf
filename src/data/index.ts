@@ -5,7 +5,15 @@
 
 export { heroData } from './hero';
 export { scheduleData } from './schedule';
-export { ticketsData } from './tickets';
+export {
+  ticketsData,
+  createTicketDataFromStripe,
+  mapStripePlanToTicketPlan,
+  TICKET_FEATURES,
+  TICKET_METADATA,
+  STAGE_COPY,
+  DISCOUNT_EXPIRY_DATE,
+} from './tickets';
 export { timelineData } from './timeline';
 export { footerData } from './footer';
 

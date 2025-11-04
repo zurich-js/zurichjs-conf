@@ -54,7 +54,7 @@ export const SpeakerCard: React.FC<SpeakerCardProps> = ({
       variants={shouldAnimate ? cardVariants : {}}
     >
       {/* Card Container */}
-      <div className="relative bg-yellow-400 rounded-lg overflow-hidden shadow-md w-[240px] h-[320px] transition-shadow duration-300 group-hover:shadow-xl">
+      <div className="relative bg-brand-primary rounded-lg overflow-hidden shadow-md w-[240px] h-[320px] transition-shadow duration-300 group-hover:shadow-xl">
         {/* Speaker Image or Silhouette */}
         {imageSrc ? (
           <Image
@@ -65,7 +65,7 @@ export const SpeakerCard: React.FC<SpeakerCardProps> = ({
             sizes="240px"
           />
         ) : (
-          <div className="w-full h-full flex items-end justify-center pb-4 bg-gradient-to-b from-yellow-300 to-yellow-400">
+          <div className="w-full h-full flex items-end justify-center pb-4 bg-gradient-to-b from-brand-light to-brand-primary">
             {/* Silhouette SVG */}
             <svg
               viewBox="0 0 100 120"
