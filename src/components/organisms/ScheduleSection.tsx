@@ -77,7 +77,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           </div>
 
           {/* Right column: Tabbed schedule */}
-          <div>
+          <div className="w-full min-w-0">
             <DayTabs
               tabs={days.map((day) => ({
                 id: day.id,

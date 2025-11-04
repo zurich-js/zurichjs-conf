@@ -39,37 +39,43 @@ export const DayTabs: React.FC<DayTabsProps> = ({
 
     const updatePosition = () => {
       if (!activeTabElement || !containerRef.current) return;
-      
-      const wrapperDiv = containerRef.current.querySelector('[role="tablist"]') as HTMLElement;
-      if (!wrapperDiv) return;
 
-      const wrapperRect = wrapperDiv.getBoundingClientRect();
-      const tabRect = activeTabElement.getBoundingClientRect();
+      const scrollContainer = containerRef.current.querySelector('.overflow-x-auto') as HTMLElement;
+      const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
 
+      // Use offsetLeft and subtract scroll position for accurate placement
       setIndicatorStyle({
-        left: tabRect.left - wrapperRect.left,
-        width: tabRect.width,
+        left: activeTabElement.offsetLeft - scrollLeft,
+        width: activeTabElement.offsetWidth,
       });
     };
 
     // Initial position update
     updatePosition();
 
-    // Scroll active tab into view on mobile - align to left edge
-    if (window.innerWidth < 640) {
-      const scrollContainer = containerRef.current.querySelector('.overflow-x-auto') as HTMLElement;
-      if (scrollContainer) {
-        const tabLeft = activeTabElement.offsetLeft;
-        
-        // Scroll so active tab is at the left edge
-        scrollContainer.scrollTo({
-          left: tabLeft,
-          behavior: prefersReducedMotion ? 'auto' : 'smooth',
-        });
+    const scrollContainer = containerRef.current.querySelector('.overflow-x-auto') as HTMLElement;
 
-        // Update position after scroll
-        setTimeout(updatePosition, prefersReducedMotion ? 0 : 200);
-      }
+    // Add scroll listener to update indicator during scroll
+    const handleScroll = () => {
+      updatePosition();
+    };
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+    }
+
+    // Scroll active tab into view on mobile - align to left edge
+    if (window.innerWidth < 640 && scrollContainer) {
+      const tabLeft = activeTabElement.offsetLeft;
+      
+      // Scroll so active tab is at the left edge
+      scrollContainer.scrollTo({
+        left: tabLeft,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
+
+      // Update position after scroll completes
+      setTimeout(updatePosition, prefersReducedMotion ? 0 : 200);
     }
 
     // Update aria-live region
@@ -77,6 +83,12 @@ export const DayTabs: React.FC<DayTabsProps> = ({
     if (activeTabData) {
       setLiveRegionText(`${activeTabData.label}, ${activeTabData.date}, selected`);
     }
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, [activeTab, tabs, prefersReducedMotion]);
 
   // Handle resize and recompute indicator position
@@ -86,21 +98,26 @@ export const DayTabs: React.FC<DayTabsProps> = ({
       
       // Recompute indicator position
       const activeTabElement = tabRefs.current.get(activeTab);
-      if (activeTabElement && containerRef.current) {
-        const wrapperDiv = containerRef.current.querySelector('[role="tablist"]') as HTMLElement;
-        if (!wrapperDiv) return;
+      if (activeTabElement) {
+        const scrollContainer = containerRef.current.querySelector('.overflow-x-auto') as HTMLElement;
+        const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
 
-        const wrapperRect = wrapperDiv.getBoundingClientRect();
-        const tabRect = activeTabElement.getBoundingClientRect();
-        
+        // Use offsetLeft and subtract scroll position for accurate placement
         setIndicatorStyle({
-          left: tabRect.left - wrapperRect.left,
-          width: tabRect.width,
+          left: activeTabElement.offsetLeft - scrollLeft,
+          width: activeTabElement.offsetWidth,
         });
       }
     };
 
     updateIndicator();
+
+    const scrollContainer = containerRef.current?.querySelector('.overflow-x-auto') as HTMLElement;
+    
+    // Add scroll listener to update indicator position during scroll
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', updateIndicator);
+    }
 
     const resizeObserver = new ResizeObserver(updateIndicator);
     if (containerRef.current) {
@@ -110,6 +127,9 @@ export const DayTabs: React.FC<DayTabsProps> = ({
     window.addEventListener('resize', updateIndicator);
 
     return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', updateIndicator);
+      }
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateIndicator);
     };
@@ -156,7 +176,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
   return (
     <div
       ref={containerRef}
-      className={className}
+      className={`w-full overflow-hidden ${className}`}
       style={
         {
           '--brandAccent': colors.brand.primary,
@@ -166,9 +186,9 @@ export const DayTabs: React.FC<DayTabsProps> = ({
       }
     >
       {/* Wrapper with bottom border (grey line) */}
-      <div className="relative border-b border-slate-200">
+      <div className="relative border-b border-slate-200 w-full">
         {/* Scrollable container */}
-        <div className="relative overflow-x-auto sm:overflow-visible -mb-px scrollbar-hide">
+        <div className="relative overflow-x-auto sm:overflow-visible -mb-px scrollbar-hide w-full">
           {/* Tabs row - left aligned */}
           <div
             role="tablist"
