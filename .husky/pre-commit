@@ -1,0 +1,8 @@
+# Run lint-staged to lint staged files
+npx lint-staged
+
+# Run typecheck on entire project
+npm run typecheck
+
+# Run build to ensure project builds successfully
+npm run build

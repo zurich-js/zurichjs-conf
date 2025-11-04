@@ -4,7 +4,20 @@ import { motion, HTMLMotionProps } from 'framer-motion';
 export type ButtonVariant = 'primary' | 'ghost' | 'accent' | 'outline' | 'dark';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
+// Exclude event handlers that conflict with framer-motion
+type ConflictingProps =
+  | 'onDrag'
+  | 'onDragStart'
+  | 'onDragEnd'
+  | 'onDragEnter'
+  | 'onDragExit'
+  | 'onDragLeave'
+  | 'onDragOver'
+  | 'onAnimationStart'
+  | 'onAnimationEnd'
+  | 'onAnimationIteration';
+
+export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | ConflictingProps> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   asChild?: boolean;
@@ -78,7 +91,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         <motion.a
           href={href}
           className={combinedClassName}
-          {...(motionProps as any)}
+          whileHover={motionProps.whileHover}
+          whileTap={motionProps.whileTap}
+          transition={motionProps.transition}
           aria-disabled={isDisabled}
         >
           {content}
@@ -91,8 +106,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={combinedClassName}
         disabled={isDisabled}
-        {...motionProps}
         {...props}
+        {...motionProps}
       >
         {content}
       </motion.button>

@@ -39,7 +39,6 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 }) => {
   const { shouldAnimate } = useMotion();
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
 
   // Sort entries by date
@@ -96,7 +95,6 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
         const nextElement = cardRefs.current.get(nextEntry.id);
         if (nextElement) {
           nextElement.focus();
-          setFocusedIndex(nextIndex);
         }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
@@ -105,7 +103,6 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
         const prevElement = cardRefs.current.get(prevEntry.id);
         if (prevElement) {
           prevElement.focus();
-          setFocusedIndex(prevIndex);
         }
       } else if (e.key === 'Enter' && entry.href) {
         e.preventDefault();

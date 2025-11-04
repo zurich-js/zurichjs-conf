@@ -32,17 +32,14 @@ export const SpeakerCard: React.FC<SpeakerCardProps> = ({
       transition: {
         duration: 0.6,
         delay: 0.9 + index * 0.1,
-        ease: [0.22, 1, 0.36, 1],
+        ease: [0.22, 1, 0.36, 1] as const,
       },
     },
-  };
-
-  const hoverVariants = {
     hover: {
       y: -8,
       transition: {
         duration: 0.25,
-        ease: 'easeOut',
+        ease: 'easeOut' as const,
       },
     },
   };
@@ -53,7 +50,7 @@ export const SpeakerCard: React.FC<SpeakerCardProps> = ({
       initial={shouldAnimate ? 'hidden' : 'visible'}
       animate="visible"
       whileHover={shouldAnimate ? 'hover' : undefined}
-      variants={shouldAnimate ? { ...cardVariants, ...hoverVariants } : {}}
+      variants={shouldAnimate ? cardVariants : {}}
     >
       {/* Card Container */}
       <div className="relative bg-yellow-400 rounded-lg overflow-hidden shadow-md w-[240px] h-[320px] transition-shadow duration-300 group-hover:shadow-xl">

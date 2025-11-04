@@ -39,6 +39,13 @@ export type CountdownPillProps = {
   showZeros?: boolean;
 };
 
+type RequiredLabels = {
+  days: string;
+  hours: string;
+  minutes: string;
+  seconds: string;
+};
+
 /**
  * Format the remaining time for screen readers
  */
@@ -48,7 +55,7 @@ const formatAriaLabel = (
   hours: number,
   minutes: number,
   seconds: number,
-  labels: Required<CountdownPillProps['labels']>
+  labels: RequiredLabels
 ): string => {
   return `${title} ${days} ${labels.days}, ${hours} ${labels.hours}, ${minutes} ${labels.minutes}, ${seconds} ${labels.seconds}`;
 };
@@ -79,7 +86,7 @@ export const CountdownPill: React.FC<CountdownPillProps> = ({
   const [isMounted, setIsMounted] = useState(false);
 
   // Merge custom labels with defaults
-  const labels: Required<CountdownPillProps['labels']> = {
+  const labels: RequiredLabels = {
     days: customLabels.days || 'Days',
     hours: customLabels.hours || 'Hours',
     minutes: customLabels.minutes || 'Minutes',

@@ -73,17 +73,21 @@ export const stylePatterns = {
  */
 export const getColor = (path: string): string => {
   const parts = path.split('.');
-  let value: any = colors;
-  
+  let value: Record<string, unknown> | string = colors;
+
   for (const part of parts) {
-    value = value[part];
+    if (typeof value === 'string') {
+      console.warn(`Color path "${path}" not found in tokens`);
+      return '#000000';
+    }
+    value = value[part] as Record<string, unknown> | string;
     if (value === undefined) {
       console.warn(`Color path "${path}" not found in tokens`);
       return '#000000';
     }
   }
-  
-  return value;
+
+  return typeof value === 'string' ? value : '#000000';
 };
 
 /**

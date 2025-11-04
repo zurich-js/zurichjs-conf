@@ -6,7 +6,7 @@ export interface TabProps {
   label: string;
   isActive: boolean;
   onClick: (id: string) => void;
-  index: number;
+  index?: number;
 }
 
 /**
@@ -19,7 +19,6 @@ export const Tab: React.FC<TabProps> = ({
   label,
   isActive,
   onClick,
-  index,
 }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
 

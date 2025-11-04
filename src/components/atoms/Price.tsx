@@ -38,7 +38,7 @@ const formatPrice = (amount: number, currency: string): string => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  } catch (error) {
+  } catch {
     // Fallback if currency is invalid
     return `${currency} ${amount.toLocaleString()}`;
   }
