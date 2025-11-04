@@ -82,41 +82,6 @@ export interface TicketsSectionProps {
   className?: string;
 }
 
-/**
- * DiagonalSeparator component creates angled dividers
- */
-const DiagonalSeparator: React.FC<{ position: 'top' | 'bottom' }> = ({ position }) => {
-  const isTop = position === 'top';
-  
-  return (
-    <div
-      className="absolute left-0 right-0 h-12 md:h-16 lg:h-20 overflow-hidden pointer-events-none z-10"
-      style={{ [isTop ? 'top' : 'bottom']: 0 }}
-      aria-hidden="true"
-    >
-      <svg
-        className="absolute w-full h-full"
-        viewBox="0 0 1200 80"
-        preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {isTop ? (
-          // Top separator: black to yellow
-          <path
-            d="M0,80 L0,0 L1200,0 L1200,20 L0,80 Z"
-            fill="#000000"
-          />
-        ) : (
-          // Bottom separator: yellow to black
-          <path
-            d="M0,0 L1200,60 L1200,80 L0,80 Z"
-            fill="#000000"
-          />
-        )}
-      </svg>
-    </div>
-  );
-};
 
 /**
  * TicketsSection organism component
@@ -133,12 +98,9 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
 }) => {
   return (
     <section
-      className={`relative bg-[#F1E271] py-24 md:py-32 lg:py-40 ${className}`}
+      className={`relative bg-brand-primary py-24 md:py-32 lg:py-40 ${className}`}
       aria-labelledby="tickets-heading"
     >
-      {/* Diagonal separators */}
-      <DiagonalSeparator position="top" />
-      <DiagonalSeparator position="bottom" />
 
       {/* Content container */}
       <div className="relative z-20 container mx-auto px-4 md:px-6 lg:px-8">

@@ -8,6 +8,10 @@ export { FeatureList } from './FeatureList';
 export { PriceCard } from './PriceCard';
 export { DiscountCountdown } from './DiscountCountdown';
 export { CountdownRow } from './CountdownRow';
+export { TimelineDot } from './TimelineDot';
+export { TimelineCard } from './TimelineCard';
+export { LinkGroup } from './LinkGroup';
+export { NewsletterForm } from './NewsletterForm';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -19,4 +23,8 @@ export type { FeatureListProps, Feature } from './FeatureList';
 export type { PriceCardProps, CTA } from './PriceCard';
 export type { DiscountCountdownProps } from './DiscountCountdown';
 export type { CountdownRowProps } from './CountdownRow';
+export type { TimelineDotProps, TimelineIconType } from './TimelineDot';
+export type { TimelineCardProps, TimelineTag } from './TimelineCard';
+export type { LinkGroupProps, NavLink } from './LinkGroup';
+export type { NewsletterFormProps } from './NewsletterForm';
 

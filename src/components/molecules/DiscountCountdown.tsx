@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useCountdown, padZero } from '@/hooks/useCountdown';
+import { Separator } from '@/components/atoms/Separator';
 import { tokens } from '@/styles/tokens';
 
 export interface DiscountCountdownProps {
@@ -32,13 +33,16 @@ export const DiscountCountdown: React.FC<DiscountCountdownProps> = ({
   className = '',
   title = 'Discount expires in',
 }) => {
-  const { days, hours, minutes, seconds, isComplete } = useCountdown(discountEndsAt);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  
+  // Mount state to avoid hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Check for reduced motion preference
   useEffect(() => {
-    setIsMounted(true);
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
 
@@ -49,6 +53,41 @@ export const DiscountCountdown: React.FC<DiscountCountdownProps> = ({
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
+
+  const { days, hours, minutes, seconds, isComplete } = useCountdown(discountEndsAt);
+
+  // Don't render anything until client-side hydration is complete
+  // This prevents hydration mismatches with the countdown timer
+  if (!isMounted) {
+    return (
+      <div className={`flex justify-center ${className}`}>
+        <div
+          className="inline-flex flex-col items-center justify-center px-6 py-5 md:px-8 md:py-6 rounded-[28px] w-full max-w-fit opacity-0"
+          style={{
+            backgroundColor: tokens.colors.countdown.surface,
+            boxShadow: tokens.shadows.card,
+          }}
+          role="timer"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div className="text-center text-base md:text-lg font-semibold mb-5" style={{ color: tokens.colors.countdown.textPrimary }}>
+            {title}
+          </div>
+          <div className="flex items-center justify-center gap-0">
+            <div className="flex flex-col items-center justify-center px-4 lg:px-6">
+              <div className="text-4xl md:text-5xl font-bold" style={{ color: tokens.colors.countdown.textPrimary, minWidth: '2ch' }}>
+                --
+              </div>
+              <div className="text-xs md:text-sm font-medium mt-1" style={{ color: tokens.colors.countdown.textPrimary }}>
+                Days
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Don't render if countdown is complete
   if (isComplete) {
@@ -75,9 +114,7 @@ export const DiscountCountdown: React.FC<DiscountCountdownProps> = ({
   const ariaLabel = `${title} ${days} ${timeUnits[0].label}, ${hours} ${timeUnits[1].label}, ${minutes} ${timeUnits[2].label}, ${seconds} ${timeUnits[3].label}`;
 
   // Fade-in animation class
-  const fadeInClass = isMounted && !prefersReducedMotion
-    ? 'animate-fade-in'
-    : 'opacity-100';
+  const fadeInClass = !prefersReducedMotion ? 'animate-fade-in' : 'opacity-100';
 
   return (
     <div className={`flex justify-center ${className}`}>
@@ -135,11 +172,10 @@ export const DiscountCountdown: React.FC<DiscountCountdownProps> = ({
               
               {/* Vertical divider between units */}
               {index < timeUnits.length - 1 && (
-                <div
-                  className="h-16 w-px"
-                  style={{ backgroundColor: tokens.colors.countdown.divider }}
-                  role="separator"
-                  aria-hidden="true"
+                <Separator 
+                  variant="vertical" 
+                  fill={tokens.colors.countdown.divider}
+                  className="h-16"
                 />
               )}
             </React.Fragment>

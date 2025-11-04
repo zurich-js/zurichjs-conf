@@ -1,5 +1,6 @@
 import React from 'react';
 import { StatCell } from '@/components/atoms/StatCell';
+import { Separator } from '@/components/atoms/Separator';
 import { tokens } from '@/styles/tokens';
 
 export interface CountdownRowProps {
@@ -83,11 +84,10 @@ export const CountdownRow: React.FC<CountdownRowProps> = ({
             />
           </div>
           {index < visibleUnits.length - 1 && (
-            <div
-              className="h-px w-full"
-              style={{ backgroundColor: tokens.colors.countdown.divider }}
-              role="separator"
-              aria-hidden="true"
+            <Separator 
+              variant="horizontal" 
+              fill={tokens.colors.countdown.divider}
+              className="w-full"
             />
           )}
         </React.Fragment>

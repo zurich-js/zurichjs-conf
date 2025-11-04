@@ -10,6 +10,11 @@ export { Price } from './Price';
 export { Icon } from './Icon';
 export { Pill } from './Pill';
 export { StatCell } from './StatCell';
+export { Subtext } from './Subtext';
+export { Tag } from './Tag';
+export { Input } from './Input';
+export { SocialIcon } from './SocialIcon';
+export { Separator } from './Separator';
 
 export type { LogoProps } from './Logo';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
@@ -23,4 +28,9 @@ export type { PriceProps } from './Price';
 export type { IconProps, IconType, IconColor } from './Icon';
 export type { PillProps } from './Pill';
 export type { StatCellProps } from './StatCell';
+export type { SubtextProps } from './Subtext';
+export type { TagProps, TagTone } from './Tag';
+export type { InputProps } from './Input';
+export type { SocialIconProps, SocialIconType } from './SocialIcon';
+export type { SeparatorProps, SeparatorVariant, SeparatorColor } from './Separator';
 

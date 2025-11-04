@@ -129,17 +129,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         </div>
       </div>
 
-      {/* Diagonal transition at bottom */}
-      <div className="relative h-24 md:h-32 overflow-hidden">
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          className="absolute inset-0 w-full h-full"
-        >
-          <polygon points="0,0 100,0 100,100 0,100" fill="white" />
-          <polygon points="0,50 100,0 100,100 0,100" fill="black" />
-        </svg>
-      </div>
     </section>
   );
 };

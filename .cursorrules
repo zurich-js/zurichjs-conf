@@ -1,0 +1,565 @@
+# ZurichJS Conference - Cursor AI Rules
+
+## Project Overview
+
+This is a Next.js conference landing page for ZurichJS Conference 2026. The codebase follows strict architectural patterns, design systems, and coding standards to ensure scalability, maintainability, and excellent developer experience.
+
+## Core Principles
+
+1. **Type Safety First**: Strict TypeScript, no `any` types, comprehensive type definitions
+2. **Atomic Design**: Components organized by atoms → molecules → organisms
+3. **Data Separation**: All content data lives in `src/data/`, never in components
+4. **Design Token System**: All colors, spacing, typography from `src/styles/tokens.ts`
+5. **Accessibility**: WCAG AAA compliance, keyboard navigation, screen readers
+6. **Performance**: No hydration warnings, optimized bundles, lazy loading when appropriate
+
+## Architecture
+
+### Directory Structure
+
+```
+src/
+├── components/
+│   ├── atoms/           # Base components (Button, Heading, Tag, etc.)
+│   ├── molecules/       # Combined atoms (Card, Timeline items, etc.)
+│   └── organisms/       # Page sections (Hero, Schedule, Timeline, etc.)
+├── contexts/            # React contexts (MotionContext, etc.)
+├── data/                # All static content and configuration
+├── hooks/               # Custom React hooks
+├── pages/               # Next.js pages (minimal, mostly composition)
+├── styles/              # Global styles, tokens, utilities
+└── types/               # Shared TypeScript types (if needed)
+```
+
+### Component Organization
+
+**Atoms** (`src/components/atoms/`)
+- Single-purpose, reusable UI primitives
+- No business logic or data fetching
+- Examples: Button, Heading, Kicker, Tag, Icon
+- Must export both component and props type
+
+**Molecules** (`src/components/molecules/`)
+- Combinations of atoms
+- Simple, focused functionality
+- Examples: TimelineCard, TimelineDot, PriceCard
+- Can manage internal state but not app-level state
+
+**Organisms** (`src/components/organisms/`)
+- Complete page sections
+- Composed of molecules and atoms
+- Examples: Hero, ScheduleSection, TimelineSection
+- Accept data as props, never fetch data internally
+
+### Index Files
+
+Every component directory MUST have an `index.ts` that exports all components and types:
+
+```typescript
+// ✅ Good
+export { ComponentName } from './ComponentName';
+export type { ComponentNameProps } from './ComponentName';
+
+// ❌ Bad - missing type export
+export { ComponentName } from './ComponentName';
+```
+
+## Data Management
+
+### Data Files (`src/data/`)
+
+- All static content lives here, organized by section
+- Export typed objects matching component prop interfaces
+- Use `as const` for literal types
+- Never hardcode content in components
+
+```typescript
+// ✅ Good - src/data/timeline.ts
+export const timelineData: TimelineSectionProps = {
+  title: 'Conference Timeline',
+  entries: [...],
+} as const;
+
+// ❌ Bad - data in component
+const MyComponent = () => {
+  const data = { title: 'Conference Timeline' }; // Never do this
+  return <Section {...data} />;
+};
+```
+
+### Data File Structure
+
+```
+src/data/
+├── index.ts         # Re-exports all data
+├── hero.ts          # Hero section data
+├── schedule.ts      # Schedule data
+├── tickets.ts       # Ticket plans
+└── timeline.ts      # Timeline events
+```
+
+## Styling System
+
+### Design Tokens (`src/styles/tokens.ts`)
+
+- **Single source of truth** for all design values
+- Never use arbitrary color values in components
+- Organized by: colors, spacing, typography, shadows, etc.
+
+```typescript
+// ✅ Good - use tokens
+import { colors } from '@/styles/tokens';
+const bgColor = colors.surface.card;
+
+// ❌ Bad - arbitrary values
+const bgColor = '#242528'; // Use tokens instead!
+```
+
+### Tailwind CSS
+
+- Prefer Tailwind utility classes over custom CSS
+- Use tokens defined in `globals.css` via `@theme`
+- Custom utilities in `@layer utilities` for reusable patterns
+
+```tsx
+// ✅ Good - Tailwind utilities
+<div className="bg-[#242528] rounded-2xl px-4 py-3" />
+
+// ✅ Better - use utility patterns
+import { stylePatterns } from '@/styles/utils';
+<div className={stylePatterns.card} />
+```
+
+### Style Utilities (`src/styles/utils.ts`)
+
+- Common style patterns for reuse
+- Helper functions like `cn()` for conditional classes
+- Motion variants for Framer Motion
+
+```typescript
+import { stylePatterns, cn } from '@/styles/utils';
+
+// Conditional classes
+const className = cn(
+  stylePatterns.card,
+  isActive && 'ring-2 ring-accent',
+  disabled && 'opacity-50'
+);
+```
+
+## TypeScript Standards
+
+### Strict Rules
+
+- **No `any` types** - use `unknown` if truly unknown, then type guard
+- **Explicit return types** on all exported functions/components
+- **Interface over type** for component props (better error messages)
+- **Const assertions** for data objects
+
+```typescript
+// ✅ Good
+export interface ButtonProps {
+  variant: 'primary' | 'secondary';
+  children: React.ReactNode;
+}
+
+export const Button: React.FC<ButtonProps> = ({ variant, children }) => {
+  // implementation
+};
+
+// ❌ Bad
+export const Button = (props: any) => { // No any!
+  // implementation
+};
+```
+
+### Type Exports
+
+Always export types alongside components:
+
+```typescript
+// Component file
+export interface MyComponentProps {
+  title: string;
+}
+
+export const MyComponent: React.FC<MyComponentProps> = (props) => {
+  // ...
+};
+
+// Index file
+export { MyComponent } from './MyComponent';
+export type { MyComponentProps } from './MyComponent';
+```
+
+## Component Patterns
+
+### Component Structure
+
+```typescript
+import React from 'react';
+import { motion } from 'framer-motion';
+import { useMotion } from '@/contexts/MotionContext';
+
+export interface MyComponentProps {
+  title: string;
+  className?: string;
+}
+
+/**
+ * Component description
+ * Explain purpose and usage
+ */
+export const MyComponent: React.FC<MyComponentProps> = ({
+  title,
+  className = '',
+}) => {
+  const { shouldAnimate } = useMotion();
+  
+  return (
+    <div className={`base-styles ${className}`}>
+      {title}
+    </div>
+  );
+};
+```
+
+### Props Pattern
+
+- Required props first, optional after
+- Destructure with defaults
+- `className?` for style extension
+- Children last
+
+```typescript
+interface Props {
+  // Required
+  title: string;
+  id: string;
+  
+  // Optional
+  description?: string;
+  icon?: IconType;
+  className?: string;
+  
+  // Children/callbacks last
+  children?: React.ReactNode;
+  onClick?: () => void;
+}
+```
+
+## Accessibility Requirements
+
+### Must-Haves
+
+1. **Semantic HTML**: Use correct elements (`<button>`, `<nav>`, `<time>`, etc.)
+2. **ARIA attributes**: `aria-label`, `aria-current`, `role` when needed
+3. **Keyboard navigation**: Tab, Enter, Arrow keys must work
+4. **Focus indicators**: Visible focus rings, no color-only states
+5. **Screen readers**: `sr-only` class for context, descriptive labels
+
+```tsx
+// ✅ Good accessibility
+<button
+  className="btn"
+  aria-label="Close dialog"
+  onClick={handleClose}
+>
+  <Icon name="close" aria-hidden="true" />
+  <span className="sr-only">Close</span>
+</button>
+
+// ✅ Good semantic HTML
+<time dateTime="2026-09-11">September 11, 2026</time>
+
+// ❌ Bad - div pretending to be button
+<div onClick={handleClick}>Click me</div>
+```
+
+### Keyboard Navigation
+
+All interactive elements must support:
+- **Tab**: Move between focusable elements
+- **Enter/Space**: Activate buttons
+- **Escape**: Close modals/dropdowns
+- **Arrow keys**: Navigate lists/menus (when appropriate)
+
+### Focus Management
+
+```typescript
+// Use refs for focus management
+const buttonRef = useRef<HTMLButtonElement>(null);
+
+useEffect(() => {
+  if (shouldFocus) {
+    buttonRef.current?.focus();
+  }
+}, [shouldFocus]);
+```
+
+## Animation & Motion
+
+### Framer Motion Integration
+
+- Use `useMotion()` hook from `MotionContext`
+- Respect `prefers-reduced-motion` automatically
+- Consistent easing: `[0.22, 1, 0.36, 1]` (smooth)
+
+```typescript
+import { useMotion } from '@/contexts/MotionContext';
+
+const { shouldAnimate } = useMotion();
+
+if (shouldAnimate) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {content}
+    </motion.div>
+  );
+}
+
+return <div>{content}</div>;
+```
+
+### Animation Guidelines
+
+- Subtle and purposeful, not distracting
+- 60ms stagger delay for list items
+- 0.4-0.6s duration for most animations
+- Disable all animations when `prefers-reduced-motion`
+
+## Performance
+
+### Best Practices
+
+1. **No hydration warnings**: Server and client render must match
+2. **Lazy load images**: Use Next.js Image component
+3. **Code splitting**: Dynamic imports for heavy components
+4. **Memoization**: `useMemo`/`useCallback` for expensive operations
+5. **Key props**: Stable keys for list items
+
+```typescript
+// ✅ Good - stable date-based key
+{entries.map((entry) => (
+  <Card key={entry.id} {...entry} />
+))}
+
+// ❌ Bad - index as key
+{entries.map((entry, i) => (
+  <Card key={i} {...entry} />
+))}
+```
+
+### Avoiding Hydration Mismatches
+
+**Common Causes:**
+- Dynamic dates (`new Date()`, `Date.now()`)
+- Random values (`Math.random()`)
+- Browser APIs (`window`, `localStorage`) accessed during render
+- Time-dependent values that change between server and client
+
+**Solutions:**
+
+```typescript
+// ❌ Bad - dynamic date causes hydration mismatch
+const getExpiry = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 50);
+  return date.toISOString();
+};
+
+// ✅ Good - static date is consistent
+const EXPIRY_DATE = '2025-12-01T00:00:00.000Z';
+
+// ✅ Good - client-only rendering with useEffect
+const [isMounted, setIsMounted] = useState(false);
+
+useEffect(() => {
+  setIsMounted(true);
+}, []);
+
+if (!isMounted) {
+  return <Placeholder />; // Server-rendered placeholder
+}
+
+return <DynamicContent />; // Client-only content
+```
+
+**For countdown timers and live data:**
+- Use static dates in data files
+- Render placeholder during SSR with `opacity-0`
+- Show actual content only after client hydration
+- Use `isMounted` state to control rendering
+
+## Color System
+
+### Palette Organization
+
+All colors in `src/styles/tokens.ts`:
+
+```typescript
+colors.brand.primary     // #F1E271 - Yellow accent
+colors.surface.section   // #19191B - Dark section bg
+colors.surface.card      // #242528 - Card bg
+colors.text.primary      // #FFFFFF - Main text
+colors.text.secondary    // #E5E7EB - Body text
+colors.semantic.success  // #22C55E - Success states
+colors.semantic.warning  // #F97316 - Warning states
+```
+
+### Using Colors
+
+```tsx
+// ✅ In Tailwind (via @theme in globals.css)
+<div className="bg-[#242528] text-white" />
+
+// ✅ In styled components/JS
+import { colors } from '@/styles/tokens';
+const bgColor = colors.surface.card;
+
+// ❌ Never hardcode
+const bgColor = '#242528'; // Use tokens!
+```
+
+## Code Quality
+
+### Linting & Formatting
+
+- Run `npm run lint` before committing
+- Fix all linter errors immediately
+- Use ESLint and TypeScript compiler strictly
+
+### Comments & Documentation
+
+```typescript
+/**
+ * Component description explaining purpose
+ * 
+ * @example
+ * <MyComponent title="Hello" />
+ */
+export const MyComponent: React.FC<Props> = (props) => {
+  // Implementation comment when logic is complex
+  const processedData = complexFunction(); // Explain why
+  
+  return <div>...</div>;
+};
+```
+
+### File Naming
+
+- Components: PascalCase (`Button.tsx`, `TimelineCard.tsx`)
+- Utilities: camelCase (`tokens.ts`, `utils.ts`)
+- Data files: camelCase (`hero.ts`, `schedule.ts`)
+- Test files: `*.test.tsx` or `*.spec.tsx`
+
+## Common Patterns
+
+### Conditional Rendering
+
+```tsx
+// ✅ Good - clear and concise
+{items.length > 0 && <List items={items} />}
+{error ? <ErrorMessage /> : <Content />}
+
+// ❌ Bad - nested ternaries
+{items ? items.length ? <List items={items} /> : null : null}
+```
+
+### Event Handlers
+
+```typescript
+// ✅ Good - clear handler names
+const handleSubmit = () => { /* ... */ };
+const handleClick = () => { /* ... */ };
+const handleKeyDown = (e: KeyboardEvent) => { /* ... */ };
+
+// ❌ Bad - vague names
+const onClick = () => { /* ... */ };
+const handler = () => { /* ... */ };
+```
+
+### Optional Chaining
+
+```typescript
+// ✅ Good - safe property access
+const value = data?.user?.profile?.name;
+
+// ✅ Good - with fallback
+const name = data?.user?.name ?? 'Anonymous';
+```
+
+## Git Workflow
+
+### Commit Messages
+
+- Use conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`
+- Keep first line under 50 characters
+- Add body for complex changes
+
+```
+feat: add timeline section with auto-highlighting
+
+- Created TimelineSection organism
+- Added TimelineDot and TimelineCard molecules
+- Implemented keyboard navigation
+- Added auto-highlight for upcoming events
+```
+
+### Branch Naming
+
+- `feature/timeline-section`
+- `fix/button-accessibility`
+- `refactor/data-structure`
+- `docs/component-guidelines`
+
+## Testing Considerations
+
+- Component tests: Render, accessibility, interactions
+- Hook tests: Custom hooks in isolation
+- Integration tests: Page-level composition
+- E2E tests: Critical user flows
+
+## When in Doubt
+
+1. Check existing components for patterns
+2. Refer to `src/styles/tokens.ts` for design values
+3. Look at `src/data/` for data structure examples
+4. Follow atomic design: atoms → molecules → organisms
+5. Keep components small, focused, and reusable
+
+## Key Don'ts
+
+❌ **Don't** use `any` types
+❌ **Don't** put data in components
+❌ **Don't** hardcode colors/spacing
+❌ **Don't** skip accessibility attributes
+❌ **Don't** ignore TypeScript errors
+❌ **Don't** create hydration warnings
+❌ **Don't** forget to export types
+❌ **Don't** use `div` for interactive elements
+❌ **Don't** skip keyboard navigation
+❌ **Don't** ignore `prefers-reduced-motion`
+❌ **Don't** create markdown summary/documentation files after changes (REFACTORING_SUMMARY.md, QUICK_REFERENCE.md, etc.)
+
+## Key Do's
+
+✅ **Do** use strict TypeScript
+✅ **Do** separate data from components
+✅ **Do** use design tokens
+✅ **Do** follow atomic design
+✅ **Do** make it accessible
+✅ **Do** respect user preferences
+✅ **Do** export types with components
+✅ **Do** use semantic HTML
+✅ **Do** test keyboard navigation
+✅ **Do** keep components focused and small
+
+---
+
+**Remember**: This codebase values type safety, accessibility, maintainability, and excellent developer experience above all else. When adding features, ensure they follow these established patterns.
+
