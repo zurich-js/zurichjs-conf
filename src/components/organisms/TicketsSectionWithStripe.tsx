@@ -29,6 +29,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   if (isLoading) {
     return (
       <section
+        id="tickets"
         className={`relative bg-brand-primary py-24 md:py-32 lg:py-40 ${className}`}
         aria-labelledby="tickets-heading"
       >
