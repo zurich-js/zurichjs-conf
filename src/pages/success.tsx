@@ -103,7 +103,7 @@ const SuccessPage: React.FC = () => {
                 </p>
               </div>
               <Link href="/">
-                <Button variant="primary" size="large">
+                <Button variant="primary" size="lg">
                   Return to Homepage
                 </Button>
               </Link>
@@ -255,12 +255,12 @@ const SuccessPage: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/">
-                  <Button variant="primary" size="large" className="w-full sm:w-auto">
+                  <Button variant="primary" size="lg" className="w-full sm:w-auto">
                     Return to Homepage
                   </Button>
                 </Link>
                 <Link href="/#schedule">
-                  <Button variant="secondary" size="large" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     View Schedule
                   </Button>
                 </Link>
