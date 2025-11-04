@@ -50,21 +50,22 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     <section className="relative bg-white">
       {/* Main content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12 lg:pt-16 pb-16 md:pb-24 lg:pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.75fr] gap-8 lg:gap-12 xl:gap-16">
           {/* Left column: Title and description */}
-          <div className="flex flex-col justify-start">
-            <Kicker className="text-gray-500! text-xs! md:text-sm! tracking-widest! mb-4">
+          <div className="flex flex-col justify-start lg:max-w-md">
+            <Kicker variant="light" className="mb-4">
               SCHEDULE
             </Kicker>
             
             <Heading
               level="h2"
-              className="text-gray-900! text-3xl md:text-4xl lg:text-5xl mb-6 font-bold!"
+              variant="light"
+              className="text-3xl md:text-4xl lg:text-4xl mb-4"
             >
               {title}
             </Heading>
             
-            <p className="text-base md:text-lg lg:text-xl text-gray-600 leading-relaxed mb-6">
+            <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-6">
               {subtitle}
             </p>
             

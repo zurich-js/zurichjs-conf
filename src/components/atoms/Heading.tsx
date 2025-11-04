@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 
 export type HeadingLevel = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+export type HeadingVariant = 'dark' | 'light';
 
 export interface HeadingProps {
   level?: HeadingLevel;
@@ -9,11 +10,14 @@ export interface HeadingProps {
   className?: string;
   animate?: boolean;
   delay?: number;
+  variant?: HeadingVariant;
 }
 
 /**
  * Semantic heading component with optional animation
  * Supports all heading levels with consistent styling
+ * 
+ * @param variant - 'dark' for light text on dark backgrounds (default), 'light' for dark text on light backgrounds
  */
 export const Heading: React.FC<HeadingProps> = ({
   level = 'h1',
@@ -21,11 +25,20 @@ export const Heading: React.FC<HeadingProps> = ({
   className = '',
   animate = false,
   delay = 0,
+  variant = 'dark',
 }) => {
   const Component = level;
   
-  const baseClassName = 'font-bold text-white';
-  const combinedClassName = `${baseClassName} ${className}`;
+  // Base styles shared across variants
+  const baseStyles = 'font-bold';
+  
+  // Variant-specific styles
+  const variantStyles = {
+    dark: 'text-white',
+    light: 'text-gray-900',
+  };
+  
+  const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;
 
   if (animate) {
     const MotionComponent = motion[Component] as React.ComponentType<HTMLMotionProps<typeof Component>>;

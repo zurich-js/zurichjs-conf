@@ -1,25 +1,39 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+export type KickerVariant = 'dark' | 'light';
+
 export interface KickerProps {
   children: React.ReactNode;
   className?: string;
   animate?: boolean;
   delay?: number;
+  variant?: KickerVariant;
 }
 
 /**
  * Kicker component for small taglines or eyebrow text
  * Typically appears above main headings
+ * 
+ * @param variant - 'dark' for light text on dark backgrounds (default), 'light' for dark text on light backgrounds
  */
 export const Kicker: React.FC<KickerProps> = ({
   children,
   className = '',
   animate = false,
   delay = 0,
+  variant = 'dark',
 }) => {
-  const baseClassName = 'text-base md:text-lg xl:text-xl uppercase tracking-wider font-bold text-white/90';
-  const combinedClassName = `${baseClassName} ${className}`;
+  // Base styles shared across variants
+  const baseStyles = 'uppercase tracking-wider font-bold';
+  
+  // Variant-specific styles
+  const variantStyles = {
+    dark: 'text-base md:text-lg xl:text-xl text-white/90',
+    light: 'text-xs md:text-sm text-gray-500 tracking-widest',
+  };
+  
+  const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;
 
   if (animate) {
     return (

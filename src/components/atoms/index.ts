@@ -18,8 +18,8 @@ export { Separator } from './Separator';
 
 export type { LogoProps } from './Logo';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
-export type { HeadingProps, HeadingLevel } from './Heading';
-export type { KickerProps } from './Kicker';
+export type { HeadingProps, HeadingLevel, HeadingVariant } from './Heading';
+export type { KickerProps, KickerVariant } from './Kicker';
 export type { StatProps } from './Stat';
 export type { IconButtonProps } from './IconButton';
 export type { LinkTextProps } from './LinkText';

@@ -143,9 +143,6 @@ export const Hero: React.FC<HeroProps> = ({
           <SpeakerGrid speakers={speakers} />
         </DiagonalSection>
       </div>
-
-      {/* White section below (to show the diagonal effect) */}
-      <div className="relative bg-white h-32 md:h-48" />
     </section>
   );
 };
