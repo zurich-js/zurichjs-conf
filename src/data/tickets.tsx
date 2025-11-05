@@ -20,24 +20,24 @@ export const DISCOUNT_EXPIRY_DATE = '2025-12-01T00:00:00.000Z';
  * Static feature definitions for each ticket type
  */
 export const TICKET_FEATURES: Record<string, Feature[]> = {
-  super_saver: [
-    { label: 'Everything in Standard', kind: 'included' as const },
-    { label: 'Non-refundable', kind: 'excluded' as const },
-  ],
   standard: [
     { label: 'Full conference day access', kind: 'included' as const },
     { label: 'Lunch, coffee & refreshments', kind: 'included' as const },
     { label: 'Access to networking events', kind: 'included' as const },
-    { label: 'Community event (week of conf)', kind: 'included' as const },
+    { label: 'Access to meetups', kind: 'included' as const },
     { label: 'Workshops (purchased separately)', kind: 'excluded' as const },
-    { label: 'Refundable (see policy)', kind: 'included' as const },
   ],
   vip: [
     { label: 'Everything in Standard', kind: 'included' as const },
     { label: 'Speaker dinner invitation', kind: 'extra' as const },
     { label: 'VIP after-party access', kind: 'extra' as const },
     { label: 'Priority seating', kind: 'extra' as const },
+    { label: 'Workshops (purchased separately)', kind: 'excluded' as const },
     { label: 'Limited to 15 tickets', kind: 'extra' as const },
+  ],
+  verein_member: [
+    { label: 'Everything in Standard', kind: 'included' as const },
+    { label: 'ZurichJS Verein member discount', kind: 'extra' as const },
   ],
 };
 
@@ -48,32 +48,19 @@ export const TICKET_METADATA: Record<
   string,
   { blurb: string; footnote?: React.ReactNode; variant: 'standard' | 'vip' | 'member' }
 > = {
-  super_saver: {
-    blurb: 'Lowest price, no refunds. Best for committed attendees.',
-    footnote: 'Non-refundable · Limited availability',
-    variant: 'member',
-  },
   standard: {
-    blurb: 'Full access + refundable. Most popular choice.',
-    footnote: (
-      <>
-        Refundable –{' '}
-        <a
-          href="/refund-policy"
-          className="underline hover:text-text-muted transition-colors"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          View refund policy ↗
-        </a>
-      </>
-    ),
+    blurb: 'Your passport to JavaScript excellence in the heart of Zurich.',
     variant: 'standard',
   },
   vip: {
-    blurb: 'Everything in Standard + speaker dinner, VIP after-party, priority seating. Limited to 15 tickets.',
-    footnote: 'Only 15 tickets available · Includes speaker dinner',
+    blurb: 'Because some connections are worth the extra investment.',
+    footnote: 'Only 15 tickets available',
     variant: 'vip',
+  },
+  verein_member: {
+    blurb: 'Community first, always.',
+    footnote: 'ZurichJS Verein members only',
+    variant: 'member',
   },
 };
 
@@ -123,50 +110,22 @@ export const STAGE_COPY: Record<
 };
 
 /**
- * FAQ items addressing common objections and concerns
+ * FAQ items addressing common ticket questions
  */
 export const TICKET_FAQ: FAQItem[] = [
-  {
-    question: 'Is the ticket price worth it for one day?',
-    answer: (
-      <>
-        Yes! Your ticket includes full conference access, lunch, coffee & refreshments throughout
-        the day, access to networking events, and a community event during the week of the
-        conference. Comparable conferences charge 800-1200 CHF, making ZurichJS Conference
-        excellent value.
-      </>
-    ),
-  },
   {
     question: "What if I can't attend?",
     answer: (
       <>
-        Standard and VIP tickets are refundable depending on timing:
+        All tickets are refundable depending on timing:
         <ul className="list-disc list-inside mt-2 space-y-1">
           <li>More than 60 days before: 80% refund</li>
           <li>30-60 days before: 50% refund</li>
-          <li>Less than 30 days: No refund, but you can transfer to a colleague for free</li>
+          <li>Less than 30 days: No refund, but you can request a transfer</li>
         </ul>
-        Super Saver tickets are non-refundable but can be transferred to another person.{' '}
         <a href="/refund-policy" className="underline" target="_blank" rel="noopener noreferrer">
           View full refund policy ↗
         </a>
-      </>
-    ),
-  },
-  {
-    question: 'Is the VIP ticket worth the extra cost?',
-    answer: (
-      <>
-        Absolutely! The VIP ticket includes everything in Standard plus:
-        <ul className="list-disc list-inside mt-2 space-y-1">
-          <li>Private speaker dinner (150+ CHF value alone)</li>
-          <li>Exclusive VIP after-party at a rooftop bar</li>
-          <li>Priority seating in the main hall</li>
-          <li>Networking with only 15 top attendees</li>
-        </ul>
-        Limited to just 15 tickets, VIP offers unparalleled access to speakers and key figures in
-        the JavaScript community.
       </>
     ),
   },
@@ -188,35 +147,6 @@ export const TICKET_FAQ: FAQItem[] = [
     ),
   },
   {
-    question: 'Are there student or unemployed discounts?',
-    answer: (
-      <>
-        Yes! We offer 30% discounts for students and unemployed developers. Email us at{' '}
-        <a href="mailto:tickets@zurichjs.com" className="underline">
-          tickets@zurichjs.com
-        </a>{' '}
-        with your student ID or LinkedIn profile for a discount code. We&apos;re committed to
-        making the conference accessible to the entire community.
-      </>
-    ),
-  },
-  {
-    question: 'Will prices increase?',
-    answer: (
-      <>
-        Yes. We have four pricing stages:
-        <ul className="list-disc list-inside mt-2 space-y-1">
-          <li>Blind Bird (lowest price, before keynote announcement)</li>
-          <li>Early Bird (save 15-20% vs standard pricing)</li>
-          <li>Standard (regular pricing)</li>
-          <li>Late Bird (highest price, close to event date)</li>
-        </ul>
-        Early Bird tickets save you up to 300 CHF compared to Late Bird pricing. Book early to
-        secure the best price.
-      </>
-    ),
-  },
-  {
     question: 'Do prices include VAT? Can I get an invoice?',
     answer: (
       <>
@@ -230,12 +160,11 @@ export const TICKET_FAQ: FAQItem[] = [
     question: 'Can I transfer my ticket to someone else?',
     answer: (
       <>
-        Yes! All ticket types (including non-refundable Super Saver) can be transferred to another
-        person for free up to 7 days before the event. Simply email us at{' '}
+        Ticket transfers are handled on a case-by-case basis. Email us at{' '}
         <a href="mailto:tickets@zurichjs.com" className="underline">
           tickets@zurichjs.com
         </a>{' '}
-        with your order number and the new attendee&apos;s details.
+        with your order number and the reason for transfer, and we&apos;ll do our best to accommodate your request.
       </>
     ),
   },
@@ -264,7 +193,7 @@ export const mapStripePlanToTicketPlan = (stripePlan: TicketPlan): Plan => {
     features,
     variant: metadata.variant,
     footnote: metadata.footnote,
-    badge: stripePlan.id === 'standard' ? 'Most Popular' : undefined,
+    badge: undefined,
     cta: {
       type: 'button' as const,
       onClick: () => {
@@ -319,31 +248,14 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
   faq: TICKET_FAQ,
   plans: [
     {
-      id: 'super_saver',
-      title: 'Super Saver',
-      blurb: 'Lowest price, no refunds. Best for committed attendees.',
-      comparePrice: 699,
-      price: 599,
-      currency: 'CHF',
-      variant: 'member' as const,
-      features: TICKET_FEATURES.super_saver,
-      footnote: 'Limited availability',
-      cta: {
-        type: 'button' as const,
-        onClick: () => console.log('Super Saver ticket clicked'),
-        label: 'Get Super Saver Ticket',
-      },
-    },
-    {
       id: 'standard',
       title: 'Standard',
-      blurb: 'Full access + refundable. Most popular choice.',
+      blurb: 'Your passport to JavaScript excellence in the heart of Zurich.',
       comparePrice: 799,
       price: 699,
       currency: 'CHF',
       variant: 'standard' as const,
       features: TICKET_FEATURES.standard,
-      badge: 'Most Popular',
       cta: {
         type: 'button' as const,
         onClick: () => console.log('Standard ticket clicked'),
@@ -353,16 +265,33 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
     {
       id: 'vip',
       title: 'VIP',
-      blurb: 'Everything in Standard + speaker dinner, VIP after-party, priority seating. Limited to 15 tickets.',
+      blurb: 'Because some connections are worth the extra investment.',
       comparePrice: 1099,
-      price: 899,
+      price: 999,
       currency: 'CHF',
       variant: 'vip' as const,
       features: TICKET_FEATURES.vip,
+      footnote: 'Only 15 tickets available',
       cta: {
         type: 'button' as const,
         onClick: () => console.log('VIP ticket clicked'),
         label: 'Get VIP Ticket',
+      },
+    },
+    {
+      id: 'verein_member',
+      title: 'Verein Member',
+      blurb: 'Community first, always.',
+      comparePrice: 699,
+      price: 599,
+      currency: 'CHF',
+      variant: 'member' as const,
+      features: TICKET_FEATURES.verein_member,
+      footnote: 'ZurichJS Verein members only',
+      cta: {
+        type: 'button' as const,
+        onClick: () => console.log('Verein Member ticket clicked'),
+        label: 'Get Verein Member Ticket',
       },
     },
   ],

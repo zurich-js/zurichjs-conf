@@ -15,15 +15,15 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
   days: [
     {
       id: 'community',
-      label: 'Community day',
+      label: 'Meetups',
       date: 'September 9, 2026',
-      description: 'Kick off the conference with a day dedicated to community building. Connect with local JavaScript user groups, participate in informal meetups, and engage in lightning talks. This day is all about bringing together developers from diverse backgrounds to share knowledge and build lasting connections.',
+      description: 'Connect with local JavaScript user groups and regional communities for informal discussions, knowledge sharing, and networking. This day is all about bringing together developers from diverse backgrounds to share knowledge and build lasting connections.',
       tbaMode: false, // Set to true to show TBA mode for this day
       events: [
         {
           time: '09:00 – 10:00',
           title: 'Registration & Welcome Coffee',
-          description: 'Pick up your badge, meet fellow attendees, and enjoy refreshments as we kick off the community day.',
+          description: 'Pick up your badge, meet fellow attendees, and enjoy refreshments as we kick off the meetup day.',
         },
         {
           time: '10:00 – 12:00',
@@ -31,14 +31,9 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
           description: 'Join local JavaScript user groups and regional communities for informal discussions, knowledge sharing, and networking.',
         },
         {
-          time: '12:00 – 13:30',
-          title: 'Lunch & Open Space',
-          description: 'Catered lunch with open space for spontaneous discussions and unconference-style sessions.',
-        },
-        {
           time: '13:30 – 16:00',
-          title: 'Workshop: Building Inclusive Communities',
-          description: 'Interactive workshop on fostering diverse and welcoming tech communities, led by experienced community organizers.',
+          title: 'Building Inclusive Communities',
+          description: 'Interactive session on fostering diverse and welcoming tech communities, led by experienced community organizers.',
         },
         {
           time: '16:00 – 17:00',
@@ -54,9 +49,9 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
     },
     {
       id: 'warmup',
-      label: 'Warm-up day',
+      label: 'Workshops',
       date: 'September 10, 2026',
-      description: 'Prepare for the main conference with intensive hands-on workshops. Learn the latest TypeScript features and modern React patterns from expert instructors. The day concludes with a pre-conference party where you can unwind and network with fellow attendees.',
+      description: 'Intensive hands-on workshops to prepare for the main conference. Learn the latest TypeScript features and modern React patterns from expert instructors. The day concludes with a pre-conference party where you can unwind and network with fellow attendees.',
       tbaMode: true, // Set to true to show TBA mode for this day
       events: [
         {
