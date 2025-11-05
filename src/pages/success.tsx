@@ -1,21 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
+import { useQuery } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
 import Link from 'next/link';
-
-/**
- * Session details retrieved from Stripe
- */
-interface SessionDetails {
-  customer_email?: string;
-  customer_name?: string;
-  amount_total?: number;
-  currency?: string;
-  payment_status?: string;
-  session_id?: string;
-  error?: string;
-}
+import { checkoutSessionQueryOptions, type CheckoutSessionDetails } from '@/lib/queries/checkout';
 
 /**
  * Success Page
@@ -25,43 +14,14 @@ interface SessionDetails {
 const SuccessPage: React.FC = () => {
   const router = useRouter();
   const { session_id } = router.query;
-  const [sessionDetails, setSessionDetails] = useState<SessionDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchSessionDetails = async () => {
-      if (!session_id || typeof session_id !== 'string') {
-        console.error('No session_id in URL query parameters');
-        setError('No session ID provided. Please check the URL from your confirmation email.');
-        setIsLoading(false);
-        return;
-      }
+  // Wait for router to be ready and extract session_id
+  const sessionId = router.isReady && typeof session_id === 'string' ? session_id : '';
 
-      console.log('Fetching session details for:', session_id);
-
-      try {
-        const response = await fetch(`/api/checkout/session?session_id=${session_id}`);
-        const data: SessionDetails = await response.json();
-
-        console.log('API Response:', { status: response.status, data });
-
-        if (!response.ok || data.error) {
-          throw new Error(data.error || `Failed to fetch session details (Status: ${response.status})`);
-        }
-
-        setSessionDetails(data);
-      } catch (err) {
-        console.error('Error fetching session details:', err);
-        const errorMsg = err instanceof Error ? err.message : 'An error occurred while fetching session details';
-        setError(errorMsg);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSessionDetails();
-  }, [session_id]);
+  // Use TanStack Query to fetch session details
+  const { data: sessionDetails, isLoading, error } = useQuery(
+    checkoutSessionQueryOptions(sessionId)
+  );
 
   // Generate order number from session ID (matching webhook logic)
   const getOrderNumber = (sessionId?: string): string => {
@@ -85,16 +45,16 @@ const SuccessPage: React.FC = () => {
     >
       <div className="min-h-screen bg-brand-primary py-16 md:py-24 px-6">
         <div className="max-w-3xl mx-auto">
-          {/* Loading State */}
-          {isLoading && (
+          {/* Loading State - Show while router is not ready OR while fetching */}
+          {(!router.isReady || isLoading) && (
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
               <p className="mt-4 text-black">Loading your order details...</p>
             </div>
           )}
 
-          {/* Error State */}
-          {error && !isLoading && (
+          {/* Error State - Router ready but no session_id OR API error */}
+          {router.isReady && (!sessionId || error) && (
             <div className="text-center">
               <div className="mb-8">
                 <div className="text-6xl mb-4">⚠️</div>
@@ -106,7 +66,11 @@ const SuccessPage: React.FC = () => {
                 </Heading>
                 <div className="max-w-xl mx-auto">
                   <p className="text-lg text-black/80 mb-4">
-                    {error}
+                    {!sessionId
+                      ? 'No session ID found in the URL. Please use the link from your confirmation email.'
+                      : error instanceof Error
+                        ? error.message
+                        : 'An unexpected error occurred while loading your order details.'}
                   </p>
                   <div className="bg-black rounded-2xl p-6 text-left mb-8">
                     <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
@@ -136,7 +100,7 @@ const SuccessPage: React.FC = () => {
           )}
 
           {/* Success State */}
-          {!isLoading && !error && sessionDetails && (
+          {router.isReady && !isLoading && !error && sessionDetails && (
             <>
               {/* Success Header */}
               <div className="text-center mb-12">
