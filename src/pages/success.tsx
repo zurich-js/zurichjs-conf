@@ -32,23 +32,29 @@ const SuccessPage: React.FC = () => {
   useEffect(() => {
     const fetchSessionDetails = async () => {
       if (!session_id || typeof session_id !== 'string') {
-        setError('No session ID provided');
+        console.error('No session_id in URL query parameters');
+        setError('No session ID provided. Please check the URL from your confirmation email.');
         setIsLoading(false);
         return;
       }
+
+      console.log('Fetching session details for:', session_id);
 
       try {
         const response = await fetch(`/api/checkout/session?session_id=${session_id}`);
         const data: SessionDetails = await response.json();
 
+        console.log('API Response:', { status: response.status, data });
+
         if (!response.ok || data.error) {
-          throw new Error(data.error || 'Failed to fetch session details');
+          throw new Error(data.error || `Failed to fetch session details (Status: ${response.status})`);
         }
 
         setSessionDetails(data);
       } catch (err) {
         console.error('Error fetching session details:', err);
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        const errorMsg = err instanceof Error ? err.message : 'An error occurred while fetching session details';
+        setError(errorMsg);
       } finally {
         setIsLoading(false);
       }
@@ -93,14 +99,33 @@ const SuccessPage: React.FC = () => {
               <div className="mb-8">
                 <div className="text-6xl mb-4">⚠️</div>
                 <Kicker variant="light" className="mb-4">
-                  Error
+                  Error Loading Order Details
                 </Kicker>
                 <Heading level="h1" variant="light" className="mb-6 text-black">
-                  Something went wrong
+                  Unable to Load Order Information
                 </Heading>
-                <p className="text-lg text-black/80 mb-8">
-                  {error}
-                </p>
+                <div className="max-w-xl mx-auto">
+                  <p className="text-lg text-black/80 mb-4">
+                    {error}
+                  </p>
+                  <div className="bg-black rounded-2xl p-6 text-left mb-8">
+                    <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
+                    <ul className="text-gray-200 space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-brand-primary mt-1">•</span>
+                        <span>Check your email for the confirmation message with your order details</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-brand-primary mt-1">•</span>
+                        <span>Your payment was processed successfully - you&apos;ll receive your ticket via email</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-brand-primary mt-1">•</span>
+                        <span>If you don&apos;t receive an email within 10 minutes, contact us at tickets@zurichjs.com</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
               <Link href="/">
                 <Button variant="primary" size="lg">
