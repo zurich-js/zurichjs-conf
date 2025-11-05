@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
 import Link from 'next/link';
-import { checkoutSessionQueryOptions, type CheckoutSessionDetails } from '@/lib/queries/checkout';
+import { checkoutSessionQueryOptions } from '@/lib/queries/checkout';
 
 /**
  * Success Page
