@@ -13,8 +13,11 @@ interface HomeProps {
 
 export default function Home({ dehydratedState }: HomeProps) {
   const handleCtaClick = () => {
-    console.log('Render ticket clicked!');
-    // Add your ticket rendering logic here
+    // Scroll smoothly to the tickets section
+    const ticketsSection = document.getElementById('tickets');
+    if (ticketsSection) {
+      ticketsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   return (

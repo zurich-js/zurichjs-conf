@@ -52,6 +52,10 @@ export const endpoints = {
     purchase: () => '/api/tickets/purchase' as const,
     byId: (id: string) => `/api/tickets/${id}` as const,
   },
+  checkout: {
+    session: (sessionId: string) => `/api/checkout/session?session_id=${sessionId}` as const,
+    createSession: () => '/api/checkout/create-session' as const,
+  },
   // Add more endpoint groups as your API grows
   // Example:
   // speakers: {
@@ -71,6 +75,8 @@ export type EndpointPath = ReturnType<
   | typeof endpoints.tickets.pricing
   | typeof endpoints.tickets.purchase
   | typeof endpoints.tickets.byId
+  | typeof endpoints.checkout.session
+  | typeof endpoints.checkout.createSession
 >;
 
 /**
