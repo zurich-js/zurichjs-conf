@@ -6,7 +6,6 @@ export { TicketsSectionWithStripe } from './TicketsSectionWithStripe';
 export { CountdownPill } from './CountdownPill';
 export { TimelineSection } from './TimelineSection';
 export { SiteFooter } from './SiteFooter';
-export { CartDrawer } from './CartDrawer';
 export { PageHeader } from './PageHeader';
 export { CheckoutForm } from './CheckoutForm';
 
@@ -18,7 +17,6 @@ export type { TicketsSectionWithStripeProps } from './TicketsSectionWithStripe';
 export type { CountdownPillProps } from './CountdownPill';
 export type { TimelineSectionProps, TimelineEntry } from './TimelineSection';
 export type { SiteFooterProps } from './SiteFooter';
-export type { CartDrawerProps } from './CartDrawer';
 export type { PageHeaderProps } from './PageHeader';
 export type { CheckoutFormProps } from './CheckoutForm';
 

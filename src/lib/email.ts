@@ -3,9 +3,12 @@
  * Handles sending emails for ticket confirmations
  */
 
+import * as React from 'react';
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
-import { TicketConfirmationEmail } from '@/emails/TicketConfirmation';
+import { TicketPurchaseEmail } from '@/emails/templates/TicketPurchaseEmail';
+import type { TicketPurchaseEmailProps } from '@/emails/templates/TicketPurchaseEmail';
+import { getFirstName } from '@/emails/utils/render';
 
 /**
  * Initialize Resend client
@@ -24,9 +27,15 @@ const getResendClient = (): Resend => {
  * Email configuration
  */
 const EMAIL_CONFIG = {
-  from: process.env.EMAIL_FROM || 'ZurichJS Conference <noreply@zurichjs.com>',
-  replyTo: process.env.EMAIL_REPLY_TO || 'support@zurichjs.com',
+  from: process.env.EMAIL_FROM || 'ZurichJS Conference <tickets@zurichjs.com>',
+  replyTo: process.env.EMAIL_REPLY_TO || 'tickets@zurichjs.com',
+  supportEmail: 'tickets@zurichjs.com',
 };
+
+/**
+ * Base URL configuration
+ */
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
 
 /**
  * Data structure for ticket confirmation email
@@ -41,6 +50,8 @@ export interface TicketConfirmationData {
   currency: string;
   conferenceDate: string;
   conferenceName: string;
+  badgeLabel?: string;
+  notes?: string;
 }
 
 /**
@@ -54,6 +65,16 @@ export interface VerificationRequestData {
 }
 
 /**
+ * Generate QR code URL for ticket
+ * In production, this should generate an actual QR code image
+ */
+function generateQRCodeUrl(ticketId: string): string {
+  // TODO: Replace with actual QR code generation service
+  // For now, use a placeholder that shows the ticket ID
+  return `${BASE_URL}/api/qr/${ticketId}`;
+}
+
+/**
  * Send ticket confirmation email
  */
 export async function sendTicketConfirmationEmail(
@@ -62,18 +83,38 @@ export async function sendTicketConfirmationEmail(
   try {
     const resend = getResendClient();
 
+    // Map legacy data to new template format
+    const emailProps: TicketPurchaseEmailProps = {
+      firstName: getFirstName(data.customerName),
+      fullName: data.customerName,
+      email: data.customerEmail,
+      eventName: data.conferenceName,
+      edition: 'ZJS2026',
+      tierLabel: data.ticketType,
+      badgeLabel: data.badgeLabel,
+      venueName: 'Technopark Zürich',
+      venueAddress: 'Technoparkstrasse 1,\n8005 Zürich',
+      dateLabel: data.conferenceDate,
+      timeLabel: '09:00 – 17:00',
+      tz: 'CEST',
+      ticketId: data.orderNumber,
+      qrSrc: generateQRCodeUrl(data.orderNumber),
+      qrAlt: `QR code for ticket ${data.orderNumber}`,
+      logoSrc: `${BASE_URL}/logo.png`,
+      logoAlt: 'ZurichJS Conference',
+      appleWalletUrl: `${BASE_URL}/api/wallet/apple/${data.orderNumber}`,
+      googleWalletUrl: `${BASE_URL}/api/wallet/google/${data.orderNumber}`,
+      orderUrl: `${BASE_URL}/orders/${data.orderNumber}`,
+      calendarUrl: `${BASE_URL}/api/calendar/add`,
+      venueMapUrl: 'https://maps.google.com/?q=Technoparkstrasse+1+8005+Zurich',
+      refundPolicyUrl: `${BASE_URL}/refund-policy`,
+      supportEmail: EMAIL_CONFIG.supportEmail,
+      notes: data.notes,
+    };
+
     // Render the email template to HTML
     const emailHtml = await render(
-      TicketConfirmationEmail({
-        customerName: data.customerName,
-        customerEmail: data.customerEmail,
-        ticketType: data.ticketType,
-        orderNumber: data.orderNumber,
-        amountPaid: data.amountPaid,
-        currency: data.currency,
-        conferenceDate: data.conferenceDate,
-        conferenceName: data.conferenceName,
-      })
+      React.createElement(TicketPurchaseEmail, emailProps)
     );
 
     // Send the email
@@ -81,7 +122,7 @@ export async function sendTicketConfirmationEmail(
       from: EMAIL_CONFIG.from,
       to: data.to,
       replyTo: EMAIL_CONFIG.replyTo,
-      subject: `Your ticket for ${data.conferenceName}`,
+      subject: `Your ${data.ticketType} for ${data.conferenceName}`,
       html: emailHtml,
     });
 

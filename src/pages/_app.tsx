@@ -3,10 +3,10 @@ import type { AppProps } from "next/app";
 import { Figtree } from "next/font/google";
 import { MotionProvider } from "@/contexts/MotionContext";
 import { CartProvider } from "@/contexts/CartContext";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
-import { CartDrawer } from "@/components/organisms/CartDrawer";
+import { NuqsAdapter } from "nuqs/adapters/next/pages";
 import { useState } from "react";
 
 const figtree = Figtree({
@@ -21,14 +21,17 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <MotionProvider>
-          <main className={figtree.variable}>
-            <Component {...pageProps} />
-          </main>
-          <CartDrawer />
-        </MotionProvider>
-      </CartProvider>
+      <HydrationBoundary state={pageProps.dehydratedState}>
+        <NuqsAdapter>
+          <CartProvider>
+            <MotionProvider>
+              <main className={figtree.variable}>
+                <Component {...pageProps} />
+              </main>
+            </MotionProvider>
+          </CartProvider>
+        </NuqsAdapter>
+      </HydrationBoundary>
       {process.env.NODE_ENV === 'development' && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}

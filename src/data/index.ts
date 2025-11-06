@@ -9,10 +9,10 @@ export {
   ticketsData,
   createTicketDataFromStripe,
   mapStripePlanToTicketPlan,
+  getStageEndDate,
   TICKET_FEATURES,
   TICKET_METADATA,
   STAGE_COPY,
-  DISCOUNT_EXPIRY_DATE,
 } from './tickets';
 export { timelineData } from './timeline';
 export { footerData } from './footer';

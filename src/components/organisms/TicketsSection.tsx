@@ -75,6 +75,10 @@ export interface TicketsSectionProps {
    */
   discountEndsAt?: string;
   /**
+   * Countdown title (e.g., "Early Bird phase ends in", "Discount expires in")
+   */
+  countdownTitle?: string;
+  /**
    * Student/unemployed help link configuration
    */
   helpLine?: {
@@ -102,6 +106,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
   subcopy,
   plans,
   discountEndsAt,
+  countdownTitle,
   helpLine,
   faq,
   className = '',
@@ -217,6 +222,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
           {discountEndsAt && (
             <DiscountCountdown
               discountEndsAt={discountEndsAt}
+              title={countdownTitle}
               className="mt-2"
             />
           )}

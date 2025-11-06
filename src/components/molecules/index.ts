@@ -19,6 +19,7 @@ export { CartSummary } from './CartSummary';
 export { VoucherInput } from './VoucherInput';
 export { WorkshopVoucherCard } from './WorkshopVoucherCard';
 export { ToastContainer } from './Toast';
+export { TeamRequestModal } from './TeamRequestModal';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -41,3 +42,4 @@ export type { CartSummaryProps } from './CartSummary';
 export type { VoucherInputProps } from './VoucherInput';
 export type { WorkshopVoucherCardProps } from './WorkshopVoucherCard';
 export type { ToastContainerProps } from './Toast';
+export type { TeamRequestModalProps, TeamRequestData } from './TeamRequestModal';

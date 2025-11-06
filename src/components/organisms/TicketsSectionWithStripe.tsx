@@ -27,7 +27,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   className = '',
 }) => {
   const { plans, currentStage, isLoading, error, refetch } = useTicketPricing();
-  const { addToCart, openCart } = useCart();
+  const { addToCart, navigateToCart } = useCart();
   const {
     isModalOpen,
     openModal,
@@ -143,7 +143,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     return null;
   }
 
-  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, addToCart, openCart);
+  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, addToCart, navigateToCart);
   return (
     <>
       <TicketsSection {...ticketData} className={className} />

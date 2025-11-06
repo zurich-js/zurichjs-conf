@@ -1,119 +1,117 @@
 /**
- * Cart Context with useReducer
+ * Cart Context with localStorage persistence
  * Simplified state management for shopping cart with localStorage persistence
+ * URL state sync is handled separately on the cart page
  */
 
-import React, { createContext, useContext, useReducer, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useCallback, useMemo, useEffect, useState } from 'react';
 import type { Cart, CartItem } from '@/types/cart';
 import { useVoucherValidation } from '@/hooks/useVoucherValidation';
 
 /**
- * Cart Actions
+ * Cart manipulation helpers
+ * These are pure functions that return new cart states
  */
-type CartAction =
-  | { type: 'ADD_ITEM'; payload: { item: Omit<CartItem, 'quantity'>; quantity: number } }
-  | { type: 'REMOVE_ITEM'; payload: { itemId: string } }
-  | { type: 'UPDATE_QUANTITY'; payload: { itemId: string; quantity: number } }
-  | { type: 'APPLY_VOUCHER'; payload: { code: string; promotionCodeId: string; discountAmount: number } }
-  | { type: 'REMOVE_VOUCHER' }
-  | { type: 'CLEAR_CART' };
 
 /**
- * Cart Reducer
+ * Add item to cart
  */
-function cartReducer(state: Cart, action: CartAction): Cart {
-  switch (action.type) {
-    case 'ADD_ITEM': {
-      const { item, quantity } = action.payload;
-      const existingItemIndex = state.items.findIndex((i) => i.id === item.id);
+function addItemToCart(cart: Cart, item: Omit<CartItem, 'quantity'>, quantity: number): Cart {
+  const existingItemIndex = cart.items.findIndex((i) => i.id === item.id);
 
-      let newItems: CartItem[];
-      if (existingItemIndex >= 0) {
-        // Update existing item quantity
-        newItems = [...state.items];
-        newItems[existingItemIndex] = {
-          ...newItems[existingItemIndex],
-          quantity: newItems[existingItemIndex].quantity + quantity,
-        };
-      } else {
-        // Add new item
-        newItems = [...state.items, { ...item, quantity }];
-      }
-
-      // Recalculate totals
-      const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
-      const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-      return {
-        ...state,
-        items: newItems,
-        totalItems,
-        totalPrice,
-        currency: item.currency,
-      };
-    }
-
-    case 'REMOVE_ITEM': {
-      const newItems = state.items.filter((item) => item.id !== action.payload.itemId);
-      const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
-      const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-      return {
-        ...state,
-        items: newItems,
-        totalItems,
-        totalPrice,
-      };
-    }
-
-    case 'UPDATE_QUANTITY': {
-      const { itemId, quantity } = action.payload;
-      
-      if (quantity <= 0) {
-        // Remove item if quantity is 0
-        return cartReducer(state, { type: 'REMOVE_ITEM', payload: { itemId } });
-      }
-
-      const newItems = state.items.map((item) =>
-        item.id === itemId ? { ...item, quantity } : item
-      );
-
-      const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
-      const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-      return {
-        ...state,
-        items: newItems,
-        totalItems,
-        totalPrice,
-      };
-    }
-
-    case 'APPLY_VOUCHER': {
-      return {
-        ...state,
-        voucherCode: action.payload.code,
-        promotionCodeId: action.payload.promotionCodeId,
-        discountAmount: action.payload.discountAmount,
-      };
-    }
-
-    case 'REMOVE_VOUCHER': {
-      return {
-        ...state,
-        voucherCode: undefined,
-        promotionCodeId: undefined,
-        discountAmount: undefined,
-      };
-    }
-
-    case 'CLEAR_CART': {
-      return createEmptyCart();
-    }
-
-    default:
-      return state;
+  let newItems: CartItem[];
+  if (existingItemIndex >= 0) {
+    // Update existing item quantity
+    newItems = [...cart.items];
+    newItems[existingItemIndex] = {
+      ...newItems[existingItemIndex],
+      quantity: newItems[existingItemIndex].quantity + quantity,
+    };
+  } else {
+    // Add new item
+    newItems = [...cart.items, { ...item, quantity }];
   }
+
+  // Recalculate totals
+  const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
+  const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  return {
+    ...cart,
+    items: newItems,
+    totalItems,
+    totalPrice,
+    currency: item.currency,
+  };
+}
+
+/**
+ * Remove item from cart
+ */
+function removeItemFromCart(cart: Cart, itemId: string): Cart {
+  const newItems = cart.items.filter((item) => item.id !== itemId);
+  const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
+  const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  return {
+    ...cart,
+    items: newItems,
+    totalItems,
+    totalPrice,
+  };
+}
+
+/**
+ * Update item quantity in cart
+ */
+function updateItemQuantityInCart(cart: Cart, itemId: string, quantity: number): Cart {
+  if (quantity <= 0) {
+    // Remove item if quantity is 0
+    return removeItemFromCart(cart, itemId);
+  }
+
+  const newItems = cart.items.map((item) =>
+    item.id === itemId ? { ...item, quantity } : item
+  );
+
+  const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
+  const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  return {
+    ...cart,
+    items: newItems,
+    totalItems,
+    totalPrice,
+  };
+}
+
+/**
+ * Apply voucher to cart
+ */
+function applyVoucherToCart(
+  cart: Cart,
+  code: string,
+  promotionCodeId: string,
+  discountAmount: number
+): Cart {
+  return {
+    ...cart,
+    voucherCode: code,
+    promotionCodeId,
+    discountAmount,
+  };
+}
+
+/**
+ * Remove voucher from cart
+ */
+function removeVoucherFromCart(cart: Cart): Cart {
+  return {
+    ...cart,
+    voucherCode: undefined,
+    promotionCodeId: undefined,
+    discountAmount: undefined,
+  };
 }
 
 /**
@@ -129,6 +127,45 @@ function createEmptyCart(): Cart {
 }
 
 /**
+ * Load cart from localStorage
+ */
+function loadCartFromStorage(): Cart {
+  if (typeof window === 'undefined') {
+    return createEmptyCart();
+  }
+
+  try {
+    const storedCart = localStorage.getItem('zurichjs-cart');
+    if (storedCart) {
+      const parsed = JSON.parse(storedCart);
+      // Validate the structure
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.items)) {
+        return parsed as Cart;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load cart from localStorage:', error);
+  }
+
+  return createEmptyCart();
+}
+
+/**
+ * Save cart to localStorage
+ */
+function saveCartToStorage(cart: Cart): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem('zurichjs-cart', JSON.stringify(cart));
+  } catch (error) {
+    console.error('Failed to save cart to localStorage:', error);
+  }
+}
+
+/**
  * Cart context value
  */
 interface CartContextValue {
@@ -141,10 +178,7 @@ interface CartContextValue {
   clearCart: () => void;
   isInCart: (itemId: string) => boolean;
   getItemQuantity: (itemId: string) => number;
-  isCartOpen: boolean;
-  openCart: () => void;
-  closeCart: () => void;
-  toggleCart: () => void;
+  navigateToCart: () => void;
 }
 
 /**
@@ -163,17 +197,33 @@ export interface CartProviderProps {
  * Cart provider component
  */
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-  // Initialize reducer with empty cart
-  const [cart, dispatch] = useReducer(cartReducer, createEmptyCart());
-  const [isCartOpen, setIsCartOpen] = React.useState(false);
-  
+  // Always start with empty cart to avoid hydration mismatch
+  const [cart, setCart] = useState<Cart>(createEmptyCart());
+  const [isHydrated, setIsHydrated] = useState(false);
+
   // Ref to always have access to current cart without causing re-renders
   const cartRef = React.useRef<Cart>(cart);
-  
+
   // Keep ref in sync with cart state
   useEffect(() => {
     cartRef.current = cart;
   }, [cart]);
+
+  // Load cart from localStorage after mount (client-only)
+  useEffect(() => {
+    const storedCart = loadCartFromStorage();
+    if (storedCart.items.length > 0) {
+      setCart(storedCart);
+    }
+    setIsHydrated(true);
+  }, []);
+
+  // Persist cart to localStorage whenever it changes (but only after hydration)
+  useEffect(() => {
+    if (isHydrated) {
+      saveCartToStorage(cart);
+    }
+  }, [cart, isHydrated]);
 
   // Voucher validation mutation
   const { mutateAsync: validateVoucher } = useVoucherValidation();
@@ -182,21 +232,21 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
    * Add item to cart
    */
   const addToCart = useCallback((item: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
-    dispatch({ type: 'ADD_ITEM', payload: { item, quantity } });
+    setCart((currentCart) => addItemToCart(currentCart, item, quantity));
   }, []);
 
   /**
    * Remove item from cart
    */
   const removeFromCart = useCallback((itemId: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: { itemId } });
+    setCart((currentCart) => removeItemFromCart(currentCart, itemId));
   }, []);
 
   /**
    * Update item quantity
    */
   const updateItemQuantity = useCallback((itemId: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { itemId, quantity } });
+    setCart((currentCart) => updateItemQuantityInCart(currentCart, itemId, quantity));
   }, []);
 
   /**
@@ -211,7 +261,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       const priceIds = currentCart.items.map((item) => item.priceId);
 
       if (priceIds.length === 0) {
-        return { success: false, error: 'Your cart is empty' };
+        return { success: false, error: 'No tickets selected' };
       }
 
       // Validate voucher with Stripe via API
@@ -223,7 +273,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       });
 
       if (!result.valid) {
-        return { success: false, error: result.error || 'Invalid voucher code' };
+        return { success: false, error: result.error || 'Invalid promo code' };
       }
 
       // Calculate discount based on voucher type
@@ -235,18 +285,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       }
 
       // Apply voucher to cart
-      dispatch({
-        type: 'APPLY_VOUCHER',
-        payload: {
-          code: result.code || code.trim(),
-          promotionCodeId: result.promotionCodeId || '',
-          discountAmount,
-        },
-      });
+      setCart((currentCart) =>
+        applyVoucherToCart(
+          currentCart,
+          result.code || code.trim(),
+          result.promotionCodeId || '',
+          discountAmount
+        )
+      );
 
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to apply voucher';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to apply promo code';
       return { success: false, error: errorMessage };
     }
   }, [validateVoucher]);
@@ -255,14 +305,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
    * Remove voucher
    */
   const removeVoucher = useCallback(() => {
-    dispatch({ type: 'REMOVE_VOUCHER' });
+    setCart((currentCart) => removeVoucherFromCart(currentCart));
   }, []);
 
   /**
    * Clear entire cart
    */
   const clearCart = useCallback(() => {
-    dispatch({ type: 'CLEAR_CART' });
+    setCart(createEmptyCart());
   }, []);
 
   /**
@@ -281,24 +331,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, []);
 
   /**
-   * Open cart drawer
+   * Navigate to cart page
+   * Note: This can only be called from client-side components
    */
-  const openCart = useCallback(() => {
-    setIsCartOpen(true);
-  }, []);
-
-  /**
-   * Close cart drawer
-   */
-  const closeCart = useCallback(() => {
-    setIsCartOpen(false);
-  }, []);
-
-  /**
-   * Toggle cart drawer
-   */
-  const toggleCart = useCallback(() => {
-    setIsCartOpen((prev) => !prev);
+  const navigateToCart = useCallback(() => {
+    // Only navigate if we're in the browser
+    if (typeof window !== 'undefined') {
+      window.location.href = '/cart';
+    }
   }, []);
 
   // Memoize the context value to prevent unnecessary re-renders
@@ -313,10 +353,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       clearCart,
       isInCart,
       getItemQuantity,
-      isCartOpen,
-      openCart,
-      closeCart,
-      toggleCart,
+      navigateToCart,
     }),
     [
       cart,
@@ -328,10 +365,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       clearCart,
       isInCart,
       getItemQuantity,
-      isCartOpen,
-      openCart,
-      closeCart,
-      toggleCart,
+      navigateToCart,
     ]
   );
 

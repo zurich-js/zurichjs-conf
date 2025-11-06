@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -25,6 +27,7 @@
     "framer-motion": "^12.23.24",
     "micro": "^10.0.1",
     "next": "15.2.0",
+    "nuqs": "^2.7.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.66.0",
