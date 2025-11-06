@@ -54,7 +54,7 @@ export default async function handler(
 
     if (!session_id || typeof session_id !== 'string') {
       res.status(400).json({
-        error: 'Invalid session ID',
+        error: 'Invalid session ID provided',
       });
       return;
     }
@@ -62,9 +62,7 @@ export default async function handler(
     const stripe = getStripeClient();
 
     // Retrieve the checkout session
-    const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ['line_items', 'line_items.data.price.product'],
-    });
+    const session = await stripe.checkout.sessions.retrieve(session_id);
 
     // Return session details
     res.status(200).json({
@@ -77,6 +75,14 @@ export default async function handler(
     });
   } catch (error) {
     console.error('Error retrieving checkout session:', error);
+
+    // Handle Stripe-specific errors
+    if (error instanceof Stripe.errors.StripeError) {
+      res.status(400).json({
+        error: `Stripe error: ${error.message}`,
+      });
+      return;
+    }
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve checkout session';
 
