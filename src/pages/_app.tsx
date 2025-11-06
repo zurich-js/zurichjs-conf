@@ -2,8 +2,11 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { Figtree } from "next/font/google";
 import { MotionProvider } from "@/contexts/MotionContext";
+import { CartProvider } from "@/contexts/CartContext";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
+import { CartDrawer } from "@/components/organisms/CartDrawer";
 import { useState } from "react";
 
 const figtree = Figtree({
@@ -18,11 +21,17 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MotionProvider>
-        <main className={figtree.variable}>
-          <Component {...pageProps} />
-        </main>
-      </MotionProvider>
+      <CartProvider>
+        <MotionProvider>
+          <main className={figtree.variable}>
+            <Component {...pageProps} />
+          </main>
+          <CartDrawer />
+        </MotionProvider>
+      </CartProvider>
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   );
 }

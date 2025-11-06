@@ -44,6 +44,16 @@ export interface TicketConfirmationData {
 }
 
 /**
+ * Data structure for verification request email
+ */
+export interface VerificationRequestData {
+  to: string;
+  name: string;
+  verificationId: string;
+  verificationType: 'student' | 'unemployed';
+}
+
+/**
  * Send ticket confirmation email
  */
 export async function sendTicketConfirmationEmail(
@@ -84,6 +94,127 @@ export async function sendTicketConfirmationEmail(
     return { success: true };
   } catch (error) {
     console.error('Error sending ticket confirmation email:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Send verification request confirmation email
+ */
+export async function sendVerificationRequestEmail(
+  data: VerificationRequestData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resend = getResendClient();
+
+    const typeLabel = data.verificationType === 'student' ? 'Student' : 'Unemployed';
+
+    // Create a simple HTML email (you can create a React Email template later)
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification Request Received</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #F1E271; padding: 40px 30px; text-align: center;">
+              <h1 style="margin: 0; color: #000000; font-size: 28px; font-weight: bold;">ZurichJS Conference 2026</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 20px 0; color: #111827; font-size: 24px; font-weight: bold;">Verification Request Received</h2>
+              
+              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                Hi ${data.name},
+              </p>
+              
+              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                Thank you for submitting your ${typeLabel} verification request for the discounted ZurichJS Conference 2026 ticket.
+              </p>
+              
+              <div style="background-color: #F1E271; border-left: 4px solid #000000; padding: 16px; margin: 24px 0;">
+                <p style="margin: 0 0 8px 0; color: #000000; font-size: 14px; font-weight: bold;">
+                  Verification ID
+                </p>
+                <p style="margin: 0; color: #000000; font-size: 18px; font-weight: bold; font-family: monospace;">
+                  ${data.verificationId}
+                </p>
+              </div>
+              
+              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                <strong>What happens next?</strong>
+              </p>
+              
+              <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                <li style="margin-bottom: 8px;">Our team will review your verification request within 24 hours</li>
+                <li style="margin-bottom: 8px;">We may contact you to validate your student ID or unemployment documents</li>
+                <li style="margin-bottom: 8px;">If approved, you'll receive an email with a secure payment link</li>
+                <li style="margin-bottom: 8px;">The payment link will allow you to purchase your ticket at the discounted price</li>
+                <li style="margin-bottom: 8px;">Keep your verification ID handy for reference</li>
+              </ul>
+              
+              <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                If you have any questions or haven't heard back within 24 hours, please contact us at 
+                <a href="mailto:tickets@zurichjs.com" style="color: #000000; text-decoration: underline;">tickets@zurichjs.com</a>
+                and include your verification ID.
+              </p>
+              
+              <p style="margin: 24px 0 0 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                Best regards,<br>
+                <strong>The ZurichJS Conference Team</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
+                ZurichJS Conference 2026
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                September 11, 2026 · Zurich, Switzerland
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+
+    // Send the email
+    const result = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: data.to,
+      replyTo: EMAIL_CONFIG.replyTo,
+      subject: `Verification Request Received - ${data.verificationId}`,
+      html: emailHtml,
+    });
+
+    if (result.error) {
+      console.error('Error sending verification email:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    console.log('Verification email sent successfully:', result.data?.id);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending verification request email:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }

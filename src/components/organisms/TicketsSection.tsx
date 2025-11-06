@@ -106,12 +106,12 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
   faq,
   className = '',
 }) => {
-  // Reorder plans: Standard (left), VIP (center), Super Saver (right)
+  // Reorder plans: Standard (left), VIP (center), Student/Unemployed (right)
   const reorderedPlans = React.useMemo(() => {
     const standard = plans.find(p => p.variant === 'standard');
     const vip = plans.find(p => p.variant === 'vip');
-    const superSaver = plans.find(p => p.variant === 'member');
-    return [standard, vip, superSaver].filter(Boolean) as Plan[];
+    const studentUnemployed = plans.find(p => p.variant === 'member');
+    return [standard, vip, studentUnemployed].filter(Boolean) as Plan[];
   }, [plans]);
 
   return (

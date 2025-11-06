@@ -39,7 +39,7 @@ const RefundPolicyPage: React.FC = () => {
                   <thead>
                     <tr className="border-b border-gray-700">
                       <th className="text-left py-3 px-2 text-gray-200 font-semibold">Timeframe</th>
-                      <th className="text-center py-3 px-2 text-gray-200 font-semibold">Super Saver</th>
+                      <th className="text-center py-3 px-2 text-gray-200 font-semibold">Student/Unemployed</th>
                       <th className="text-center py-3 px-2 text-gray-200 font-semibold">Standard</th>
                       <th className="text-center py-3 px-2 text-gray-200 font-semibold">VIP</th>
                     </tr>
@@ -47,38 +47,39 @@ const RefundPolicyPage: React.FC = () => {
                   <tbody className="text-gray-200">
                     <tr className="border-b border-gray-800">
                       <td className="py-3 px-2">&gt;60 days before</td>
-                      <td className="text-center py-3 px-2">0%</td>
+                      <td className="text-center py-3 px-2 text-success-light font-semibold">80%</td>
                       <td className="text-center py-3 px-2 text-success-light font-semibold">80%</td>
                       <td className="text-center py-3 px-2 text-success-light font-semibold">80%</td>
                     </tr>
                     <tr className="border-b border-gray-800">
                       <td className="py-3 px-2">30-60 days before</td>
-                      <td className="text-center py-3 px-2">0%</td>
+                      <td className="text-center py-3 px-2 text-warning-light font-semibold">50%</td>
                       <td className="text-center py-3 px-2 text-warning-light font-semibold">50%</td>
                       <td className="text-center py-3 px-2 text-warning-light font-semibold">50%</td>
                     </tr>
                     <tr className="border-b border-gray-800">
                       <td className="py-3 px-2">&lt;30 days before</td>
-                      <td className="text-center py-3 px-2">0%</td>
+                      <td className="text-center py-3 px-2 text-error-light">0%*</td>
                       <td className="text-center py-3 px-2 text-error-light">0%*</td>
                       <td className="text-center py-3 px-2 text-error-light">0%*</td>
                     </tr>
                     <tr className="border-b border-gray-800">
                       <td className="py-3 px-2">Transfers</td>
-                      <td className="text-center py-3 px-2 text-success-light">Free</td>
+                      <td className="text-center py-3 px-2 text-success-light">Free**</td>
                       <td className="text-center py-3 px-2 text-success-light">Free</td>
                       <td className="text-center py-3 px-2 text-success-light">Free</td>
                     </tr>
                     <tr>
                       <td className="py-3 px-2">Event cancelled</td>
-                      <td className="text-center py-3 px-2">0%</td>
+                      <td className="text-center py-3 px-2 text-success-light font-semibold">100%</td>
                       <td className="text-center py-3 px-2 text-success-light font-semibold">100%</td>
                       <td className="text-center py-3 px-2 text-success-light font-semibold">100%</td>
                     </tr>
                   </tbody>
                 </table>
                 <p className="text-xs text-slate-400 mt-4">
-                  * Transfers to another person are free up to 7 days before the event.
+                  * Transfers to another person are free up to 7 days before the event.<br />
+                  ** Student/Unemployed tickets can only be transferred to someone who also qualifies for the discount.
                 </p>
               </div>
             </section>
@@ -90,27 +91,14 @@ const RefundPolicyPage: React.FC = () => {
               </Heading>
 
               <div className="space-y-4">
-                {/* Standard Tickets */}
+                {/* Standard, Student/Unemployed & VIP Tickets */}
                 <div className="bg-black rounded-2xl p-6">
                   <h3 className="text-xl font-semibold mb-3 text-brand-primary">
-                    Standard & VIP Tickets
+                    Standard, Student/Unemployed & VIP Tickets
                   </h3>
                   <p className="text-gray-200">
-                    Standard and VIP tickets are <strong className="text-white">refundable</strong> under the conditions
-                    specified in this policy.
-                  </p>
-                </div>
-
-                {/* Super Saver Tickets */}
-                <div className="bg-black rounded-2xl p-6">
-                  <h3 className="text-xl font-semibold mb-3 text-brand-primary">
-                    Super Saver Tickets
-                  </h3>
-                  <p className="text-gray-200">
-                    Super Saver tickets are <strong className="text-white">non-refundable</strong> under all circumstances,
-                    including conference cancellation, postponement, or changes. By purchasing a
-                    Super Saver ticket, you acknowledge and accept this condition in exchange for
-                    the discounted price.
+                    All ticket types (Standard, Student/Unemployed, and VIP) are <strong className="text-white">refundable</strong> under the conditions
+                    specified in this policy. Student/Unemployed tickets follow the same refund policy as Standard tickets.
                   </p>
                 </div>
               </div>
@@ -119,14 +107,14 @@ const RefundPolicyPage: React.FC = () => {
             {/* Refund Conditions */}
             <section>
               <Heading level="h2" variant='light' className="mb-6 text-black">
-                Refund Conditions (Standard & VIP Only)
+                Refund Conditions (All Ticket Types)
               </Heading>
 
               <div className="space-y-4">
                 <div className="bg-black rounded-2xl p-6">
                   <h3 className="text-lg font-semibold mb-3 text-white">1. Conference Cancellation</h3>
                   <p className="text-gray-200">
-                    If ZurichJS Conference 2026 is cancelled by the organizers, Standard and VIP
+                    If ZurichJS Conference 2026 is cancelled by the organizers, all
                     ticket holders will receive a <strong className="text-white">full refund (100%)</strong> of the ticket
                     price.
                   </p>
@@ -204,8 +192,9 @@ const RefundPolicyPage: React.FC = () => {
               </Heading>
               <div className="bg-black rounded-2xl p-6">
                 <p className="text-gray-200 mb-4">
-                  All ticket types (including Super Saver) may be transferred to another person at no
-                  cost up to <strong className="text-white">7 days before the event</strong>. To transfer your ticket:
+                  All ticket types may be transferred to another person at no
+                  cost up to <strong className="text-white">7 days before the event</strong>. Note: Student/Unemployed tickets
+                  can only be transferred to someone who also qualifies for the discount. To transfer your ticket:
                 </p>
                 <ol className="list-decimal list-inside space-y-2 text-gray-200">
                   <li>Contact us at tickets@zurichjs.com with the subject &quot;Ticket Transfer&quot;</li>

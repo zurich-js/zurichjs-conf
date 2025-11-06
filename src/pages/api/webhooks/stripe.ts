@@ -39,12 +39,16 @@ const getTicketTypeFromLookupKey = (lookupKey: string | null): string => {
   if (!lookupKey) return 'Conference Ticket';
 
   // Extract ticket type from lookup key pattern: category_stage
-  // e.g., "super_saver_blind_bird" -> "Super Saver"
+  // e.g., "standard_blind_bird" -> "Standard"
+  // Special case: "standard_student_unemployed" -> "Student / Unemployed"
+  
+  if (lookupKey === 'standard_student_unemployed') {
+    return 'Student / Unemployed';
+  }
+
   const parts = lookupKey.split('_');
 
-  if (parts[0] === 'super' && parts[1] === 'saver') {
-    return 'Super Saver';
-  } else if (parts[0] === 'vip') {
+  if (parts[0] === 'vip') {
     return 'VIP';
   } else if (parts[0] === 'standard') {
     return 'Standard';
