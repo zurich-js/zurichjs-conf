@@ -10,7 +10,7 @@ export type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird';
 /**
  * Ticket category types
  */
-export type TicketCategory = 'super_saver' | 'standard' | 'vip';
+export type TicketCategory = 'standard_student_unemployed' | 'standard' | 'vip';
 
 /**
  * Stripe price data from API

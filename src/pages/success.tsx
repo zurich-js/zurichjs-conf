@@ -103,7 +103,7 @@ const SuccessPage: React.FC = () => {
                 </p>
               </div>
               <Link href="/">
-                <Button variant="primary" size="large">
+                <Button variant="primary" size="lg">
                   Return to Homepage
                 </Button>
               </Link>
@@ -169,7 +169,7 @@ const SuccessPage: React.FC = () => {
 
               {/* Next Steps */}
               <div className="bg-black rounded-2xl p-8 mb-8">
-                <h2 className="text-2xl font-bold text-brand-primary mb-6">What's Next?</h2>
+                <h2 className="text-2xl font-bold text-brand-primary mb-6">What&apos;s Next?</h2>
 
                 <div className="space-y-4 text-gray-200">
                   <div className="flex gap-4">
@@ -179,7 +179,7 @@ const SuccessPage: React.FC = () => {
                     <div>
                       <h3 className="text-white font-semibold mb-1">Check Your Email</h3>
                       <p className="text-gray-400">
-                        We've sent a confirmation email with your ticket details and invoice to{' '}
+                        We&apos;ve sent a confirmation email with your ticket details and invoice to{' '}
                         <span className="text-white">{sessionDetails.customer_email}</span>
                       </p>
                     </div>
@@ -255,12 +255,12 @@ const SuccessPage: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/">
-                  <Button variant="primary" size="large" className="w-full sm:w-auto">
+                  <Button variant="primary" size="lg" className="w-full sm:w-auto">
                     Return to Homepage
                   </Button>
                 </Link>
                 <Link href="/#schedule">
-                  <Button variant="secondary" size="large" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     View Schedule
                   </Button>
                 </Link>

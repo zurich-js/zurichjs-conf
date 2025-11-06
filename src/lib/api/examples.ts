@@ -38,7 +38,7 @@ export async function fetchTicketPricing(): Promise<TicketPricingResponse> {
 
 interface TicketSearchParams extends Record<string, string | number | boolean | undefined> {
   stage?: 'early_bird' | 'standard' | 'late_bird';
-  category?: 'super_saver' | 'standard' | 'vip';
+  category?: 'standard_student_unemployed' | 'standard' | 'vip';
   currency?: string;
   limit?: number;
 }
@@ -250,17 +250,17 @@ export async function fetchTicketsWithCancellation(
 
 export async function fetchAllTicketData(): Promise<{
   pricing: TicketPricingResponse;
-  superSaver: TicketDetails;
+  studentUnemployed: TicketDetails;
   vip: TicketDetails;
 }> {
   // Execute multiple requests in parallel
-  const [pricing, superSaver, vip] = await Promise.all([
+  const [pricing, studentUnemployed, vip] = await Promise.all([
     apiClient.get<TicketPricingResponse>(endpoints.tickets.pricing()),
-    apiClient.get<TicketDetails>(endpoints.tickets.byId('super_saver')),
+    apiClient.get<TicketDetails>(endpoints.tickets.byId('standard_student_unemployed')),
     apiClient.get<TicketDetails>(endpoints.tickets.byId('vip')),
   ]);
 
-  return { pricing, superSaver, vip };
+  return { pricing, studentUnemployed, vip };
 }
 
 // ============================================================================

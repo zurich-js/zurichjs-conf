@@ -14,7 +14,7 @@ type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird';
 /**
  * Ticket category types
  */
-type TicketCategory = 'super_saver' | 'standard' | 'vip';
+type TicketCategory = 'standard_student_unemployed' | 'standard' | 'vip';
 
 /**
  * Response structure for a single ticket plan
@@ -110,8 +110,13 @@ const getCurrentStage = (): PriceStage => {
 
 /**
  * Build lookup key from category and stage
+ * Note: Student/Unemployed tickets have fixed pricing regardless of stage
  */
 const buildLookupKey = (category: TicketCategory, stage: PriceStage): string => {
+  // Student/Unemployed always uses fixed lookup key
+  if (category === 'standard_student_unemployed') {
+    return 'standard_student_unemployed';
+  }
   return `${category}_${stage}`;
 };
 
@@ -120,8 +125,8 @@ const buildLookupKey = (category: TicketCategory, stage: PriceStage): string => 
  */
 const getCategoryTitle = (category: TicketCategory): string => {
   switch (category) {
-    case 'super_saver':
-      return 'Super Saver';
+    case 'standard_student_unemployed':
+      return 'Student / Unemployed';
     case 'standard':
       return 'Standard';
     case 'vip':
@@ -161,16 +166,13 @@ const getComparisonPrice = async (
   category: TicketCategory,
   currentStage: PriceStage
 ): Promise<number | undefined> => {
-  // Determine the final stage for this category
-  let finalStage: PriceStage;
-  
-  if (category === 'super_saver') {
-    // Super Saver's final stage is 'standard'
-    finalStage = 'standard';
-  } else {
-    // Standard and VIP's final stage is 'late_bird'
-    finalStage = 'late_bird';
+  // Student/Unemployed tickets don't have comparison prices (fixed discount)
+  if (category === 'standard_student_unemployed') {
+    return undefined;
   }
+
+    // Standard and VIP's final stage is 'late_bird'
+  const finalStage: PriceStage = 'late_bird';
 
   // Don't show comparison if we're already at the final stage
   if (currentStage === finalStage) {
@@ -191,38 +193,19 @@ const fetchTicketPrices = async (
   currentStage: PriceStage
 ): Promise<TicketPlanResponse[]> => {
   const stripe = getStripeClient();
-  const categories: TicketCategory[] = ['super_saver', 'standard', 'vip'];
+  const categories: TicketCategory[] = ['standard_student_unemployed', 'standard', 'vip'];
   const plans: TicketPlanResponse[] = [];
 
   for (const category of categories) {
-    // Super Saver doesn't have late_bird pricing
-    if (category === 'super_saver' && currentStage === 'late_bird') {
-      // Use standard pricing for super_saver during late_bird
-      const lookupKey = buildLookupKey(category, 'standard');
-      const price = await fetchPriceByLookupKey(stripe, lookupKey);
-
-      if (price && price.unit_amount && price.currency) {
-        const comparePrice = await getComparisonPrice(stripe, category, 'standard');
-        
-        plans.push({
-          id: category,
-          title: getCategoryTitle(category),
-          price: price.unit_amount,
-          comparePrice,
-          currency: price.currency.toUpperCase(),
-          priceId: price.id,
-          lookupKey,
-          stage: 'standard',
-        });
-      }
-      continue;
-    }
-
+    // Student/Unemployed tickets have fixed pricing (always use the same lookup key)
     const lookupKey = buildLookupKey(category, currentStage);
     const price = await fetchPriceByLookupKey(stripe, lookupKey);
 
     if (price && price.unit_amount && price.currency) {
-      const comparePrice = await getComparisonPrice(stripe, category, currentStage);
+      // Student/Unemployed tickets don't have comparison prices
+      const comparePrice = category === 'standard_student_unemployed' 
+        ? undefined 
+        : await getComparisonPrice(stripe, category, currentStage);
       
       plans.push({
         id: category,
@@ -232,7 +215,7 @@ const fetchTicketPrices = async (
         currency: price.currency.toUpperCase(),
         priceId: price.id,
         lookupKey,
-        stage: currentStage,
+        stage: category === 'standard_student_unemployed' ? 'standard' : currentStage,
       });
     }
   }

@@ -39,6 +39,9 @@ interface UseTicketPricingResult {
  * Custom hook to fetch ticket pricing from the API using TanStack Query
  * Provides automatic caching, refetching, and background updates
  * 
+ * Returns empty plans/stage ONLY during loading.
+ * After loading completes, if there's an error or no data, error will be set.
+ * 
  * @example
  * const { plans, currentStage, isLoading, error } = useTicketPricing();
  */
@@ -50,11 +53,21 @@ export const useTicketPricing = (): UseTicketPricingResult => {
     refetch,
   } = useQuery(ticketPricingQueryOptions);
 
+  // Determine error state
+  let errorMessage: string | null = null;
+  if (queryError) {
+    errorMessage = queryError.message;
+  } else if (!isLoading && (!data?.plans || data.plans.length === 0)) {
+    errorMessage = 'No ticket plans available';
+  } else if (!isLoading && !data?.currentStage) {
+    errorMessage = 'Current price stage not available';
+  }
+
   return {
     plans: data?.plans ?? [],
     currentStage: data?.currentStage as PriceStage | null ?? null,
     isLoading,
-    error: queryError ? queryError.message : null,
+    error: errorMessage,
     refetch: () => {
       refetch();
     },

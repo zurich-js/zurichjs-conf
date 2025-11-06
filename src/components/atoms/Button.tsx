@@ -61,9 +61,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || loading;
-    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = 'inline-flex items-center justify-center gap-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
     
-    const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
+    // Apply rounded-lg as default if no border-radius class is provided
+    const roundedClass = className.includes('rounded') ? '' : 'rounded-lg';
+    
+    const combinedClassName = `${baseStyles} ${roundedClass} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
 
     const motionProps: HTMLMotionProps<'button'> = {
       whileHover: isDisabled ? {} : { scale: 1.02, y: -2 },

@@ -1,6 +1,6 @@
 /**
  * Ticket plans and pricing data with Stripe integration
- * Configuration for standard, VIP, and supersaver ticket options
+ * Configuration for standard, VIP, and student/unemployed ticket options
  */
 
 import type { TicketsSectionProps, Plan } from '@/components/organisms';
@@ -20,9 +20,10 @@ export const DISCOUNT_EXPIRY_DATE = '2025-12-01T00:00:00.000Z';
  * Static feature definitions for each ticket type
  */
 export const TICKET_FEATURES: Record<string, Feature[]> = {
-  super_saver: [
+  standard_student_unemployed: [
     { label: 'Everything in Standard', kind: 'included' as const },
-    { label: 'Non-refundable', kind: 'excluded' as const },
+    { label: 'Verification required', kind: 'extra' as const },
+    { label: '30% discount', kind: 'extra' as const },
   ],
   standard: [
     { label: 'Full conference day access', kind: 'included' as const },
@@ -48,9 +49,9 @@ export const TICKET_METADATA: Record<
   string,
   { blurb: string; footnote?: React.ReactNode; variant: 'standard' | 'vip' | 'member' }
 > = {
-  super_saver: {
-    blurb: 'Lowest price, no refunds. Best for committed attendees.',
-    footnote: 'Non-refundable · Limited availability',
+  standard_student_unemployed: {
+    blurb: 'Standard features with 30% discount. Verification required.',
+    footnote: 'Student ID or unemployment proof required',
     variant: 'member',
   },
   standard: {
@@ -147,7 +148,7 @@ export const TICKET_FAQ: FAQItem[] = [
           <li>30-60 days before: 50% refund</li>
           <li>Less than 30 days: No refund, but you can transfer to a colleague for free</li>
         </ul>
-        Super Saver tickets are non-refundable but can be transferred to another person.{' '}
+        Student/Unemployed tickets follow the same refund policy as Standard tickets.{' '}
         <a href="/refund-policy" className="underline" target="_blank" rel="noopener noreferrer">
           View full refund policy ↗
         </a>
@@ -188,15 +189,17 @@ export const TICKET_FAQ: FAQItem[] = [
     ),
   },
   {
-    question: 'Are there student or unemployed discounts?',
+    question: 'How do I verify my student or unemployed status?',
     answer: (
       <>
-        Yes! We offer 30% discounts for students and unemployed developers. Email us at{' '}
-        <a href="mailto:tickets@zurichjs.com" className="underline">
-          tickets@zurichjs.com
-        </a>{' '}
-        with your student ID or LinkedIn profile for a discount code. We&apos;re committed to
-        making the conference accessible to the entire community.
+        Select the Student/Unemployed ticket option and you&apos;ll be guided through a
+        verification process. You&apos;ll need to provide:
+        <ul className="list-disc list-inside mt-2 space-y-1">
+          <li>Students: Valid student ID or enrollment certificate</li>
+          <li>Unemployed: LinkedIn profile or unemployment documentation</li>
+        </ul>
+        Once verified, you&apos;ll receive a 30% discount on Standard tickets. We&apos;re
+        committed to making the conference accessible to the entire community.
       </>
     ),
   },
@@ -230,12 +233,13 @@ export const TICKET_FAQ: FAQItem[] = [
     question: 'Can I transfer my ticket to someone else?',
     answer: (
       <>
-        Yes! All ticket types (including non-refundable Super Saver) can be transferred to another
-        person for free up to 7 days before the event. Simply email us at{' '}
+        Yes! All ticket types can be transferred to another person for free up to 7 days before the
+        event. Simply email us at{' '}
         <a href="mailto:tickets@zurichjs.com" className="underline">
           tickets@zurichjs.com
         </a>{' '}
-        with your order number and the new attendee&apos;s details.
+        with your order number and the new attendee&apos;s details. Note: Student/Unemployed
+        tickets can only be transferred to someone who also qualifies for the discount.
       </>
     ),
   },
@@ -244,7 +248,19 @@ export const TICKET_FAQ: FAQItem[] = [
 /**
  * Map Stripe plan to ticket plan with features and metadata
  */
-export const mapStripePlanToTicketPlan = (stripePlan: TicketPlan): Plan => {
+export const mapStripePlanToTicketPlan = (
+  stripePlan: TicketPlan,
+  openVerificationModal?: (priceId: string) => void,
+  addToCart?: (item: {
+    id: string;
+    title: string;
+    price: number;
+    currency: string;
+    priceId: string;
+    variant?: 'standard' | 'vip' | 'member';
+  }, quantity: number) => void,
+  openCart?: () => void
+): Plan => {
   const features = TICKET_FEATURES[stripePlan.id] || TICKET_FEATURES.standard;
   const metadata = TICKET_METADATA[stripePlan.id] || TICKET_METADATA.standard;
 
@@ -253,6 +269,9 @@ export const mapStripePlanToTicketPlan = (stripePlan: TicketPlan): Plan => {
   const comparePrice = stripePlan.comparePrice
     ? Math.round(stripePlan.comparePrice / 100)
     : undefined;
+
+  // Special handling for student/unemployed tickets - they need verification
+  const isStudentUnemployed = stripePlan.id === 'standard_student_unemployed';
 
   return {
     id: stripePlan.id,
@@ -268,9 +287,36 @@ export const mapStripePlanToTicketPlan = (stripePlan: TicketPlan): Plan => {
     cta: {
       type: 'button' as const,
       onClick: () => {
-        redirectToCheckout(stripePlan.priceId);
+        if (isStudentUnemployed) {
+          // Open verification modal
+          if (openVerificationModal) {
+            openVerificationModal(stripePlan.priceId);
+          } else {
+            // Fallback if modal is not available
+            alert('Student/Unemployed verification flow will open here. Please contact tickets@zurichjs.com with your student ID or unemployment proof.');
+          }
+        } else {
+          // Add to cart instead of direct checkout
+          if (addToCart && openCart) {
+            addToCart(
+              {
+                id: stripePlan.id,
+                title: stripePlan.title,
+                price,
+                currency: stripePlan.currency,
+                priceId: stripePlan.priceId,
+                variant: metadata.variant,
+              },
+              1
+            );
+            openCart();
+          } else {
+            // Fallback to direct checkout if cart is not available
+            redirectToCheckout(stripePlan.priceId);
+          }
+        }
       },
-      label: `Get ${stripePlan.title} Ticket`,
+      label: isStudentUnemployed ? 'Verify & Get Ticket' : 'Add to Cart',
     },
   };
 };
@@ -280,9 +326,21 @@ export const mapStripePlanToTicketPlan = (stripePlan: TicketPlan): Plan => {
  */
 export const createTicketDataFromStripe = (
   stripePlans: TicketPlan[],
-  currentStage: string
+  currentStage: string,
+  openVerificationModal?: (priceId: string) => void,
+  addToCart?: (item: {
+    id: string;
+    title: string;
+    price: number;
+    currency: string;
+    priceId: string;
+    variant?: 'standard' | 'vip' | 'member';
+  }, quantity: number) => void,
+  openCart?: () => void
 ): Omit<TicketsSectionProps, 'className'> => {
-  const plans = stripePlans.map(mapStripePlanToTicketPlan);
+  const plans = stripePlans.map((plan) => 
+    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, openCart)
+  );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 
   return {
@@ -291,7 +349,7 @@ export const createTicketDataFromStripe = (
     subcopy: stageCopy.subcopy,
     discountEndsAt: currentStage === 'blind_bird' ? DISCOUNT_EXPIRY_DATE : undefined,
     helpLine: {
-      text: 'Are you a student or unemployed?',
+      text: 'Questions about tickets?',
       href: '/contact',
     },
     plans,
@@ -313,25 +371,27 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
   ),
   discountEndsAt: undefined,
   helpLine: {
-    text: 'Are you a student or unemployed?',
+    text: 'Questions about tickets?',
     href: '/contact',
   },
   faq: TICKET_FAQ,
   plans: [
     {
-      id: 'super_saver',
-      title: 'Super Saver',
-      blurb: 'Lowest price, no refunds. Best for committed attendees.',
+      id: 'standard_student_unemployed',
+      title: 'Student / Unemployed',
+      blurb: 'Standard features with 30% discount. Verification required.',
       comparePrice: 699,
-      price: 599,
+      price: 489,
       currency: 'CHF',
       variant: 'member' as const,
-      features: TICKET_FEATURES.super_saver,
-      footnote: 'Limited availability',
+      features: TICKET_FEATURES.standard_student_unemployed,
+      footnote: 'Student ID or unemployment proof required',
       cta: {
         type: 'button' as const,
-        onClick: () => console.log('Super Saver ticket clicked'),
-        label: 'Get Super Saver Ticket',
+        onClick: () => {
+          alert('Student/Unemployed verification flow will open here. Please contact tickets@zurichjs.com with your student ID or unemployment proof.');
+        },
+        label: 'Verify & Get Ticket',
       },
     },
     {

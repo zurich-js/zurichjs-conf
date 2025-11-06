@@ -72,22 +72,22 @@ const getButtonStyles = (
 } => {
   switch (variant) {
     case 'member':
-      // Super Saver: yellow filled with black text, rounder corners
+      // Student/Unemployed: yellow filled with black text, fully rounded
       return {
-        className: 'bg-brand-primary text-text-dark font-semibold hover:bg-brand-dark shadow-lg hover:shadow-xl rounded-[20px]',
+        className: 'bg-brand-primary text-text-dark font-semibold hover:bg-brand-dark shadow-lg hover:shadow-xl rounded-full',
         variant: 'primary',
       };
     case 'vip':
-      // VIP: orange filled (#EA561D)
+      // VIP: orange filled (#EA561D), fully rounded
       return {
-        className: 'font-semibold shadow-lg hover:shadow-xl',
+        className: 'font-semibold shadow-lg hover:shadow-xl rounded-full',
         style: { backgroundColor: '#EA561D', color: '#FFFFFF' },
         variant: 'primary',
       };
     default:
-      // Standard: outline with transparent and white text
+      // Standard: outline with transparent and white text, fully rounded
       return {
-        className: 'bg-transparent text-white border-2 border-white font-semibold hover:bg-white hover:text-text-dark',
+        className: 'bg-transparent text-white border-2 border-white font-semibold hover:bg-white hover:text-text-dark rounded-full',
         variant: 'ghost',
       };
   }
