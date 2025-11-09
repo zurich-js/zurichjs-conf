@@ -67,26 +67,17 @@ export default async function handler(
       });
     }
 
-    // Search for promotion code in Stripe - case sensitive!
-    // Stripe promotion codes can be case-sensitive depending on how they were created
-    const promotionCodes = await stripe.promotionCodes.list({
-      code: code.trim(), // Preserve exact case, just trim whitespace
-      active: true,
-      limit: 1,
-      expand: ['data.coupon'], // Expand coupon data
-    });
-
-    if (promotionCodes.data.length === 0) {
+    // Retrieve coupon directly by ID/code
+    let coupon: Stripe.Coupon;
+    try {
+      coupon = await stripe.coupons.retrieve(code.trim());
+    } catch (error) {
+      console.error('Error retrieving coupon:', error);
       return res.status(200).json({
         valid: false,
         error: 'Invalid voucher code',
       });
     }
-
-    const promotionCode = promotionCodes.data[0];
-    // Type assertion needed due to Stripe API version changes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const coupon = (promotionCode as any).coupon as Stripe.Coupon;
 
     // Fetch product IDs from the price IDs
     const productIds: string[] = [];
@@ -114,33 +105,6 @@ export default async function handler(
           error: 'This voucher is not applicable to the items in your cart',
         });
       }
-    }
-
-    // Check if promotion code is active
-    if (!promotionCode.active) {
-      return res.status(200).json({
-        valid: false,
-        error: 'This voucher code is no longer active',
-      });
-    }
-
-    // Check if promotion code has expired
-    if (promotionCode.expires_at && promotionCode.expires_at * 1000 < Date.now()) {
-      return res.status(200).json({
-        valid: false,
-        error: 'This voucher code has expired',
-      });
-    }
-
-    // Check if promotion code has reached max redemptions
-    if (
-      promotionCode.max_redemptions &&
-      promotionCode.times_redeemed >= promotionCode.max_redemptions
-    ) {
-      return res.status(200).json({
-        valid: false,
-        error: 'This voucher code has reached its maximum number of uses',
-      });
     }
 
     // Check if coupon is valid
@@ -181,8 +145,7 @@ export default async function handler(
 
       return res.status(200).json({
         valid: true,
-        code: promotionCode.code,
-        promotionCodeId: promotionCode.id,
+        code: coupon.id,
         couponId: coupon.id,
         type: 'fixed',
         value: coupon.amount_off / 100,
@@ -194,8 +157,7 @@ export default async function handler(
       // Percentage discount
       return res.status(200).json({
         valid: true,
-        code: promotionCode.code,
-        promotionCodeId: promotionCode.id,
+        code: coupon.id,
         couponId: coupon.id,
         type: 'percentage',
         value: coupon.percent_off,
