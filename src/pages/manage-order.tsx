@@ -442,7 +442,7 @@ const ManageOrderPage: React.FC = () => {
                           type="text"
                           value={reassignData.firstName}
                           onChange={(e) => setReassignData({ ...reassignData, firstName: e.target.value })}
-                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none"
+                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none bg-white text-black"
                           placeholder="John"
                           disabled={reassignMutation.isPending}
                         />
@@ -456,7 +456,7 @@ const ManageOrderPage: React.FC = () => {
                           type="text"
                           value={reassignData.lastName}
                           onChange={(e) => setReassignData({ ...reassignData, lastName: e.target.value })}
-                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none"
+                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none bg-white text-black"
                           placeholder="Doe"
                           disabled={reassignMutation.isPending}
                         />
@@ -470,7 +470,7 @@ const ManageOrderPage: React.FC = () => {
                           type="email"
                           value={reassignData.email}
                           onChange={(e) => setReassignData({ ...reassignData, email: e.target.value })}
-                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none"
+                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none bg-white text-black"
                           placeholder="john.doe@example.com"
                           disabled={reassignMutation.isPending}
                         />
