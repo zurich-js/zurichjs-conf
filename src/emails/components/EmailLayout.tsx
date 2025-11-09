@@ -5,7 +5,7 @@
 
 import { Body, Container, Head, Html, Preview } from '@react-email/components';
 import * as React from 'react';
-import { colors, typography, layout } from '../design/tokens';
+import { typography, layout } from '../design/tokens';
 
 export interface EmailLayoutProps {
   preheader?: string;
@@ -19,11 +19,22 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
   return (
     <Html>
       <Head>
+        <meta name="color-scheme" content="light only" />
+        <meta name="supported-color-schemes" content="light only" />
         <style>
           {`
+            :root {
+              color-scheme: light only;
+              supported-color-schemes: light only;
+            }
+
+            /* Force light mode for Apple Mail and other email clients */
             @media (prefers-color-scheme: dark) {
-              .email-canvas {
-                background-color: ${colors.surface.canvasDark} !important;
+              body, .email-canvas, [data-ogsc] {
+                background-color: #FFFFFF !important;
+              }
+              * {
+                color: inherit !important;
               }
             }
 
@@ -54,12 +65,12 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
 const bodyStyle: React.CSSProperties = {
   margin: 0,
   padding: 0,
-  backgroundColor: colors.surface.canvas,
+  backgroundColor: '#FFFFFF',
   fontFamily: typography.family.base,
 };
 
 const canvasStyle: React.CSSProperties = {
-  backgroundColor: colors.surface.canvas,
+  backgroundColor: '#FFFFFF',
   padding: '32px 16px',
 };
 
