@@ -44,17 +44,17 @@ export default function Home({ dehydratedState }: HomeProps) {
           days={scheduleData.days}
         />
         <Separator variant="diagonal-transition" backgroundColor="white" fill="black" />
-        
-        <TicketsSectionWithStripe />
-        <Separator variant="diagonal-bottom" fill="#000000" className="h-12 md:h-16 lg:h-20" />
-        
+
         <TimelineSection
           kicker={timelineData.kicker}
           title={timelineData.title}
           copy={timelineData.copy}
           entries={timelineData.entries}
         />
-        <Separator variant="diagonal-bottom" fill="#19191B" />
+        <Separator variant="diagonal-transition" backgroundColor="#19191B" fill="#F1E271" />
+
+        <TicketsSectionWithStripe />
+        <Separator variant="diagonal-bottom" fill="#000000" className="h-12 md:h-16 lg:h-20" />
       </Layout>
     </HydrationBoundary>
   );

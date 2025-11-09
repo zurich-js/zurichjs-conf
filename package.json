@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "prepare": "husky"
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "prepare": "husky",
+    "email:dev": "email dev --dir ./src/emails --port 3001"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
@@ -19,12 +22,20 @@
     "@hookform/resolvers": "^5.2.2",
     "@react-email/components": "^0.5.7",
     "@react-email/render": "^1.4.0",
+    "@react-pdf/renderer": "^4.3.1",
     "@stripe/stripe-js": "^8.3.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.80.0",
     "@tanstack/react-query": "^5.90.6",
+    "@types/qrcode": "^1.5.6",
     "add-to-calendar-button-react": "^2.12.13",
+    "cookie": "^1.0.2",
     "framer-motion": "^12.23.24",
+    "ics": "^3.8.1",
     "micro": "^10.0.1",
     "next": "15.2.0",
+    "nuqs": "^2.7.2",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.66.0",
@@ -35,8 +46,10 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@react-email/preview-server": "^5.0.1",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query-devtools": "^5.90.2",
+    "@types/cookie": "^1.0.0",
     "@types/micro": "^10.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -45,6 +58,7 @@
     "eslint-config-next": "15.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
+    "react-email": "^5.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

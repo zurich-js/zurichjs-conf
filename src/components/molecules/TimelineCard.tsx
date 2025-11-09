@@ -19,6 +19,7 @@ export interface TimelineCardProps {
   emphasis?: boolean;
   isCurrent?: boolean;
   delay?: number;
+  showDate?: boolean;
   onClick?: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   tabIndex?: number;
@@ -40,6 +41,7 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
       emphasis = false,
       isCurrent = false,
       delay = 0,
+      showDate = true,
       onClick,
       onKeyDown,
       tabIndex = 0,
@@ -60,13 +62,15 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
     const CardContent = () => (
       <div className="flex flex-col gap-3 w-full">
         <div className="flex items-start gap-3 sm:gap-4">
-          {/* Date Column */}
-          <time
-            dateTime={dateISO}
-            className="shrink-0 w-16 sm:w-20 pt-1 text-sm text-slate-400 font-medium"
-          >
-            {dateFormatted}
-          </time>
+          {/* Date Column - Only show if showDate is true */}
+          {showDate && (
+            <time
+              dateTime={dateISO}
+              className="shrink-0 w-16 sm:w-20 pt-1 text-sm text-slate-400 font-medium"
+            >
+              {dateFormatted}
+            </time>
+          )}
 
           {/* Content Column */}
           <div className="flex-1 min-w-0">
@@ -75,7 +79,7 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
             </h3>
 
             {body && (
-              <p className="text-sm text-slate-300 leading-relaxed mb-2">
+              <p className="text-sm text-slate-300 leading-relaxed mb-2 whitespace-pre-line">
                 {body}
               </p>
             )}
@@ -94,11 +98,11 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
           </div>
         </div>
 
-        {/* Calendar Button Row - Aligned with Date Column */}
+        {/* Calendar Button Row */}
         <div className="flex items-start gap-3 sm:gap-4">
           <div className="shrink-0">
-            <div 
-              className="relative z-20 pl-0" 
+            <div
+              className="relative z-20 pl-0"
               onClick={(e) => e.stopPropagation()}
             >
               <AddToCalendar

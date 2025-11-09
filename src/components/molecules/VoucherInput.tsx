@@ -53,10 +53,10 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(false), 3000);
       } else {
-        setError(result.error || 'Invalid voucher code');
+        setError(result.error || 'Invalid promo code');
       }
     } catch {
-      setError('Failed to apply voucher');
+      setError('Failed to apply promo code');
     } finally {
       setIsApplying(false);
     }
@@ -77,10 +77,10 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
             type="text"
             value={code}
             onChange={handleInputChange}
-            placeholder="Enter voucher code"
+            placeholder="Enter promo code"
             disabled={disabled || isApplying}
             className="flex-1 px-4 py-3 bg-gray-800 text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all placeholder:text-gray-500 font-mono"
-            aria-label="Voucher code"
+            aria-label="Promo code"
             aria-invalid={!!error}
             aria-describedby={error ? 'voucher-error' : success ? 'voucher-success' : undefined}
           />
@@ -128,7 +128,7 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
             >
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Voucher applied successfully!
+            Promo code applied successfully!
           </p>
         )}
       </form>

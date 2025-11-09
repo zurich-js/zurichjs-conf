@@ -1,40 +1,201 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# ZurichJS Conference 2026
 
-## Getting Started
+A production-ready conference ticketing and workshop management platform built with Next.js, Supabase, and Stripe.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 🎫 **Ticket Sales**: Multiple ticket types with dynamic pricing stages
+- 🎓 **Workshops**: Workshop catalog with registration and capacity management
+- 👤 **User Accounts**: Profile management, ticket history, workshop registrations
+- 💳 **Secure Payments**: Stripe integration with webhook handling
+- 🔐 **Authentication**: Supabase Auth with role-based access control
+- 🔒 **Row Level Security**: Database-level security with RLS policies
+- 📧 **Email Notifications**: Automated confirmation emails with React Email
+- 🎨 **Modern UI**: Tailwind CSS with Atomic Design components
+- 📱 **Responsive**: Mobile-first design approach
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (Pages Router)
+- **Database & Auth**: Supabase
+- **Payments**: Stripe
+- **Email**: Resend with React Email
+- **Styling**: Tailwind CSS v4
+- **State Management**: React Query, Context API
+- **Type Safety**: TypeScript (strict mode)
+- **Code Quality**: ESLint, Husky, lint-staged
+
+## Project Structure
+
+```
+src/
+├── pages/              # Next.js pages and API routes
+│   ├── api/           # Backend API endpoints
+│   ├── auth/          # Authentication pages (login, signup)
+│   ├── account/       # User account pages
+│   ├── workshops/     # Workshop catalog and details
+│   └── admin/         # Admin interface
+├── lib/               # Domain logic and infrastructure
+│   ├── supabase/      # Supabase client and auth
+│   ├── stripe/        # Stripe integration
+│   ├── users/         # User management
+│   ├── tickets/       # Ticket operations
+│   ├── workshops/     # Workshop management
+│   ├── roles/         # Role-based access control
+│   └── types/         # TypeScript types
+├── components/        # React components (Atomic Design)
+│   ├── atoms/         # Basic building blocks
+│   ├── molecules/     # Composite components
+│   └── organisms/     # Complex components
+├── config/            # Configuration files
+├── emails/            # Email templates
+└── data/              # Static data
+
+supabase/
+├── migrations/        # Database migrations (SQL)
+└── config.toml        # Supabase configuration
+
+docs/
+├── architecture.md    # System architecture
+├── IMPLEMENTATION_STATUS.md  # Implementation progress
+└── [other docs]       # Additional documentation
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Quick Start
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+- Node.js 20+
+- npm or yarn
+- Supabase account
+- Stripe account
+- Resend account (for emails)
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+### Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Clone and install dependencies**
+   ```bash
+   git clone <repo-url>
+   cd zurichjs-conf
+   npm install
+   ```
 
-## Learn More
+2. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+   Fill in your credentials in `.env.local`:
+   - Supabase URL and keys
+   - Stripe keys and webhook secret
+   - Resend API key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+3. **Set up Supabase**
+   ```bash
+   # Install Supabase CLI
+   npm install -g supabase
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   # Link to your project
+   supabase link --project-ref your-project-ref
 
-## Deploy on Vercel
+   # Apply migrations
+   supabase db push
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Configure Stripe**
+   - Create products and prices in Stripe Dashboard
+   - Set up webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
+   - Add webhook secret to `.env.local`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+5. **Run development server**
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000)
+
+6. **Test webhooks locally** (optional)
+   ```bash
+   stripe listen --forward-to localhost:3000/api/webhooks/stripe
+   ```
+
+## Documentation
+
+- **[Architecture Overview](./docs/architecture.md)** - System design and architecture decisions
+- **[Implementation Status](./docs/IMPLEMENTATION_STATUS.md)** - Current progress and next steps
+- **[API Documentation](./docs/api.md)** - API endpoints and usage (TODO)
+- **[Deployment Guide](./docs/deployment.md)** - Production deployment instructions (TODO)
+
+## Development
+
+### Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run typecheck    # Run TypeScript type checking
+npm run email:dev    # Preview email templates
+```
+
+### Code Quality
+
+- Pre-commit hooks run linting and type checking
+- Strict TypeScript configuration
+- ESLint with Next.js recommended rules
+
+## Architecture Highlights
+
+### Domain-Driven Design
+
+The codebase is organized by domain (users, tickets, workshops, roles) rather than by technical layer. Each domain exposes clean, typed interfaces.
+
+### Type Safety
+
+Full TypeScript coverage with:
+- Database schema types
+- API request/response types
+- Domain model types
+- Strict null checking
+
+### Security
+
+- Row Level Security (RLS) on all tables
+- Role-based access control (attendee, speaker, admin)
+- Secure webhook signature verification
+- Environment variable validation
+
+### Idempotency
+
+All write operations are idempotent:
+- Ticket creation checks for existing records by session ID
+- User profile creation is upsert-based
+- Webhook handlers can be safely retried
+
+## User Roles
+
+- **Attendee**: Can purchase tickets and register for workshops
+- **Speaker**: Attendee permissions + can manage own workshops
+- **Admin**: Full access to all resources
+
+## Deployment
+
+See [deployment.md](./docs/deployment.md) for detailed instructions.
+
+Quick deploy to Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-repo/zurichjs-conf)
+
+**Important**:
+- Set all environment variables in Vercel
+- Apply database migrations to production Supabase
+- Configure Stripe webhook URL to production endpoint
+
+## Contributing
+
+This is a private conference platform. For questions or issues, contact the development team.
+
+## License
+
+Private - All rights reserved

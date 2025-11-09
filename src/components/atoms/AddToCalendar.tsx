@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { AddToCalendarButton } from 'add-to-calendar-button-react';
 
 type CalendarOption = 'Apple' | 'Google' | 'iCal' | 'Microsoft365' | 'Outlook.com' | 'Yahoo' | 'MicrosoftTeams';
@@ -19,6 +21,9 @@ export interface AddToCalendarProps {
 /**
  * AddToCalendar component - wrapper around add-to-calendar-button-react
  * Provides an easy way to add events to various calendar services
+ *
+ * Note: This component only renders on the client to avoid hydration mismatches
+ * with the web component that modifies itself after mounting.
  */
 export const AddToCalendar: React.FC<AddToCalendarProps> = ({
   name,
@@ -32,9 +37,21 @@ export const AddToCalendar: React.FC<AddToCalendarProps> = ({
   buttonStyle = 'text',
   lightMode = 'dark',
 }) => {
+  // Only render on client to avoid hydration mismatch
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Prefix event name with conference name for calendar
   const calendarEventName = `ZurichJS Conference - ${name}`;
-  
+
+  // Don't render anything on the server
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <>
       <AddToCalendarButton

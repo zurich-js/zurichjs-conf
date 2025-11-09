@@ -1,11 +1,21 @@
 /**
  * Email Service using Resend
- * Handles sending emails for ticket confirmations
+ * Handles sending emails for ticket confirmations with rate limiting
  */
 
+import * as React from 'react';
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
-import { TicketConfirmationEmail } from '@/emails/TicketConfirmation';
+import { TicketPurchaseEmail } from '@/emails/templates/TicketPurchaseEmail';
+import type { TicketPurchaseEmailProps } from '@/emails/templates/TicketPurchaseEmail';
+import { getFirstName } from '@/emails/utils/render';
+import { getZurichJSVenueMapUrl } from '@/lib/venue';
+
+/**
+ * Delay utility for rate limiting
+ * @param ms Milliseconds to delay
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Initialize Resend client
@@ -24,9 +34,15 @@ const getResendClient = (): Resend => {
  * Email configuration
  */
 const EMAIL_CONFIG = {
-  from: process.env.EMAIL_FROM || 'ZurichJS Conference <noreply@zurichjs.com>',
-  replyTo: process.env.EMAIL_REPLY_TO || 'support@zurichjs.com',
+  from: process.env.EMAIL_FROM || 'ZurichJS Conference <hello@zurichjs.com>',
+  replyTo: process.env.EMAIL_REPLY_TO || 'hello@zurichjs.com',
+  supportEmail: 'hello@zurichjs.com',
 };
+
+/**
+ * Base URL configuration
+ */
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://zurichjs-conf.vercel.app';
 
 /**
  * Data structure for ticket confirmation email
@@ -41,6 +57,11 @@ export interface TicketConfirmationData {
   currency: string;
   conferenceDate: string;
   conferenceName: string;
+  badgeLabel?: string;
+  notes?: string;
+  ticketId?: string; // Optional - if different from orderNumber
+  qrCodeUrl?: string; // QR code URL from Supabase object storage (required for emails to work)
+  pdfAttachment?: Buffer; // Optional PDF ticket attachment
 }
 
 /**
@@ -62,35 +83,86 @@ export async function sendTicketConfirmationEmail(
   try {
     const resend = getResendClient();
 
+    // Use ticketId if provided, otherwise fall back to orderNumber
+    const ticketIdToUse = data.ticketId || data.orderNumber;
+
+    // Use stored QR code URL from object storage
+    if (!data.qrCodeUrl) {
+      console.error('[Email] ❌ QR code URL is missing for ticket:', ticketIdToUse);
+      return {
+        success: false,
+        error: 'QR code URL is required but was not provided',
+      };
+    }
+
+    console.log('[Email] Using QR code from object storage:', data.qrCodeUrl);
+    const qrCodeSrc = data.qrCodeUrl;
+
+    // Map legacy data to new template format
+    const emailProps: TicketPurchaseEmailProps = {
+      firstName: getFirstName(data.customerName),
+      fullName: data.customerName,
+      email: data.customerEmail,
+      eventName: data.conferenceName,
+      edition: 'ZJS2026',
+      tierLabel: data.ticketType,
+      badgeLabel: data.badgeLabel,
+      venueName: 'Technopark Zürich',
+      venueAddress: 'Technoparkstrasse 1,\n8005 Zürich',
+      dateLabel: data.conferenceDate,
+      timeLabel: '09:00 – 17:00',
+      tz: 'CEST',
+      ticketId: data.orderNumber,
+      qrSrc: qrCodeSrc, // QR code image URL from Supabase object storage
+      qrAlt: `QR code for ticket ${data.orderNumber}`,
+      logoSrc: `${BASE_URL}/images/logo/zurichjs-square.png`,
+      logoAlt: 'ZurichJS Conference',
+      // Wallet buttons disabled - not ready for integration
+      // appleWalletUrl: `${BASE_URL}/api/wallet/apple/${ticketIdToUse}`,
+      // googleWalletUrl: `${BASE_URL}/api/wallet/google/${ticketIdToUse}`,
+      orderUrl: `${BASE_URL}/orders/${data.orderNumber}`,
+      calendarUrl: `${BASE_URL}/api/calendar/${ticketIdToUse}`,
+      venueMapUrl: getZurichJSVenueMapUrl(),
+      refundPolicyUrl: `${BASE_URL}/refund-policy`,
+      supportEmail: EMAIL_CONFIG.supportEmail,
+      notes: data.notes,
+    };
+
+    console.log('[Email] Email props:', emailProps);
+
     // Render the email template to HTML
     const emailHtml = await render(
-      TicketConfirmationEmail({
-        customerName: data.customerName,
-        customerEmail: data.customerEmail,
-        ticketType: data.ticketType,
-        orderNumber: data.orderNumber,
-        amountPaid: data.amountPaid,
-        currency: data.currency,
-        conferenceDate: data.conferenceDate,
-        conferenceName: data.conferenceName,
-      })
+      React.createElement(TicketPurchaseEmail, emailProps)
     );
+
+    // Prepare attachments
+    const attachments = [];
+    if (data.pdfAttachment) {
+      attachments.push({
+        filename: `${data.conferenceName.replace(/\s+/g, '_')}_Ticket_${ticketIdToUse}.pdf`,
+        content: data.pdfAttachment,
+      });
+      console.log('[Email] PDF attachment added to email');
+    }
 
     // Send the email
     const result = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: data.to,
       replyTo: EMAIL_CONFIG.replyTo,
-      subject: `Your ticket for ${data.conferenceName}`,
+      subject: `Your ${data.ticketType} for ${data.conferenceName}`,
       html: emailHtml,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     if (result.error) {
-      console.error('Error sending email:', result.error);
+      console.error('[Email] ❌ Error sending email:', result.error);
       return { success: false, error: result.error.message };
     }
 
-    console.log('Email sent successfully:', result.data?.id);
+    console.log('[Email] ✅ Ticket confirmation email sent successfully:', result.data?.id);
+    console.log('[Email] To:', data.to);
+    console.log('[Email] Ticket ID:', ticketIdToUse);
     return { success: true };
   } catch (error) {
     console.error('Error sending ticket confirmation email:', error);
@@ -130,20 +202,20 @@ export async function sendVerificationRequestEmail(
               <h1 style="margin: 0; color: #000000; font-size: 28px; font-weight: bold;">ZurichJS Conference 2026</h1>
             </td>
           </tr>
-          
+
           <!-- Content -->
           <tr>
             <td style="padding: 40px 30px;">
               <h2 style="margin: 0 0 20px 0; color: #111827; font-size: 24px; font-weight: bold;">Verification Request Received</h2>
-              
+
               <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
                 Hi ${data.name},
               </p>
-              
+
               <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
                 Thank you for submitting your ${typeLabel} verification request for the discounted ZurichJS Conference 2026 ticket.
               </p>
-              
+
               <div style="background-color: #F1E271; border-left: 4px solid #000000; padding: 16px; margin: 24px 0;">
                 <p style="margin: 0 0 8px 0; color: #000000; font-size: 14px; font-weight: bold;">
                   Verification ID
@@ -152,11 +224,11 @@ export async function sendVerificationRequestEmail(
                   ${data.verificationId}
                 </p>
               </div>
-              
+
               <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
                 <strong>What happens next?</strong>
               </p>
-              
+
               <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #374151; font-size: 16px; line-height: 1.6;">
                 <li style="margin-bottom: 8px;">Our team will review your verification request within 24 hours</li>
                 <li style="margin-bottom: 8px;">We may contact you to validate your student ID or unemployment documents</li>
@@ -164,20 +236,20 @@ export async function sendVerificationRequestEmail(
                 <li style="margin-bottom: 8px;">The payment link will allow you to purchase your ticket at the discounted price</li>
                 <li style="margin-bottom: 8px;">Keep your verification ID handy for reference</li>
               </ul>
-              
+
               <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                If you have any questions or haven't heard back within 24 hours, please contact us at 
-                <a href="mailto:tickets@zurichjs.com" style="color: #000000; text-decoration: underline;">tickets@zurichjs.com</a>
+                If you have any questions or haven't heard back within 24 hours, please contact us at
+                <a href="mailto:hello@zurichjs.com" style="color: #000000; text-decoration: underline;">hello@zurichjs.com</a>
                 and include your verification ID.
               </p>
-              
+
               <p style="margin: 24px 0 0 0; color: #374151; font-size: 16px; line-height: 1.6;">
                 Best regards,<br>
                 <strong>The ZurichJS Conference Team</strong>
               </p>
             </td>
           </tr>
-          
+
           <!-- Footer -->
           <tr>
             <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
@@ -218,4 +290,42 @@ export async function sendVerificationRequestEmail(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
+}
+
+/**
+ * Send multiple ticket confirmation emails with rate limiting
+ * Resend allows max 2 requests/second, so we delay 600ms between each email (1.67 emails/sec)
+ *
+ * @param emails Array of email data to send
+ * @returns Array of results for each email
+ */
+export async function sendTicketConfirmationEmailsQueued(
+  emails: TicketConfirmationData[]
+): Promise<Array<{ success: boolean; error?: string; email: string }>> {
+  console.log(`[Email Queue] Starting to send ${emails.length} emails with rate limiting...`);
+  const results: Array<{ success: boolean; error?: string; email: string }> = [];
+
+  for (let i = 0; i < emails.length; i++) {
+    const emailData = emails[i];
+    console.log(`[Email Queue] Sending email ${i + 1}/${emails.length} to:`, emailData.to);
+
+    const result = await sendTicketConfirmationEmail(emailData);
+    results.push({
+      ...result,
+      email: emailData.to,
+    });
+
+    // Add delay between emails (except after the last one)
+    if (i < emails.length - 1) {
+      const delayMs = 600; // 600ms delay = 1.67 emails/second (under 2/sec limit)
+      console.log(`[Email Queue] Waiting ${delayMs}ms before next email...`);
+      await delay(delayMs);
+    }
+  }
+
+  const successCount = results.filter(r => r.success).length;
+  const failCount = results.filter(r => !r.success).length;
+  console.log(`[Email Queue] Completed: ${successCount} sent successfully, ${failCount} failed`);
+
+  return results;
 }

@@ -6,10 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 
-/**
- * Price stage types matching the Stripe lookup key patterns
- */
-type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird';
+import { getCurrentStage, type PriceStage } from '@/config/pricing-stages';
 
 /**
  * Ticket category types
@@ -40,21 +37,11 @@ interface PricingResponse {
 }
 
 /**
- * Stage configuration with date ranges and priorities
- */
-interface StageConfig {
-  stage: PriceStage;
-  startDate: Date;
-  endDate: Date;
-  priority: number;
-}
-
-/**
  * Initialize Stripe with secret key from environment variables
  */
 const getStripeClient = (): Stripe => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  
+
   if (!secretKey) {
     throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
   }
@@ -62,50 +49,6 @@ const getStripeClient = (): Stripe => {
   return new Stripe(secretKey, {
     apiVersion: '2025-10-29.clover',
   });
-};
-
-/**
- * Stage configurations with date ranges
- * Update these dates based on your conference schedule
- */
-const STAGE_CONFIGS: StageConfig[] = [
-  {
-    stage: 'blind_bird',
-    startDate: new Date('2025-01-01T00:00:00.000Z'),
-    endDate: new Date('2025-12-01T00:00:00.000Z'),
-    priority: 1,
-  },
-  {
-    stage: 'early_bird',
-    startDate: new Date('2025-12-01T00:00:00.000Z'),
-    endDate: new Date('2026-03-01T00:00:00.000Z'),
-    priority: 2,
-  },
-  {
-    stage: 'standard',
-    startDate: new Date('2026-03-01T00:00:00.000Z'),
-    endDate: new Date('2026-08-01T00:00:00.000Z'),
-    priority: 3,
-  },
-  {
-    stage: 'late_bird',
-    startDate: new Date('2026-08-01T00:00:00.000Z'),
-    endDate: new Date('2026-09-11T00:00:00.000Z'),
-    priority: 4,
-  },
-];
-
-/**
- * Determine the current pricing stage based on the current date
- */
-const getCurrentStage = (): PriceStage => {
-  const now = new Date();
-  
-  const activeStage = STAGE_CONFIGS.find(
-    (config) => now >= config.startDate && now < config.endDate
-  );
-
-  return activeStage?.stage || 'standard';
 };
 
 /**
@@ -241,8 +184,9 @@ export default async function handler(
   }
 
   try {
-    // Determine current pricing stage
-    const currentStage = getCurrentStage();
+    // Determine current pricing stage from centralized config
+    const currentStageConfig = getCurrentStage();
+    const currentStage = currentStageConfig.stage;
 
     // Fetch prices from Stripe
     const plans = await fetchTicketPrices(currentStage);

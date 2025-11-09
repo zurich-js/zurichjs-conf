@@ -1,15 +1,27 @@
 /**
  * Stripe Webhook Handler
- * Handles Stripe webhook events for ticket purchases
+ * Handles Stripe webhook events for ticket purchases and workshop registrations
+ *
+ * This webhook:
+ * - Verifies Stripe signatures
+ * - Creates user profiles in Supabase
+ * - Links Stripe customers to users
+ * - Creates ticket and workshop registration records
+ * - Is idempotent (safe to retry)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import Stripe from 'stripe';
-import { sendTicketConfirmationEmail } from '@/lib/email';
+import type Stripe from 'stripe';
 import { buffer } from 'micro';
+import { verifyWebhookSignature } from '@/lib/stripe/client';
+import {
+  handleCheckoutSessionCompleted,
+  handleAsyncPaymentSucceeded,
+  handleAsyncPaymentFailed,
+} from '@/lib/stripe/webhookHandlers';
 
 /**
- * Disable body parsing, need raw body for webhook signature verification
+ * Disable body parsing - we need the raw body for webhook signature verification
  */
 export const config = {
   api: {
@@ -18,174 +30,100 @@ export const config = {
 };
 
 /**
- * Initialize Stripe client
- */
-const getStripeClient = (): Stripe => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-
-  if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
-  }
-
-  return new Stripe(secretKey, {
-    apiVersion: '2025-10-29.clover',
-  });
-};
-
-/**
- * Get ticket type display name from price lookup key
- */
-const getTicketTypeFromLookupKey = (lookupKey: string | null): string => {
-  if (!lookupKey) return 'Conference Ticket';
-
-  // Extract ticket type from lookup key pattern: category_stage
-  // e.g., "standard_blind_bird" -> "Standard"
-  // Special case: "standard_student_unemployed" -> "Student / Unemployed"
-  
-  if (lookupKey === 'standard_student_unemployed') {
-    return 'Student / Unemployed';
-  }
-
-  const parts = lookupKey.split('_');
-
-  if (parts[0] === 'vip') {
-    return 'VIP';
-  } else if (parts[0] === 'standard') {
-    return 'Standard';
-  }
-
-  return 'Conference Ticket';
-};
-
-/**
- * Handle checkout.session.completed event
- */
-async function handleCheckoutSessionCompleted(
-  session: Stripe.Checkout.Session,
-  stripe: Stripe
-): Promise<void> {
-  console.log('Processing checkout.session.completed event:', session.id);
-
-  // Extract customer information
-  const customerEmail = session.customer_details?.email;
-  const customerName = session.customer_details?.name || 'Valued Customer';
-
-  if (!customerEmail) {
-    console.error('No customer email found in checkout session');
-    return;
-  }
-
-  // Get line items to determine ticket type
-  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-    expand: ['data.price'],
-  });
-
-  const firstItem = lineItems.data[0];
-  const price = firstItem?.price as Stripe.Price | undefined;
-  const lookupKey = price?.lookup_key || null;
-  const ticketType = getTicketTypeFromLookupKey(lookupKey);
-
-  // Get payment information
-  const amountPaid = session.amount_total || 0;
-  const currency = session.currency?.toUpperCase() || 'CHF';
-
-  // Generate order number from session ID
-  const orderNumber = `ZJS-${session.id.slice(-8).toUpperCase()}`;
-
-  // Send confirmation email
-  try {
-    const emailResult = await sendTicketConfirmationEmail({
-      to: customerEmail,
-      customerName,
-      customerEmail,
-      ticketType,
-      orderNumber,
-      amountPaid,
-      currency,
-      conferenceDate: 'September 11, 2026',
-      conferenceName: 'ZurichJS Conference 2026',
-    });
-
-    if (emailResult.success) {
-      console.log(`Ticket confirmation email sent to ${customerEmail}`);
-    } else {
-      console.error(`Failed to send email to ${customerEmail}:`, emailResult.error);
-    }
-  } catch (error) {
-    console.error('Error sending ticket confirmation email:', error);
-  }
-}
-
-/**
  * API Handler for Stripe webhooks
  */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ): Promise<void> {
+  console.log('[Webhook] ====== Received webhook request ======');
+  console.log('[Webhook] Method:', req.method);
+  console.log('[Webhook] Headers:', {
+    'content-type': req.headers['content-type'],
+    'stripe-signature': req.headers['stripe-signature'] ? '(present)' : '(missing)',
+  });
+
   // Only allow POST requests
   if (req.method !== 'POST') {
+    console.error('[Webhook] ❌ Method not allowed:', req.method);
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
-  const stripe = getStripeClient();
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    console.error('STRIPE_WEBHOOK_SECRET is not configured');
-    res.status(500).json({ error: 'Webhook secret not configured' });
-    return;
-  }
-
   try {
-    // Get raw body for signature verification
+    // Get raw body and signature
+    console.log('[Webhook] Reading request body...');
     const buf = await buffer(req);
+    console.log('[Webhook] Body size:', buf.length, 'bytes');
+
     const signature = req.headers['stripe-signature'];
 
-    if (!signature) {
+    if (!signature || typeof signature !== 'string') {
+      console.error('[Webhook] ❌ Missing or invalid stripe-signature header');
       res.status(400).json({ error: 'Missing stripe-signature header' });
       return;
     }
 
     // Verify webhook signature
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(buf, signature, webhookSecret);
-    } catch (err) {
-      const error = err as Error;
-      console.error('Webhook signature verification failed:', error.message);
-      res.status(400).json({ error: `Webhook Error: ${error.message}` });
+    console.log('[Webhook] Verifying webhook signature...');
+    const event = verifyWebhookSignature(buf, signature);
+
+    if (!event) {
+      console.error('[Webhook] ❌ Invalid webhook signature');
+      res.status(400).json({ error: 'Invalid webhook signature' });
       return;
     }
 
+    console.log('[Webhook] ✅ Signature verified');
+    console.log('[Webhook] Event type:', event.type);
+    console.log('[Webhook] Event ID:', event.id);
+
     // Handle the event
     switch (event.type) {
-      case 'checkout.session.completed':
+      case 'checkout.session.completed': {
+        console.log('[Webhook] Handling checkout.session.completed event');
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutSessionCompleted(session, stripe);
+        console.log('[Webhook] Session details:', {
+          id: session.id,
+          payment_status: session.payment_status,
+          customer: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+          amount_total: session.amount_total,
+        });
+        await handleCheckoutSessionCompleted(session);
+        console.log('[Webhook] ✅ checkout.session.completed handled successfully');
         break;
+      }
 
-      case 'checkout.session.async_payment_succeeded':
-        // Handle async payment success (e.g., bank transfers)
-        const asyncSession = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutSessionCompleted(asyncSession, stripe);
+      case 'checkout.session.async_payment_succeeded': {
+        console.log('[Webhook] Handling checkout.session.async_payment_succeeded event');
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleAsyncPaymentSucceeded(session);
+        console.log('[Webhook] ✅ async_payment_succeeded handled successfully');
         break;
+      }
 
-      case 'checkout.session.async_payment_failed':
-        // Log failed async payments
-        console.log('Async payment failed:', event.data.object);
+      case 'checkout.session.async_payment_failed': {
+        console.log('[Webhook] Handling checkout.session.async_payment_failed event');
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleAsyncPaymentFailed(session);
+        console.log('[Webhook] ✅ async_payment_failed handled successfully');
         break;
+      }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log('[Webhook] ⚠️ Unhandled event type:', event.type);
     }
 
     // Return a response to acknowledge receipt of the event
+    console.log('[Webhook] ✅ Sending success response to Stripe');
     res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('[Webhook] ❌ Error processing webhook:', error);
+    console.error('[Webhook] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Return 500 so Stripe retries
+    console.log('[Webhook] Sending error response to Stripe (will retry)');
     res.status(500).json({ error: errorMessage });
   }
 }

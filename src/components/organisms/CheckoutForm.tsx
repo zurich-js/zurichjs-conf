@@ -26,6 +26,10 @@ export interface CheckoutFormProps {
    * Called when user clicks back button
    */
   onBack: () => void;
+  /**
+   * Default values to pre-fill the form (e.g., from primary attendee)
+   */
+  defaultValues?: Partial<CheckoutFormData>;
 }
 
 /**
@@ -38,6 +42,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   totalAmount,
   currency,
   onBack,
+  defaultValues,
 }) => {
   const {
     register,
@@ -49,6 +54,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       country: 'Switzerland',
       agreeToTerms: false,
       subscribeNewsletter: false,
+      ...defaultValues, // Merge in provided default values
     },
   });
 
@@ -130,17 +136,40 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="company" className="block text-sm font-semibold text-white mb-2">
-              Company (Optional)
-            </label>
-            <Input
-              id="company"
-              type="text"
-              {...register('company')}
-              placeholder="Acme Inc."
-              className="w-full"
-            />
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="company" className="block text-sm font-semibold text-white mb-2">
+                Company <span className="text-red-400">*</span>
+              </label>
+              <Input
+                id="company"
+                type="text"
+                {...register('company')}
+                placeholder="Acme Inc."
+                className="w-full"
+                aria-invalid={!!errors.company}
+              />
+              {errors.company && (
+                <p className="text-red-400 text-sm mt-1">{errors.company.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="jobTitle" className="block text-sm font-semibold text-white mb-2">
+                Job Title <span className="text-red-400">*</span>
+              </label>
+              <Input
+                id="jobTitle"
+                type="text"
+                {...register('jobTitle')}
+                placeholder="Software Engineer"
+                className="w-full"
+                aria-invalid={!!errors.jobTitle}
+              />
+              {errors.jobTitle && (
+                <p className="text-red-400 text-sm mt-1">{errors.jobTitle.message}</p>
+              )}
+            </div>
           </div>
 
           <div>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type IconType = 'check' | 'dot' | 'star' | 'minus';
+export type IconType = 'check' | 'double-check' | 'dot' | 'star' | 'minus';
 export type IconColor = 'success' | 'warning' | 'accent' | 'muted';
 
 export interface IconProps {
@@ -48,6 +48,35 @@ const CheckIcon: React.FC<{ size: number; className: string }> = ({ size, classN
     <path
       d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
       fill="currentColor"
+    />
+  </svg>
+);
+
+/**
+ * Double Check icon (for VIP/premium features)
+ */
+const DoubleCheckIcon: React.FC<{ size: number; className: string }> = ({ size, className }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M0.5 12.5L5.5 17.5L17.5 5.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7 12.5L12 17.5L24 5.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );
@@ -122,6 +151,7 @@ export const Icon: React.FC<IconProps> = ({
 
   const iconMap = {
     check: CheckIcon,
+    'double-check': DoubleCheckIcon,
     dot: DotIcon,
     star: StarIcon,
     minus: MinusIcon,

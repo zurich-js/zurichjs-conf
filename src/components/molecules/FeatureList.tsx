@@ -18,6 +18,10 @@ export interface FeatureListProps {
    */
   features: Feature[];
   /**
+   * Variant that affects icon styling for extra features
+   */
+  variant?: 'standard' | 'vip' | 'member';
+  /**
    * Additional CSS classes
    */
   className?: string;
@@ -29,11 +33,14 @@ export interface FeatureListProps {
  */
 export const FeatureList: React.FC<FeatureListProps> = ({
   features,
+  variant = 'standard',
   className = '',
 }) => {
   if (!features || features.length === 0) {
     return null;
   }
+
+  const isVip = variant === 'vip';
 
   return (
     <ul className={`flex flex-col gap-3 ${className}`} role="list">
@@ -41,11 +48,12 @@ export const FeatureList: React.FC<FeatureListProps> = ({
         const kind = feature.kind || 'included';
         const isExtra = kind === 'extra';
         const isExcluded = kind === 'excluded';
-        
-        const iconType = isExcluded ? 'minus' : isExtra ? 'dot' : 'check';
+
+        // VIP extra features use double-check, others use dot
+        const iconType = isExcluded ? 'minus' : isExtra ? (isVip ? 'double-check' : 'dot') : 'check';
         const iconColor = isExcluded ? 'muted' : isExtra ? 'accent' : 'success';
         const textColor = isExcluded ? 'text-gray-500' : 'text-gray-200';
-        
+
         return (
           <li
             key={`${feature.label}-${index}`}

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
+import { PageHeader } from '@/components/organisms';
 import Link from 'next/link';
 import { checkoutSessionQueryOptions } from '@/lib/queries/checkout';
 
@@ -43,6 +44,7 @@ const SuccessPage: React.FC = () => {
       title="Payment Successful | ZurichJS Conference 2026"
       description="Your ticket purchase was successful. Check your email for confirmation details."
     >
+      <PageHeader />
       <div className="min-h-screen bg-brand-primary py-16 md:py-24 px-6">
         <div className="max-w-3xl mx-auto">
           {/* Loading State - Show while router is not ready OR while fetching */}
@@ -85,7 +87,7 @@ const SuccessPage: React.FC = () => {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-brand-primary mt-1">•</span>
-                        <span>If you don&apos;t receive an email within 10 minutes, contact us at tickets@zurichjs.com</span>
+                        <span>If you don&apos;t receive an email within 10 minutes, contact us at hello@zurichjs.com</span>
                       </li>
                     </ul>
                   </div>
@@ -236,7 +238,7 @@ const SuccessPage: React.FC = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-brand-primary mt-1">•</span>
-                    <span>Contact us at tickets@zurichjs.com for any questions</span>
+                    <span>Contact us at hello@zurichjs.com for any questions</span>
                   </li>
                 </ul>
               </div>
@@ -255,10 +257,10 @@ const SuccessPage: React.FC = () => {
                 <p className="text-black/70">
                   Questions? Contact us at{' '}
                   <a
-                    href="mailto:tickets@zurichjs.com"
+                    href="mailto:hello@zurichjs.com"
                     className="text-black hover:underline font-bold transition-colors"
                   >
-                    tickets@zurichjs.com
+                    hello@zurichjs.com
                   </a>
                 </p>
               </div>

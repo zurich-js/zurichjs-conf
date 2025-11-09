@@ -197,7 +197,7 @@ const RefundPolicyPage: React.FC = () => {
                   can only be transferred to someone who also qualifies for the discount. To transfer your ticket:
                 </p>
                 <ol className="list-decimal list-inside space-y-2 text-gray-200">
-                  <li>Contact us at tickets@zurichjs.com with the subject &quot;Ticket Transfer&quot;</li>
+                  <li>Contact us at hello@zurichjs.com with the subject &quot;Ticket Transfer&quot;</li>
                   <li>Provide your order number and the new attendee&apos;s full name and email</li>
                   <li>We&apos;ll process the transfer within 2-3 business days</li>
                 </ol>
@@ -214,7 +214,7 @@ const RefundPolicyPage: React.FC = () => {
                   To request a refund for an eligible ticket:
                 </p>
                 <ol className="list-decimal list-inside space-y-2 text-gray-200">
-                  <li>Email us at tickets@zurichjs.com with the subject &quot;Refund Request&quot;</li>
+                  <li>Email us at hello@zurichjs.com with the subject &quot;Refund Request&quot;</li>
                   <li>Include your order number and reason for the refund</li>
                   <li>
                     If applicable, attach supporting documentation (e.g., medical certificate)
@@ -277,7 +277,7 @@ const RefundPolicyPage: React.FC = () => {
                 If you have questions about this refund policy or need clarification, please contact
                 us at{' '}
                 <a
-                  href="mailto:tickets@zurichjs.com"
+                  href="mailto:hello@zurichjs.com"
                   className="text-black hover:underline font-bold transition-colors"
                 >
                   hello@zurichjs.com
