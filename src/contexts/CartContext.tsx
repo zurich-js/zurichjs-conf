@@ -14,6 +14,24 @@ import { useVoucherValidation } from '@/hooks/useVoucherValidation';
  */
 
 /**
+ * Recalculate discount based on new cart total
+ */
+function recalculateDiscount(cart: Cart, newTotalPrice: number): Partial<Cart> {
+  if (!cart.discountType || !cart.discountValue) {
+    return {};
+  }
+
+  let discountAmount = 0;
+  if (cart.discountType === 'fixed') {
+    discountAmount = cart.discountValue;
+  } else if (cart.discountType === 'percentage') {
+    discountAmount = (newTotalPrice * cart.discountValue) / 100;
+  }
+
+  return { discountAmount };
+}
+
+/**
  * Add item to cart
  */
 function addItemToCart(cart: Cart, item: Omit<CartItem, 'quantity'>, quantity: number): Cart {
@@ -36,12 +54,16 @@ function addItemToCart(cart: Cart, item: Omit<CartItem, 'quantity'>, quantity: n
   const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  // Recalculate discount if voucher is applied
+  const discountUpdate = recalculateDiscount(cart, totalPrice);
+
   return {
     ...cart,
     items: newItems,
     totalItems,
     totalPrice,
     currency: item.currency,
+    ...discountUpdate,
   };
 }
 
@@ -53,11 +75,15 @@ function removeItemFromCart(cart: Cart, itemId: string): Cart {
   const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  // Recalculate discount if voucher is applied
+  const discountUpdate = recalculateDiscount(cart, totalPrice);
+
   return {
     ...cart,
     items: newItems,
     totalItems,
     totalPrice,
+    ...discountUpdate,
   };
 }
 
@@ -77,11 +103,15 @@ function updateItemQuantityInCart(cart: Cart, itemId: string, quantity: number):
   const totalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
+  // Recalculate discount if voucher is applied
+  const discountUpdate = recalculateDiscount(cart, totalPrice);
+
   return {
     ...cart,
     items: newItems,
     totalItems,
     totalPrice,
+    ...discountUpdate,
   };
 }
 
@@ -90,15 +120,17 @@ function updateItemQuantityInCart(cart: Cart, itemId: string, quantity: number):
  */
 function applyVoucherToCart(
   cart: Cart,
-  code: string,
-  promotionCodeId: string,
-  discountAmount: number
+  couponCode: string,
+  discountAmount: number,
+  discountType?: 'percentage' | 'fixed',
+  discountValue?: number
 ): Cart {
   return {
     ...cart,
-    voucherCode: code,
-    promotionCodeId,
+    couponCode,
     discountAmount,
+    discountType,
+    discountValue,
   };
 }
 
@@ -108,9 +140,10 @@ function applyVoucherToCart(
 function removeVoucherFromCart(cart: Cart): Cart {
   return {
     ...cart,
-    voucherCode: undefined,
-    promotionCodeId: undefined,
+    couponCode: undefined,
     discountAmount: undefined,
+    discountType: undefined,
+    discountValue: undefined,
   };
 }
 
@@ -278,19 +311,35 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
       // Calculate discount based on voucher type
       let discountAmount = 0;
+      let discountType: 'percentage' | 'fixed' | undefined;
+      let discountValue: number | undefined;
+
       if (result.type === 'fixed' && result.amountOff) {
         discountAmount = result.amountOff;
+        discountType = 'fixed';
+        discountValue = result.amountOff;
       } else if (result.type === 'percentage' && result.percentOff) {
         discountAmount = (currentCart.totalPrice * result.percentOff) / 100;
+        discountType = 'percentage';
+        discountValue = result.percentOff;
       }
 
-      // Apply voucher to cart
+      console.log('[CartContext] Applying voucher to cart:', {
+        couponCode: code.trim(),
+        stripeId: result.couponId,
+        discountAmount,
+        discountType,
+        discountValue,
+      });
+
+      // Apply voucher to cart (use the user-entered code for display)
       setCart((currentCart) =>
         applyVoucherToCart(
           currentCart,
-          result.code || code.trim(),
-          result.promotionCodeId || '',
-          discountAmount
+          code.trim(),
+          discountAmount,
+          discountType,
+          discountValue
         )
       );
 

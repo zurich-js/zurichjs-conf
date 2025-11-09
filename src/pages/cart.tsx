@@ -70,7 +70,7 @@ export default function CartPage() {
   const [teamTicketInfo, setTeamTicketInfo] = useState<{ type: string; quantity: number } | null>(null);
 
   const eligibleTeamTicket = cart.items.find(item => item.quantity >= 3);
-  const showTeamUpsell = eligibleTeamTicket && !cart.voucherCode; // Don't show if already using a voucher
+  const showTeamUpsell = eligibleTeamTicket && !cart.couponCode; // Don't show if already using a coupon
 
   const handleTeamModalOpen = () => {
     if (eligibleTeamTicket) {
@@ -139,6 +139,13 @@ export default function CartPage() {
   };
 
   const handleCheckoutSubmit = (data: CheckoutFormData) => {
+    console.log('[Cart] Submitting checkout with cart:', {
+      couponCode: cart.couponCode,
+      discountAmount: cart.discountAmount,
+      totalItems: cart.totalItems,
+      totalPrice: cart.totalPrice,
+    });
+
     createCheckout({
       cart,
       customerInfo: {
@@ -240,7 +247,7 @@ export default function CartPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center gap-1.5 sm:gap-3 md:gap-4 max-w-2xl mx-auto overflow-x-auto px-4 scrollbar-hide">
+              <div className="flex items-center justify-center gap-1 sm:gap-2 md:gap-3 max-w-2xl mx-auto">
                 {/* Step 1 */}
                 <button
                   onClick={() => setCurrentStep('review')}
@@ -252,7 +259,7 @@ export default function CartPage() {
                   }`}>
                     1
                   </div>
-                  <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                  <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                     currentStep === 'review' ? 'text-white' : 'text-gray-400'
                   }`}>
                     Tickets
@@ -260,7 +267,7 @@ export default function CartPage() {
                 </button>
 
                 {/* Connector */}
-                <div className="w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 bg-gray-800 shrink-0"></div>
+                <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-gray-800 shrink-0"></div>
 
                 {/* Step 2 - Attendees (conditional) */}
                 {needsAttendeeInfo && (
@@ -275,14 +282,14 @@ export default function CartPage() {
                       }`}>
                         2
                       </div>
-                      <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                      <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                         currentStep === 'attendees' ? 'text-white' : 'text-gray-400'
                       }`}>
                         Attendees
                       </span>
                     </button>
 
-                    <div className="w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 bg-gray-800 shrink-0"></div>
+                    <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-gray-800 shrink-0"></div>
                   </>
                 )}
 
@@ -299,14 +306,14 @@ export default function CartPage() {
                       }`}>
                         {needsAttendeeInfo ? '3' : '2'}
                       </div>
-                      <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                      <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                         currentStep === 'upsells' ? 'text-white' : 'text-gray-400'
                       }`}>
                         Workshops
                       </span>
                     </button>
 
-                    <div className="w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 bg-gray-800 shrink-0"></div>
+                    <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-gray-800 shrink-0"></div>
                   </>
                 )}
 
@@ -321,7 +328,7 @@ export default function CartPage() {
                   }`}>
                     {needsAttendeeInfo && showWorkshopUpsells ? '4' : needsAttendeeInfo || showWorkshopUpsells ? '3' : '2'}
                   </div>
-                  <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                  <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                     currentStep === 'checkout' ? 'text-white' : 'text-gray-400'
                   }`}>
                     Payment
@@ -419,7 +426,9 @@ export default function CartPage() {
                         summary={orderSummary}
                         showTax={false}
                         showDiscount={true}
-                        voucherCode={cart.voucherCode}
+                        voucherCode={cart.couponCode}
+                        discountType={cart.discountType}
+                        discountValue={cart.discountValue}
                         onRemoveVoucher={removeVoucher}
                       />
 
@@ -600,7 +609,9 @@ export default function CartPage() {
                               summary={orderSummary}
                               showTax={false}
                               showDiscount={true}
-                              voucherCode={cart.voucherCode}
+                              voucherCode={cart.couponCode}
+                              discountType={cart.discountType}
+                              discountValue={cart.discountValue}
                               onRemoveVoucher={removeVoucher}
                             />
                           </div>
@@ -608,19 +619,11 @@ export default function CartPage() {
 
                         {/* Trust Badges */}
                         <div className="bg-black rounded-2xl p-6">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-sm text-gray-400">
-                              <svg className="w-5 h-5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                              <span>Secure payment via Stripe</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-400">
-                              <svg className="w-5 h-5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                              <span>Flexible refund policy</span>
-                            </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-400">
+                            <svg className="w-5 h-5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span>Secure payment via Stripe</span>
                           </div>
                         </div>
                       </div>

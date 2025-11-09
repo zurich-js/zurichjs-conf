@@ -23,6 +23,11 @@ export const useCheckout = () => {
     CreateCheckoutSessionRequest
   >({
     mutationFn: async ({ cart, customerInfo }) => {
+      console.log('[useCheckout] Creating checkout session with cart:', {
+        couponCode: cart.couponCode,
+        discountAmount: cart.discountAmount,
+      });
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {

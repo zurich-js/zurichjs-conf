@@ -20,7 +20,6 @@ export interface ValidateVoucherRequest {
 export interface ValidateVoucherResponse {
   valid: boolean;
   code?: string;
-  promotionCodeId?: string;
   couponId?: string;
   type?: 'percentage' | 'fixed';
   value?: number;
@@ -70,9 +69,17 @@ export default async function handler(
     // Retrieve coupon directly by ID/code
     let coupon: Stripe.Coupon;
     try {
+      console.log('[ValidateVoucher] Retrieving coupon with code:', code.trim());
       coupon = await stripe.coupons.retrieve(code.trim());
+      console.log('[ValidateVoucher] ✅ Found coupon:', {
+        id: coupon.id,
+        name: coupon.name,
+        percentOff: coupon.percent_off,
+        amountOff: coupon.amount_off,
+        valid: coupon.valid,
+      });
     } catch (error) {
-      console.error('Error retrieving coupon:', error);
+      console.error('[ValidateVoucher] ❌ Error retrieving coupon:', error);
       return res.status(200).json({
         valid: false,
         error: 'Invalid voucher code',
@@ -143,27 +150,31 @@ export default async function handler(
         });
       }
 
-      return res.status(200).json({
+      const response = {
         valid: true,
         code: coupon.id,
         couponId: coupon.id,
-        type: 'fixed',
+        type: 'fixed' as const,
         value: coupon.amount_off / 100,
         amountOff: coupon.amount_off / 100,
         currency: coupon.currency,
         minPurchase: 0,
-      });
+      };
+      console.log('[ValidateVoucher] ✅ Returning fixed discount response:', response);
+      return res.status(200).json(response);
     } else if (coupon.percent_off) {
       // Percentage discount
-      return res.status(200).json({
+      const response = {
         valid: true,
         code: coupon.id,
         couponId: coupon.id,
-        type: 'percentage',
+        type: 'percentage' as const,
         value: coupon.percent_off,
         percentOff: coupon.percent_off,
         minPurchase: 0,
-      });
+      };
+      console.log('[ValidateVoucher] ✅ Returning percentage discount response:', response);
+      return res.status(200).json(response);
     } else {
       return res.status(200).json({
         valid: false,

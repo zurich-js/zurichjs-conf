@@ -125,12 +125,7 @@ export default async function handler(
     }));
 
     // Note: Voucher/discount handling
-    // If cart has a voucher code with discount amount, we note it in metadata
-    // In production, you would create a Stripe Coupon or Promotion Code
-    // Stripe doesn't support direct discount amounts in checkout, so you'd need to:
-    // 1. Create a coupon with the discount
-    // 2. Or adjust the prices
-    // For now, we note it in metadata and handle it server-side via allow_promotion_codes
+    // Pre-validated coupons are passed to Stripe checkout via the discounts parameter
 
     // Create customer metadata
     const metadata: Record<string, string> = {
@@ -147,7 +142,7 @@ export default async function handler(
       postalCode: customerInfo.postalCode,
       country: customerInfo.country,
       subscribeNewsletter: customerInfo.subscribeNewsletter ? 'true' : 'false',
-      voucherCode: cart.voucherCode || '',
+      couponCode: cart.couponCode || '',
       // Store attendee information as JSON string for multi-ticket purchases
       attendees: customerInfo.attendees ? JSON.stringify(customerInfo.attendees) : '',
       totalTickets: cart.totalItems.toString(),
@@ -156,10 +151,18 @@ export default async function handler(
     // Get Stripe redirect URLs using centralized utility
     const { successUrl, cancelUrl } = getStripeRedirectUrls(req);
 
-    // Prepare discounts array if promotion code was applied
-    const discounts = cart.promotionCodeId
-      ? [{ promotion_code: cart.promotionCodeId }]
+    // Prepare discounts array if coupon was applied
+    // Use coupon code for direct coupon application
+    const discounts = cart.couponCode
+      ? [{ coupon: cart.couponCode }]
       : undefined;
+
+    console.log('[CreateCheckout] Cart coupon info:', {
+      couponCode: cart.couponCode,
+      discountAmount: cart.discountAmount,
+      hasDiscounts: !!discounts,
+      discounts,
+    });
 
     // Get or create Stripe Customer to avoid duplicates
     // First check if customer exists with this email
@@ -220,7 +223,7 @@ export default async function handler(
     // Create Stripe Checkout Session
     // Note: Prices already include 8.1% Swiss VAT - no additional tax calculation
     // By passing a customer with address, Stripe will prefill the billing address in checkout
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -237,11 +240,17 @@ export default async function handler(
       phone_number_collection: {
         enabled: true,
       },
-      // Apply pre-validated promotion code if available
-      ...(discounts && { discounts }),
-      // Still allow manual promotion codes if none was pre-applied
-      allow_promotion_codes: !cart.promotionCodeId,
-    });
+    };
+
+    // Apply pre-validated coupon if available
+    if (discounts && discounts.length > 0) {
+      sessionParams.discounts = discounts;
+      console.log('[CreateCheckout] ✅ Applying coupon to checkout session:', discounts);
+    }
+
+    console.log('[CreateCheckout] Creating session with params:', JSON.stringify(sessionParams, null, 2));
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     // Return the checkout URL
     res.status(200).json({

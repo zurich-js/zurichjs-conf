@@ -60,17 +60,29 @@ export interface Cart {
    */
   currency: string;
   /**
-   * Applied voucher code (if any)
+   * Applied coupon code (Stripe coupon ID)
+   */
+  couponCode?: string;
+  /**
+   * User-entered voucher code
    */
   voucherCode?: string;
   /**
-   * Stripe promotion code ID (needed for checkout)
+   * Stripe promotion code ID
    */
   promotionCodeId?: string;
   /**
-   * Discount amount from voucher
+   * Discount amount from coupon
    */
   discountAmount?: number;
+  /**
+   * Discount type (percentage or fixed amount)
+   */
+  discountType?: 'percentage' | 'fixed';
+  /**
+   * Original discount value (percentage number or fixed amount)
+   */
+  discountValue?: number;
 }
 
 /**
