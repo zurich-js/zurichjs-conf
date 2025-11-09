@@ -356,12 +356,12 @@ const ManageOrderPage: React.FC = () => {
               {/* Reassign Ticket */}
               <div className="bg-black rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-brand-primary mb-6">Transfer Ticket</h2>
-                <p className="text-gray-300 mb-6">
+                <p className="text-gray-200 mb-6">
                   Can&apos;t attend? You can transfer your ticket to someone else. Once transferred, you will no longer have access to this ticket and the action cannot be undone.
                 </p>
                 <button
                   onClick={() => setShowReassignModal(true)}
-                  className="flex items-center justify-center gap-2 bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors w-full md:w-auto"
+                  className="flex items-center justify-center gap-2 bg-brand-primary text-black font-semibold py-3 px-6 rounded-lg hover:bg-brand-primary/90 transition-colors w-full md:w-auto"
                 >
                   ↗️ Transfer to Someone Else
                 </button>
