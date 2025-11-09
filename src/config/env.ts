@@ -33,9 +33,9 @@ const isServer = typeof window === 'undefined';
  * These must be prefixed with NEXT_PUBLIC_ and directly referenced
  */
 export const clientEnv = {
-  baseUrl: getOptionalEnv(
+  baseUrl: getRequiredEnv(
     process.env.NEXT_PUBLIC_BASE_URL,
-    'http://localhost:3000'
+    'NEXT_PUBLIC_BASE_URL'
   ),
   supabase: {
     url: getRequiredEnv(

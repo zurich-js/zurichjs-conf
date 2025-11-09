@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import type { Cart, CheckoutFormData } from '@/types/cart';
+import { getStripeRedirectUrls } from '@/lib/url';
 
 /**
  * API request body
@@ -152,10 +153,8 @@ export default async function handler(
       totalTickets: cart.totalItems.toString(),
     };
 
-    // Determine success and cancel URLs
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const successUrl = `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${baseUrl}/checkout`;
+    // Get Stripe redirect URLs using centralized utility
+    const { successUrl, cancelUrl } = getStripeRedirectUrls(req);
 
     // Prepare discounts array if promotion code was applied
     const discounts = cart.promotionCodeId

@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { createAppleWalletPass, areWalletPassesConfigured } from '@/lib/wallet';
+import { getBaseUrl } from '@/lib/url';
 
 export default async function handler(
   req: NextApiRequest,
@@ -49,7 +50,6 @@ export default async function handler(
     }
 
     // Generate Apple Wallet pass
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
     const typedTicket = ticket as {
       id: string;
       first_name: string;
@@ -66,7 +66,7 @@ export default async function handler(
       eventDate: new Date('2026-09-11T09:00:00+02:00'),
       venueName: 'Technopark Zürich',
       venueAddress: 'Technoparkstrasse 1, 8005 Zürich, Switzerland',
-      qrCodeData: `${baseUrl}/validate/${typedTicket.id}`,
+      qrCodeData: `${getBaseUrl(req)}/validate/${typedTicket.id}`,
     });
 
     if (!result.success || !result.passData) {

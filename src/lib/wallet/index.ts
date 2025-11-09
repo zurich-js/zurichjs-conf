@@ -9,6 +9,8 @@
  * This is a basic implementation that can be enhanced with actual pass generation
  */
 
+import { getBaseUrl } from '@/lib/url';
+
 export interface WalletPassData {
   ticketId: string;
   ticketHolderName: string;
@@ -32,8 +34,7 @@ export interface WalletPassData {
  * For now, this returns a URL to an API endpoint that will generate the pass
  */
 export function generateAppleWalletUrl(ticketId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
-  return `${baseUrl}/api/wallet/apple/${ticketId}`;
+  return `${getBaseUrl()}/api/wallet/apple/${ticketId}`;
 }
 
 /**
@@ -49,8 +50,7 @@ export function generateAppleWalletUrl(ticketId: string): string {
  * For now, this returns a URL to an API endpoint that will generate the pass
  */
 export function generateGoogleWalletUrl(ticketId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
-  return `${baseUrl}/api/wallet/google/${ticketId}`;
+  return `${getBaseUrl()}/api/wallet/google/${ticketId}`;
 }
 
 /**

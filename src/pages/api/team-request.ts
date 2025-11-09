@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
 import type { TeamRequestData } from '@/components/molecules';
+import { getBaseUrl } from '@/lib/url';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -55,6 +56,9 @@ export default async function handler(
         error: 'Email service not configured',
       });
     }
+
+    // Get base URL for email links
+    const baseUrl = getBaseUrl(req);
 
     // Send confirmation email to customer
     const customerEmailResult = await resend.emails.send({
@@ -121,7 +125,7 @@ export default async function handler(
 
                 <p>In the meantime, feel free to explore more about the conference:</p>
                 <p style="text-align: center;">
-                  <a href="https://conf.zurichjs.com" class="button">View Conference Details</a>
+                  <a href="${baseUrl}" class="button">View Conference Details</a>
                 </p>
 
                 <p>If you have any immediate questions, don't hesitate to reply to this email.</p>

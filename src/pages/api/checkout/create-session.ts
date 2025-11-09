@@ -5,6 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { getStripeRedirectUrls } from '@/lib/url';
 
 /**
  * Response structure for checkout session creation
@@ -57,8 +58,8 @@ export default async function handler(
 
     const stripe = getStripeClient();
 
-    // Get the origin for success/cancel URLs
-    const origin = req.headers.origin || `https://${req.headers.host}`;
+    // Get Stripe redirect URLs using centralized utility
+    const { successUrl, cancelUrl } = getStripeRedirectUrls(req);
 
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -69,8 +70,8 @@ export default async function handler(
         },
       ],
       mode: 'payment',
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       billing_address_collection: 'required',
       shipping_address_collection: {
         allowed_countries: ['CH', 'DE', 'AT', 'FR', 'IT', 'LI'],

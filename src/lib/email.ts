@@ -10,6 +10,7 @@ import { TicketPurchaseEmail } from '@/emails/templates/TicketPurchaseEmail';
 import type { TicketPurchaseEmailProps } from '@/emails/templates/TicketPurchaseEmail';
 import { getFirstName } from '@/emails/utils/render';
 import { getZurichJSVenueMapUrl } from '@/lib/venue';
+import { getBaseUrl } from '@/lib/url';
 
 /**
  * Delay utility for rate limiting
@@ -38,11 +39,6 @@ const EMAIL_CONFIG = {
   replyTo: process.env.EMAIL_REPLY_TO || 'hello@zurichjs.com',
   supportEmail: 'hello@zurichjs.com',
 };
-
-/**
- * Base URL configuration
- */
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://zurichjs-conf.vercel.app';
 
 /**
  * Data structure for ticket confirmation email
@@ -115,15 +111,15 @@ export async function sendTicketConfirmationEmail(
       ticketId: data.orderNumber,
       qrSrc: qrCodeSrc, // QR code image URL from Supabase object storage
       qrAlt: `QR code for ticket ${data.orderNumber}`,
-      logoSrc: `${BASE_URL}/images/logo/zurichjs-square.png`,
+      logoSrc: `${getBaseUrl()}/images/logo/zurichjs-square.png`,
       logoAlt: 'ZurichJS Conference',
       // Wallet buttons disabled - not ready for integration
-      // appleWalletUrl: `${BASE_URL}/api/wallet/apple/${ticketIdToUse}`,
-      // googleWalletUrl: `${BASE_URL}/api/wallet/google/${ticketIdToUse}`,
-      orderUrl: `${BASE_URL}/orders/${data.orderNumber}`,
-      calendarUrl: `${BASE_URL}/api/calendar/${ticketIdToUse}`,
+      // appleWalletUrl: `${getBaseUrl()}/api/wallet/apple/${ticketIdToUse}`,
+      // googleWalletUrl: `${getBaseUrl()}/api/wallet/google/${ticketIdToUse}`,
+      orderUrl: `${getBaseUrl()}/orders/${data.orderNumber}`,
+      calendarUrl: `${getBaseUrl()}/api/calendar/${ticketIdToUse}`,
       venueMapUrl: getZurichJSVenueMapUrl(),
-      refundPolicyUrl: `${BASE_URL}/refund-policy`,
+      refundPolicyUrl: `${getBaseUrl()}/refund-policy`,
       supportEmail: EMAIL_CONFIG.supportEmail,
       notes: data.notes,
     };

@@ -240,19 +240,19 @@ export default function CartPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center gap-2 sm:gap-4 max-w-2xl mx-auto">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-3 md:gap-4 max-w-2xl mx-auto overflow-x-auto px-4 scrollbar-hide">
                 {/* Step 1 */}
                 <button
                   onClick={() => setCurrentStep('review')}
-                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                   aria-label="Go to Review Tickets step"
                 >
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+                  <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
                     currentStep === 'review' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
                   }`}>
                     1
                   </div>
-                  <span className={`ml-2 sm:ml-3 text-xs sm:text-sm font-medium transition-colors ${
+                  <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                     currentStep === 'review' ? 'text-white' : 'text-gray-400'
                   }`}>
                     Tickets
@@ -260,29 +260,29 @@ export default function CartPage() {
                 </button>
 
                 {/* Connector */}
-                <div className="w-8 sm:w-16 h-0.5 bg-gray-800"></div>
+                <div className="w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 bg-gray-800 shrink-0"></div>
 
                 {/* Step 2 - Attendees (conditional) */}
                 {needsAttendeeInfo && (
                   <>
                     <button
                       onClick={() => setCurrentStep('attendees')}
-                      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                       aria-label="Go to Attendees step"
                     >
-                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+                      <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
                         currentStep === 'attendees' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
                       }`}>
                         2
                       </div>
-                      <span className={`ml-2 sm:ml-3 text-xs sm:text-sm font-medium transition-colors ${
+                      <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                         currentStep === 'attendees' ? 'text-white' : 'text-gray-400'
                       }`}>
                         Attendees
                       </span>
                     </button>
 
-                    <div className="w-8 sm:w-16 h-0.5 bg-gray-800"></div>
+                    <div className="w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 bg-gray-800 shrink-0"></div>
                   </>
                 )}
 
@@ -291,37 +291,37 @@ export default function CartPage() {
                   <>
                     <button
                       onClick={() => setCurrentStep('upsells')}
-                      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                       aria-label="Go to Workshop Upsells step"
                     >
-                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+                      <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
                         currentStep === 'upsells' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
                       }`}>
                         {needsAttendeeInfo ? '3' : '2'}
                       </div>
-                      <span className={`ml-2 sm:ml-3 text-xs sm:text-sm font-medium transition-colors ${
+                      <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                         currentStep === 'upsells' ? 'text-white' : 'text-gray-400'
                       }`}>
                         Workshops
                       </span>
                     </button>
 
-                    <div className="w-8 sm:w-16 h-0.5 bg-gray-800"></div>
+                    <div className="w-4 sm:w-8 md:w-12 lg:w-16 h-0.5 bg-gray-800 shrink-0"></div>
                   </>
                 )}
 
                 {/* Step 4 - Payment */}
                 <button
                   onClick={() => setCurrentStep('checkout')}
-                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                   aria-label="Go to Payment step"
                 >
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+                  <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
                     currentStep === 'checkout' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
                   }`}>
                     {needsAttendeeInfo && showWorkshopUpsells ? '4' : needsAttendeeInfo || showWorkshopUpsells ? '3' : '2'}
                   </div>
-                  <span className={`ml-2 sm:ml-3 text-xs sm:text-sm font-medium transition-colors ${
+                  <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                     currentStep === 'checkout' ? 'text-white' : 'text-gray-400'
                   }`}>
                     Payment

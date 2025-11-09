@@ -5,6 +5,7 @@
 
 import QRCode from 'qrcode';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { getBaseUrl } from '@/lib/url';
 
 /**
  * Generate a QR code data URL for a ticket
@@ -15,8 +16,7 @@ export async function generateTicketQRCode(ticketId: string): Promise<string> {
 
   try {
     // Create a validation URL that contains the ticket ID
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://zurichjs-conf.vercel.app';
-    const validationData = `${baseUrl}/validate/${ticketId}`;
+    const validationData = `${getBaseUrl()}/validate/${ticketId}`;
     console.log('[QRCode] Data URL validation URL:', validationData);
 
     // Generate QR code as data URL (base64 encoded PNG)
@@ -55,8 +55,7 @@ export async function generateAndStoreTicketQRCode(
     const supabase = createServiceRoleClient();
 
     // Generate QR code as buffer
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://zurichjs-conf.vercel.app';
-    const validationData = `${baseUrl}/validate/${ticketId}`;
+    const validationData = `${getBaseUrl()}/validate/${ticketId}`;
     console.log('[QRCode] Validation URL:', validationData);
 
     console.log('[QRCode] Generating QR code buffer...');

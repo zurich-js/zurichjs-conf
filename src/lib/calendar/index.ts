@@ -4,6 +4,7 @@
  */
 
 import { createEvents, type EventAttributes } from 'ics';
+import { getBaseUrl } from '@/lib/url';
 
 export interface ConferenceEventData {
   ticketHolderName: string;
@@ -43,7 +44,7 @@ export function generateCalendarEvent(data: ConferenceEventData): {
       title: data.eventName,
       description: data.eventDescription || `You're registered for ${data.eventName}!`,
       location: `${data.venueName}, ${data.venueAddress}`,
-      url: process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com',
+      url: getBaseUrl(),
       status: 'CONFIRMED',
       busyStatus: 'BUSY',
       organizer: {
