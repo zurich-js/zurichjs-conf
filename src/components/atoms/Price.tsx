@@ -45,14 +45,6 @@ const formatPrice = (amount: number, currency: string): string => {
 };
 
 /**
- * Calculate savings percentage
- */
-const calculateSavingsPercent = (compareAmount: number, currentAmount: number): number => {
-  if (compareAmount <= currentAmount) return 0;
-  return Math.round(((compareAmount - currentAmount) / compareAmount) * 100);
-};
-
-/**
  * Price component with optional compare pricing and formatting
  */
 export const Price: React.FC<PriceProps> = ({
@@ -65,7 +57,6 @@ export const Price: React.FC<PriceProps> = ({
 }) => {
   const formattedPrice = formatPrice(amount, currency);
   const formattedComparePrice = compareAmount ? formatPrice(compareAmount, currency) : null;
-  const savingsPercent = compareAmount ? calculateSavingsPercent(compareAmount, amount) : 0;
 
   const priceSize = variant === 'large' ? 'text-4xl md:text-5xl' : 'text-2xl md:text-3xl';
   const suffixSize = variant === 'large' ? 'text-base md:text-lg' : 'text-sm md:text-base';
@@ -75,19 +66,14 @@ export const Price: React.FC<PriceProps> = ({
       {compareAmount && formattedComparePrice && (
         <div className="flex items-center gap-2">
           <span
-            className="text-text-muted line-through text-lg"
+            className="text-text-muted line-through text-xl md:text-2xl font-medium"
             aria-label={`Original price: ${formattedComparePrice}`}
           >
             {formattedComparePrice}
           </span>
-          {savingsPercent > 0 && (
-            <span className="text-success-light text-sm font-semibold bg-success/10 px-2 py-1 rounded">
-              Save {savingsPercent}%
-            </span>
-          )}
         </div>
       )}
-      
+
       <div className="flex items-baseline gap-2">
         <span
           className={`font-bold text-text-primary ${priceSize}`}

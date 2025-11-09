@@ -112,7 +112,7 @@ Main ticket confirmation email template.
 - `calendarUrl`: Add to calendar link
 - `venueMapUrl`: Google Maps link
 - `refundPolicyUrl`: Refund policy link (default provided)
-- `supportEmail`: Support email (default: tickets@zurichjs.com)
+- `supportEmail`: Support email (default: hello@zurichjs.com)
 - `notes`: Optional important notes
 
 **Example:**
@@ -258,7 +258,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const html = render(<TicketPurchaseEmail {...props} />);
 
 await resend.emails.send({
-  from: 'ZurichJS Conference <tickets@zurichjs.com>',
+  from: 'ZurichJS Conference <hello@zurichjs.com>',
   to: customerEmail,
   subject: 'Your ticket for Zurich JS Conf 2026',
   html,

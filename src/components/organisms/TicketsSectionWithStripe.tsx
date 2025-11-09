@@ -114,7 +114,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
                     Try Again
                   </button>
                   <a
-                    href="mailto:tickets@zurichjs.com"
+                    href="mailto:hello@zurichjs.com"
                     className="px-6 py-3 bg-black/10 text-black font-bold rounded-full hover:bg-black/20 transition-colors"
                   >
                     Contact Support
@@ -123,10 +123,10 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
                 <p className="text-sm text-black/60 mt-6">
                   Need immediate assistance? Email us at{' '}
                   <a
-                    href="mailto:tickets@zurichjs.com"
+                    href="mailto:hello@zurichjs.com"
                     className="underline hover:text-black"
                   >
-                    tickets@zurichjs.com
+                    hello@zurichjs.com
                   </a>
                 </p>
               </div>

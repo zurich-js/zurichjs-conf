@@ -2,6 +2,7 @@
  * Ticket Order Page
  * Simplified multi-step ticket ordering flow with TanStack Query integration
  * Server-side prefetches pricing data to prevent UI shifts
+ * REQUIRES AUTHENTICATION: Users must be logged in to access the cart
  */
 
 import React, { useState, useCallback } from 'react';
@@ -11,11 +12,12 @@ import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
-import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, type TeamRequestData } from '@/components/molecules';
+import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, AttendeeForm, type TeamRequestData } from '@/components/molecules';
 import { Button } from '@/components/atoms';
 import { PageHeader, CheckoutForm } from '@/components/organisms';
 import { calculateOrderSummary } from '@/lib/cart';
 import type { CheckoutFormData, Cart as CartType } from '@/types/cart';
+import type { AttendeeInfo } from '@/lib/validations/checkout';
 import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -23,7 +25,7 @@ import { dehydrate } from '@tanstack/react-query';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { createQueryClient } from '@/lib/query-client';
 
-type CartStep = 'review' | 'upsells' | 'checkout';
+type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
 
 export default function CartPage() {
   const {
@@ -38,6 +40,7 @@ export default function CartPage() {
   // Pricing data is prefetched on server, so isLoading should be false immediately
   const { currentStage, isLoading: isPricingLoading } = useTicketPricing();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
+  const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
   const { toasts, showToast } = useToast();
 
@@ -122,15 +125,33 @@ export default function CartPage() {
     showToast(`Added ${totalValue} ${cart.currency || 'CHF'} workshop credit to your order!`, 'success');
   };
 
+  // Check if we need attendee collection (more than 1 ticket total)
+  const needsAttendeeInfo = cart.totalItems > 1;
+
+  const handleAttendeesSubmit = (attendeeData: AttendeeInfo[]) => {
+    setAttendees(attendeeData);
+    // After collecting attendees, go to upsells or checkout
+    if (showWorkshopUpsells) {
+      setCurrentStep('upsells');
+    } else {
+      setCurrentStep('checkout');
+    }
+  };
+
   const handleCheckoutSubmit = (data: CheckoutFormData) => {
     createCheckout({
       cart,
-      customerInfo: data,
+      customerInfo: {
+        ...data,
+        attendees, // Include attendee information for multi-ticket orders
+      },
     });
   };
 
   const handleContinueFromReview = () => {
-    if (showWorkshopUpsells) {
+    if (needsAttendeeInfo) {
+      setCurrentStep('attendees');
+    } else if (showWorkshopUpsells) {
       setCurrentStep('upsells');
     } else {
       setCurrentStep('checkout');
@@ -241,7 +262,31 @@ export default function CartPage() {
                 {/* Connector */}
                 <div className="w-8 sm:w-16 h-0.5 bg-gray-800"></div>
 
-                {/* Step 2 (conditional) */}
+                {/* Step 2 - Attendees (conditional) */}
+                {needsAttendeeInfo && (
+                  <>
+                    <button
+                      onClick={() => setCurrentStep('attendees')}
+                      className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                      aria-label="Go to Attendees step"
+                    >
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+                        currentStep === 'attendees' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
+                      }`}>
+                        2
+                      </div>
+                      <span className={`ml-2 sm:ml-3 text-xs sm:text-sm font-medium transition-colors ${
+                        currentStep === 'attendees' ? 'text-white' : 'text-gray-400'
+                      }`}>
+                        Attendees
+                      </span>
+                    </button>
+
+                    <div className="w-8 sm:w-16 h-0.5 bg-gray-800"></div>
+                  </>
+                )}
+
+                {/* Step 3 - Workshops (conditional) */}
                 {showWorkshopUpsells && (
                   <>
                     <button
@@ -252,7 +297,7 @@ export default function CartPage() {
                       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
                         currentStep === 'upsells' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
                       }`}>
-                        2
+                        {needsAttendeeInfo ? '3' : '2'}
                       </div>
                       <span className={`ml-2 sm:ml-3 text-xs sm:text-sm font-medium transition-colors ${
                         currentStep === 'upsells' ? 'text-white' : 'text-gray-400'
@@ -265,7 +310,7 @@ export default function CartPage() {
                   </>
                 )}
 
-                {/* Step 3 */}
+                {/* Step 4 - Payment */}
                 <button
                   onClick={() => setCurrentStep('checkout')}
                   className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
@@ -274,7 +319,7 @@ export default function CartPage() {
                   <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
                     currentStep === 'checkout' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
                   }`}>
-                    {showWorkshopUpsells ? '3' : '2'}
+                    {needsAttendeeInfo && showWorkshopUpsells ? '4' : needsAttendeeInfo || showWorkshopUpsells ? '3' : '2'}
                   </div>
                   <span className={`ml-2 sm:ml-3 text-xs sm:text-sm font-medium transition-colors ${
                     currentStep === 'checkout' ? 'text-white' : 'text-gray-400'
@@ -398,7 +443,27 @@ export default function CartPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Workshop Upsells */}
+            {/* Step 2: Attendees (conditional) */}
+            {currentStep === 'attendees' && needsAttendeeInfo && (
+              <motion.div
+                key="attendees"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="max-w-4xl mx-auto"
+              >
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Attendee Information</h1>
+                <AttendeeForm
+                  cartItems={cart.items}
+                  initialAttendees={attendees}
+                  onSubmit={handleAttendeesSubmit}
+                  onBack={() => setCurrentStep('review')}
+                />
+              </motion.div>
+            )}
+
+            {/* Step 3: Workshop Upsells */}
             {currentStep === 'upsells' && showWorkshopUpsells && (
               <motion.div
                 key="upsells"
@@ -455,13 +520,13 @@ export default function CartPage() {
                     Skip workshop credit
                   </button>
                   <button
-                    onClick={() => setCurrentStep('review')}
+                    onClick={() => setCurrentStep(needsAttendeeInfo ? 'attendees' : 'review')}
                     className="text-gray-500 hover:text-gray-300 transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
-                    Back to tickets
+                    Back to {needsAttendeeInfo ? 'attendees' : 'tickets'}
                   </button>
                 </div>
               </motion.div>
@@ -491,7 +556,23 @@ export default function CartPage() {
                         isSubmitting={isSubmitting}
                         totalAmount={orderSummary.total.toFixed(2)}
                         currency={orderSummary.currency}
-                        onBack={() => setCurrentStep(showWorkshopUpsells ? 'upsells' : 'review')}
+                        onBack={() => {
+                          if (showWorkshopUpsells) {
+                            setCurrentStep('upsells');
+                          } else if (needsAttendeeInfo) {
+                            setCurrentStep('attendees');
+                          } else {
+                            setCurrentStep('review');
+                          }
+                        }}
+                        defaultValues={attendees.length > 0 ? {
+                          // Pre-fill with primary attendee (first attendee)
+                          firstName: attendees[0].firstName,
+                          lastName: attendees[0].lastName,
+                          email: attendees[0].email,
+                          company: attendees[0].company || '',
+                          jobTitle: attendees[0].jobTitle || '',
+                        } : undefined}
                       />
                     </div>
 
@@ -570,7 +651,7 @@ export default function CartPage() {
 }
 
 /**
- * Server-side props - prefetch pricing data
+ * Server-side props - Prefetch pricing data
  * This eliminates the loading state and prevents UI shifts
  * The dehydrated state is automatically picked up by HydrationBoundary in _app.tsx
  */
@@ -578,7 +659,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
   const queryClient = createQueryClient();
 
   try {
-    // Prefetch pricing data on the server
     await queryClient.prefetchQuery(ticketPricingQueryOptions);
   } catch (error) {
     // If prefetch fails, log it but don't block page render

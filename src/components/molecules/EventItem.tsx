@@ -66,3 +66,4 @@ export const EventItem: React.FC<EventItemProps> = ({
   );
 };
 
+

@@ -54,12 +54,6 @@ export const TicketCard: React.FC<TicketCardProps> = ({
 
   return (
     <Section style={cardStyle}>
-      {/* Perforation nibbles */}
-      <div style={perforationContainerStyle}>
-        <div style={{ ...nibbleStyle, ...nibbleLeftStyle }} />
-        <div style={{ ...nibbleStyle, ...nibbleRightStyle }} />
-      </div>
-
       {/* Header: Logo + Event Info */}
       <Section style={headerStyle}>
         <Row>
@@ -109,17 +103,25 @@ export const TicketCard: React.FC<TicketCardProps> = ({
           <Column style={identityColumnStyle}>
             <InfoBlock label="Attendee" value={fullName} />
             <InfoBlock label="Email" value={email} />
-            <InfoBlock label="Ticket ID" value={<Text style={ticketIdStyle}>{ticketId}</Text>} />
+            <InfoBlock label="Ticket ID" value={ticketId} valueStyle={ticketIdStyle} />
           </Column>
           <Column style={{ width: spacing.xl }} />
           <Column style={qrColumnStyle}>
-            <Img
-              src={qrSrc}
-              alt={qrAlt}
-              width="144"
-              height="144"
-              style={qrStyle}
-            />
+            <table cellPadding="0" cellSpacing="0" border={0} style={{ width: '100%' }}>
+              <tbody>
+                <tr>
+                  <td align="right">
+                    <Img
+                      src={qrSrc}
+                      alt={qrAlt}
+                      width="144"
+                      height="144"
+                      style={qrStyle}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </Column>
         </Row>
       </Section>
@@ -157,36 +159,7 @@ const cardStyle: React.CSSProperties = {
   borderRadius: `${radii.card}px`,
   padding: `${layout.cardPadding}px`,
   boxShadow: shadows.card,
-  position: 'relative',
   marginBottom: spacing['3xl'],
-};
-
-// Perforation nibbles (circular cutouts on left and right)
-const perforationContainerStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '50%',
-  left: 0,
-  right: 0,
-  height: 0,
-  pointerEvents: 'none',
-  zIndex: 1,
-};
-
-const nibbleStyle: React.CSSProperties = {
-  position: 'absolute',
-  width: '16px',
-  height: '16px',
-  backgroundColor: colors.surface.canvas,
-  borderRadius: '50%',
-  top: '-8px',
-};
-
-const nibbleLeftStyle: React.CSSProperties = {
-  left: '-8px',
-};
-
-const nibbleRightStyle: React.CSSProperties = {
-  right: '-8px',
 };
 
 // Header styles
@@ -279,7 +252,7 @@ const qrStyle: React.CSSProperties = {
   display: 'block',
   width: '144px',
   height: '144px',
-  marginLeft: 'auto',
+  border: '0',
 };
 
 const ticketIdStyle: React.CSSProperties = {

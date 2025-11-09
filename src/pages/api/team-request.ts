@@ -58,7 +58,7 @@ export default async function handler(
 
     // Send confirmation email to customer
     const customerEmailResult = await resend.emails.send({
-      from: 'ZurichJS Conference <tickets@zurichjs.com>',
+      from: 'ZurichJS Conference <hello@zurichjs.com>',
       to: email,
       subject: 'Team Package Request Received - ZurichJS Conference 2026',
       html: `
@@ -149,7 +149,7 @@ export default async function handler(
 
     // Send notification email to sales team
     const salesEmailResult = await resend.emails.send({
-      from: 'ZurichJS Conference <tickets@zurichjs.com>',
+      from: 'ZurichJS Conference <hello@zurichjs.com>',
       to: 'hello@zurichjs.com',
       subject: `🎟️ New Team Package Request - ${company} (${quantity} tickets)`,
       html: `

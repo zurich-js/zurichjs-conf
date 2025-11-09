@@ -7,7 +7,10 @@
       "Bash(git commit:*)",
       "Bash(npm run typecheck:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(mkdir:*)",
+      "Bash(xargs cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -26,23 +26,18 @@ export const TICKET_FEATURES: Record<string, Feature[]> = {
   standard_student_unemployed: [
     { label: 'Everything in Standard', kind: 'included' as const },
     { label: 'Verification required', kind: 'extra' as const },
-    { label: '30% discount', kind: 'extra' as const },
   ],
   standard: [
-    { label: 'Full conference day (Sept 11)', kind: 'included' as const },
-    { label: 'Lunch & refreshments included', kind: 'included' as const },
-    { label: 'Community meetup (Sept 9)', kind: 'included' as const },
-    { label: 'Networking events access', kind: 'included' as const },
-    { label: 'Refundable ticket', kind: 'included' as const },
-    { label: 'Workshops (separate purchase)', kind: 'excluded' as const },
+    { label: 'Access to conference', kind: 'included' as const },
+    { label: 'Refreshments and lunch', kind: 'included' as const },
+    { label: 'Goodie bag', kind: 'included' as const },
+    { label: 'Access to community warm up event', kind: 'included' as const },
   ],
   vip: [
-    { label: 'Everything in Standard', kind: 'included' as const },
-    { label: 'Select activities with speakers', kind: 'extra' as const },
-    { label: 'More 1:1 time opportunities', kind: 'extra' as const },
-    { label: 'VIP after-party access', kind: 'extra' as const },
-    { label: 'Priority seating', kind: 'extra' as const },
-    { label: 'Limited to 15 tickets', kind: 'extra' as const },
+    { label: 'Everything in Standard', kind: 'extra' as const },
+    { label: 'Invite to speaker city tour', kind: 'extra' as const },
+    { label: 'Limited edition goodies', kind: 'extra' as const },
+    { label: '20% discount to all workshops', kind: 'extra' as const },
   ],
 };
 
@@ -60,19 +55,6 @@ export const TICKET_METADATA: Record<
   },
   standard: {
     blurb: 'The sweet spot. Everything you need, nothing you don\'t.',
-    footnote: (
-      <>
-        Refundable –{' '}
-        <a
-          href="/refund-policy"
-          className="underline hover:text-text-muted transition-colors"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          View refund policy ↗
-        </a>
-      </>
-    ),
     variant: 'standard',
   },
   vip: {
@@ -185,8 +167,8 @@ export const TICKET_FAQ: FAQItem[] = [
       <>
         Ticket transfers are evaluated on a case-by-case basis. If you need to transfer your
         ticket, email us at{' '}
-        <a href="mailto:tickets@zurichjs.com" className="underline">
-          tickets@zurichjs.com
+        <a href="mailto:hello@zurichjs.com" className="underline">
+          hello@zurichjs.com
         </a>{' '}
         with your order number and reason for transfer. We&apos;ll review your request and get
         back to you as soon as possible.
@@ -243,7 +225,7 @@ export const mapStripePlanToTicketPlan = (
             openVerificationModal(stripePlan.priceId);
           } else {
             // Fallback if modal is not available
-            alert('Student/Unemployed verification flow will open here. Please contact tickets@zurichjs.com with your student ID or unemployment proof.');
+            alert('Student/Unemployed verification flow will open here. Please contact hello@zurichjs.com with your student ID or unemployment proof.');
           }
         } else {
           // Add to cart and navigate to cart page
@@ -347,7 +329,7 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
       cta: {
         type: 'button' as const,
         onClick: () => {
-          alert('Student/Unemployed verification flow will open here. Please contact tickets@zurichjs.com with your student ID or unemployment proof.');
+          alert('Student/Unemployed verification flow will open here. Please contact hello@zurichjs.com with your student ID or unemployment proof.');
         },
         label: 'Verify & Get Ticket',
       },
@@ -362,6 +344,7 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
       variant: 'standard' as const,
       features: TICKET_FEATURES.standard,
       badge: 'Most Popular',
+      footnote: TICKET_METADATA.standard.footnote,
       cta: {
         type: 'button' as const,
         onClick: () => console.log('Standard ticket clicked'),
@@ -377,6 +360,7 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
       currency: 'CHF',
       variant: 'vip' as const,
       features: TICKET_FEATURES.vip,
+      footnote: TICKET_METADATA.vip.footnote,
       cta: {
         type: 'button' as const,
         onClick: () => console.log('VIP ticket clicked'),

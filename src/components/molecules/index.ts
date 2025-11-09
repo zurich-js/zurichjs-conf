@@ -20,6 +20,7 @@ export { VoucherInput } from './VoucherInput';
 export { WorkshopVoucherCard } from './WorkshopVoucherCard';
 export { ToastContainer } from './Toast';
 export { TeamRequestModal } from './TeamRequestModal';
+export { AttendeeForm } from './AttendeeForm';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -43,3 +44,4 @@ export type { VoucherInputProps } from './VoucherInput';
 export type { WorkshopVoucherCardProps } from './WorkshopVoucherCard';
 export type { ToastContainerProps } from './Toast';
 export type { TeamRequestModalProps, TeamRequestData } from './TeamRequestModal';
+export type { AttendeeFormProps } from './AttendeeForm';

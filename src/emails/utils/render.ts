@@ -10,7 +10,7 @@ import type { ReactElement } from 'react';
  * Render React Email component to HTML string
  * Optimized for production use with inlined styles
  */
-export async function renderEmail(component: ReactElement): Promise<string> {
+export function renderEmail(component: ReactElement): Promise<string> {
   return render(component, {
     pretty: process.env.NODE_ENV === 'development',
   });
@@ -20,7 +20,7 @@ export async function renderEmail(component: ReactElement): Promise<string> {
  * Render React Email component to plain text
  * Useful for email clients that don't support HTML
  */
-export async function renderEmailText(component: ReactElement): Promise<string> {
+export function renderEmailText(component: ReactElement): Promise<string> {
   return render(component, {
     plainText: true,
   });

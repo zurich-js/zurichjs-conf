@@ -40,6 +40,47 @@ const getStripeClient = (): Stripe => {
 };
 
 /**
+ * Convert country name to ISO 3166-1 alpha-2 country code
+ * Stripe requires 2-letter country codes (e.g., 'CH' for Switzerland)
+ */
+const getCountryCode = (countryName: string): string => {
+  // Common country mappings
+  const countryMap: Record<string, string> = {
+    'switzerland': 'CH',
+    'germany': 'DE',
+    'austria': 'AT',
+    'france': 'FR',
+    'italy': 'IT',
+    'united kingdom': 'GB',
+    'uk': 'GB',
+    'united states': 'US',
+    'usa': 'US',
+    'netherlands': 'NL',
+    'belgium': 'BE',
+    'spain': 'ES',
+    'portugal': 'PT',
+    'sweden': 'SE',
+    'norway': 'NO',
+    'denmark': 'DK',
+    'poland': 'PL',
+    'czech republic': 'CZ',
+    'ireland': 'IE',
+    'luxembourg': 'LU',
+    'liechtenstein': 'LI',
+  };
+
+  const normalized = countryName.toLowerCase().trim();
+
+  // If it's already a 2-letter code, return it uppercase
+  if (countryName.length === 2) {
+    return countryName.toUpperCase();
+  }
+
+  // Look up in mapping
+  return countryMap[normalized] || 'CH'; // Default to Switzerland if not found
+};
+
+/**
  * API Handler
  */
 export default async function handler(
@@ -94,15 +135,21 @@ export default async function handler(
     const metadata: Record<string, string> = {
       firstName: customerInfo.firstName,
       lastName: customerInfo.lastName,
+      email: customerInfo.email,
       phone: customerInfo.phone || '',
       company: customerInfo.company || '',
+      jobTitle: customerInfo.jobTitle || '',
       addressLine1: customerInfo.addressLine1,
       addressLine2: customerInfo.addressLine2 || '',
       city: customerInfo.city,
+      state: customerInfo.state || '',
       postalCode: customerInfo.postalCode,
       country: customerInfo.country,
       subscribeNewsletter: customerInfo.subscribeNewsletter ? 'true' : 'false',
       voucherCode: cart.voucherCode || '',
+      // Store attendee information as JSON string for multi-ticket purchases
+      attendees: customerInfo.attendees ? JSON.stringify(customerInfo.attendees) : '',
+      totalTickets: cart.totalItems.toString(),
     };
 
     // Determine success and cancel URLs
@@ -115,34 +162,81 @@ export default async function handler(
       ? [{ promotion_code: cart.promotionCodeId }]
       : undefined;
 
+    // Get or create Stripe Customer to avoid duplicates
+    // First check if customer exists with this email
+    console.log('[CreateCheckout] Searching for existing customer with email:', customerInfo.email);
+    const existingCustomers = await stripe.customers.list({
+      email: customerInfo.email,
+      limit: 1,
+    });
+
+    let customer: Stripe.Customer;
+
+    if (existingCustomers.data.length > 0) {
+      // Reuse existing customer
+      customer = existingCustomers.data[0];
+      console.log('[CreateCheckout] ✅ Found existing customer:', customer.id);
+
+      // Update customer with latest information
+      customer = await stripe.customers.update(customer.id, {
+        name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+        phone: customerInfo.phone || undefined,
+        address: {
+          line1: customerInfo.addressLine1,
+          line2: customerInfo.addressLine2 || undefined,
+          city: customerInfo.city,
+          state: customerInfo.state || undefined,
+          postal_code: customerInfo.postalCode,
+          country: getCountryCode(customerInfo.country),
+        },
+        metadata: {
+          company: customerInfo.company || '',
+          jobTitle: customerInfo.jobTitle || '',
+        },
+      });
+      console.log('[CreateCheckout] Updated existing customer info');
+    } else {
+      // Create new customer if none exists
+      console.log('[CreateCheckout] No existing customer found, creating new one...');
+      customer = await stripe.customers.create({
+        name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+        email: customerInfo.email,
+        phone: customerInfo.phone || undefined,
+        address: {
+          line1: customerInfo.addressLine1,
+          line2: customerInfo.addressLine2 || undefined,
+          city: customerInfo.city,
+          state: customerInfo.state || undefined,
+          postal_code: customerInfo.postalCode,
+          country: getCountryCode(customerInfo.country),
+        },
+        metadata: {
+          company: customerInfo.company || '',
+          jobTitle: customerInfo.jobTitle || '',
+        },
+      });
+      console.log('[CreateCheckout] ✅ Created new customer:', customer.id);
+    }
+
     // Create Stripe Checkout Session
     // Note: Prices already include 8.1% Swiss VAT - no additional tax calculation
+    // By passing a customer with address, Stripe will prefill the billing address in checkout
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
-      customer_email: customerInfo.email,
-      metadata,
+      customer: customer.id, // Use the customer we just created with prefilled address
+      customer_update: {
+        // Allow Stripe to update customer with any changes made in checkout
+        address: 'auto',
+        name: 'auto',
+      },
+      metadata, // Stored for retrieval in webhook
       success_url: successUrl,
       cancel_url: cancelUrl,
-      billing_address_collection: 'required',
-      shipping_address_collection: {
-        allowed_countries: ['CH', 'DE', 'AT', 'FR', 'IT', 'LI'], // Switzerland and neighboring countries
-      },
+      billing_address_collection: 'auto', // Use customer's saved address, prefilling the checkout form
       phone_number_collection: {
         enabled: true,
-      },
-      tax_id_collection: {
-        enabled: true, // Allow business customers to provide VAT ID for records
-      },
-      // Invoice creation for business customers
-      invoice_creation: {
-        enabled: true,
-        invoice_data: {
-          description: 'ZurichJS Conference 2026 Tickets (VAT included)',
-          metadata,
-          footer: 'Thank you for attending ZurichJS Conference 2026! All prices include 8.1% Swiss VAT.',
-        },
       },
       // Apply pre-validated promotion code if available
       ...(discounts && { discounts }),

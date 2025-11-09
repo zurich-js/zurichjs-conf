@@ -26,6 +26,18 @@ export const EmailLayout: React.FC<EmailLayoutProps> = ({
                 background-color: ${colors.surface.canvasDark} !important;
               }
             }
+
+            @media only screen and (max-width: 600px) {
+              .action-cell {
+                display: block !important;
+                width: 100% !important;
+                padding-bottom: 12px !important;
+              }
+              .action-table td {
+                display: block !important;
+                width: 100% !important;
+              }
+            }
           `}
         </style>
       </Head>
@@ -48,7 +60,6 @@ const bodyStyle: React.CSSProperties = {
 
 const canvasStyle: React.CSSProperties = {
   backgroundColor: colors.surface.canvas,
-  minHeight: '100vh',
   padding: '32px 16px',
 };
 

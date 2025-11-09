@@ -23,8 +23,8 @@ export const TicketPurchaseEmail: React.FC<TicketPurchaseEmailProps> = ({
   orderUrl,
   calendarUrl,
   venueMapUrl,
-  refundPolicyUrl = 'https://conf.zurichjs.com/refund-policy',
-  supportEmail = 'tickets@zurichjs.com',
+  refundPolicyUrl = 'https://zurichjs-conf.vercel.app/refund-policy',
+  supportEmail = 'hello@zurichjs.com',
   notes,
   ...ticketCardProps
 }) => {
@@ -50,23 +50,33 @@ export const TicketPurchaseEmail: React.FC<TicketPurchaseEmailProps> = ({
       {/* Quick Actions */}
       <Section style={actionsSectionStyle}>
         <Text style={sectionTitleStyle}>Quick Actions</Text>
-        <div style={actionsGridStyle}>
-          {calendarUrl && (
-            <Button href={calendarUrl} style={actionButtonStyle}>
-              📅 Add to Calendar
-            </Button>
-          )}
-          {venueMapUrl && (
-            <Button href={venueMapUrl} style={actionButtonStyle}>
-              📍 View Map
-            </Button>
-          )}
-          {orderUrl && (
-            <Button href={orderUrl} style={actionButtonPrimaryStyle}>
-              Manage Order
-            </Button>
-          )}
-        </div>
+        <table className="action-table" style={actionsTableStyle}>
+          <tbody>
+            <tr>
+              {calendarUrl && (
+                <td className="action-cell" style={actionCellStyle}>
+                  <Button href={calendarUrl} style={actionButtonStyle}>
+                    📅 Add to Calendar
+                  </Button>
+                </td>
+              )}
+              {venueMapUrl && (
+                <td className="action-cell" style={actionCellStyle}>
+                  <Button href={venueMapUrl} style={actionButtonStyle}>
+                    📍 View Map
+                  </Button>
+                </td>
+              )}
+              {orderUrl && (
+                <td className="action-cell" style={actionCellStyle}>
+                  <Button href={orderUrl} style={actionButtonPrimaryStyle}>
+                    Manage Order
+                  </Button>
+                </td>
+              )}
+            </tr>
+          </tbody>
+        </table>
       </Section>
 
       {/* Conditional Notes */}
@@ -140,15 +150,22 @@ const sectionTitleStyle: React.CSSProperties = {
   margin: `0 0 ${spacing.base}px 0`,
 };
 
-const actionsGridStyle: React.CSSProperties = {
-  display: 'grid',
-  gap: `${spacing.md}px`,
-  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+const actionsTableStyle: React.CSSProperties = {
+  width: '100%',
+  borderCollapse: 'separate',
+  borderSpacing: `${spacing.md}px 0`,
+  margin: 0,
+};
+
+const actionCellStyle: React.CSSProperties = {
+  verticalAlign: 'top',
+  width: '33.33%',
+  padding: 0,
 };
 
 const actionButtonStyle: React.CSSProperties = {
-  display: 'inline-block',
-  padding: `${spacing.md}px ${spacing.lg}px`,
+  display: 'block',
+  padding: `${spacing.md}px ${spacing.base}px`,
   backgroundColor: colors.surface.card,
   border: `1px solid ${colors.border.default}`,
   borderRadius: `${radii.button}px`,
@@ -159,6 +176,7 @@ const actionButtonStyle: React.CSSProperties = {
   textAlign: 'center',
   cursor: 'pointer',
   width: '100%',
+  boxSizing: 'border-box',
 };
 
 const actionButtonPrimaryStyle: React.CSSProperties = {

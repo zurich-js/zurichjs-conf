@@ -43,3 +43,10 @@ export {
   generateMapsUrl,
   isValidEmail,
 } from './utils/render';
+
+// Example Data (for development and testing)
+export {
+  sampleTicketData,
+  sampleVIPTicketData,
+  sampleStudentTicketData,
+} from './examples/ticket-purchase.example';

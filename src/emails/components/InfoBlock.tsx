@@ -10,13 +10,16 @@ import { colors, typography, spacing } from '../design/tokens';
 export interface InfoBlockProps {
   label: string;
   value: string | React.ReactNode;
+  valueStyle?: React.CSSProperties;
 }
 
-export const InfoBlock: React.FC<InfoBlockProps> = ({ label, value }) => {
+export const InfoBlock: React.FC<InfoBlockProps> = ({ label, value, valueStyle: customValueStyle }) => {
+  const finalValueStyle = customValueStyle ? { ...valueStyle, ...customValueStyle } : valueStyle;
+
   return (
     <div style={containerStyle}>
       <Text style={labelStyle}>{label}</Text>
-      <Text style={valueStyle}>{value}</Text>
+      <Text style={finalValueStyle}>{value}</Text>
     </div>
   );
 };

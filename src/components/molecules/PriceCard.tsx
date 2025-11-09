@@ -160,7 +160,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
 
       {/* Features */}
       <div className="mb-8 flex-1">
-        <FeatureList features={features} />
+        <FeatureList features={features} variant={variant} />
       </div>
 
       {/* CTA */}

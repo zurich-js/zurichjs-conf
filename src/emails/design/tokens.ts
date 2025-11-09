@@ -19,7 +19,7 @@ export const colors = {
   },
   surface: {
     card: '#FFFFFF',        // White card background
-    canvas: '#FFF7CF',      // Light yellow canvas (ticket background)
+    canvas: '#FFFFFF',      // White canvas (email background)
     canvasDark: '#0A0A0A',  // Dark mode canvas (from website)
   },
   border: {
