@@ -105,7 +105,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({
             <InfoBlock label="Email" value={email} />
             <InfoBlock label="Ticket ID" value={ticketId} valueStyle={ticketIdStyle} />
           </Column>
-          <Column style={{ width: spacing.xl }} />
+          <Column style={{ width: spacing['3xl'] }} />
           <Column style={qrColumnStyle}>
             <table cellPadding="0" cellSpacing="0" border={0} style={{ width: '100%' }}>
               <tbody>
@@ -246,6 +246,7 @@ const qrColumnStyle: React.CSSProperties = {
   verticalAlign: 'top',
   width: '144px',
   textAlign: 'right',
+  paddingLeft: spacing.base,
 };
 
 const qrStyle: React.CSSProperties = {
