@@ -364,29 +364,30 @@ function TicketsTab() {
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
+        {/* Desktop Table View - Hidden on mobile */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   ID
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   Name
                 </th>
-                <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
+                <th className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   Email
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   Type
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   Amount
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   Status
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   Actions
                 </th>
               </tr>
@@ -394,25 +395,25 @@ function TicketsTab() {
             <tbody className="bg-white divide-y divide-gray-200">
               {tickets.map((ticket) => (
                 <tr key={ticket.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-black font-medium">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-mono text-black font-medium">
                     {ticket.id.substring(0, 8)}...
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-black font-medium">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-black font-medium">
                     {ticket.first_name} {ticket.last_name}
                   </td>
-                  <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="hidden lg:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {ticket.email}
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     <div className="flex flex-col space-y-1">
                       <span className="font-medium text-black capitalize">{ticket.ticket_category}</span>
                       <span className="text-xs text-gray-500 capitalize">{ticket.ticket_stage.replace('_', ' ')}</span>
                     </div>
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-black font-semibold">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-black font-semibold">
                     {(ticket.amount_paid / 100).toFixed(2)} {ticket.currency}
                   </td>
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${
                         ticket.status === 'confirmed'
@@ -427,7 +428,7 @@ function TicketsTab() {
                       {ticket.status}
                     </span>
                   </td>
-                  <td className="px-3 sm:px-6 py-4 text-sm">
+                  <td className="px-4 lg:px-6 py-4 text-sm">
                     <div className="flex flex-wrap gap-2">
                       <a
                         href={`https://dashboard.stripe.com/payments/${ticket.stripe_payment_intent_id}`}
@@ -439,7 +440,7 @@ function TicketsTab() {
                         <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
-                        Stripe
+                        <span className="hidden xl:inline">Stripe</span>
                       </a>
                       <button
                         onClick={() => {
@@ -452,7 +453,7 @@ function TicketsTab() {
                         <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        Resend
+                        <span className="hidden xl:inline">Resend</span>
                       </button>
                       <button
                         onClick={() => {
@@ -465,7 +466,7 @@ function TicketsTab() {
                         <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                         </svg>
-                        Reassign
+                        <span className="hidden xl:inline">Reassign</span>
                       </button>
                       {ticket.status === 'confirmed' && (
                         <>
@@ -480,7 +481,7 @@ function TicketsTab() {
                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                             </svg>
-                            Refund
+                            <span className="hidden xl:inline">Refund</span>
                           </button>
                           <button
                             onClick={() => {
@@ -493,7 +494,7 @@ function TicketsTab() {
                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            Cancel
+                            <span className="hidden xl:inline">Cancel</span>
                           </button>
                         </>
                       )}
@@ -503,6 +504,118 @@ function TicketsTab() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View - Shown on mobile only */}
+        <div className="md:hidden space-y-4 p-4">
+          {tickets.map((ticket) => (
+            <div key={ticket.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              {/* Card Header */}
+              <div className="bg-gradient-to-r from-gray-50 to-white px-4 py-3 border-b border-gray-200">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-black truncate">
+                      {ticket.first_name} {ticket.last_name}
+                    </h3>
+                    <p className="text-xs text-gray-600 truncate mt-0.5">{ticket.email}</p>
+                  </div>
+                  <span
+                    className={`ml-2 px-2.5 py-1 text-xs font-bold rounded-full whitespace-nowrap ${
+                      ticket.status === 'confirmed'
+                        ? 'bg-green-100 text-green-800'
+                        : ticket.status === 'refunded'
+                        ? 'bg-red-100 text-red-800'
+                        : ticket.status === 'cancelled'
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}
+                  >
+                    {ticket.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card Body */}
+              <div className="px-4 py-3 space-y-2.5">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Ticket ID</p>
+                    <p className="text-black font-mono text-xs">{ticket.id.substring(0, 12)}...</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Amount</p>
+                    <p className="text-black font-bold">
+                      {(ticket.amount_paid / 100).toFixed(2)} {ticket.currency}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Ticket Type</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-black capitalize">{ticket.ticket_category}</span>
+                    <span className="text-xs text-gray-500">•</span>
+                    <span className="text-xs text-gray-600 capitalize">{ticket.ticket_stage.replace('_', ' ')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Actions */}
+              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={`https://dashboard.stripe.com/payments/${ticket.stripe_payment_intent_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center px-3 py-2.5 border border-blue-300 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 active:bg-blue-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Stripe
+                  </a>
+                  <button
+                    onClick={() => {
+                      setSelectedTicket(ticket);
+                      setShowResendConfirm(true);
+                    }}
+                    className="flex items-center justify-center px-3 py-2.5 border border-indigo-300 rounded-lg text-xs font-medium text-indigo-700 bg-indigo-50 active:bg-indigo-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Resend
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedTicket(ticket);
+                      setShowReassignModal(true);
+                    }}
+                    className="flex items-center justify-center px-3 py-2.5 border border-purple-300 rounded-lg text-xs font-medium text-purple-700 bg-purple-50 active:bg-purple-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    Reassign
+                  </button>
+                  {ticket.status === 'confirmed' && (
+                    <button
+                      onClick={() => {
+                        setSelectedTicket(ticket);
+                        setShowRefundConfirm(true);
+                      }}
+                      className="flex items-center justify-center px-3 py-2.5 border border-red-300 rounded-lg text-xs font-medium text-red-700 bg-red-50 active:bg-red-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                      </svg>
+                      Refund
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

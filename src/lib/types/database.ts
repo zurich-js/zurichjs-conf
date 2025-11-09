@@ -73,6 +73,9 @@ export interface Ticket {
   checked_in: boolean | null; // Whether the ticket has been checked in at the venue
   checked_in_at: string | null; // When the ticket was checked in
   qr_code_url: string | null; // Public URL to stored QR code image
+  transferred_from_name: string | null; // Name of original owner if ticket was transferred
+  transferred_from_email: string | null; // Email of original owner if ticket was transferred
+  transferred_at: string | null; // When the ticket was transferred
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

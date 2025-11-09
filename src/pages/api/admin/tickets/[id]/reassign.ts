@@ -7,6 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
+import { generateOrderUrl } from '@/lib/auth/orderToken';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -33,13 +34,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const supabase = createServiceRoleClient();
 
-    // Update ticket with new owner details
+    // First, get the current ticket to save original owner info
+    const { data: currentTicket, error: fetchError } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !currentTicket) {
+      console.error('Error fetching ticket:', fetchError);
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    // Update ticket with new owner details and save transfer info
     const { data: ticket, error: updateError } = await supabase
       .from('tickets')
       .update({
         email,
         first_name: firstName,
         last_name: lastName,
+        transferred_from_name: `${currentTicket.first_name} ${currentTicket.last_name}`,
+        transferred_from_email: currentTicket.email,
+        transferred_at: new Date().toISOString(),
       })
       .eq('id', id)
       .select()
@@ -50,8 +66,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to reassign ticket' });
     }
 
-    // Send email to new owner
+    // Send email to new owner with transfer information
     const customerName = `${firstName} ${lastName}`;
+    const transferFromName = `${currentTicket.first_name} ${currentTicket.last_name}`;
+    const transferNotes = `This ticket has been transferred to you by ${transferFromName} (${currentTicket.email}).`;
+    const orderUrl = generateOrderUrl(ticket.id);
+
     const emailResult = await sendTicketConfirmationEmail({
       to: email,
       customerName,
@@ -64,7 +84,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       conferenceName: 'ZurichJS Conference 2026',
       ticketId: ticket.id,
       qrCodeUrl: ticket.qr_code_url || undefined,
-      notes: 'This ticket has been transferred to you.',
+      orderUrl,
+      notes: transferNotes,
     });
 
     if (!emailResult.success) {

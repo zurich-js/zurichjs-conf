@@ -58,6 +58,7 @@ export interface TicketConfirmationData {
   ticketId?: string; // Optional - if different from orderNumber
   qrCodeUrl?: string; // QR code URL from Supabase object storage (required for emails to work)
   pdfAttachment?: Buffer; // Optional PDF ticket attachment
+  orderUrl?: string; // Optional custom order URL (uses secure token if provided)
 }
 
 /**
@@ -116,7 +117,7 @@ export async function sendTicketConfirmationEmail(
       // Wallet buttons disabled - not ready for integration
       // appleWalletUrl: `${getBaseUrl()}/api/wallet/apple/${ticketIdToUse}`,
       // googleWalletUrl: `${getBaseUrl()}/api/wallet/google/${ticketIdToUse}`,
-      orderUrl: `${getBaseUrl()}/orders/${data.orderNumber}`,
+      orderUrl: data.orderUrl, // Use provided secure token URL
       calendarUrl: `${getBaseUrl()}/api/calendar/${ticketIdToUse}`,
       venueMapUrl: getZurichJSVenueMapUrl(),
       refundPolicyUrl: `${getBaseUrl()}/refund-policy`,

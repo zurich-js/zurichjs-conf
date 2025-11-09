@@ -10,6 +10,7 @@ import type { TicketType, TicketCategory, TicketStage } from '@/lib/types/databa
 import { sendTicketConfirmationEmailsQueued, type TicketConfirmationData } from '@/lib/email';
 import { getCurrentStage, type PriceStage } from '@/config/pricing-stages';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
+import { generateOrderUrl } from '@/lib/auth/orderToken';
 
 /**
  * Map PriceStage from pricing-stages.ts to TicketStage for database
@@ -451,6 +452,9 @@ export async function handleCheckoutSessionCompleted(
         // Non-fatal, continue with email without PDF
       }
 
+      // Generate order management URL
+      const orderUrl = generateOrderUrl(ticketId);
+
       // Add to email queue
       emailsToSend.push({
         to: result.attendee.email,
@@ -464,6 +468,7 @@ export async function handleCheckoutSessionCompleted(
         conferenceName: 'ZurichJS Conference 2026',
         ticketId,
         qrCodeUrl: result.ticket.qr_code_url || undefined,
+        orderUrl,
         notes,
         pdfAttachment: pdfBuffer,
       });
