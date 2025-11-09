@@ -4,6 +4,7 @@
  */
 
 import crypto from 'crypto';
+import { getBaseUrl } from '@/lib/url';
 
 /**
  * Generate a secure token for accessing an order
@@ -70,6 +71,6 @@ export function verifyOrderToken(token: string): string | null {
  */
 export function generateOrderUrl(ticketId: string, baseUrl?: string): string {
   const token = generateOrderToken(ticketId);
-  const base = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
+  const base = baseUrl || getBaseUrl();
   return `${base}/manage-order?token=${token}`;
 }
