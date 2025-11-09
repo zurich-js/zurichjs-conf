@@ -3,6 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  // Configure image domains for Supabase storage
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
+
   // Explicitly expose environment variables to the client
   // While NEXT_PUBLIC_* prefix works automatically, this ensures proper inlining
   env: {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
 import { PageHeader } from '@/components/organisms';
@@ -9,17 +9,19 @@ import type { OrderDetailsResponse } from '@/pages/api/orders/[token]';
 import Image from 'next/image';
 
 /**
- * Manage Order Page
- * Allows attendees to view and manage their order using a secure token from email
+ * Manage Ticket Page
+ * Allows attendees to view and manage their ticket using a secure token from email
  */
 const ManageOrderPage: React.FC = () => {
   const router = useRouter();
   const { token } = router.query;
+  const [showReassignModal, setShowReassignModal] = React.useState(false);
+  const [reassignData, setReassignData] = React.useState({ email: '', firstName: '', lastName: '' });
 
   // Wait for router to be ready and extract token
   const orderToken = router.isReady && typeof token === 'string' ? token : '';
 
-  // Fetch order details using the token
+  // Fetch ticket details using the token
   const { data: orderDetails, isLoading, error } = useQuery<OrderDetailsResponse>({
     queryKey: ['order', orderToken],
     queryFn: async () => {
@@ -28,11 +30,43 @@ const ManageOrderPage: React.FC = () => {
       const response = await fetch(`/api/orders/${orderToken}`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch order details');
+        throw new Error(errorData.error || 'Failed to fetch ticket details');
       }
       return response.json();
     },
     enabled: !!orderToken,
+  });
+
+  // Mutation for ticket reassignment
+  const reassignMutation = useMutation({
+    mutationFn: async (data: { email: string; firstName: string; lastName: string }) => {
+      if (!orderDetails?.ticket.id) throw new Error('No ticket ID');
+
+      const response = await fetch(`/api/tickets/${orderDetails.ticket.id}/reassign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: orderToken,
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reassign ticket');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      alert('✓ Ticket reassigned successfully! The new owner will receive an email with their ticket details. You will no longer have access to this ticket.');
+      setShowReassignModal(false);
+      setReassignData({ email: '', firstName: '', lastName: '' });
+      // Redirect to homepage since user no longer owns this ticket
+      setTimeout(() => router.push('/'), 2000);
+    },
   });
 
   // Format currency amount
@@ -87,8 +121,8 @@ const ManageOrderPage: React.FC = () => {
 
   return (
     <Layout
-      title="Manage Your Order | ZurichJS Conference 2026"
-      description="View and manage your ZurichJS Conference 2026 ticket order."
+      title="Manage Your Ticket | ZurichJS Conference 2026"
+      description="View and manage your ZurichJS Conference 2026 ticket."
     >
       <PageHeader />
       <div className="min-h-screen bg-brand-primary py-16 md:py-24 px-6">
@@ -97,7 +131,7 @@ const ManageOrderPage: React.FC = () => {
           {(!router.isReady || isLoading) && (
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-              <p className="mt-4 text-black">Loading your order...</p>
+              <p className="mt-4 text-black">Loading your ticket...</p>
             </div>
           )}
 
@@ -110,7 +144,7 @@ const ManageOrderPage: React.FC = () => {
                   Access Denied
                 </Kicker>
                 <Heading level="h1" variant="light" className="mb-6 text-black">
-                  Unable to Access Order
+                  Unable to Access Ticket
                 </Heading>
                 <div className="max-w-xl mx-auto">
                   <p className="text-lg text-black/80 mb-4">
@@ -118,14 +152,14 @@ const ManageOrderPage: React.FC = () => {
                       ? 'No access token found. Please use the link from your confirmation email.'
                       : error instanceof Error
                         ? error.message
-                        : 'An unexpected error occurred while loading your order.'}
+                        : 'An unexpected error occurred while loading your ticket.'}
                   </p>
                   <div className="bg-black rounded-2xl p-6 text-left mb-8">
                     <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
                     <ul className="text-gray-200 space-y-2">
                       <li className="flex items-start gap-2">
                         <span className="text-brand-primary mt-1">•</span>
-                        <span>Check your email for the order management link</span>
+                        <span>Check your email for the ticket management link</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-brand-primary mt-1">•</span>
@@ -183,25 +217,39 @@ const ManageOrderPage: React.FC = () => {
               )}
 
               {/* QR Code Card */}
-              {orderDetails.ticket.qr_code_url && (
-                <div className="bg-black rounded-2xl p-8 mb-8">
-                  <h2 className="text-2xl font-bold text-brand-primary mb-6 text-center">Your Entry Pass</h2>
-                  <div className="flex flex-col items-center">
-                    <div className="bg-white p-6 rounded-xl mb-4">
-                      <Image
-                        src={orderDetails.ticket.qr_code_url}
-                        alt="Ticket QR Code"
-                        width={300}
-                        height={300}
-                        className="w-64 h-64"
-                      />
+              <div className="bg-black rounded-2xl p-8 mb-8">
+                <h2 className="text-2xl font-bold text-brand-primary mb-6 text-center">Your Entry Pass</h2>
+                <div className="flex flex-col items-center">
+                  {orderDetails.ticket.qr_code_url ? (
+                    <>
+                      <div className="bg-white p-6 rounded-xl mb-4">
+                        <Image
+                          src={orderDetails.ticket.qr_code_url}
+                          alt="Ticket QR Code"
+                          width={300}
+                          height={300}
+                          className="w-64 h-64"
+                        />
+                      </div>
+                      <p className="text-gray-400 text-sm text-center max-w-md">
+                        Present this QR code at the venue entrance for check-in. You can also show this from your email or download the PDF ticket.
+                      </p>
+                    </>
+                  ) : (
+                    <div className="text-center">
+                      <div className="bg-gray-800 p-8 rounded-xl mb-4">
+                        <p className="text-gray-400 text-lg mb-2">QR Code Generating...</p>
+                        <p className="text-gray-500 text-sm">
+                          Your QR code is being generated. Please check your email for the full ticket with QR code, or refresh this page in a few moments.
+                        </p>
+                      </div>
+                      <p className="text-gray-400 text-sm max-w-md">
+                        If you continue to see this message, please contact us at hello@zurichjs.com
+                      </p>
                     </div>
-                    <p className="text-gray-400 text-sm text-center max-w-md">
-                      Present this QR code at the venue entrance for check-in. You can also show this from your email or download the PDF ticket.
-                    </p>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Ticket Details Card */}
               <div className="bg-black rounded-2xl p-8 mb-8">
@@ -305,6 +353,20 @@ const ManageOrderPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Reassign Ticket */}
+              <div className="bg-black rounded-2xl p-8 mb-8">
+                <h2 className="text-2xl font-bold text-brand-primary mb-6">Transfer Ticket</h2>
+                <p className="text-gray-300 mb-6">
+                  Can&apos;t attend? You can transfer your ticket to someone else. Once transferred, you will no longer have access to this ticket and the action cannot be undone.
+                </p>
+                <button
+                  onClick={() => setShowReassignModal(true)}
+                  className="flex items-center justify-center gap-2 bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors w-full md:w-auto"
+                >
+                  ↗️ Transfer to Someone Else
+                </button>
+              </div>
+
               {/* Important Information */}
               <div className="bg-black rounded-2xl p-8 mb-8">
                 <h2 className="text-xl font-bold text-brand-primary mb-4">Important Information</h2>
@@ -329,7 +391,7 @@ const ManageOrderPage: React.FC = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-brand-primary mt-1">•</span>
-                    <span>Contact us at hello@zurichjs.com for any questions or to request a transfer</span>
+                    <span>Contact us at hello@zurichjs.com for any questions</span>
                   </li>
                 </ul>
               </div>
@@ -355,6 +417,95 @@ const ManageOrderPage: React.FC = () => {
                   </a>
                 </p>
               </div>
+
+              {/* Reassignment Modal */}
+              {showReassignModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+                  <div className="bg-brand-primary rounded-2xl max-w-md w-full p-8">
+                    <h2 className="text-2xl font-bold text-black mb-4">Transfer Ticket</h2>
+                    <p className="text-black/80 mb-6">
+                      Enter the details of the person you want to transfer this ticket to. They will receive an email with their new ticket. This action cannot be undone.
+                    </p>
+
+                    {reassignMutation.error && (
+                      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+                        {reassignMutation.error instanceof Error ? reassignMutation.error.message : 'Failed to transfer ticket'}
+                      </div>
+                    )}
+
+                    <div className="space-y-4 mb-6">
+                      <div>
+                        <label className="block text-black font-semibold mb-2">
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={reassignData.firstName}
+                          onChange={(e) => setReassignData({ ...reassignData, firstName: e.target.value })}
+                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none"
+                          placeholder="John"
+                          disabled={reassignMutation.isPending}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-black font-semibold mb-2">
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={reassignData.lastName}
+                          onChange={(e) => setReassignData({ ...reassignData, lastName: e.target.value })}
+                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none"
+                          placeholder="Doe"
+                          disabled={reassignMutation.isPending}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-black font-semibold mb-2">
+                          Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          value={reassignData.email}
+                          onChange={(e) => setReassignData({ ...reassignData, email: e.target.value })}
+                          className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none"
+                          placeholder="john.doe@example.com"
+                          disabled={reassignMutation.isPending}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
+                      <p className="text-yellow-800 text-sm font-semibold">
+                        ⚠️ Warning: This action cannot be undone. You will lose access to this ticket immediately.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setShowReassignModal(false);
+                          setReassignData({ email: '', firstName: '', lastName: '' });
+                          reassignMutation.reset();
+                        }}
+                        disabled={reassignMutation.isPending}
+                        className="flex-1 bg-gray-200 text-black font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => reassignMutation.mutate(reassignData)}
+                        disabled={reassignMutation.isPending || !reassignData.email || !reassignData.firstName || !reassignData.lastName}
+                        className="flex-1 bg-black text-brand-primary font-semibold py-3 px-6 rounded-lg hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {reassignMutation.isPending ? 'Transferring...' : 'Confirm Transfer'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
