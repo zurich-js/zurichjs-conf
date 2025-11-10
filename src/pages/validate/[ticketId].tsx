@@ -35,12 +35,33 @@ export default function ValidateTicketPage() {
   const router = useRouter();
   const { ticketId } = router.query;
   const [loading, setLoading] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkInData, setCheckInData] = useState<CheckInResponse | null>(null);
 
+  // Check admin authentication
   useEffect(() => {
-    if (!ticketId || typeof ticketId !== 'string') return;
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/admin/verify');
+        if (!response.ok) {
+          // Not authenticated, redirect to homepage
+          router.push('/');
+          return;
+        }
+        setCheckingAuth(false);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        router.push('/');
+      }
+    }
+
+    checkAuth();
+  }, [router]);
+
+  useEffect(() => {
+    if (!ticketId || typeof ticketId !== 'string' || checkingAuth) return;
 
     async function validateTicket() {
       setLoading(true);
@@ -60,7 +81,7 @@ export default function ValidateTicketPage() {
     }
 
     validateTicket();
-  }, [ticketId]);
+  }, [ticketId, checkingAuth]);
 
   const handleCheckIn = async () => {
     if (!ticketId || typeof ticketId !== 'string') return;
@@ -70,6 +91,13 @@ export default function ValidateTicketPage() {
       const response = await fetch(`/api/validate/${ticketId}`, {
         method: 'POST',
       });
+
+      // Check for unauthorized response
+      if (response.status === 401) {
+        router.push('/');
+        return;
+      }
+
       const data: CheckInResponse = await response.json();
       setCheckInData(data);
 
@@ -105,13 +133,19 @@ export default function ValidateTicketPage() {
           <h1 style={titleStyle}>ZurichJS Conference 2026</h1>
           <h2 style={subtitleStyle}>Ticket Validation</h2>
 
-          {loading && (
+          {checkingAuth && (
+            <div style={statusBoxStyle}>
+              <p style={statusTextStyle}>Verifying admin access...</p>
+            </div>
+          )}
+
+          {!checkingAuth && loading && (
             <div style={statusBoxStyle}>
               <p style={statusTextStyle}>Validating ticket...</p>
             </div>
           )}
 
-          {!loading && validationData && (
+          {!checkingAuth && !loading && validationData && (
             <>
               {validationData.valid && validationData.ticket ? (
                 <>
