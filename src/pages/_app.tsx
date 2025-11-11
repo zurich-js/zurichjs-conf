@@ -25,9 +25,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <NuqsAdapter>
           <CartProvider>
             <MotionProvider>
-              <main className={figtree.variable}>
+              <div className={figtree.variable}>
                 <Component {...pageProps} />
-              </main>
+              </div>
             </MotionProvider>
           </CartProvider>
         </NuqsAdapter>

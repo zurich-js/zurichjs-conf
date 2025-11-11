@@ -1,7 +1,7 @@
 /**
  * Design tokens for ZurichJS Conference site
  * Centralized values for colors, spacing, typography, and more
- * 
+ *
  * @see src/styles/globals.css - Tailwind theme configuration
  */
 
@@ -10,17 +10,46 @@
  * Organized by semantic meaning and use case
  */
 export const colors = {
-  // Primary Brand - Yellow accent
+  // Brand Colors - Core palette
   brand: {
-    primary: '#F1E271',     // Main yellow accent
-    primaryDark: '#E8D54E', // Darker variant
-    primaryLight: '#F5EC9A', // Lighter variant
-    primaryMuted: '#F1E271', // Muted for backgrounds
+    // Yellow (Primary)
+    yellow: {
+      main: '#F1E271',
+      secondary: '#EDC936',
+    },
+    
+    // Blue
+    blue: '#268BCC',
+    
+    // Orange
+    orange: '#EA561D',
+    
+    // Green
+    green: '#31A853',
+    
+    // Black & White
+    black: '#000000',
+    white: 'white',
+    
+    // Gray Scale (from design palette)
+    gray: {
+      darkest: '#19191B',
+      dark: '#242528',
+      medium: '#7C7F89',
+      light: '#A9AAB1',
+      lightest: '#EDEDEF',
+    },
+    
+    // Legacy support
+    primary: '#F1E271',
+    primaryDark: '#E8D54E',
+    primaryLight: '#F5EC9A',
+    primaryMuted: '#F1E271',
   },
 
-  // Secondary Brand - Blue
+  // Secondary Brand - Blue (legacy)
   blue: {
-    primary: '#258BCC',
+    primary: '#268BCC',
     primaryDark: '#1E6FA3',
     primaryLight: '#3BA0E0',
   },
@@ -142,7 +171,7 @@ export const typography = {
     '7xl': '4.5rem',    // 72px
     '8xl': '6rem',      // 96px
   },
-  
+
   fontWeight: {
     normal: 400,
     medium: 500,
@@ -150,7 +179,7 @@ export const typography = {
     bold: 700,
     extrabold: 800,
   },
-  
+
   lineHeight: {
     none: 1,
     tight: 1.1,
@@ -159,7 +188,7 @@ export const typography = {
     relaxed: 1.75,
     loose: 2,
   },
-  
+
   letterSpacing: {
     tighter: '-0.05em',
     tight: '-0.025em',
@@ -213,7 +242,7 @@ export const animation = {
     slow: '350ms',
     slower: '500ms',
   },
-  
+
   easing: {
     linear: 'linear',
     ease: 'ease',

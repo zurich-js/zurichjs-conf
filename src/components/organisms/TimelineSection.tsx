@@ -2,7 +2,6 @@ import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { Kicker } from '@/components/atoms/Kicker';
 import { Heading } from '@/components/atoms/Heading';
 import { Subtext } from '@/components/atoms/Subtext';
-import { Separator } from '@/components/atoms/Separator';
 import { TimelineDot, TimelineIconType } from '@/components/molecules/TimelineDot';
 import { TimelineCard, TimelineTag } from '@/components/molecules/TimelineCard';
 import { useMotion } from '@/contexts/MotionContext';
@@ -68,7 +67,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const upcomingEntry = sortedEntries.find(entry => {
       const entryDate = new Date(entry.dateISO);
       entryDate.setHours(0, 0, 0, 0);
@@ -136,138 +135,126 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   }, []);
 
   return (
-    <section
-      className="relative bg-surface-section text-slate-200 overflow-hidden"
-      aria-label="Timeline"
-    >
-      {/* Top Diagonal Separator */}
-      <Separator variant="diagonal-top" fill="#19191B" />
-
-      {/* Main Content */}
-      <div className="relative max-w-7xl mx-auto px-6 py-16 lg:py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
-          {/* Left Column - Text Content */}
-          <div className="lg:col-span-4">
-            <div className="lg:sticky lg:top-24">
-              {shouldAnimate ? (
-                <>
-                  <Kicker animate delay={0.1}>
-                    {kicker}
-                  </Kicker>
-                  <Heading
-                    level="h2"
-                    className="text-4xl md:text-5xl lg:text-6xl mt-4 mb-6"
-                    animate
-                    delay={0.2}
-                  >
-                    {title}
-                  </Heading>
-                  {copy && (
-                    <Subtext animate delay={0.3}>
-                      {copy}
-                    </Subtext>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Kicker>{kicker}</Kicker>
-                  <Heading
-                    level="h2"
-                    className="text-4xl md:text-5xl lg:text-6xl mt-4 mb-6"
-                  >
-                    {title}
-                  </Heading>
-                  {copy && <Subtext>{copy}</Subtext>}
-                </>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16" aria-label="Timeline">
+      {/* Left Column - Text Content */}
+      <div className="lg:col-span-4">
+        <div className="lg:sticky lg:top-24">
+          {shouldAnimate ? (
+            <>
+              <Kicker animate delay={0.1}>
+                {kicker}
+              </Kicker>
+              <Heading
+                level="h2"
+                className="text-4xl md:text-5xl lg:text-6xl mt-4 mb-6"
+                animate
+                delay={0.2}
+              >
+                {title}
+              </Heading>
+              {copy && (
+                <Subtext animate delay={0.3}>
+                  {copy}
+                </Subtext>
               )}
-            </div>
-          </div>
-
-          {/* Right Column - Timeline */}
-          <div className="lg:col-span-8 relative">
-            {/* Timeline Rail */}
-            <div
-              className="absolute left-[122px] sm:left-[146px] top-0 bottom-0 w-px bg-[rgba(255,255,255,0.08)]"
-              aria-hidden="true"
-            />
-
-            {/* Timeline Items */}
-            <div className="space-y-6">
-              {groupedEntries.map((group) => {
-                const allEntriesIndex = sortedEntries.findIndex(e => e.id === group.entries[0].id);
-
-                return (
-                  <div key={`group-${group.date}`} className="relative">
-                    {group.entries.map((entry, entryIndex) => {
-                      const isCurrent = entry.id === currentEntryId;
-                      const index = allEntriesIndex + entryIndex;
-                      const delay = shouldAnimate ? 0.4 + index * 0.06 : 0;
-                      const isFirstInGroup = entryIndex === 0;
-
-                      return (
-                        <div
-                          key={entry.id}
-                          className={`relative flex items-start gap-4 sm:gap-6 ${entryIndex > 0 ? 'mt-6' : ''}`}
-                        >
-                          {/* Date Column - Only show for first entry in group */}
-                          <div className="flex-shrink-0 w-20 sm:w-24 pt-1">
-                            {isFirstInGroup && (
-                              <time
-                                dateTime={entry.dateISO}
-                                className="text-sm text-slate-400 font-medium"
-                              >
-                                {formatDate(entry.dateISO)}
-                              </time>
-                            )}
-                          </div>
-
-                          {/* Timeline Dot */}
-                          <div className="flex-shrink-0 relative z-10">
-                            <TimelineDot
-                              icon={entry.icon}
-                              emphasis={entry.emphasis}
-                              isCurrent={isCurrent}
-                              delay={delay}
-                            />
-                          </div>
-
-                          {/* Timeline Card */}
-                          <div className="flex-1 min-w-0">
-                            <TimelineCard
-                              ref={(el) => {
-                                if (el) {
-                                  cardRefs.current.set(entry.id, el);
-                                } else {
-                                  cardRefs.current.delete(entry.id);
-                                }
-                              }}
-                              title={entry.title}
-                              dateISO={entry.dateISO}
-                              dateFormatted={formatDate(entry.dateISO)}
-                              body={entry.body}
-                              tags={entry.tags}
-                              href={entry.href}
-                              emphasis={entry.emphasis}
-                              isCurrent={isCurrent}
-                              delay={delay}
-                              showDate={false}
-                              onClick={() => handleCardClick(entry.href)}
-                              onKeyDown={(e) => handleKeyDown(e, index, entry)}
-                              tabIndex={0}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+            </>
+          ) : (
+            <>
+              <Kicker>{kicker}</Kicker>
+              <Heading
+                level="h2"
+                className="text-4xl md:text-5xl lg:text-6xl mt-4 mb-6"
+              >
+                {title}
+              </Heading>
+              {copy && <Subtext>{copy}</Subtext>}
+            </>
+          )}
         </div>
       </div>
 
-    </section>
+      {/* Right Column - Timeline */}
+      <div className="lg:col-span-8 relative">
+        {/* Timeline Rail */}
+        <div
+          className="absolute left-[122px] sm:left-[146px] top-0 bottom-0 w-px bg-[rgba(255,255,255,0.08)]"
+          aria-hidden="true"
+        />
+
+        {/* Timeline Items */}
+        <div className="space-y-6">
+          {groupedEntries.map((group) => {
+            const allEntriesIndex = sortedEntries.findIndex(e => e.id === group.entries[0].id);
+
+            return (
+              <div key={`group-${group.date}`} className="relative">
+                {group.entries.map((entry, entryIndex) => {
+                  const isCurrent = entry.id === currentEntryId;
+                  const index = allEntriesIndex + entryIndex;
+                  const delay = shouldAnimate ? 0.4 + index * 0.06 : 0;
+                  const isFirstInGroup = entryIndex === 0;
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`relative flex items-start gap-4 sm:gap-6 ${entryIndex > 0 ? 'mt-6' : ''}`}
+                    >
+                      {/* Date Column - Only show for first entry in group */}
+                      <div className="flex-shrink-0 w-20 sm:w-24 pt-1">
+                        {isFirstInGroup && (
+                          <time
+                            dateTime={entry.dateISO}
+                            className="text-sm text-slate-400 font-medium"
+                          >
+                            {formatDate(entry.dateISO)}
+                          </time>
+                        )}
+                      </div>
+
+                      {/* Timeline Dot */}
+                      <div className="flex-shrink-0 relative z-10">
+                        <TimelineDot
+                          icon={entry.icon}
+                          emphasis={entry.emphasis}
+                          isCurrent={isCurrent}
+                          delay={delay}
+                        />
+                      </div>
+
+                      {/* Timeline Card */}
+                      <div className="flex-1 min-w-0">
+                        <TimelineCard
+                          ref={(el) => {
+                            if (el) {
+                              cardRefs.current.set(entry.id, el);
+                            } else {
+                              cardRefs.current.delete(entry.id);
+                            }
+                          }}
+                          title={entry.title}
+                          dateISO={entry.dateISO}
+                          dateFormatted={formatDate(entry.dateISO)}
+                          body={entry.body}
+                          tags={entry.tags}
+                          href={entry.href}
+                          emphasis={entry.emphasis}
+                          isCurrent={isCurrent}
+                          delay={delay}
+                          showDate={false}
+                          onClick={() => handleCardClick(entry.href)}
+                          onKeyDown={(e) => handleKeyDown(e, index, entry)}
+                          tabIndex={0}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+  </div>
   );
 };
 

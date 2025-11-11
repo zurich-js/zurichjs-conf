@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { PriceCard, CTA } from '@/components/molecules/PriceCard';
 import { DiscountCountdown } from '@/components/molecules/DiscountCountdown';
 import { Feature } from '@/components/molecules/FeatureList';
-import { FAQAccordion, FAQItem } from '@/components/molecules/FAQAccordion';
 
 export interface Plan {
   /**
@@ -86,10 +85,6 @@ export interface TicketsSectionProps {
     href: string;
   };
   /**
-   * Optional FAQ items to display below pricing
-   */
-  faq?: FAQItem[];
-  /**
    * Additional CSS classes
    */
   className?: string;
@@ -108,7 +103,6 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
   discountEndsAt,
   countdownTitle,
   helpLine,
-  faq,
   className = '',
 }) => {
   // Reorder plans: Standard (left), VIP (center), Student/Unemployed (right)
@@ -141,7 +135,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
               {kicker}
             </p>
           )}
-          
+
           <h1
             id="tickets-heading"
             className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6"
@@ -227,24 +221,6 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
             />
           )}
         </div>
-
-        {/* FAQ Section */}
-        {faq && faq.length > 0 && (
-          <motion.div
-            className="mt-16 md:mt-20 max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <h2 className="text-2xl md:text-3xl font-bold text-black text-center mb-8 md:mb-12">
-              Frequently Asked Questions
-            </h2>
-            <div className="bg-black rounded-[28px] p-6 md:p-8 shadow-card">
-              <FAQAccordion items={faq} />
-            </div>
-          </motion.div>
-        )}
       </div>
     </section>
   );

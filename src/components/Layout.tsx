@@ -1,7 +1,5 @@
 import React from 'react';
 import Head from 'next/head';
-import { SiteFooter } from '@/components/organisms/SiteFooter';
-import { footerData } from '@/data';
 
 export interface LayoutProps {
   children: React.ReactNode;
@@ -11,9 +9,8 @@ export interface LayoutProps {
 
 /**
  * Layout template component
- * Wraps page content with common elements including footer
+ * Wraps page content with common elements
  * Follows atomic design pattern as a template composing organisms
- * Footer data is consistent across all pages
  */
 export const Layout: React.FC<LayoutProps> = ({
   children,
@@ -32,8 +29,6 @@ export const Layout: React.FC<LayoutProps> = ({
       <main className="min-h-screen">
         {children}
       </main>
-      
-      <SiteFooter {...footerData} />
     </>
   );
 };

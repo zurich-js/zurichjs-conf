@@ -16,8 +16,24 @@
   --color-brand-dark: #E8D54E;
   --color-brand-light: #F5EC9A;
 
+  /* Brand Palette - Full spectrum */
+  --color-brand-yellow-main: #F1E271;
+  --color-brand-yellow-secondary: #EDC936;
+  --color-brand-blue: #268BCC;
+  --color-brand-orange: #EA561D;
+  --color-brand-green: #31A853;
+  --color-brand-black: #000000;
+  --color-brand-white: #FFFFFF;
+
+  /* Brand Gray Scale */
+  --color-brand-gray-darkest: #19191B;
+  --color-brand-gray-dark: #242528;
+  --color-brand-gray-medium: #7C7F89;
+  --color-brand-gray-light: #A9AAB1;
+  --color-brand-gray-lightest: #EDEDEF;
+
   /* Blue Brand */
-  --color-blue-primary: #258BCC;
+  --color-blue-primary: #268BCC;
   --color-blue-dark: #1E6FA3;
   --color-blue-light: #3BA0E0;
 
@@ -93,12 +109,12 @@
 :root {
   --background: #0A0A0A;
   --foreground: #E5E7EB;
-  
+
   /* Animation durations */
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 350ms;
-  
+
   /* Easing functions */
   --easing-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   --easing-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -151,13 +167,13 @@ body {
   .bg-gradient-conic {
     background-image: conic-gradient(from 180deg, var(--tw-gradient-stops));
   }
-  
+
   /* Scrollbar Utilities */
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari, Opera */
   }
@@ -293,6 +309,49 @@ body {
 
   .interactive-lift:active {
     transform: translateY(0);
+  }
+
+  /* Shaped Section - Angled clip-path utilities */
+  .shaped-section {
+    --shaped-section-angle: clamp(50px, 5vw, 150px);
+    --shaped-section-complement: calc(100% - var(--shaped-section-angle));
+  }
+
+  /* Default (both angles) variants */
+  .shaped-section:not(.shaped-section-drop-top):not(.shaped-section-drop-bottom).shaped-section-widen {
+    clip-path: polygon(
+            0 var(--shaped-section-angle),
+            100% 0,
+            100% 100%,
+            0 var(--shaped-section-complement)
+    );
+  }
+
+  .shaped-section:not(.shaped-section-drop-top):not(.shaped-section-drop-bottom).shaped-section-tighten {
+    clip-path: polygon(
+            0 0,
+            100% var(--shaped-section-angle),
+            100% var(--shaped-section-complement),
+            0 100%
+    );
+  }
+
+  /* Drop top variants - flatten the top edge */
+  .shaped-section-drop-top.shaped-section-widen {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 var(--shaped-section-complement));
+  }
+
+  .shaped-section-drop-top.shaped-section-tighten {
+    clip-path: polygon(0 0, 100% 0, 100% var(--shaped-section-complement), 0 100%);
+  }
+
+  /* Drop bottom variants - flatten the bottom edge */
+  .shaped-section-drop-bottom.shaped-section-widen {
+    clip-path: polygon(0 var(--shaped-section-angle), 100% 0, 100% 100%, 0 100%);
+  }
+
+  .shaped-section-drop-bottom.shaped-section-tighten {
+    clip-path: polygon(0 0, 100% var(--shaped-section-angle), 100% 100%, 0 100%);
   }
 }
 

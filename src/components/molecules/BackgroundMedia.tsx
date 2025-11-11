@@ -31,7 +31,7 @@ export const BackgroundMedia: React.FC<BackgroundMediaProps> = ({
   };
 
   return (
-    <div className={`absolute inset-0 overflow-hidden ${className}`}>
+    <div className={`absolute inset-0 overflow-hidden w-full h-full ${className}`}>
       {/* Media Layer - Top Half Only */}
       <div className="absolute top-0 left-0 right-0 h-1/2">
         {videoSrc && !videoError ? (

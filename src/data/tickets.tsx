@@ -293,7 +293,6 @@ export const createTicketDataFromStripe = (
       href: '/contact',
     },
     plans,
-    faq: TICKET_FAQ,
   };
 };
 
@@ -314,7 +313,6 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
     text: 'Questions about tickets?',
     href: '/contact',
   },
-  faq: TICKET_FAQ,
   plans: [
     {
       id: 'standard_student_unemployed',

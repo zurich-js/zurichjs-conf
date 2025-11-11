@@ -4,7 +4,6 @@ import { useMotion } from '@/contexts/MotionContext';
 import { LinkGroup, NavLink } from '@/components/molecules/LinkGroup';
 import { NewsletterForm } from '@/components/molecules/NewsletterForm';
 import { SocialIcon, SocialIconType } from '@/components/atoms/SocialIcon';
-import { Separator } from '@/components/atoms/Separator';
 
 export interface SiteFooterProps {
   about: {
@@ -73,11 +72,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
   };
 
   return (
-    <footer className="relative bg-[#0B0F14]" role="contentinfo">
-      {/* Diagonal separator */}
-      <Separator variant="diagonal-subtle" />
-
-      <div className="max-w-7xl mx-auto px-6 py-16 lg:py-24 relative">
+      <footer className="relative" role="contentinfo">
         {shouldAnimate ? (
           <motion.div
             variants={container}
@@ -139,7 +134,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                   <p className="text-[#A8B1BD] text-sm">{newsletter.copy}</p>
                 )}
               </div>
-              
+
               <NewsletterForm
                 ctaLabel={newsletter.ctaLabel}
                 onSubscribe={newsletter.onSubscribe}
@@ -218,7 +213,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                   <p className="text-[#A8B1BD] text-sm">{newsletter.copy}</p>
                 )}
               </div>
-              
+
               <NewsletterForm
                 ctaLabel={newsletter.ctaLabel}
                 onSubscribe={newsletter.onSubscribe}
@@ -247,14 +242,12 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
         {/* Bottom stripe with copyright */}
         {about.orgNote && (
           <div className="mt-12 pt-8">
-            <Separator variant="horizontal" color="default" />
             <p className="text-text-disabled text-xs text-center mt-8">
               {about.orgNote}
             </p>
           </div>
         )}
-      </div>
-    </footer>
+      </footer>
   );
 };
 

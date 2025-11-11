@@ -8,6 +8,9 @@ export { TimelineSection } from './TimelineSection';
 export { SiteFooter } from './SiteFooter';
 export { PageHeader } from './PageHeader';
 export { CheckoutForm } from './CheckoutForm';
+export { ShapedSection } from './ShapedSection';
+export { SectionContainer } from './SectionContainer';
+export { FAQSection } from './FAQSection';
 
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';
@@ -19,4 +22,5 @@ export type { TimelineSectionProps, TimelineEntry } from './TimelineSection';
 export type { SiteFooterProps } from './SiteFooter';
 export type { PageHeaderProps } from './PageHeader';
 export type { CheckoutFormProps } from './CheckoutForm';
+export type { ShapedSectionProps } from './ShapedSection';
 
