@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState, KeyboardEvent } from 'react';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { colors } from '@/styles/tokens';
 
 export interface DayTab {
   id: string;
@@ -177,13 +176,6 @@ export const DayTabs: React.FC<DayTabsProps> = ({
     <div
       ref={containerRef}
       className={`w-full pt-8 ${className}`}
-      style={
-        {
-          '--brandAccent': colors.brand.primary,
-          '--brandPrimary': colors.brand.primary,
-          '--textMuted': colors.text.muted,
-        } as React.CSSProperties
-      }
     >
       {/* Wrapper with bottom border (grey line) */}
       <div className="relative isolate w-full">
@@ -253,7 +245,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
 
         {/* Animated yellow indicator bar */}
         <div
-          className="absolute z-30 bottom-0 h-[4px] rounded-full bg-[color:var(--brandAccent)] pointer-events-none"
+          className="absolute z-30 bottom-0 h-[4px] rounded-full bg-brand-primary pointer-events-none"
           style={{
             left: `${indicatorStyle.left}px`,
             width: `${indicatorStyle.width}px`,

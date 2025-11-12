@@ -365,7 +365,7 @@ export default function CartPage() {
                 <div className="grid lg:grid-cols-3 gap-8">
                   {/* Ticket Items */}
                   <div className="lg:col-span-2 space-y-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Your Tickets</h1>
+                    <h1 className="text-xl font-bold text-white mb-6">Your Tickets</h1>
 
                     <div className="space-y-4">
                       <AnimatePresence mode="popLayout">
@@ -472,7 +472,7 @@ export default function CartPage() {
                 transition={{ duration: 0.3 }}
                 className="max-w-4xl mx-auto"
               >
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Attendee Information</h1>
+                <h1 className="text-xl font-bold text-white mb-6">Attendee Information</h1>
                 <AttendeeForm
                   cartItems={ticketItems}
                   initialAttendees={attendees}
@@ -564,7 +564,7 @@ export default function CartPage() {
                   <div className="grid lg:grid-cols-3 gap-8">
                     {/* Payment Form */}
                     <div className="lg:col-span-2">
-                      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Complete Registration</h1>
+                      <h1 className="text-xl font-bold text-white mb-6">Complete Registration</h1>
                       {error && (
                         <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
                           <p className="text-red-400 text-sm">{error.message}</p>

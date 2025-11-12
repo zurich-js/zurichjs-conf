@@ -109,7 +109,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Request Sent!</h3>
+              <h3 className="text-xl font-bold text-white mb-2">Request Sent!</h3>
               <p className="text-gray-400">
                 We&apos;ll be in touch shortly with your custom team package quote.
               </p>
@@ -121,7 +121,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
               <div className="bg-brand-primary/10 border-b border-brand-primary/30 px-6 py-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-1">Team Package Request</h2>
+                    <h2 className="text-xl font-bold text-white mb-1">Team Package Request</h2>
                     <p className="text-sm text-gray-400">
                       Get exclusive team discounts and simplified invoicing
                     </p>

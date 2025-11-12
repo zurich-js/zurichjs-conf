@@ -134,7 +134,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
       <div className="border-t border-gray-800 pt-3">
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-white">Total</span>
-          <span className="text-2xl font-bold text-brand-primary">
+          <span className="text-xl font-bold text-brand-primary">
             {formatPrice(summary.total, summary.currency)}
           </span>
         </div>

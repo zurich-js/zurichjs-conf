@@ -94,7 +94,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
                   />
                 </svg>
               </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-black mb-4">
+              <h3 className="text-xl font-bold text-black mb-4">
                 Unable to Load Ticket Prices
               </h3>
               <p className="text-lg text-black/80 mb-6">

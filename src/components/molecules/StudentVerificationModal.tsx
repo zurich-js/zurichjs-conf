@@ -220,7 +220,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
             {/* Header */}
             <div className="mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              <h2 className="text-xl font-bold text-white mb-2">
                 Verify Your Status
               </h2>
               <p className="text-gray-400">

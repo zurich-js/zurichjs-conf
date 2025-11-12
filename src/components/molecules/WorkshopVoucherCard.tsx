@@ -70,11 +70,11 @@ export const WorkshopVoucherCard: React.FC<WorkshopVoucherCardProps> = ({
         {/* Value Proposition */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-2xl font-black text-white">
+            <span className="text-xl font-black text-white">
               {amount} {currency}
             </span>
             <span className="text-sm text-gray-400">→</span>
-            <span className="text-2xl font-black text-brand-primary">
+            <span className="text-xl font-black text-brand-primary">
               {totalValue} {currency}
             </span>
           </div>

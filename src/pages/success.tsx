@@ -122,7 +122,7 @@ const SuccessPage: React.FC = () => {
 
               {/* Order Details Card */}
               <div className="bg-black rounded-2xl p-8 mb-8">
-                <h2 className="text-2xl font-bold text-brand-primary mb-6">Order Details</h2>
+                <h2 className="text-xl font-bold text-brand-primary mb-6">Order Details</h2>
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
@@ -160,7 +160,7 @@ const SuccessPage: React.FC = () => {
 
               {/* Next Steps */}
               <div className="bg-black rounded-2xl p-8 mb-8">
-                <h2 className="text-2xl font-bold text-brand-primary mb-6">What&apos;s Next?</h2>
+                <h2 className="text-xl font-bold text-brand-primary mb-6">What&apos;s Next?</h2>
 
                 <div className="space-y-4 text-gray-200">
                   <div className="flex gap-4">
