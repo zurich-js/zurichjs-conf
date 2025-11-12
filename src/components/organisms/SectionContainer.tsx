@@ -2,5 +2,5 @@
 import React from 'react';
 
 export const SectionContainer: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className = '' }) => {
-    return <div className={`container mx-auto px-4 sm:px-12 ${className}`}>{children}</div>;
+    return <div className={`container mx-auto px-4 xs:px-6 sm:px-8 md:px-10 lg:px-12 ${className}`}>{children}</div>;
 }

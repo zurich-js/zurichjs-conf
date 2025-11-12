@@ -76,7 +76,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
     <motion.article
       id={`plan-${id}`}
       className={`
-        flex-1 flex flex-col
+        flex-1 flex flex-col max-w-screen-xs
         relative bg-brand-black rounded-4xl p-6
         hover:bg-gradient-to-br hover:from-brand-black hover:to-brand-gray-medium/50
         transition-colors duration-500 ease-in-out
@@ -101,14 +101,14 @@ export const PriceCard: React.FC<PriceCardProps> = ({
         {/* Header */}
         <Heading
           level="h3"
-          className="text-xl font-bold text-brand-white flex gap-2.5 items-center"
+          className="text-xl lg:text-lg xl:text-xl font-bold text-brand-white flex gap-2.5 items-center"
         >
           {isVip && (
             <CrownIcon size={32} />
           )}
           {title}
         </Heading>
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4 sm:gap-8">
           {blurb && (
             <p className="text-sm text-brand-gray-lightest leading-relaxed">
               {blurb}

@@ -71,7 +71,7 @@ export const Price: React.FC<PriceProps> = ({
         aria-label={`Original price: ${formattedPrice}`}
       >
         <small className="font-light text-lg leading-none">{currency}</small>
-        <span className="text-2xl leading-none">{formattedPrice}</span>
+        <span className="text-2xl leading-none font-bold">{formattedPrice}</span>
         {suffix && (
           <small className="text-sm leading-none">
             {suffix}

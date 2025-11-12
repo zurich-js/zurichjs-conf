@@ -139,7 +139,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
       subtitle={subtitle}
       variant="dark"
     >
-      <div className="lg:col-span-8 relative">
+      <div className="lg:col-span-8 relative pt-8">
         {/* Timeline Items */}
         <div className="space-y-6">
           {groupedEntries.map((group) => {

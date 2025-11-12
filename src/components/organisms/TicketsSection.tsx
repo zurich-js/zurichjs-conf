@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { PriceCard, CTA } from '@/components/molecules/PriceCard';
 import { Feature } from '@/components/molecules/FeatureList';
-import {SectionContainer} from "@/components/organisms/SectionContainer";
 import {Heading, Kicker} from "@/components/atoms";
 import {Countdown} from "@/components/molecules";
 
@@ -108,7 +107,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
   }, [plans]);
 
   return (
-    <SectionContainer
+    <div
       className={`relative flex flex-col gap-10 ${className}`}
       aria-labelledby="tickets-heading"
     >
@@ -141,7 +140,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
 
       <div className="flex flex-col gap-12">
         {/* Price cards - Custom layout with VIP centered and larger */}
-        <div className="flex flex-col lg:flex-row gap-12 items-center justify-center max-w-7xl mx-auto">
+        <div className="flex flex-col items-stretch lg:flex-row gap-8 xl:gap-12 lg:items-center justify-center max-w-7xl mx-auto">
           {reorderedPlans.map((plan, index) => (
               <PriceCard
                 key={plan.id}
@@ -202,7 +201,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
           </div>
         )}
       </div>
-    </SectionContainer>
+    </div>
   );
 };
 
