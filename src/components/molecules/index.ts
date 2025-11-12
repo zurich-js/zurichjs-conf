@@ -46,4 +46,4 @@ export type { WorkshopVoucherCardProps } from './WorkshopVoucherCard';
 export type { ToastContainerProps } from './Toast';
 export type { TeamRequestModalProps, TeamRequestData } from './TeamRequestModal';
 export type { AttendeeFormProps } from './AttendeeForm';
-export type { PhotoSwiperProps, PhotoSlide, PhotoLayout } from './PhotoSwiper';
+export type { PhotoSwiperProps, PhotoSlide, PhotoLayout, NestedContainer } from './PhotoSwiper';

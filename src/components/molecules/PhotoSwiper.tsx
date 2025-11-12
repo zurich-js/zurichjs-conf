@@ -4,7 +4,18 @@ import { useMotion } from '@/contexts/MotionContext';
 import Image from 'next/image';
 
 // Type definitions matching the data structure
-// Max 2 levels of nesting: 1-2 images OR 1 image + 1 container with 2 images
+// Max 2 levels of nesting: 1-2 images OR 1 image + 1 container with 1-2 images
+
+// Nested container can hold single or double-horizontal layout
+export type NestedContainer =
+  | { type: 'single'; height: '1/3' | '2/3'; image: string; alt: string }
+  | {
+      type: 'double-horizontal';
+      height: '1/3' | '2/3';
+      left: { image: string; alt: string; width: '1/3' | '2/3' };
+      right: { image: string; alt: string; width: '1/3' | '2/3' };
+    };
+
 export type PhotoLayout =
   | { type: 'single'; image: string; alt: string }
   | {
@@ -20,11 +31,7 @@ export type PhotoLayout =
   | {
       type: 'nested';
       main: { image: string; alt: string; height: '1/3' | '2/3' };
-      nested: {
-        height: '1/3' | '2/3';
-        left: { image: string; alt: string; width: '1/3' | '2/3' };
-        right: { image: string; alt: string; width: '1/3' | '2/3' };
-      };
+      nested: NestedContainer;
     };
 
 export interface PhotoSlide {
@@ -91,7 +98,7 @@ export const PhotoSwiper: React.FC<PhotoSwiperProps> = ({ photos, className = ''
         {photos.slice(0, 3).map((photo) => (
           <div
             key={photo.id}
-            className="flex-shrink-0 w-[400px] h-[500px] bg-brand-black rounded-2xl animate-pulse"
+            className="flex-shrink-0 w-[400px] h-[500px] bg-brand-black animate-pulse"
             aria-hidden="true"
           />
         ))}
@@ -140,7 +147,7 @@ export const PhotoSwiper: React.FC<PhotoSwiperProps> = ({ photos, className = ''
         return (
           <SwiperSlide key={photo.id} className="!w-auto !h-auto">
             <motion.div
-              className="w-[400px] h-[500px] rounded-2xl overflow-hidden"
+              className="w-[400px] h-[500px] overflow-hidden"
               initial={shouldAnimate ? { opacity: 0, scale: 0.95 } : false}
               animate={shouldAnimate ? { opacity: 1, scale: 1 } : {}}
               transition={{
@@ -208,7 +215,7 @@ export const SinglePhotoLayout: React.FC<SinglePhotoLayoutProps> = ({ image, alt
         src={image}
         alt={alt}
         fill
-        className="object-cover"
+        className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
         sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
       />
     </div>
@@ -235,7 +242,7 @@ bottom,
           src={top.image}
           alt={top.alt}
           fill
-          className="object-cover"
+          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
         />
       </div>
@@ -244,7 +251,7 @@ bottom,
           src={bottom.image}
           alt={bottom.alt}
           fill
-          className="object-cover"
+          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
         />
       </div>
@@ -272,7 +279,7 @@ right,
           src={left.image}
           alt={left.alt}
           fill
-          className="object-cover"
+          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
         />
       </div>
@@ -281,7 +288,7 @@ right,
           src={right.image}
           alt={right.alt}
           fill
-          className="object-cover"
+          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
         />
       </div>
@@ -291,17 +298,20 @@ right,
 
 export interface NestedPhotoLayoutProps {
   main: { image: string; alt: string; height: '1/3' | '2/3' };
-  nested: {
-    height: '1/3' | '2/3';
-    left: { image: string; alt: string; width: '1/3' | '2/3' };
-    right: { image: string; alt: string; width: '1/3' | '2/3' };
-  };
+  nested:
+    | { type: 'single'; height: '1/3' | '2/3'; image: string; alt: string }
+    | {
+        type: 'double-horizontal';
+        height: '1/3' | '2/3';
+        left: { image: string; alt: string; width: '1/3' | '2/3' };
+        right: { image: string; alt: string; width: '1/3' | '2/3' };
+      };
 }
 
 /**
- * NestedPhotoLayout - One image + container with two more images
+ * NestedPhotoLayout - One image + container with 1-2 more images
  * Level 1: Main image + nested container
- * Level 2: Two images inside the nested container
+ * Level 2: Single image OR two images inside the nested container
  * This is the ONLY layout with 2 levels of nesting
  */
 export const NestedPhotoLayout: React.FC<NestedPhotoLayoutProps> = ({ main, nested }) => {
@@ -313,32 +323,44 @@ export const NestedPhotoLayout: React.FC<NestedPhotoLayoutProps> = ({ main, nest
           src={main.image}
           alt={main.alt}
           fill
-          className="object-cover"
+          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
         />
       </div>
 
-      {/* Nested container with two images */}
-      <div className={`flex w-full ${getHeightClass(nested.height)} gap-4 sm:gap-5 lg:gap-6`}>
-        <div className={`relative ${getWidthClass(nested.left.width)} h-full`}>
+      {/* Nested container - single or double-horizontal */}
+      {nested.type === 'single' ? (
+        <div className={`relative ${getHeightClass(nested.height)}`}>
           <Image
-            src={nested.left.image}
-            alt={nested.left.alt}
+            src={nested.image}
+            alt={nested.alt}
             fill
-            className="object-cover"
-            sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
+            className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+            sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
           />
         </div>
-        <div className={`relative ${getWidthClass(nested.right.width)} h-full`}>
-          <Image
-            src={nested.right.image}
-            alt={nested.right.alt}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
-          />
+      ) : (
+        <div className={`flex w-full ${getHeightClass(nested.height)} gap-4 sm:gap-5 lg:gap-6`}>
+          <div className={`relative ${getWidthClass(nested.left.width)} h-full`}>
+            <Image
+              src={nested.left.image}
+              alt={nested.left.alt}
+              fill
+              className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+              sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
+            />
+          </div>
+          <div className={`relative ${getWidthClass(nested.right.width)} h-full`}>
+            <Image
+              src={nested.right.image}
+              alt={nested.right.alt}
+              fill
+              className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+              sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
