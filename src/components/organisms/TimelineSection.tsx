@@ -1,10 +1,8 @@
 import React, { useCallback, useRef, useEffect, useState } from 'react';
-import { Kicker } from '@/components/atoms/Kicker';
-import { Heading } from '@/components/atoms/Heading';
-import { Subtext } from '@/components/atoms/Subtext';
-import { TimelineDot, TimelineIconType } from '@/components/molecules/TimelineDot';
+import { TimelineIconType } from '@/components/molecules/TimelineDot';
 import { TimelineCard, TimelineTag } from '@/components/molecules/TimelineCard';
 import { useMotion } from '@/contexts/MotionContext';
+import {SectionSplitView} from "@/components/organisms/SectionSplitView";
 
 export interface TimelineEntry {
   id: string;
@@ -20,7 +18,7 @@ export interface TimelineEntry {
 export interface TimelineSectionProps {
   kicker?: string;
   title: string;
-  copy?: string;
+  subtitle?: string;
   entries: TimelineEntry[];
   startAtId?: string;
 }
@@ -32,7 +30,7 @@ export interface TimelineSectionProps {
 export const TimelineSection: React.FC<TimelineSectionProps> = ({
   kicker = 'TIMELINE',
   title,
-  copy,
+  subtitle,
   entries,
   startAtId,
 }) => {
@@ -135,52 +133,13 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   }, []);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16" aria-label="Timeline">
-      {/* Left Column - Text Content */}
-      <div className="lg:col-span-4">
-        <div className="lg:sticky lg:top-24">
-          {shouldAnimate ? (
-            <>
-              <Kicker animate delay={0.1}>
-                {kicker}
-              </Kicker>
-              <Heading
-                level="h2"
-                className="text-4xl md:text-5xl lg:text-6xl mt-4 mb-6"
-                animate
-                delay={0.2}
-              >
-                {title}
-              </Heading>
-              {copy && (
-                <Subtext animate delay={0.3}>
-                  {copy}
-                </Subtext>
-              )}
-            </>
-          ) : (
-            <>
-              <Kicker>{kicker}</Kicker>
-              <Heading
-                level="h2"
-                className="text-4xl md:text-5xl lg:text-6xl mt-4 mb-6"
-              >
-                {title}
-              </Heading>
-              {copy && <Subtext>{copy}</Subtext>}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Right Column - Timeline */}
+    <SectionSplitView
+      kicker={kicker}
+      title={title}
+      subtitle={subtitle}
+      variant="dark"
+    >
       <div className="lg:col-span-8 relative">
-        {/* Timeline Rail */}
-        <div
-          className="absolute left-[122px] sm:left-[146px] top-0 bottom-0 w-px bg-[rgba(255,255,255,0.08)]"
-          aria-hidden="true"
-        />
-
         {/* Timeline Items */}
         <div className="space-y-6">
           {groupedEntries.map((group) => {
@@ -200,25 +159,15 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                       className={`relative flex items-start gap-4 sm:gap-6 ${entryIndex > 0 ? 'mt-6' : ''}`}
                     >
                       {/* Date Column - Only show for first entry in group */}
-                      <div className="flex-shrink-0 w-20 sm:w-24 pt-1">
+                      <div className="flex-shrink-0 w-28 pt-1">
                         {isFirstInGroup && (
                           <time
                             dateTime={entry.dateISO}
-                            className="text-sm text-slate-400 font-medium"
+                            className="text-sm text-brand-gray-medium font-medium"
                           >
                             {formatDate(entry.dateISO)}
                           </time>
                         )}
-                      </div>
-
-                      {/* Timeline Dot */}
-                      <div className="flex-shrink-0 relative z-10">
-                        <TimelineDot
-                          icon={entry.icon}
-                          emphasis={entry.emphasis}
-                          isCurrent={isCurrent}
-                          delay={delay}
-                        />
                       </div>
 
                       {/* Timeline Card */}
@@ -235,6 +184,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                           dateISO={entry.dateISO}
                           dateFormatted={formatDate(entry.dateISO)}
                           body={entry.body}
+                          icon={entry.icon}
                           tags={entry.tags}
                           href={entry.href}
                           emphasis={entry.emphasis}
@@ -254,7 +204,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
           })}
         </div>
       </div>
-  </div>
+    </SectionSplitView>
   );
 };
 

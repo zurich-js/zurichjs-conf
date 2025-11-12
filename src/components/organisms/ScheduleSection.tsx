@@ -52,7 +52,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       kicker="Schedule"
       title={title}
       subtitle={subtitle}
-      aboutLink={aboutLink}
+      link={aboutLink}
       variant="light"
     >
       <DayTabs

@@ -8,7 +8,7 @@ import type { TimelineSectionProps } from '@/components/organisms';
 export const timelineData: Omit<TimelineSectionProps, 'className'> = {
   kicker: 'TIMELINE',
   title: 'Your journey to ZurichJS Conf',
-  copy: 'Stay up to date with all important dates and milestones leading up to the conference. Mark your calendar for ticket sales, speaker announcements, and more.',
+  subtitle: 'Stay up to date with all important dates and milestones leading up to the conference. Mark your calendar for ticket sales, speaker announcements, and more.',
   entries: [
     {
       id: 'announcement-blindbird',
@@ -17,8 +17,8 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
       icon: 'ticket',
       body: 'We\'re releasing X # of tickets before we announce speakers. This is the lowest possible price point for what is already the most affordable conference in zurich?\n\nOnce sold out, Early bird tickets become available.',
       tags: [
-        { label: '-30%', tone: 'accent' },
-        { label: 'Limited stock', tone: 'warning' },
+        { label: '-30%', tone: 'success' },
+        { label: 'Limited stock', tone: 'neutral' },
       ],
       href: '#tickets',
       emphasis: true,

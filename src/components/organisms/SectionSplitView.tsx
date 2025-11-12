@@ -5,8 +5,8 @@ import {useMotion} from "@/contexts";
 interface SectionSplitViewProps {
   kicker: string;
   title: string;
-  subtitle: string;
-  aboutLink?: {
+  subtitle?: string;
+  link?: {
     label: string;
     href: string;
   };
@@ -19,7 +19,7 @@ export const SectionSplitView = ({
     kicker,
     title,
     subtitle,
-    aboutLink,
+    link,
     variant,
     children
 }: SectionSplitViewProps) => {
@@ -36,19 +36,21 @@ export const SectionSplitView = ({
         <div className="flex flex-col gap-5">
           <Heading
             level="h2"
-            variant="light"
+            variant={variant}
             className="text-xl text-balance leading-tight"
           >
             {title}
           </Heading>
 
-          <p className="text-base text-brand-gray-medium max-w-screen-sm">
-            {subtitle}
-          </p>
+          {subtitle && (
+            <p className="text-base text-brand-gray-medium max-w-screen-sm">
+              {subtitle}
+            </p>
+          )}
 
-          {aboutLink && (
-            <LinkText href={aboutLink.href} animate={shouldAnimate}>
-              {aboutLink.label}
+          {link && (
+            <LinkText href={link.href} animate={shouldAnimate}>
+              {link.label}
             </LinkText>
           )}
         </div>

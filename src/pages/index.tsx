@@ -55,7 +55,7 @@ export default function Home({ dehydratedState }: HomeProps) {
           <TimelineSection
             kicker={timelineData.kicker}
             title={timelineData.title}
-            copy={timelineData.copy}
+            subtitle={timelineData.subtitle}
             entries={timelineData.entries}
           />
         </ShapedSection>
