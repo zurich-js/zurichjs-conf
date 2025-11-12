@@ -1,6 +1,6 @@
-import { Hero, ScheduleSection, ShapedSection, SiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection } from '@/components/organisms';
+import { Hero, ScheduleSection, ShapedSection, SiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection } from '@/components/organisms';
 import { Layout } from '@/components/Layout';
-import { footerData, heroData, scheduleData, timelineData } from '@/data';
+import { footerData, heroData, scheduleData, timelineData, sponsorsData } from '@/data';
 import { dehydrate, HydrationBoundary, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
@@ -47,10 +47,8 @@ export default function Home({ dehydratedState }: HomeProps) {
           />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="dark" id="sponsors-photos">
-          <div className="min-h-[300px]">
-            WIP sponsors and photos
-          </div>
+        <ShapedSection shape="tighten" variant="dark" id="sponsors-photos" disableContainer>
+          <SponsorsSection {...sponsorsData} />
         </ShapedSection>
 
         <ShapedSection shape="widen" variant="medium" id="timeline">

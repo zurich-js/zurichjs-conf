@@ -86,12 +86,55 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
   };
 
   // Calculate padding and margin based on drop configuration
-  // Matches Vue implementation exactly
-  const spacingClasses =
-    dropTop && !dropBottom ? '-mb-16 pt-16 pb-32' :
-    dropBottom && !dropTop ? '-mt-16 pb-16 pt-32' :
-    !dropTop && !dropBottom ? '-my-16 py-32' :
-    'py-16';
+
+  const spaceWithoutBottom = [
+    '-mt-16 pt-16 pb-32',
+    'sm:-mt-20 sm:pt-20 sm:pb-40',
+    'md:-mt-28 md:pt-28 md:pb-56',
+    'lg:-mt-40 lg:pt-40 lg:pb-64',
+    'xl:-mt-40 2xl:pt-40 2xl:pb-64',
+    '2xl:-mt-48 2xl:pt-48 2xl:pb-72',
+    '3xl:-mt-64 3xl:pt-64 3xl:pb-96',
+    '4xl:-mt-76 4xl:pt-76 4xl:pb-112',
+  ].join(' ')
+
+  const spaceWithoutTop = [
+    '-mt-16 pb-16 pt-32',
+    'sm:-mt-20 sm:pb-20 sm:pt-40',
+    'md:-mt-28 md:pb-28 md:pt-56',
+    'lg:-mt-40 lg:pb-40 lg:pt-64',
+    'xl:-mt-40 2xl:pb-40 2xl:pt-64',
+    '2xl:-mt-48 2xl:pb-48 2xl:pt-72',
+    '3xl:-mt-64 3xl:pb-64 3xl:pt-96',
+    '4xl:-mt-76 4xl:pb-76 4xl:pt-112',
+  ].join(' ')
+
+  const spaceStraight = [
+    '-my-16 py-32',
+    'sm:-my-20 sm:py-40',
+    'md:-my-28 md:py-56',
+    'lg:-my-40 lg:py-64',
+    'xl:-my-40 2xl:py-64',
+    '2xl:-my-48 2xl:py-72',
+    '3xl:-my-64 3xl:py-96',
+    '4xl:-my-76 4xl:py-112',
+  ].join(' ')
+
+  const spaceWithBoth = [
+    'py-16',
+    'sm:py-20',
+    'md:py-28',
+    'lg:py-40',
+    '2xl:py-40',
+    '2xl:py-48',
+    '3xl:py-64',
+    '4xl:py-76',
+  ].join(' ')
+
+  const spacingClasses = dropTop && !dropBottom ? spaceWithoutBottom :
+    dropBottom && !dropTop ? spaceWithoutTop :
+    !dropTop && !dropBottom ? spaceStraight :
+    spaceWithBoth;
 
   // Build the shape-specific clip-path class
   const shapeClass = `shaped-section-${shape}`;

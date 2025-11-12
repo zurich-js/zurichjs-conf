@@ -35,7 +35,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       </div>
 
       {/* Text */}
-      <span className="text-xl md:text-2xl font-bold text-text-primary group-hover:text-brand-primary transition-colors duration-300">
+      <span className="text-base md:text-md font-bold text-text-primary group-hover:text-brand-primary transition-colors duration-300">
         {children}
       </span>
     </motion.button>

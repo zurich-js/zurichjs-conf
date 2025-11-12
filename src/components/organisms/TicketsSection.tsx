@@ -116,7 +116,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
   return (
     <section
       id="tickets"
-      className={`relative bg-brand-primary py-24 md:py-32 lg:py-40 ${className}`}
+      className={`relative bg-brand-primary ${className}`}
       aria-labelledby="tickets-heading"
     >
 

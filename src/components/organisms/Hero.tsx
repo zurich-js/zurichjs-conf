@@ -64,75 +64,72 @@ export const Hero: React.FC<HeroProps> = ({
           fadeOut={true}
         />
       <SectionContainer>
-
         {/* Logo */}
-        <div className="relative z-10 mb-20">
+        <div className="relative z-10 my-20">
           <Logo width={180} height={48} />
         </div>
 
         {/* Main Content Area */}
-        <div className="relative z-10 flex-1 flex items-end">
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-12 xl:gap-16 2xl:gap-20">
-              {/* Left Content */}
-              <div className="space-y-3 flex-1 max-w-3xl">
-                {/* Kicker */}
-                <Kicker animate={shouldAnimate} delay={0.1}>
-                  {kicker}
-                </Kicker>
+        <div className="relative z-10 flex flex-col">
+          <div className="space-y-3">
+            {/* Kicker */}
+            <Kicker animate={shouldAnimate} delay={0.1} className="text-base md:text-md text-brand-white font-semibold">
+              {kicker}
+            </Kicker>
 
-                {/* Title */}
-                <Heading
-                  level="h1"
-                  animate={shouldAnimate}
-                  delay={0.2}
-                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-tight"
-                >
-                  {title}
-                </Heading>
+            {/* Title */}
+            <Heading
+              level="h1"
+              animate={shouldAnimate}
+              delay={0.2}
+              className="text-2xl xs:text-3xl xl:text-4xl leading-tight mb-4 md:mb-6 lg:mb-8"
+            >
+              {title}
+            </Heading>
+          </div>
 
-                {/* Date, Location, and Button Container */}
-                <motion.div
-                  className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 md:gap-8 pt-2"
-                  initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
-                  animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-                  transition={{
-                    duration: 0.6,
-                    delay: 0.3,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
-                  {/* Date and Location */}
-                  <div className="space-y-1">
-                    <p className="text-base md:text-lg xl:text-xl text-white/90">
-                      {formattedDate}
-                    </p>
-                    <p className="text-base md:text-lg xl:text-xl text-text-muted">
-                      {venue}, {city}
-                    </p>
-                  </div>
-
-                  {/* Render Ticket Button */}
-                  <IconButton
-                    onClick={onCtaClick}
-                    icon={
-                      <Image
-                        src={RightArrowCircle}
-                        alt="Arrow icon"
-                        width={56}
-                        height={56}
-                        className="w-full h-full"
-                      />
-                    }
-                  >
-                    {ctaLabel}
-                  </IconButton>
-                </motion.div>
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:w-full gap-4 md:gap-8">
+            {/* Date, Location, and Button Container */}
+            <motion.div
+              className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8"
+              initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+              animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
+              transition={{
+                duration: 0.6,
+                delay: 0.3,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              {/* Date and Location */}
+              <div className="space-y-1">
+                <p className="text-md text-brand-white">
+                  {formattedDate}
+                </p>
+                <p className="text-base text-brand-gray-light">
+                  {venue}, {city}
+                </p>
               </div>
 
-              {/* Right Content - Countdown */}
-              <div className="lg:shrink-0 lg:pb-2 xl:scale-110 2xl:scale-125 xl:mr-4 2xl:mr-8">
-                <Countdown targetDate={dateTimeISO} />
-              </div>
+              {/* Render Ticket Button */}
+              <IconButton
+                onClick={onCtaClick}
+                icon={
+                  <Image
+                    src={RightArrowCircle}
+                    alt="Arrow icon"
+                    width={56}
+                    height={56}
+                    className="w-full h-full"
+                  />
+                }
+              >
+                {ctaLabel}
+              </IconButton>
+            </motion.div>
+
+            <div className="lg:shrink-0 lg:pb-2 xl:scale-110 2xl:scale-125 xl:mr-4 2xl:mr-8">
+              <Countdown targetDate={dateTimeISO} />
+            </div>
           </div>
         </div>
 

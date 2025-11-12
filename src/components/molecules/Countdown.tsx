@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useMotion } from '@/contexts/MotionContext';
 import { padZero } from '@/hooks/useCountdown';
+import {Kicker} from "@/components/atoms";
 
 export interface CountdownProps {
   targetDate: string | Date;
@@ -14,9 +15,9 @@ export interface CountdownProps {
  * Displays days, hours, minutes, and seconds until target date
  * Updates every second with smooth animations
  */
-export const Countdown: React.FC<CountdownProps> = ({ 
-  targetDate, 
-  className = '' 
+export const Countdown: React.FC<CountdownProps> = ({
+  targetDate,
+  className = ''
 }) => {
   const timeRemaining = useCountdown(targetDate);
   const { shouldAnimate } = useMotion();
@@ -29,26 +30,26 @@ export const Countdown: React.FC<CountdownProps> = ({
 
   if (timeRemaining.isComplete) {
     return (
-      <div 
-        className={`text-white text-center ${className}`}
+      <div
+        className={`text-brand-white text-center ${className}`}
         role="status"
         aria-live="polite"
       >
-        <p className="text-2xl font-semibold">Event has started!</p>
+        <p className="text-xl font-semibold">Event has started!</p>
       </div>
     );
   }
 
   const units = [
-    { value: timeRemaining.days, label: 'DAYS', padded: false },
-    { value: timeRemaining.hours, label: 'HOURS', padded: true },
-    { value: timeRemaining.minutes, label: 'MINUTES', padded: true },
-    { value: timeRemaining.seconds, label: 'SECONDS', padded: true },
+    { value: timeRemaining.days, label: 'Days', padded: false },
+    { value: timeRemaining.hours, label: 'Hours', padded: true },
+    { value: timeRemaining.minutes, label: 'Minutes', padded: true },
+    { value: timeRemaining.seconds, label: 'Seconds', padded: true },
   ];
 
   return (
     <motion.div
-      className={className}
+      className={`flex flex-col items-start`}
       role="timer"
       aria-live={isMounted ? "polite" : "off"}
       aria-label={isMounted ? `Time until event: ${timeRemaining.days} days, ${timeRemaining.hours} hours, ${timeRemaining.minutes} minutes, ${timeRemaining.seconds} seconds` : "Time until event"}
@@ -61,9 +62,9 @@ export const Countdown: React.FC<CountdownProps> = ({
       }}
     >
       {/* Header */}
-      <div className="text-xs font-normal tracking-widest text-gray-400 mb-3 text-center lg:text-left">
-        TIME REMAINING
-      </div>
+      <Kicker className="mb-2">
+        Time remaining
+      </Kicker>
 
       {/* Countdown Units */}
       <div className="flex items-center justify-center lg:justify-start gap-3">
@@ -71,20 +72,20 @@ export const Countdown: React.FC<CountdownProps> = ({
           <React.Fragment key={unit.label}>
             {/* Unit Display */}
             <div className="flex flex-col items-center">
-              <div 
-                className="text-2xl md:text-3xl font-light text-white tabular-nums"
+              <div
+                className="text-md font-normal text-white tabular-nums"
                 suppressHydrationWarning
               >
                 {unit.padded ? padZero(unit.value) : unit.value}
               </div>
-              <div className="text-xs text-gray-400 mt-1 tracking-wide">
+              <div className="text-sm text-brand-gray-medium tracking-wide">
                 {unit.label}
               </div>
             </div>
 
             {/* Divider */}
             {index < units.length - 1 && (
-              <div className="h-8 w-px bg-gray-600" aria-hidden="true" />
+              <div className="h-6 w-px bg-brand-gray-medium" aria-hidden="true" />
             )}
           </React.Fragment>
         ))}

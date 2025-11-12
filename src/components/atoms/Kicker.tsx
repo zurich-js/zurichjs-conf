@@ -14,7 +14,7 @@ export interface KickerProps {
 /**
  * Kicker component for small taglines or eyebrow text
  * Typically appears above main headings
- * 
+ *
  * @param variant - 'dark' for light text on dark backgrounds (default), 'light' for dark text on light backgrounds
  */
 export const Kicker: React.FC<KickerProps> = ({
@@ -25,14 +25,14 @@ export const Kicker: React.FC<KickerProps> = ({
   variant = 'dark',
 }) => {
   // Base styles shared across variants
-  const baseStyles = 'uppercase tracking-wider font-bold';
-  
+  const baseStyles = 'uppercase tracking-wider font-medium';
+
   // Variant-specific styles
   const variantStyles = {
-    dark: 'text-base md:text-lg xl:text-xl text-text-primary/90',
-    light: 'text-xs md:text-sm text-gray-500 tracking-widest',
+    dark: 'text-xs md:text-sm text-brand-gray-light',
+    light: 'text-xs md:text-sm text-brand-gray-medium',
   };
-  
+
   const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;
 
   if (animate) {
