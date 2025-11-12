@@ -2,22 +2,29 @@ import {TICKET_FAQ} from "@/data/tickets";
 import {motion} from "framer-motion";
 import {FAQAccordion} from "@/components/molecules";
 import React from "react";
+import {SectionSplitView} from "@/components/organisms/SectionSplitView";
+import {useMotion} from "@/contexts";
 
 export const FAQSection = () => {
+  const { shouldAnimate } = useMotion();
+
   return (
-    <motion.div
-      className="mb-16"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+    <SectionSplitView
+      kicker="Frequently Asked Questions"
+      title="F.A.Q."
+      variant="dark"
+      subtitle="Find answers to common questions about tickets, the event, and more."
     >
-      <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">
-        Frequently Asked Questions
-      </h2>
-      <div className="rounded-[28px] p-6 md:p-8 shadow-card bg-brand-gray-dark">
+      <motion.div
+        className="pt-8"
+        initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      >
         <FAQAccordion items={TICKET_FAQ} />
-      </div>
-    </motion.div>
+      </motion.div>
+    </SectionSplitView>
+
   )
 }
