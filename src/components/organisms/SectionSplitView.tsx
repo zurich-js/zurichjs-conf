@@ -4,8 +4,8 @@ import {useMotion} from "@/contexts";
 
 interface SectionSplitViewProps {
   kicker: string;
-  title: string;
-  subtitle?: string;
+  title: string | React.ReactNode;
+  subtitle?: string | React.ReactNode;
   link?: {
     label: string;
     href: string;

@@ -25,12 +25,12 @@ export const Kicker: React.FC<KickerProps> = ({
   variant = 'dark',
 }) => {
   // Base styles shared across variants
-  const baseStyles = 'uppercase tracking-wider font-medium';
+  const baseStyles = 'uppercase tracking-widest font-medium';
 
   // Variant-specific styles
   const variantStyles = {
     dark: 'text-xs md:text-sm text-brand-gray-light',
-    light: 'text-xs md:text-sm text-brand-gray-medium',
+    light: 'text-xs md:text-sm text-brand-gray-dark',
   };
 
   const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;

@@ -9,25 +9,24 @@ export const footerData: SiteFooterProps = {
     title: 'ZurichJS',
     copy: 'Our mission is to be the #1 JavaScript resource for developers in the Zurich tech scene, offering everything from meetups and workshops, to creating unparalleled networking opportunities, while making sure everybody feels welcome and included.',
     orgNote: 'Zurich JS Conf is part of the Swiss JavaScript Group, a non-profit association registered in Switzerland. © 2025 Swiss JavaScript Group (CHE-255.581.547). All rights reserved',
-    moreHref: '/about',
+    moreHref: 'https://zurichjs.com/about',
   },
   conference: {
     title: 'Conference',
     links: [
-      { label: 'Speakers', href: '/speakers' },
-      { label: 'Schedule', href: '/schedule' },
-      { label: 'Sponsors', href: '/sponsors' },
-      { label: 'Volunteer', href: '/volunteer', locked: true },
-      { label: 'FAQ', href: '/faq' },
+      { label: 'Speakers', href: '/speakers', locked: true },
+      { label: 'Full schedule', href: '/schedule', locked: true },
+      { label: 'Sponsor us', href: 'mailto@hello@zurichjs.com', locked: true },
+      { label: 'Volunteer', href: 'https://zurichjs.com/cfv' },
     ],
   },
   legal: {
     title: 'Legal',
     links: [
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Refund Policy', href: '/refund' },
-      { label: 'Code of Conduct', href: '/code-of-conduct' },
+      { label: 'Terms of Service', href: 'https://zurichjs.com/policies/code-of-conduct' },
+      { label: 'Privacy Policy', href: 'https://zurichjs.com/policies/privacy-policy' },
+      { label: 'Refund Policy', href: '/refund-policy' },
+      { label: 'Code of Conduct', href: '/code-of-conduct', locked: true },
     ],
   },
   newsletter: {
@@ -37,10 +36,10 @@ export const footerData: SiteFooterProps = {
     onSubscribe: async (email: string) => {
       // Mock subscription - replace with actual API call
       console.log('Subscribing email:', email);
-      
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+
       // In production, this would be:
       // await fetch('/api/newsletter', {
       //   method: 'POST',
@@ -48,7 +47,7 @@ export const footerData: SiteFooterProps = {
       //   body: JSON.stringify({ email }),
       // });
     },
-    privacyHref: '/privacy',
+    privacyHref: 'https://zurichjs.com/policies/privacy-policy',
   },
   socials: [
     {

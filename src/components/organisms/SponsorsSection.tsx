@@ -58,7 +58,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
             {title}
           </p>
           <motion.p
-            className="mt-4 flex items-center gap-2 justify-center text-brand-gray-light text-lg"
+            className="flex items-center gap-2 justify-center text-brand-gray-light text-lg"
             initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
             animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
             transition={{

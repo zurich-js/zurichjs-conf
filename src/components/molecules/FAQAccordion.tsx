@@ -55,7 +55,7 @@ const AccordionItem: React.FC<{ item: FAQItem; isOpen: boolean; onClick: () => v
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden p-2.5 pb-5"
+            className="overflow-hidden px-2.5 pb-5"
           >
             <div className="text-base text-brand-gray-light leading-relaxed">
               {item.answer}
