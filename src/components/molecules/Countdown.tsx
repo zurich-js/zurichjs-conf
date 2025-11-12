@@ -7,6 +7,8 @@ import {Kicker} from "@/components/atoms";
 
 export interface CountdownProps {
   targetDate: string | Date;
+  kicker?: string;
+  kickerClassName?: string;
   className?: string;
 }
 
@@ -17,6 +19,8 @@ export interface CountdownProps {
  */
 export const Countdown: React.FC<CountdownProps> = ({
   targetDate,
+  kicker = 'Time remaining',
+  kickerClassName = '',
   className = ''
 }) => {
   const timeRemaining = useCountdown(targetDate);
@@ -62,8 +66,8 @@ export const Countdown: React.FC<CountdownProps> = ({
       }}
     >
       {/* Header */}
-      <Kicker className="mb-2">
-        Time remaining
+      <Kicker className={`mt-2 ${kickerClassName}`}>
+        {kicker}
       </Kicker>
 
       {/* Countdown Units */}

@@ -11,6 +11,7 @@ import { useStudentVerification } from '@/hooks/useStudentVerification';
 import { useCart } from '@/contexts/CartContext';
 import { createTicketDataFromStripe } from '@/data/tickets';
 import { motion } from 'framer-motion';
+import {SectionContainer} from "@/components/organisms/SectionContainer";
 
 export interface TicketsSectionWithStripeProps {
   /**
@@ -39,7 +40,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   // Show loading state
   if (isLoading) {
     return (
-      <div
+      <SectionContainer
         className={`relative ${className}`}
         aria-labelledby="tickets-heading"
       >
@@ -62,7 +63,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
             </motion.div>
           </div>
         </div>
-      </div>
+      </SectionContainer>
     );
   }
 
@@ -70,8 +71,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   // The hook already validates plans and currentStage, so only check error
   if (error) {
     return (
-      <div className={`${className}`} aria-labelledby="tickets-heading">
-        <div className="max-w-2xl mx-auto text-center">
+      <SectionContainer className={`${className}`} aria-labelledby="tickets-heading">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -125,8 +125,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
               </p>
             </div>
           </motion.div>
-        </div>
-      </div>
+      </SectionContainer>
     );
   }
 

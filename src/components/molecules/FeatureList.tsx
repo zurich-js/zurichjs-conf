@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon } from '@/components/atoms/Icon';
+import { CircleDashedIcon, CheckIcon, CheckCheckIcon } from 'lucide-react';
 
 export interface Feature {
   /**
@@ -43,29 +43,34 @@ export const FeatureList: React.FC<FeatureListProps> = ({
   const isVip = variant === 'vip';
 
   return (
-    <ul className={`flex flex-col gap-3 ${className}`} role="list">
+    <ul className={`flex flex-col gap-2 ${className}`} role="list">
       {features.map((feature, index) => {
         const kind = feature.kind || 'included';
         const isExtra = kind === 'extra';
         const isExcluded = kind === 'excluded';
 
         // VIP extra features use double-check, others use dot
-        const iconType = isExcluded ? 'minus' : isExtra ? (isVip ? 'double-check' : 'dot') : 'check';
-        const iconColor = isExcluded ? 'muted' : isExtra ? 'accent' : 'success';
-        const textColor = isExcluded ? 'text-gray-500' : 'text-gray-200';
+        const iconType = isExcluded
+          ? CircleDashedIcon
+          : isExtra
+            ? CheckCheckIcon
+            : CheckIcon;
+        const iconColor = variant === 'standard' ? 'text-brand-green' : isVip ? 'text-brand-orange' : 'text-brand-white';
 
         return (
           <li
             key={`${feature.label}-${index}`}
-            className={`flex items-start gap-3 ${textColor}`}
+            className={`flex items-start gap-2.5 text-brand-white`}
           >
-            <Icon
-              type={iconType}
-              color={iconColor}
-              size={20}
-              aria-label={isExcluded ? 'Not included' : isExtra ? 'Premium feature' : 'Included feature'}
-            />
-            <span className="text-sm md:text-base leading-relaxed flex-1">
+            {
+              React.createElement(iconType, {
+                className: iconColor,
+                size: 20,
+                strokeWidth: 2,
+                'aria-label': isExcluded ? 'Not included' : isExtra ? 'Premium feature' : 'Included feature'
+              })
+            }
+            <span className="text-sm flex-1">
               {feature.label}
             </span>
           </li>
