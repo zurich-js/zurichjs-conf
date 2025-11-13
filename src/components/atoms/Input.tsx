@@ -25,8 +25,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const baseStyles = 'bg-surface-card text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
-    
+    const baseStyles = 'bg-brand-gray-dark text-brand-white placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
+
     const variantStyles = {
       default: 'rounded-lg px-4 py-3',
       pill: 'rounded-full px-6 py-3',
@@ -34,9 +34,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const widthStyle = fullWidth ? 'w-full' : '';
     const errorStyle = error ? 'ring-2 ring-error' : '';
-    
+
     const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${widthStyle} ${errorStyle} ${className}`;
-    
+
     const inputId = props.id || props.name;
     const errorId = error && inputId ? `${inputId}-error` : undefined;
 

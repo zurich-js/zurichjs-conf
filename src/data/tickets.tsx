@@ -48,7 +48,7 @@ export const TICKET_METADATA: Record<
   { blurb: string; variant: 'standard' | 'vip' | 'member' }
 > = {
   standard_student_unemployed: {
-    blurb: 'Building the future, one ticket at a time. Student ID or unemployment proof required',
+    blurb: 'Building the future, one ticket at a time.',
     variant: 'member',
   },
   standard: {

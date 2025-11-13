@@ -78,7 +78,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
       className={`
         flex-1 flex flex-col max-w-screen-xs
         relative bg-brand-black rounded-4xl p-6
-        hover:bg-gradient-to-br hover:from-brand-black hover:to-brand-gray-medium/50
+        hover:bg-gradient-to-br hover:from-brand-black hover:to-brand-gray-medium/30
         transition-colors duration-500 ease-in-out
       `}
       initial={{ opacity: 0, y: 20 }}
@@ -136,7 +136,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
               <Link href={cta.href} passHref legacyBehavior>
                 <Button
                   size="md"
-                  variant={variant === 'vip' ? 'accent' : variant === 'member' ? 'ghost' : 'primary'}
+                  variant={variant === 'vip' ? 'accent' : variant === 'member' ? 'outline' : 'primary'}
                   className="w-full"
                   asChild
                   disabled={cta.disabled}
@@ -146,7 +146,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
               </Link>
             ) : (
               <Button
-                variant={variant === 'vip' ? 'accent' : variant === 'member' ? 'ghost' : 'primary'}
+                variant={variant === 'vip' ? 'accent' : variant === 'member' ? 'outline' : 'primary'}
                 size="md"
                 className="w-full"
                 onClick={cta.onClick}

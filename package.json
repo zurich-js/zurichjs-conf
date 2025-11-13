@@ -19,6 +19,7 @@
     ]
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
     "@hookform/resolvers": "^5.2.2",
     "@react-email/components": "^0.5.7",
     "@react-email/render": "^1.4.0",

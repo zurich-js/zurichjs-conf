@@ -28,15 +28,17 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 
 const sizeStyles: Record<ButtonSize, string> = {
   sm: 'px-3 py-1.5 text-xs leading-relaxed',
-  md: 'p-2.5 text-md leading-relaxed',
+  md: 'px-4 py-2.5 text-md leading-relaxed',
   lg: 'p-3 text-lg leading-relaxed',
 };
 
+const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out outline-none focus:ring-4 focus:ring-brand-blue cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-yellow-main text-brand-black font-bold hover:bg-brand-yellow-secondary focus:ring-brand-yellow-secondary',
-  ghost: 'bg-transparent text-brand-white border-2 border-text-primary font-medium hover:bg-text-primary hover:text-text-dark ',
-  accent: 'bg-vip text-text-primary font-semibold hover:bg-vip/90 shadow-lg hover:shadow-xl',
-  outline: 'bg-transparent text-brand-primary border-2 border-brand-primary font-semibold hover:bg-brand-primary hover:text-text-dark',
+  primary: 'bg-brand-yellow-main text-brand-black font-bold hover:bg-brand-yellow-secondary focus:bg-brand-yellow-secondary',
+  ghost: 'bg-transparent text-brand-white font-medium hover:bg-text-primary hover:text-text-dark',
+  accent: 'bg-brand-orange text-text-primary font-semibold hover:bg-brand-orange-dark focus:bg-brand-orange-dark',
+  outline: 'bg-transparent text-brand-white border-2 border-text-primary font-medium hover:bg-text-primary hover:text-text-dark',
   dark: 'bg-gray-800 text-text-primary font-semibold hover:bg-gray-700 shadow-md hover:shadow-lg',
 };
 
@@ -60,7 +62,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || loading;
-    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
     const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
 
