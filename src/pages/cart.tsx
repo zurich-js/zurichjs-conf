@@ -9,6 +9,7 @@ import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
+import { useWorkshopVouchers } from '@/hooks/useWorkshopVouchers';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
@@ -23,6 +24,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { dehydrate } from '@tanstack/react-query';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
+import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
 
 type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
@@ -39,6 +41,7 @@ export default function CartPage() {
 
   // Pricing data is prefetched on server, so isLoading should be false immediately
   const { currentStage, isLoading: isPricingLoading } = useTicketPricing();
+  const { vouchers: workshopVouchers, isLoading: isVouchersLoading } = useWorkshopVouchers();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
   const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
@@ -59,10 +62,9 @@ export default function CartPage() {
   const isEmpty = cart.items.length === 0;
 
   // Workshop upsell logic
-  // Prevent layout shift by determining this once pricing data is loaded
-  const showWorkshopUpsells = !isPricingLoading && (currentStage === 'blind_bird' || currentStage === 'early_bird');
+  // Prevent layout shift by determining this once pricing data and vouchers are loaded
+  const showWorkshopUpsells = !isPricingLoading && !isVouchersLoading && workshopVouchers.length > 0 && (currentStage === 'blind_bird' || currentStage === 'early_bird');
   const bonusPercent = currentStage === 'blind_bird' ? 25 : currentStage === 'early_bird' ? 15 : 0;
-  const workshopVoucherAmounts = [50, 75, 100, 150, 200];
 
   // Team package upsell logic
   // Detect if user has 3+ of the same ticket type
@@ -109,24 +111,32 @@ export default function CartPage() {
     }
   };
 
-  const handleAddWorkshopVoucher = (amount: number) => {
+  const handleAddWorkshopVoucher = (voucherId: string) => {
+    const voucher = workshopVouchers.find(v => v.id === voucherId);
+    if (!voucher) return;
+
+    // Amount is in cents, convert to display currency
+    const amount = voucher.amount / 100;
     const bonusAmount = (amount * bonusPercent) / 100;
     const totalValue = amount + bonusAmount;
 
     addToCart({
-      id: `workshop-voucher-${amount}`,
+      id: voucher.id,
       title: `Workshop Voucher (+${bonusPercent}% bonus)`,
-      price: amount,
-      currency: cart.currency || 'CHF',
-      priceId: `workshop_voucher_${amount}`,
+      price: voucher.amount / 100, // Convert from cents to regular currency
+      currency: voucher.currency,
+      priceId: voucher.priceId, // Use real Stripe price ID
       variant: 'standard',
     }, 1);
 
-    showToast(`Added ${totalValue} ${cart.currency || 'CHF'} workshop credit to your order!`, 'success');
+    showToast(`Added ${totalValue} ${voucher.currency} workshop credit to your order!`, 'success');
   };
 
   // Check if we need attendee collection (more than 1 ticket total)
-  const needsAttendeeInfo = cart.totalItems > 1;
+  // Exclude workshop vouchers - they don't require separate attendee info
+  const ticketItems = cart.items.filter(item => !item.title.includes('Workshop Voucher'));
+  const ticketCount = ticketItems.reduce((sum, item) => sum + item.quantity, 0);
+  const needsAttendeeInfo = ticketCount > 1;
 
   const handleAttendeesSubmit = (attendeeData: AttendeeInfo[]) => {
     setAttendees(attendeeData);
@@ -220,7 +230,7 @@ export default function CartPage() {
         <PageHeader
           rightContent={
             <span className="text-sm text-gray-400">
-              {cart.totalItems} ticket{cart.totalItems !== 1 ? 's' : ''}
+              {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
             </span>
           }
         />
@@ -464,7 +474,7 @@ export default function CartPage() {
               >
                 <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Attendee Information</h1>
                 <AttendeeForm
-                  cartItems={cart.items}
+                  cartItems={ticketItems}
                   initialAttendees={attendees}
                   onSubmit={handleAttendeesSubmit}
                   onBack={() => setCurrentStep('review')}
@@ -501,13 +511,13 @@ export default function CartPage() {
 
                 {/* Voucher Cards */}
                 <div className="space-y-3 sm:space-y-4 mb-12">
-                  {workshopVoucherAmounts.map((amount) => (
+                  {workshopVouchers.map((voucher) => (
                     <WorkshopVoucherCard
-                      key={amount}
-                      amount={amount}
+                      key={voucher.id}
+                      amount={voucher.amount / 100}
                       bonusPercent={bonusPercent}
-                      currency={cart.currency || 'CHF'}
-                      onClick={() => handleAddWorkshopVoucher(amount)}
+                      currency={voucher.currency}
+                      onClick={() => handleAddWorkshopVoucher(voucher.id)}
                     />
                   ))}
                 </div>
@@ -654,7 +664,7 @@ export default function CartPage() {
 }
 
 /**
- * Server-side props - Prefetch pricing data
+ * Server-side props - Prefetch pricing data and workshop vouchers
  * This eliminates the loading state and prevents UI shifts
  * The dehydrated state is automatically picked up by HydrationBoundary in _app.tsx
  */
@@ -662,10 +672,14 @@ export const getServerSideProps: GetServerSideProps = async () => {
   const queryClient = createQueryClient();
 
   try {
-    await queryClient.prefetchQuery(ticketPricingQueryOptions);
+    // Prefetch both ticket pricing and workshop vouchers in parallel
+    await Promise.all([
+      queryClient.prefetchQuery(ticketPricingQueryOptions),
+      queryClient.prefetchQuery(workshopVouchersQueryOptions),
+    ]);
   } catch (error) {
     // If prefetch fails, log it but don't block page render
-    console.error('Failed to prefetch pricing data:', error);
+    console.error('Failed to prefetch data:', error);
   }
 
   return {

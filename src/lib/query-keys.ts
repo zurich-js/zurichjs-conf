@@ -35,10 +35,26 @@ export const checkoutKeys = {
 } as const;
 
 /**
+ * Workshops query keys
+ */
+export const workshopsKeys = {
+  /**
+   * Base key for all workshop queries
+   */
+  all: ['workshops'] as const,
+
+  /**
+   * Key for vouchers queries
+   */
+  vouchers: () => [...workshopsKeys.all, 'vouchers'] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
   tickets: ticketsKeys,
   checkout: checkoutKeys,
+  workshops: workshopsKeys,
 } as const;
 

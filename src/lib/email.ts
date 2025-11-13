@@ -8,6 +8,8 @@ import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import { TicketPurchaseEmail } from '@/emails/templates/TicketPurchaseEmail';
 import type { TicketPurchaseEmailProps } from '@/emails/templates/TicketPurchaseEmail';
+import { VoucherPurchaseEmail } from '@/emails/templates/VoucherPurchaseEmail';
+import type { VoucherPurchaseEmailProps } from '@/emails/templates/VoucherPurchaseEmail';
 import { getFirstName } from '@/emails/utils/render';
 import { getZurichJSVenueMapUrl } from '@/lib/venue';
 import { getBaseUrl } from '@/lib/url';
@@ -69,6 +71,19 @@ export interface VerificationRequestData {
   name: string;
   verificationId: string;
   verificationType: 'student' | 'unemployed';
+}
+
+/**
+ * Data structure for voucher confirmation email
+ */
+export interface VoucherConfirmationData {
+  to: string;
+  firstName: string;
+  amountPaid: number;
+  voucherValue: number;
+  currency: string;
+  bonusPercent?: number;
+  orderUrl?: string;
 }
 
 /**
@@ -163,6 +178,79 @@ export async function sendTicketConfirmationEmail(
     return { success: true };
   } catch (error) {
     console.error('Error sending ticket confirmation email:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Send voucher confirmation email
+ */
+export async function sendVoucherConfirmationEmail(
+  data: VoucherConfirmationData
+): Promise<{ success: boolean; error?: string }> {
+  console.log('[Email] ====== Sending voucher confirmation email ======');
+  console.log('[Email] To:', data.to);
+  console.log('[Email] First name:', data.firstName);
+  console.log('[Email] Amount paid:', data.amountPaid, data.currency);
+  console.log('[Email] Voucher value:', data.voucherValue, data.currency);
+  console.log('[Email] Bonus percent:', data.bonusPercent);
+
+  try {
+    console.log('[Email] Initializing Resend client...');
+    const resend = getResendClient();
+    console.log('[Email] ✅ Resend client initialized');
+
+    // Map data to email template props
+    const emailProps: VoucherPurchaseEmailProps = {
+      firstName: data.firstName,
+      amountPaid: data.amountPaid,
+      voucherValue: data.voucherValue,
+      currency: data.currency,
+      bonusPercent: data.bonusPercent,
+      orderUrl: data.orderUrl,
+      supportEmail: EMAIL_CONFIG.supportEmail,
+      workshopsUrl: `${getBaseUrl()}/workshops`,
+    };
+
+    console.log('[Email] Voucher email props:', emailProps);
+    console.log('[Email] Rendering email template...');
+
+    // Render the email template to HTML
+    const emailHtml = await render(
+      React.createElement(VoucherPurchaseEmail, emailProps)
+    );
+    console.log('[Email] ✅ Email template rendered successfully');
+
+    // Send the email
+    console.log('[Email] Sending email via Resend...');
+    console.log('[Email] From:', EMAIL_CONFIG.from);
+    console.log('[Email] To:', data.to);
+    console.log('[Email] Subject:', `Your Workshop Voucher - ${data.voucherValue} ${data.currency}`);
+
+    const result = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: data.to,
+      replyTo: EMAIL_CONFIG.replyTo,
+      subject: `Your Workshop Voucher - ${data.voucherValue} ${data.currency}`,
+      html: emailHtml,
+    });
+
+    if (result.error) {
+      console.error('[Email] ❌ Error sending voucher email:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    console.log('[Email] ✅ Voucher confirmation email sent successfully!');
+    console.log('[Email] Email ID:', result.data?.id);
+    console.log('[Email] To:', data.to);
+    console.log('[Email] Amount:', `${data.voucherValue} ${data.currency}`);
+    console.log('[Email] ====== Voucher email send complete ======');
+    return { success: true };
+  } catch (error) {
+    console.error('[Email] ❌ Exception sending voucher confirmation email:', error);
+    console.error('[Email] Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('[Email] Stack trace:', error instanceof Error ? error.stack : 'No stack');
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
