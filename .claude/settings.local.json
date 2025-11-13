@@ -10,7 +10,9 @@
       "Bash(npm run build:*)",
       "Bash(npm uninstall:*)",
       "Bash(mkdir:*)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(git add:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

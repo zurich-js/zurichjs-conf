@@ -7,7 +7,6 @@ export interface EventItemProps {
   title: string;
   description: string;
   index: number;
-  isLast?: boolean;
 }
 
 /**
@@ -20,7 +19,6 @@ export const EventItem: React.FC<EventItemProps> = ({
   title,
   description,
   index,
-  isLast = false,
 }) => {
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -42,22 +40,22 @@ export const EventItem: React.FC<EventItemProps> = ({
       variants={prefersReducedMotion ? undefined : variants}
       initial="hidden"
       animate="visible"
-      className={`py-6 ${!isLast ? 'border-b border-gray-200' : ''}`}
+      className="py-4"
     >
-      <div className="flex flex-col sm:flex-row sm:gap-8">
+      <div className="flex flex-col sm:gap-2.5 sm:flex-row">
         {/* Time */}
         <time
-          className="text-sm md:text-base font-semibold text-gray-900 mb-2 sm:mb-0 sm:w-32 flex-shrink-0"
+          className="text-sm py-0.5 font-bold text-brand-gray-medium sm:min-w-32 flex-shrink-0"
         >
           {time}
         </time>
-        
+
         {/* Content */}
         <div className="flex-1">
-          <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+          <h4 className="text-lg font-bold text-brand-black mb-2 leading-none">
             {title}
           </h4>
-          <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+          <p className="text-base text-brand-gray-medium leading-relaxed">
             {description}
           </p>
         </div>

@@ -16,7 +16,7 @@ export interface HeadingProps {
 /**
  * Semantic heading component with optional animation
  * Supports all heading levels with consistent styling
- * 
+ *
  * @param variant - 'dark' for light text on dark backgrounds (default), 'light' for dark text on light backgrounds
  */
 export const Heading: React.FC<HeadingProps> = ({
@@ -28,21 +28,21 @@ export const Heading: React.FC<HeadingProps> = ({
   variant = 'dark',
 }) => {
   const Component = level;
-  
+
   // Base styles shared across variants
   const baseStyles = 'font-bold';
-  
+
   // Variant-specific styles
   const variantStyles = {
-    dark: 'text-text-primary',
-    light: 'text-gray-900',
+    dark: 'text-brand-white',
+    light: 'text-brand-black',
   };
-  
+
   const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;
 
   if (animate) {
     const MotionComponent = motion[Component] as React.ComponentType<HTMLMotionProps<typeof Component>>;
-    
+
     return (
       <MotionComponent
         className={combinedClassName}

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Tag, TagTone } from '@/components/atoms/Tag';
 import { AddToCalendar } from '@/components/atoms/AddToCalendar';
 import { useMotion } from '@/contexts/MotionContext';
+import {TimelineDot, TimelineIconType} from "@/components/molecules/TimelineDot";
 
 export interface TimelineTag {
   label: string;
@@ -23,6 +24,7 @@ export interface TimelineCardProps {
   onClick?: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   tabIndex?: number;
+  icon?: TimelineIconType;
 }
 
 /**
@@ -45,18 +47,17 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
       onClick,
       onKeyDown,
       tabIndex = 0,
+      icon,
     },
     ref
   ) => {
     const { shouldAnimate } = useMotion();
 
     const cardClasses = `
-      group relative flex items-start gap-3 sm:gap-4
-      bg-[#242528] rounded-2xl px-4 sm:px-5 py-3 sm:py-4
-      shadow-[0_10px_25px_rgba(0,0,0,0.25)]
-      ${emphasis || isCurrent ? 'ring-1 ring-[#F1E271]/20 bg-[#242528]/90' : ''}
+      relative flex items-start gap-3 sm:gap-4
+      bg-brand-gray-dark rounded-xl px-4 sm:px-5 py-3 sm:py-4
       transition-all duration-300
-      ${href ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] focus-within:ring-2 focus-within:ring-[#F1E271] focus-within:ring-offset-2 focus-within:ring-offset-[#19191B]' : ''}
+      ${href ? 'cursor-pointer group hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] focus-within:ring-2 focus-within:ring-[#F1E271] focus-within:ring-offset-2 focus-within:ring-offset-[#19191B]' : ''}
     `;
 
     const CardContent = () => (
@@ -73,27 +74,31 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
           )}
 
           {/* Content Column */}
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base sm:text-lg font-semibold text-white group-hover:text-brand-primary transition-colors mb-1">
+          <div className="flex-1 min-w-0 flex flex-col gap-2.5">
+            <h3 className="text-base flex flex-wrap leading-none items-center gap-1.5 sm:text-lg font-semibold text-brand-white group-hover:text-brand-primary transition-colors">
+              <TimelineDot
+                icon={icon}
+                isCurrent={isCurrent}
+                emphasis={emphasis}
+              />
               {title}
+              {tags && tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {tags.map((tag, index) => (
+                    <Tag
+                      key={`${tag.label}-${index}`}
+                      label={tag.label}
+                      tone={tag.tone}
+                    />
+                  ))}
+                </div>
+              )}
             </h3>
 
             {body && (
-              <p className="text-sm text-slate-300 leading-relaxed mb-2 whitespace-pre-line">
+              <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
                 {body}
               </p>
-            )}
-
-            {tags && tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {tags.map((tag, index) => (
-                  <Tag
-                    key={`${tag.label}-${index}`}
-                    label={tag.label}
-                    tone={tag.tone}
-                  />
-                ))}
-              </div>
             )}
           </div>
         </div>

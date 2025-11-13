@@ -18,10 +18,6 @@ export interface PriceProps {
    */
   suffix?: string;
   /**
-   * Display variant
-   */
-  variant?: 'large' | 'small';
-  /**
    * Additional CSS classes
    */
   className?: string;
@@ -30,17 +26,17 @@ export interface PriceProps {
 /**
  * Format price using Intl.NumberFormat with proper currency formatting
  */
-const formatPrice = (amount: number, currency: string): string => {
+const formatSplitPrice = (amount: number, currency: string): string => {
   try {
-    return new Intl.NumberFormat('en-CH', {
-      style: 'currency',
+    return  new Intl.NumberFormat('en-CH', {
+      style: 'decimal',
       currency: currency.toUpperCase(),
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
   } catch {
     // Fallback if currency is invalid
-    return `${currency} ${amount.toLocaleString()}`;
+    return amount.toLocaleString();
   }
 };
 
@@ -48,45 +44,40 @@ const formatPrice = (amount: number, currency: string): string => {
  * Price component with optional compare pricing and formatting
  */
 export const Price: React.FC<PriceProps> = ({
-  amount,
-  currency,
-  compareAmount,
-  suffix,
-  variant = 'large',
-  className = '',
-}) => {
-  const formattedPrice = formatPrice(amount, currency);
-  const formattedComparePrice = compareAmount ? formatPrice(compareAmount, currency) : null;
-
-  const priceSize = variant === 'large' ? 'text-4xl md:text-5xl' : 'text-2xl md:text-3xl';
-  const suffixSize = variant === 'large' ? 'text-base md:text-lg' : 'text-sm md:text-base';
+                                              amount,
+                                              currency,
+                                              compareAmount,
+                                              suffix,
+                                              className = '',
+                                            }) => {
+  const formattedPrice = formatSplitPrice(amount, currency);
+  const formattedComparePrice = compareAmount ? formatSplitPrice(compareAmount, currency) : null;
 
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       {compareAmount && formattedComparePrice && (
-        <div className="flex items-center gap-2">
-          <span
-            className="text-text-muted line-through text-xl md:text-2xl font-medium"
-            aria-label={`Original price: ${formattedComparePrice}`}
-          >
-            {formattedComparePrice}
-          </span>
-        </div>
+        <p
+          className="relative isolate flex gap-1 items-end text-brand-gray-light w-fit"
+          aria-label={`Original price: ${formattedComparePrice}`}
+        >
+          <small className="font-light text-sm leading-none">{currency}</small>
+          <span className="text-lg leading-none">{formattedComparePrice}</span>
+          <span className="absolute block w-full h-px left-0 top-1/2 bg-current -rotate-12" />
+        </p>
       )}
 
-      <div className="flex items-baseline gap-2">
-        <span
-          className={`font-bold text-text-primary ${priceSize}`}
-          aria-label={`Current price: ${formattedPrice}${suffix || ''}`}
-        >
-          {formattedPrice}
-        </span>
+      <p
+        className="relative flex gap-1 items-baseline text-brand-white"
+        aria-label={`Original price: ${formattedPrice}`}
+      >
+        <small className="font-light text-lg leading-none">{currency}</small>
+        <span className="text-2xl leading-none font-bold">{formattedPrice}</span>
         {suffix && (
-          <span className={`text-text-muted ${suffixSize}`}>
+          <small className="text-sm leading-none">
             {suffix}
-          </span>
+          </small>
         )}
-      </div>
+      </p>
     </div>
   );
 };

@@ -9,9 +9,8 @@ This is a Next.js conference landing page for ZurichJS Conference 2026. The code
 1. **Type Safety First**: Strict TypeScript, no `any` types, comprehensive type definitions
 2. **Atomic Design**: Components organized by atoms → molecules → organisms
 3. **Data Separation**: All content data lives in `src/data/`, never in components
-4. **Design Token System**: All colors, spacing, typography from `src/styles/tokens.ts`
-5. **Accessibility**: WCAG AAA compliance, keyboard navigation, screen readers
-6. **Performance**: No hydration warnings, optimized bundles, lazy loading when appropriate
+4. **Accessibility**: WCAG AAA compliance, keyboard navigation, screen readers
+5. **Performance**: No hydration warnings, optimized bundles, lazy loading when appropriate
 
 ## Architecture
 
@@ -27,7 +26,7 @@ src/
 ├── data/                # All static content and configuration
 ├── hooks/               # Custom React hooks
 ├── pages/               # Next.js pages (minimal, mostly composition)
-├── styles/              # Global styles, tokens, utilities
+├── styles/              # Global styles, utilities
 └── types/               # Shared TypeScript types (if needed)
 ```
 
@@ -100,21 +99,6 @@ src/data/
 
 ## Styling System
 
-### Design Tokens (`src/styles/tokens.ts`)
-
-- **Single source of truth** for all design values
-- Never use arbitrary color values in components
-- Organized by: colors, spacing, typography, shadows, etc.
-
-```typescript
-// ✅ Good - use tokens
-import { colors } from '@/styles/tokens';
-const bgColor = colors.surface.card;
-
-// ❌ Bad - arbitrary values
-const bgColor = '#242528'; // Use tokens instead!
-```
-
 ### Tailwind CSS
 
 - Prefer Tailwind utility classes over custom CSS
@@ -122,29 +106,11 @@ const bgColor = '#242528'; // Use tokens instead!
 - Custom utilities in `@layer utilities` for reusable patterns
 
 ```tsx
-// ✅ Good - Tailwind utilities
+// ❌ Bad - Tailwind custom utilities
 <div className="bg-[#242528] rounded-2xl px-4 py-3" />
 
-// ✅ Better - use utility patterns
-import { stylePatterns } from '@/styles/utils';
-<div className={stylePatterns.card} />
-```
-
-### Style Utilities (`src/styles/utils.ts`)
-
-- Common style patterns for reuse
-- Helper functions like `cn()` for conditional classes
-- Motion variants for Framer Motion
-
-```typescript
-import { stylePatterns, cn } from '@/styles/utils';
-
-// Conditional classes
-const className = cn(
-  stylePatterns.card,
-  isActive && 'ring-2 ring-accent',
-  disabled && 'opacity-50'
-);
+// ✅ Good - use utility patterns
+<div className="bg-brand-yellow-main rounded-2xl px-4 py-3" />
 ```
 
 ## TypeScript Standards
@@ -215,7 +181,7 @@ export const MyComponent: React.FC<MyComponentProps> = ({
   className = '',
 }) => {
   const { shouldAnimate } = useMotion();
-  
+
   return (
     <div className={`base-styles ${className}`}>
       {title}
@@ -236,12 +202,12 @@ interface Props {
   // Required
   title: string;
   id: string;
-  
+
   // Optional
   description?: string;
   icon?: IconType;
   className?: string;
-  
+
   // Children/callbacks last
   children?: React.ReactNode;
   onClick?: () => void;
@@ -415,7 +381,7 @@ colors.semantic.warning  // #F97316 - Warning states
 
 ```tsx
 // ✅ In Tailwind (via @theme in globals.css)
-<div className="bg-[#242528] text-white" />
+<div className="bg-[#242528] text-brand-white" />
 
 // ✅ In styled components/JS
 import { colors } from '@/styles/tokens';
@@ -438,14 +404,14 @@ const bgColor = '#242528'; // Use tokens!
 ```typescript
 /**
  * Component description explaining purpose
- * 
+ *
  * @example
  * <MyComponent title="Hello" />
  */
 export const MyComponent: React.FC<Props> = (props) => {
   // Implementation comment when logic is complex
   const processedData = complexFunction(); // Explain why
-  
+
   return <div>...</div>;
 };
 ```
@@ -453,7 +419,6 @@ export const MyComponent: React.FC<Props> = (props) => {
 ### File Naming
 
 - Components: PascalCase (`Button.tsx`, `TimelineCard.tsx`)
-- Utilities: camelCase (`tokens.ts`, `utils.ts`)
 - Data files: camelCase (`hero.ts`, `schedule.ts`)
 - Test files: `*.test.tsx` or `*.spec.tsx`
 
@@ -527,7 +492,7 @@ feat: add timeline section with auto-highlighting
 ## When in Doubt
 
 1. Check existing components for patterns
-2. Refer to `src/styles/tokens.ts` for design values
+2. Refer to `src/styles/globals.css` for design values
 3. Look at `src/data/` for data structure examples
 4. Follow atomic design: atoms → molecules → organisms
 5. Keep components small, focused, and reusable
@@ -550,7 +515,7 @@ feat: add timeline section with auto-highlighting
 
 ✅ **Do** use strict TypeScript
 ✅ **Do** separate data from components
-✅ **Do** use design tokens
+✅ **Do** use tailwind design tokens
 ✅ **Do** follow atomic design
 ✅ **Do** make it accessible
 ✅ **Do** respect user preferences

@@ -3,9 +3,6 @@
  * Central export file for all email templates, components, and utilities
  */
 
-// Design Tokens
-export * from './design/tokens';
-
 // Components
 export {
   EmailLayout,

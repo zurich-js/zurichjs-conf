@@ -1,5 +1,4 @@
 import React from 'react';
-import { tokens } from '@/styles/tokens';
 
 export interface StatCellProps {
   /**
@@ -43,8 +42,8 @@ export const StatCell: React.FC<StatCellProps> = ({
 }) => {
   // Days use grouping (e.g., "1,234"), others use zero-padding (e.g., "09")
   const useGrouping = label.toLowerCase().includes('day');
-  const formattedValue = formatter 
-    ? formatter(value) 
+  const formattedValue = formatter
+    ? formatter(value)
     : defaultFormatter(value, useGrouping);
 
   return (
@@ -55,9 +54,8 @@ export const StatCell: React.FC<StatCellProps> = ({
     >
       {/* Numeric value */}
       <div
-        className="text-4xl md:text-5xl font-bold tabular-nums tracking-tight"
-        style={{ 
-          color: tokens.colors.countdown.textPrimary,
+        className="text-4xl md:text-5xl font-bold tabular-nums tracking-tight text-brand-white"
+        style={{
           fontVariantNumeric: 'tabular-nums',
           minWidth: useGrouping ? '2.5ch' : '2ch',
         }}
@@ -65,14 +63,10 @@ export const StatCell: React.FC<StatCellProps> = ({
       >
         {formattedValue}
       </div>
-      
+
       {/* Label */}
       <div
-        className="text-sm md:text-base font-medium"
-        style={{ 
-          color: tokens.colors.countdown.textPrimary,
-          letterSpacing: '0.02em',
-        }}
+        className="text-sm md:text-base font-medium text-brand-white tracking-wide"
         aria-hidden="true"
       >
         {label}

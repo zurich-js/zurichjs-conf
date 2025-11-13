@@ -182,7 +182,7 @@ export default function AdminDashboard() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold text-black">
+                  <h1 className="text-lg font-bold text-black">
                     Admin Dashboard
                   </h1>
                   <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">ZurichJS Conference 2026</p>
@@ -889,7 +889,7 @@ function ConfirmModal({
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={onConfirm}
-              className={`flex-1 ${buttonBg} text-white px-4 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${confirmColor}-500 transition-all cursor-pointer`}
+              className={`flex-1 ${buttonBg} text-brand-white px-4 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${confirmColor}-500 transition-all cursor-pointer`}
             >
               {confirmText}
             </button>
@@ -961,7 +961,7 @@ function FinancialsTab() {
               </svg>
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-green-600">
+          <p className="text-xl font-bold text-green-600">
             {(summary.totalRevenue / 100).toFixed(2)} CHF
           </p>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 font-medium">
@@ -978,7 +978,7 @@ function FinancialsTab() {
               </svg>
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-red-600">
+          <p className="text-xl font-bold text-red-600">
             {(summary.totalRefunded / 100).toFixed(2)} CHF
           </p>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 font-medium">
@@ -995,7 +995,7 @@ function FinancialsTab() {
               </svg>
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-blue-600">
+          <p className="text-xl font-bold text-blue-600">
             {(summary.netRevenue / 100).toFixed(2)} CHF
           </p>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 font-medium">

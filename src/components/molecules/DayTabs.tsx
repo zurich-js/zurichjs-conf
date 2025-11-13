@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState, KeyboardEvent } from 'react';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { colors } from '@/styles/tokens';
 
 export interface DayTab {
   id: string;
@@ -67,7 +66,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
     // Scroll active tab into view on mobile - align to left edge
     if (window.innerWidth < 640 && scrollContainer) {
       const tabLeft = activeTabElement.offsetLeft;
-      
+
       // Scroll so active tab is at the left edge
       scrollContainer.scrollTo({
         left: tabLeft,
@@ -95,7 +94,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
   useEffect(() => {
     const updateIndicator = () => {
       if (!containerRef.current) return;
-      
+
       // Recompute indicator position
       const activeTabElement = tabRefs.current.get(activeTab);
       if (activeTabElement) {
@@ -113,7 +112,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
     updateIndicator();
 
     const scrollContainer = containerRef.current?.querySelector('.overflow-x-auto') as HTMLElement;
-    
+
     // Add scroll listener to update indicator position during scroll
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', updateIndicator);
@@ -176,28 +175,23 @@ export const DayTabs: React.FC<DayTabsProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`w-full overflow-hidden ${className}`}
-      style={
-        {
-          '--brandAccent': colors.brand.primary,
-          '--brandPrimary': colors.brand.primary,
-          '--textMuted': colors.text.muted,
-        } as React.CSSProperties
-      }
+      className={`w-full pt-8 ${className}`}
     >
       {/* Wrapper with bottom border (grey line) */}
-      <div className="relative border-b border-slate-200 w-full">
-        {/* Scrollable container */}
-        <div className="relative overflow-x-auto sm:overflow-visible -mb-px scrollbar-hide w-full">
+      <div className="relative isolate w-full">
+        <div
+          className="absolute left-0 w-full z-10 bottom-0 h-[4px] bg-brand-gray-lightest pointer-events-none"
+        />
+
+        <div className="relative z-20 overflow-x-auto sm:overflow-visible -mb-1 scrollbar-hide w-full">
           {/* Tabs row - left aligned */}
           <div
             role="tablist"
             aria-label="Conference schedule by day"
-            className="relative flex items-end"
+            className="relative flex items-end gap-10"
           >
             {tabs.map((tab, index) => {
               const isActive = activeTab === tab.id;
-              const isFirst = index === 0;
               return (
                 <button
                   key={tab.id}
@@ -215,33 +209,31 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => onTabChange(tab.id)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
-                  className={`group relative shrink-0 py-3 outline-none min-h-[44px] flex flex-col items-start justify-center focus-visible:ring-2 focus-visible:ring-[color:var(--brandAccent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation ${
-                    isFirst ? 'pl-0 pr-4 sm:pr-4' : 'px-4 sm:px-4'
-                  }`}
+                  className="group relative shrink-0 py-2.5 outline-none min-h-[44px]
+                  flex flex-col gap-2.5 items-start justify-center focus-visible:ring-2 focus-visible:ring-brand-yellow-main/40 focus-visible:ring-offset-2
+                  focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation"
                   style={{
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
                   {/* Title */}
                   <span
-                    className={`block leading-tight whitespace-nowrap transition-colors ${
+                    className={`block leading-tight text-md xs:text-lg font-bold whitespace-nowrap transition-colors ${
                       isActive
-                        ? 'font-semibold text-slate-900'
-                        : 'font-medium text-slate-500 group-hover:text-slate-700 group-active:text-slate-900'
+                        ? 'text-brand-black'
+                        : 'text-brand-gray-light group-hover:text-brand-black group-active:text-brand-black'
                     }`}
-                    style={{
-                      fontSize: 'clamp(18px, 5vw, 24px)',
-                    }}
                   >
                     {tab.label}
                   </span>
 
                   {/* Date sublabel */}
                   <span
-                    className="mt-1 block whitespace-nowrap text-[color:var(--textMuted)] leading-tight"
-                    style={{
-                      fontSize: 'clamp(12px, 3vw, 12px)',
-                    }}
+                    className={`block leading-tight text-xs xs:text-sm whitespace-nowrap transition-colors ${
+                      isActive
+                        ? 'text-brand-black'
+                        : 'text-brand-gray-light group-hover:text-brand-black group-active:text-brand-black'
+                    }`}
                   >
                     {tab.date}
                   </span>
@@ -253,7 +245,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
 
         {/* Animated yellow indicator bar */}
         <div
-          className="absolute bottom-0 h-[3px] rounded-full bg-[color:var(--brandAccent)] pointer-events-none"
+          className="absolute z-30 bottom-0 h-[4px] rounded-full bg-brand-primary pointer-events-none"
           style={{
             left: `${indicatorStyle.left}px`,
             width: `${indicatorStyle.width}px`,

@@ -62,10 +62,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Contact Information */}
       <div className="bg-black rounded-2xl p-6 md:p-8">
-        <h2 className="text-xl font-bold text-white mb-6">Contact Information</h2>
+        <h2 className="text-xl font-bold text-brand-white mb-6">Contact Information</h2>
         <div className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
+            <label htmlFor="email" className="block text-sm font-semibold text-brand-white mb-2">
               Email Address <span className="text-red-400">*</span>
             </label>
             <Input
@@ -82,7 +82,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-semibold text-white mb-2">
+            <label htmlFor="phone" className="block text-sm font-semibold text-brand-white mb-2">
               Phone Number (Optional)
             </label>
             <Input
@@ -98,11 +98,11 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
       {/* Billing Information */}
       <div className="bg-black rounded-2xl p-6 md:p-8">
-        <h2 className="text-xl font-bold text-white mb-6">Billing Information</h2>
+        <h2 className="text-xl font-bold text-brand-white mb-6">Billing Information</h2>
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="firstName" className="block text-sm font-semibold text-brand-white mb-2">
                 First Name <span className="text-red-400">*</span>
               </label>
               <Input
@@ -119,7 +119,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </div>
 
             <div>
-              <label htmlFor="lastName" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="lastName" className="block text-sm font-semibold text-brand-white mb-2">
                 Last Name <span className="text-red-400">*</span>
               </label>
               <Input
@@ -138,7 +138,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="company" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="company" className="block text-sm font-semibold text-brand-white mb-2">
                 Company <span className="text-red-400">*</span>
               </label>
               <Input
@@ -155,7 +155,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </div>
 
             <div>
-              <label htmlFor="jobTitle" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="jobTitle" className="block text-sm font-semibold text-brand-white mb-2">
                 Job Title <span className="text-red-400">*</span>
               </label>
               <Input
@@ -173,7 +173,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </div>
 
           <div>
-            <label htmlFor="addressLine1" className="block text-sm font-semibold text-white mb-2">
+            <label htmlFor="addressLine1" className="block text-sm font-semibold text-brand-white mb-2">
               Address Line 1 <span className="text-red-400">*</span>
             </label>
             <Input
@@ -190,7 +190,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </div>
 
           <div>
-            <label htmlFor="addressLine2" className="block text-sm font-semibold text-white mb-2">
+            <label htmlFor="addressLine2" className="block text-sm font-semibold text-brand-white mb-2">
               Address Line 2 (Optional)
             </label>
             <Input
@@ -204,7 +204,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="city" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="city" className="block text-sm font-semibold text-brand-white mb-2">
                 City <span className="text-red-400">*</span>
               </label>
               <Input
@@ -221,7 +221,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </div>
 
             <div>
-              <label htmlFor="state" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="state" className="block text-sm font-semibold text-brand-white mb-2">
                 State/Province (Optional)
               </label>
               <Input
@@ -234,7 +234,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </div>
 
             <div>
-              <label htmlFor="postalCode" className="block text-sm font-semibold text-white mb-2">
+              <label htmlFor="postalCode" className="block text-sm font-semibold text-brand-white mb-2">
                 Postal Code <span className="text-red-400">*</span>
               </label>
               <Input
@@ -252,7 +252,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </div>
 
           <div>
-            <label htmlFor="country" className="block text-sm font-semibold text-white mb-2">
+            <label htmlFor="country" className="block text-sm font-semibold text-brand-white mb-2">
               Country <span className="text-red-400">*</span>
             </label>
             <Input
@@ -312,7 +312,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="text-gray-400 hover:text-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
+          className="text-gray-400 hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
         >
           <svg
             className="w-4 h-4"

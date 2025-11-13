@@ -97,7 +97,7 @@ const RefundPolicyPage: React.FC = () => {
                     Standard, Student/Unemployed & VIP Tickets
                   </h3>
                   <p className="text-gray-200">
-                    All ticket types (Standard, Student/Unemployed, and VIP) are <strong className="text-white">refundable</strong> under the conditions
+                    All ticket types (Standard, Student/Unemployed, and VIP) are <strong className="text-brand-white">refundable</strong> under the conditions
                     specified in this policy. Student/Unemployed tickets follow the same refund policy as Standard tickets.
                   </p>
                 </div>
@@ -112,16 +112,16 @@ const RefundPolicyPage: React.FC = () => {
 
               <div className="space-y-4">
                 <div className="bg-black rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold mb-3 text-white">1. Conference Cancellation</h3>
+                  <h3 className="text-lg font-semibold mb-3 text-brand-white">1. Conference Cancellation</h3>
                   <p className="text-gray-200">
                     If ZurichJS Conference 2026 is cancelled by the organizers, all
-                    ticket holders will receive a <strong className="text-white">full refund (100%)</strong> of the ticket
+                    ticket holders will receive a <strong className="text-brand-white">full refund (100%)</strong> of the ticket
                     price.
                   </p>
                 </div>
 
                 <div className="bg-black rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold mb-3 text-white">2. Conference Postponement</h3>
+                  <h3 className="text-lg font-semibold mb-3 text-brand-white">2. Conference Postponement</h3>
                   <p className="text-gray-200 mb-3">
                     If the conference is postponed to a new date, ticket holders have two options:
                   </p>
@@ -129,13 +129,13 @@ const RefundPolicyPage: React.FC = () => {
                     <li>Transfer your ticket to the new date at no additional cost, or</li>
                     <li>
                       Request a refund within 14 days of the postponement announcement for a{' '}
-                      <strong className="text-white">full refund (100%)</strong>
+                      <strong className="text-brand-white">full refund (100%)</strong>
                     </li>
                   </ul>
                 </div>
 
                 <div className="bg-black rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold mb-3 text-white">3. Major Conference Changes</h3>
+                  <h3 className="text-lg font-semibold mb-3 text-brand-white">3. Major Conference Changes</h3>
                   <p className="text-gray-200 mb-3">
                     If significant changes are made to the conference (e.g., venue change to a
                     different city, major format changes), ticket holders may request a refund
@@ -143,42 +143,42 @@ const RefundPolicyPage: React.FC = () => {
                   </p>
                   <ul className="list-disc list-inside space-y-2 text-gray-200">
                     <li>
-                      <strong className="text-white">More than 60 days before event:</strong> 100% refund
+                      <strong className="text-brand-white">More than 60 days before event:</strong> 100% refund
                     </li>
                     <li>
-                      <strong className="text-white">30-60 days before event:</strong> 75% refund
+                      <strong className="text-brand-white">30-60 days before event:</strong> 75% refund
                     </li>
                     <li>
-                      <strong className="text-white">Less than 30 days before event:</strong> 50% refund
+                      <strong className="text-brand-white">Less than 30 days before event:</strong> 50% refund
                     </li>
                   </ul>
                 </div>
 
                 <div className="bg-black rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold mb-3 text-white">4. Personal Circumstances</h3>
+                  <h3 className="text-lg font-semibold mb-3 text-brand-white">4. Personal Circumstances</h3>
                   <p className="text-gray-200 mb-3">
                     If you cannot attend due to personal reasons, refunds are available based on the
                     timing of your request:
                   </p>
                   <ul className="list-disc list-inside space-y-2 text-gray-200">
                     <li>
-                      <strong className="text-white">More than 60 days before event:</strong> 80% refund
+                      <strong className="text-brand-white">More than 60 days before event:</strong> 80% refund
                     </li>
                     <li>
-                      <strong className="text-white">30-60 days before event:</strong> 50% refund
+                      <strong className="text-brand-white">30-60 days before event:</strong> 50% refund
                     </li>
                     <li>
-                      <strong className="text-white">Less than 30 days before event:</strong> No refund available (ticket
+                      <strong className="text-brand-white">Less than 30 days before event:</strong> No refund available (ticket
                       may be transferred to another person)
                     </li>
                   </ul>
                 </div>
 
                 <div className="bg-black rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold mb-3 text-white">5. Medical Emergencies</h3>
+                  <h3 className="text-lg font-semibold mb-3 text-brand-white">5. Medical Emergencies</h3>
                   <p className="text-gray-200">
                     In the case of serious illness or medical emergency (with supporting
-                    documentation), a <strong className="text-white">full refund (100%)</strong> may be granted at the
+                    documentation), a <strong className="text-brand-white">full refund (100%)</strong> may be granted at the
                     discretion of the organizers, regardless of timing.
                   </p>
                 </div>
@@ -193,7 +193,7 @@ const RefundPolicyPage: React.FC = () => {
               <div className="bg-black rounded-2xl p-6">
                 <p className="text-gray-200 mb-4">
                   All ticket types may be transferred to another person at no
-                  cost up to <strong className="text-white">7 days before the event</strong>. Note: Student/Unemployed tickets
+                  cost up to <strong className="text-brand-white">7 days before the event</strong>. Note: Student/Unemployed tickets
                   can only be transferred to someone who also qualifies for the discount. To transfer your ticket:
                 </p>
                 <ol className="list-decimal list-inside space-y-2 text-gray-200">
@@ -240,13 +240,13 @@ const RefundPolicyPage: React.FC = () => {
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-gray-200">
                   <li>
-                    <strong className="text-white">More than 14 days before workshop:</strong> 100% refund
+                    <strong className="text-brand-white">More than 14 days before workshop:</strong> 100% refund
                   </li>
                   <li>
-                    <strong className="text-white">7-14 days before workshop:</strong> 50% refund
+                    <strong className="text-brand-white">7-14 days before workshop:</strong> 50% refund
                   </li>
                   <li>
-                    <strong className="text-white">Less than 7 days before workshop:</strong> No refund available
+                    <strong className="text-brand-white">Less than 7 days before workshop:</strong> No refund available
                   </li>
                 </ul>
               </div>

@@ -122,29 +122,29 @@ const SuccessPage: React.FC = () => {
 
               {/* Order Details Card */}
               <div className="bg-black rounded-2xl p-8 mb-8">
-                <h2 className="text-2xl font-bold text-brand-primary mb-6">Order Details</h2>
+                <h2 className="text-xl font-bold text-brand-primary mb-6">Order Details</h2>
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Order Number</span>
-                    <span className="text-white font-semibold font-mono">
+                    <span className="text-brand-white font-semibold font-mono">
                       {getOrderNumber(sessionDetails.session_id)}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Customer Name</span>
-                    <span className="text-white">{sessionDetails.customer_name || 'N/A'}</span>
+                    <span className="text-brand-white">{sessionDetails.customer_name || 'N/A'}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Email</span>
-                    <span className="text-white">{sessionDetails.customer_email || 'N/A'}</span>
+                    <span className="text-brand-white">{sessionDetails.customer_email || 'N/A'}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Amount Paid</span>
-                    <span className="text-white font-semibold">
+                    <span className="text-brand-white font-semibold">
                       {formatAmount(sessionDetails.amount_total, sessionDetails.currency)}
                     </span>
                   </div>
@@ -160,7 +160,7 @@ const SuccessPage: React.FC = () => {
 
               {/* Next Steps */}
               <div className="bg-black rounded-2xl p-8 mb-8">
-                <h2 className="text-2xl font-bold text-brand-primary mb-6">What&apos;s Next?</h2>
+                <h2 className="text-xl font-bold text-brand-primary mb-6">What&apos;s Next?</h2>
 
                 <div className="space-y-4 text-gray-200">
                   <div className="flex gap-4">
@@ -168,10 +168,10 @@ const SuccessPage: React.FC = () => {
                       1
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold mb-1">Check Your Email</h3>
+                      <h3 className="text-brand-white font-semibold mb-1">Check Your Email</h3>
                       <p className="text-gray-400">
                         We&apos;ve sent a confirmation email with your ticket details and invoice to{' '}
-                        <span className="text-white">{sessionDetails.customer_email}</span>
+                        <span className="text-brand-white">{sessionDetails.customer_email}</span>
                       </p>
                     </div>
                   </div>
@@ -181,7 +181,7 @@ const SuccessPage: React.FC = () => {
                       2
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold mb-1">Save the Date</h3>
+                      <h3 className="text-brand-white font-semibold mb-1">Save the Date</h3>
                       <p className="text-gray-400">
                         ZurichJS Conference 2026 will be held in Zurich. Mark your calendar and make your travel arrangements.
                       </p>
@@ -193,7 +193,7 @@ const SuccessPage: React.FC = () => {
                       3
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold mb-1">Stay Updated</h3>
+                      <h3 className="text-brand-white font-semibold mb-1">Stay Updated</h3>
                       <p className="text-gray-400">
                         Keep an eye on your email for speaker announcements, schedule updates, and important event information.
                       </p>
@@ -205,7 +205,7 @@ const SuccessPage: React.FC = () => {
                       4
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold mb-1">Join Our Community</h3>
+                      <h3 className="text-brand-white font-semibold mb-1">Join Our Community</h3>
                       <p className="text-gray-400">
                         Connect with other attendees and speakers. Follow us on social media for the latest updates.
                       </p>

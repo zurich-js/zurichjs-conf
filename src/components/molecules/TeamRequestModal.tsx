@@ -4,8 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/atoms';
+import { Dialog, DialogPanel, DialogTitle, DialogBackdrop } from '@headlessui/react';
+import { AnimatePresence } from 'framer-motion';
+import {XIcon, CheckIcon, OctagonAlertIcon} from 'lucide-react';
+import {Button, Input, Textarea} from '@/components/atoms';
 
 export interface TeamRequestData {
   name: string;
@@ -22,6 +24,10 @@ export interface TeamRequestModalProps {
   ticketType: string;
   quantity: number;
   onSubmit: (data: TeamRequestData) => Promise<void>;
+  /**
+   * Callback fired when submission is successful
+   */
+  onSuccess?: (data: TeamRequestData) => void;
 }
 
 export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
@@ -30,6 +36,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
   ticketType,
   quantity,
   onSubmit,
+  onSuccess,
 }) => {
   const [formData, setFormData] = useState<TeamRequestData>({
     name: '',
@@ -40,225 +47,282 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Update formData when modal opens with new props
+  React.useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: '',
+        email: '',
+        company: '',
+        ticketType,
+        quantity,
+        message: '',
+      });
+      setError(null);
+      setValidationErrors({});
+    }
+  }, [isOpen, ticketType, quantity]);
+
+  // Validate form
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Invalid email address';
+    }
+
+    if (!formData.company.trim()) {
+      errors.company = 'Company name is required';
+    }
+
+    if (!formData.quantity || formData.quantity < 1) {
+      errors.quantity = 'Quantity must be at least 1';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       await onSubmit(formData);
-      setIsSuccess(true);
-
-      // Close modal after showing success message
-      setTimeout(() => {
-        onClose();
-        // Reset form after modal closes
-        setTimeout(() => {
-          setIsSuccess(false);
-          setFormData({
-            name: '',
-            email: '',
-            company: '',
-            ticketType,
-            quantity,
-            message: '',
-          });
-        }, 300);
-      }, 2000);
-    } catch (error) {
-      console.error('Failed to submit team request:', error);
+      
+      // Call success callback and close modal
+      onSuccess?.(formData);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit team request. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: name === 'quantity' ? parseInt(value, 10) || 0 : value,
     }));
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
-
-  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-          onClick={onClose}
-        />
+      {isOpen && (
+        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+          {/* Backdrop */}
+          <DialogBackdrop className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
 
-        {/* Modal */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-gray-900 rounded-2xl shadow-2xl border border-gray-800 overflow-hidden"
-        >
-          {isSuccess ? (
-            // Success State
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Request Sent!</h3>
-              <p className="text-gray-400">
-                We&apos;ll be in touch shortly with your custom team package quote.
-              </p>
-            </div>
-          ) : (
-            // Form State
-            <>
+          {/* Center container */}
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <DialogPanel className="relative w-full max-w-lg bg-surface-section rounded-[28px] p-6 md:p-8 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 cursor-pointer w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-700 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            aria-label="Close modal"
+            autoFocus
+          >
+            <XIcon size={20} className="fill-brand-white" />
+          </button>
+
+          {/* Form State */}
+          <div className="space-y-5">
               {/* Header */}
-              <div className="bg-brand-primary/10 border-b border-brand-primary/30 px-6 py-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-1">Team Package Request</h2>
-                    <p className="text-sm text-gray-400">
-                      Get exclusive team discounts and simplified invoicing
-                    </p>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="text-gray-400 hover:text-white transition-colors"
-                    aria-label="Close modal"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+              <div className="space-y-2.5">
+                <DialogTitle className="text-xl font-bold text-brand-white mb-2">
+                  Team Package Request
+                </DialogTitle>
+                <p className="text-sm text-brand-gray-light">
+                  Get exclusive team discounts and simplified invoicing
+                </p>
+                <ul className="space-y-1 text-sm text-brand-gray-light">
+                  <li className="flex items-center gap-2">
+                    <CheckIcon size={16} className="stroke-brand-green" />
+                    <span>Custom team pricing</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckIcon size={16} className="stroke-brand-green" />
+                    <span>Single invoice for your whole team</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckIcon size={16} className="stroke-brand-green" />
+                    <span>Bank transfer payment option</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckIcon size={16} className="stroke-brand-green" />
+                    <span>Dedicated support from our team</span>
+                  </li>
+                </ul>
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Error message */}
+                {error && (
+                  <p className="border-2 border-brand-red/50 rounded-lg p-4 text-brand-red">
+                    <OctagonAlertIcon size={16} className="stroke-brand-red inline-block mr-1 mb-[0.1em]" />&nbsp;
+                    {error}
+                  </p>
+                )}
+
                 {/* Team Details */}
-                <div className="bg-gray-800/50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Ticket Type</p>
-                      <p className="text-lg font-semibold text-white">{ticketType}</p>
+                <div className="bg-brand-gray-dark/50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="text-sm text-brand-gray-light mb-1">Ticket Type</p>
+                      <p className="text-lg font-semibold text-brand-white">{ticketType}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-400">Quantity</p>
-                      <p className="text-lg font-semibold text-brand-primary">{quantity} tickets</p>
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <label htmlFor="quantity" className="block text-sm text-brand-gray-light mb-1">
+                          Quantity
+                        </label>
+                        <Input
+                          type="number"
+                          id="quantity"
+                          name="quantity"
+                          min={1}
+                          required
+                          value={formData.quantity}
+                          onChange={handleChange}
+                          className="w-20 text-center"
+                          aria-invalid={!!validationErrors.quantity}
+                          aria-describedby={validationErrors.quantity ? 'quantity-error' : undefined}
+                        />
+                      </div>
                     </div>
                   </div>
+                  {validationErrors.quantity && (
+                    <p id="quantity-error" className="text-brand-red text-sm font-medium mt-2">
+                      {validationErrors.quantity}
+                    </p>
+                  )}
                 </div>
 
                 {/* Name */}
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-                    Your Name *
+                  <label htmlFor="name" className="block text-sm font-semibold text-brand-white mb-2">
+                    Your Name <span className="text-brand-red">*</span>
                   </label>
-                  <input
+                  <Input
                     type="text"
                     id="name"
                     name="name"
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     placeholder="John Doe"
+                    className="w-full"
+                    aria-invalid={!!validationErrors.name}
+                    aria-describedby={validationErrors.name ? 'name-error' : undefined}
                   />
+                  {validationErrors.name && (
+                    <p id="name-error" className="text-brand-red text-sm font-medium mt-1">
+                      {validationErrors.name}
+                    </p>
+                  )}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                    Email Address *
+                  <label htmlFor="email" className="block text-sm font-semibold text-brand-white mb-2">
+                    Email Address <span className="text-brand-red">*</span>
                   </label>
-                  <input
+                  <Input
                     type="email"
                     id="email"
                     name="email"
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     placeholder="john@company.com"
+                    className="w-full"
+                    aria-invalid={!!validationErrors.email}
+                    aria-describedby={validationErrors.email ? 'email-error' : undefined}
                   />
+                  {validationErrors.email && (
+                    <p id="email-error" className="text-brand-red text-sm font-medium mt-1">
+                      {validationErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 {/* Company */}
                 <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-300 mb-2">
-                    Company Name *
+                  <label htmlFor="company" className="block text-sm font-semibold text-brand-white mb-2">
+                    Company Name <span className="text-brand-red">*</span>
                   </label>
-                  <input
+                  <Input
                     type="text"
                     id="company"
                     name="company"
                     required
                     value={formData.company}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     placeholder="Acme Inc."
+                    className="w-full"
+                    aria-invalid={!!validationErrors.company}
+                    aria-describedby={validationErrors.company ? 'company-error' : undefined}
                   />
+                  {validationErrors.company && (
+                    <p id="company-error" className="text-brand-red text-sm font-medium mt-1">
+                      {validationErrors.company}
+                    </p>
+                  )}
                 </div>
 
                 {/* Message */}
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="message" className="block text-sm font-semibold text-brand-white mb-2">
                     Additional Information (Optional)
                   </label>
-                  <textarea
+                  <Textarea
                     id="message"
                     name="message"
                     rows={3}
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent resize-none"
+                    className="w-full"
                     placeholder="Any specific requirements or questions..."
                   />
                 </div>
 
-                {/* Benefits List */}
-                <div className="bg-brand-primary/5 border border-brand-primary/20 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-brand-primary mb-2">Team Package Benefits:</h4>
-                  <ul className="space-y-1 text-sm text-gray-300">
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-brand-primary shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>Custom team pricing</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-brand-primary shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>Single invoice for your whole team</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-brand-primary shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>Bank transfer payment option</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-brand-primary shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>Dedicated support from our team</span>
-                    </li>
-                  </ul>
-                </div>
+                <p className="text-xs text-brand-gray-medium">
+                  Sponsors also get tickets, as well as brand exposure and recruitment opportunities. <a href="mailto:hello@zurichjs.com" className="text-brand-blue hover:text-brand-gray-lightest duration-300 ease-in-out">Reach out</a> for a sponsorship package.
+                </p>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex flex-col justify-between sm:flex-row gap-3 pt-2">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     onClick={onClose}
-                    className="flex-1"
                     disabled={isSubmitting}
                   >
                     Cancel
@@ -266,17 +330,19 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                   <Button
                     type="submit"
                     variant="primary"
-                    className="flex-1 bg-brand-primary text-black hover:bg-brand-dark"
+                    className="bg-brand-primary text-black hover:bg-brand-dark"
+                    loading={isSubmitting}
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? 'Sending...' : 'Request Quote'}
                   </Button>
                 </div>
               </form>
-            </>
-          )}
-        </motion.div>
-      </div>
+          </div>
+            </DialogPanel>
+          </div>
+        </Dialog>
+      )}
     </AnimatePresence>
   );
 };

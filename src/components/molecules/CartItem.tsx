@@ -6,8 +6,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import type { CartItem as CartItemType } from '@/types/cart';
-import { QuantitySelector } from '@/components/atoms';
+import {Input} from '@/components/atoms';
 import { formatPrice } from '@/lib/cart';
+import {CrownIcon, TicketCheck, Trash2Icon} from "lucide-react";
 
 export interface CartItemProps {
   /**
@@ -40,18 +41,9 @@ export const CartItem: React.FC<CartItemProps> = ({
 }) => {
   const totalPrice = item.price * item.quantity;
 
-  // Variant-based styling
-  const variantColors = {
-    standard: 'border-gray-700',
-    vip: 'border-vip/30',
-    member: 'border-brand-primary/30',
-  };
-
-  const borderColor = item.variant ? variantColors[item.variant] : variantColors.standard;
-
   return (
     <motion.div
-      className={`relative bg-black rounded-xl p-4 border ${borderColor}`}
+      className={`relative rounded-xl bg-brand-gray-darkest p-5`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
@@ -63,66 +55,48 @@ export const CartItem: React.FC<CartItemProps> = ({
     >
       <div className="flex gap-4">
         {/* Ticket Icon/Badge */}
-        <div className="flex-shrink-0">
-          <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center">
-            <svg
-              className="w-8 h-8 text-brand-primary"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-            </svg>
-          </div>
-        </div>
 
         {/* Item Details */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-2">
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-white mb-1">
-                {item.title} Ticket
-              </h3>
-              <p className="text-sm text-gray-400">
-                {formatPrice(item.price, item.currency)} per ticket
-              </p>
-            </div>
+            <h3 className="flex gap-4 text-lg font-bold mb-2 text-brand-white">
+              <div className="flex-shrink-0 mt-0.5">
+                { item.variant === 'vip' ? (
+                  <CrownIcon size={32} className="stroke-brand-yellow-main" />
+                ) : item.variant === 'member' ? (
+                  <span>m</span>
+                ) : (
+                  <TicketCheck size={32} className="stroke-current" />
+                )}
+              </div>
+              {item.title} Ticket
+            </h3>
 
             {/* Remove button */}
             <button
               onClick={() => onRemove(item.id)}
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-red-500/20 hover:text-red-400 text-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+              className="ml-auto -mr-2.5 flex-shrink-0 group/btn cursor-pointer p-2.5 rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out"
               aria-label={`Remove ${item.title} ticket from cart`}
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              <Trash2Icon size={16} className="stroke-brand-gray-light group-hover/btn:stroke-brand-red transition-colors duration-300 ease-in-out" />
             </button>
           </div>
 
           {/* Quantity and Total */}
-          <div className="flex items-center justify-between gap-4">
-            <QuantitySelector
+          <div className="flex items-baseline justify-between gap-4">
+            <Input
+              type="number"
               value={item.quantity}
-              onChange={(quantity) => onQuantityChange(item.id, quantity)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const newValue = parseInt(e.target.value, 10);
+                if (!isNaN(newValue)) onQuantityChange(item.id, newValue)
+              }}
               min={1}
               max={10}
-              size="sm"
             />
 
             <div className="text-right">
-              <p className="text-lg font-bold text-white">
+              <p className="text-lg font-bold text-brand-white">
                 {formatPrice(totalPrice, item.currency)}
               </p>
               {item.quantity > 1 && (

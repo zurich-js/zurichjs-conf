@@ -4,9 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/atoms/Button';
-import { Input } from '@/components/atoms/Input';
+import { Dialog, DialogPanel, DialogTitle, DialogBackdrop, RadioGroup, Radio, Field, Label as HeadlessLabel } from '@headlessui/react';
+import { AnimatePresence } from 'framer-motion';
+import { Button, Input, Textarea } from '@/components/atoms';
+import {OctagonAlertIcon, XIcon} from 'lucide-react';
 
 export interface StudentVerificationModalProps {
   /**
@@ -36,6 +37,7 @@ interface FormData {
   studentId?: string;
   university?: string;
   linkedInUrl?: string;
+  ravRegistrationDate?: string;
   additionalInfo?: string;
 }
 
@@ -56,6 +58,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
     studentId: '',
     university: '',
     linkedInUrl: '',
+    ravRegistrationDate: '',
     additionalInfo: '',
   });
 
@@ -63,12 +66,16 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // Handle backdrop click
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
+  const radioOptions = [
+    {
+      label: 'A student',
+      key: 'student' as VerificationType,
+    },
+    {
+      label: 'Unemployed',
+      key: 'unemployed' as VerificationType,
     }
-  };
+  ]
 
   // Handle form input changes
   const handleInputChange = (field: keyof FormData, value: string) => {
@@ -109,6 +116,9 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
         errors.linkedInUrl = 'LinkedIn profile URL is required';
       } else if (!/^https?:\/\/(www\.)?linkedin\.com\/.+/.test(formData.linkedInUrl)) {
         errors.linkedInUrl = 'Please enter a valid LinkedIn profile URL';
+      }
+      if (!formData.ravRegistrationDate?.trim()) {
+        errors.ravRegistrationDate = 'RAV registration date is required';
       }
     }
 
@@ -164,6 +174,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
         studentId: '',
         university: '',
         linkedInUrl: '',
+        ravRegistrationDate: '',
         additionalInfo: '',
       });
       setError(null);
@@ -174,58 +185,32 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          <style jsx>{`
-            .modal-content::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleBackdropClick}
-          >
-            <motion.div
-              className="modal-content relative w-full max-w-2xl bg-surface-section rounded-[28px] p-6 md:p-8 max-h-[90vh] overflow-y-auto"
-              style={{
-                scrollbarWidth: 'none', // Firefox
-                msOverflowStyle: 'none', // IE and Edge
-              }}
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
-            >
+        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+          {/* Backdrop */}
+          <DialogBackdrop className="fixed inset-0 bg-brand-black/80 backdrop-blur-sm" />
+
+          {/* Center container */}
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <DialogPanel className="relative w-full max-w-2xl bg-brand-gray-darkest rounded-[28px] p-6 md:p-8 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              className="absolute top-4 right-4 cursor-pointer w-10 h-10 flex items-center justify-center rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary"
               aria-label="Close modal"
+              autoFocus
             >
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <XIcon size={20} className="fill-brand-white" />
             </button>
 
             {/* Header */}
             <div className="mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              <DialogTitle className="text-xl font-bold text-brand0white mb-2">
                 Verify Your Status
-              </h2>
-              <p className="text-gray-400">
+              </DialogTitle>
+              <p className="text-brand-gray-light">
                 Please provide your details to verify your eligibility for the discounted ticket.
-                We&apos;ll review your information and send you a payment link within 24 hours.
+                Over the next few days, we&#39;ll review your information; we might reach out for further verification.
+                Once verification is successeful, you&#39;ll get a payment link.
               </p>
             </div>
 
@@ -233,46 +218,43 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Error message */}
               {error && (
-                <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400">
+                <p className="border-2 border-brand-red/50 rounded-lg p-4 text-brand-red">
+                  <OctagonAlertIcon size={16} className="stroke-brand-red inline-block mr-1 mb-[0.1em]" />&nbsp;
                   {error}
-                </div>
+                </p>
               )}
 
               {/* Verification Type */}
-              <div>
-                <label className="block text-sm font-semibold text-white mb-3">
-                  I am a <span className="text-red-400">*</span>
+              <RadioGroup
+                value={formData.verificationType}
+                onChange={(value) => handleInputChange('verificationType', value)}
+              >
+                <label className="block text-sm font-semibold text-brand-white mb-3">
+                  I am <span className="text-brand-red">*</span>
                 </label>
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('verificationType', 'student')}
-                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                      formData.verificationType === 'student'
-                        ? 'bg-brand-primary text-black'
-                        : 'bg-gray-800 text-white hover:bg-gray-700'
-                    }`}
-                  >
-                    Student
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('verificationType', 'unemployed')}
-                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                      formData.verificationType === 'unemployed'
-                        ? 'bg-brand-primary text-black'
-                        : 'bg-gray-800 text-white hover:bg-gray-700'
-                    }`}
-                  >
-                    Unemployed
-                  </button>
+                <div className="flex w-fit gap-2">
+                  {radioOptions.map((option) => (
+                    <Field key={option.key} className="">
+                      <Radio
+                        value={option.key}
+                        className="w-fit flex items-center px-2.5 py-2.5 shrink-0 rounded-full font-semibold group
+                      transition-all cursor-pointer data-checked:text-brand-primary border border-brand-gray-medium
+                      text-brand-white hover:text-gray-300"
+                      >
+                        <div className="size-4 shrink-0 rounded-full bg-brand-gray-medium group-data-[checked]:bg-brand-primary transition-colors duration-300 ease-in-out" />
+                        <HeadlessLabel className="px-2.5 pointer-events-none">
+                            {option.label}
+                        </HeadlessLabel>
+                      </Radio>
+                    </Field>
+                  ))}
                 </div>
-              </div>
+              </RadioGroup>
 
               {/* Name */}
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-white mb-2">
-                  Full Name <span className="text-red-400">*</span>
+                <label htmlFor="name" className="block text-sm font-semibold text-brand-white mb-2">
+                  Full Name <span className="text-brand-red">*</span>
                 </label>
                 <Input
                   id="name"
@@ -280,12 +262,13 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="John Doe"
+                  required
                   className="w-full"
                   aria-invalid={!!validationErrors.name}
                   aria-describedby={validationErrors.name ? 'name-error' : undefined}
                 />
                 {validationErrors.name && (
-                  <p id="name-error" className="text-red-400 text-sm mt-1">
+                  <p id="name-error" className="text-brand-red text-sm font-medium mt-1">
                     {validationErrors.name}
                   </p>
                 )}
@@ -293,8 +276,8 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
-                  Email Address <span className="text-red-400">*</span>
+                <label htmlFor="email" className="block text-sm font-semibold text-brand-white mb-2">
+                  Email Address <span className="text-brand-red">*</span>
                 </label>
                 <Input
                   id="email"
@@ -302,12 +285,13 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="john@example.com"
+                  required
                   className="w-full"
                   aria-invalid={!!validationErrors.email}
                   aria-describedby={validationErrors.email ? 'email-error' : undefined}
                 />
                 {validationErrors.email && (
-                  <p id="email-error" className="text-red-400 text-sm mt-1">
+                  <p id="email-error" className="text-brand-red text-sm font-medium mt-1">
                     {validationErrors.email}
                   </p>
                 )}
@@ -317,8 +301,8 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
               {formData.verificationType === 'student' && (
                 <>
                   <div>
-                    <label htmlFor="university" className="block text-sm font-semibold text-white mb-2">
-                      University/School Name <span className="text-red-400">*</span>
+                    <label htmlFor="university" className="block text-sm font-semibold text-brand-white mb-2">
+                      University/School Name <span className="text-brand-red">*</span>
                     </label>
                     <Input
                       id="university"
@@ -326,20 +310,21 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                       value={formData.university}
                       onChange={(e) => handleInputChange('university', e.target.value)}
                       placeholder="ETH Zurich"
+                      required
                       className="w-full"
                       aria-invalid={!!validationErrors.university}
                       aria-describedby={validationErrors.university ? 'university-error' : undefined}
                     />
                     {validationErrors.university && (
-                      <p id="university-error" className="text-red-400 text-sm mt-1">
+                      <p id="university-error" className="text-brand-red text-sm font-medium mt-1">
                         {validationErrors.university}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label htmlFor="studentId" className="block text-sm font-semibold text-white mb-2">
-                      Student ID Number <span className="text-red-400">*</span>
+                    <label htmlFor="studentId" className="block text-sm font-semibold text-brand-white mb-2">
+                      Student ID Number <span className="text-brand-red">*</span>
                     </label>
                     <Input
                       id="studentId"
@@ -347,84 +332,104 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                       value={formData.studentId}
                       onChange={(e) => handleInputChange('studentId', e.target.value)}
                       placeholder="123456789"
+                      required
                       className="w-full"
                       aria-invalid={!!validationErrors.studentId}
                       aria-describedby={validationErrors.studentId ? 'studentId-error' : undefined}
                     />
                     {validationErrors.studentId && (
-                      <p id="studentId-error" className="text-red-400 text-sm mt-1">
+                      <p id="studentId-error" className="text-brand-red text-sm font-medium mt-1">
                         {validationErrors.studentId}
                       </p>
                     )}
-                    <p className="text-gray-500 text-sm mt-1">
-                      We&apos;ll verify this with your school. Please have your student ID ready.
-                    </p>
                   </div>
                 </>
               )}
 
               {/* Unemployed-specific fields */}
               {formData.verificationType === 'unemployed' && (
-                <div>
-                  <label htmlFor="linkedInUrl" className="block text-sm font-semibold text-white mb-2">
-                    LinkedIn Profile URL <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id="linkedInUrl"
-                    type="url"
-                    value={formData.linkedInUrl}
-                    onChange={(e) => handleInputChange('linkedInUrl', e.target.value)}
-                    placeholder="https://linkedin.com/in/johndoe"
-                    className="w-full"
-                    aria-invalid={!!validationErrors.linkedInUrl}
-                    aria-describedby={validationErrors.linkedInUrl ? 'linkedIn-error' : undefined}
-                  />
-                  {validationErrors.linkedInUrl && (
-                    <p id="linkedIn-error" className="text-red-400 text-sm mt-1">
-                      {validationErrors.linkedInUrl}
-                    </p>
-                  )}
-                  <p className="text-gray-500 text-sm mt-1">
-                    We&apos;ll review your profile to verify your employment status.
-                  </p>
-                </div>
+                <>
+                  <div>
+                    <label htmlFor="linkedInUrl" className="block text-sm font-semibold text-brand-white mb-2">
+                      LinkedIn Profile URL <span className="text-brand-red">*</span>
+                    </label>
+                    <Input
+                      id="linkedInUrl"
+                      type="url"
+                      value={formData.linkedInUrl}
+                      onChange={(e) => handleInputChange('linkedInUrl', e.target.value)}
+                      placeholder="https://linkedin.com/in/johndoe"
+                      required
+                      className="w-full"
+                      aria-invalid={!!validationErrors.linkedInUrl}
+                      aria-describedby={validationErrors.linkedInUrl ? 'linkedIn-error' : undefined}
+                    />
+                    {validationErrors.linkedInUrl && (
+                      <p id="linkedIn-error" className="text-brand-red text-sm font-medium mt-1">
+                        {validationErrors.linkedInUrl}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="ravRegistrationDate" className="block text-sm font-semibold text-brand-white mb-2">
+                      RAV Registration Date <span className="text-brand-red">*</span>
+                    </label>
+                    <Input
+                      id="ravRegistrationDate"
+                      type="date"
+                      value={formData.ravRegistrationDate}
+                      onChange={(e) => handleInputChange('ravRegistrationDate', e.target.value)}
+                      required
+                      className="w-full"
+                      aria-invalid={!!validationErrors.ravRegistrationDate}
+                      aria-describedby={validationErrors.ravRegistrationDate ? 'ravRegistrationDate-error' : undefined}
+                    />
+                    {validationErrors.ravRegistrationDate && (
+                      <p id="ravRegistrationDate-error" className="text-brand-red text-sm font-medium mt-1">
+                        {validationErrors.ravRegistrationDate}
+                      </p>
+                    )}
+                  </div>
+                </>
               )}
 
               {/* Additional Info */}
               <div>
-                <label htmlFor="additionalInfo" className="block text-sm font-semibold text-white mb-2">
+                <label htmlFor="additionalInfo" className="block text-sm font-semibold text-brand-white mb-2">
                   Additional Information (Optional)
                 </label>
-                <textarea
+                <Textarea
                   id="additionalInfo"
                   value={formData.additionalInfo}
                   onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
                   placeholder="Any additional context that might help us verify your status..."
                   rows={3}
-                  className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all resize-none"
+                  className="w-full"
                 />
               </div>
 
               {/* Info box */}
               <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-lg p-4">
                 <p className="text-sm text-gray-300">
-                  <strong className="text-white">What happens next?</strong>
+                  <strong className="text-brand-white">What happens next?</strong>
                   <br />
-                  After submitting, we&apos;ll review your information within 24 hours. We may contact
-                  you to validate your student ID or unemployment documents. If approved,
-                  you&apos;ll receive an email with a secure payment link to complete your purchase
-                  at the discounted price.
+                  After submitting, we&apos;ll review your information within 24 hours.
+                  {formData.verificationType === 'student'
+                    ? ' We may contact you to verify your student ID with your school.'
+                    : ' We may contact you to verify your LinkedIn profile and RAV registration documents.'
+                  }
+                  {' '}If approved, you&apos;ll receive an email with a secure payment link to complete
+                  your purchase at the discounted price.
                 </p>
               </div>
 
               {/* Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="flex flex-col justify-between sm:flex-row gap-3 pt-2">
                 <Button
                   type="button"
                   variant="ghost"
-                  size="lg"
                   onClick={onClose}
-                  className="flex-1 sm:flex-initial"
                   disabled={isSubmitting}
                 >
                   Cancel
@@ -432,8 +437,6 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                 <Button
                   type="submit"
                   variant="primary"
-                  size="lg"
-                  className="flex-1 bg-brand-primary text-black hover:bg-brand-dark"
                   loading={isSubmitting}
                   disabled={isSubmitting}
                 >
@@ -441,9 +444,9 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                 </Button>
               </div>
             </form>
-          </motion.div>
-        </motion.div>
-        </>
+            </DialogPanel>
+          </div>
+        </Dialog>
       )}
     </AnimatePresence>
   );

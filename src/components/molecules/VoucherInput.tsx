@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Button } from '@/components/atoms';
+import {Button, Input} from '@/components/atoms';
 
 export interface VoucherInputProps {
   /**
@@ -37,7 +37,7 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!code.trim() || isApplying) return;
 
     setIsApplying(true);
@@ -46,7 +46,7 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
 
     try {
       const result = await onApply(code.trim());
-      
+
       if (result.success) {
         setSuccess(true);
         setCode('');
@@ -73,24 +73,23 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
     <div className={className}>
       <form onSubmit={handleSubmit} className="space-y-2">
         <div className="flex gap-2">
-          <input
-            type="text"
+          <Input
             value={code}
             onChange={handleInputChange}
             placeholder="Enter promo code"
             disabled={disabled || isApplying}
-            className="flex-1 px-4 py-3 bg-gray-800 text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all placeholder:text-gray-500 font-mono"
+            className="w-full font-mono flex-1"
+            fullWidth
             aria-label="Promo code"
             aria-invalid={!!error}
             aria-describedby={error ? 'voucher-error' : success ? 'voucher-success' : undefined}
           />
           <Button
             type="submit"
-            variant="primary"
+            variant="ghost"
             size="md"
             disabled={!code.trim() || disabled || isApplying}
             loading={isApplying}
-            className="bg-brand-primary text-black hover:bg-brand-dark font-semibold"
           >
             Apply
           </Button>
