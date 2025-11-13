@@ -81,8 +81,8 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
   const variantStyles = {
     light: 'bg-brand-white text-black',
     yellow: 'bg-brand-yellow-main text-black',
-    medium: 'bg-brand-gray-darkest text-white',
-    dark: 'bg-brand-black text-white',
+    medium: 'bg-brand-gray-darkest text-brand-white',
+    dark: 'bg-brand-black text-brand-white',
   };
 
   // Calculate padding and margin based on drop configuration

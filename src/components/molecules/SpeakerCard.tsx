@@ -84,10 +84,10 @@ export const SpeakerCard: React.FC<SpeakerCardProps> = ({
 
         {/* Name Badge (if provided) */}
         {name && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-3 text-white">
+          <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-3 text-brand-white">
             <h3 className="font-semibold text-sm md:text-base">{name}</h3>
             {role && (
-              <p className="text-xs md:text-sm text-white/80 mt-0.5">{role}</p>
+              <p className="text-xs md:text-sm text-brand-white/80 mt-0.5">{role}</p>
             )}
           </div>
         )}

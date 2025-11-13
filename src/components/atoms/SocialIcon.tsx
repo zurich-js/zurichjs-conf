@@ -23,7 +23,7 @@ export const SocialIcon: React.FC<SocialIconProps> = ({ kind, href, label }) => 
 
   const ariaLabel = label || `Follow us on ${defaultLabels[kind]}`;
 
-  const baseClassName = 'inline-flex items-center justify-center w-10 h-10 text-white hover:text-[#F1E271] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(241,226,113,0.5)] rounded-md';
+  const baseClassName = 'inline-flex items-center justify-center w-10 h-10 text-brand-white hover:text-[#F1E271] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(241,226,113,0.5)] rounded-md';
 
   const icons: Record<SocialIconType, React.ReactNode> = {
     linkedin: (

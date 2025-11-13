@@ -14,7 +14,7 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
 import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, AttendeeForm, type TeamRequestData } from '@/components/molecules';
-import { Button } from '@/components/atoms';
+import {Button, Heading} from '@/components/atoms';
 import {PageHeader, CheckoutForm, SectionContainer} from '@/components/organisms';
 import { calculateOrderSummary } from '@/lib/cart';
 import type { CheckoutFormData, Cart as CartType } from '@/types/cart';
@@ -343,76 +343,63 @@ export default function CartPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className=""
+                className="flex flex-col lg:flex-row gap-8 justify-center"
               >
-                <div className="grid lg:grid-cols-3 gap-8 w-full">
-                  {/* Ticket Items */}
-                  <div className="lg:col-span-2 space-y-6">
-                    <h1 className="text-xl font-bold text-brand-white mb-6">Your Tickets</h1>
+                {/* Ticket Items */}
+                <div className="flex-[2_0_0] flex flex-col gap-5 max-w-screen-lg">
+                  <Heading level="h1" className="text-xl font-bold text-brand-white">Your tickets</Heading>
 
-                    <div className="space-y-4">
-                      <AnimatePresence mode="popLayout">
-                        {cart.items.map((item, index) => (
-                          <CartItem
-                            key={item.id}
-                            item={item}
-                            onQuantityChange={updateItemQuantity}
-                            onRemove={removeFromCart}
-                            delay={index * 0.05}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Team Package Upsell Banner */}
-                    {showTeamUpsell && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-gradient-to-r from-brand-primary/10 to-brand-primary/5 border border-brand-primary/30 rounded-xl p-6"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="shrink-0 w-12 h-12 bg-brand-primary/20 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-lg font-bold text-brand-white mb-1">
-                              Coming as a group?
-                            </h3>
-                            <p className="text-sm text-gray-300 mb-4">
-                              We offer <strong className="text-brand-primary">custom team pricing</strong> and simplified invoicing for groups of 3+. Let us create a package tailored for your team!
-                            </p>
-                            <div className="flex flex-wrap gap-3">
-                              <button
-                                onClick={handleTeamModalOpen}
-                                className="px-6 py-2.5 bg-brand-primary text-brand-black font-semibold rounded-lg hover:bg-brand-dark transition-colors cursor-pointer"
-                              >
-                                Request Team Quote
-                              </button>
-                              <div className="flex items-center gap-2 text-xs text-brand-gray-light">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                <span>Single invoice • Bank transfer available</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Discount Code Input */}
-                    <div className="pt-6 border-t border-brand-gray-dark">
-                      <h3 className="text-lg font-semibold text-brand-white mb-4">Promo Code</h3>
-                      <VoucherInput onApply={applyVoucher} />
-                    </div>
+                  <div className="space-y-4">
+                    <AnimatePresence mode="popLayout">
+                      {cart.items.map((item, index) => (
+                        <CartItem
+                          key={item.id}
+                          item={item}
+                          onQuantityChange={updateItemQuantity}
+                          onRemove={removeFromCart}
+                          delay={index * 0.05}
+                        />
+                      ))}
+                    </AnimatePresence>
                   </div>
 
-                  {/* Order Summary Sidebar */}
-                  <div className="lg:col-span-1 bg-brand-black p-6 sticky top-24 flex flex-col gap-5">
-                    <h2 className="text-lg font-bold text-brand-white mb-6">Order Summary</h2>
+                  {/* Team Package Upsell Banner */}
+                  {showTeamUpsell && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className=""
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-md font-bold text-brand-white mb-1">
+                            Coming as a group?
+                          </h3>
+                          <p className="text-sm text-brand-gray-light mb-4">
+                            We offer <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">custom team pricing</strong> and simplified invoicing for groups of 3+. Let us create a package tailored for your team!
+                          </p>
+                          <Button
+                            variant="primary"
+                            onClick={handleTeamModalOpen}
+                            size="sm"
+                          >
+                            Request Team Quote
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Discount Code Input */}
+                  <div className="pt-6 border-t border-brand-gray-dark">
+                    <h3 className="text-lg font-semibold text-brand-white mb-4">Promo Code</h3>
+                    <VoucherInput onApply={applyVoucher} />
+                  </div>
+                </div>
+
+                {/* Order Summary Sidebar */}
+                <div className="flex-[1_0_0] lg:max-w-screen-xs sticky top-24 flex flex-col gap-5">
+                    <Heading level="h2" className="text-lg mt-1.5 font-bold text-brand-white">Order summary</Heading>
 
                     <CartSummary
                       summary={orderSummary}
@@ -425,20 +412,19 @@ export default function CartPage() {
                     />
 
                     <Button
-                      variant="primary"
+                      variant="accent"
                       onClick={handleContinueFromReview}
                       className="w-full"
                     >
-                      Continue to Payment
+                      Continue
                     </Button>
 
                     <Link href="/#tickets">
-                      <button className="w-full mt-4 text-center text-sm text-brand-gray-light hover:text-brand-white transition-colors cursor-pointer">
-                        Add More Tickets
-                      </button>
+                      <Button className="w-full" asChild variant="ghost">
+                        Add more tickets
+                      </Button>
                     </Link>
                   </div>
-                </div>
               </motion.div>
             )}
 
@@ -450,9 +436,7 @@ export default function CartPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-4xl mx-auto"
               >
-                <h1 className="text-xl font-bold text-brand-white mb-6">Attendee Information</h1>
                 <AttendeeForm
                   cartItems={ticketItems}
                   initialAttendees={attendees}

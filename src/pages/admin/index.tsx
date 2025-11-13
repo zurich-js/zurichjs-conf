@@ -889,7 +889,7 @@ function ConfirmModal({
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={onConfirm}
-              className={`flex-1 ${buttonBg} text-white px-4 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${confirmColor}-500 transition-all cursor-pointer`}
+              className={`flex-1 ${buttonBg} text-brand-white px-4 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${confirmColor}-500 transition-all cursor-pointer`}
             >
               {confirmText}
             </button>

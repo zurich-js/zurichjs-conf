@@ -332,7 +332,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                 <div className="flex flex-col justify-between sm:flex-row gap-3 pt-2">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     onClick={onClose}
                     disabled={isSubmitting}
                   >

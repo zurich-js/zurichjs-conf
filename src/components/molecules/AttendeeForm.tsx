@@ -5,8 +5,9 @@
 
 import React from 'react';
 import { attendeeInfoSchema, type AttendeeInfo } from '@/lib/validations/checkout';
-import { Input, Button } from '@/components/atoms';
+import { Input, Button, Heading } from '@/components/atoms';
 import type { CartItem as CartItemType } from '@/types/cart';
+import {SectionContainer} from "@/components/organisms";
 
 export interface AttendeeFormProps {
   /**
@@ -113,27 +114,19 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
   let ticketIndex = 0;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="bg-black/50 border border-gray-800 rounded-2xl p-6">
-        <div className="flex items-start gap-4 mb-6">
-          <div className="shrink-0 w-12 h-12 bg-brand-primary/20 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white mb-2">Attendee Information</h2>
-            <p className="text-sm text-gray-400 mb-3">
-              Please provide the name and email for each ticket. Each attendee will receive their individual ticket via email.
+    <SectionContainer>
+      <Heading level="h1" className="text-xl font-bold text-brand-white mb-6">Attendee Information</Heading>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="">
+          <p className="text-sm text-gray-400 mb-3">
+            Please provide the name and email for each ticket. Each attendee will receive their individual ticket via email.
+          </p>
+          <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-lg p-3">
+            <p className="text-sm text-gray-300">
+              <span className="font-semibold text-brand-primary">Note:</span> The first attendee will be used for billing information and will receive an order summary along with their ticket.
             </p>
-            <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-lg p-3">
-              <p className="text-sm text-gray-300">
-                <span className="font-semibold text-brand-primary">Note:</span> The first attendee will be used for billing information and will receive an order summary along with their ticket.
-              </p>
-            </div>
           </div>
         </div>
-      </div>
 
       {cartItems.map((item) => {
         const itemTickets = [];
@@ -142,7 +135,7 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
           itemTickets.push(
             <div
               key={currentIndex}
-              className="bg-black rounded-2xl p-6 space-y-4"
+              className="bg-black rounded-2xl space-y-4"
               data-error={errors[currentIndex] ? 'true' : 'false'}
             >
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-800">
@@ -267,27 +260,28 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
         return itemTickets;
       })}
 
-      {/* Navigation Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-gray-400 hover:text-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
+        {/* Navigation Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-gray-400 hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
 
-        <Button
-          type="submit"
-          variant="primary"
-          className="bg-brand-primary text-black hover:bg-brand-dark font-bold cursor-pointer px-12 py-4 text-lg"
-        >
-          Continue to Payment
-        </Button>
-      </div>
-    </form>
+          <Button
+            type="submit"
+            variant="primary"
+            className="bg-brand-primary text-black hover:bg-brand-dark font-bold cursor-pointer px-12 py-4 text-lg"
+          >
+            Continue to Payment
+          </Button>
+        </div>
+      </form>
+    </SectionContainer>
   );
 };

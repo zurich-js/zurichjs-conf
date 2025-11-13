@@ -229,7 +229,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                 value={formData.verificationType}
                 onChange={(value) => handleInputChange('verificationType', value)}
               >
-                <label className="block text-sm font-semibold text-white mb-3">
+                <label className="block text-sm font-semibold text-brand-white mb-3">
                   I am <span className="text-brand-red">*</span>
                 </label>
                 <div className="flex w-fit gap-2">
@@ -239,7 +239,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                         value={option.key}
                         className="w-fit flex items-center px-2.5 py-2.5 shrink-0 rounded-full font-semibold group
                       transition-all cursor-pointer data-checked:text-brand-primary border border-brand-gray-medium
-                      text-white hover:text-gray-300"
+                      text-brand-white hover:text-gray-300"
                       >
                         <div className="size-4 shrink-0 rounded-full bg-brand-gray-medium group-data-[checked]:bg-brand-primary transition-colors duration-300 ease-in-out" />
                         <HeadlessLabel className="px-2.5 pointer-events-none">
@@ -253,7 +253,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
               {/* Name */}
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-white mb-2">
+                <label htmlFor="name" className="block text-sm font-semibold text-brand-white mb-2">
                   Full Name <span className="text-brand-red">*</span>
                 </label>
                 <Input
@@ -276,7 +276,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
+                <label htmlFor="email" className="block text-sm font-semibold text-brand-white mb-2">
                   Email Address <span className="text-brand-red">*</span>
                 </label>
                 <Input
@@ -301,7 +301,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
               {formData.verificationType === 'student' && (
                 <>
                   <div>
-                    <label htmlFor="university" className="block text-sm font-semibold text-white mb-2">
+                    <label htmlFor="university" className="block text-sm font-semibold text-brand-white mb-2">
                       University/School Name <span className="text-brand-red">*</span>
                     </label>
                     <Input
@@ -323,7 +323,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                   </div>
 
                   <div>
-                    <label htmlFor="studentId" className="block text-sm font-semibold text-white mb-2">
+                    <label htmlFor="studentId" className="block text-sm font-semibold text-brand-white mb-2">
                       Student ID Number <span className="text-brand-red">*</span>
                     </label>
                     <Input
@@ -350,7 +350,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
               {formData.verificationType === 'unemployed' && (
                 <>
                   <div>
-                    <label htmlFor="linkedInUrl" className="block text-sm font-semibold text-white mb-2">
+                    <label htmlFor="linkedInUrl" className="block text-sm font-semibold text-brand-white mb-2">
                       LinkedIn Profile URL <span className="text-brand-red">*</span>
                     </label>
                     <Input
@@ -372,7 +372,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                   </div>
 
                   <div>
-                    <label htmlFor="ravRegistrationDate" className="block text-sm font-semibold text-white mb-2">
+                    <label htmlFor="ravRegistrationDate" className="block text-sm font-semibold text-brand-white mb-2">
                       RAV Registration Date <span className="text-brand-red">*</span>
                     </label>
                     <Input
@@ -396,7 +396,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
               {/* Additional Info */}
               <div>
-                <label htmlFor="additionalInfo" className="block text-sm font-semibold text-white mb-2">
+                <label htmlFor="additionalInfo" className="block text-sm font-semibold text-brand-white mb-2">
                   Additional Information (Optional)
                 </label>
                 <Textarea
@@ -412,7 +412,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
               {/* Info box */}
               <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-lg p-4">
                 <p className="text-sm text-gray-300">
-                  <strong className="text-white">What happens next?</strong>
+                  <strong className="text-brand-white">What happens next?</strong>
                   <br />
                   After submitting, we&apos;ll review your information within 24 hours.
                   {formData.verificationType === 'student'

@@ -77,7 +77,7 @@ export const Countdown: React.FC<CountdownProps> = ({
             {/* Unit Display */}
             <div className="flex flex-col items-center">
               <div
-                className="text-md font-normal text-white tabular-nums"
+                className="text-md font-normal text-brand-white tabular-nums"
                 suppressHydrationWarning
               >
                 {unit.padded ? padZero(unit.value) : unit.value}

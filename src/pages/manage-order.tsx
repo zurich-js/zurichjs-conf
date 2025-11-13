@@ -258,50 +258,50 @@ const ManageOrderPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Ticket ID</span>
-                    <span className="text-white font-semibold font-mono text-sm">
+                    <span className="text-brand-white font-semibold font-mono text-sm">
                       {orderDetails.ticket.id.slice(0, 8).toUpperCase()}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Attendee Name</span>
-                    <span className="text-white">{orderDetails.ticket.first_name} {orderDetails.ticket.last_name}</span>
+                    <span className="text-brand-white">{orderDetails.ticket.first_name} {orderDetails.ticket.last_name}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Email</span>
-                    <span className="text-white">{orderDetails.ticket.email}</span>
+                    <span className="text-brand-white">{orderDetails.ticket.email}</span>
                   </div>
 
                   {orderDetails.ticket.company && (
                     <div className="flex justify-between items-center py-3 border-b border-gray-800">
                       <span className="text-gray-400">Company</span>
-                      <span className="text-white">{orderDetails.ticket.company}</span>
+                      <span className="text-brand-white">{orderDetails.ticket.company}</span>
                     </div>
                   )}
 
                   {orderDetails.ticket.job_title && (
                     <div className="flex justify-between items-center py-3 border-b border-gray-800">
                       <span className="text-gray-400">Job Title</span>
-                      <span className="text-white">{orderDetails.ticket.job_title}</span>
+                      <span className="text-brand-white">{orderDetails.ticket.job_title}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Ticket Type</span>
-                    <span className="text-white capitalize">{orderDetails.ticket.ticket_category} - {orderDetails.ticket.ticket_stage.replace('_', ' ')}</span>
+                    <span className="text-brand-white capitalize">{orderDetails.ticket.ticket_category} - {orderDetails.ticket.ticket_stage.replace('_', ' ')}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Amount Paid</span>
-                    <span className="text-white font-semibold">
+                    <span className="text-brand-white font-semibold">
                       {formatAmount(orderDetails.ticket.amount_paid, orderDetails.ticket.currency)}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Purchase Date</span>
-                    <span className="text-white">{formatDate(orderDetails.ticket.created_at)}</span>
+                    <span className="text-brand-white">{formatDate(orderDetails.ticket.created_at)}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3">
@@ -318,11 +318,11 @@ const ManageOrderPage: React.FC = () => {
                 <h2 className="text-xl font-bold text-brand-primary mb-6">Event Information</h2>
                 <div className="space-y-4 text-gray-200">
                   <div>
-                    <h3 className="text-white font-semibold mb-1">📅 Date & Time</h3>
+                    <h3 className="text-brand-white font-semibold mb-1">📅 Date & Time</h3>
                     <p className="text-gray-400">September 11, 2026</p>
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold mb-1">📍 Venue</h3>
+                    <h3 className="text-brand-white font-semibold mb-1">📍 Venue</h3>
                     <p className="text-gray-400">
                       Technopark Zürich<br />
                       Technoparkstrasse 1<br />
@@ -346,7 +346,7 @@ const ManageOrderPage: React.FC = () => {
                     href="https://maps.google.com/?q=Technopark+Zürich"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors"
+                    className="flex items-center justify-center gap-2 bg-gray-800 text-brand-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors"
                   >
                     📍 View Map
                   </a>

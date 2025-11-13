@@ -381,7 +381,7 @@ colors.semantic.warning  // #F97316 - Warning states
 
 ```tsx
 // ✅ In Tailwind (via @theme in globals.css)
-<div className="bg-[#242528] text-white" />
+<div className="bg-[#242528] text-brand-white" />
 
 // ✅ In styled components/JS
 import { colors } from '@/styles/tokens';

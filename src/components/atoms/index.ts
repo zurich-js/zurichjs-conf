@@ -18,7 +18,6 @@ export { Textarea } from './Textarea';
 export { SocialIcon } from './SocialIcon';
 export { Separator } from './Separator';
 export { AddToCalendar } from './AddToCalendar';
-export { QuantitySelector } from './QuantitySelector';
 
 export type { LogoProps } from './Logo';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
@@ -40,5 +39,4 @@ export type { TextareaProps } from './Textarea';
 export type { SocialIconProps, SocialIconType } from './SocialIcon';
 export type { SeparatorProps, SeparatorVariant, SeparatorColor } from './Separator';
 export type { AddToCalendarProps } from './AddToCalendar';
-export type { QuantitySelectorProps } from './QuantitySelector';
 

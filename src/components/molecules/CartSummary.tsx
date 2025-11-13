@@ -76,14 +76,13 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
 
   return (
     <div className={`flex flex-col gap-5 ${className}`}>
-
       <div className="flex flex-col gap-2.5">
         {/* Subtotal */}
         <div className="flex items-center justify-between text-base">
           <span className="text-brand-gray-light">Subtotal</span>
           <span className="text-brand-white font-semibold">
-          {formatPrice(summary.subtotal, summary.currency)}
-        </span>
+            {formatPrice(summary.subtotal, summary.currency)}
+          </span>
         </div>
 
         {/* Discount */}
@@ -91,19 +90,19 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
           <div className="flex items-center justify-between text-base gap-2">
             <span className="text-brand-green text-sm">{getDiscountLabel()}</span>
             <span className="text-brand-green font-semibold tabular-nums shrink-0">
-            <span className="mr-0.5">−</span>{formatPrice(summary.discount, summary.currency)}
-          </span>
+              <span className="mr-0.5">−</span>{formatPrice(summary.discount, summary.currency)}
+            </span>
           </div>
         )}
         {voucherCode && (
           <button
-            className="ml-auto inline-flex items-center cursor-pointer gap-1.5 px-3 py-1.5 border-2 border-brand-gray-dark text-brand-green text-sm font-mono rounded-lg group/btn"
+            className="inline-flex items-center cursor-pointer gap-1.5 px-3 py-1.5 border-2 border-brand-gray-dark text-brand-green text-sm font-mono rounded-lg group/btn"
             aria-label="Remove voucher"
             onClick={onRemoveVoucher}
           >
             <CirclePercentIcon size={14} className="stroke-current" />
             {voucherCode}
-            <XIcon size={16} className="stroke-brand-gray-medium group-hover/btn:stroke-brand-red group-focus/btn:stroke-brand-red" />
+            <XIcon size={16} className="inline-block ml-auto stroke-brand-gray-medium group-hover/btn:stroke-brand-red group-focus/btn:stroke-brand-red" />
           </button>
         )}
 

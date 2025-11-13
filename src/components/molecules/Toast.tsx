@@ -29,8 +29,8 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts }) => {
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             className={`px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 min-w-[300px] pointer-events-auto ${
               toast.type === 'success'
-                ? 'bg-green-500/90 text-white'
-                : 'bg-red-500/90 text-white'
+                ? 'bg-green-500/90 text-brand-white'
+                : 'bg-red-500/90 text-brand-white'
             }`}
           >
             <div className="shrink-0">

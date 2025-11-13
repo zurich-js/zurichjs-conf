@@ -32,10 +32,10 @@ const AccordionItem: React.FC<{ item: FAQItem; isOpen: boolean; onClick: () => v
     <div className="bg-brand-gray-dark rounded-xl">
       <button
         onClick={onClick}
-        className="w-full text-left p-2.5 flex items-center justify-between gap-2.5 hover:text-white transition-colors focus:outline-none focus:ring-0 cursor-pointer"
+        className="w-full text-left p-2.5 flex items-center justify-between gap-2.5 hover:text-brand-white transition-colors focus:outline-none focus:ring-0 cursor-pointer"
         aria-expanded={isOpen}
       >
-        <span className="text-base font-semibold text-white">
+        <span className="text-base font-semibold text-brand-white">
           {item.question}
         </span>
         <motion.span

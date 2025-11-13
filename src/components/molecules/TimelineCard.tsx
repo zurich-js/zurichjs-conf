@@ -75,7 +75,7 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
 
           {/* Content Column */}
           <div className="flex-1 min-w-0 flex flex-col gap-2.5">
-            <h3 className="text-base flex flex-wrap leading-none items-center gap-1.5 sm:text-lg font-semibold text-white group-hover:text-brand-primary transition-colors">
+            <h3 className="text-base flex flex-wrap leading-none items-center gap-1.5 sm:text-lg font-semibold text-brand-white group-hover:text-brand-primary transition-colors">
               <TimelineDot
                 icon={icon}
                 isCurrent={isCurrent}
