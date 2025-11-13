@@ -239,7 +239,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                 {/* Name */}
                 <div>
                   <label htmlFor="name" className="block text-sm font-semibold text-brand-white mb-2">
-                    Your Name <span className="text-red-400">*</span>
+                    Your Name <span className="text-brand-red">*</span>
                   </label>
                   <Input
                     type="text"
@@ -263,7 +263,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                 {/* Email */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-brand-white mb-2">
-                    Email Address <span className="text-red-400">*</span>
+                    Email Address <span className="text-brand-red">*</span>
                   </label>
                   <Input
                     type="email"
@@ -287,7 +287,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                 {/* Company */}
                 <div>
                   <label htmlFor="company" className="block text-sm font-semibold text-brand-white mb-2">
-                    Company Name <span className="text-red-400">*</span>
+                    Company Name <span className="text-brand-red">*</span>
                   </label>
                   <Input
                     type="text"

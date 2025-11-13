@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/atoms';
+import {SectionContainer} from "@/components/organisms/SectionContainer";
 
 export interface PageHeaderProps {
   /**
@@ -16,8 +17,8 @@ export interface PageHeaderProps {
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({ rightContent }) => {
   return (
-    <header className="bg-black border-b border-gray-800 sticky top-0 z-40">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-black sticky top-0 z-40">
+      <SectionContainer>
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="cursor-pointer">
@@ -31,7 +32,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ rightContent }) => {
             </div>
           )}
         </div>
-      </div>
+      </SectionContainer>
     </header>
   );
 };

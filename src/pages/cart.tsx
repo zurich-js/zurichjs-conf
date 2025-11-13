@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
 import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, AttendeeForm, type TeamRequestData } from '@/components/molecules';
 import { Button } from '@/components/atoms';
-import { PageHeader, CheckoutForm } from '@/components/organisms';
+import {PageHeader, CheckoutForm, SectionContainer} from '@/components/organisms';
 import { calculateOrderSummary } from '@/lib/cart';
 import type { CheckoutFormData, Cart as CartType } from '@/types/cart';
 import type { AttendeeInfo } from '@/lib/validations/checkout';
@@ -26,6 +26,7 @@ import { dehydrate } from '@tanstack/react-query';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
+import {TicketXIcon} from "lucide-react";
 
 type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
 
@@ -71,6 +72,7 @@ export default function CartPage() {
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamTicketInfo, setTeamTicketInfo] = useState<{ type: string; quantity: number } | null>(null);
 
+  // TODO: we should actually scan across all tickets. team discounts should work even if you have 2 VIP and 2 standard.
   const eligibleTeamTicket = cart.items.find(item => item.quantity >= 3);
   const showTeamUpsell = eligibleTeamTicket && !cart.couponCode; // Don't show if already using a coupon
 
@@ -185,30 +187,19 @@ export default function CartPage() {
 
         <PageHeader />
 
-        <div className="min-h-screen bg-surface-section flex items-center justify-center px-4">
+        <div className="min-h-screen bg-brand-gray-darkest flex items-center justify-center px-4">
           <div className="max-w-md w-full text-center">
-            <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg
-                className="w-12 h-12 text-gray-600"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-              </svg>
+            <div className="w-full flex justify-center">
+              <TicketXIcon size={48} className="stroke-brand-red" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-3">No Tickets Selected</h1>
-            <p className="text-gray-400 mb-8">
+            <h1 className="text-3xl font-bold text-brand-white mb-3">No Tickets Selected</h1>
+            <p className="text-brand-gray-light mb-8">
               Choose your tickets to get started with your conference registration.
             </p>
             <Link href="/#tickets">
               <Button
                 variant="primary"
-                size="lg"
-                className="bg-brand-primary text-black hover:bg-brand-dark cursor-pointer"
+                asChild
               >
                 View Tickets
               </Button>
@@ -225,36 +216,28 @@ export default function CartPage() {
         <title>Your Tickets | ZurichJS Conference 2026</title>
       </Head>
 
-      <div className="min-h-screen bg-surface-section">
+      <div className="min-h-screen bg-brand-black">
         {/* Header with ticket count */}
         <PageHeader
           rightContent={
-            <span className="text-sm text-gray-400">
-              {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
+            <span className="text-sm text-brand-gray-light">
+              {cart.totalItems} ticket{cart.totalItems !== 1 ? 's' : ''}
             </span>
           }
         />
 
         {/* Progress Steps */}
-        <div className="bg-black/50 border-b border-gray-800">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-brand-darkest">
+          <SectionContainer>
             {isPricingLoading ? (
               // Loading skeleton to prevent layout shift
               <div className="flex items-center justify-center gap-2 sm:gap-4 max-w-2xl mx-auto animate-pulse">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-800" />
-                  <div className="ml-2 sm:ml-3 w-12 h-4 bg-gray-800 rounded" />
-                </div>
-                <div className="w-8 sm:w-16 h-0.5 bg-gray-800" />
-                <div className="flex items-center">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-800" />
-                  <div className="ml-2 sm:ml-3 w-16 h-4 bg-gray-800 rounded" />
-                </div>
-                <div className="w-8 sm:w-16 h-0.5 bg-gray-800" />
-                <div className="flex items-center">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-800" />
-                  <div className="ml-2 sm:ml-3 w-14 h-4 bg-gray-800 rounded" />
-                </div>
+                {Array(3).fill(null).map((_, index) => (
+                    <div key={index} className="flex items-center">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-brand-gray-dark" />
+                        <div className="ml-2 sm:ml-3 w-16 h-4 bg-brand-gray-dark rounded" />
+                    </div>
+                ))}
               </div>
             ) : (
               <div className="flex items-center justify-center gap-1 sm:gap-2 md:gap-3 max-w-2xl mx-auto">
@@ -265,19 +248,19 @@ export default function CartPage() {
                   aria-label="Go to Review Tickets step"
                 >
                   <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
-                    currentStep === 'review' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
+                    currentStep === 'review' ? 'bg-brand-primary text-black' : 'bg-brand-gray-dark text-brand-gray-light'
                   }`}>
                     1
                   </div>
                   <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                    currentStep === 'review' ? 'text-white' : 'text-gray-400'
+                    currentStep === 'review' ? 'text-brand-white' : 'text-brand-gray-light'
                   }`}>
                     Tickets
                   </span>
                 </button>
 
                 {/* Connector */}
-                <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-gray-800 shrink-0"></div>
+                <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-brand-gray-dark shrink-0"></div>
 
                 {/* Step 2 - Attendees (conditional) */}
                 {needsAttendeeInfo && (
@@ -288,18 +271,18 @@ export default function CartPage() {
                       aria-label="Go to Attendees step"
                     >
                       <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
-                        currentStep === 'attendees' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
+                        currentStep === 'attendees' ? 'bg-brand-primary text-black' : 'bg-brand-gray-dark text-brand-gray-light'
                       }`}>
                         2
                       </div>
                       <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                        currentStep === 'attendees' ? 'text-white' : 'text-gray-400'
+                        currentStep === 'attendees' ? 'text-brand-white' : 'text-brand-gray-light'
                       }`}>
                         Attendees
                       </span>
                     </button>
 
-                    <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-gray-800 shrink-0"></div>
+                    <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-brand-gray-dark shrink-0"></div>
                   </>
                 )}
 
@@ -312,18 +295,18 @@ export default function CartPage() {
                       aria-label="Go to Workshop Upsells step"
                     >
                       <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
-                        currentStep === 'upsells' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
+                        currentStep === 'upsells' ? 'bg-brand-primary text-black' : 'bg-brand-gray-dark text-brand-gray-light'
                       }`}>
                         {needsAttendeeInfo ? '3' : '2'}
                       </div>
                       <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                        currentStep === 'upsells' ? 'text-white' : 'text-gray-400'
+                        currentStep === 'upsells' ? 'text-brand-white' : 'text-brand-gray-light'
                       }`}>
                         Workshops
                       </span>
                     </button>
 
-                    <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-gray-800 shrink-0"></div>
+                    <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-brand-gray-dark shrink-0"></div>
                   </>
                 )}
 
@@ -334,23 +317,23 @@ export default function CartPage() {
                   aria-label="Go to Payment step"
                 >
                   <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
-                    currentStep === 'checkout' ? 'bg-brand-primary text-black' : 'bg-gray-800 text-gray-400'
+                    currentStep === 'checkout' ? 'bg-brand-primary text-black' : 'bg-brand-gray-dark text-brand-gray-light'
                   }`}>
                     {needsAttendeeInfo && showWorkshopUpsells ? '4' : needsAttendeeInfo || showWorkshopUpsells ? '3' : '2'}
                   </div>
                   <span className={`ml-1 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                    currentStep === 'checkout' ? 'text-white' : 'text-gray-400'
+                    currentStep === 'checkout' ? 'text-brand-white' : 'text-brand-gray-light'
                   }`}>
                     Payment
                   </span>
                 </button>
               </div>
             )}
-          </div>
+          </SectionContainer>
         </div>
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <SectionContainer className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
           <AnimatePresence mode="wait">
             {/* Step 1: Review Cart */}
             {currentStep === 'review' && (
@@ -360,12 +343,12 @@ export default function CartPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-4xl mx-auto"
+                className=""
               >
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid lg:grid-cols-3 gap-8 w-full">
                   {/* Ticket Items */}
                   <div className="lg:col-span-2 space-y-6">
-                    <h1 className="text-xl font-bold text-white mb-6">Your Tickets</h1>
+                    <h1 className="text-xl font-bold text-brand-white mb-6">Your Tickets</h1>
 
                     <div className="space-y-4">
                       <AnimatePresence mode="popLayout">
@@ -395,7 +378,7 @@ export default function CartPage() {
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-lg font-bold text-white mb-1">
+                            <h3 className="text-lg font-bold text-brand-white mb-1">
                               Coming as a group?
                             </h3>
                             <p className="text-sm text-gray-300 mb-4">
@@ -404,11 +387,11 @@ export default function CartPage() {
                             <div className="flex flex-wrap gap-3">
                               <button
                                 onClick={handleTeamModalOpen}
-                                className="px-6 py-2.5 bg-brand-primary text-black font-semibold rounded-lg hover:bg-brand-dark transition-colors cursor-pointer"
+                                className="px-6 py-2.5 bg-brand-primary text-brand-black font-semibold rounded-lg hover:bg-brand-dark transition-colors cursor-pointer"
                               >
                                 Request Team Quote
                               </button>
-                              <div className="flex items-center gap-2 text-xs text-gray-400">
+                              <div className="flex items-center gap-2 text-xs text-brand-gray-light">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                 </svg>
@@ -421,42 +404,39 @@ export default function CartPage() {
                     )}
 
                     {/* Discount Code Input */}
-                    <div className="pt-6 border-t border-gray-800">
-                      <h3 className="text-lg font-semibold text-white mb-4">Promo Code</h3>
+                    <div className="pt-6 border-t border-brand-gray-dark">
+                      <h3 className="text-lg font-semibold text-brand-white mb-4">Promo Code</h3>
                       <VoucherInput onApply={applyVoucher} />
                     </div>
                   </div>
 
                   {/* Order Summary Sidebar */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-black rounded-2xl p-6 sticky top-24">
-                      <h2 className="text-xl font-bold text-white mb-6">Order Summary</h2>
+                  <div className="lg:col-span-1 bg-brand-black p-6 sticky top-24 flex flex-col gap-5">
+                    <h2 className="text-lg font-bold text-brand-white mb-6">Order Summary</h2>
 
-                      <CartSummary
-                        summary={orderSummary}
-                        showTax={false}
-                        showDiscount={true}
-                        voucherCode={cart.couponCode}
-                        discountType={cart.discountType}
-                        discountValue={cart.discountValue}
-                        onRemoveVoucher={removeVoucher}
-                      />
+                    <CartSummary
+                      summary={orderSummary}
+                      showTax={false}
+                      showDiscount={true}
+                      voucherCode={cart.couponCode}
+                      discountType={cart.discountType}
+                      discountValue={cart.discountValue}
+                      onRemoveVoucher={removeVoucher}
+                    />
 
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        onClick={handleContinueFromReview}
-                        className="w-full mt-6 bg-brand-primary text-black hover:bg-brand-dark font-bold cursor-pointer"
-                      >
-                        Continue to Payment
-                      </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleContinueFromReview}
+                      className="w-full"
+                    >
+                      Continue to Payment
+                    </Button>
 
-                      <Link href="/#tickets">
-                        <button className="w-full mt-4 text-center text-sm text-gray-400 hover:text-white transition-colors cursor-pointer">
-                          Add More Tickets
-                        </button>
-                      </Link>
-                    </div>
+                    <Link href="/#tickets">
+                      <button className="w-full mt-4 text-center text-sm text-brand-gray-light hover:text-brand-white transition-colors cursor-pointer">
+                        Add More Tickets
+                      </button>
+                    </Link>
                   </div>
                 </div>
               </motion.div>
@@ -472,7 +452,7 @@ export default function CartPage() {
                 transition={{ duration: 0.3 }}
                 className="max-w-4xl mx-auto"
               >
-                <h1 className="text-xl font-bold text-white mb-6">Attendee Information</h1>
+                <h1 className="text-xl font-bold text-brand-white mb-6">Attendee Information</h1>
                 <AttendeeForm
                   cartItems={ticketItems}
                   initialAttendees={attendees}
@@ -494,7 +474,7 @@ export default function CartPage() {
               >
                 {/* Header */}
                 <div className="text-center mb-12">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-brand-black text-brand-white mb-4">
                     Add Workshop Credit
                   </h1>
                   <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-6">
@@ -528,13 +508,13 @@ export default function CartPage() {
                     variant="primary"
                     size="lg"
                     onClick={() => setCurrentStep('checkout')}
-                    className="bg-brand-primary text-black hover:bg-brand-dark font-bold cursor-pointer w-full sm:w-auto sm:px-16"
+                    className="w-full sm:w-auto sm:px-16"
                   >
                     Continue to Payment
                   </Button>
                   <button
                     onClick={() => setCurrentStep('checkout')}
-                    className="text-gray-400 hover:text-white transition-colors cursor-pointer text-sm"
+                    className="text-brand-gray-light hover:text-brand-white transition-colors cursor-pointer text-sm"
                   >
                     Skip workshop credit
                   </button>
@@ -564,7 +544,7 @@ export default function CartPage() {
                   <div className="grid lg:grid-cols-3 gap-8">
                     {/* Payment Form */}
                     <div className="lg:col-span-2">
-                      <h1 className="text-xl font-bold text-white mb-6">Complete Registration</h1>
+                      <h1 className="text-xl font-bold text-brand-white mb-6">Complete Registration</h1>
                       {error && (
                         <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
                           <p className="text-red-400 text-sm">{error.message}</p>
@@ -598,38 +578,36 @@ export default function CartPage() {
                     {/* Order Summary */}
                     <div className="lg:col-span-1">
                       <div className="sticky top-24 space-y-6">
-                        <div className="bg-black rounded-2xl p-6">
-                          <h2 className="text-lg font-bold text-white mb-4">Order Summary</h2>
+                        <div className="bg-brand-black rounded-2xl p-6">
+                          <h2 className="text-lg font-bold text-brand-white mb-4">Order Summary</h2>
                           <div className="space-y-3 mb-6">
                             {cart.items.map((item) => (
                               <div key={item.id} className="flex justify-between text-sm">
                                 <div>
-                                  <div className="text-white font-medium">{item.title}</div>
-                                  <div className="text-gray-400">Qty: {item.quantity}</div>
+                                  <div className="text-brand-white font-medium">{item.title}</div>
+                                  <div className="text-brand-gray-light">Qty: {item.quantity}</div>
                                 </div>
-                                <div className="text-white font-semibold">
+                                <div className="text-brand-white font-semibold">
                                   {(item.price * item.quantity).toFixed(2)} {item.currency}
                                 </div>
                               </div>
                             ))}
                           </div>
 
-                          <div className="border-t border-gray-800 pt-4">
-                            <CartSummary
-                              summary={orderSummary}
-                              showTax={false}
-                              showDiscount={true}
-                              voucherCode={cart.couponCode}
-                              discountType={cart.discountType}
-                              discountValue={cart.discountValue}
-                              onRemoveVoucher={removeVoucher}
-                            />
-                          </div>
+                          <CartSummary
+                            summary={orderSummary}
+                            showTax={false}
+                            showDiscount={true}
+                            voucherCode={cart.couponCode}
+                            discountType={cart.discountType}
+                            discountValue={cart.discountValue}
+                            onRemoveVoucher={removeVoucher}
+                          />
                         </div>
 
                         {/* Trust Badges */}
-                        <div className="bg-black rounded-2xl p-6">
-                          <div className="flex items-center gap-3 text-sm text-gray-400">
+                        <div className="bg-brand-black rounded-2xl p-6">
+                          <div className="flex items-center gap-3 text-sm text-brand-gray-light">
                             <svg className="w-5 h-5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
@@ -643,7 +621,7 @@ export default function CartPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </SectionContainer>
 
         {/* Toast Notifications */}
         <ToastContainer toasts={toasts} />

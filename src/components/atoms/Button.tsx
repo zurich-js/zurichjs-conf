@@ -27,12 +27,12 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-xs leading-relaxed',
-  md: 'px-4 py-2.5 text-md leading-relaxed',
-  lg: 'p-3 text-lg leading-relaxed',
+  sm: 'px-3 py-1.5 text-xs ',
+  md: 'px-4 py-2.5 text-md ',
+  lg: 'px-4 py-2.5 text-lg ',
 };
 
-const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out outline-none focus:ring-4 focus:ring-brand-blue cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const baseStyles = 'inline-flex items-center leading-relaxed h-fit justify-center gap-2 rounded-full transition-all duration-300 ease-in-out outline-none focus:ring-4 focus:ring-brand-blue cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary: 'bg-brand-yellow-main text-brand-black font-bold hover:bg-brand-yellow-secondary focus:bg-brand-yellow-secondary',

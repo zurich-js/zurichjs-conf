@@ -283,7 +283,6 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
         <Button
           type="submit"
           variant="primary"
-          size="lg"
           className="bg-brand-primary text-black hover:bg-brand-dark font-bold cursor-pointer px-12 py-4 text-lg"
         >
           Continue to Payment
