@@ -236,7 +236,7 @@ export default function CartPage() {
         <PageHeader
           rightContent={
             <span className="text-sm text-brand-gray-light">
-              {cart.totalItems} ticket{cart.totalItems !== 1 ? 's' : ''}
+              {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
             </span>
           }
         />
