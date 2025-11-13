@@ -18,7 +18,7 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       label: 'Community day',
       date: 'September 9, 2026',
       description: 'Kick off the conference with a day dedicated to community building. Connect with local JavaScript user groups, participate in informal meetups, and engage in lightning talks. This day is all about bringing together developers from diverse backgrounds to share knowledge and build lasting connections.',
-      tbaMode: false, // Set to true to show TBA mode for this day
+      tbaMode: true, // Set to true to show TBA mode for this day
       events: [
         {
           time: '09:00 – 10:00',
