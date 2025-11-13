@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle, DialogBackdrop } from '@headlessui/react';
 import { AnimatePresence } from 'framer-motion';
-import {XIcon, CheckCircle, CheckIcon, OctagonAlertIcon} from 'lucide-react';
+import {XIcon, CheckIcon, OctagonAlertIcon} from 'lucide-react';
 import {Button, Input, Textarea} from '@/components/atoms';
 
 export interface TeamRequestData {
@@ -24,6 +24,10 @@ export interface TeamRequestModalProps {
   ticketType: string;
   quantity: number;
   onSubmit: (data: TeamRequestData) => Promise<void>;
+  /**
+   * Callback fired when submission is successful
+   */
+  onSuccess?: (data: TeamRequestData) => void;
 }
 
 export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
@@ -32,6 +36,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
   ticketType,
   quantity,
   onSubmit,
+  onSuccess,
 }) => {
   const [formData, setFormData] = useState<TeamRequestData>({
     name: '',
@@ -42,7 +47,6 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -59,7 +63,6 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
       });
       setError(null);
       setValidationErrors({});
-      setIsSuccess(false);
     }
   }, [isOpen, ticketType, quantity]);
 
@@ -101,12 +104,10 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
 
     try {
       await onSubmit(formData);
-      setIsSuccess(true);
-
-      // Close modal after showing success message
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+      
+      // Call success callback and close modal
+      onSuccess?.(formData);
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit team request. Please try again.');
     } finally {
@@ -150,20 +151,8 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
             <XIcon size={20} className="fill-brand-white" />
           </button>
 
-          {isSuccess ? (
-            // Success State
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle size={32} className="text-success" />
-              </div>
-              <h3 className="text-xl font-bold text-brand-white mb-2">Request Sent!</h3>
-              <p className="text-brand-gray-light">
-                We&apos;ll be in touch shortly with your custom team package quote.
-              </p>
-            </div>
-          ) : (
-            // Form State
-            <div className="space-y-5">
+          {/* Form State */}
+          <div className="space-y-5">
               {/* Header */}
               <div className="space-y-2.5">
                 <DialogTitle className="text-xl font-bold text-brand-white mb-2">
@@ -349,8 +338,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                   </Button>
                 </div>
               </form>
-            </div>
-          )}
+          </div>
             </DialogPanel>
           </div>
         </Dialog>

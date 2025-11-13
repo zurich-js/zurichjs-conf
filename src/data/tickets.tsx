@@ -52,7 +52,7 @@ export const TICKET_METADATA: Record<
     variant: 'member',
   },
   standard: {
-    blurb: 'The sweet spot. Everything you need, nothing you don\'t.',
+    blurb: 'The sweet spot.',
     variant: 'standard',
   },
   vip: {

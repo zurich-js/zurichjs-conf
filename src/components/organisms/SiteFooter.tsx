@@ -78,8 +78,8 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
           variant="dark"
           subtitle={
             <>
-              <span>{about.copy}</span>
-              <span>{about.orgNote}</span>
+              <span className="block">{about.copy}</span>
+              <span className="block text-sm mt-2">{about.orgNote}</span>
             </>
           }
           link={about.moreHref ? { label: 'More about us', href: about.moreHref } : undefined}

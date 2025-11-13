@@ -96,7 +96,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         )}
         {voucherCode && (
           <button
-            className="inline-flex items-center cursor-pointer gap-1.5 px-3 py-1.5 border-2 border-brand-gray-dark text-brand-green text-sm font-mono rounded-lg group/btn"
+            className="inline-flex items-center cursor-pointer gap-1.5 px-3 py-1.5 border-2 border-brand-green/50 bg-brand-green/20 text-brand-green text-sm font-mono rounded-lg group/btn"
             aria-label="Remove voucher"
             onClick={onRemoveVoucher}
           >
@@ -120,7 +120,8 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
       <div className="flex items-center justify-between gap-2">
         <span className="text-lg font-bold text-brand-white">Total</span>
         <span className="text-xl font-bold text-brand-yellow-main">
-          {formatPrice(summary.total, summary.currency)}
+          <small className="font-light">{formatPrice(summary.total, summary.currency).split('&nbsp;')[0]}</small>
+          {formatPrice(summary.total, summary.currency).split('&nbsp;')[1]}
         </span>
       </div>
 

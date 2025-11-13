@@ -16,7 +16,7 @@ export const footerData: SiteFooterProps = {
     links: [
       { label: 'Speakers', href: '/speakers', locked: true },
       { label: 'Full schedule', href: '/schedule', locked: true },
-      { label: 'Sponsor us', href: 'mailto@hello@zurichjs.com', locked: true },
+      { label: 'Sponsor us', href: 'mailto@hello@zurichjs.com' },
       { label: 'Volunteer', href: 'https://zurichjs.com/cfv' },
     ],
   },
@@ -26,7 +26,7 @@ export const footerData: SiteFooterProps = {
       { label: 'Terms of Service', href: 'https://zurichjs.com/policies/code-of-conduct' },
       { label: 'Privacy Policy', href: 'https://zurichjs.com/policies/privacy-policy' },
       { label: 'Refund Policy', href: '/refund-policy' },
-      { label: 'Code of Conduct', href: '/code-of-conduct', locked: true },
+      { label: 'Code of Conduct', href: 'https://zurichjs.com/policies/code-of-conduct' },
     ],
   },
   newsletter: {
@@ -57,7 +57,7 @@ export const footerData: SiteFooterProps = {
     },
     {
       kind: 'instagram',
-      href: 'https://www.instagram.com/zurichjs',
+      href: 'https://www.instagram.com/zurich.js',
       label: 'Follow ZurichJS on Instagram',
     },
   ],

@@ -13,7 +13,7 @@ import { useWorkshopVouchers } from '@/hooks/useWorkshopVouchers';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
-import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, AttendeeForm, type TeamRequestData } from '@/components/molecules';
+import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm, type TeamRequestData } from '@/components/molecules';
 import {Button, Heading} from '@/components/atoms';
 import {PageHeader, CheckoutForm, SectionContainer} from '@/components/organisms';
 import { calculateOrderSummary } from '@/lib/cart';
@@ -26,7 +26,7 @@ import { dehydrate } from '@tanstack/react-query';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
-import {TicketXIcon} from "lucide-react";
+import {ChevronLeftIcon, TicketXIcon} from "lucide-react";
 
 type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
 
@@ -72,6 +72,10 @@ export default function CartPage() {
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamTicketInfo, setTeamTicketInfo] = useState<{ type: string; quantity: number } | null>(null);
 
+  // Team request success dialog
+  const [showTeamSuccessDialog, setShowTeamSuccessDialog] = useState(false);
+  const [successTeamData, setSuccessTeamData] = useState<TeamRequestData | null>(null);
+
   // TODO: we should actually scan across all tickets. team discounts should work even if you have 2 VIP and 2 standard.
   const eligibleTeamTicket = cart.items.find(item => item.quantity >= 3);
   const showTeamUpsell = eligibleTeamTicket && !cart.couponCode; // Don't show if already using a coupon
@@ -104,13 +108,24 @@ export default function CartPage() {
         throw new Error(errorMessage);
       }
 
-      showToast('Team request submitted! We\'ll be in touch soon.', 'success');
+      // Don't show toast anymore - we'll show the success dialog instead
     } catch (error) {
       console.error('Team request error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit request';
       showToast(errorMessage, 'error');
       throw error;
     }
+  };
+
+  const handleTeamRequestSuccess = (data: TeamRequestData) => {
+    setSuccessTeamData(data);
+    setShowTeamModal(false);
+    setShowTeamSuccessDialog(true);
+  };
+
+  const closeTeamSuccessDialog = () => {
+    setShowTeamSuccessDialog(false);
+    setSuccessTeamData(null);
   };
 
   const handleAddWorkshopVoucher = (voucherId: string) => {
@@ -391,7 +406,7 @@ export default function CartPage() {
                   )}
 
                   {/* Discount Code Input */}
-                  <div className="pt-6 border-t border-brand-gray-dark">
+                  <div className="">
                     <h3 className="text-lg font-semibold text-brand-white mb-4">Promo Code</h3>
                     <VoucherInput onApply={applyVoucher} />
                   </div>
@@ -448,43 +463,36 @@ export default function CartPage() {
 
             {/* Step 3: Workshop Upsells */}
             {currentStep === 'upsells' && showWorkshopUpsells && (
-              <motion.div
-                key="upsells"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-3xl mx-auto"
-              >
-                {/* Header */}
-                <div className="text-center mb-12">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-brand-black text-brand-white mb-4">
-                    Add Workshop Credit
-                  </h1>
-                  <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-6">
+              <SectionContainer>
+                <motion.div
+                  key="upsells"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-5"
+                >
+                  <Heading level="h1" className="text-xl font-bold text-brand-white">
+                    Add workshop credit
+                  </Heading>
+
+                  <p className="leading-relaxed">
                     Get <span className="text-brand-primary font-bold">{bonusPercent}% bonus credit</span> on workshop vouchers during this pricing stage.
+                    Valid for both conference workshops and ZurichJS meetup workshops.
                   </p>
 
-                  {/* Info */}
-                  <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-xl p-4 sm:p-6">
-                    <p className="text-sm sm:text-base text-gray-200">
-                      <span className="font-semibold text-brand-primary">Flexible Use:</span> Valid for both conference workshops and ZurichJS meetup workshops.
-                    </p>
+                  {/* Voucher Cards */}
+                  <div className="space-y-3 sm:space-y-4 mb-12">
+                    {workshopVouchers.map((voucher) => (
+                      <WorkshopVoucherCard
+                        key={voucher.id}
+                        amount={voucher.amount / 100}
+                        bonusPercent={bonusPercent}
+                        currency={voucher.currency}
+                        onClick={() => handleAddWorkshopVoucher(voucher.id)}
+                      />
+                    ))}
                   </div>
-                </div>
-
-                {/* Voucher Cards */}
-                <div className="space-y-3 sm:space-y-4 mb-12">
-                  {workshopVouchers.map((voucher) => (
-                    <WorkshopVoucherCard
-                      key={voucher.id}
-                      amount={voucher.amount / 100}
-                      bonusPercent={bonusPercent}
-                      currency={voucher.currency}
-                      onClick={() => handleAddWorkshopVoucher(voucher.id)}
-                    />
-                  ))}
-                </div>
 
                 {/* Actions */}
                 <div className="flex flex-col items-center gap-4">
@@ -562,17 +570,26 @@ export default function CartPage() {
                     {/* Order Summary */}
                     <div className="lg:col-span-1">
                       <div className="sticky top-24 space-y-6">
-                        <div className="bg-brand-black rounded-2xl p-6">
                           <h2 className="text-lg font-bold text-brand-white mb-4">Order Summary</h2>
                           <div className="space-y-3 mb-6">
                             {cart.items.map((item) => (
-                              <div key={item.id} className="flex justify-between text-sm">
-                                <div>
+                              <div key={item.id} className="flex justify-between text-sm gap-3">
+                                <div className="flex-1">
                                   <div className="text-brand-white font-medium">{item.title}</div>
                                   <div className="text-brand-gray-light">Qty: {item.quantity}</div>
                                 </div>
-                                <div className="text-brand-white font-semibold">
-                                  {(item.price * item.quantity).toFixed(2)} {item.currency}
+                                <div className="flex flex-col items-end gap-1">
+                                  <div className="text-brand-white font-semibold">
+                                    {(item.price * item.quantity).toFixed(2)} {item.currency}
+                                  </div>
+                                  <button
+                                    onClick={() => removeFromCart(item.id)}
+                                    className="text-brand-red/70 hover:text-brand-red transition-colors duration-200 flex items-center gap-1 text-xs"
+                                    aria-label={`Remove ${item.title} from cart`}
+                                  >
+                                    <TicketXIcon size={14} />
+                                    <span>Remove</span>
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -590,15 +607,12 @@ export default function CartPage() {
                         </div>
 
                         {/* Trust Badges */}
-                        <div className="bg-brand-black rounded-2xl p-6">
-                          <div className="flex items-center gap-3 text-sm text-brand-gray-light">
-                            <svg className="w-5 h-5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <span>Secure payment via Stripe</span>
-                          </div>
+                        <div className="flex items-center gap-3 text-sm text-brand-gray-light">
+                          <svg className="w-5 h-5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span>Secure payment via Stripe</span>
                         </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -618,8 +632,18 @@ export default function CartPage() {
             ticketType={teamTicketInfo.type}
             quantity={teamTicketInfo.quantity}
             onSubmit={handleTeamRequestSubmit}
+            onSuccess={handleTeamRequestSuccess}
           />
         )}
+
+        {/* Team Request Success Dialog */}
+        <TeamRequestSuccessDialog
+          isOpen={showTeamSuccessDialog}
+          onClose={closeTeamSuccessDialog}
+          email={successTeamData?.email || null}
+          company={successTeamData?.company || null}
+          quantity={successTeamData?.quantity || null}
+        />
       </div>
     </>
   );

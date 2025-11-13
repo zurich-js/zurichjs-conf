@@ -252,11 +252,10 @@ export async function handleCheckoutSessionCompleted(
     const item = lineItems.data[i];
     const price = item.price as Stripe.Price | undefined;
 
-    console.log(`[WebhookHandler] Processing line item ${i + 1}/${lineItems.data.length}:`, {
+    console.log(`[WebhookHandler] Checking line item ${i + 1}:`, {
       description: item.description,
       priceId: price?.id,
       amount: item.amount_total,
-      quantity: item.quantity,
     });
 
     if (isWorkshopVoucher(price)) {

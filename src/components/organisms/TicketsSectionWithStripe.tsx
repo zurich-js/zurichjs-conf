@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { TicketsSection } from './TicketsSection';
-import { StudentVerificationModal } from '@/components/molecules';
+import { StudentVerificationModal, VerificationSuccessModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useStudentVerification } from '@/hooks/useStudentVerification';
 import { useCart } from '@/contexts/CartContext';
@@ -35,6 +35,10 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     closeModal,
     handleVerificationSubmit,
     currentPriceId,
+    isSuccessDialogOpen,
+    closeSuccessDialog,
+    verifiedEmail,
+    verificationId,
   } = useStudentVerification();
 
   // Show loading state
@@ -144,6 +148,12 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
         onClose={closeModal}
         onVerificationSubmit={handleVerificationSubmit}
         priceId={currentPriceId || ''}
+      />
+      <VerificationSuccessModal
+        isOpen={isSuccessDialogOpen}
+        onClose={closeSuccessDialog}
+        email={verifiedEmail}
+        verificationId={verificationId}
       />
     </>
   );

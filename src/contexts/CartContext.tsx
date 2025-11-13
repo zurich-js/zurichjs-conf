@@ -265,6 +265,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
    * Add item to cart
    */
   const addToCart = useCallback((item: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
+    // TODO: must limit adding to cart globally, not just interface level. you can now add 10 tickets to cart, then go back on homepage, add 1 more, etc.
     setCart((currentCart) => addItemToCart(currentCart, item, quantity));
   }, []);
 
@@ -289,7 +290,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     try {
       // Use ref to access current cart without causing re-renders
       const currentCart = cartRef.current;
-      
+
       // Extract price IDs from cart items for product validation
       const priceIds = currentCart.items.map((item) => item.priceId);
 

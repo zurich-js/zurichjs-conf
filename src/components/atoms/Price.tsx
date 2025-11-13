@@ -26,7 +26,7 @@ export interface PriceProps {
 /**
  * Format price using Intl.NumberFormat with proper currency formatting
  */
-const formatPrice = (amount: number, currency: string): string => {
+const formatSplitPrice = (amount: number, currency: string): string => {
   try {
     return  new Intl.NumberFormat('en-CH', {
       style: 'decimal',
@@ -50,8 +50,8 @@ export const Price: React.FC<PriceProps> = ({
                                               suffix,
                                               className = '',
                                             }) => {
-  const formattedPrice = formatPrice(amount, currency);
-  const formattedComparePrice = compareAmount ? formatPrice(compareAmount, currency) : null;
+  const formattedPrice = formatSplitPrice(amount, currency);
+  const formattedComparePrice = compareAmount ? formatSplitPrice(compareAmount, currency) : null;
 
   return (
     <div className={`flex flex-col gap-2 ${className}`}>

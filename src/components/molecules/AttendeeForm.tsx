@@ -9,6 +9,29 @@ import { Input, Button, Heading } from '@/components/atoms';
 import type { CartItem as CartItemType } from '@/types/cart';
 import {SectionContainer} from "@/components/organisms";
 
+export interface AttendeeTicketFormProps {
+  /**
+   * Ticket index (0-based)
+   */
+  ticketIndex: number;
+  /**
+   * Ticket item title (e.g., "Conference Pass")
+   */
+  itemTitle: string;
+  /**
+   * Current attendee data
+   */
+  attendee: AttendeeInfo;
+  /**
+   * Validation errors for this ticket's fields
+   */
+  errors?: Record<string, string>;
+  /**
+   * Called when any field changes
+   */
+  onChange: (field: keyof AttendeeInfo, value: string) => void;
+}
+
 export interface AttendeeFormProps {
   /**
    * Cart items to collect attendees for
@@ -27,6 +50,157 @@ export interface AttendeeFormProps {
    */
   onBack: () => void;
 }
+
+/**
+ * AttendeeTicketForm component
+ * Displays and handles input for a single ticket's attendee information
+ */
+export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
+  ticketIndex,
+  itemTitle,
+  attendee,
+  errors = {},
+  onChange,
+}) => {
+  const isPrimaryContact = ticketIndex === 0;
+
+  return (
+    <div
+      className="bg-brand-gray-darkest p-5 rounded-2xl space-y-4"
+      data-error={Object.keys(errors).length > 0 ? 'true' : 'false'}
+    >
+      {/* Ticket Header */}
+      <div className="flex items-center justify-between mb-4 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-white">
+              Ticket {ticketIndex + 1}
+            </h3>
+            {isPrimaryContact && (
+              <span className="px-2.5 py-0.5 text-xs font-semibold bg-brand-gray-medium text-brand-gray-lightest rounded-full">
+                Primary Contact
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-brand-gray-light">{itemTitle}</p>
+        </div>
+      </div>
+
+      {/* Name Fields */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor={`firstName-${ticketIndex}`}
+            className="block text-sm font-semibold text-white mb-2"
+          >
+            First Name <span className="text-red-400">*</span>
+          </label>
+          <Input
+            id={`firstName-${ticketIndex}`}
+            type="text"
+            value={attendee.firstName}
+            onChange={(e) => onChange('firstName', e.target.value)}
+            placeholder="John"
+            className="w-full"
+            aria-invalid={!!errors.firstName}
+            aria-describedby={errors.firstName ? `firstName-${ticketIndex}-error` : undefined}
+          />
+          {errors.firstName && (
+            <p id={`firstName-${ticketIndex}-error`} className="text-red-400 text-sm mt-1">
+              {errors.firstName}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor={`lastName-${ticketIndex}`}
+            className="block text-sm font-semibold text-white mb-2"
+          >
+            Last Name <span className="text-red-400">*</span>
+          </label>
+          <Input
+            id={`lastName-${ticketIndex}`}
+            type="text"
+            value={attendee.lastName}
+            onChange={(e) => onChange('lastName', e.target.value)}
+            placeholder="Doe"
+            className="w-full"
+            aria-invalid={!!errors.lastName}
+            aria-describedby={errors.lastName ? `lastName-${ticketIndex}-error` : undefined}
+          />
+          {errors.lastName && (
+            <p id={`lastName-${ticketIndex}-error`} className="text-red-400 text-sm mt-1">
+              {errors.lastName}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Email Field */}
+      <div>
+        <label
+          htmlFor={`email-${ticketIndex}`}
+          className="block text-sm font-semibold text-white mb-2"
+        >
+          Email Address <span className="text-red-400">*</span>
+        </label>
+        <Input
+          id={`email-${ticketIndex}`}
+          type="email"
+          value={attendee.email}
+          onChange={(e) => onChange('email', e.target.value)}
+          placeholder="john@example.com"
+          className="w-full"
+          aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? `email-${ticketIndex}-error` : undefined}
+        />
+        {errors.email && (
+          <p id={`email-${ticketIndex}-error`} className="text-red-400 text-sm mt-1">
+            {errors.email}
+          </p>
+        )}
+      </div>
+
+      {/* Company and Job Title Fields */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor={`company-${ticketIndex}`}
+            className="block text-sm font-semibold text-white mb-2"
+          >
+            Company (Optional)
+          </label>
+          <Input
+            id={`company-${ticketIndex}`}
+            type="text"
+            value={attendee.company}
+            onChange={(e) => onChange('company', e.target.value)}
+            placeholder="Acme Inc."
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor={`jobTitle-${ticketIndex}`}
+            className="block text-sm font-semibold text-white mb-2"
+          >
+            Job Title (Optional)
+          </label>
+          <Input
+            id={`jobTitle-${ticketIndex}`}
+            type="text"
+            value={attendee.jobTitle}
+            onChange={(e) => onChange('jobTitle', e.target.value)}
+            placeholder="Software Engineer"
+            className="w-full"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /**
  * AttendeeForm component
@@ -118,14 +292,10 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
       <Heading level="h1" className="text-xl font-bold text-brand-white mb-6">Attendee Information</Heading>
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="">
-          <p className="text-sm text-gray-400 mb-3">
-            Please provide the name and email for each ticket. Each attendee will receive their individual ticket via email.
+          <p className="text-sm text-brand-gray-light mb-3">
+            Please provide the name and email for each ticket. Each attendee will receive their individual ticket via email.<br/>
+            You&#39;ll get a chance to review and fill <b>billing details</b> at the Payment step.
           </p>
-          <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-lg p-3">
-            <p className="text-sm text-gray-300">
-              <span className="font-semibold text-brand-primary">Note:</span> The first attendee will be used for billing information and will receive an order summary along with their ticket.
-            </p>
-          </div>
         </div>
 
       {cartItems.map((item) => {
@@ -133,128 +303,14 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
         for (let i = 0; i < item.quantity; i++) {
           const currentIndex = ticketIndex++;
           itemTickets.push(
-            <div
+            <AttendeeTicketForm
               key={currentIndex}
-              className="bg-black rounded-2xl space-y-4"
-              data-error={errors[currentIndex] ? 'true' : 'false'}
-            >
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-800">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-white">
-                      Ticket {currentIndex + 1}
-                    </h3>
-                    {currentIndex === 0 && (
-                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-brand-primary text-black rounded-full">
-                        Primary / Billing Contact
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-400">{item.title}</p>
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor={`firstName-${currentIndex}`}
-                    className="block text-sm font-semibold text-white mb-2"
-                  >
-                    First Name <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id={`firstName-${currentIndex}`}
-                    type="text"
-                    value={attendees[currentIndex]?.firstName || ''}
-                    onChange={(e) => handleAttendeeChange(currentIndex, 'firstName', e.target.value)}
-                    placeholder="John"
-                    className="w-full"
-                    aria-invalid={!!errors[currentIndex]?.firstName}
-                  />
-                  {errors[currentIndex]?.firstName && (
-                    <p className="text-red-400 text-sm mt-1">{errors[currentIndex].firstName}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`lastName-${currentIndex}`}
-                    className="block text-sm font-semibold text-white mb-2"
-                  >
-                    Last Name <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id={`lastName-${currentIndex}`}
-                    type="text"
-                    value={attendees[currentIndex]?.lastName || ''}
-                    onChange={(e) => handleAttendeeChange(currentIndex, 'lastName', e.target.value)}
-                    placeholder="Doe"
-                    className="w-full"
-                    aria-invalid={!!errors[currentIndex]?.lastName}
-                  />
-                  {errors[currentIndex]?.lastName && (
-                    <p className="text-red-400 text-sm mt-1">{errors[currentIndex].lastName}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor={`email-${currentIndex}`}
-                  className="block text-sm font-semibold text-white mb-2"
-                >
-                  Email Address <span className="text-red-400">*</span>
-                </label>
-                <Input
-                  id={`email-${currentIndex}`}
-                  type="email"
-                  value={attendees[currentIndex]?.email || ''}
-                  onChange={(e) => handleAttendeeChange(currentIndex, 'email', e.target.value)}
-                  placeholder="john@example.com"
-                  className="w-full"
-                  aria-invalid={!!errors[currentIndex]?.email}
-                />
-                {errors[currentIndex]?.email && (
-                  <p className="text-red-400 text-sm mt-1">{errors[currentIndex].email}</p>
-                )}
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor={`company-${currentIndex}`}
-                    className="block text-sm font-semibold text-white mb-2"
-                  >
-                    Company (Optional)
-                  </label>
-                  <Input
-                    id={`company-${currentIndex}`}
-                    type="text"
-                    value={attendees[currentIndex]?.company || ''}
-                    onChange={(e) => handleAttendeeChange(currentIndex, 'company', e.target.value)}
-                    placeholder="Acme Inc."
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`jobTitle-${currentIndex}`}
-                    className="block text-sm font-semibold text-white mb-2"
-                  >
-                    Job Title (Optional)
-                  </label>
-                  <Input
-                    id={`jobTitle-${currentIndex}`}
-                    type="text"
-                    value={attendees[currentIndex]?.jobTitle || ''}
-                    onChange={(e) => handleAttendeeChange(currentIndex, 'jobTitle', e.target.value)}
-                    placeholder="Software Engineer"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
+              ticketIndex={currentIndex}
+              itemTitle={item.title}
+              attendee={attendees[currentIndex]}
+              errors={errors[currentIndex]}
+              onChange={(field, value) => handleAttendeeChange(currentIndex, field, value)}
+            />
           );
         }
         return itemTickets;
@@ -265,7 +321,7 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="text-gray-400 hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
+            className="text-brand-gray-light hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

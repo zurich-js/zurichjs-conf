@@ -196,7 +196,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
             <Countdown
               targetDate={discountEndsAt}
               kicker={countdownTitle}
-              kickerClassName="!normal-case text-center text-brand-white w-fit mx-auto"
+              kickerClassName="!normal-case text-center text-brand-white w-fit mx-auto !mt-0 mb-2 !font-semibold"
             />
           </div>
         )}
