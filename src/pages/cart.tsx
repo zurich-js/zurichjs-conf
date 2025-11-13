@@ -26,7 +26,7 @@ import { dehydrate } from '@tanstack/react-query';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
-import {ChevronLeftIcon, TicketXIcon} from "lucide-react";
+import { TicketXIcon } from "lucide-react";
 
 type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
 
@@ -521,6 +521,7 @@ export default function CartPage() {
                   </button>
                 </div>
               </motion.div>
+              </SectionContainer>
             )}
 
             {/* Step 3: Checkout */}

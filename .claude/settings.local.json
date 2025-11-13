@@ -11,7 +11,8 @@
       "Bash(npm uninstall:*)",
       "Bash(mkdir:*)",
       "Bash(xargs cat:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
