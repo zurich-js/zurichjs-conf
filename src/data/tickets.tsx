@@ -122,13 +122,12 @@ export const TICKET_FAQ: FAQItem[] = [
     question: "What if I can't attend?",
     answer: (
       <>
-        Standard and VIP tickets are refundable depending on timing:
-        <ul className="list-disc list-inside mt-2 space-y-1">
-          <li>More than 60 days before: 80% refund</li>
-          <li>30-60 days before: 50% refund</li>
-          <li>Less than 30 days: No refund</li>
-        </ul>
-        Student/Unemployed tickets follow the same refund policy as Standard tickets.{' '}
+        All ticket sales are final. Refunds are not available except on a case-by-case basis in
+        exceptional circumstances. If you have extenuating circumstances, please contact us at{' '}
+        <a href="mailto:hello@zurichjs.com" className="underline">
+          hello@zurichjs.com
+        </a>{' '}
+        and we&apos;ll review your request.{' '}
         <a href="/refund-policy" className="underline" target="_blank" rel="noopener noreferrer">
           View full refund policy ↗
         </a>

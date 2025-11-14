@@ -15,7 +15,7 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
       dateISO: '2025-11-14',
       title: 'Blind tickets go on sale',
       icon: 'ticket',
-      body: 'We\'re releasing X # of tickets before we announce speakers. This is the lowest possible price point for what is already the most affordable conference in zurich?\n\nOnce sold out, Early bird tickets become available.',
+      body: 'We\'re releasing 30 tickets before we announce speakers. This is the lowest possible price point for what is already the most affordable conference in zurich?\n\nOnce sold out, Early bird tickets become available.',
       tags: [
         { label: '-30%', tone: 'success' },
         { label: 'Limited stock', tone: 'neutral' },
@@ -28,7 +28,7 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
       dateISO: '2026-01-01',
       title: 'Early Bird tickets go on sale',
       icon: 'ticket',
-      body: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh viverra non semper suscipit posuere a pede.',
+      body: 'After blind bird tickets sell out, early bird tickets become available. Get your tickets at a discounted price while speaker announcements start rolling in.',
       tags: [
         { label: '-12%', tone: 'accent' },
       ],
@@ -40,7 +40,7 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
       dateISO: '2026-01-01',
       title: 'Call for Papers starts',
       icon: 'flag',
-      body: 'If you were looking to speak at the conference, bla bla bla',
+      body: 'Have something to share with the JavaScript community? Submit your talk proposal and join our lineup of speakers.',
     },
     {
       id: 'cfp-ends',
@@ -61,7 +61,7 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
       dateISO: '2026-05-15',
       title: 'General Admission tickets',
       icon: 'ticket',
-      body: 'Lorem ipsum dolor sit amet',
+      body: 'Full speaker lineup announced! Standard pricing tickets are now available. Secure your spot before late bird pricing kicks in.',
       href: '#tickets',
       emphasis: true,
     },

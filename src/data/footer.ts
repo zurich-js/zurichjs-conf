@@ -16,17 +16,17 @@ export const footerData: SiteFooterProps = {
     links: [
       { label: 'Speakers', href: '/speakers', locked: true },
       { label: 'Full schedule', href: '/schedule', locked: true },
-      { label: 'Sponsor us', href: 'mailto@hello@zurichjs.com' },
-      { label: 'Volunteer', href: 'https://zurichjs.com/cfv' },
+      { label: 'Sponsor us', href: 'mailto@hello@zurichjs.com', locked: true },
+      { label: 'Volunteer', href: 'https://zurichjs.com/cfv', locked: true },
     ],
   },
   legal: {
     title: 'Legal',
     links: [
-      { label: 'Terms of Service', href: 'https://zurichjs.com/policies/code-of-conduct' },
-      { label: 'Privacy Policy', href: 'https://zurichjs.com/policies/privacy-policy' },
+      { label: 'Terms of Service', href: 'https://zurichjs.com/policies/code-of-conduct', locked: true },
+      { label: 'Privacy Policy', href: 'https://zurichjs.com/policies/privacy-policy', locked: true },
       { label: 'Refund Policy', href: '/refund-policy' },
-      { label: 'Code of Conduct', href: 'https://zurichjs.com/policies/code-of-conduct' },
+      { label: 'Code of Conduct', href: 'https://zurichjs.com/policies/code-of-conduct', locked: true },
     ],
   },
   newsletter: {
