@@ -156,7 +156,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                   return (
                     <div
                       key={entry.id}
-                      className={`relative flex items-start gap-4 sm:gap-6 ${entryIndex > 0 ? 'mt-6' : ''}`}
+                      className={`relative flex items-start gap-4 flex-col sm:flex-row sm:gap-6 ${entryIndex > 0 ? 'mt-6' : ''}`}
                     >
                       {/* Date Column - Only show for first entry in group */}
                       <div className="flex-shrink-0 w-28 pt-1">
