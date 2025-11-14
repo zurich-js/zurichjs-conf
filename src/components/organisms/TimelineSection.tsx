@@ -171,7 +171,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                       </div>
 
                       {/* Timeline Card */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 w-full">
                         <TimelineCard
                           ref={(el) => {
                             if (el) {

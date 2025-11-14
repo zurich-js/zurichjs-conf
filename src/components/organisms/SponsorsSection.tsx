@@ -165,7 +165,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
           <p className="text-brand-gray-light text-md text-center mb-4">
             Want to sponsor, partner, or volunteer?{' '}
             <a href="mailto:hello@zurichjs.com" className="text-md text-brand-blue hover:text-brand-gray-lightest duration-300 ease-in-out">
-              Reach out to us
+              Reach&nbsp;out&nbsp;to&nbsp;us
             </a>
           </p>
         </motion.div>

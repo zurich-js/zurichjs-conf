@@ -53,13 +53,6 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
   ) => {
     const { shouldAnimate } = useMotion();
 
-    const cardClasses = `
-      relative flex items-start gap-3 sm:gap-4
-      bg-brand-gray-dark rounded-xl px-4 sm:px-5 py-3 sm:py-4
-      transition-all duration-300
-      ${href ? 'cursor-pointer group hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] focus-within:ring-2 focus-within:ring-[#F1E271] focus-within:ring-offset-2 focus-within:ring-offset-[#19191B]' : ''}
-    `;
-
     const CardContent = () => (
       <div className="flex flex-col gap-3 w-full">
         <div className="flex items-start gap-3 sm:gap-4">
@@ -127,7 +120,12 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
     const cardElement = (
       <div
         ref={ref}
-        className={cardClasses}
+        className={`
+          relative flex items-start gap-3 sm:gap-4
+        bg-brand-gray-dark rounded-xl px-4 sm:px-5 py-3 sm:py-4
+          transition-all duration-300
+          ${href ? 'cursor-pointer group hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] focus-within:ring-2 focus-within:ring-[#F1E271] focus-within:ring-offset-2 focus-within:ring-offset-[#19191B]' : ''}
+        `}
         role={href ? 'link' : 'group'}
         aria-current={isCurrent ? 'true' : undefined}
         tabIndex={tabIndex}

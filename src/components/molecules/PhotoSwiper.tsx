@@ -215,7 +215,7 @@ export const SinglePhotoLayout: React.FC<SinglePhotoLayoutProps> = ({ image, alt
         src={image}
         alt={alt}
         fill
-        className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+        className="object-cover opacity-100 sm:opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
         sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
       />
     </div>
@@ -242,7 +242,7 @@ bottom,
           src={top.image}
           alt={top.alt}
           fill
-          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+          className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
         />
       </div>
@@ -251,7 +251,7 @@ bottom,
           src={bottom.image}
           alt={bottom.alt}
           fill
-          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+          className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
         />
       </div>
@@ -279,7 +279,7 @@ right,
           src={left.image}
           alt={left.alt}
           fill
-          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+          className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
         />
       </div>
@@ -288,7 +288,7 @@ right,
           src={right.image}
           alt={right.alt}
           fill
-          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+          className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
         />
       </div>
@@ -323,7 +323,7 @@ export const NestedPhotoLayout: React.FC<NestedPhotoLayoutProps> = ({ main, nest
           src={main.image}
           alt={main.alt}
           fill
-          className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+          className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
           sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
         />
       </div>
@@ -335,7 +335,7 @@ export const NestedPhotoLayout: React.FC<NestedPhotoLayoutProps> = ({ main, nest
             src={nested.image}
             alt={nested.alt}
             fill
-            className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+            className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
             sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
           />
         </div>
@@ -346,7 +346,7 @@ export const NestedPhotoLayout: React.FC<NestedPhotoLayoutProps> = ({ main, nest
               src={nested.left.image}
               alt={nested.left.alt}
               fill
-              className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+              className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
               sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
             />
           </div>
@@ -355,7 +355,7 @@ export const NestedPhotoLayout: React.FC<NestedPhotoLayoutProps> = ({ main, nest
               src={nested.right.image}
               alt={nested.right.alt}
               fill
-              className="object-cover opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+              className="object-cover opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
               sizes="(max-width: 640px) 40vw, (max-width: 1024px) 30vw, 20vw"
             />
           </div>
