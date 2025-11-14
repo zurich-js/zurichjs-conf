@@ -25,7 +25,7 @@ export interface Day {
 export interface ScheduleSectionProps {
   title: string;
   subtitle: string;
-  aboutLink: {
+  aboutLink?: {
     label: string;
     href: string;
   };

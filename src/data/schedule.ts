@@ -8,10 +8,10 @@ import type { ScheduleSectionProps } from '@/components/organisms';
 export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
   title: 'JS Conference by humans, for humans',
   subtitle: 'Join us for three days of community building, learning, and networking. From grassroots meetups to cutting-edge technical sessions, we\'re bringing together JavaScript enthusiasts from around the world.',
-  aboutLink: {
-    label: 'More about us',
-    href: '/about',
-  },
+  // aboutLink: {
+  //   label: 'More about us',
+  //   href: 'https://zurichjs.com/about',
+  // },
   days: [
     {
       id: 'community',
