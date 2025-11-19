@@ -86,8 +86,8 @@ function isTicketProduct(price: Stripe.Price | undefined): boolean {
 
   // Standard pattern: category_stage
   const [category, stage] = lookupKey.split('_');
-  return TICKET_CATEGORIES.includes(category as any) &&
-         LOOKUP_KEY_STAGES.includes(stage as any);
+  return (TICKET_CATEGORIES as readonly string[]).includes(category) &&
+         (LOOKUP_KEY_STAGES as readonly string[]).includes(stage);
 }
 
 /**

@@ -10,7 +10,7 @@
  */
 
 import posthog from 'posthog-js'
-import type { AnalyticsEvent, EventName, EventProperties } from './events'
+import type { EventName, EventProperties } from './events'
 
 class AnalyticsClient {
   private initialized = false
@@ -60,7 +60,7 @@ class AnalyticsClient {
         })
         return sanitized
       },
-      loaded: (posthog) => {
+      loaded: () => {
         if (process.env.NODE_ENV === 'development') {
           console.log('[Analytics] PostHog initialized')
         }

@@ -228,6 +228,7 @@ export const TicketPDF: React.FC<TicketPDFProps> = ({
 
         {/* QR Code Section */}
         <View style={styles.qrSection}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image src={qrCodeDataUrl} style={styles.qrImage} />
           <Text style={styles.qrText}>
             Scan this QR code at the entrance for check-in
