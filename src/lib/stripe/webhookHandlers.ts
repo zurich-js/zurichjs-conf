@@ -7,165 +7,101 @@ import type Stripe from 'stripe';
 import { getStripeClient } from './client';
 import { createTicket } from '@/lib/tickets';
 import type { TicketType, TicketCategory, TicketStage } from '@/lib/types/database';
+import { TICKET_CATEGORIES, LOOKUP_KEY_STAGES, STAGE_LOOKUP_MAP } from '@/lib/types/ticket-constants';
 import { sendTicketConfirmationEmailsQueued, sendVoucherConfirmationEmail, type TicketConfirmationData } from '@/lib/email';
-import { getCurrentStage, type PriceStage } from '@/config/pricing-stages';
+import { getCurrentStage } from '@/config/pricing-stages';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
 
 /**
- * Map PriceStage from pricing-stages.ts to TicketStage for database
- * Note: 'standard' in PriceStage maps to 'general_admission' in TicketStage
+ * Parse ticket info from lookup key: {category}_{stage}
+ * Called after isTicketProduct() validation
  */
-function mapPriceStageToTicketStage(priceStage: PriceStage): TicketStage {
-  const stageMap: Record<PriceStage, TicketStage> = {
-    blind_bird: 'blind_bird',
-    early_bird: 'early_bird',
-    standard: 'general_admission',
-    late_bird: 'late_bird',
-  };
-  return stageMap[priceStage];
-}
-
-/**
- * Parse ticket category and stage from price lookup key
- * Lookup key format: {category}_{stage} (e.g., "standard_blind_bird", "vip_early_bird")
- * Special cases: "standard_student_unemployed" for student/unemployed pricing
- * 
- * When no lookup key is provided, uses the current active stage from pricing-stages.ts
- */
-function parseTicketInfo(lookupKey: string | null): {
+function parseTicketInfo(lookupKey: string): {
   category: TicketCategory;
   stage: TicketStage;
-  legacyType: TicketType;
 } {
-  if (!lookupKey) {
-    // Use current active stage from pricing-stages.ts configuration
-    const currentStageConfig = getCurrentStage();
-    const ticketStage = mapPriceStageToTicketStage(currentStageConfig.stage);
-    
-    return {
-      category: 'standard',
-      stage: ticketStage,
-      legacyType: currentStageConfig.stage === 'standard' ? 'standard' : currentStageConfig.stage,
-    };
+  // Special cases
+  if (lookupKey.includes('student')) {
+    return { category: 'student', stage: 'general_admission' };
   }
-
-  // Handle student/unemployed special case
-  if (lookupKey === 'standard_student_unemployed' || lookupKey.includes('student')) {
-    return {
-      category: 'student',
-      stage: 'general_admission',
-      legacyType: 'student',
-    };
-  }
-
   if (lookupKey.includes('unemployed')) {
-    return {
-      category: 'unemployed',
-      stage: 'general_admission',
-      legacyType: 'unemployed',
-    };
+    return { category: 'unemployed', stage: 'general_admission' };
   }
 
-  // Extract category and stage from lookup key pattern: category_stage
-  const parts = lookupKey.split('_');
-
-  if (parts.length >= 2) {
-    const category = parts[0] as TicketCategory;
-    const stage = parts[1];
-
-    // Map stage names
-    const stageMap: Record<string, TicketStage> = {
-      'blind_bird': 'blind_bird',
-      'early_bird': 'early_bird',
-      'standard': 'general_admission',
-      'general': 'general_admission',
-      'late_bird': 'late_bird',
-    };
-
-    // If stage doesn't match known patterns, use current active stage from pricing-stages.ts
-    const ticketStage: TicketStage = stageMap[stage] || mapPriceStageToTicketStage(getCurrentStage().stage);
-
-    // Determine legacy type for backward compatibility
-    let legacyType: TicketType = 'standard';
-    if (category === 'vip') {
-      legacyType = 'vip';
-    } else if (category === 'student') {
-      legacyType = 'student';
-    } else if (category === 'unemployed') {
-      legacyType = 'unemployed';
-    } else if (stage === 'blind_bird') {
-      legacyType = 'blind_bird';
-    } else if (stage === 'early_bird') {
-      legacyType = 'early_bird';
-    } else if (stage === 'late_bird') {
-      legacyType = 'late_bird';
-    }
-
-    return {
-      category: category || 'standard',
-      stage: ticketStage,
-      legacyType,
-    };
-  }
-
-  // Final fallback: use current active stage from pricing-stages.ts
-  const currentStageConfig = getCurrentStage();
-  const ticketStage = mapPriceStageToTicketStage(currentStageConfig.stage);
-  
+  // Parse category_stage pattern
+  const [category, stage] = lookupKey.split('_');
   return {
-    category: 'standard',
-    stage: ticketStage,
-    legacyType: currentStageConfig.stage === 'standard' ? 'standard' : currentStageConfig.stage,
+    category: category as TicketCategory,
+    stage: STAGE_LOOKUP_MAP[stage] || 'general_admission',
   };
 }
 
 /**
- * Get ticket type display name
+ * Get display name for ticket
  */
-function getTicketTypeDisplayName(ticketType: TicketType): string {
-  const names: Record<TicketType, string> = {
+function getTicketDisplayName(category: TicketCategory, stage: TicketStage): string {
+  if (category === 'vip') return 'VIP Ticket';
+  if (category === 'student') return 'Student Ticket';
+  if (category === 'unemployed') return 'Unemployed Ticket';
+
+  const stageNames: Record<TicketStage, string> = {
     blind_bird: 'Blind Bird',
     early_bird: 'Early Bird',
-    standard: 'Standard',
-    student: 'Student',
-    unemployed: 'Unemployed',
+    general_admission: 'Standard',
     late_bird: 'Late Bird',
-    vip: 'VIP',
   };
 
-  return names[ticketType] || 'Conference Ticket';
+  return stageNames[stage] || 'Conference Ticket';
 }
 
 /**
- * Check if a line item is a workshop voucher
- * Vouchers are identified by the WORKSHOP_VOUCHER_PRODUCT_ID or lookup_key pattern
+ * Map category/stage to legacy ticket type (for database compatibility)
+ */
+function toLegacyType(category: TicketCategory, stage: TicketStage): TicketType {
+  if (category === 'vip') return 'vip';
+  if (category === 'student') return 'student';
+  if (category === 'unemployed') return 'unemployed';
+  if (stage === 'blind_bird') return 'blind_bird';
+  if (stage === 'early_bird') return 'early_bird';
+  if (stage === 'late_bird') return 'late_bird';
+  return 'standard';
+}
+
+/**
+ * Check if a price is a valid conference ticket product
+ * Validates based on lookup key pattern: {category}_{stage}
+ */
+function isTicketProduct(price: Stripe.Price | undefined): boolean {
+  if (!price?.lookup_key) return false;
+
+  const lookupKey = price.lookup_key;
+
+  // Special cases: student/unemployed tickets
+  if (lookupKey === 'standard_student_unemployed' ||
+      lookupKey.includes('student') ||
+      lookupKey.includes('unemployed')) {
+    return true;
+  }
+
+  // Standard pattern: category_stage
+  const [category, stage] = lookupKey.split('_');
+  return TICKET_CATEGORIES.includes(category as any) &&
+         LOOKUP_KEY_STAGES.includes(stage as any);
+}
+
+/**
+ * Check if a price is a workshop voucher
+ * Vouchers are identified by matching WORKSHOP_VOUCHER_PRODUCT_ID
  */
 function isWorkshopVoucher(price: Stripe.Price | undefined): boolean {
-  if (!price) {
-    console.log('[WebhookHandler] isWorkshopVoucher: price is undefined');
-    return false;
-  }
+  if (!price) return false;
 
   const workshopVoucherProductId = process.env.WORKSHOP_VOUCHER_PRODUCT_ID;
-  console.log('[WebhookHandler] isWorkshopVoucher: checking price', {
-    priceId: price.id,
-    productId: typeof price.product === 'string' ? price.product : price.product?.id,
-    lookupKey: price.lookup_key,
-    expectedProductId: workshopVoucherProductId,
-  });
+  if (!workshopVoucherProductId) return false;
 
-  if (!workshopVoucherProductId) {
-    console.warn('[WebhookHandler] isWorkshopVoucher: WORKSHOP_VOUCHER_PRODUCT_ID not set in environment');
-    return false;
-  }
-
-  // Check if the price's product matches the workshop voucher product ID
   const productId = typeof price.product === 'string' ? price.product : price.product?.id;
-  const isVoucher = productId === workshopVoucherProductId;
-
-  console.log('[WebhookHandler] isWorkshopVoucher result:', isVoucher);
-  return isVoucher;
+  return productId === workshopVoucherProductId;
 }
 
 /**
@@ -243,43 +179,41 @@ export async function handleCheckoutSessionCompleted(
     throw new Error('No line items in session');
   }
 
-  // Separate line items into tickets and vouchers
+  // Categorize line items into tickets, vouchers, and unrecognized products
   const ticketLineItems: Stripe.LineItem[] = [];
   const voucherLineItems: Stripe.LineItem[] = [];
+  const unrecognizedLineItems: Stripe.LineItem[] = [];
 
-  console.log('[WebhookHandler] ====== Categorizing line items ======');
-  for (let i = 0; i < lineItems.data.length; i++) {
-    const item = lineItems.data[i];
+  for (const item of lineItems.data) {
     const price = item.price as Stripe.Price | undefined;
-
-    console.log(`[WebhookHandler] Checking line item ${i + 1}:`, {
-      description: item.description,
-      priceId: price?.id,
-      amount: item.amount_total,
-    });
 
     if (isWorkshopVoucher(price)) {
       voucherLineItems.push(item);
-      console.log('[WebhookHandler] ✅ Categorized as: WORKSHOP VOUCHER');
-    } else {
+    } else if (isTicketProduct(price)) {
       ticketLineItems.push(item);
-      console.log('[WebhookHandler] ✅ Categorized as: TICKET');
+    } else {
+      unrecognizedLineItems.push(item);
     }
   }
 
-  console.log('[WebhookHandler] ====== Categorization complete ======');
-  console.log('[WebhookHandler] Summary:', {
-    totalItems: lineItems.data.length,
+  console.log('[WebhookHandler] Line items categorized:', {
+    total: lineItems.data.length,
     tickets: ticketLineItems.length,
     vouchers: voucherLineItems.length,
+    unrecognized: unrecognizedLineItems.length,
   });
 
-  if (voucherLineItems.length > 0) {
-    console.log('[WebhookHandler] Voucher items found:', voucherLineItems.map(v => ({
-      description: v.description,
-      amount: v.amount_total,
-      quantity: v.quantity,
-    })));
+  // Warn about unrecognized products
+  if (unrecognizedLineItems.length > 0) {
+    console.warn('[WebhookHandler] ⚠️ Unrecognized products will be skipped:');
+    unrecognizedLineItems.forEach(item => {
+      const price = item.price as Stripe.Price | undefined;
+      console.warn('[WebhookHandler]', {
+        description: item.description,
+        lookupKey: price?.lookup_key,
+        priceId: price?.id,
+      });
+    });
   }
 
   // ====== Process Workshop Vouchers FIRST (they're fast, no database operations) ======
@@ -351,32 +285,27 @@ export async function handleCheckoutSessionCompleted(
     console.log('[WebhookHandler] ====== Workshop vouchers processed ======');
   }
 
-  // Process tickets (only if there are any)
+  // Parse ticket info if we have tickets
   let ticketInfo: ReturnType<typeof parseTicketInfo> | undefined;
-  let ticketTypeName: string | undefined;
+  let ticketDisplayName: string | undefined;
 
   if (ticketLineItems.length > 0) {
-    const firstTicket = ticketLineItems[0];
-    const price = firstTicket?.price as Stripe.Price | undefined;
-    const lookupKey = price?.lookup_key || null;
+    const price = ticketLineItems[0]?.price as Stripe.Price | undefined;
 
-    // Parse ticket information from lookup key
-    ticketInfo = parseTicketInfo(lookupKey);
-    ticketTypeName = getTicketTypeDisplayName(ticketInfo.legacyType);
+    if (price?.lookup_key) {
+      ticketInfo = parseTicketInfo(price.lookup_key);
+      ticketDisplayName = getTicketDisplayName(ticketInfo.category, ticketInfo.stage);
 
-    console.log('[WebhookHandler] Ticket information parsed:', {
-      lookupKey,
-      category: ticketInfo.category,
-      stage: ticketInfo.stage,
-      legacyType: ticketInfo.legacyType,
-      displayName: ticketTypeName,
-      priceId: price?.id,
-      amount: firstTicket?.amount_total,
-    });
+      console.log('[WebhookHandler] Ticket info:', {
+        category: ticketInfo.category,
+        stage: ticketInfo.stage,
+        displayName: ticketDisplayName,
+      });
+    }
   }
 
   // ====== Process Tickets (slower due to DB + PDF generation) ======
-  if (ticketLineItems.length > 0 && ticketInfo && ticketTypeName) {
+  if (ticketLineItems.length > 0 && ticketInfo && ticketDisplayName) {
     console.log('[WebhookHandler] ====== Processing tickets ======');
 
     // Extract additional customer info from metadata
@@ -466,9 +395,9 @@ export async function handleCheckoutSessionCompleted(
         console.log(`[WebhookHandler] Creating ticket ${i + 1}/${attendees.length} for:`, attendee.email, isPrimary ? '(PRIMARY)' : '');
 
         const ticketResult = await createTicket({
-          ticketType: ticketInfo.legacyType, // Legacy field for backward compatibility
-          ticketCategory: ticketInfo.category, // NEW: Separate category
-          ticketStage: ticketInfo.stage, // NEW: Separate stage
+          ticketType: toLegacyType(ticketInfo.category, ticketInfo.stage),
+          ticketCategory: ticketInfo.category,
+          ticketStage: ticketInfo.stage,
           firstName: attendee.firstName,
           lastName: attendee.lastName,
           email: attendee.email,
@@ -578,7 +507,7 @@ export async function handleCheckoutSessionCompleted(
                 ticketId,
                 attendeeName,
                 attendeeEmail: result.attendee.email,
-                ticketType: ticketTypeName,
+                ticketType: ticketDisplayName,
                 orderNumber: ticketId,
                 amountPaid: result.ticket.amount_paid,
                 currency: session.currency?.toUpperCase() || 'CHF',
@@ -607,7 +536,7 @@ export async function handleCheckoutSessionCompleted(
             to: result.attendee.email,
             customerName: attendeeName,
             customerEmail: result.attendee.email,
-            ticketType: ticketTypeName,
+            ticketType: ticketDisplayName,
             orderNumber: ticketId,
             amountPaid: result.ticket.amount_paid,
             currency: session.currency?.toUpperCase() || 'CHF',
