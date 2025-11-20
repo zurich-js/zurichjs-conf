@@ -163,6 +163,29 @@ export interface TicketRemovedFromCartEvent {
   event: 'ticket_removed_from_cart'
   properties: BaseEventProperties & TicketProperties & {
     quantity: number
+    removal_location?: 'cart_review' | 'checkout_summary' | 'other'
+  }
+}
+
+export interface CartQuantityUpdatedEvent {
+  event: 'cart_quantity_updated'
+  properties: BaseEventProperties & TicketProperties & {
+    old_quantity: number
+    new_quantity: number
+  }
+}
+
+export interface CartReviewedEvent {
+  event: 'cart_reviewed'
+  properties: BaseEventProperties & CartProperties
+}
+
+export interface CartStepViewedEvent {
+  event: 'cart_step_viewed'
+  properties: BaseEventProperties & {
+    step: 'review' | 'attendees' | 'upsells' | 'checkout'
+    cart_item_count: number
+    cart_total_amount: number
   }
 }
 
@@ -246,6 +269,42 @@ export interface WorkshopCancelledEvent {
     }
 }
 
+export interface WorkshopVoucherAddedToCartEvent {
+  event: 'workshop_voucher_added_to_cart'
+  properties: BaseEventProperties & {
+    voucher_amount: number
+    bonus_percent: number
+    total_value: number
+    currency: string
+    quantity: number
+  }
+}
+
+export interface WorkshopVoucherRemovedFromCartEvent {
+  event: 'workshop_voucher_removed_from_cart'
+  properties: BaseEventProperties & {
+    voucher_amount: number
+    currency: string
+    quantity: number
+  }
+}
+
+export interface WorkshopUpsellViewedEvent {
+  event: 'workshop_upsell_viewed'
+  properties: BaseEventProperties & {
+    bonus_percent: number
+    available_vouchers: number
+    current_stage: string
+  }
+}
+
+export interface WorkshopUpsellSkippedEvent {
+  event: 'workshop_upsell_skipped'
+  properties: BaseEventProperties & {
+    bonus_percent: number
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Checkout & Payment Events
 // ----------------------------------------------------------------------------
@@ -274,6 +333,34 @@ export interface CheckoutAbandonedEvent {
       abandonment_stage: 'cart' | 'customer_info' | 'payment'
       time_spent_seconds?: number
     }
+}
+
+export interface CheckoutFormFieldFocusedEvent {
+  event: 'checkout_form_field_focused'
+  properties: BaseEventProperties & {
+    field_name: string
+    field_type: string
+  }
+}
+
+export interface VoucherAppliedEvent {
+  event: 'voucher_applied'
+  properties: BaseEventProperties & {
+    voucher_code: string
+    discount_amount: number
+    discount_type: 'percentage' | 'fixed'
+    discount_value: number
+    success: boolean
+    error_message?: string
+  }
+}
+
+export interface VoucherRemovedEvent {
+  event: 'voucher_removed'
+  properties: BaseEventProperties & {
+    voucher_code: string
+    discount_amount: number
+  }
 }
 
 export interface PaymentSucceededEvent {
@@ -305,6 +392,16 @@ export interface ButtonClickedEvent {
     button_id?: string
     button_location: string
     button_action: string
+    button_context?: Record<string, unknown>
+  }
+}
+
+export interface TicketButtonClickedEvent {
+  event: 'ticket_button_clicked'
+  properties: BaseEventProperties & TicketProperties & {
+    button_location: 'price_card' | 'tickets_section' | 'other'
+    ticket_type: string
+    is_sold_out?: boolean
   }
 }
 
@@ -417,13 +514,24 @@ export type AnalyticsEvent =
   | TicketTransferredEvent
   | TicketValidatedEvent
   | TicketCheckedInEvent
+  | TicketButtonClickedEvent
+  | CartQuantityUpdatedEvent
+  | CartReviewedEvent
+  | CartStepViewedEvent
   | WorkshopViewedEvent
   | WorkshopVoucherPurchasedEvent
   | WorkshopRegisteredEvent
   | WorkshopCancelledEvent
+  | WorkshopVoucherAddedToCartEvent
+  | WorkshopVoucherRemovedFromCartEvent
+  | WorkshopUpsellViewedEvent
+  | WorkshopUpsellSkippedEvent
   | CheckoutStartedEvent
   | CheckoutCompletedEvent
   | CheckoutAbandonedEvent
+  | CheckoutFormFieldFocusedEvent
+  | VoucherAppliedEvent
+  | VoucherRemovedEvent
   | PaymentSucceededEvent
   | PaymentFailedEvent
   | ButtonClickedEvent

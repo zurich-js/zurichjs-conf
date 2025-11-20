@@ -12,6 +12,8 @@ import { sendTicketConfirmationEmailsQueued, sendVoucherConfirmationEmail, type 
 import { getCurrentStage } from '@/config/pricing-stages';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
+import { serverAnalytics } from '@/lib/analytics/server';
+import type { EventProperties } from '@/lib/analytics/events';
 
 /**
  * Parse ticket info from lookup key: {category}_{stage}
@@ -111,10 +113,16 @@ function isWorkshopVoucher(price: Stripe.Price | undefined): boolean {
 export async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session
 ): Promise<void> {
-  console.log('[WebhookHandler] ====== Processing checkout.session.completed ======');
-  console.log('[WebhookHandler] Session ID:', session.id);
-  console.log('[WebhookHandler] Payment status:', session.payment_status);
-  console.log('[WebhookHandler] Session status:', session.status);
+  const startTime = Date.now();
+
+  // Track webhook received
+  await serverAnalytics.track('webhook_received', {
+    webhook_source: 'stripe',
+    webhook_event_type: 'checkout.session.completed',
+    webhook_id: session.id,
+    webhook_success: true,
+    webhook_processing_time_ms: 0, // Will update at end
+  } as EventProperties<'webhook_received'>);
 
   const stripe = getStripeClient();
 
@@ -122,13 +130,12 @@ export async function handleCheckoutSessionCompleted(
   const customerEmail = session.customer_details?.email;
   const customerName = session.customer_details?.name || 'Valued Customer';
 
-  console.log('[WebhookHandler] Customer details:', {
-    email: customerEmail,
-    name: customerName,
-  });
-
   if (!customerEmail) {
-    console.error('[WebhookHandler] ❌ No customer email found in checkout session');
+    await serverAnalytics.error('No customer email in checkout session', new Error('Customer email is required'), {
+      type: 'payment',
+      severity: 'high',
+      code: 'MISSING_EMAIL',
+    });
     throw new Error('Customer email is required');
   }
 
@@ -175,7 +182,11 @@ export async function handleCheckoutSessionCompleted(
   console.log('[WebhookHandler] Line items count:', lineItems.data.length);
 
   if (!lineItems.data.length) {
-    console.error('[WebhookHandler] ❌ No line items found in checkout session');
+    await serverAnalytics.error('No line items in checkout session', new Error('No line items in session'), {
+      type: 'payment',
+      severity: 'high',
+      code: 'NO_LINE_ITEMS',
+    });
     throw new Error('No line items in session');
   }
 
@@ -449,8 +460,34 @@ export async function handleCheckoutSessionCompleted(
       // Check if any tickets failed
       const failedTickets = ticketResults.filter(r => !r.success);
       if (failedTickets.length > 0) {
-        console.error('[WebhookHandler] ❌ Failed to create', failedTickets.length, 'ticket(s)');
+        await serverAnalytics.error(`Failed to create ${failedTickets.length} tickets`, new Error(`Failed to create ${failedTickets.length} ticket(s)`), {
+          type: 'system',
+          severity: 'critical',
+          code: 'TICKET_CREATION_FAILED',
+        });
         throw new Error(`Failed to create ${failedTickets.length} ticket(s)`);
+      }
+
+      // Track successful ticket purchases
+      for (const result of ticketResults) {
+        if (result.success && result.ticket) {
+          await serverAnalytics.track('ticket_purchased', {
+            ticket_id: result.ticket.id,
+            ticket_category: ticketInfo.category,
+            ticket_stage: ticketInfo.stage,
+            ticket_price: result.ticket.amount_paid,
+            currency: session.currency?.toUpperCase() || 'CHF',
+            ticket_count: 1,
+            attendee_count: ticketResults.length,
+            email: result.attendee.email,
+            company: result.attendee.company,
+            payment_status: 'succeeded',
+            stripe_session_id: session.id,
+            revenue_amount: result.ticket.amount_paid,
+            revenue_currency: session.currency?.toUpperCase() || 'CHF',
+            revenue_type: 'ticket',
+          } as EventProperties<'ticket_purchased'>);
+        }
       }
 
       // Prepare emails for all attendees with PDFs
@@ -575,7 +612,15 @@ export async function handleCheckoutSessionCompleted(
     console.log('[WebhookHandler] ====== Tickets processed ======');
   } // End of if (ticketLineItems.length > 0)
 
-  console.log('[WebhookHandler] ====== Checkout session processing complete ======');
+  // Track successful webhook processing completion
+  const processingTime = Date.now() - startTime;
+  await serverAnalytics.track('webhook_received', {
+    webhook_source: 'stripe',
+    webhook_event_type: 'checkout.session.completed',
+    webhook_id: session.id,
+    webhook_processing_time_ms: processingTime,
+    webhook_success: true,
+  } as EventProperties<'webhook_received'>);
 }
 
 /**

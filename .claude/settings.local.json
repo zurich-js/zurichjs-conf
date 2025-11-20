@@ -14,7 +14,8 @@
       "Bash(git add:*)",
       "Bash(node:*)",
       "WebSearch",
-      "WebFetch(domain:posthog.com)"
+      "WebFetch(domain:posthog.com)",
+      "WebFetch(domain:medium.com)"
     ],
     "deny": [],
     "ask": []

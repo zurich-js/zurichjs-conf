@@ -16,59 +16,28 @@ class AnalyticsClient {
   private initialized = false
 
   /**
-   * Initialize PostHog (called automatically in instrumentation-client.ts)
+   * Initialize PostHog (now handled in _app.tsx)
+   * This method is kept for backwards compatibility but does nothing
    */
   init() {
-    if (this.initialized || typeof window === 'undefined') {
+    // PostHog is now initialized directly in _app.tsx
+    // We just check if it's available and mark as initialized
+    if (typeof window === 'undefined') {
       return
     }
 
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
-    if (!key) {
-      console.warn('[Analytics] PostHog key not configured')
-      return
-    }
-
-    posthog.init(key, {
-      api_host: '/ingest',
-      ui_host: 'https://eu.posthog.com',
-      person_profiles: 'identified_only',
-      capture_pageview: false, // We'll handle this manually
-      capture_pageleave: true,
-      autocapture: false, // Disable autocapture for explicit tracking
-      disable_session_recording: false,
-      session_recording: {
-        maskAllInputs: true,
-        maskTextSelector: '[data-mask]',
-      },
-      persistence: 'localStorage+cookie',
-      sanitize_properties: (properties) => {
-        // Remove sensitive data from all events
-        const sanitized = { ...properties }
-        const sensitiveKeys = [
-          'password',
-          'credit_card',
-          'ssn',
-          'api_key',
-          'token',
-          'secret',
-        ]
-        sensitiveKeys.forEach((key) => {
-          if (key in sanitized) {
-            delete sanitized[key]
-          }
-        })
-        return sanitized
-      },
-      loaded: () => {
+    // Check if PostHog has a distinct_id (meaning it's initialized)
+    try {
+      const distinctId = posthog.get_distinct_id()
+      if (distinctId) {
+        this.initialized = true
         if (process.env.NODE_ENV === 'development') {
-          console.log('[Analytics] PostHog initialized')
+          console.log('[Analytics] Using PostHog instance initialized in _app.tsx')
         }
-      },
-      debug: process.env.NODE_ENV === 'development',
-    })
-
-    this.initialized = true
+      }
+    } catch (error) {
+      console.warn('[Analytics] PostHog not yet initialized')
+    }
   }
 
   /**
@@ -90,6 +59,17 @@ class AnalyticsClient {
     event: T,
     properties: Omit<EventProperties<T>, keyof typeof this.getCommonProperties>
   ): void {
+    // Auto-detect if PostHog is initialized
+    if (!this.initialized && typeof window !== 'undefined') {
+      try {
+        if (posthog.get_distinct_id()) {
+          this.initialized = true
+        }
+      } catch {
+        // PostHog not initialized yet
+      }
+    }
+
     if (!this.initialized) {
       if (process.env.NODE_ENV === 'development') {
         console.log('[Analytics] Event tracked (not initialized):', event, properties)
@@ -323,7 +303,6 @@ class AnalyticsClient {
 // Export singleton instance
 export const analytics = new AnalyticsClient()
 
-// Auto-initialize on import (browser only)
-if (typeof window !== 'undefined') {
-  analytics.init()
-}
+// NOTE: Do not auto-initialize here!
+// PostHog initialization is handled in _app.tsx using PostHogProvider
+// This ensures proper timing and avoids the 401 api_key errors with session recording

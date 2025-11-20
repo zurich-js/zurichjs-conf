@@ -5,7 +5,7 @@
  * REQUIRES AUTHENTICATION: Users must be logged in to access the cart
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -13,6 +13,8 @@ import { useWorkshopVouchers } from '@/hooks/useWorkshopVouchers';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
+import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm, type TeamRequestData } from '@/components/molecules';
 import {Button, Heading} from '@/components/atoms';
 import {PageHeader, CheckoutForm, SectionContainer} from '@/components/organisms';
@@ -54,7 +56,12 @@ export default function CartPage() {
     // When loading from URL, replace the entire cart
     // Note: This would need to be implemented in CartContext
     // For now, we'll just let the URL sync work one-way (context -> URL)
-    console.log('Cart loaded from URL:', urlCart);
+    analytics.track('button_clicked', {
+      button_text: 'Cart loaded from URL',
+      button_location: 'cart_page',
+      button_action: 'load_cart_from_url',
+      button_context: { itemCount: urlCart.items.length },
+    } as EventProperties<'button_clicked'>);
   }, []);
 
   useCartUrlSync(cart, handleCartLoad);
@@ -104,13 +111,27 @@ export default function CartPage() {
 
       if (!response.ok) {
         const errorMessage = result.error || 'Failed to submit team request';
-        console.error('Team request API error:', errorMessage, result);
+        analytics.error('Team request API error', new Error(errorMessage), {
+          type: 'network',
+          severity: 'medium',
+          code: response.status.toString(),
+        });
         throw new Error(errorMessage);
       }
 
+      // Track successful team request
+      analytics.track('form_submitted', {
+        form_name: 'team_request',
+        form_type: 'other',
+        form_success: true,
+      } as EventProperties<'form_submitted'>);
+
       // Don't show toast anymore - we'll show the success dialog instead
     } catch (error) {
-      console.error('Team request error:', error);
+      analytics.error('Team request error', error instanceof Error ? error : new Error('Unknown error'), {
+        type: 'network',
+        severity: 'medium',
+      });
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit request';
       showToast(errorMessage, 'error');
       throw error;
@@ -166,12 +187,21 @@ export default function CartPage() {
   };
 
   const handleCheckoutSubmit = (data: CheckoutFormData) => {
-    console.log('[Cart] Submitting checkout with cart:', {
-      couponCode: cart.couponCode,
-      discountAmount: cart.discountAmount,
-      totalItems: cart.totalItems,
-      totalPrice: cart.totalPrice,
-    });
+    // Track checkout started
+    analytics.track('checkout_started', {
+      cart_item_count: cart.items.length,
+      cart_total_amount: orderSummary.total,
+      cart_currency: orderSummary.currency,
+      cart_items: cart.items.map(item => ({
+        type: item.title.includes('Workshop') ? 'workshop_voucher' as const : 'ticket' as const,
+        category: item.variant as any,
+        stage: 'unknown' as any,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      email: data.email,
+      company: data.company,
+    } as EventProperties<'checkout_started'>);
 
     createCheckout({
       cart,
@@ -183,6 +213,20 @@ export default function CartPage() {
   };
 
   const handleContinueFromReview = () => {
+    // Track cart review completion
+    analytics.track('cart_reviewed', {
+      cart_item_count: cart.items.length,
+      cart_total_amount: orderSummary.total,
+      cart_currency: orderSummary.currency,
+      cart_items: cart.items.map(item => ({
+        type: item.title.includes('Workshop') ? 'workshop_voucher' as const : 'ticket' as const,
+        category: item.variant as any,
+        stage: 'unknown' as any,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    } as EventProperties<'cart_reviewed'>);
+
     if (needsAttendeeInfo) {
       setCurrentStep('attendees');
     } else if (showWorkshopUpsells) {
@@ -191,6 +235,24 @@ export default function CartPage() {
       setCurrentStep('checkout');
     }
   };
+
+  // Track step views
+  useEffect(() => {
+    analytics.track('cart_step_viewed', {
+      step: currentStep,
+      cart_item_count: cart.items.length,
+      cart_total_amount: orderSummary.total,
+    } as EventProperties<'cart_step_viewed'>);
+
+    // Track workshop upsell view
+    if (currentStep === 'upsells' && showWorkshopUpsells) {
+      analytics.track('workshop_upsell_viewed', {
+        bonus_percent: bonusPercent,
+        available_vouchers: workshopVouchers.length,
+        current_stage: currentStage || 'unknown',
+      } as EventProperties<'workshop_upsell_viewed'>);
+    }
+  }, [currentStep, cart.items.length, orderSummary.total, showWorkshopUpsells, bonusPercent, workshopVouchers.length, currentStage]);
 
   // Empty order state
   if (isEmpty) {
@@ -505,7 +567,13 @@ export default function CartPage() {
                     Continue to Payment
                   </Button>
                   <button
-                    onClick={() => setCurrentStep('checkout')}
+                    onClick={() => {
+                      // Track workshop upsell skip
+                      analytics.track('workshop_upsell_skipped', {
+                        bonus_percent: bonusPercent,
+                      } as EventProperties<'workshop_upsell_skipped'>);
+                      setCurrentStep('checkout');
+                    }}
                     className="text-brand-gray-light hover:text-brand-white transition-colors cursor-pointer text-sm"
                   >
                     Skip workshop credit
