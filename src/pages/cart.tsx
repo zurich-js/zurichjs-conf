@@ -194,8 +194,8 @@ export default function CartPage() {
       cart_currency: orderSummary.currency,
       cart_items: cart.items.map(item => ({
         type: item.title.includes('Workshop') ? 'workshop_voucher' as const : 'ticket' as const,
-        category: item.variant as any,
-        stage: 'unknown' as any,
+        category: item.variant === 'member' ? 'standard' : item.variant,
+        stage: 'general_admission',
         quantity: item.quantity,
         price: item.price,
       })),
@@ -220,8 +220,8 @@ export default function CartPage() {
       cart_currency: orderSummary.currency,
       cart_items: cart.items.map(item => ({
         type: item.title.includes('Workshop') ? 'workshop_voucher' as const : 'ticket' as const,
-        category: item.variant as any,
-        stage: 'unknown' as any,
+        category: item.variant === 'member' ? 'standard' : item.variant,
+        stage: 'general_admission',
         quantity: item.quantity,
         price: item.price,
       })),

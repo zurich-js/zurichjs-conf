@@ -116,7 +116,7 @@ export async function handleCheckoutSessionCompleted(
   const startTime = Date.now();
 
   // Track webhook received
-  await serverAnalytics.track('webhook_received', {
+  await serverAnalytics.track('webhook_received', session.id, {
     webhook_source: 'stripe',
     webhook_event_type: 'checkout.session.completed',
     webhook_id: session.id,
@@ -131,10 +131,11 @@ export async function handleCheckoutSessionCompleted(
   const customerName = session.customer_details?.name || 'Valued Customer';
 
   if (!customerEmail) {
-    await serverAnalytics.error('No customer email in checkout session', new Error('Customer email is required'), {
+    await serverAnalytics.error(session.id, 'No customer email in checkout session', {
       type: 'payment',
       severity: 'high',
       code: 'MISSING_EMAIL',
+      stack: new Error('Customer email is required').stack,
     });
     throw new Error('Customer email is required');
   }
@@ -182,10 +183,11 @@ export async function handleCheckoutSessionCompleted(
   console.log('[WebhookHandler] Line items count:', lineItems.data.length);
 
   if (!lineItems.data.length) {
-    await serverAnalytics.error('No line items in checkout session', new Error('No line items in session'), {
+    await serverAnalytics.error(session.id, 'No line items in checkout session', {
       type: 'payment',
       severity: 'high',
       code: 'NO_LINE_ITEMS',
+      stack: new Error('No line items in session').stack,
     });
     throw new Error('No line items in session');
   }
@@ -460,10 +462,11 @@ export async function handleCheckoutSessionCompleted(
       // Check if any tickets failed
       const failedTickets = ticketResults.filter(r => !r.success);
       if (failedTickets.length > 0) {
-        await serverAnalytics.error(`Failed to create ${failedTickets.length} tickets`, new Error(`Failed to create ${failedTickets.length} ticket(s)`), {
+        await serverAnalytics.error(stripeCustomerId, `Failed to create ${failedTickets.length} tickets`, {
           type: 'system',
           severity: 'critical',
           code: 'TICKET_CREATION_FAILED',
+          stack: new Error(`Failed to create ${failedTickets.length} ticket(s)`).stack,
         });
         throw new Error(`Failed to create ${failedTickets.length} ticket(s)`);
       }
@@ -471,7 +474,7 @@ export async function handleCheckoutSessionCompleted(
       // Track successful ticket purchases
       for (const result of ticketResults) {
         if (result.success && result.ticket) {
-          await serverAnalytics.track('ticket_purchased', {
+          await serverAnalytics.track('ticket_purchased', result.attendee.email, {
             ticket_id: result.ticket.id,
             ticket_category: ticketInfo.category,
             ticket_stage: ticketInfo.stage,
@@ -614,7 +617,7 @@ export async function handleCheckoutSessionCompleted(
 
   // Track successful webhook processing completion
   const processingTime = Date.now() - startTime;
-  await serverAnalytics.track('webhook_received', {
+  await serverAnalytics.track('webhook_received', session.id, {
     webhook_source: 'stripe',
     webhook_event_type: 'checkout.session.completed',
     webhook_id: session.id,

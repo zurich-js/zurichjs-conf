@@ -79,8 +79,8 @@ export const PriceCard: React.FC<PriceCardProps> = ({
     analytics.track('ticket_button_clicked', {
       button_location: 'price_card',
       ticket_type: title,
-      ticket_category: variant as any,
-      ticket_stage: 'unknown' as any, // Will be set by parent component if available
+      ticket_category: (variant === 'member' ? 'standard' : variant) as 'standard' | 'vip',
+      ticket_stage: 'general_admission',
       ticket_price: price,
       currency,
       ticket_count: 1,

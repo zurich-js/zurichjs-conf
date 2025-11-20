@@ -35,7 +35,7 @@ class AnalyticsClient {
           console.log('[Analytics] Using PostHog instance initialized in _app.tsx')
         }
       }
-    } catch (error) {
+    } catch {
       console.warn('[Analytics] PostHog not yet initialized')
     }
   }

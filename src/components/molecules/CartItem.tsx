@@ -48,8 +48,8 @@ export const CartItem: React.FC<CartItemProps> = ({
     if (newQuantity !== previousQuantity.current) {
       // Track quantity change
       analytics.track('cart_quantity_updated', {
-        ticket_category: item.variant as any,
-        ticket_stage: 'unknown' as any,
+        ticket_category: (item.variant === 'member' ? 'standard' : item.variant || 'standard') as 'standard' | 'vip',
+        ticket_stage: 'general_admission',
         ticket_price: item.price,
         currency: item.currency,
         ticket_count: newQuantity,
@@ -65,8 +65,8 @@ export const CartItem: React.FC<CartItemProps> = ({
   const handleRemove = () => {
     // Track item removal
     analytics.track('ticket_removed_from_cart', {
-      ticket_category: item.variant as any,
-      ticket_stage: 'unknown' as any,
+      ticket_category: (item.variant === 'member' ? 'standard' : item.variant || 'standard') as 'standard' | 'vip',
+      ticket_stage: 'general_admission',
       ticket_price: item.price,
       currency: item.currency,
       ticket_count: item.quantity,
