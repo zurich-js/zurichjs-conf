@@ -12,7 +12,10 @@
       "Bash(mkdir:*)",
       "Bash(xargs cat:*)",
       "Bash(git add:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebSearch",
+      "WebFetch(domain:posthog.com)",
+      "WebFetch(domain:medium.com)"
     ],
     "deny": [],
     "ask": []

@@ -6,6 +6,8 @@ import { Button } from '@/components/atoms/Button';
 import { FeatureList, Feature } from './FeatureList';
 import {CrownIcon} from "lucide-react";
 import {Heading} from "@/components/atoms";
+import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 
 export type CTA =
   | { type: 'link'; href: string; label: string; disabled?: boolean }
@@ -71,6 +73,25 @@ export const PriceCard: React.FC<PriceCardProps> = ({
   delay = 0,
 }) => {
   const isVip = variant === 'vip';
+
+  const handleCTAClick = () => {
+    // Track ticket button click
+    analytics.track('ticket_button_clicked', {
+      button_location: 'price_card',
+      ticket_type: title,
+      ticket_category: (variant === 'member' ? 'standard' : variant) as 'standard' | 'vip',
+      ticket_stage: 'general_admission',
+      ticket_price: price,
+      currency,
+      ticket_count: 1,
+      is_sold_out: cta.disabled || false,
+    } as EventProperties<'ticket_button_clicked'>);
+
+    // Call original onClick if it's a button
+    if (cta.type === 'button') {
+      cta.onClick();
+    }
+  };
 
   return (
     <motion.article
@@ -140,6 +161,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
                   className="w-full"
                   asChild
                   disabled={cta.disabled}
+                  onClick={handleCTAClick}
                 >
                   {cta.label}
                 </Button>
@@ -149,7 +171,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
                 variant={variant === 'vip' ? 'accent' : variant === 'member' ? 'outline' : 'primary'}
                 size="md"
                 className="w-full"
-                onClick={cta.onClick}
+                onClick={handleCTAClick}
                 disabled={cta.disabled}
                 loading={cta.loading}
               >

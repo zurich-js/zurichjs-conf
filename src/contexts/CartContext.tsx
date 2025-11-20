@@ -7,6 +7,8 @@
 import React, { createContext, useContext, useCallback, useMemo, useEffect, useState } from 'react';
 import type { Cart, CartItem } from '@/types/cart';
 import { useVoucherValidation } from '@/hooks/useVoucherValidation';
+import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 
 /**
  * Cart manipulation helpers
@@ -177,7 +179,10 @@ function loadCartFromStorage(): Cart {
       }
     }
   } catch (error) {
-    console.error('Failed to load cart from localStorage:', error);
+    analytics.error('Failed to load cart from localStorage', error instanceof Error ? error : new Error('Unknown error'), {
+      type: 'system',
+      severity: 'low',
+    });
   }
 
   return createEmptyCart();
@@ -194,7 +199,10 @@ function saveCartToStorage(cart: Cart): void {
   try {
     localStorage.setItem('zurichjs-cart', JSON.stringify(cart));
   } catch (error) {
-    console.error('Failed to save cart to localStorage:', error);
+    analytics.error('Failed to save cart to localStorage', error instanceof Error ? error : new Error('Unknown error'), {
+      type: 'system',
+      severity: 'low',
+    });
   }
 }
 
@@ -325,13 +333,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         discountValue = result.percentOff;
       }
 
-      console.log('[CartContext] Applying voucher to cart:', {
-        couponCode: code.trim(),
-        stripeId: result.couponId,
-        discountAmount,
-        discountType,
-        discountValue,
-      });
+      // Track successful voucher application
+      analytics.track('voucher_applied', {
+        voucher_code: code.trim(),
+        discount_amount: discountAmount,
+        discount_type: discountType || 'fixed',
+        discount_value: discountValue || 0,
+        success: true,
+      } as EventProperties<'voucher_applied'>);
 
       // Apply voucher to cart (use the user-entered code for display)
       setCart((currentCart) =>
@@ -347,6 +356,16 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to apply promo code';
+
+      // Track failed voucher application
+      analytics.track('voucher_applied', {
+        voucher_code: code.trim(),
+        discount_amount: 0,
+        discount_type: 'fixed',
+        discount_value: 0,
+        success: false,
+        error_message: errorMessage,
+      } as EventProperties<'voucher_applied'>);
       return { success: false, error: errorMessage };
     }
   }, [validateVoucher]);
@@ -355,7 +374,16 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
    * Remove voucher
    */
   const removeVoucher = useCallback(() => {
-    setCart((currentCart) => removeVoucherFromCart(currentCart));
+    setCart((currentCart) => {
+      // Track voucher removal
+      if (currentCart.couponCode) {
+        analytics.track('voucher_removed', {
+          voucher_code: currentCart.couponCode,
+          discount_amount: currentCart.discountAmount || 0,
+        } as EventProperties<'voucher_removed'>);
+      }
+      return removeVoucherFromCart(currentCart);
+    });
   }, []);
 
   /**

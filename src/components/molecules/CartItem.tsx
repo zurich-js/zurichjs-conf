@@ -3,12 +3,14 @@
  * Displays a single cart item with quantity controls and remove button
  */
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { CartItem as CartItemType } from '@/types/cart';
 import {Input} from '@/components/atoms';
 import { formatPrice } from '@/lib/cart';
 import {CrownIcon, TicketCheck, Trash2Icon} from "lucide-react";
+import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 
 export interface CartItemProps {
   /**
@@ -40,6 +42,40 @@ export const CartItem: React.FC<CartItemProps> = ({
   delay = 0,
 }) => {
   const totalPrice = item.price * item.quantity;
+  const previousQuantity = useRef(item.quantity);
+
+  const handleQuantityChange = (newQuantity: number) => {
+    if (newQuantity !== previousQuantity.current) {
+      // Track quantity change
+      analytics.track('cart_quantity_updated', {
+        ticket_category: (item.variant === 'member' ? 'standard' : item.variant || 'standard') as 'standard' | 'vip',
+        ticket_stage: 'general_admission',
+        ticket_price: item.price,
+        currency: item.currency,
+        ticket_count: newQuantity,
+        old_quantity: previousQuantity.current,
+        new_quantity: newQuantity,
+      } as EventProperties<'cart_quantity_updated'>);
+
+      previousQuantity.current = newQuantity;
+    }
+    onQuantityChange(item.id, newQuantity);
+  };
+
+  const handleRemove = () => {
+    // Track item removal
+    analytics.track('ticket_removed_from_cart', {
+      ticket_category: (item.variant === 'member' ? 'standard' : item.variant || 'standard') as 'standard' | 'vip',
+      ticket_stage: 'general_admission',
+      ticket_price: item.price,
+      currency: item.currency,
+      ticket_count: item.quantity,
+      quantity: item.quantity,
+      removal_location: 'cart_review',
+    } as EventProperties<'ticket_removed_from_cart'>);
+
+    onRemove(item.id);
+  };
 
   return (
     <motion.div
@@ -74,7 +110,7 @@ export const CartItem: React.FC<CartItemProps> = ({
 
             {/* Remove button */}
             <button
-              onClick={() => onRemove(item.id)}
+              onClick={handleRemove}
               className="ml-auto -mr-2.5 flex-shrink-0 group/btn cursor-pointer p-2.5 rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out"
               aria-label={`Remove ${item.title} ticket from cart`}
             >
@@ -89,7 +125,7 @@ export const CartItem: React.FC<CartItemProps> = ({
               value={item.quantity}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const newValue = parseInt(e.target.value, 10);
-                if (!isNaN(newValue)) onQuantityChange(item.id, newValue)
+                if (!isNaN(newValue)) handleQuantityChange(newValue);
               }}
               min={1}
               max={10}

@@ -7,7 +7,9 @@ import { QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
 import { NuqsAdapter } from "nuqs/adapters/next/pages";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import posthog from 'posthog-js';
+import { PostHogProvider } from 'posthog-js/react';
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -19,22 +21,55 @@ export default function App({ Component, pageProps }: AppProps) {
   // Create a stable query client instance per request
   const [queryClient] = useState(() => getQueryClient());
 
+  useEffect(() => {
+    // Initialize PostHog on the client side
+    if (typeof window !== 'undefined') {
+      const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+      const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
+
+      if (!key) {
+        console.error('[PostHog] API key not configured');
+        return;
+      }
+
+      posthog.init(key, {
+        api_host: host,
+        person_profiles: 'always',
+        capture_pageview: false,
+        capture_pageleave: true,
+        autocapture: false,
+        disable_session_recording: false,
+        session_recording: {
+          maskAllInputs: true,
+          maskTextSelector: '[data-mask]',
+        },
+        loaded: (posthogInstance) => {
+          if (process.env.NODE_ENV === 'development') {
+            posthogInstance.debug();
+          }
+        },
+      });
+    }
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <HydrationBoundary state={pageProps.dehydratedState}>
-        <NuqsAdapter>
-          <CartProvider>
-            <MotionProvider>
-              <div className={figtree.variable}>
-                <Component {...pageProps} />
-              </div>
-            </MotionProvider>
-          </CartProvider>
-        </NuqsAdapter>
-      </HydrationBoundary>
-      {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
-    </QueryClientProvider>
+    <PostHogProvider client={posthog}>
+      <QueryClientProvider client={queryClient}>
+        <HydrationBoundary state={pageProps.dehydratedState}>
+          <NuqsAdapter>
+            <CartProvider>
+              <MotionProvider>
+                <div className={figtree.variable}>
+                  <Component {...pageProps} />
+                </div>
+              </MotionProvider>
+            </CartProvider>
+          </NuqsAdapter>
+        </HydrationBoundary>
+        {process.env.NODE_ENV === 'development' && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
+      </QueryClientProvider>
+    </PostHogProvider>
   );
 }

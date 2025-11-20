@@ -6,6 +6,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MinusIcon } from 'lucide-react';
+import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 
 export interface WorkshopVoucherCardProps {
   /**
@@ -61,7 +63,28 @@ export const WorkshopVoucherCard: React.FC<WorkshopVoucherCardProps> = ({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Track workshop voucher removal
+    analytics.track('workshop_voucher_removed_from_cart', {
+      voucher_amount: amount,
+      currency,
+      quantity: quantity,
+    } as EventProperties<'workshop_voucher_removed_from_cart'>);
+
     onRemove?.();
+  };
+
+  const handleAdd = () => {
+    // Track workshop voucher addition
+    analytics.track('workshop_voucher_added_to_cart', {
+      voucher_amount: amount,
+      bonus_percent: bonusPercent,
+      total_value: totalValue,
+      currency,
+      quantity: 1,
+    } as EventProperties<'workshop_voucher_added_to_cart'>);
+
+    onClick();
   };
 
   return (
@@ -114,7 +137,7 @@ export const WorkshopVoucherCard: React.FC<WorkshopVoucherCardProps> = ({
           ) : (
             /* Add button */
             <motion.button
-              onClick={onClick}
+              onClick={handleAdd}
               disabled={isLoading}
               className="w-10 h-10 bg-brand-primary hover:bg-brand-primary/90 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               whileTap={{ scale: 0.95 }}
