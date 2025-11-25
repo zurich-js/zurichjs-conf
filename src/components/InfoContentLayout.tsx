@@ -65,16 +65,15 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
         </SectionContainer>
       </header>
       <main className="min-h-screen bg-white">
-        <div className="py-16 md:py-24 px-6">
-          <div className="max-w-7xl mx-auto">
+        <SectionContainer>
+          <div className="py-16 md:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
-              {/* Main Content */}
               <div className="max-w-4xl">
                 <div className="mb-12">
-                  <Kicker variant="dark" className="mb-4">
+                  <Kicker variant="light" className="mb-4">
                     {page.kicker}
                   </Kicker>
-                  <Heading level="h1" variant="dark" className="mb-6">
+                  <Heading level="h1" variant="light" className="mb-6 text-2xl font-bold">
                     {page.title}
                   </Heading>
                   <p className="text-lg text-gray-700 leading-relaxed">
@@ -86,14 +85,12 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                 </div>
                 <RichTextRenderer sections={page.sections} />
               </div>
-
-              {/* Right Sidebar - Page Navigation */}
               <aside className="lg:block hidden">
                 <PageNavigation items={navigationItems} />
               </aside>
             </div>
           </div>
-        </div>
+        </SectionContainer>
       </main>
       <footer className="bg-black text-white py-16 md:py-24">
         <SectionContainer>
