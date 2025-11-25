@@ -1,0 +1,145 @@
+import React from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
+import { Logo } from '@/components/atoms/Logo';
+import { SocialIcon } from '@/components/atoms/SocialIcon';
+import { Button } from '@/components/atoms/Button';
+import { Kicker, Heading } from '@/components/atoms';
+import { SectionContainer } from '@/components/organisms/SectionContainer';
+import { RichTextRenderer } from '@/components/RichTextRenderer';
+import type { InfoPage } from '@/content/info-pages';
+
+export interface InfoContentLayoutProps {
+  page: InfoPage;
+}
+export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) => {
+  return (
+    <>
+      <Head>
+        <title>{page.title} | ZurichJS Conference 2026</title>
+        <meta name="description" content={page.description} />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <header className="bg-black sticky top-0 z-40">
+        <SectionContainer>
+          <div className="flex items-center justify-between h-20">
+            <Link href="/" className="cursor-pointer">
+              <Logo width={140} height={38} />
+            </Link>
+            <Link href="/#tickets">
+              <Button variant="primary" size="md">
+                Order Ticket
+              </Button>
+            </Link>
+          </div>
+        </SectionContainer>
+      </header>
+      <main className="min-h-screen bg-white">
+        <div className="py-16 md:py-24 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-12">
+              <Kicker variant="dark" className="mb-4">
+                {page.kicker}
+              </Kicker>
+              <Heading level="h1" variant="dark" className="mb-6">
+                {page.title}
+              </Heading>
+              <p className="text-lg text-gray-700 leading-relaxed">
+                {page.description}
+              </p>
+              <p className="text-sm text-gray-500 mt-4">
+                Last updated: {page.lastUpdated}
+              </p>
+            </div>
+            <RichTextRenderer sections={page.sections} />
+          </div>
+        </div>
+      </main>
+      <footer className="bg-black text-white py-16 md:py-24">
+        <SectionContainer>
+          <div className="space-y-12">
+            <div className="space-y-4">
+              <p className="text-brand-primary text-sm font-semibold uppercase tracking-wider">
+                Get in touch
+              </p>
+              <h2 className="text-4xl md:text-5xl font-bold">
+                Questions or feedback?
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16">
+              <div className="space-y-6">
+                <p className="text-brand-gray-light text-lg">
+                  We are here to help! Reach out to us for any questions, concerns, or feedback.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-brand-gray-light mb-1">General Inquiries</p>
+                    <a
+                      href="mailto:hello@zurichjs.com"
+                      className="text-brand-primary hover:underline font-semibold text-lg"
+                    >
+                      hello@zurichjs.com
+                    </a>
+                  </div>
+                  <div>
+                    <p className="text-sm text-brand-gray-light mb-1">Ticket Support</p>
+                    <a
+                      href="mailto:tickets@zurichjs.com"
+                      className="text-brand-primary hover:underline font-semibold text-lg"
+                    >
+                      tickets@zurichjs.com
+                    </a>
+                  </div>
+                  <div>
+                    <p className="text-sm text-brand-gray-light mb-1">Sponsorship</p>
+                    <a
+                      href="mailto:sponsors@zurichjs.com"
+                      className="text-brand-primary hover:underline font-semibold text-lg"
+                    >
+                      sponsors@zurichjs.com
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <p className="text-brand-gray-light text-lg">
+                  Prefer to send us a detailed message? Use our contact form to get in touch.
+                </p>
+                <a
+                  href="mailto:hello@zurichjs.com?subject=Contact from ZurichJS Conf 2026"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="primary" size="lg" className="w-full md:w-auto">
+                    Contact Us
+                  </Button>
+                </a>
+              </div>
+            </div>
+            <div className="pt-12 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex flex-col items-center md:items-start gap-2">
+                <Logo width={160} height={43} />
+                <p className="text-sm text-brand-gray-light">
+                  ZurichJS Conference 2026
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <SocialIcon
+                  kind="linkedin"
+                  href="https://www.linkedin.com/company/zurichjs"
+                  label="Follow ZurichJS on LinkedIn"
+                />
+                <SocialIcon
+                  kind="instagram"
+                  href="https://www.instagram.com/zurich.js"
+                  label="Follow ZurichJS on Instagram"
+                />
+              </div>
+            </div>
+          </div>
+        </SectionContainer>
+      </footer>
+    </>
+  );
+};
