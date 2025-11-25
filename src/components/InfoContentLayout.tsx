@@ -62,7 +62,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
             </Link>
             <Link href="/#tickets">
               <Button variant="primary" size="xs">
-                Render Ticket
+                Order Ticket
               </Button>
             </Link>
           </div>
@@ -166,11 +166,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full md:w-auto"
-                  >
+                  <Button variant="black" size="xs" className="w-full md:w-auto">
                     Contact Us
                   </Button>
                 </a>
