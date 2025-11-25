@@ -57,7 +57,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
               <Logo width={140} height={38} />
             </Link>
             <Link href="/#tickets">
-              <Button variant="primary" size="md">
+              <Button variant="primary" size="xs">
                 Order Ticket
               </Button>
             </Link>
@@ -153,7 +153,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button variant="primary" size="lg" className="w-full md:w-auto">
+                  <Button variant="black" size="xs" className="w-full md:w-auto">
                     Contact Us
                   </Button>
                 </a>
