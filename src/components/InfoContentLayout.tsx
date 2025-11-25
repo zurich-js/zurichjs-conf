@@ -1,6 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Logo } from '@/components/atoms/Logo';
 import { SocialIcon } from '@/components/atoms/SocialIcon';
 import { Button } from '@/components/atoms/Button';
@@ -16,6 +17,30 @@ export interface InfoContentLayoutProps {
 export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) => {
   // Extract navigation items from page content
   const navigationItems = extractNavigationItems(page.sections);
+
+  // Animation variants for footer (same as frontpage)
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1] as const,
+      },
+    },
+  };
 
   return (
     <>
@@ -72,18 +97,23 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
       </main>
       <footer className="bg-black text-white py-16 md:py-24">
         <SectionContainer>
-          <div className="space-y-12">
-            <div className="space-y-4">
+          <motion.div
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-100px' }}
+            className="space-y-12"
+          >
+            <motion.div variants={item} className="space-y-4">
               <p className="text-brand-gray-light text-sm font-semibold uppercase tracking-wider">
                 Get in touch
               </p>
               <h2 className="text-4xl md:text-5xl font-bold">
                 Questions or feedback?
               </h2>
-            </div>
+            </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16">
-              <div className="space-y-6">
-                
+              <motion.div variants={item} className="space-y-6">
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-brand-gray-light mb-1">General Inquiries</p>
@@ -113,8 +143,8 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                     </a>
                   </div>
                 </div>
-              </div>
-              <div className="space-y-6">
+              </motion.div>
+              <motion.div variants={item} className="space-y-6">
                 <p className="text-brand-gray-light text-lg">
                   We would love to hear from you! Whether you have questions about the conference, want to become a sponsor, or are interested in speaking, our team is here to help.
                 </p>
@@ -127,9 +157,9 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                     Contact Us
                   </Button>
                 </a>
-              </div>
+              </motion.div>
             </div>
-            <div className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6">
+            <motion.div variants={item} className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex flex-col items-center md:items-start gap-2">
                 <Logo width={160} height={43} />
                 <p className="text-sm text-brand-gray-light">
@@ -148,8 +178,8 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                   label="Follow ZurichJS on Instagram"
                 />
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </SectionContainer>
       </footer>
     </>
