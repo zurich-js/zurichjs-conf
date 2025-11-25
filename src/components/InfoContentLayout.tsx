@@ -145,7 +145,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                 </div>
               </motion.div>
               <motion.div variants={item} className="space-y-6">
-                <p className="text-brand-gray-light text-lg">
+                <p className="text-brand-gray-light text-base">
                   We would love to hear from you! Whether you have questions about the conference, want to become a sponsor, or are interested in speaking, our team is here to help.
                 </p>
                 <a
