@@ -1,7 +1,7 @@
 import React from 'react';
 import { GetStaticProps, GetStaticPaths } from 'next';
 import { InfoContentLayout } from '@/components/InfoContentLayout';
-import { getAllPageSlugs, getPageBySlug, type InfoPage } from '@/content/info-pages';
+import { getAllPageSlugs, getPageBySlug, type InfoPage } from '@/data/info-pages';
 
 interface InfoPageProps {
   page: InfoPage;

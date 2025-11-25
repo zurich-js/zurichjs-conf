@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heading } from '@/components/atoms';
-import type { ContentSection } from '@/content/info-pages';
+import type { ContentSection } from '@/data/info-pages';
 
 export interface RichTextRendererProps {
   sections: ContentSection[];

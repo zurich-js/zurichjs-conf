@@ -7,7 +7,7 @@ import { Button } from '@/components/atoms/Button';
 import { Kicker, Heading } from '@/components/atoms';
 import { SectionContainer } from '@/components/organisms/SectionContainer';
 import { RichTextRenderer } from '@/components/RichTextRenderer';
-import type { InfoPage } from '@/content/info-pages';
+import type { InfoPage } from '@/data/info-pages';
 
 export interface InfoContentLayoutProps {
   page: InfoPage;
@@ -60,18 +60,17 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
         <SectionContainer>
           <div className="space-y-12">
             <div className="space-y-4">
-              <p className="text-brand-primary text-sm font-semibold uppercase tracking-wider">
+              <p className="text-brand-gray-light text-sm font-semibold uppercase tracking-wider">
                 Get in touch
               </p>
+                <Heading level="h2">Questions or Feedback</Heading>
               <h2 className="text-4xl md:text-5xl font-bold">
                 Questions or feedback?
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16">
               <div className="space-y-6">
-                <p className="text-brand-gray-light text-lg">
-                  We are here to help! Reach out to us for any questions, concerns, or feedback.
-                </p>
+                
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-brand-gray-light mb-1">General Inquiries</p>
@@ -104,7 +103,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
               </div>
               <div className="space-y-6">
                 <p className="text-brand-gray-light text-lg">
-                  Prefer to send us a detailed message? Use our contact form to get in touch.
+                  We would love to hear from you! Whether you have questions about the conference, want to become a sponsor, or are interested in speaking, our team is here to help.
                 </p>
                 <a
                   href="mailto:hello@zurichjs.com?subject=Contact from ZurichJS Conf 2026"
@@ -117,7 +116,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                 </a>
               </div>
             </div>
-            <div className="pt-12 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex flex-col items-center md:items-start gap-2">
                 <Logo width={160} height={43} />
                 <p className="text-sm text-brand-gray-light">
