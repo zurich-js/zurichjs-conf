@@ -6,13 +6,17 @@ import { SocialIcon } from '@/components/atoms/SocialIcon';
 import { Button } from '@/components/atoms/Button';
 import { Kicker, Heading } from '@/components/atoms';
 import { SectionContainer } from '@/components/organisms/SectionContainer';
-import { RichTextRenderer } from '@/components/RichTextRenderer';
+import { RichTextRenderer, extractNavigationItems } from '@/components/RichTextRenderer';
+import { PageNavigation } from '@/components/PageNavigation';
 import type { InfoPage } from '@/data/info-pages';
 
 export interface InfoContentLayoutProps {
   page: InfoPage;
 }
 export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) => {
+  // Extract navigation items from page content
+  const navigationItems = extractNavigationItems(page.sections);
+
   return (
     <>
       <Head>
@@ -37,22 +41,32 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
       </header>
       <main className="min-h-screen bg-white">
         <div className="py-16 md:py-24 px-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-12">
-              <Kicker variant="dark" className="mb-4">
-                {page.kicker}
-              </Kicker>
-              <Heading level="h1" variant="dark" className="mb-6">
-                {page.title}
-              </Heading>
-              <p className="text-lg text-gray-700 leading-relaxed">
-                {page.description}
-              </p>
-              <p className="text-sm text-gray-500 mt-4">
-                Last updated: {page.lastUpdated}
-              </p>
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
+              {/* Main Content */}
+              <div className="max-w-4xl">
+                <div className="mb-12">
+                  <Kicker variant="dark" className="mb-4">
+                    {page.kicker}
+                  </Kicker>
+                  <Heading level="h1" variant="dark" className="mb-6">
+                    {page.title}
+                  </Heading>
+                  <p className="text-lg text-gray-700 leading-relaxed">
+                    {page.description}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-4">
+                    Last updated: {page.lastUpdated}
+                  </p>
+                </div>
+                <RichTextRenderer sections={page.sections} />
+              </div>
+
+              {/* Right Sidebar - Page Navigation */}
+              <aside className="lg:block hidden">
+                <PageNavigation items={navigationItems} />
+              </aside>
             </div>
-            <RichTextRenderer sections={page.sections} />
           </div>
         </div>
       </main>
@@ -63,7 +77,6 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
               <p className="text-brand-gray-light text-sm font-semibold uppercase tracking-wider">
                 Get in touch
               </p>
-                <Heading level="h2">Questions or Feedback</Heading>
               <h2 className="text-4xl md:text-5xl font-bold">
                 Questions or feedback?
               </h2>
