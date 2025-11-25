@@ -116,28 +116,28 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
               <motion.div variants={item} className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-brand-gray-light mb-1">General Inquiries</p>
+                    <p className="text-sm text-brand-white-light font-semibold mb-1">General Inquiries</p>
                     <a
                       href="mailto:hello@zurichjs.com"
-                      className="text-brand-primary hover:underline font-semibold text-lg"
+                      className="text-brand-gray-light hover:underline  text-base"
                     >
                       hello@zurichjs.com
                     </a>
                   </div>
                   <div>
-                    <p className="text-sm text-brand-gray-light mb-1">Ticket Support</p>
+                    <p className="text-sm text-brand-white-light font-semibold mb-1">Ticket Support</p>
                     <a
                       href="mailto:tickets@zurichjs.com"
-                      className="text-brand-primary hover:underline font-semibold text-lg"
+                      className=" text-brand-gray-light hover:underline font-semibold text-base"
                     >
                       tickets@zurichjs.com
                     </a>
                   </div>
                   <div>
-                    <p className="text-sm text-brand-gray-light mb-1">Sponsorship</p>
+                    <p className="text-sm text-brand-white-light font-semibold mb-1">Sponsorship</p>
                     <a
                       href="mailto:sponsors@zurichjs.com"
-                      className="text-brand-primary hover:underline font-semibold text-lg"
+                      className="hover:underline text-brand-gray-light text-base"
                     >
                       sponsors@zurichjs.com
                     </a>
