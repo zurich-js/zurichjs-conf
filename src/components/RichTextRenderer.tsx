@@ -1,6 +1,6 @@
-import React from 'react';
-import { Heading } from '@/components/atoms';
-import type { ContentSection } from '@/data/info-pages';
+import React from "react";
+import { Heading } from "@/components/atoms";
+import type { ContentSection } from "@/data/info-pages";
 
 export interface RichTextRendererProps {
   sections: ContentSection[];
@@ -17,30 +17,37 @@ export interface NavigationItem {
 const slugify = (text: string): string => {
   return text
     .toLowerCase()
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/[^\w\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/[^\w\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 };
 
-/**
- * Extract subsection label from paragraph content (e.g., "1.1 Ticket Validity:")
- * Returns null if not a labeled subsection
- */
 const extractSubsectionLabel = (content: string): string | null => {
   const match = content.match(/<strong[^>]*>(\d+\.\d+\s+[^:]+):/);
   return match ? match[1] : null;
 };
 
-/**
- * Extract all navigation items from content sections
- * Finds all labeled subsections (e.g., "1.1 Something", "2.1 Another")
- */
-export const extractNavigationItems = (sections: ContentSection[]): NavigationItem[] => {
+export const extractNavigationItems = (
+  sections: ContentSection[]
+): NavigationItem[] => {
   const items: NavigationItem[] = [];
 
   const processSection = (section: ContentSection) => {
-    if (section.type === 'paragraph' && section.content) {
+    // Add H2 headings to navigation
+    if (
+      section.type === "heading" &&
+      section.level === "h2" &&
+      section.content
+    ) {
+      items.push({
+        id: slugify(section.content),
+        label: section.content,
+      });
+    }
+
+    // Add labeled subsections (e.g., "2.1 General:")
+    if (section.type === "paragraph" && section.content) {
       const label = extractSubsectionLabel(section.content);
       if (label) {
         items.push({
@@ -48,7 +55,7 @@ export const extractNavigationItems = (sections: ContentSection[]): NavigationIt
           label: label,
         });
       }
-    } else if (section.type === 'subsection' && section.subsections) {
+    } else if (section.type === "subsection" && section.subsections) {
       section.subsections.forEach(processSection);
     }
   };
@@ -62,48 +69,66 @@ export const extractNavigationItems = (sections: ContentSection[]): NavigationIt
  * Renders content sections dynamically based on their type
  * Supports headings, paragraphs, lists, and nested subsections
  */
-export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ sections }) => {
-  const renderSection = (section: ContentSection, index: number): React.ReactNode => {
+export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
+  sections,
+}) => {
+  const renderSection = (
+    section: ContentSection,
+    index: number
+  ): React.ReactNode => {
     switch (section.type) {
-      case 'heading':
+      case "heading":
+        const headingId = section.content
+          ? slugify(section.content)
+          : undefined;
         return (
-          <Heading
-            key={index}
-            level={section.level || 'h2'}
-            variant="dark"
-            className="mb-6"
-          >
-            {section.content}
-          </Heading>
+          <div key={index} id={headingId} className="scroll-mt-24">
+            <Heading
+              level={section.level || "h2"}
+              variant="light"
+              className="mb-6"
+            >
+              {section.content}
+            </Heading>
+          </div>
         );
 
-      case 'paragraph':
+      case "paragraph":
         // Check if this paragraph is a labeled subsection
-        const subsectionLabel = section.content ? extractSubsectionLabel(section.content) : null;
-        const paragraphId = subsectionLabel ? slugify(subsectionLabel) : undefined;
+        const subsectionLabel = section.content
+          ? extractSubsectionLabel(section.content)
+          : null;
+        const paragraphId = subsectionLabel
+          ? slugify(subsectionLabel)
+          : undefined;
 
         return (
           <p
             key={index}
             id={paragraphId}
             className="text-gray-700 leading-relaxed scroll-mt-24"
-            dangerouslySetInnerHTML={{ __html: section.content || '' }}
+            dangerouslySetInnerHTML={{ __html: section.content || "" }}
           />
         );
 
-      case 'list':
+      case "list":
         return (
-          <ul key={index} className="list-disc list-inside space-y-2 text-gray-700 ml-4">
+          <ul
+            key={index}
+            className="list-disc list-inside space-y-2 text-gray-700 ml-4"
+          >
             {section.items?.map((item, i) => (
               <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
             ))}
           </ul>
         );
 
-      case 'subsection':
+      case "subsection":
         return (
           <div key={index} className="space-y-4 text-gray-700">
-            {section.subsections?.map((subsection, i) => renderSection(subsection, i))}
+            {section.subsections?.map((subsection, i) =>
+              renderSection(subsection, i)
+            )}
           </div>
         );
 
@@ -115,9 +140,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ sections }) 
   return (
     <div className="space-y-12">
       {sections.map((section, index) => (
-        <section key={index}>
-          {renderSection(section, index)}
-        </section>
+        <section key={index}>{renderSection(section, index)}</section>
       ))}
     </div>
   );
