@@ -1,24 +1,28 @@
-import React from 'react';
-import Head from 'next/head';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Logo } from '@/components/atoms/Logo';
-import { SocialIcon } from '@/components/atoms/SocialIcon';
-import { Button } from '@/components/atoms/Button';
-import { Kicker, Heading } from '@/components/atoms';
-import { SectionContainer } from '@/components/organisms/SectionContainer';
-import { RichTextRenderer, extractNavigationItems } from '@/components/RichTextRenderer';
-import { PageNavigation } from '@/components/PageNavigation';
-import type { InfoPage } from '@/data/info-pages';
+import React from "react";
+import Head from "next/head";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Logo } from "@/components/atoms/Logo";
+import { SocialIcon } from "@/components/atoms/SocialIcon";
+import { Button } from "@/components/atoms/Button";
+import { Kicker, Heading } from "@/components/atoms";
+import { SectionContainer } from "@/components/organisms/SectionContainer";
+import {
+  RichTextRenderer,
+  extractNavigationItems,
+} from "@/components/RichTextRenderer";
+import { PageNavigation } from "@/components/PageNavigation";
+import type { InfoPage } from "@/data/info-pages";
 
 export interface InfoContentLayoutProps {
   page: InfoPage;
 }
-export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) => {
+export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
+  page,
+}) => {
   // Extract navigation items from page content
   const navigationItems = extractNavigationItems(page.sections);
 
-  // Animation variants for footer (same as frontpage)
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -45,7 +49,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
   return (
     <>
       <Head>
-        <title>{page.title} | ZurichJS Conference 2026</title>
+        <title>{`${page.title} | ZurichJS Conference 2026`}</title>
         <meta name="description" content={page.description} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -73,7 +77,11 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                   <Kicker variant="light" className="mb-4">
                     {page.kicker}
                   </Kicker>
-                  <Heading level="h1" variant="light" className="mb-6 text-2xl font-bold">
+                  <Heading
+                    level="h1"
+                    variant="light"
+                    className="mb-6 text-2xl font-bold"
+                  >
                     {page.title}
                   </Heading>
                   <p className="text-lg text-gray-700 leading-relaxed">
@@ -98,7 +106,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
             variants={container}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: true, margin: '-100px' }}
+            viewport={{ once: true, margin: "-100px" }}
             className="space-y-12"
           >
             <motion.div variants={item} className="space-y-4">
@@ -113,7 +121,9 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
               <motion.div variants={item} className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-brand-white-light font-semibold mb-1">General Inquiries</p>
+                    <p className="text-sm text-brand-white-light font-semibold mb-1">
+                      General Inquiries
+                    </p>
                     <a
                       href="mailto:hello@zurichjs.com"
                       className="text-brand-gray-light hover:underline  text-base"
@@ -122,7 +132,9 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                     </a>
                   </div>
                   <div>
-                    <p className="text-sm text-brand-white-light font-semibold mb-1">Ticket Support</p>
+                    <p className="text-sm text-brand-white-light font-semibold mb-1">
+                      Ticket Support
+                    </p>
                     <a
                       href="mailto:tickets@zurichjs.com"
                       className=" text-brand-gray-light hover:underline font-semibold text-base"
@@ -131,7 +143,9 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
                     </a>
                   </div>
                   <div>
-                    <p className="text-sm text-brand-white-light font-semibold mb-1">Sponsorship</p>
+                    <p className="text-sm text-brand-white-light font-semibold mb-1">
+                      Sponsorship
+                    </p>
                     <a
                       href="mailto:sponsors@zurichjs.com"
                       className="hover:underline text-brand-gray-light text-base"
@@ -143,20 +157,29 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({ page }) =>
               </motion.div>
               <motion.div variants={item} className="space-y-6">
                 <p className="text-brand-gray-light text-base">
-                  We would love to hear from you! Whether you have questions about the conference, want to become a sponsor, or are interested in speaking, our team is here to help.
+                  We would love to hear from you! Whether you have questions
+                  about the conference, want to become a sponsor, or are
+                  interested in speaking, our team is here to help.
                 </p>
                 <a
                   href="mailto:hello@zurichjs.com?subject=Contact from ZurichJS Conf 2026"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button variant="black" size="xs" className="w-full md:w-auto">
+                  <Button
+                    variant="black"
+                    size="xs"
+                    className="w-full md:w-auto"
+                  >
                     Contact Us
                   </Button>
                 </a>
               </motion.div>
             </div>
-            <motion.div variants={item} className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6">
+            <motion.div
+              variants={item}
+              className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6"
+            >
               <div className="flex flex-col items-center md:items-start gap-2">
                 <Logo width={160} height={43} />
                 <p className="text-sm text-brand-gray-light">
