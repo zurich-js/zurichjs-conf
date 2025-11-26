@@ -86,7 +86,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
             <Heading
               level={section.level || "h2"}
               variant="light"
-              className="mb-6"
+              className="mb-3"
             >
               {section.content}
             </Heading>
@@ -138,7 +138,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-6">
       {sections.map((section, index) => (
         <section key={index}>{renderSection(section, index)}</section>
       ))}
