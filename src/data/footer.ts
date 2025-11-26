@@ -1,4 +1,5 @@
 import { SiteFooterProps } from '@/components/organisms/SiteFooter';
+import { subscribeToNewsletter } from '@/lib/api/newsletter';
 
 /**
  * Footer data for ZurichJS Conference site
@@ -34,18 +35,10 @@ export const footerData: SiteFooterProps = {
     copy: 'Get updates about speakers, schedule, and early bird tickets.',
     ctaLabel: 'Sign up',
     onSubscribe: async (email: string) => {
-      // Mock subscription - replace with actual API call
-      console.log('Subscribing email:', email);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // In production, this would be:
-      // await fetch('/api/newsletter', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email }),
-      // });
+      await subscribeToNewsletter({
+        email,
+        source: 'footer',
+      });
     },
     privacyHref: 'https://zurichjs.com/policies/privacy-policy',
   },

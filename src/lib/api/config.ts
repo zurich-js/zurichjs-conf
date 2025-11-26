@@ -59,6 +59,9 @@ export const endpoints = {
     session: (sessionId: string) => `/api/checkout/session?session_id=${sessionId}` as const,
     createSession: () => '/api/checkout/create-session' as const,
   },
+  newsletter: {
+    subscribe: () => '/api/newsletter/subscribe' as const,
+  },
   // Add more endpoint groups as your API grows
   // Example:
   // speakers: {
@@ -81,6 +84,7 @@ export type EndpointPath = ReturnType<
   | typeof endpoints.workshops.vouchers
   | typeof endpoints.checkout.session
   | typeof endpoints.checkout.createSession
+  | typeof endpoints.newsletter.subscribe
 >;
 
 /**
@@ -89,5 +93,6 @@ export type EndpointPath = ReturnType<
 export function buildUrl(endpoint: string, config: ApiConfig = defaultApiConfig): string {
   return `${config.baseUrl}${endpoint}`;
 }
+
 
 

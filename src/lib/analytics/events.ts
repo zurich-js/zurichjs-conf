@@ -465,6 +465,16 @@ export interface ShareClickedEvent {
   }
 }
 
+export interface NewsletterSubscribedEvent {
+  event: 'newsletter_subscribed'
+  properties: BaseEventProperties & {
+    email: string
+    subscription_source: 'footer' | 'popup' | 'checkout' | 'other'
+    subscription_success: boolean
+    error_message?: string
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Error & System Events
 // ----------------------------------------------------------------------------
@@ -541,6 +551,7 @@ export type AnalyticsEvent =
   | SearchPerformedEvent
   | FilterAppliedEvent
   | ShareClickedEvent
+  | NewsletterSubscribedEvent
   | ErrorOccurredEvent
   | ApiErrorEvent
   | WebhookReceivedEvent

@@ -76,7 +76,7 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
   return (
     <div className={className}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="relative w-full max-w-[300px]">
+        <div className="relative w-full max-w-md">
           <input
             type="email"
             id="newsletter-email"
@@ -94,7 +94,7 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || isSuccess}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-4 bg-brand-primary text-text-dark text-sm font-semibold rounded-full hover:bg-brand-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-primary/80 focus:ring-offset-1"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-4 bg-brand-primary text-text-dark text-sm font-semibold rounded-full hover:bg-brand-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary/80 focus:ring-offset-1"
           >
             {isSubmitting ? (
               <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

@@ -8,7 +8,7 @@ import { getStripeClient } from './client';
 import { createTicket } from '@/lib/tickets';
 import type { TicketType, TicketCategory, TicketStage } from '@/lib/types/database';
 import { TICKET_CATEGORIES, LOOKUP_KEY_STAGES, STAGE_LOOKUP_MAP } from '@/lib/types/ticket-constants';
-import { sendTicketConfirmationEmailsQueued, sendVoucherConfirmationEmail, type TicketConfirmationData } from '@/lib/email';
+import { sendTicketConfirmationEmailsQueued, sendVoucherConfirmationEmail, addNewsletterContact, type TicketConfirmationData } from '@/lib/email';
 import { getCurrentStage } from '@/config/pricing-stages';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
@@ -490,6 +490,33 @@ export async function handleCheckoutSessionCompleted(
             revenue_currency: session.currency?.toUpperCase() || 'CHF',
             revenue_type: 'ticket',
           } as EventProperties<'ticket_purchased'>);
+        }
+      }
+
+      // Create newsletter contacts for all attendees (ticket purchasers)
+      // Note: addNewsletterContact already tracks 'newsletter_subscribed' events to PostHog
+      for (const result of ticketResults) {
+        if (result.success && result.attendee.email) {
+          try {
+            const contactResult = await addNewsletterContact(result.attendee.email, 'checkout');
+            if (!contactResult.success) {
+              await serverAnalytics.error(result.attendee.email, `Failed to create newsletter contact: ${contactResult.error}`, {
+                type: 'system',
+                severity: 'low',
+                code: 'NEWSLETTER_CONTACT_FAILED',
+                stack: new Error(contactResult.error).stack,
+              });
+            }
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            await serverAnalytics.error(result.attendee.email, `Error creating newsletter contact: ${errorMessage}`, {
+              type: 'system',
+              severity: 'low',
+              code: 'NEWSLETTER_CONTACT_ERROR',
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+            // Non-fatal, continue with other contacts
+          }
         }
       }
 
