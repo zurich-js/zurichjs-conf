@@ -81,7 +81,7 @@ export const infoPages: Record<string, InfoPage> = {
           {
             type: "paragraph",
             content:
-              "<strong>2.5 Group / Team Tickets:</strong> If you can no longer attend, you may request to **transfer your ticket to another person. Please contact us at <a href='mailto:hello@zurichjs.com', class='text-blue-600 hover:underline font-semibold'> hello@zurichjs.com </a> , and we will do our best to find a solution.Transfers are subject to organizer approval and may require verification.",
+              "<strong>2.5 Group / Team Tickets:</strong> If you can no longer attend, you may request to transfer your ticket to another person. Please contact us at <a href='mailto:hello@zurichjs.com', class='text-blue-600 hover:underline font-semibold'> hello@zurichjs.com </a> , and we will do our best to find a solution.Transfers are subject to organizer approval and may require verification.",
           },
         ],
       },
