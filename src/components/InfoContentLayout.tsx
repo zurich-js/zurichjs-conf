@@ -62,7 +62,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
             </Link>
             <Link href="/#tickets">
               <Button variant="primary" size="xs">
-                Order Ticket
+                Render Ticket
               </Button>
             </Link>
           </div>
