@@ -9,7 +9,6 @@ import { Kicker, Heading } from "@/components/atoms";
 import { SectionContainer } from "@/components/organisms/SectionContainer";
 
 export default function AboutUs() {
-  // Animation variants for footer (same as info pages)
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -63,61 +62,212 @@ export default function AboutUs() {
           <div className="py-16 md:py-24">
             {/* Hero Section */}
             <div className="mb-16">
-                <Heading
-                  level="h1"
-                  variant="light"
-                  className="text-2xl font-bold"
-                >
-                  This is ZurichJS.
-                </Heading>
+              <Heading
+                level="h1"
+                variant="light"
+                className="text-2xl font-bold"
+              >
+                This is ZurichJS.
+              </Heading>
+            </div>
+            <div className="mb-16">
+              <Kicker variant="light" className="mb-4">
+                Our Mission
+              </Kicker>
+              <Heading
+                level="h2"
+                variant="light"
+                className="mb-8 text-xl font-bold"
+              >
+                Building the future of Javascript together
+              </Heading>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                <div className="space-y-4">
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    Zurich JS Conf is the premier JavaScript conference in
+                    Switzerland, bringing together developers, designers, and
+                    technology enthusiasts from around the world. Our mission is
+                    to foster innovation, share knowledge, and build a stronger
+                    JavaScript community.
+                  </p>
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    Since its inception, Zurich JS Conf has been dedicated to
+                    showcasing the latest trends, best practices, and
+                    cutting-edge technologies in the JavaScript ecosystem. From
+                    frontend frameworks to backend solutions, we cover it all.
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    We believe in the power of community-driven learning and
+                    collaboration. Through engaging talks, hands-on workshops,
+                    and networking opportunities, we create an environment where
+                    ideas flourish and connections are made.
+                  </p>
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    Join us for three days of inspiration, learning, and
+                    connection as we explore the future of web development
+                    together.
+                  </p>
+                </div>
               </div>
-
-              {/* Mission Section */}
-              <div className="mb-16">
-                <Kicker variant="light" className="mb-4">
-                  Our Mission
-                </Kicker>
-                <Heading
-                  level="h2"
-                  variant="light"
-                  className="mb-8 text-xl font-bold"
-                >
-                  Building the future of Javascript together
-                </Heading>
-
-                {/* Two Column Text */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                  <div>
-                    <p className="text-gray-700 leading-relaxed text-base">
-                      Zurich JS Conf is the premier JavaScript conference in
-                      Switzerland, bringing together developers, designers, and
-                      technology enthusiasts from around the world. Our mission
-                      is to foster innovation, share knowledge, and build a
-                      stronger JavaScript community.
+            </div>
+            <div
+              className="relative my-16"
+              style={{
+                marginLeft: "calc(-50vw + 50%)",
+                marginRight: "calc(-50vw + 50%)",
+                width: "100vw",
+              }}
+            >
+              <div
+                className="absolute inset-0 bg-gray-100"
+                style={{
+                  transform: "skewY(2deg)",
+                }}
+                aria-hidden="true"
+              />
+              <div className="relative py-16 max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+                  <div className="text-center">
+                    <p className="text-5xl md:text-6xl font-bold text-gray-900 mb-2">
+                      300
                     </p>
-                    <p className="text-gray-700 leading-relaxed text-base">
-                      Since its inception, Zurich JS Conf has been dedicated to
-                      showcasing the latest trends, best practices, and
-                      cutting-edge technologies in the JavaScript ecosystem.
-                      From frontend frameworks to backend solutions, we cover it
-                      all.
-                    </p>
+                    <p className="text-base text-gray-600">attendees</p>
                   </div>
-                  <div>
-                    <p className="text-gray-700 leading-relaxed text-base">
-                      We believe in the power of community-driven learning and
-                      collaboration. Through engaging talks, hands-on workshops,
-                      and networking opportunities, we create an environment
-                      where ideas flourish and connections are made.
+                  <div className="text-center">
+                    <p className="text-5xl md:text-6xl font-bold text-gray-900 mb-2">
+                      30+
                     </p>
-                    <p className="text-gray-700 leading-relaxed text-base">
-                      Join us for three days of inspiration, learning, and
-                      connection as we explore the future of web development
-                      together.
+                    <p className="text-base text-gray-600">speakers</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-5xl md:text-6xl font-bold text-gray-900 mb-2">
+                      3
                     </p>
+                    <p className="text-base text-gray-600">days</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-5xl md:text-6xl font-bold text-gray-900 mb-2">
+                      10+
+                    </p>
+                    <p className="text-base text-gray-600">workshops</p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="mb-16">
+              <Kicker variant="light" className="mb-4">
+                the team
+              </Kicker>
+              <Heading
+                level="h2"
+                variant="light"
+                className="mb-6 text-xl font-bold"
+              >
+                Meet the team
+              </Heading>
+              <p className="text-lg text-gray-700 leading-relaxed mb-12 max-w-3xl">
+                Our passionate team of organizers and volunteers work tirelessly
+                to bring you the best JavaScript conference experience.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div>
+                  <div
+                    className="mb-4 bg-gray-200 rounded-lg overflow-hidden"
+                    style={{ width: "290px", height: "210px" }}
+                  >
+                    <img
+                      src="/placeholder-team-1.jpg"
+                      alt="Team member 1"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                    Faris Aziz
+                  </h3>
+                  <p className="text-base text-gray-600">Role / Position</p>
+                </div>
+
+                <div>
+                  <div
+                    className="mb-4 bg-gray-200 rounded-lg overflow-hidden"
+                    style={{ width: "290px", height: "210px" }}
+                  >
+                    <img
+                      src="/placeholder-team-2.jpg"
+                      alt="Team member 2"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                    Nadja Hesselbjerg
+                  </h3>
+                  <p className="text-base text-gray-600">Role / Position</p>
+                </div>
+
+                <div>
+                  <div
+                    className="mb-4 bg-gray-200 rounded-lg overflow-hidden"
+                    style={{ width: "290px", height: "210px" }}
+                  >
+                    <img
+                      src="/placeholder-team-3.jpg"
+                      alt="Team member 3"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                    Bogdan Mihai Ilie
+                  </h3>
+                  <p className="text-base text-gray-600">Role / Position</p>
+                </div>
+              </div>
+              <div className="mt-16">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  And our amazing volunteers
+                </h3>
+                <p className="text-base text-gray-700 leading-relaxed mb-8 max-w-3xl">
+                  None of this would be possible without our incredible
+                  volunteers who dedicate their time and energy to make this
+                  conference a success.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                  <div className="text-gray-900">
+                    <p className="font-medium">Volunteer Name</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </SectionContainer>
       </main>
@@ -187,11 +337,7 @@ export default function AboutUs() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button
-                    variant="dark"
-                    size="sm"
-                    className="w-full md:w-auto"
-                  >
+                  <Button variant="dark" size="sm" className="w-full md:w-auto">
                     Contact Us
                   </Button>
                 </a>
