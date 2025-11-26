@@ -297,10 +297,7 @@ export default function AboutUs() {
                 >
                   Technopark Zürich
                 </Heading>
-
-                {/* Two Column Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                  {/* Left Column - Text */}
                   <div className="space-y-4">
                     <p className="text-white leading-relaxed text-base">
                       Technopark Zürich is Switzerland&apos;s largest technology
@@ -319,9 +316,10 @@ export default function AboutUs() {
                       technology conference.
                     </p>
                     <p className="text-white leading-relaxed text-base">
-                      Located just minutes from Zurich&apos;s main train station, the
-                      venue is easily accessible by public transportation and
-                      offers parking facilities for those arriving by car.
+                      Located just minutes from Zurich&apos;s main train
+                      station, the venue is easily accessible by public
+                      transportation and offers parking facilities for those
+                      arriving by car.
                     </p>
                   </div>
                   <div>
@@ -371,18 +369,138 @@ export default function AboutUs() {
                 </div>
               </div>
             </div>
+            <div className="mb-16">
+              <Kicker variant="light" className="mb-4">
+                Our Values
+              </Kicker>
+              <Heading
+                level="h2"
+                variant="light"
+                className="mb-12 text-xl font-bold"
+              >
+                What we stand for
+              </Heading>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-gray-100 rounded-lg p-8">
+                  <div className="mb-4 w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center"></div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Community First
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    We believe in building a strong, inclusive community where
+                    everyone feels welcome and valued. Our conference is a place
+                    for learning, sharing, and growing together.
+                  </p>
+                </div>
+
+                <div className="bg-gray-100 rounded-lg p-8">
+                  <div className="mb-4 w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center"></div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Innovation & Learning
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    We promote cutting-edge technologies and encourage
+                    continuous learning. Every session is designed to inspire
+                    and expand your knowledge of JavaScript.
+                  </p>
+                </div>
+                <div className="bg-gray-100 rounded-lg p-8">
+                  <div className="mb-4 w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center"></div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Collaboration
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    We create opportunities for meaningful connections and
+                    partnerships. Through networking events and workshops, we
+                    foster collaboration that extends beyond the conference.
+                  </p>
+                </div>
+                <div className="bg-gray-100 rounded-lg p-8">
+                  <div className="mb-4 w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center"></div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    Excellence
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed text-base">
+                    We strive for excellence in every aspect of the conference,
+                    from speaker selection to venue quality, ensuring an
+                    outstanding experience for all attendees.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA Section */}
+            <div className="relative mt-16" style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', width: '100vw' }}>
+              {/* Parallelogram Background */}
+              <div
+                className="absolute inset-0 bg-brand-yellow-main"
+                style={{
+                  transform: 'skewY(2deg)',
+                }}
+                aria-hidden="true"
+              />
+
+              {/* Content */}
+              <div className="relative py-16 max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
+                <Kicker variant="light" className="mb-4">
+                  Join Us
+                </Kicker>
+                <Heading
+                  level="h2"
+                  variant="light"
+                  className="mb-8 text-xl font-bold"
+                >
+                  Be part of ZurichJS Conference 2026
+                </Heading>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                  <div className="space-y-6">
+                    <p className="text-gray-900 leading-relaxed text-base">
+                      Whether you&apos;re a seasoned JavaScript developer or just starting your journey, ZurichJS Conference 2026 offers something for everyone. Join hundreds of developers, make lasting connections, and be inspired by world-class speakers.
+                    </p>
+                    <div>
+                      <Link href="/#tickets">
+                        <Button variant="dark" size="md">
+                          Get Your Ticket
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-gray-900 leading-relaxed text-base">
+                      Don&apos;t miss this opportunity to be part of Switzerland&apos;s premier JavaScript conference. Secure your spot today and join us for three unforgettable days of learning, networking, and innovation.
+                    </p>
+                    <p className="text-gray-900 leading-relaxed text-base">
+                      We look forward to welcoming you to Technopark Zürich!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </SectionContainer>
       </main>
-      <footer className="bg-black text-white py-16 md:py-24">
-        <SectionContainer>
-          <motion.div
-            variants={container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="space-y-12"
-          >
+      <footer className="relative text-white" style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', width: '100vw' }}>
+        {/* Parallelogram Background */}
+        <div
+          className="absolute inset-0 bg-black"
+          style={{
+            transform: 'skewY(2deg)',
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="relative py-16 md:py-24">
+          <SectionContainer>
+            <motion.div
+              variants={container}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: "-100px" }}
+              className="space-y-12"
+            >
             <motion.div variants={item} className="space-y-4">
               <p className="text-brand-gray-light text-sm font-semibold uppercase tracking-wider">
                 Get in touch
@@ -471,6 +589,7 @@ export default function AboutUs() {
             </motion.div>
           </motion.div>
         </SectionContainer>
+        </div>
       </footer>
     </>
   );
