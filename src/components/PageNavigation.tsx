@@ -100,7 +100,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
                       relative z-10 block w-4 h-4 rounded-full border-2 transition-all duration-200 flex-shrink-0
                       ${
                         isActive
-                          ? 'bg-brand-primary border-brand-primary scale-110'
+                          ? 'bg-brand-yellow-main border-brand-yellow-main scale-110'
                           : 'bg-white border-gray-300 group-hover:border-gray-500'
                       }
                     `}
