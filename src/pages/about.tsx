@@ -268,6 +268,109 @@ export default function AboutUs() {
                 </div>
               </div>
             </div>
+
+            <div
+              className="relative my-16"
+              style={{
+                marginLeft: "calc(-50vw + 50%)",
+                marginRight: "calc(-50vw + 50%)",
+                width: "100vw",
+              }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundColor: "#19191B",
+                  transform: "skewY(2deg)",
+                }}
+                aria-hidden="true"
+              />
+
+              <div className="relative py-16 max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
+                <Kicker variant="dark" className="mb-4">
+                  the venue
+                </Kicker>
+                <Heading
+                  level="h2"
+                  variant="dark"
+                  className="mb-8 text-xl font-bold"
+                >
+                  Technopark Zürich
+                </Heading>
+
+                {/* Two Column Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                  {/* Left Column - Text */}
+                  <div className="space-y-4">
+                    <p className="text-white leading-relaxed text-base">
+                      Technopark Zürich is Switzerland&apos;s largest technology
+                      center, located in the heart of Zurich&apos;s innovation
+                      district. This modern facility provides the perfect
+                      backdrop for our conference.
+                    </p>
+                    <p className="text-white leading-relaxed text-base">
+                      With state-of-the-art facilities and excellent
+                      transportation connections, Technopark offers an inspiring
+                      environment for learning, networking, and collaboration.
+                    </p>
+                    <p className="text-white leading-relaxed text-base">
+                      The venue features modern conference rooms, comfortable
+                      seating, and all the amenities needed for a world-class
+                      technology conference.
+                    </p>
+                    <p className="text-white leading-relaxed text-base">
+                      Located just minutes from Zurich&apos;s main train station, the
+                      venue is easily accessible by public transportation and
+                      offers parking facilities for those arriving by car.
+                    </p>
+                  </div>
+                  <div>
+                    <div className="mb-6 w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2701.234567890123!2d8.5167!3d47.3833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDfCsDIyJzU5LjkiTiA4wrAzMScwMC4xIkU!5e0!3m2!1sen!2sch!4v1234567890123"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Technopark Zürich location"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-white leading-relaxed text-base">
+                          Technoparkstrasse 1<br />
+                          8005 Zürich
+                          <br />
+                          Switzerland
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          className="w-full"
+                          asChild
+                          href="https://maps.google.com"
+                        >
+                          Get Directions
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full"
+                          asChild
+                          href="https://technopark.ch"
+                        >
+                          Visit Website
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </SectionContainer>
       </main>
