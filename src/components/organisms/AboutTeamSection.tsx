@@ -16,7 +16,7 @@ export const AboutTeamSection: React.FC<AboutTeamSectionProps> = ({ data }) => {
       <Heading level="h2" variant="light" className="mb-6 text-xl font-bold">
         {data.title}
       </Heading>
-      <p className="text-lg text-gray-700 leading-relaxed mb-12 max-w-3xl">
+      <p className="text-base text-gray-700 leading-relaxed mb-12 max-w-3xl">
         {data.description}
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
