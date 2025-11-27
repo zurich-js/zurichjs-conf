@@ -10,7 +10,7 @@ export interface ParallelogramSectionProps {
 export const ParallelogramSection: React.FC<ParallelogramSectionProps> = ({
   children,
   backgroundColor = "#f3f4f6", // default gray-100
-  skewDegree = 2,
+  skewDegree = 3,
   className = "",
 }) => {
   return (
@@ -33,7 +33,7 @@ export const ParallelogramSection: React.FC<ParallelogramSectionProps> = ({
       />
 
       {/* Content */}
-      <div className="relative py-16 max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
+      <div className="relative py-24 max-w-[800px] mx-auto px-4">
         {children}
       </div>
     </div>
