@@ -1,5 +1,8 @@
-# Run lint-staged to lint staged files
+# Run lint-staged to lint staged files and run related tests
 npx lint-staged
+
+# Run full test suite
+npm run test:run
 
 # Run typecheck on entire project
 npm run typecheck

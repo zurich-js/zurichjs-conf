@@ -14,10 +14,12 @@ import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
 import { serverAnalytics } from '@/lib/analytics/server';
 import type { EventProperties } from '@/lib/analytics/events';
+import { logger } from '@/lib/logger';
 
 /**
  * Parse ticket info from lookup key: {category}_{stage}
  * Called after isTicketProduct() validation
+ * Handles multi-part stage names like "blind_bird" correctly
  */
 function parseTicketInfo(lookupKey: string): {
   category: TicketCategory;
@@ -32,10 +34,22 @@ function parseTicketInfo(lookupKey: string): {
   }
 
   // Parse category_stage pattern
-  const [category, stage] = lookupKey.split('_');
+  // Split only on first underscore to handle multi-part stage names like "blind_bird"
+  const firstUnderscoreIndex = lookupKey.indexOf('_');
+  if (firstUnderscoreIndex === -1) {
+    // No underscore found, treat entire key as category
+    return {
+      category: lookupKey as TicketCategory,
+      stage: 'general_admission',
+    };
+  }
+
+  const category = lookupKey.substring(0, firstUnderscoreIndex);
+  const stageKey = lookupKey.substring(firstUnderscoreIndex + 1);
+  
   return {
     category: category as TicketCategory,
-    stage: STAGE_LOOKUP_MAP[stage] || 'general_admission',
+    stage: STAGE_LOOKUP_MAP[stageKey] || 'general_admission',
   };
 }
 
@@ -73,6 +87,7 @@ function toLegacyType(category: TicketCategory, stage: TicketStage): TicketType 
 /**
  * Check if a price is a valid conference ticket product
  * Validates based on lookup key pattern: {category}_{stage}
+ * Handles multi-part stage names like "blind_bird" correctly
  */
 function isTicketProduct(price: Stripe.Price | undefined): boolean {
   if (!price?.lookup_key) return false;
@@ -87,9 +102,18 @@ function isTicketProduct(price: Stripe.Price | undefined): boolean {
   }
 
   // Standard pattern: category_stage
-  const [category, stage] = lookupKey.split('_');
+  // Split only on first underscore to handle multi-part stage names like "blind_bird"
+  const firstUnderscoreIndex = lookupKey.indexOf('_');
+  if (firstUnderscoreIndex === -1) {
+    // No underscore found, check if entire key is a valid category
+    return (TICKET_CATEGORIES as readonly string[]).includes(lookupKey);
+  }
+
+  const category = lookupKey.substring(0, firstUnderscoreIndex);
+  const stageKey = lookupKey.substring(firstUnderscoreIndex + 1);
+  
   return (TICKET_CATEGORIES as readonly string[]).includes(category) &&
-         (LOOKUP_KEY_STAGES as readonly string[]).includes(stage);
+         (LOOKUP_KEY_STAGES as readonly string[]).includes(stageKey);
 }
 
 /**
@@ -114,6 +138,7 @@ export async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session
 ): Promise<void> {
   const startTime = Date.now();
+  const log = logger.scope('WebhookHandler', { sessionId: session.id });
 
   // Track webhook received
   await serverAnalytics.track('webhook_received', session.id, {
@@ -131,6 +156,11 @@ export async function handleCheckoutSessionCompleted(
   const customerName = session.customer_details?.name || 'Valued Customer';
 
   if (!customerEmail) {
+    log.error('No customer email in checkout session', new Error('Customer email is required'), {
+      type: 'payment',
+      severity: 'high',
+      code: 'MISSING_EMAIL',
+    });
     await serverAnalytics.error(session.id, 'No customer email in checkout session', {
       type: 'payment',
       severity: 'high',
@@ -145,7 +175,7 @@ export async function handleCheckoutSessionCompleted(
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
-  console.log('[WebhookHandler] Name parsing:', {
+  log.debug('Name parsing', {
     fullName: customerName,
     firstName,
     lastName,
@@ -156,12 +186,12 @@ export async function handleCheckoutSessionCompleted(
 
   if (typeof session.customer === 'string') {
     stripeCustomerId = session.customer;
-    console.log('[WebhookHandler] Using existing customer ID from session:', stripeCustomerId);
+    log.debug('Using existing customer ID from session', { stripeCustomerId });
   } else if (session.customer) {
     stripeCustomerId = session.customer.id;
-    console.log('[WebhookHandler] Using customer ID from object:', stripeCustomerId);
+    log.debug('Using customer ID from object', { stripeCustomerId });
   } else {
-    console.log('[WebhookHandler] No customer found, creating new customer...');
+    log.info('No customer found, creating new customer');
     // Create customer if it doesn't exist
     const customer = await stripe.customers.create({
       email: customerEmail,
@@ -171,18 +201,23 @@ export async function handleCheckoutSessionCompleted(
       },
     });
     stripeCustomerId = customer.id;
-    console.log('[WebhookHandler] Created new customer:', stripeCustomerId);
+    log.info('Created new customer', { stripeCustomerId });
   }
 
   // Get line items to determine what was purchased
-  console.log('[WebhookHandler] Fetching line items...');
+  log.debug('Fetching line items');
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
     expand: ['data.price.product'],
   });
 
-  console.log('[WebhookHandler] Line items count:', lineItems.data.length);
+  log.debug('Line items fetched', { count: lineItems.data.length });
 
   if (!lineItems.data.length) {
+    log.error('No line items in checkout session', new Error('No line items in session'), {
+      type: 'payment',
+      severity: 'high',
+      code: 'NO_LINE_ITEMS',
+    });
     await serverAnalytics.error(session.id, 'No line items in checkout session', {
       type: 'payment',
       severity: 'high',
@@ -209,7 +244,7 @@ export async function handleCheckoutSessionCompleted(
     }
   }
 
-  console.log('[WebhookHandler] Line items categorized:', {
+  log.debug('Line items categorized', {
     total: lineItems.data.length,
     tickets: ticketLineItems.length,
     vouchers: voucherLineItems.length,
@@ -218,10 +253,12 @@ export async function handleCheckoutSessionCompleted(
 
   // Warn about unrecognized products
   if (unrecognizedLineItems.length > 0) {
-    console.warn('[WebhookHandler] ⚠️ Unrecognized products will be skipped:');
+    log.warn('Unrecognized products will be skipped', {
+      count: unrecognizedLineItems.length,
+    });
     unrecognizedLineItems.forEach(item => {
       const price = item.price as Stripe.Price | undefined;
-      console.warn('[WebhookHandler]', {
+      log.warn('Unrecognized product', {
         description: item.description,
         lookupKey: price?.lookup_key,
         priceId: price?.id,
@@ -230,20 +267,23 @@ export async function handleCheckoutSessionCompleted(
   }
 
   // ====== Process Workshop Vouchers FIRST (they're fast, no database operations) ======
-  console.log('[WebhookHandler] Checking if voucher processing needed...');
-  console.log('[WebhookHandler] voucherLineItems.length:', voucherLineItems.length);
+  log.debug('Checking if voucher processing needed', { voucherCount: voucherLineItems.length });
 
   if (voucherLineItems.length > 0) {
-    console.log('[WebhookHandler] ====== Processing workshop vouchers (FAST PATH) ======');
-    console.log('[WebhookHandler] Voucher count:', voucherLineItems.length);
-    console.log('[WebhookHandler] Customer email:', customerEmail);
-    console.log('[WebhookHandler] Customer first name:', firstName);
+    log.info('Processing workshop vouchers (FAST PATH)', {
+      voucherCount: voucherLineItems.length,
+      customerEmail,
+      firstName,
+    });
 
     // Get current pricing stage to calculate bonus
     const currentStage = getCurrentStage();
     const bonusPercent = currentStage.stage === 'blind_bird' ? 25 : currentStage.stage === 'early_bird' ? 15 : 0;
 
-    console.log('[WebhookHandler] Current stage:', currentStage.stage, '- Bonus:', bonusPercent + '%');
+    log.debug('Current pricing stage', {
+      stage: currentStage.stage,
+      bonusPercent,
+    });
 
     for (const voucherItem of voucherLineItems) {
       const price = voucherItem.price as Stripe.Price | undefined;
@@ -251,7 +291,7 @@ export async function handleCheckoutSessionCompleted(
       const amountPerVoucher = price?.unit_amount || 0;
       const currency = (price?.currency || session.currency || 'CHF').toUpperCase();
 
-      console.log('[WebhookHandler] Processing voucher:', {
+      log.debug('Processing voucher', {
         priceId: price?.id,
         quantity,
         amountPerVoucher: amountPerVoucher / 100,
@@ -265,7 +305,7 @@ export async function handleCheckoutSessionCompleted(
         const bonusAmount = (amountPaid * bonusPercent) / 100;
         const voucherValue = amountPaid + bonusAmount;
 
-        console.log(`[WebhookHandler] Sending voucher email ${i + 1}/${quantity} to:`, customerEmail);
+        log.debug(`Sending voucher email ${i + 1}/${quantity}`, { email: customerEmail });
 
         try {
           const result = await sendVoucherConfirmationEmail({
@@ -279,9 +319,14 @@ export async function handleCheckoutSessionCompleted(
           });
 
           if (result.success) {
-            console.log(`[WebhookHandler] ✅ Voucher email ${i + 1}/${quantity} sent successfully`);
+            log.info(`Voucher email ${i + 1}/${quantity} sent successfully`, { email: customerEmail });
           } else {
-            console.error(`[WebhookHandler] ❌ Failed to send voucher email ${i + 1}/${quantity}:`, result.error);
+            log.error(`Failed to send voucher email ${i + 1}/${quantity}`, new Error(result.error || 'Unknown error'), {
+              type: 'system',
+              severity: 'medium',
+              code: 'VOUCHER_EMAIL_FAILED',
+              email: customerEmail,
+            });
           }
 
           // Rate limiting delay between voucher emails (600ms = 1.67 emails/sec)
@@ -289,13 +334,18 @@ export async function handleCheckoutSessionCompleted(
             await new Promise(resolve => setTimeout(resolve, 600));
           }
         } catch (error) {
-          console.error(`[WebhookHandler] ⚠️ Error sending voucher email ${i + 1}/${quantity}:`, error);
+          log.error(`Error sending voucher email ${i + 1}/${quantity}`, error, {
+            type: 'system',
+            severity: 'medium',
+            code: 'VOUCHER_EMAIL_ERROR',
+            email: customerEmail,
+          });
           // Non-fatal, continue with other vouchers
         }
       }
     }
 
-    console.log('[WebhookHandler] ====== Workshop vouchers processed ======');
+    log.info('Workshop vouchers processed', { count: voucherLineItems.length });
   }
 
   // Parse ticket info if we have tickets
@@ -309,17 +359,18 @@ export async function handleCheckoutSessionCompleted(
       ticketInfo = parseTicketInfo(price.lookup_key);
       ticketDisplayName = getTicketDisplayName(ticketInfo.category, ticketInfo.stage);
 
-      console.log('[WebhookHandler] Ticket info:', {
+      log.debug('Ticket info parsed', {
         category: ticketInfo.category,
         stage: ticketInfo.stage,
         displayName: ticketDisplayName,
+        lookupKey: price.lookup_key,
       });
     }
   }
 
   // ====== Process Tickets (slower due to DB + PDF generation) ======
   if (ticketLineItems.length > 0 && ticketInfo && ticketDisplayName) {
-    console.log('[WebhookHandler] ====== Processing tickets ======');
+    log.info('Processing tickets', { ticketCount: ticketLineItems.length });
 
     // Extract additional customer info from metadata
     const jobTitle = session.metadata?.jobTitle || null;
@@ -327,7 +378,7 @@ export async function handleCheckoutSessionCompleted(
     const attendeesJson = session.metadata?.attendees || null;
     const totalTickets = parseInt(session.metadata?.totalTickets || '1', 10);
 
-    console.log('[WebhookHandler] Additional customer info:', {
+    log.debug('Additional customer info', {
       company,
       jobTitle,
       totalTickets,
@@ -340,15 +391,19 @@ export async function handleCheckoutSessionCompleted(
     if (attendeesJson) {
       try {
         attendees = JSON.parse(attendeesJson);
-        console.log('[WebhookHandler] Parsed attendees:', attendees.length, 'attendees');
+        log.debug('Parsed attendees', { count: attendees.length });
       } catch (error) {
-        console.error('[WebhookHandler] Failed to parse attendees JSON:', error);
+        log.error('Failed to parse attendees JSON', error, {
+          type: 'validation',
+          severity: 'medium',
+          code: 'ATTENDEES_PARSE_ERROR',
+        });
       }
     }
 
     // If no attendees provided, create single ticket for billing customer (legacy behavior)
     if (attendees.length === 0) {
-      console.log('[WebhookHandler] No attendees found, creating single ticket for billing customer');
+      log.debug('No attendees found, creating single ticket for billing customer');
       attendees = [{
         firstName,
         lastName,
@@ -359,7 +414,7 @@ export async function handleCheckoutSessionCompleted(
     }
 
     // Check if tickets already exist for this session (idempotency for emails)
-    console.log('[WebhookHandler] Checking for existing tickets with session ID:', session.id);
+    log.debug('Checking for existing tickets with session ID', { sessionId: session.id });
     const { createServiceRoleClient } = await import('@/lib/supabase');
     const supabase = createServiceRoleClient();
 
@@ -369,16 +424,22 @@ export async function handleCheckoutSessionCompleted(
       .eq('stripe_session_id', session.id);
 
     if (checkError) {
-      console.error('[WebhookHandler] Error checking for existing tickets:', checkError);
+      log.error('Error checking for existing tickets', checkError, {
+        type: 'system',
+        severity: 'medium',
+        code: 'TICKET_CHECK_ERROR',
+      });
     }
 
     if (existingTickets && existingTickets.length > 0) {
-      console.log('[WebhookHandler] ⚠️ Tickets already exist for this session. Skipping ticket creation.');
-      console.log('[WebhookHandler] Existing tickets:', existingTickets.map(t => ({ id: t.id, email: t.email })));
+      log.warn('Tickets already exist for this session. Skipping ticket creation.', {
+        existingTicketCount: existingTickets.length,
+        existingTickets: existingTickets.map(t => ({ id: t.id, email: t.email })),
+      });
       // Continue to process vouchers if any
     } else {
       // Create tickets for each attendee
-      console.log('[WebhookHandler] No existing tickets found. Creating', attendees.length, 'ticket(s) in database...');
+      log.info('No existing tickets found. Creating tickets in database', { count: attendees.length });
       const ticketResults: Array<{
         success: boolean;
         ticket?: {
@@ -405,7 +466,10 @@ export async function handleCheckoutSessionCompleted(
       for (let i = 0; i < attendees.length; i++) {
         const attendee = attendees[i];
         const isPrimary = i === 0;
-        console.log(`[WebhookHandler] Creating ticket ${i + 1}/${attendees.length} for:`, attendee.email, isPrimary ? '(PRIMARY)' : '');
+        log.debug(`Creating ticket ${i + 1}/${attendees.length}`, {
+          email: attendee.email,
+          isPrimary,
+        });
 
         const ticketResult = await createTicket({
           ticketType: toLegacyType(ticketInfo.category, ticketInfo.stage),
@@ -448,10 +512,16 @@ export async function handleCheckoutSessionCompleted(
         });
 
         if (!ticketResult.success) {
-          console.error(`[WebhookHandler] ❌ Failed to create ticket ${i + 1}:`, ticketResult.error);
+          log.error(`Failed to create ticket ${i + 1}`, new Error(ticketResult.error || 'Unknown error'), {
+            type: 'system',
+            severity: 'high',
+            code: 'TICKET_CREATION_FAILED',
+            attendeeEmail: attendee.email,
+            attendeeIndex: i,
+          });
           // Continue creating other tickets even if one fails
         } else {
-          console.log(`[WebhookHandler] ✅ Ticket ${i + 1}/${attendees.length} created successfully:`, {
+          log.info(`Ticket ${i + 1}/${attendees.length} created successfully`, {
             ticketId: ticketResult.ticket?.id,
             email: ticketResult.ticket?.email,
             ticketType: ticketResult.ticket?.ticket_type,
@@ -521,7 +591,7 @@ export async function handleCheckoutSessionCompleted(
       }
 
       // Prepare emails for all attendees with PDFs
-      console.log('[WebhookHandler] Preparing confirmation emails for', ticketResults.length, 'attendee(s)...');
+      log.info('Preparing confirmation emails', { count: ticketResults.length });
       const emailsToSend: TicketConfirmationData[] = [];
 
       for (let i = 0; i < ticketResults.length; i++) {
@@ -538,7 +608,11 @@ export async function handleCheckoutSessionCompleted(
             continue;
           }
 
-          console.log('[WebhookHandler] Preparing email for:', result.attendee.email, isPrimary ? '(PRIMARY with order summary)' : '(SECONDARY)');
+          log.debug('Preparing email', {
+            email: result.attendee.email,
+            isPrimary,
+            hasOrderSummary: isPrimary && ticketResults.length > 1,
+          });
 
           // Prepare notes based on whether this is primary or secondary attendee
           let notes: string | undefined;
@@ -564,7 +638,7 @@ export async function handleCheckoutSessionCompleted(
           let pdfBuffer: Buffer | undefined;
           try {
             if (result.ticket.qr_code_url) {
-              console.log('[WebhookHandler] Generating PDF for ticket:', ticketId);
+              log.debug('Generating PDF for ticket', { ticketId });
 
               // Convert QR code URL to data URL for embedding in PDF
               const qrCodeDataUrl = await imageUrlToDataUrl(result.ticket.qr_code_url);
@@ -586,12 +660,17 @@ export async function handleCheckoutSessionCompleted(
                 notes,
               });
 
-              console.log('[WebhookHandler] ✅ PDF generated successfully');
+              log.debug('PDF generated successfully', { ticketId });
             } else {
-              console.warn('[WebhookHandler] ⚠️ No QR code URL available, skipping PDF generation');
+              log.warn('No QR code URL available, skipping PDF generation', { ticketId });
             }
           } catch (pdfError) {
-            console.error('[WebhookHandler] ⚠️ Error generating PDF:', pdfError);
+            log.error('Error generating PDF', pdfError, {
+              type: 'system',
+              severity: 'medium',
+              code: 'PDF_GENERATION_ERROR',
+              ticketId,
+            });
             // Non-fatal, continue with email without PDF
           }
 
@@ -616,7 +695,12 @@ export async function handleCheckoutSessionCompleted(
             pdfAttachment: pdfBuffer,
           });
         } catch (error) {
-          console.error('[WebhookHandler] ⚠️ Error preparing email for', result.attendee.email, ':', error);
+          log.error('Error preparing email', error, {
+            type: 'system',
+            severity: 'medium',
+            code: 'EMAIL_PREP_ERROR',
+            email: result.attendee.email,
+          });
           // Non-fatal, continue with other emails
         }
       }
@@ -629,17 +713,20 @@ export async function handleCheckoutSessionCompleted(
         const successfulEmails = emailResults.filter(r => r.success);
         const failedEmails = emailResults.filter(r => !r.success);
 
-        console.log('[WebhookHandler] ✅ Successfully sent', successfulEmails.length, 'ticket email(s)');
+        log.info('Successfully sent ticket emails', { count: successfulEmails.length });
         if (failedEmails.length > 0) {
-          console.error('[WebhookHandler] ⚠️ Failed to send', failedEmails.length, 'ticket email(s):');
-          failedEmails.forEach(r => {
-            console.error('[WebhookHandler]   -', r.email, ':', r.error);
+          log.error('Failed to send ticket emails', new Error(`${failedEmails.length} email(s) failed`), {
+            type: 'system',
+            severity: 'medium',
+            code: 'TICKET_EMAIL_FAILED',
+            failedCount: failedEmails.length,
+            failedEmails: failedEmails.map(r => ({ email: r.email, error: r.error })),
           });
         }
       }
     } // End of else (ticket creation)
 
-    console.log('[WebhookHandler] ====== Tickets processed ======');
+    log.info('Tickets processed', { count: ticketLineItems.length });
   } // End of if (ticketLineItems.length > 0)
 
   // Track successful webhook processing completion
@@ -659,7 +746,8 @@ export async function handleCheckoutSessionCompleted(
 export async function handleAsyncPaymentSucceeded(
   session: Stripe.Checkout.Session
 ): Promise<void> {
-  console.log('[WebhookHandler] Processing checkout.session.async_payment_succeeded:', session.id);
+  const log = logger.scope('WebhookHandler', { sessionId: session.id });
+  log.info('Processing checkout.session.async_payment_succeeded');
   // Reuse the same logic as checkout completion
   await handleCheckoutSessionCompleted(session);
 }
@@ -670,9 +758,14 @@ export async function handleAsyncPaymentSucceeded(
 export async function handleAsyncPaymentFailed(
   session: Stripe.Checkout.Session
 ): Promise<void> {
-  console.log('[WebhookHandler] ❌ Async payment failed for session:', session.id);
-  console.log('[WebhookHandler] Customer:', session.customer_details?.email);
-  console.log('[WebhookHandler] Amount:', session.amount_total);
+  const log = logger.scope('WebhookHandler', { sessionId: session.id });
+  log.error('Async payment failed', new Error('Payment failed'), {
+    type: 'payment',
+    severity: 'high',
+    code: 'ASYNC_PAYMENT_FAILED',
+    customerEmail: session.customer_details?.email,
+    amount: session.amount_total,
+  });
   // TODO: Send notification to user about failed payment
   // For now, just log it
 }
@@ -684,6 +777,16 @@ export async function handleAsyncPaymentFailed(
 export async function handlePaymentIntentSucceeded(
   paymentIntent: Stripe.PaymentIntent
 ): Promise<void> {
-  console.log('Processing payment_intent.succeeded:', paymentIntent.id);
+  const log = logger.scope('WebhookHandler', { paymentIntentId: paymentIntent.id });
+  log.info('Processing payment_intent.succeeded');
   // TODO: Implement if needed for direct payment flows
 }
+
+// Export internal functions for testing
+export const __testing = {
+  parseTicketInfo,
+  getTicketDisplayName,
+  toLegacyType,
+  isTicketProduct,
+  isWorkshopVoucher,
+};

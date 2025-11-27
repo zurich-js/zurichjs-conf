@@ -7,7 +7,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
-type Tab = 'tickets' | 'financials';
+type Tab = 'tickets' | 'issue' | 'financials';
+
+interface TicketMetadata {
+  issuedManually?: boolean;
+  issuedAt?: string;
+  paymentType?: 'complimentary' | 'stripe';
+  complimentaryReason?: string;
+  stripePaymentId?: string;
+  [key: string]: unknown;
+}
 
 interface Ticket {
   id: string;
@@ -21,6 +30,14 @@ interface Ticket {
   currency: string;
   status: string;
   stripe_payment_intent_id?: string;
+  stripe_session_id?: string;
+  stripe_customer_id?: string;
+  company?: string;
+  job_title?: string;
+  qr_code_url?: string;
+  created_at?: string;
+  updated_at?: string;
+  metadata?: TicketMetadata;
 }
 
 interface FinancialData {
@@ -220,6 +237,21 @@ export default function AdminDashboard() {
               </div>
             </button>
             <button
+              onClick={() => setActiveTab('issue')}
+              className={`${
+                activeTab === 'issue'
+                  ? 'bg-[#F1E271] text-black shadow-sm'
+                  : 'text-gray-600 hover:text-black hover:bg-gray-50'
+              } flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-md font-medium text-xs sm:text-sm transition-all cursor-pointer`}
+            >
+              <div className="flex items-center justify-center space-x-1 sm:space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Issue</span>
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab('financials')}
               className={`${
                 activeTab === 'financials'
@@ -239,6 +271,7 @@ export default function AdminDashboard() {
           {/* Tab Content */}
           <div className="mt-6 pb-12">
             {activeTab === 'tickets' && <TicketsTab />}
+            {activeTab === 'issue' && <IssueTicketTab />}
             {activeTab === 'financials' && <FinancialsTab />}
           </div>
         </div>
@@ -247,15 +280,357 @@ export default function AdminDashboard() {
   );
 }
 
+// Ticket Details Modal Component with Actions
+function TicketDetailsModal({
+  ticket,
+  onClose,
+  onResend,
+  onReassign,
+  onRefund,
+  onCancel,
+  onDelete,
+}: {
+  ticket: Ticket;
+  onClose: () => void;
+  onResend: () => void;
+  onReassign: () => void;
+  onRefund: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}) {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  };
+
+  const formatComplimentaryReason = (reason?: string) => {
+    if (!reason) return 'Not specified';
+    const reasonLabels: Record<string, string> = {
+      speaker: 'Speaker',
+      sponsor: 'Sponsor',
+      organizer: 'Organizer / Staff',
+      volunteer: 'Volunteer',
+      media: 'Media / Press',
+      partner: 'Partner',
+      contest_winner: 'Contest Winner',
+      other: 'Other',
+    };
+    return reasonLabels[reason] || reason;
+  };
+
+  const isComplimentary = ticket.metadata?.paymentType === 'complimentary' || ticket.amount_paid === 0;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold text-black">Ticket Details</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                  {ticket.first_name} {ticket.last_name}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 sm:p-6 space-y-6">
+          {/* Status Badge */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`px-4 py-1.5 text-sm font-bold rounded-full ${
+                ticket.status === 'confirmed'
+                  ? 'bg-green-100 text-green-800'
+                  : ticket.status === 'refunded'
+                  ? 'bg-red-100 text-red-800'
+                  : ticket.status === 'cancelled'
+                  ? 'bg-gray-100 text-gray-800'
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}
+            >
+              {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+            </span>
+            {ticket.metadata?.issuedManually && (
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                Manually Issued
+              </span>
+            )}
+            {isComplimentary && (
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                Complimentary
+              </span>
+            )}
+          </div>
+
+          {/* Ticket Info */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Ticket Information</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <p className="text-xs text-gray-500 mb-0.5">Ticket ID</p>
+                <p className="text-xs text-gray-400 mb-1">Unique identifier for this ticket</p>
+                <p className="text-sm font-mono text-black break-all">{ticket.id}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Category</p>
+                <p className="text-xs text-gray-400 mb-1">Ticket type (standard, VIP, student, etc.)</p>
+                <p className="text-sm text-black capitalize font-medium">{ticket.ticket_category}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Stage</p>
+                <p className="text-xs text-gray-400 mb-1">Pricing tier when purchased</p>
+                <p className="text-sm text-black capitalize">{ticket.ticket_stage.replace('_', ' ')}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Attendee Info */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Attendee Information</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Name</p>
+                <p className="text-sm text-black font-medium">{ticket.first_name} {ticket.last_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Email</p>
+                <p className="text-sm text-black break-all">{ticket.email}</p>
+              </div>
+              {ticket.company && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Company</p>
+                  <p className="text-sm text-black">{ticket.company}</p>
+                </div>
+              )}
+              {ticket.job_title && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Job Title</p>
+                  <p className="text-sm text-black">{ticket.job_title}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Info */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Payment Information</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Amount</p>
+                <p className="text-xs text-gray-400 mb-1">Total paid for this ticket</p>
+                <p className="text-sm text-black font-bold">
+                  {isComplimentary ? (
+                    <span className="text-purple-600">Complimentary</span>
+                  ) : (
+                    `${(ticket.amount_paid / 100).toFixed(2)} ${ticket.currency}`
+                  )}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Payment Type</p>
+                <p className="text-xs text-gray-400 mb-1">How this ticket was acquired</p>
+                <p className="text-sm text-black capitalize">
+                  {ticket.metadata?.paymentType || (ticket.amount_paid === 0 ? 'Complimentary' : 'Stripe')}
+                </p>
+              </div>
+              {isComplimentary && ticket.metadata?.complimentaryReason && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Complimentary Reason</p>
+                  <p className="text-xs text-gray-400 mb-1">Why ticket was given for free</p>
+                  <p className="text-sm text-purple-700 font-medium">
+                    {formatComplimentaryReason(ticket.metadata.complimentaryReason)}
+                  </p>
+                </div>
+              )}
+              {ticket.stripe_payment_intent_id && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Stripe Payment ID</p>
+                  <p className="text-xs text-gray-400 mb-1">Unique identifier for the Stripe payment transaction</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono text-black break-all">{ticket.stripe_payment_intent_id}</p>
+                    <a
+                      href={`https://dashboard.stripe.com/payments/${ticket.stripe_payment_intent_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-700 flex-shrink-0"
+                      title="View in Stripe"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              )}
+              {ticket.stripe_session_id && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Checkout Session ID</p>
+                  <p className="text-xs text-gray-400 mb-1">Stripe checkout session used during purchase</p>
+                  <p className="text-sm font-mono text-black break-all">{ticket.stripe_session_id}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Timestamps */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Timestamps</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Created</p>
+                <p className="text-sm text-black">{formatDate(ticket.created_at)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Last Updated</p>
+                <p className="text-sm text-black">{formatDate(ticket.updated_at)}</p>
+              </div>
+              {ticket.metadata?.issuedAt && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Manually Issued At</p>
+                  <p className="text-sm text-black">{formatDate(ticket.metadata.issuedAt)}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* QR Code */}
+          {ticket.qr_code_url && (
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">QR Code</h4>
+              <div className="flex justify-center">
+                <img
+                  src={ticket.qr_code_url}
+                  alt="Ticket QR Code"
+                  className="w-32 h-32 border border-gray-200 rounded-lg"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions Footer */}
+        <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
+          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Actions</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {ticket.stripe_payment_intent_id && (
+              <a
+                href={`https://dashboard.stripe.com/payments/${ticket.stripe_payment_intent_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center px-3 py-2.5 border border-blue-300 rounded-lg text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Stripe
+              </a>
+            )}
+            <button
+              onClick={onResend}
+              className="flex items-center justify-center px-3 py-2.5 border border-indigo-300 rounded-lg text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Resend
+            </button>
+            <button
+              onClick={onReassign}
+              className="flex items-center justify-center px-3 py-2.5 border border-purple-300 rounded-lg text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Reassign
+            </button>
+            {ticket.status === 'confirmed' && (
+              <>
+                <button
+                  onClick={onRefund}
+                  className="flex items-center justify-center px-3 py-2.5 border border-orange-300 rounded-lg text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors cursor-pointer"
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  Refund
+                </button>
+                <button
+                  onClick={onCancel}
+                  className="flex items-center justify-center px-3 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Cancel
+                </button>
+              </>
+            )}
+            <button
+              onClick={onDelete}
+              className="flex items-center justify-center px-3 py-2.5 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete
+            </button>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={onClose}
+              className="w-full px-6 py-2.5 bg-gray-200 text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Tickets Tab Component
+interface ToastMessage {
+  type: 'success' | 'error';
+  text: string;
+}
+
 function TicketsTab() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showResendConfirm, setShowResendConfirm] = useState(false);
   const [showRefundConfirm, setShowRefundConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  const showToast = (type: 'success' | 'error', text: string) => {
+    setToast({ type, text });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   useEffect(() => {
     fetchTickets();
@@ -282,14 +657,14 @@ function TicketsTab() {
         method: 'POST',
       });
       if (response.ok) {
-        alert('Ticket email resent successfully!');
+        showToast('success', 'Ticket email resent successfully!');
         setShowResendConfirm(false);
         setSelectedTicket(null);
       } else {
-        alert('Failed to resend ticket email');
+        showToast('error', 'Failed to resend ticket email');
       }
     } catch {
-      alert('Error resending ticket email');
+      showToast('error', 'Error resending ticket email');
     }
   };
 
@@ -302,16 +677,16 @@ function TicketsTab() {
         body: JSON.stringify({ reason: 'requested_by_customer' }),
       });
       if (response.ok) {
-        alert('Ticket refunded successfully!');
+        showToast('success', 'Ticket refunded successfully!');
         fetchTickets();
         setShowRefundConfirm(false);
         setSelectedTicket(null);
       } else {
         const data = await response.json();
-        alert(`Failed to refund ticket: ${data.error}`);
+        showToast('error', `Failed to refund ticket: ${data.error}`);
       }
     } catch {
-      alert('Error refunding ticket');
+      showToast('error', 'Error refunding ticket');
     }
   };
 
@@ -322,15 +697,36 @@ function TicketsTab() {
         method: 'POST',
       });
       if (response.ok) {
-        alert('Ticket cancelled successfully!');
+        showToast('success', 'Ticket cancelled successfully!');
         fetchTickets();
         setShowCancelConfirm(false);
         setSelectedTicket(null);
       } else {
-        alert('Failed to cancel ticket');
+        showToast('error', 'Failed to cancel ticket');
       }
     } catch {
-      alert('Error cancelling ticket');
+      showToast('error', 'Error cancelling ticket');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedTicket) return;
+    try {
+      const response = await fetch(`/api/admin/tickets/${selectedTicket.id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        showToast('success', 'Ticket deleted successfully!');
+        fetchTickets();
+        setShowDeleteConfirm(false);
+        setShowDetailsModal(false);
+        setSelectedTicket(null);
+      } else {
+        const data = await response.json();
+        showToast('error', `Failed to delete ticket: ${data.error}`);
+      }
+    } catch {
+      showToast('error', 'Error deleting ticket');
     }
   };
 
@@ -345,6 +741,38 @@ function TicketsTab() {
 
   return (
     <>
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-[60] animate-in fade-in slide-in-from-top-2 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${
+              toast.type === 'success'
+                ? 'bg-green-50 border-green-200 text-green-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            <p className="text-sm font-medium">{toast.text}</p>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 p-1 hover:bg-black/5 rounded transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
         <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -429,76 +857,20 @@ function TicketsTab() {
                     </span>
                   </td>
                   <td className="px-4 lg:px-6 py-4 text-sm">
-                    <div className="flex flex-wrap gap-2">
-                      <a
-                        href={`https://dashboard.stripe.com/payments/${ticket.stripe_payment_intent_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-2.5 py-1.5 border border-blue-300 rounded-md text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
-                        title="View in Stripe Dashboard"
-                      >
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        <span className="hidden xl:inline">Stripe</span>
-                      </a>
-                      <button
-                        onClick={() => {
-                          setSelectedTicket(ticket);
-                          setShowResendConfirm(true);
-                        }}
-                        className="inline-flex items-center px-2.5 py-1.5 border border-indigo-300 rounded-md text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 cursor-pointer transition-colors"
-                        title="Resend ticket email to customer"
-                      >
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        <span className="hidden xl:inline">Resend</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedTicket(ticket);
-                          setShowReassignModal(true);
-                        }}
-                        className="inline-flex items-center px-2.5 py-1.5 border border-purple-300 rounded-md text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 cursor-pointer transition-colors"
-                        title="Transfer ticket to another person"
-                      >
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        <span className="hidden xl:inline">Reassign</span>
-                      </button>
-                      {ticket.status === 'confirmed' && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setSelectedTicket(ticket);
-                              setShowRefundConfirm(true);
-                            }}
-                            className="inline-flex items-center px-2.5 py-1.5 border border-red-300 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 cursor-pointer transition-colors"
-                            title="Process full refund via Stripe"
-                          >
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                            </svg>
-                            <span className="hidden xl:inline">Refund</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedTicket(ticket);
-                              setShowCancelConfirm(true);
-                            }}
-                            className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
-                            title="Cancel ticket without refunding"
-                          >
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span className="hidden xl:inline">Cancel</span>
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedTicket(ticket);
+                        setShowDetailsModal(true);
+                      }}
+                      className="inline-flex items-center px-3 py-1.5 border border-[#F1E271] rounded-md text-xs font-medium text-black bg-[#F1E271] hover:bg-[#e8d95e] cursor-pointer transition-colors"
+                      title="View ticket details"
+                    >
+                      <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      View
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -562,62 +934,55 @@ function TicketsTab() {
 
               {/* Card Actions */}
               <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                <div className="grid grid-cols-2 gap-2">
-                  <a
-                    href={`https://dashboard.stripe.com/payments/${ticket.stripe_payment_intent_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center px-3 py-2.5 border border-blue-300 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 active:bg-blue-100 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Stripe
-                  </a>
-                  <button
-                    onClick={() => {
-                      setSelectedTicket(ticket);
-                      setShowResendConfirm(true);
-                    }}
-                    className="flex items-center justify-center px-3 py-2.5 border border-indigo-300 rounded-lg text-xs font-medium text-indigo-700 bg-indigo-50 active:bg-indigo-100 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Resend
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedTicket(ticket);
-                      setShowReassignModal(true);
-                    }}
-                    className="flex items-center justify-center px-3 py-2.5 border border-purple-300 rounded-lg text-xs font-medium text-purple-700 bg-purple-50 active:bg-purple-100 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    Reassign
-                  </button>
-                  {ticket.status === 'confirmed' && (
-                    <button
-                      onClick={() => {
-                        setSelectedTicket(ticket);
-                        setShowRefundConfirm(true);
-                      }}
-                      className="flex items-center justify-center px-3 py-2.5 border border-red-300 rounded-lg text-xs font-medium text-red-700 bg-red-50 active:bg-red-100 transition-colors"
-                    >
-                      <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                      </svg>
-                      Refund
-                    </button>
-                  )}
-                </div>
+                <button
+                  onClick={() => {
+                    setSelectedTicket(ticket);
+                    setShowDetailsModal(true);
+                  }}
+                  className="w-full flex items-center justify-center px-3 py-2.5 border border-[#F1E271] rounded-lg text-sm font-medium text-black bg-[#F1E271] active:bg-[#e8d95e] transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  View Details
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Ticket Details Modal */}
+      {showDetailsModal && selectedTicket && (
+        <TicketDetailsModal
+          ticket={selectedTicket}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedTicket(null);
+          }}
+          onResend={() => {
+            setShowDetailsModal(false);
+            setShowResendConfirm(true);
+          }}
+          onReassign={() => {
+            setShowDetailsModal(false);
+            setShowReassignModal(true);
+          }}
+          onRefund={() => {
+            setShowDetailsModal(false);
+            setShowRefundConfirm(true);
+          }}
+          onCancel={() => {
+            setShowDetailsModal(false);
+            setShowCancelConfirm(true);
+          }}
+          onDelete={() => {
+            setShowDetailsModal(false);
+            setShowDeleteConfirm(true);
+          }}
+        />
+      )}
 
       {/* Reassign Modal */}
       {showReassignModal && selectedTicket && (
@@ -632,6 +997,7 @@ function TicketsTab() {
             setShowReassignModal(false);
             setSelectedTicket(null);
           }}
+          showToast={showToast}
         />
       )}
 
@@ -709,6 +1075,31 @@ function TicketsTab() {
           }}
         />
       )}
+
+      {/* Delete Confirmation */}
+      {showDeleteConfirm && selectedTicket && (
+        <ConfirmModal
+          title="Delete Ticket"
+          message={`Are you sure you want to permanently delete this ticket?`}
+          details={[
+            `Ticket ID: ${selectedTicket.id}`,
+            `Customer: ${selectedTicket.first_name} ${selectedTicket.last_name}`,
+            `Email: ${selectedTicket.email}`,
+            '',
+            'WARNING: This action will:',
+            '• Permanently remove the ticket from the database',
+            '• This action CANNOT be undone',
+            '• No refund will be processed'
+          ]}
+          confirmText="Delete Permanently"
+          confirmColor="red"
+          onConfirm={handleDelete}
+          onCancel={() => {
+            setShowDeleteConfirm(false);
+            setSelectedTicket(null);
+          }}
+        />
+      )}
     </>
   );
 }
@@ -718,10 +1109,12 @@ function ReassignModal({
   ticket,
   onClose,
   onSuccess,
+  showToast,
 }: {
   ticket: Ticket;
   onClose: () => void;
   onSuccess: () => void;
+  showToast: (type: 'success' | 'error', text: string) => void;
 }) {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -740,14 +1133,14 @@ function ReassignModal({
       });
 
       if (response.ok) {
-        alert('Ticket reassigned successfully!');
+        showToast('success', 'Ticket reassigned successfully!');
         onSuccess();
       } else {
         const data = await response.json();
-        alert(`Failed to reassign ticket: ${data.error}`);
+        showToast('error', `Failed to reassign ticket: ${data.error}`);
       }
     } catch {
-      alert('Error reassigning ticket');
+      showToast('error', 'Error reassigning ticket');
     } finally {
       setLoading(false);
     }
@@ -902,6 +1295,439 @@ function ConfirmModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Issue Ticket Tab Component
+interface StripePaymentDetails {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  description: string | null;
+  created: number;
+  metadata: Record<string, string>;
+}
+
+function IssueTicketTab() {
+  const [paymentType, setPaymentType] = useState<'complimentary' | 'stripe'>('complimentary');
+  const [stripePaymentId, setStripePaymentId] = useState('');
+  const [stripePayment, setStripePayment] = useState<StripePaymentDetails | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState('');
+
+  const [ticketCategory, setTicketCategory] = useState<string>('standard');
+  const [ticketStage, setTicketStage] = useState<string>('general_admission');
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [company, setCompany] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+
+  const [complimentaryReason, setComplimentaryReason] = useState('');
+  const [sendEmail, setSendEmail] = useState(true);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const handleLookupPayment = async () => {
+    if (!stripePaymentId.trim()) {
+      setLookupError('Please enter a payment ID');
+      return;
+    }
+
+    setLookupLoading(true);
+    setLookupError('');
+    setStripePayment(null);
+
+    try {
+      const response = await fetch(`/api/admin/stripe-payment?id=${encodeURIComponent(stripePaymentId.trim())}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setLookupError(data.error || 'Failed to lookup payment');
+        return;
+      }
+
+      setStripePayment(data.payment);
+
+      // Auto-fill customer details if available
+      if (data.payment.customerName) {
+        const nameParts = data.payment.customerName.split(' ');
+        setFirstName(nameParts[0] || '');
+        setLastName(nameParts.slice(1).join(' ') || '');
+      }
+      if (data.payment.customerEmail) {
+        setEmail(data.payment.customerEmail);
+      }
+    } catch {
+      setLookupError('Failed to lookup payment');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError('');
+    setSubmitSuccess(false);
+
+    try {
+      const response = await fetch('/api/admin/issue-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketCategory,
+          ticketStage,
+          firstName,
+          lastName,
+          email,
+          company: company || undefined,
+          jobTitle: jobTitle || undefined,
+          paymentType,
+          stripePaymentId: paymentType === 'stripe' ? stripePaymentId : undefined,
+          amountPaid: paymentType === 'stripe' && stripePayment ? stripePayment.amount : 0,
+          currency: paymentType === 'stripe' && stripePayment ? stripePayment.currency : 'CHF',
+          complimentaryReason: paymentType === 'complimentary' ? complimentaryReason : undefined,
+          sendEmail,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSubmitError(data.error || 'Failed to issue ticket');
+        return;
+      }
+
+      setSubmitSuccess(true);
+
+      // Reset form
+      setStripePaymentId('');
+      setStripePayment(null);
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setCompany('');
+      setJobTitle('');
+      setComplimentaryReason('');
+    } catch {
+      setSubmitError('Failed to issue ticket');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSubmitSuccess(false);
+    setSubmitError('');
+  };
+
+  return (
+    <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
+      <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-black">Issue Ticket</h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">Manually issue a ticket for a customer</p>
+          </div>
+        </div>
+      </div>
+
+      {submitSuccess ? (
+        <div className="p-4 sm:p-6">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-green-800 mb-2">Ticket Issued Successfully!</h3>
+            <p className="text-sm text-green-700 mb-4">
+              {sendEmail ? 'A confirmation email has been sent to the customer.' : 'The ticket has been created without sending an email.'}
+            </p>
+            <button
+              onClick={resetForm}
+              className="px-6 py-2.5 bg-green-600 text-brand-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors cursor-pointer"
+            >
+              Issue Another Ticket
+            </button>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
+          {/* Payment Type Selection */}
+          <div>
+            <label className="block text-sm font-bold text-black mb-3">Payment Type *</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentType('complimentary')}
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                  paymentType === 'complimentary'
+                    ? 'border-[#F1E271] bg-[#F1E271]/10'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    paymentType === 'complimentary' ? 'bg-[#F1E271]' : 'bg-gray-100'
+                  }`}>
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-black">Complimentary</p>
+                    <p className="text-xs text-gray-600">Free ticket (speaker, sponsor, etc.)</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentType('stripe')}
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                  paymentType === 'stripe'
+                    ? 'border-[#F1E271] bg-[#F1E271]/10'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    paymentType === 'stripe' ? 'bg-[#F1E271]' : 'bg-gray-100'
+                  }`}>
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-black">Stripe Payment</p>
+                    <p className="text-xs text-gray-600">Link to existing payment</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Stripe Payment Lookup */}
+          {paymentType === 'stripe' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <label className="block text-sm font-bold text-black mb-2">Stripe Payment ID *</label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={stripePaymentId}
+                  onChange={(e) => setStripePaymentId(e.target.value)}
+                  placeholder="pi_xxx, ch_xxx, or cs_xxx"
+                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={handleLookupPayment}
+                  disabled={lookupLoading}
+                  className="px-4 py-2.5 bg-blue-600 text-brand-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  {lookupLoading ? 'Looking up...' : 'Lookup Payment'}
+                </button>
+              </div>
+              {lookupError && (
+                <p className="mt-2 text-sm text-red-600">{lookupError}</p>
+              )}
+              {stripePayment && (
+                <div className="mt-3 p-3 bg-white rounded-lg border border-blue-200">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Payment Found</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-600">Amount:</span>
+                      <span className="ml-1 font-bold text-black">{(stripePayment.amount / 100).toFixed(2)} {stripePayment.currency}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Status:</span>
+                      <span className={`ml-1 font-bold ${stripePayment.status === 'succeeded' || stripePayment.status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                        {stripePayment.status}
+                      </span>
+                    </div>
+                    {stripePayment.customerName && (
+                      <div className="col-span-2">
+                        <span className="text-gray-600">Customer:</span>
+                        <span className="ml-1 text-black">{stripePayment.customerName}</span>
+                      </div>
+                    )}
+                    {stripePayment.customerEmail && (
+                      <div className="col-span-2">
+                        <span className="text-gray-600">Email:</span>
+                        <span className="ml-1 text-black">{stripePayment.customerEmail}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Complimentary Reason */}
+          {paymentType === 'complimentary' && (
+            <div>
+              <label className="block text-sm font-bold text-black mb-2">Reason for Complimentary Ticket</label>
+              <select
+                value={complimentaryReason}
+                onChange={(e) => setComplimentaryReason(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+              >
+                <option value="">Select a reason...</option>
+                <option value="speaker">Speaker</option>
+                <option value="sponsor">Sponsor</option>
+                <option value="organizer">Organizer / Staff</option>
+                <option value="volunteer">Volunteer</option>
+                <option value="media">Media / Press</option>
+                <option value="partner">Partner</option>
+                <option value="contest_winner">Contest Winner</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          )}
+
+          {/* Ticket Type Selection */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-black mb-2">Ticket Category *</label>
+              <select
+                value={ticketCategory}
+                onChange={(e) => setTicketCategory(e.target.value)}
+                required
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+              >
+                <option value="standard">Standard</option>
+                <option value="vip">VIP</option>
+                <option value="student">Student</option>
+                <option value="unemployed">Unemployed</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-black mb-2">Ticket Stage *</label>
+              <select
+                value={ticketStage}
+                onChange={(e) => setTicketStage(e.target.value)}
+                required
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+              >
+                <option value="blind_bird">Blind Bird</option>
+                <option value="early_bird">Early Bird</option>
+                <option value="general_admission">General Admission</option>
+                <option value="late_bird">Late Bird</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Attendee Details */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-sm font-bold text-black mb-4">Attendee Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-black mb-2">First Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-black mb-2">Last Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  placeholder="Doe"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-bold text-black mb-2">Email *</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-black mb-2">Company</label>
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  placeholder="Acme Inc."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-black mb-2">Job Title</label>
+                <input
+                  type="text"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  placeholder="Software Engineer"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Email Option */}
+          <div className="border-t border-gray-200 pt-6">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-[#F1E271] focus:ring-[#F1E271] cursor-pointer"
+              />
+              <div>
+                <span className="font-bold text-black">Send confirmation email</span>
+                <p className="text-xs text-gray-600">Send ticket with QR code and details to the attendee</p>
+              </div>
+            </label>
+          </div>
+
+          {/* Error Message */}
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800 font-medium">{submitError}</p>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="border-t border-gray-200 pt-6">
+            <button
+              type="submit"
+              disabled={isSubmitting || (paymentType === 'stripe' && !stripePayment)}
+              className="w-full sm:w-auto px-8 py-3 bg-[#F1E271] text-black rounded-lg text-base font-medium hover:bg-[#e8d95e] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+            >
+              {isSubmitting ? 'Issuing Ticket...' : 'Issue Ticket'}
+            </button>
+            {paymentType === 'stripe' && !stripePayment && (
+              <p className="mt-2 text-xs text-gray-500">Please lookup the Stripe payment first</p>
+            )}
+          </div>
+        </form>
+      )}
     </div>
   );
 }
