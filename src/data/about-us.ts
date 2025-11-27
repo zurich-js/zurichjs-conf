@@ -17,7 +17,7 @@ export interface AboutStatData {
 }
 
 export interface AboutTeamMemberData {
-  imageSrc: string;
+  imageSrc?: string;
   imageAlt: string;
   name: string;
   role: string;
@@ -59,13 +59,18 @@ export interface AboutValuesData {
   values: AboutValueData[];
 }
 
-export interface AboutCTAData {
+export interface AboutCTAButton {
+  text: string;
+  url: string;
+  variant?: 'primary' | 'dark' | 'ghost' | 'outline' | 'accent';
+}
+
+export interface AboutCTASlide {
   kicker: string;
   title: string;
   leftColumn: string;
   rightColumn: string[];
-  buttonText: string;
-  buttonUrl: string;
+  buttons: AboutCTAButton[];
 }
 
 export interface AboutPageData {
@@ -75,7 +80,7 @@ export interface AboutPageData {
   team: AboutTeamData;
   venue: AboutVenueData;
   values: AboutValuesData;
-  cta: AboutCTAData;
+  ctaSlides: AboutCTASlide[];
 }
 
 export const aboutPageData: AboutPageData = {
@@ -107,20 +112,17 @@ export const aboutPageData: AboutPageData = {
       'Our passionate team of organizers and volunteers work tirelessly to bring you the best JavaScript conference experience.',
     members: [
       {
-        imageSrc: '/placeholder-team-1.jpg',
-        imageAlt: 'Team member 1',
+        imageAlt: 'Faris Aziz',
         name: 'Faris Aziz',
         role: 'Role / Position',
       },
       {
-        imageSrc: '/placeholder-team-2.jpg',
-        imageAlt: 'Team member 2',
+        imageAlt: 'Nadja Hesselbjerg',
         name: 'Nadja Hesselbjerg',
         role: 'Role / Position',
       },
       {
-        imageSrc: '/placeholder-team-3.jpg',
-        imageAlt: 'Team member 3',
+        imageAlt: 'Bogdan Mihai Ilie',
         name: 'Bogdan Mihai Ilie',
         role: 'Role / Position',
       },
@@ -190,16 +192,45 @@ export const aboutPageData: AboutPageData = {
       },
     ],
   },
-  cta: {
-    kicker: 'Join Us',
-    title: 'Be part of ZurichJS Conference 2026',
-    leftColumn:
-      "Whether you're a seasoned JavaScript developer or just starting your journey, ZurichJS Conference 2026 offers something for everyone. Join hundreds of developers, make lasting connections, and be inspired by world-class speakers.",
-    rightColumn: [
-      "Don't miss this opportunity to be part of Switzerland's premier JavaScript conference. Secure your spot today and join us for three unforgettable days of learning, networking, and innovation.",
-      'We look forward to welcoming you to Technopark Zürich!',
-    ],
-    buttonText: 'Get Your Ticket',
-    buttonUrl: '/#tickets',
-  },
+  ctaSlides: [
+    {
+      kicker: 'Join Us',
+      title: 'Be part of ZurichJS Conference 2026',
+      leftColumn:
+        "Whether you're a seasoned JavaScript developer or just starting your journey, ZurichJS Conference 2026 offers something for everyone. Join hundreds of developers, make lasting connections, and be inspired by world-class speakers.",
+      rightColumn: [
+        "Don't miss this opportunity to be part of Switzerland's premier JavaScript conference. Secure your spot today and join us for three unforgettable days of learning, networking, and innovation.",
+        'We look forward to welcoming you to Technopark Zürich!',
+      ],
+      buttons: [
+        {
+          text: 'Get Your Ticket',
+          url: '/#tickets',
+          variant: 'outline',
+        },
+      ],
+    },
+    {
+      kicker: 'Sponsorship',
+      title: 'Partner with ZurichJS Conference 2026',
+      leftColumn:
+        'Showcase your brand to hundreds of JavaScript developers, tech leaders, and innovators. Our sponsorship packages offer unique opportunities to connect with the community, demonstrate your products, and support the growth of the JavaScript ecosystem.',
+      rightColumn: [
+        'From speaking opportunities to booth space, we offer flexible sponsorship tiers designed to meet your marketing goals and budget. Join leading tech companies in supporting this premier JavaScript event.',
+        'Contact us today to discuss how we can create a sponsorship package that works for you.',
+      ],
+      buttons: [
+        {
+          text: 'View Sponsorship Packages',
+          url: '/sponsorship',
+          variant: 'dark',
+        },
+        {
+          text: 'Contact Us',
+          url: 'mailto:sponsors@zurichjs.com',
+          variant: 'outline',
+        },
+      ],
+    },
+  ],
 };
