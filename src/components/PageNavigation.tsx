@@ -7,13 +7,9 @@ export interface PageNavigationProps {
 
 export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
   const [activeId, setActiveId] = useState<string>('');
-  const [revealedItems, setRevealedItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (items.length === 0) return;
-
-    // Initially reveal the first item
-    setRevealedItems(new Set([items[0].id]));
 
     const observerOptions = {
       rootMargin: '-100px 0px -66%',
@@ -24,17 +20,6 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setActiveId(entry.target.id);
-          // Reveal this item and all previous items
-          const currentIndex = items.findIndex((item) => item.id === entry.target.id);
-          if (currentIndex !== -1) {
-            setRevealedItems((prev) => {
-              const newSet = new Set(prev);
-              for (let i = 0; i <= currentIndex; i++) {
-                newSet.add(items[i].id);
-              }
-              return newSet;
-            });
-          }
         }
       });
     };
@@ -79,15 +64,10 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
 
           {items.map((item) => {
             const isActive = activeId === item.id;
-            const isRevealed = revealedItems.has(item.id);
 
             return (
               <li
                 key={item.id}
-                className={`
-                  transition-all duration-500 ease-out
-                  ${isRevealed ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}
-                `}
               >
                 <button
                   onClick={() => handleClick(item.id)}
