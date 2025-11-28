@@ -39,6 +39,7 @@ export interface AboutVenueData {
   description: string[];
   mapUrl: string;
   address: {
+    description: string;
     street: string;
     city: string;
     country: string;
@@ -112,35 +113,33 @@ export const aboutPageData: AboutPageData = {
       "Our passionate team of organizers and volunteers work tirelessly to bring you the best JavaScript conference experience.",
     members: [
       {
-        imageAlt: "Faris Aziz",
-        name: "Faris Aziz",
-        role: "Role / Position",
+        imageSrc: '/images/team/faris.png',
+        imageAlt: 'Faris Aziz',
+        name: 'Faris Aziz',
+        role: 'Staff Software Engineer at Smallpdf, Conference Speaker, Workshop Instructor',
       },
       {
-        imageAlt: "Nadja Hesselbjerg",
-        name: "Nadja Hesselbjerg",
-        role: "Role / Position",
+        imageSrc: '/images/team/nadja.png',
+        imageAlt: 'Nadja Hesselbjerg',
+        name: 'Nadja Hesselbjerg',
+        role: 'Full-Stack/Frontend Engineer, UI/UX',
       },
       {
-        imageAlt: "Bogdan Mihai Ilie",
-        name: "Bogdan Mihai Ilie",
-        role: "Role / Position",
+        imageSrc: '/images/team/bogdan.png',
+        imageAlt: 'Bogdan Mihai Ilie',
+        name: 'Bogdan Mihai Ilie',
+        role: 'Full-Stack/Frontend Engineer, Advocate, Community builder',
       },
     ],
     volunteersTitle: "And our amazing volunteers",
     volunteersDescription:
       "None of this would be possible without our incredible volunteers who dedicate their time and energy to make this conference a success.",
     volunteers: [
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
-      "Volunteer Name",
+      'Colin Schwarz',
+      'Aleksej Dix',
+      'Aldous Waites',
+      'Hugo Sousa',
+      'Jan Schwarzkopf',
     ],
   },
   venue: {
@@ -155,6 +154,7 @@ export const aboutPageData: AboutPageData = {
     mapUrl:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2701.234567890123!2d8.5167!3d47.3833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDfCsDIyJzU5LjkiTiA4wrAzMScwMC4xIkU!5e0!3m2!1sen!2sch!4v1234567890123",
     address: {
+      description: "Adress",
       street: "Technoparkstrasse 1",
       city: "8005 Zürich",
       country: "Switzerland",
@@ -204,9 +204,9 @@ export const aboutPageData: AboutPageData = {
       ],
       buttons: [
         {
-          text: "Get Your Ticket",
-          url: "/#tickets",
-          variant: "outline",
+          text: 'Get Your Ticket',
+          url: '/#tickets',
+          variant: 'accent',
         },
       ],
     },

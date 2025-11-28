@@ -20,16 +20,20 @@ export const AboutMissionSection: React.FC<AboutMissionSectionProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
         <div className="space-y-4">
           {data.leftColumn.map((text, index) => (
-            <p key={index} className="text-gray-700 leading-relaxed text-base">
-              {text}
-            </p>
+            <p
+              key={index}
+              className="text-gray-700 leading-relaxed text-base"
+              dangerouslySetInnerHTML={{ __html: text }}
+            />
           ))}
         </div>
         <div className="space-y-4">
           {data.rightColumn.map((text, index) => (
-            <p key={index} className="text-gray-700 leading-relaxed text-base">
-              {text}
-            </p>
+            <p
+              key={index}
+              className="text-gray-700 leading-relaxed text-base"
+              dangerouslySetInnerHTML={{ __html: text }}
+            />
           ))}
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React from "react";
+import Image from 'next/image';
 
 export interface TeamMemberCardProps {
   imageSrc?: string;
@@ -10,17 +11,24 @@ export interface TeamMemberCardProps {
 export const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
   name,
   role,
+  imageSrc,
+  imageAlt,
 }) => {
   return (
     <div>
       <div
-        className="mb-4 bg-gray-200 rounded-lg flex items-center justify-center"
-        style={{ width: "290px", height: "210px" }}
+        className="mb-4 bg-gradient-to-tr from-brand-primary to-brand-dark rounded-lg aspect-square"
       >
-        {/* Placeholder div - replace with actual image later */}
+        <Image
+          src={imageSrc || '/images/placeholder-profile.png'}
+          alt={imageAlt}
+          width={600}
+          height={600}
+          className="object-cover size-full rounded-lg"
+        />
       </div>
       <h3 className="text-lg font-bold text-gray-900 mb-1">{name}</h3>
-      <p className="text-base text-gray-600">{role}</p>
+      <p className="text-xs text-gray-600">{role}</p>
     </div>
   );
 };
