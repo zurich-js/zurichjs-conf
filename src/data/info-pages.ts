@@ -279,17 +279,329 @@ export const infoPages: Record<string, InfoPage> = {
   "privacy-policy": {
     slug: "privacy-policy",
     title: "Privacy Policy",
-    description: "How we collect, use, and protect your data",
+    description:
+      "How ZurichJS Conference 2026 collects, uses, and protects your data",
     kicker: "Legal",
     lastUpdated: "November 25, 2025",
     sections: [
       {
         type: "paragraph",
         content:
-          "At ZurichJS Conference 2026, we are committed to protecting your privacy and personal data. This policy explains how we collect, use, and safeguard your information.",
+          "This Privacy Policy describes how ZurichJS Conference 2026, organised by ZurichJS — Swiss JavaScript Group, collects, uses, and protects personal data from attendees, speakers, sponsors, and other participants.",
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "1. Data Controller",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "The data controller responsible for your personal information is:",
+          },
+          {
+            type: "paragraph",
+            content:
+              "<strong>Swiss JavaScript Group (ZurichJS Operations)</strong><br>Alderstrasse 30, 8008 Zürich<br>Email: <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "2. Personal Data We Collect",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "We may collect the following categories of personal data:",
+          },
+          {
+            type: "list",
+            items: [
+              "<strong>Contact information</strong>: name, email address, company/organization.",
+              "<strong>Ticketing information</strong>: billing details, transaction ID, ticket preferences.",
+              "<strong>Communication data</strong>: emails or messages you send us.",
+              "<strong>Event participation data</strong>: talk submissions, workshop registrations.",
+              "<strong>Photography & video</strong>: images or recordings captured during the event.",
+              "<strong>Technical data</strong>: IP address, device information, and analytics collected through our website.",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "3. How We Use Your Data",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content: "We process your data for the following purposes:",
+          },
+          {
+            type: "list",
+            items: [
+              "To manage your ticket purchase and event registration.",
+              "To send essential event communications (e.g., updates, schedules, changes).",
+              "To verify identity and ensure event security.",
+              "To organize talks, workshops, and community activities.",
+              "To provide customer support and respond to inquiries.",
+              "To analyse website or event performance and improve our services.",
+              "To record and document the event (including photos and videos).",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "4. Legal Basis for Processing",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "We process personal data under the following legal bases under Swiss and EU data protection laws:",
+          },
+          {
+            type: "list",
+            items: [
+              "<strong>Contractual necessity</strong>: processing required to deliver your ticket or participation.",
+              "<strong>Consent</strong>: for optional services, photography, newsletters, or speaker submissions.",
+              "<strong>Legitimate interests</strong>: improving the event, ensuring security, preventing fraud.",
+              "<strong>Legal obligations</strong>: accounting and record-keeping requirements.",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "5. Photography and Video Recording",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "Photographs and videos will be taken during the event. These may include audience shots where individuals are visible.",
+          },
+          {
+            type: "list",
+            items: [
+              "Recordings may be used for documentation and promotional purposes.",
+              "We avoid publishing sensitive or inappropriate material.",
+              "If you prefer not to appear in photos, please inform staff at check-in.",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "6. Sharing of Personal Data",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "We do not sell your personal information. We may share data only with trusted third parties:",
+          },
+          {
+            type: "list",
+            items: [
+              "<strong>Ticketing and payment providers</strong> (e.g., Stripe) for secure transactions.",
+              "<strong>Email and communication services</strong> for event updates.",
+              "<strong>Venue operators</strong> for safety and logistical purposes.",
+              "<strong>Contracted photographers or videographers</strong> working on-site.",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "All third-party providers are required to follow appropriate data protection and confidentiality standards.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "7. Data Retention",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "We retain personal data only as long as necessary for the purposes described in this policy:",
+          },
+          {
+            type: "list",
+            items: [
+              "Ticketing and billing data: up to 10 years (legal obligation).",
+              "Email communications: up to 2 years.",
+              "Event media (photos/videos): indefinitely, unless removal is requested.",
+              "Analytics and technical data: typically 12–24 months.",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "8. Your Rights",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content: "You have the following rights regarding your data:",
+          },
+          {
+            type: "list",
+            items: [
+              "Right to access your personal data.",
+              "Right to correct inaccurate or incomplete data.",
+              "Right to request deletion in permissible cases.",
+              "Right to withdraw consent (for consent-based processing).",
+              "Right to object to certain types of processing.",
+              "Right to request data portability.",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "To exercise any of these rights, contact us at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "9. Data Security",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "We implement appropriate technical and organizational measures to protect your personal data from unauthorized access, loss, misuse, or disclosure.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "However, no digital system can guarantee absolute security. We encourage attendees to protect their personal devices and networks.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "10. Third-Party Services",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "Our website and ticketing systems may contain links to third-party services or platforms. We are not responsible for their privacy practices.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "We encourage you to review the privacy policies of third-party providers such as Stripe, analytics tools, and communication services.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "11. International Data Transfers",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "Your data may be processed outside Switzerland or the EU when required by third-party service providers.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "We ensure such transfers comply with GDPR, Swiss data protection law, and use adequate safeguards such as Standard Contractual Clauses when applicable.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "12. Changes to This Privacy Policy",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "We may update this Privacy Policy to reflect operational or legal changes. Updates will be published on the official ZurichJS website with a revised “Last Updated” date.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "13. Contact Information",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "If you have questions, concerns, or requests related to your personal data, you may contact:",
+          },
+          {
+            type: "paragraph",
+            content:
+              "<strong>Swiss JavaScript Group (ZurichJS Operations)</strong><br>Alderstrasse 30, 8008 Zürich<br>Email: <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>",
+          },
+        ],
       },
     ],
   },
+
   "code-of-conduct": {
     slug: "code-of-conduct",
     title: "Code of Conduct",
