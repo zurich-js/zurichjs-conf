@@ -38,7 +38,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary: 'bg-brand-yellow-main text-brand-black font-bold hover:bg-brand-yellow-secondary focus:bg-brand-yellow-secondary',
   ghost: 'bg-transparent text-brand-white font-medium hover:bg-brand-white hover:text-brand-black',
   accent: 'bg-brand-orange text-text-primary font-semibold hover:bg-brand-orange-dark focus:bg-brand-orange-dark',
-  outline: 'bg-transparent text-brand-white border-2 border-text-primary font-medium hover:bg-text-primary hover:text-text-dark',
+  outline: 'bg-transparent text-white border-2 border-white font-medium',
   dark: 'bg-gray-800 text-text-primary font-semibold hover:bg-gray-700 shadow-md hover:shadow-lg',
 };
 

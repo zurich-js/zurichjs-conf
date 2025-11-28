@@ -46,9 +46,6 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-white leading-relaxed text-base font-bold mb-2">
-                  {data.address.description}
-                </p>
                 <p className="text-white leading-relaxed text-base">
                   {data.address.street}
                   <br />
@@ -59,7 +56,7 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
               </div>
             <div className="space-y-3">
               <Button
-                variant="primary"
+                variant="outline"
                 size="sm"
                 className="w-full"
                 asChild
@@ -68,7 +65,7 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
                 Get Directions
               </Button>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 className="w-full"
                 asChild
