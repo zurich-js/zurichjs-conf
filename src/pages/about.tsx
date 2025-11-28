@@ -65,7 +65,7 @@ export default function AboutUs() {
         </SectionContainer>
       </header>
       <main className="min-h-screen bg-white">
-        <div className="max-w-[800px] mx-auto px-4">
+        <div className="max-w-screen-lg mx-auto px-4">
           <div className="py-16 md:py-24">
             <AboutHeroSection data={aboutPageData.hero} />
             <AboutMissionSection data={aboutPageData.mission} />
@@ -74,13 +74,13 @@ export default function AboutUs() {
 
         <AboutStatsSection data={aboutPageData.stats} />
 
-        <div className="max-w-[800px] mx-auto px-4">
+        <div className="max-w-screen-lg mx-auto px-4">
           <AboutTeamSection data={aboutPageData.team} />
         </div>
 
         <AboutVenueSection data={aboutPageData.venue} />
 
-        <div className="max-w-[800px] mx-auto px-4 mb-16">
+        <div className="max-w-screen-lg mx-auto px-4 mb-16">
           <AboutValuesSection data={aboutPageData.values} />
         </div>
 

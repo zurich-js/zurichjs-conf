@@ -33,7 +33,7 @@ export const ParallelogramSection: React.FC<ParallelogramSectionProps> = ({
       />
 
       {/* Content */}
-      <div className="relative py-24 max-w-[800px] mx-auto px-4">
+      <div className="relative py-24 max-w-screen-lg mx-auto px-4">
         {children}
       </div>
     </div>

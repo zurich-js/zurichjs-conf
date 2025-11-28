@@ -12,7 +12,7 @@ export const ValueCard: React.FC<ValueCardProps> = ({
   description,
 }) => {
   return (
-    <div className="bg-gray-100 rounded-lg p-6 w-full max-w-[440px] h-[250px] flex flex-col">
+    <div className="bg-gray-100 rounded-lg p-6 flex flex-col">
       <div className="mb-3 w-12 h-12 bg-gray-300 rounded-lg flex items-center justify-center">
         {icon}
       </div>
