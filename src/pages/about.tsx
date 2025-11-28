@@ -139,10 +139,10 @@ export default function AboutUs() {
                         Ticket Support
                       </p>
                       <a
-                        href="mailto:tickets@zurichjs.com"
+                        href="mailto:hello@zurichjs.com"
                         className=" text-brand-gray-light hover:underline font-semibold text-base"
                       >
-                        tickets@zurichjs.com
+                        hello@zurichjs.com
                       </a>
                     </div>
                     <div>
@@ -150,10 +150,10 @@ export default function AboutUs() {
                         Sponsorship
                       </p>
                       <a
-                        href="mailto:sponsors@zurichjs.com"
+                        href="mailto:hello@zurichjs.com"
                         className="hover:underline text-brand-gray-light text-base"
                       >
-                        sponsors@zurichjs.com
+                        hello@zurichjs.com
                       </a>
                     </div>
                   </div>
