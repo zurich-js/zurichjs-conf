@@ -138,7 +138,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="rich-text-renderer space-y-6">
       {sections.map((section, index) => (
         <section key={index}>{renderSection(section, index)}</section>
       ))}

@@ -378,6 +378,16 @@ body {
   .shaped-section-drop-bottom.shaped-section-tighten {
     clip-path: polygon(0 0, 100% var(--shaped-section-angle), 100% 100%, 0 100%);
   }
+
+  /* Rich Text Renderer */
+  .rich-text-renderer {
+    h2 {
+      @apply text-lg;
+    }
+    h3 {
+      @apply text-md;
+    }
+  }
 }
 
 /**
