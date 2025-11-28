@@ -113,53 +113,53 @@ export default function AboutUs() {
               className="space-y-12"
             >
               <motion.div variants={item} className="space-y-4">
-                <p className="text-brand-gray-light text-sm font-semibold uppercase tracking-wider">
+                <p className="text-brand-gray-light text-xs sm:text-sm font-semibold uppercase tracking-wider">
                   Get in touch
                 </p>
-                <h2 className="text-4xl md:text-5xl font-bold">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
                   Questions or feedback?
                 </h2>
               </motion.div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16">
-                <motion.div variants={item} className="space-y-6">
-                  <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-16">
+                <motion.div variants={item} className="space-y-4 md:space-y-6">
+                  <div className="space-y-3 md:space-y-4">
                     <div>
-                      <p className="text-sm text-brand-white-light font-semibold mb-1">
+                      <p className="text-xs sm:text-sm text-brand-white-light font-semibold mb-1">
                         General Inquiries
                       </p>
                       <a
                         href="mailto:hello@zurichjs.com"
-                        className="text-brand-gray-light hover:underline  text-base"
+                        className="text-brand-gray-light hover:underline text-sm sm:text-base break-all"
                       >
                         hello@zurichjs.com
                       </a>
                     </div>
                     <div>
-                      <p className="text-sm text-brand-white-light font-semibold mb-1">
+                      <p className="text-xs sm:text-sm text-brand-white-light font-semibold mb-1">
                         Ticket Support
                       </p>
                       <a
                         href="mailto:hello@zurichjs.com"
-                        className=" text-brand-gray-light hover:underline font-semibold text-base"
+                        className="text-brand-gray-light hover:underline font-semibold text-sm sm:text-base break-all"
                       >
                         hello@zurichjs.com
                       </a>
                     </div>
                     <div>
-                      <p className="text-sm text-brand-white-light font-semibold mb-1">
+                      <p className="text-xs sm:text-sm text-brand-white-light font-semibold mb-1">
                         Sponsorship
                       </p>
                       <a
                         href="mailto:hello@zurichjs.com"
-                        className="hover:underline text-brand-gray-light text-base"
+                        className="hover:underline text-brand-gray-light text-sm sm:text-base break-all"
                       >
                         hello@zurichjs.com
                       </a>
                     </div>
                   </div>
                 </motion.div>
-                <motion.div variants={item} className="space-y-6">
-                  <p className="text-brand-gray-light text-base">
+                <motion.div variants={item} className="space-y-4 md:space-y-6">
+                  <p className="text-brand-gray-light text-sm sm:text-base leading-relaxed">
                     We would love to hear from you! Whether you have questions
                     about the conference, want to become a sponsor, or are
                     interested in speaking, our team is here to help.
@@ -181,11 +181,11 @@ export default function AboutUs() {
               </div>
               <motion.div
                 variants={item}
-                className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6"
+                className="pt-8 md:pt-12 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6"
               >
                 <div className="flex flex-col items-center md:items-start gap-2">
-                  <Logo width={160} height={43} />
-                  <p className="text-sm text-brand-gray-light">
+                  <Logo width={140} height={38} className="sm:w-[160px] sm:h-[43px]" />
+                  <p className="text-xs sm:text-sm text-brand-gray-light">
                     ZurichJS Conference 2026
                   </p>
                 </div>
