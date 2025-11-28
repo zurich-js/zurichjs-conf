@@ -128,7 +128,7 @@ export const TICKET_FAQ: FAQItem[] = [
           hello@zurichjs.com
         </a>{' '}
         and we&apos;ll review your request.{' '}
-        <a href="/refund-policy" className="underline" target="_blank" rel="noopener noreferrer">
+        <a href="/info/refund-policy" className="underline" target="_blank" rel="noopener noreferrer">
           View full refund policy ↗
         </a>
       </>

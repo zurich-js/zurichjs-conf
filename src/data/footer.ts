@@ -26,7 +26,7 @@ export const footerData: SiteFooterProps = {
     links: [
       { label: 'Terms of Service', href: '/info/terms-of-service' },
       { label: 'Privacy Policy', href: '/info/privacy-policy' },
-      { label: 'Refund Policy', href: '/refund-policy' },
+      { label: 'Refund Policy', href: '/info/refund-policy' },
       { label: 'Code of Conduct', href: '/info/code-of-conduct' },
     ],
   },
@@ -40,7 +40,7 @@ export const footerData: SiteFooterProps = {
         source: 'footer',
       });
     },
-    privacyHref: 'https://zurichjs.com/policies/privacy-policy',
+    privacyHref: '/info/privacy-policy',
   },
   socials: [
     {

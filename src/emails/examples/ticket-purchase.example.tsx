@@ -48,7 +48,7 @@ export const sampleTicketData: TicketPurchaseEmailProps = {
   orderUrl: 'https://conf.zurichjs.com/orders/ZJS2026-12345',
   calendarUrl: 'https://conf.zurichjs.com/calendar/add',
   venueMapUrl: 'https://maps.google.com/?q=Technoparkstrasse+1+8005+Zurich',
-  refundPolicyUrl: 'https://conf.zurichjs.com/refund-policy',
+  refundPolicyUrl: 'https://conf.zurichjs.com/info/refund-policy',
   supportEmail: 'hello@zurichjs.com',
 
   // Optional notes

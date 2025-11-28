@@ -880,6 +880,187 @@ export const infoPages: Record<string, InfoPage> = {
       },
     ],
   },
+
+  "refund-policy": {
+    slug: "refund-policy",
+    title: "Refund Policy",
+    description:
+      "At ZurichJS Conference 2026, we want to ensure transparency regarding our refund policy. This policy outlines our approach to ticket refunds.",
+    kicker: "Policies",
+    lastUpdated: "November 14, 2025",
+    sections: [
+      {
+        type: "heading",
+        level: "h2",
+        content: "1. No Refund Policy",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "<strong>All ticket sales are final.</strong> We do not offer refunds for any ticket type (Standard, Student/Unemployed, or VIP) under normal circumstances.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "This policy helps us plan and commit to delivering a high-quality event with confirmed numbers for venue, catering, and other essential services.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "2. Exceptional Circumstances",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "While refunds are not available under normal circumstances, we understand that extraordinary situations can arise. In <strong>exceptional cases only</strong>, we may consider refund requests on a <strong>case-by-case basis</strong>.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "Examples of exceptional circumstances may include (but are not limited to):",
+          },
+          {
+            type: "list",
+            items: [
+              "Serious medical emergencies (documentation required)",
+              "Unforeseen family emergencies",
+              "Other extraordinary circumstances beyond your control",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "<strong>Please note:</strong> Approval is not guaranteed and will be evaluated individually based on the specific circumstances.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "3. Event Cancellation or Postponement",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "<strong>3.1 Conference Cancellation:</strong> If ZurichJS Conference 2026 is cancelled by the organizers, all ticket holders will receive a <strong>full refund (100%)</strong> of the ticket price.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "<strong>3.2 Conference Postponement:</strong> If the conference is postponed to a new date, ticket holders will have the option to:",
+          },
+          {
+            type: "list",
+            items: [
+              "Transfer their ticket to the new date at no additional cost, or",
+              "Request a full refund (100%) within 14 days of the postponement announcement",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "4. Ticket Transfers",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "If you are unable to attend, you may be able to transfer your ticket to another person. Ticket transfers are evaluated on a <strong>case-by-case basis</strong>.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "<strong>Note:</strong> Student/Unemployed tickets can only be transferred to someone who also qualifies for the discount (verification required).",
+          },
+          {
+            type: "paragraph",
+            content:
+              "To request a ticket transfer, please contact us with your order number and the details of the person you wish to transfer the ticket to.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "5. How to Request a Refund or Transfer",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "If you believe you have exceptional circumstances that warrant a refund, or if you need to transfer your ticket:",
+          },
+          {
+            type: "list",
+            items: [
+              "Email us at <a href='mailto:hello@zurichjs.com' class='hover:underline font-semibold'>hello@zurichjs.com</a>",
+              "Include your order number in the email",
+              "Clearly explain your circumstances and reason for the request",
+              "Attach any supporting documentation (if applicable)",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "We will review your request and respond within 5-7 business days. If your request is approved, refunds will be processed to the original payment method within 10-14 business days.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "6. Important Notes",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "list",
+            items: [
+              "Refund decisions are made at the sole discretion of the organizers",
+              "Approved refunds are processed to the original payment method only",
+              "Processing typically takes 10-14 business days depending on your bank",
+              "This policy may be updated; changes will be communicated to ticket holders via email",
+              "The organizers reserve the right to make exceptions on a case-by-case basis",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "Questions About This Policy?",
+      },
+      {
+        type: "paragraph",
+        content:
+          'If you have questions about this refund policy or need clarification, please contact us at <a href="mailto:hello@zurichjs.com" class="hover:underline font-semibold">hello@zurichjs.com</a>',
+      },
+    ],
+  },
 };
 
 /**
