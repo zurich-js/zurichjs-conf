@@ -67,7 +67,6 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
           </div>
         </div>
       </div>
-      </div>
     </ParallelogramSection>
   );
 };
