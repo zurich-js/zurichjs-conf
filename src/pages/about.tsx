@@ -140,7 +140,7 @@ export default function AboutUs() {
                       </p>
                       <a
                         href="mailto:hello@zurichjs.com"
-                        className="text-brand-gray-light hover:underline font-semibold text-sm sm:text-base break-all"
+                        className="text-brand-gray-light hover:underline text-sm sm:text-base break-all"
                       >
                         hello@zurichjs.com
                       </a>
