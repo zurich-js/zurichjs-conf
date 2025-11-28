@@ -39,7 +39,6 @@ export interface AboutVenueData {
   description: string[];
   mapUrl: string;
   address: {
-    description: string;
     street: string;
     city: string;
     country: string;
@@ -113,33 +112,33 @@ export const aboutPageData: AboutPageData = {
       "Our passionate team of organizers and volunteers work tirelessly to bring you the best JavaScript conference experience.",
     members: [
       {
-        imageSrc: '/images/team/faris.png',
-        imageAlt: 'Faris Aziz',
-        name: 'Faris Aziz',
-        role: 'Staff Software Engineer at Smallpdf, Conference Speaker, Workshop Instructor',
+        imageSrc: "/images/team/faris.png",
+        imageAlt: "Faris Aziz",
+        name: "Faris Aziz",
+        role: "Staff Software Engineer at Smallpdf, Conference Speaker, Workshop Instructor",
       },
       {
-        imageSrc: '/images/team/nadja.png',
-        imageAlt: 'Nadja Hesselbjerg',
-        name: 'Nadja Hesselbjerg',
-        role: 'Full-Stack/Frontend Engineer, UI/UX',
+        imageSrc: "/images/team/nadja.png",
+        imageAlt: "Nadja Hesselbjerg",
+        name: "Nadja Hesselbjerg",
+        role: "Full-Stack/Frontend Engineer, UI/UX",
       },
       {
-        imageSrc: '/images/team/bogdan.png',
-        imageAlt: 'Bogdan Mihai Ilie',
-        name: 'Bogdan Mihai Ilie',
-        role: 'Full-Stack/Frontend Engineer, Advocate, Community builder',
+        imageSrc: "/images/team/bogdan.png",
+        imageAlt: "Bogdan Mihai Ilie",
+        name: "Bogdan Mihai Ilie",
+        role: "Full-Stack/Frontend Engineer, Advocate, Community builder",
       },
     ],
     volunteersTitle: "And our amazing volunteers",
     volunteersDescription:
       "None of this would be possible without our incredible volunteers who dedicate their time and energy to make this conference a success.",
     volunteers: [
-      'Colin Schwarz',
-      'Aleksej Dix',
-      'Aldous Waites',
-      'Hugo Sousa',
-      'Jan Schwarzkopf',
+      "Colin Schwarz",
+      "Aleksej Dix",
+      "Aldous Waites",
+      "Hugo Sousa",
+      "Jan Schwarzkopf",
     ],
   },
   venue: {
@@ -148,13 +147,12 @@ export const aboutPageData: AboutPageData = {
     description: [
       "Technopark Zürich is Switzerland's largest technology center, located in the heart of Zurich's innovation district. This modern facility provides the perfect backdrop for our conference.",
       "With state-of-the-art facilities and excellent transportation connections, Technopark offers an inspiring environment for learning, networking, and collaboration.",
-      "The venue features modern conference rooms, comfortable seating, and all the amenities needed for a world-class technology conference.",
-      "Located just minutes from Zurich's main train station, the venue is easily accessible by public transportation and offers parking facilities for those arriving by car.",
+
+      "<strong> Getting there </strong> <br>Easily accessible by public transport. Tram lines 4 and 13 stop directly at Technopark.",
     ],
     mapUrl:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2701.234567890123!2d8.5167!3d47.3833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDfCsDIyJzU5LjkiTiA4wrAzMScwMC4xIkU!5e0!3m2!1sen!2sch!4v1234567890123",
     address: {
-      description: "Adress",
       street: "Technoparkstrasse 1",
       city: "8005 Zürich",
       country: "Switzerland",
@@ -204,9 +202,9 @@ export const aboutPageData: AboutPageData = {
       ],
       buttons: [
         {
-          text: 'Get Your Ticket',
-          url: '/#tickets',
-          variant: 'accent',
+          text: "Get Your Ticket",
+          url: "/#tickets",
+          variant: "accent",
         },
       ],
     },
@@ -227,7 +225,7 @@ export const aboutPageData: AboutPageData = {
         },
         {
           text: "Contact Us",
-          url: "mailto:sponsors@zurichjs.com",
+          url: "mailto:hello@zurichjs.com",
           variant: "accent",
         },
       ],
