@@ -396,6 +396,16 @@ body {
     box-shadow: var(--shadow-card-hover);
   }
 
+  /* Rich Text Renderer */
+  .rich-text-renderer {
+    h2 {
+      @apply text-lg;
+    }
+    h3 {
+      @apply text-md;
+    }
+  }
+
   /* Section Container */
   .section-container {
     max-width: 1536px;
