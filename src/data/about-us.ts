@@ -167,7 +167,7 @@ export const aboutPageData: AboutPageData = {
     title: "What we stand for",
     values: [
       {
-        icon: null, // Will be replaced with actual icon in component
+        icon: null,
         title: "Community First",
         description:
           "We believe in building a strong, inclusive community where everyone feels welcome and valued. Our conference is a place for learning, sharing, and growing together.",
