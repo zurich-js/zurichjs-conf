@@ -76,12 +76,12 @@ export const infoPages: Record<string, InfoPage> = {
           {
             type: "paragraph",
             content:
-              "<strong>2.4 Ticket Transfers:</strong> If you can no longer attend, you may request to transfer your ticket to another person. Please contact us at <a href='mailto:hello@zurichjs.com', class='text-blue-600 hover:underline font-semibold'> hello@zurichjs.com </a> , and we will do our best to find a solution.Transfers are subject to organizer approval and may require verification.",
+              "<strong>2.4 Ticket Transfers:</strong> If you can no longer attend, you may request to transfer your ticket to another person. Please contact us at <a href='mailto:hello@zurichjs.com', class=' hover:underline font-semibold'> hello@zurichjs.com </a> , and we will do our best to find a solution.Transfers are subject to organizer approval and may require verification.",
           },
           {
             type: "paragraph",
             content:
-              "<strong>2.5 Group / Team Tickets:</strong> If you can no longer attend, you may request to transfer your ticket to another person. Please contact us at <a href='mailto:hello@zurichjs.com', class='text-blue-600 hover:underline font-semibold'> hello@zurichjs.com </a> , and we will do our best to find a solution.Transfers are subject to organizer approval and may require verification.",
+              "<strong>2.5 Group / Team Tickets:</strong> If you can no longer attend, you may request to transfer your ticket to another person. Please contact us at <a href='mailto:hello@zurichjs.com', class=' hover:underline font-semibold'> hello@zurichjs.com </a> , and we will do our best to find a solution.Transfers are subject to organizer approval and may require verification.",
           },
         ],
       },
@@ -272,7 +272,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "paragraph",
         content:
-          'If you have any questions about these Terms of Service, please contact us at <a href="mailto:hello@zurichjs.com" class="text-blue-600 hover:underline font-semibold">hello@zurichjs.com</a>',
+          'If you have any questions about these Terms of Service, please contact us at <a href="mailto:hello@zurichjs.com" class="hover:underline font-semibold">hello@zurichjs.com</a>',
       },
     ],
   },
@@ -288,7 +288,6 @@ export const infoPages: Record<string, InfoPage> = {
         content:
           "At ZurichJS Conference 2026, we are committed to protecting your privacy and personal data. This policy explains how we collect, use, and safeguard your information.",
       },
-      // Add more content sections as needed
     ],
   },
   "code-of-conduct": {
@@ -303,7 +302,270 @@ export const infoPages: Record<string, InfoPage> = {
         content:
           "ZurichJS Conference is dedicated to providing a harassment-free conference experience for everyone, regardless of gender, gender identity and expression, age, sexual orientation, disability, physical appearance, body size, race, ethnicity, religion, or technology choices.",
       },
-      // Add more content sections as needed
+      {
+        type: "heading",
+        level: "h2",
+        content: "Our Pledge",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "Zurich JS Conf, organised by <strong>ZurichJS</strong> — <strong>Swiss JavaScript Group</strong> (a registered non-profit association in Switzerland), is committed to providing a <strong>harassment-free, safe, and inclusive</strong> conference experience for everyone.",
+          },
+          {
+            type: "paragraph",
+            content: "We welcome participation from all people regardless of:",
+          },
+          {
+            type: "list",
+            items: [
+              "gender identity or expression",
+              "sexual orientation",
+              "disability",
+              "physical appearance or body size",
+              "race, ethnicity, or national origin",
+              "age",
+              "religion or belief",
+              "technology choices or professional background",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "We <strong>do not tolerate harassment in any form</strong>, and we are dedicated to ensuring that every attendee feels safe, respected, and valued.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "Expected Behavior",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "All participants—including attendees, speakers, sponsors, staff, and volunteers—are expected to:",
+          },
+          {
+            type: "list",
+            items: [
+              "Be respectful, kind, and considerate toward others.",
+              "Refrain from demeaning, discriminatory, or harassing behavior, speech, or imagery.",
+              "Listen actively, engage constructively, and help foster a welcoming community.",
+              "Be mindful of your surroundings and fellow participants.",
+              "Report unsafe situations, harassment, or violations of this Code of Conduct to organizers as soon as possible.",
+              "Participate authentically, contributing positively to the event and the broader community.",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "Unacceptable Behavior",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content: "Unacceptable behaviors include, but are not limited to:",
+          },
+
+          // Harassment & Discrimination
+          {
+            type: "paragraph",
+            content: "<strong>Harassment &amp; Discrimination:</strong>",
+          },
+          {
+            type: "list",
+            items: [
+              "Offensive or derogatory comments related to gender, gender identity or expression, sexual orientation, disability, physical appearance, body size, race, age, religion, nationality, or socio-economic status.",
+              "Deliberate misgendering or the use of inappropriate or exclusionary language.",
+            ],
+          },
+
+          // Abusive Conduct
+          {
+            type: "paragraph",
+            content: "<strong>Abusive Conduct:</strong>",
+          },
+          {
+            type: "list",
+            items: [
+              "Verbal, physical, or written threats or aggression.",
+              "Sustained disruption of talks, workshops, or activities.",
+              "Stalking, intimidation, or following.",
+            ],
+          },
+
+          // Sexual Harassment
+          {
+            type: "paragraph",
+            content: "<strong>Sexual Harassment:</strong>",
+          },
+          {
+            type: "list",
+            items: [
+              "Unwelcome sexual attention or advances.",
+              "Sexualized jokes, images, comments, or behavior—whether in person, in talks, or online communication.",
+              "Inappropriate physical contact or invasion of personal space.",
+            ],
+          },
+
+          // Other Inappropriate Behavior
+          {
+            type: "paragraph",
+            content: "<strong>Other Inappropriate Behavior:</strong>",
+          },
+          {
+            type: "list",
+            items: [
+              "Advocating for, encouraging, or trivializing any of the above conduct.",
+              "Excessively intoxicated behavior that creates discomfort or risk for others.",
+            ],
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "Consequences of Unacceptable Behavior",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "If a participant engages in unacceptable behavior, the organizers may take any action they deem appropriate. This may include, without limitation:",
+          },
+          {
+            type: "list",
+            items: [
+              "Verbal warning",
+              "Removal from a session or activity",
+              "Temporary or permanent expulsion from the conference without refund",
+              "Bans from future ZurichJS or Swiss JavaScript Group events",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "Sponsors, speakers, and individuals in positions of authority will be held to the same or higher standards as attendees.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "Reporting Guidelines",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "If you feel unsafe, experience or witness unacceptable behavior, or have any concerns, please contact an organizer as soon as possible.",
+          },
+          {
+            type: "paragraph",
+            content: "You can reach us by:",
+          },
+          {
+            type: "list",
+            items: [
+              "Email: <a href='mailto:hello@zurichjs.com' class='hover:underline font-semibold'>hello@zurichjs.com</a>",
+              "In person: Speak to any Zurich JS Conf staff member or organizer (they will be clearly identifiable).",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "All reports will be handled with <strong>respect, confidentiality, and care</strong>.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "The Swiss JavaScript Group organizers will review and investigate every report promptly and fairly.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "We are committed to protecting the reporter’s privacy and safety.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "Scope",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content: "This Code of Conduct applies to:",
+          },
+          {
+            type: "list",
+            items: [
+              "all conference venues, sessions, and activities",
+              "social events connected with Zurich JS Conf",
+              "official online spaces (e.g., chat platforms, social media hashtags)",
+              "any communication related to the conference before, during, and after the event",
+            ],
+          },
+          {
+            type: "paragraph",
+            content:
+              "It applies to <strong>all participants</strong>: attendees, speakers, sponsors, exhibitors, volunteers, contractors, and organizers.",
+          },
+        ],
+      },
+
+      {
+        type: "heading",
+        level: "h2",
+        content: "Contact Information",
+      },
+      {
+        type: "subsection",
+        subsections: [
+          {
+            type: "paragraph",
+            content:
+              "If you have any questions or need to report an incident, you can contact:",
+          },
+          {
+            type: "paragraph",
+            content:
+              "<strong>Swiss JavaScript Group (ZurichJS Operations)</strong>",
+          },
+          {
+            type: "paragraph",
+            content: "Alderstrasse 30, 8008 Zürich",
+          },
+          {
+            type: "paragraph",
+            content:
+              "Email: <a href='mailto:hello@zurichjs.com' class='hover:underline font-semibold'>hello@zurichjs.com</a>",
+          },
+        ],
+      },
     ],
   },
 };
