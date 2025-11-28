@@ -12,7 +12,7 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
   data,
 }) => {
   return (
-    <ParallelogramSection backgroundColor="#19191B" className="my-16">
+    <ParallelogramSection backgroundColor="var(--color-brand-gray-darkest)" className="my-16">
       <Kicker variant="dark" className="mb-4">
         {data.kicker}
       </Kicker>

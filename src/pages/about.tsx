@@ -170,7 +170,7 @@ export default function AboutUs() {
                     rel="noopener noreferrer"
                   >
                     <Button
-                      variant="dark"
+                      variant="outline"
                       size="sm"
                       className="w-full md:w-auto"
                     >
