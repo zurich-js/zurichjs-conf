@@ -69,10 +69,10 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
         </SectionContainer>
       </header>
       <main className="min-h-screen bg-white">
-        <SectionContainer>
+        <div className="max-w-screen-lg mx-auto px-4">
           <div className="py-16 md:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
-              <div className="max-w-4xl">
+              <div>
                 <div className="mb-12">
                   <Kicker variant="light" className="mb-4">
                     {page.kicker}
@@ -98,7 +98,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
               </aside>
             </div>
           </div>
-        </SectionContainer>
+        </div>
       </main>
       <footer className="bg-black text-white py-16 md:py-24">
         <SectionContainer>
@@ -113,7 +113,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
               <p className="text-brand-gray-light text-sm font-semibold uppercase tracking-wider">
                 Get in touch
               </p>
-              <h2 className="text-4xl md:text-5xl font-bold">
+              <h2 className="text-3xl md:text-5xl font-bold">
                 Questions or feedback?
               </h2>
             </motion.div>
@@ -136,10 +136,10 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
                       Ticket Support
                     </p>
                     <a
-                      href="mailto:tickets@zurichjs.com"
-                      className=" text-brand-gray-light hover:underline font-semibold text-base"
+                      href="mailto:hello@zurichjs.com"
+                      className="text-brand-gray-light hover:underline text-base"
                     >
-                      tickets@zurichjs.com
+                      hello@zurichjs.com
                     </a>
                   </div>
                   <div>
@@ -147,10 +147,10 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
                       Sponsorship
                     </p>
                     <a
-                      href="mailto:sponsors@zurichjs.com"
+                      href="mailto:hello@zurichjs.com"
                       className="hover:underline text-brand-gray-light text-base"
                     >
-                      sponsors@zurichjs.com
+                      hello@zurichjs.com
                     </a>
                   </div>
                 </div>
@@ -178,7 +178,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
             </div>
             <motion.div
               variants={item}
-              className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6"
+              className="pt-12 flex flex-col md:flex-row items-center md:items-center justify-between gap-6"
             >
               <div className="flex flex-col items-center md:items-start gap-2">
                 <Logo width={160} height={43} />
