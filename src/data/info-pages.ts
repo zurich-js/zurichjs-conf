@@ -305,7 +305,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "heading",
         level: "h2",
-        content: "Our Pledge",
+        content: "1. Our Pledge",
       },
       {
         type: "subsection",
@@ -343,7 +343,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "heading",
         level: "h2",
-        content: "Expected Behavior",
+        content: "2. Expected Behavior",
       },
       {
         type: "subsection",
@@ -370,7 +370,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "heading",
         level: "h2",
-        content: "Unacceptable Behavior",
+        content: "3. Unacceptable Behavior",
       },
       {
         type: "subsection",
@@ -439,7 +439,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "heading",
         level: "h2",
-        content: "Consequences of Unacceptable Behavior",
+        content: "4. Consequences of Unacceptable Behavior",
       },
       {
         type: "subsection",
@@ -469,7 +469,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "heading",
         level: "h2",
-        content: "Reporting Guidelines",
+        content: "5. Reporting Guidelines",
       },
       {
         type: "subsection",
@@ -511,7 +511,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "heading",
         level: "h2",
-        content: "Scope",
+        content: "6. Scope",
       },
       {
         type: "subsection",
@@ -540,7 +540,7 @@ export const infoPages: Record<string, InfoPage> = {
       {
         type: "heading",
         level: "h2",
-        content: "Contact Information",
+        content: "7. Contact Information",
       },
       {
         type: "subsection",
