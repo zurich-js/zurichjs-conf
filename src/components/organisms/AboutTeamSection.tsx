@@ -16,10 +16,9 @@ export const AboutTeamSection: React.FC<AboutTeamSectionProps> = ({ data }) => {
       <Heading level="h2" variant="light" className="mb-6 text-xl font-bold">
         {data.title}
       </Heading>
-      <p
-        className="text-base text-gray-700 leading-relaxed mb-12 max-w-3xl"
-        dangerouslySetInnerHTML={{ __html: data.description }}
-      />
+      <p className="text-base text-gray-700 leading-relaxed mb-12 max-w-3xl">
+        {data.description}
+      </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {data.members.map((member, index) => (
           <TeamMemberCard
@@ -35,10 +34,9 @@ export const AboutTeamSection: React.FC<AboutTeamSectionProps> = ({ data }) => {
         <h3 className="text-xl font-bold text-gray-900 mb-4">
           {data.volunteersTitle}
         </h3>
-        <p
-          className="text-base text-gray-700 leading-relaxed mb-8 max-w-3xl"
-          dangerouslySetInnerHTML={{ __html: data.volunteersDescription }}
-        />
+        <p className="text-base text-gray-700 leading-relaxed mb-8 max-w-3xl">
+          {data.volunteersDescription}
+        </p>
         <div className="flex flex-wrap gap-4">
           {data.volunteers.map((name, index) => (
             <div key={index} className=" bg-brand-gray-lightest rounded-lg p-2 px-4 text-brand-gray-darkest leading-relaxed flex items-center">

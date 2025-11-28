@@ -23,7 +23,7 @@ export const TicketPurchaseEmail: React.FC<TicketPurchaseEmailProps> = ({
   orderUrl,
   calendarUrl,
   venueMapUrl,
-  refundPolicyUrl = 'https://zurichjs-conf.vercel.app/refund-policy',
+  refundPolicyUrl = 'https://zurichjs-conf.vercel.app/info/refund-policy',
   supportEmail = 'hello@zurichjs.com',
   notes,
   ...ticketCardProps

@@ -8,6 +8,8 @@ import type { ScheduleSectionProps } from '@/components/organisms';
 export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
   title: 'JS Conference by humans, for humans',
   subtitle: 'Join us for four days of community building, learning, and networking. From grassroots meetups to cutting-edge technical sessions, we\'re bringing together JavaScript enthusiasts from around the world.',
+  travelNote: 'We recommend booking flights arriving on the evening of the 9th and departing on the evening of the 12th or 13th.',
+  accommodationNote: 'We will be partnering with hotels in the coming months to create accessible accommodation options. If you need any help and are not a Zurich local, reach out to us at hello@zurichjs.com.',
   // aboutLink: {
   //   label: 'More about us',
   //   href: 'https://zurichjs.com/about',
@@ -17,13 +19,13 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       id: 'community',
       label: 'Community day',
       date: 'September 9, 2026',
-      description: 'Kick off the conference with a ZurichJS community meetup. Connect with local JavaScript developers and engage in informal discussions and networking.',
+      description: 'Kick off the conference with a special edition warm-up meetup, regular ZurichJS style. Connect with local and visiting JavaScript developers for an evening of informal discussions and networking.',
       tbaMode: false,
       events: [
         {
           time: '17:00 – 22:00',
-          title: 'ZurichJS Community Meetup',
-          description: 'Join us for an evening of community building, networking, and informal discussions. Location TBD - centrally hosted in Zurich (not at Technopark).',
+          title: 'ZurichJS Special Edition Warm-up Meetup',
+          description: 'A special edition of our regular ZurichJS meetup to kick off the conference week. Join us for an evening of community building, networking, and informal discussions. Location TBD - centrally hosted in Zurich (not at Technopark).',
         },
       ],
     },
@@ -31,13 +33,18 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       id: 'warmup',
       label: 'Warm-up day',
       date: 'September 10, 2026',
-      description: 'A full day of workshops covering various topics and lengths. All workshops will be centrally hosted in Zurich. Workshop details will be revealed in the future.',
+      description: 'A full day of workshops covering various topics and lengths, followed by an exclusive speakers dinner in the evening. All workshops will be centrally hosted in Zurich.',
       tbaMode: false,
       events: [
         {
           time: '09:00 – 17:00',
           title: 'Workshops',
           description: 'Full day of workshops with varying lengths and topics. All workshops are centrally hosted in Zurich. Workshop details will be announced soon.',
+        },
+        {
+          time: '19:00 – 22:00',
+          title: 'Speakers Dinner',
+          description: 'An exclusive dinner for speakers to connect before the main conference day.',
         },
       ],
     },

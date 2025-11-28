@@ -1,7 +1,7 @@
 import React, { forwardRef, ButtonHTMLAttributes } from 'react';
 
-export type ButtonVariant = 'primary' | 'ghost' | 'accent' | 'outline' | 'dark';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = 'primary' | 'ghost' | 'accent' | 'outline' | 'dark' | 'black';
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 // Exclude event handlers that conflict with framer-motion
 type ConflictingProps =
@@ -27,19 +27,21 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-xs ',
-  md: 'px-4 py-2.5 text-md ',
-  lg: 'px-4 py-2.5 text-lg ',
+  xs: 'px-4 py-1 text-xs min-w-[111px] h-[29px]',
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-4 py-2.5 text-md',
+  lg: 'px-4 py-2.5 text-lg',
 };
 
 const baseStyles = 'inline-flex items-center leading-relaxed h-fit justify-center gap-2 rounded-full transition-all duration-300 ease-in-out outline-none focus:ring-4 focus:ring-brand-blue cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-yellow-main text-brand-black font-bold hover:bg-brand-yellow-secondary focus:bg-brand-yellow-secondary',
+  primary: 'bg-brand-yellow-main text-brand-black border border-brand-yellow-main font-bold hover:bg-brand-yellow-secondary hover:border-brand-yellow-secondary focus:bg-brand-yellow-secondary',
   ghost: 'bg-transparent text-brand-white font-medium hover:bg-brand-white hover:text-brand-black',
   accent: 'bg-brand-orange text-text-primary font-semibold hover:bg-brand-orange-dark focus:bg-brand-orange-dark',
   outline: 'bg-transparent text-white border-2 border-white font-medium',
   dark: 'bg-gray-800 text-text-primary font-semibold hover:bg-gray-700 shadow-md hover:shadow-lg',
+  black: 'bg-black text-white border border-white font-bold hover:bg-gray-900 hover:border-gray-100',
 };
 
 /**

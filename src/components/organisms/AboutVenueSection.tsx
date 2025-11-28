@@ -44,16 +44,6 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
                 title={`${data.title} location`}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-white leading-relaxed text-base">
-                  {data.address.street}
-                  <br />
-                  {data.address.city}
-                  <br />
-                  {data.address.country}
-                </p>
-              </div>
             <div className="space-y-3">
               <Button
                 variant="outline"
@@ -76,7 +66,6 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
             </div>
           </div>
         </div>
-      </div>
       </div>
     </ParallelogramSection>
   );

@@ -383,7 +383,7 @@ const ManageOrderPage: React.FC = () => {
                     <span className="text-brand-primary mt-1">•</span>
                     <span>
                       Review our{' '}
-                      <Link href="/refund-policy" className="text-brand-primary hover:underline">
+                      <Link href="/info/refund-policy" className="text-brand-primary hover:underline">
                         refund policy
                       </Link>
                       {' '}for cancellation terms

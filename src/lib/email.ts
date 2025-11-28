@@ -136,7 +136,7 @@ export async function sendTicketConfirmationEmail(
       orderUrl: data.orderUrl, // Use provided secure token URL
       calendarUrl: `${getBaseUrl()}/api/calendar/${ticketIdToUse}`,
       venueMapUrl: getZurichJSVenueMapUrl(),
-      refundPolicyUrl: `${getBaseUrl()}/refund-policy`,
+      refundPolicyUrl: `${getBaseUrl()}/info/refund-policy`,
       supportEmail: EMAIL_CONFIG.supportEmail,
       notes: data.notes,
     };

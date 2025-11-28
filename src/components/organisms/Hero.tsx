@@ -4,8 +4,7 @@ import { Logo, Heading, Kicker, IconButton } from '@/components/atoms';
 import { Countdown, BackgroundMedia, SpeakerCardProps } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
 import { ShapedSection } from './ShapedSection';
-import Image from 'next/image';
-import RightArrowCircle from '@/../public/icons/right-arrow-circle.svg';
+import { ArrowRight } from 'lucide-react';
 import {SectionContainer} from "@/components/organisms/SectionContainer";
 
 export interface HeroProps {
@@ -114,13 +113,14 @@ export const Hero: React.FC<HeroProps> = ({
               <IconButton
                 onClick={onCtaClick}
                 icon={
-                  <Image
-                    src={RightArrowCircle}
-                    alt="Arrow icon"
-                    width={56}
-                    height={56}
-                    className="w-full h-full"
-                  />
+                  <div className="relative w-14 h-14">
+                    {/* Outer ring */}
+                    <div className="absolute inset-0 rounded-full border border-brand-gray-light" />
+                    {/* Inner filled circle */}
+                    <div className="absolute inset-3 rounded-full bg-brand-yellow-main flex items-center justify-center">
+                      <ArrowRight size={16} strokeWidth={2} className="text-black" />
+                    </div>
+                  </div>
                 }
               >
                 {ctaLabel}

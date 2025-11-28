@@ -24,10 +24,10 @@ export const footerData: SiteFooterProps = {
   legal: {
     title: 'Legal',
     links: [
-      { label: 'Terms of Service', href: 'https://zurichjs.com/policies/code-of-conduct', locked: true },
-      { label: 'Privacy Policy', href: 'https://zurichjs.com/policies/privacy-policy', locked: true },
-      { label: 'Refund Policy', href: '/refund-policy' },
-      { label: 'Code of Conduct', href: 'https://zurichjs.com/policies/code-of-conduct', locked: true },
+      { label: 'Terms of Service', href: '/info/terms-of-service' },
+      { label: 'Privacy Policy', href: '/info/privacy-policy' },
+      { label: 'Refund Policy', href: '/info/refund-policy' },
+      { label: 'Code of Conduct', href: '/info/code-of-conduct' },
     ],
   },
   newsletter: {
@@ -40,7 +40,7 @@ export const footerData: SiteFooterProps = {
         source: 'footer',
       });
     },
-    privacyHref: 'https://zurichjs.com/policies/privacy-policy',
+    privacyHref: '/info/privacy-policy',
   },
   socials: [
     {

@@ -43,6 +43,8 @@ export default function Home({ dehydratedState }: HomeProps) {
             title={scheduleData.title}
             subtitle={scheduleData.subtitle}
             aboutLink={scheduleData.aboutLink}
+            travelNote={scheduleData.travelNote}
+            accommodationNote={scheduleData.accommodationNote}
             days={scheduleData.days}
           />
         </ShapedSection>
