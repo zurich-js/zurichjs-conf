@@ -1,0 +1,16 @@
+# robots.txt for ZurichJS Conference 2026
+# https://conf.zurichjs.com
+
+User-agent: *
+Allow: /
+
+# Disallow admin and transactional pages
+Disallow: /admin
+Disallow: /api/
+Disallow: /cart
+Disallow: /success
+Disallow: /manage-order
+Disallow: /validate/
+
+# Sitemap location
+Sitemap: https://conf.zurichjs.com/sitemap.xml

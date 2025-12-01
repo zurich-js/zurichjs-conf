@@ -1,5 +1,4 @@
 import React from "react";
-import Head from "next/head";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/atoms/Logo";
@@ -12,6 +11,7 @@ import {
   extractNavigationItems,
 } from "@/components/RichTextRenderer";
 import { PageNavigation } from "@/components/PageNavigation";
+import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import type { InfoPage } from "@/data/info-pages";
 
 export interface InfoContentLayoutProps {
@@ -46,14 +46,20 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
     },
   };
 
+  // Breadcrumb schema for info pages
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: page.title, url: `/info/${page.slug}` },
+  ]);
+
   return (
     <>
-      <Head>
-        <title>{`${page.title} | ZurichJS Conference 2026`}</title>
-        <meta name="description" content={page.description} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+      <SEO
+        title={page.title}
+        description={page.description}
+        canonical={`/info/${page.slug}`}
+        jsonLd={[organizationSchema, breadcrumbSchema]}
+      />
       <header className="bg-black sticky top-0 z-40">
         <SectionContainer>
           <div className="flex items-center justify-between h-20">

@@ -15,10 +15,11 @@ export const footerData: SiteFooterProps = {
   conference: {
     title: 'Conference',
     links: [
-      { label: 'Speakers', href: '/speakers', locked: true },
-      { label: 'Full schedule', href: '/schedule', locked: true },
-      { label: 'Sponsor us', href: 'mailto@hello@zurichjs.com', locked: true },
-      { label: 'Volunteer', href: 'https://zurichjs.com/cfv', locked: true },
+      { label: 'Speakers', href: '/speakers' },
+      { label: 'Schedule', href: '/schedule' },
+      { label: 'Venue', href: '/venue' },
+      { label: 'Workshops', href: '/workshops' },
+      { label: 'Sponsor us', href: 'mailto:hello@zurichjs.com' },
     ],
   },
   legal: {

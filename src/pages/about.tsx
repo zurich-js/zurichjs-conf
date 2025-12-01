@@ -1,6 +1,6 @@
 import React from "react";
-import Head from "next/head";
 import Link from "next/link";
+import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/atoms/Logo";
 import { SocialIcon } from "@/components/atoms/SocialIcon";
@@ -39,17 +39,21 @@ export default function AboutUs() {
     },
   };
 
+  // Breadcrumb schema for about page
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'About', url: '/about' },
+  ]);
+
   return (
     <>
-      <Head>
-        <title>{`About Us | ZurichJS Conference 2026`}</title>
-        <meta
-          name="description"
-          content="Learn more about ZurichJS and our mission to bring the JavaScript community together"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+      <SEO
+        title="About ZurichJS Conference | Team, Venue & Mission"
+        description="Meet the team behind ZurichJS Conference 2026. Learn about our mission to unite the JavaScript community at Technopark Zürich. 300 attendees, 20+ speakers, 5+ workshops."
+        canonical="/about"
+        keywords="zurichjs team, javascript community zurich, swiss javascript group, technopark zurich conference"
+        jsonLd={[organizationSchema, breadcrumbSchema]}
+      />
       <header className="bg-black sticky top-0 z-40">
         <SectionContainer>
           <div className="flex items-center justify-between h-20">

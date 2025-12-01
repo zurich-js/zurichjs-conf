@@ -1,5 +1,5 @@
 import { Hero, ScheduleSection, ShapedSection, SiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection } from '@/components/organisms';
-import { Layout } from '@/components/Layout';
+import { SEO, eventSchema, organizationSchema, websiteSchema, generateFAQSchema } from '@/components/SEO';
 import { footerData, heroData, scheduleData, timelineData, sponsorsData } from '@/data';
 import { dehydrate, HydrationBoundary, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
@@ -11,6 +11,26 @@ interface HomeProps {
   dehydratedState: DehydratedState;
 }
 
+// FAQ data for schema (plain text versions)
+const faqSchemaData = [
+  {
+    question: "What if I can't attend ZurichJS Conference?",
+    answer: "All ticket sales are final. Refunds are not available except on a case-by-case basis in exceptional circumstances. Contact hello@zurichjs.com for requests.",
+  },
+  {
+    question: "Do you offer team or bulk discounts?",
+    answer: "Yes! We offer team packages with custom pricing including simplified invoicing and bank transfer payment options. Contact us for team pricing.",
+  },
+  {
+    question: "Do prices include VAT? Can I get an invoice?",
+    answer: "All prices include 8.1% Swiss VAT. Business invoices with VAT details are provided automatically at checkout. Swiss companies can claim back the VAT.",
+  },
+  {
+    question: "Can I transfer my ticket to someone else?",
+    answer: "Ticket transfers are evaluated on a case-by-case basis. Email hello@zurichjs.com with your order number and reason for transfer.",
+  },
+];
+
 export default function Home({ dehydratedState }: HomeProps) {
   const handleCtaClick = () => {
     // Scroll smoothly to the tickets section
@@ -20,12 +40,25 @@ export default function Home({ dehydratedState }: HomeProps) {
     }
   };
 
+  // Combine all schemas for the homepage
+  const jsonLdSchemas = [
+    eventSchema,
+    organizationSchema,
+    websiteSchema,
+    generateFAQSchema(faqSchemaData),
+  ];
+
   return (
     <HydrationBoundary state={dehydratedState}>
-      <Layout
-        title="ZurichJS Conference 2026 | JavaScript Conference in Zurich"
-        description="Join us for an amazing JavaScript conference in Zurich. Learn from industry experts, network with peers, and explore the latest in web development."
-      >
+      <SEO
+        title="ZurichJS Conference 2026 | Sept 11 Zurich | JavaScript & Web Dev"
+        description="Join 300+ developers at Switzerland's premier JavaScript conference. Sep 11, 2026 at Technopark Zürich. Talks, workshops, networking. Tickets from CHF 489."
+        canonical="/"
+        ogType="website"
+        keywords="javascript conference, zurich tech conference, javascript switzerland, web development conference, js conference 2026, technopark zurich"
+        jsonLd={jsonLdSchemas}
+      />
+      <main className="min-h-screen">
         <Hero
           title={heroData.title}
           kicker={heroData.kicker}
@@ -73,7 +106,7 @@ export default function Home({ dehydratedState }: HomeProps) {
         <ShapedSection shape="tighten" variant="dark" dropBottom>
           <SiteFooter {...footerData} />
         </ShapedSection>
-      </Layout>
+      </main>
     </HydrationBoundary>
   );
 }

@@ -164,7 +164,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                 <ul className="space-y-1 text-sm text-brand-gray-light">
                   <li className="flex items-center gap-2">
                     <CheckIcon size={16} className="stroke-brand-green" />
-                    <span>Custom team pricing</span>
+                    <span>Custom team pricing (from Early Bird onwards)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckIcon size={16} className="stroke-brand-green" />

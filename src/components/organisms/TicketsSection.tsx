@@ -158,17 +158,6 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
             )
           )}
         </div>
-
-        {/* VAT transparency - directly under cards */}
-        <motion.p
-          className="text-xs text-brand-gray-medium text-center"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          All prices include 8.1% Swiss VAT. Business invoices provided at checkout.
-        </motion.p>
       </div>
 
       {/* Footer: Help line and countdown */}
