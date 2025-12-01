@@ -187,6 +187,17 @@ export default function CartPage() {
   };
 
   const handleCheckoutSubmit = (data: CheckoutFormData) => {
+    // CRITICAL: Identify user before tracking checkout
+    // This links anonymous browsing behavior to this user's email
+    analytics.identify(data.email, {
+      email: data.email,
+      first_name: data.firstName,
+      last_name: data.lastName,
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      company: data.company || undefined,
+      job_title: data.jobTitle || undefined,
+    });
+
     // Track checkout started
     analytics.track('checkout_started', {
       cart_item_count: cart.items.length,

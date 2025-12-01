@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
@@ -6,6 +6,8 @@ import { Heading, Kicker, Button } from '@/components/atoms';
 import { PageHeader } from '@/components/organisms';
 import Link from 'next/link';
 import { checkoutSessionQueryOptions } from '@/lib/queries/checkout';
+import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 
 /**
  * Success Page
@@ -38,6 +40,50 @@ const SuccessPage: React.FC = () => {
     const currencySymbol = currency.toUpperCase() === 'CHF' ? 'CHF' : '€';
     return `${currencySymbol} ${formatted}`;
   };
+
+  // Track purchase completion (only once per session)
+  const hasTracked = useRef(false);
+
+  useEffect(() => {
+    // Only track when we have session details and haven't tracked yet
+    if (!router.isReady || isLoading || error || !sessionDetails || hasTracked.current) {
+      return;
+    }
+
+    hasTracked.current = true;
+
+    // Identify the user (links this purchase to their browsing session)
+    if (sessionDetails.customer_email) {
+      analytics.identify(sessionDetails.customer_email, {
+        email: sessionDetails.customer_email,
+        name: sessionDetails.customer_name || undefined,
+      });
+    }
+
+    // Track checkout completion on client-side
+    // This complements the server-side webhook tracking and enables client-side funnel analysis
+    analytics.track('checkout_completed', {
+      cart_item_count: 1, // We don't have line items here, default to 1
+      cart_total_amount: sessionDetails.amount_total || 0,
+      cart_currency: sessionDetails.currency?.toUpperCase() || 'CHF',
+      cart_items: [], // Line items not available on success page
+      stripe_session_id: sessionDetails.session_id,
+      payment_status: 'succeeded',
+      revenue_amount: sessionDetails.amount_total || 0,
+      revenue_currency: sessionDetails.currency?.toUpperCase() || 'CHF',
+      revenue_type: 'ticket',
+      transaction_id: sessionDetails.session_id,
+      email: sessionDetails.customer_email,
+    } as EventProperties<'checkout_completed'>);
+
+    // Also track as a page view with purchase context
+    analytics.track('page_viewed', {
+      page_path: '/success',
+      page_name: 'Purchase Success',
+      page_category: 'checkout',
+    } as EventProperties<'page_viewed'>);
+
+  }, [router.isReady, isLoading, error, sessionDetails]);
 
   return (
     <Layout
