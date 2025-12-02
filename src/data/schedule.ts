@@ -52,7 +52,6 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       date: 'September 11, 2026',
       description: 'The main conference day featuring keynote presentations, talks, and networking opportunities. Join us for a full day of learning and celebration.',
       tbaMode: false,
-      defaultSelected: true,
       events: [
         {
           time: '08:30 – 09:30',
