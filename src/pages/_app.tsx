@@ -23,7 +23,7 @@ export default function App({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(() => getQueryClient());
   const router = useRouter();
 
-  // Initialize PostHog and capture UTM parameters
+  // Initialize PostHog
   useEffect(() => {
     // Initialize PostHog on the client side
     if (typeof window !== 'undefined') {
@@ -51,48 +51,7 @@ export default function App({ Component, pageProps }: AppProps) {
             posthogInstance.debug();
           }
 
-          // Capture UTM parameters and initial attribution
-          // Check both query string and hash for UTM params (supports URLs like #tickets?utm_source=...)
-          const urlParams = new URLSearchParams(window.location.search);
-          const hashParams = window.location.hash.includes('?')
-            ? new URLSearchParams(window.location.hash.split('?')[1])
-            : new URLSearchParams();
-
-          const utmParams: Record<string, string> = {};
-
-          ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(param => {
-            // Prefer query string params, fall back to hash params
-            const value = urlParams.get(param) || hashParams.get(param);
-            if (value) utmParams[param] = value;
-          });
-
-          // Also capture ad click IDs (check both sources)
-          const gclid = urlParams.get('gclid') || hashParams.get('gclid');
-          const fbclid = urlParams.get('fbclid') || hashParams.get('fbclid');
-          if (gclid) utmParams['gclid'] = gclid;
-          if (fbclid) utmParams['fbclid'] = fbclid;
-
-          // Set initial attribution (first-touch, only set once per user)
-          if (Object.keys(utmParams).length > 0 || document.referrer) {
-            posthogInstance.people.set_once({
-              initial_utm_source: utmParams.utm_source,
-              initial_utm_medium: utmParams.utm_medium,
-              initial_utm_campaign: utmParams.utm_campaign,
-              initial_utm_content: utmParams.utm_content,
-              initial_utm_term: utmParams.utm_term,
-              initial_gclid: utmParams.gclid,
-              initial_fbclid: utmParams.fbclid,
-              initial_landing_page: window.location.pathname,
-              initial_referrer: document.referrer || undefined,
-            });
-          }
-
-          // Set current UTMs (last-touch attribution, updates each visit)
-          if (Object.keys(utmParams).length > 0) {
-            posthogInstance.people.set(utmParams);
-          }
-
-          // Track initial page view
+          // Track initial page view (UTM params are captured automatically by PostHog)
           posthogInstance.capture('$pageview', {
             $current_url: window.location.href,
             page_path: window.location.pathname,
