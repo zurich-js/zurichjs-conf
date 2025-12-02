@@ -52,17 +52,23 @@ export default function App({ Component, pageProps }: AppProps) {
           }
 
           // Capture UTM parameters and initial attribution
+          // Check both query string and hash for UTM params (supports URLs like #tickets?utm_source=...)
           const urlParams = new URLSearchParams(window.location.search);
+          const hashParams = window.location.hash.includes('?')
+            ? new URLSearchParams(window.location.hash.split('?')[1])
+            : new URLSearchParams();
+
           const utmParams: Record<string, string> = {};
 
           ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(param => {
-            const value = urlParams.get(param);
+            // Prefer query string params, fall back to hash params
+            const value = urlParams.get(param) || hashParams.get(param);
             if (value) utmParams[param] = value;
           });
 
-          // Also capture ad click IDs
-          const gclid = urlParams.get('gclid');
-          const fbclid = urlParams.get('fbclid');
+          // Also capture ad click IDs (check both sources)
+          const gclid = urlParams.get('gclid') || hashParams.get('gclid');
+          const fbclid = urlParams.get('fbclid') || hashParams.get('fbclid');
           if (gclid) utmParams['gclid'] = gclid;
           if (fbclid) utmParams['fbclid'] = fbclid;
 
