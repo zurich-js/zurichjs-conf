@@ -6,6 +6,7 @@
  */
 
 import type { Cart, CartItem } from '@/types/cart';
+import { getTotalItems, getTotalPrice, createEmptyCart as createEmpty } from './cart-operations';
 
 /**
  * Minimal cart state for URL encoding
@@ -146,15 +147,11 @@ export function decodeCartState(encoded: string): Cart | null {
       ...(item.variant && { variant: item.variant }),
     }));
 
-    // Calculate derived values
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-    // Reconstruct full cart object
+    // Reconstruct full cart object (totals are derived)
     const cart: Cart = {
       items,
-      totalItems,
-      totalPrice,
+      totalItems: getTotalItems(items),
+      totalPrice: getTotalPrice(items),
       currency: minimal.currency,
       ...(minimal.voucherCode && { voucherCode: minimal.voucherCode }),
       ...(minimal.promotionCodeId && { promotionCodeId: minimal.promotionCodeId }),
@@ -169,13 +166,6 @@ export function decodeCartState(encoded: string): Cart | null {
 }
 
 /**
- * Create an empty cart object
+ * Re-export createEmptyCart for convenience
  */
-export function createEmptyCart(): Cart {
-  return {
-    items: [],
-    totalItems: 0,
-    totalPrice: 0,
-    currency: 'CHF',
-  };
-}
+export { createEmpty as createEmptyCart };

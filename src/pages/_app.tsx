@@ -120,7 +120,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <HydrationBoundary state={pageProps.dehydratedState}>
           <NuqsAdapter>
-            <CartProvider>
+            <CartProvider initialCart={pageProps.initialCart}>
               <MotionProvider>
                 <div className={figtree.variable}>
                   <Component {...pageProps} />

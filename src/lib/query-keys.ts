@@ -50,11 +50,27 @@ export const workshopsKeys = {
 } as const;
 
 /**
+ * Team request query keys
+ */
+export const teamRequestKeys = {
+  /**
+   * Base key for all team request queries
+   */
+  all: ['team-request'] as const,
+
+  /**
+   * Key for team request mutations
+   */
+  submit: () => [...teamRequestKeys.all, 'submit'] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
   tickets: ticketsKeys,
   checkout: checkoutKeys,
   workshops: workshopsKeys,
+  teamRequest: teamRequestKeys,
 } as const;
 

@@ -6,9 +6,8 @@
 import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { CartItem as CartItemType } from '@/types/cart';
-import {Input} from '@/components/atoms';
 import { formatPrice } from '@/lib/cart';
-import {CrownIcon, TicketCheck, Trash2Icon} from "lucide-react";
+import { CrownIcon, TicketCheck, Trash2Icon, Minus, Plus } from "lucide-react";
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
 
@@ -96,7 +95,7 @@ export const CartItem: React.FC<CartItemProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-2">
             <h3 className="flex gap-4 text-lg font-bold mb-2 text-brand-white">
-              <div className="flex-shrink-0 mt-0.5">
+              <div className="shrink-0 mt-0.5">
                 { item.variant === 'vip' ? (
                   <CrownIcon size={32} className="stroke-brand-yellow-main" />
                 ) : item.variant === 'member' ? (
@@ -111,7 +110,7 @@ export const CartItem: React.FC<CartItemProps> = ({
             {/* Remove button */}
             <button
               onClick={handleRemove}
-              className="ml-auto -mr-2.5 flex-shrink-0 group/btn cursor-pointer p-2.5 rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out"
+              className="ml-auto -mr-2.5 shrink-0 group/btn cursor-pointer p-2.5 rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out"
               aria-label={`Remove ${item.title} ticket from cart`}
             >
               <Trash2Icon size={16} className="stroke-brand-gray-light group-hover/btn:stroke-brand-red transition-colors duration-300 ease-in-out" />
@@ -119,17 +118,31 @@ export const CartItem: React.FC<CartItemProps> = ({
           </div>
 
           {/* Quantity and Total */}
-          <div className="flex items-baseline justify-between gap-4">
-            <Input
-              type="number"
-              value={item.quantity}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newValue = parseInt(e.target.value, 10);
-                if (!isNaN(newValue)) handleQuantityChange(newValue);
-              }}
-              min={1}
-              max={10}
-            />
+          <div className="flex items-center justify-between gap-4">
+            {/* Quantity Controls */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => handleQuantityChange(Math.max(1, item.quantity - 1))}
+                disabled={item.quantity <= 1}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-brand-gray-dark hover:bg-brand-gray-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                aria-label={`Decrease quantity of ${item.title}`}
+              >
+                <Minus size={16} className="stroke-brand-white" />
+              </button>
+              
+              <span className="w-10 text-center text-brand-white font-bold tabular-nums">
+                {item.quantity}
+              </span>
+              
+              <button
+                onClick={() => handleQuantityChange(Math.min(10, item.quantity + 1))}
+                disabled={item.quantity >= 10}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-brand-gray-dark hover:bg-brand-gray-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                aria-label={`Increase quantity of ${item.title}`}
+              >
+                <Plus size={16} className="stroke-brand-white" />
+              </button>
+            </div>
 
             <div className="text-right">
               <p className="text-lg font-bold text-brand-white">

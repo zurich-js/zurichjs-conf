@@ -1,41 +1,16 @@
 /**
  * Cart utility functions
+ * Re-exports from cart-operations.ts for backward compatibility
  */
 
-import type { Cart, OrderSummary } from '@/types/cart';
+import { getOrderSummary, formatPrice, calculateDiscountAmount } from './cart-operations';
+
+// Re-export with original names for backward compatibility
+export { formatPrice };
+export const calculateOrderSummary = getOrderSummary;
 
 /**
- * Calculate order summary with discounts
- * Note: VAT is already included in all prices (8.1% Swiss VAT)
- */
-export const calculateOrderSummary = (cart: Cart): OrderSummary => {
-  const subtotal = cart.totalPrice;
-  const discount = cart.discountAmount || 0;
-  const total = subtotal - discount;
-
-  return {
-    subtotal,
-    discount,
-    tax: 0, // VAT already included in prices
-    total,
-    currency: cart.currency,
-  };
-};
-
-/**
- * Format price with currency
- */
-export const formatPrice = (price: number, currency: string): string => {
-  return new Intl.NumberFormat('en-CH', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(price);
-};
-
-/**
- * Calculate discount amount from voucher
+ * Calculate discount amount from voucher (legacy API)
  */
 export const calculateDiscount = (
   voucherType: 'percentage' | 'fixed',
@@ -43,16 +18,12 @@ export const calculateDiscount = (
   subtotal: number,
   maxDiscount?: number
 ): number => {
-  let discount = 0;
-
-  if (voucherType === 'percentage') {
-    discount = (subtotal * voucherValue) / 100;
-    if (maxDiscount && discount > maxDiscount) {
-      discount = maxDiscount;
-    }
-  } else if (voucherType === 'fixed') {
-    discount = Math.min(voucherValue, subtotal);
+  let discount = calculateDiscountAmount(subtotal, voucherType, voucherValue);
+  
+  // Handle maxDiscount for percentage (legacy behavior)
+  if (voucherType === 'percentage' && maxDiscount && discount > maxDiscount) {
+    discount = maxDiscount;
   }
-
+  
   return discount;
 };

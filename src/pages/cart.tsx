@@ -5,7 +5,7 @@
  * REQUIRES AUTHENTICATION: Users must be logged in to access the cart
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -13,13 +13,14 @@ import { useWorkshopVouchers } from '@/hooks/useWorkshopVouchers';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
+import { useTeamRequest } from '@/hooks/useTeamRequest';
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
-import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm, type TeamRequestData } from '@/components/molecules';
+import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm } from '@/components/molecules';
 import {Button, Heading} from '@/components/atoms';
 import {PageHeader, CheckoutForm, SectionContainer} from '@/components/organisms';
 import { calculateOrderSummary } from '@/lib/cart';
-import type { CheckoutFormData, Cart as CartType } from '@/types/cart';
+import type { CheckoutFormData } from '@/types/cart';
 import type { AttendeeInfo } from '@/lib/validations/checkout';
 import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
@@ -28,6 +29,7 @@ import { dehydrate } from '@tanstack/react-query';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
+import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
 import { TicketXIcon } from "lucide-react";
 
 type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
@@ -43,7 +45,7 @@ export default function CartPage() {
   } = useCart();
 
   // Pricing data is prefetched on server, so isLoading should be false immediately
-  const { currentStage, isLoading: isPricingLoading } = useTicketPricing();
+  const { plans: ticketPlans, currentStage, isLoading: isPricingLoading } = useTicketPricing();
   const { vouchers: workshopVouchers, isLoading: isVouchersLoading } = useWorkshopVouchers();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
   const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
@@ -51,20 +53,8 @@ export default function CartPage() {
   const { toasts, showToast } = useToast();
 
   // Sync cart with URL state (cart page only)
-  // This allows sharing cart URLs while keeping other pages clean
-  const handleCartLoad = useCallback((urlCart: CartType) => {
-    // When loading from URL, replace the entire cart
-    // Note: This would need to be implemented in CartContext
-    // For now, we'll just let the URL sync work one-way (context -> URL)
-    analytics.track('button_clicked', {
-      button_text: 'Cart loaded from URL',
-      button_location: 'cart_page',
-      button_action: 'load_cart_from_url',
-      button_context: { itemCount: urlCart.items.length },
-    } as EventProperties<'button_clicked'>);
-  }, []);
-
-  useCartUrlSync(cart, handleCartLoad);
+  // Cart is loaded server-side, this hook only syncs changes back to URL
+  useCartUrlSync(cart);
 
   const orderSummary = calculateOrderSummary(cart);
   const isEmpty = cart.items.length === 0;
@@ -74,79 +64,34 @@ export default function CartPage() {
   const showWorkshopUpsells = !isPricingLoading && !isVouchersLoading && workshopVouchers.length > 0 && (currentStage === 'blind_bird' || currentStage === 'early_bird');
   const bonusPercent = currentStage === 'blind_bird' ? 25 : currentStage === 'early_bird' ? 15 : 0;
 
-  // Team package upsell logic
-  // Detect if user has 3+ of the same ticket type
-  const [showTeamModal, setShowTeamModal] = useState(false);
-  const [teamTicketInfo, setTeamTicketInfo] = useState<{ type: string; quantity: number } | null>(null);
+  // Filter out workshop vouchers for ticket counting
+  const ticketItems = cart.items.filter(item => !item.title.includes('Workshop Voucher'));
+  const ticketCount = ticketItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Team request success dialog
-  const [showTeamSuccessDialog, setShowTeamSuccessDialog] = useState(false);
-  const [successTeamData, setSuccessTeamData] = useState<TeamRequestData | null>(null);
+  // Team request hook (uses TanStack Query mutation)
+  const {
+    isModalOpen: showTeamModal,
+    ticketInfo: teamTicketInfo,
+    isSuccessDialogOpen: showTeamSuccessDialog,
+    successData: successTeamData,
+    openModal: openTeamModal,
+    closeModal: closeTeamModal,
+    submitRequest: handleTeamRequestSubmit,
+    handleSuccess: handleTeamRequestSuccess,
+    closeSuccessDialog: closeTeamSuccessDialog,
+  } = useTeamRequest({
+    onError: (message) => showToast(message, 'error'),
+  });
 
-  // TODO: we should actually scan across all tickets. team discounts should work even if you have 2 VIP and 2 standard.
-  const eligibleTeamTicket = cart.items.find(item => item.quantity >= 3);
-  const showTeamUpsell = eligibleTeamTicket && !cart.couponCode; // Don't show if already using a coupon
+  // Team package upsell - show when total ticket count is 3+ (across all ticket types)
+  const showTeamUpsell = ticketCount >= 3 && !cart.couponCode; // Don't show if already using a coupon
 
   const handleTeamModalOpen = () => {
-    if (eligibleTeamTicket) {
-      setTeamTicketInfo({
-        type: eligibleTeamTicket.title,
-        quantity: eligibleTeamTicket.quantity,
-      });
-      setShowTeamModal(true);
+    if (ticketCount >= 3) {
+      // Get a summary of ticket types for the modal
+      const ticketSummary = ticketItems.map(t => t.title).join(', ');
+      openTeamModal(ticketSummary, ticketCount);
     }
-  };
-
-  const handleTeamRequestSubmit = async (data: TeamRequestData) => {
-    try {
-      const response = await fetch('/api/team-request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = result.error || 'Failed to submit team request';
-        analytics.error('Team request API error', new Error(errorMessage), {
-          type: 'network',
-          severity: 'medium',
-          code: response.status.toString(),
-        });
-        throw new Error(errorMessage);
-      }
-
-      // Track successful team request
-      analytics.track('form_submitted', {
-        form_name: 'team_request',
-        form_type: 'other',
-        form_success: true,
-      } as EventProperties<'form_submitted'>);
-
-      // Don't show toast anymore - we'll show the success dialog instead
-    } catch (error) {
-      analytics.error('Team request error', error instanceof Error ? error : new Error('Unknown error'), {
-        type: 'network',
-        severity: 'medium',
-      });
-      const errorMessage = error instanceof Error ? error.message : 'Failed to submit request';
-      showToast(errorMessage, 'error');
-      throw error;
-    }
-  };
-
-  const handleTeamRequestSuccess = (data: TeamRequestData) => {
-    setSuccessTeamData(data);
-    setShowTeamModal(false);
-    setShowTeamSuccessDialog(true);
-  };
-
-  const closeTeamSuccessDialog = () => {
-    setShowTeamSuccessDialog(false);
-    setSuccessTeamData(null);
   };
 
   const handleAddWorkshopVoucher = (voucherId: string) => {
@@ -171,10 +116,38 @@ export default function CartPage() {
   };
 
   // Check if we need attendee collection (more than 1 ticket total)
-  // Exclude workshop vouchers - they don't require separate attendee info
-  const ticketItems = cart.items.filter(item => !item.title.includes('Workshop Voucher'));
-  const ticketCount = ticketItems.reduce((sum, item) => sum + item.quantity, 0);
   const needsAttendeeInfo = ticketCount > 1;
+
+  // VIP upsell logic - show when user has 1-2 standard tickets (not VIP or member)
+  const standardTicketItem = cart.items.find(item => item.variant === 'standard' && !item.title.includes('Workshop'));
+  const showVipUpsell = ticketCount >= 1 && ticketCount <= 2 && !!standardTicketItem;
+
+  // Handler to upgrade standard ticket to VIP
+  const handleUpgradeToVip = () => {
+    if (!standardTicketItem) return;
+
+    // Find the VIP plan from available ticket plans
+    const vipPlan = ticketPlans.find(plan => plan.id === 'vip');
+    if (!vipPlan) {
+      showToast('VIP upgrade not available at this time', 'error');
+      return;
+    }
+
+    // Remove the standard ticket
+    removeFromCart(standardTicketItem.id);
+
+    // Add VIP ticket with the same quantity
+    addToCart({
+      id: vipPlan.id,
+      title: vipPlan.title,
+      price: vipPlan.price / 100, // Convert from cents
+      currency: vipPlan.currency,
+      priceId: vipPlan.priceId,
+      variant: 'vip',
+    }, standardTicketItem.quantity);
+
+    showToast('Upgraded to VIP! 🎉', 'success');
+  };
 
   const handleAttendeesSubmit = (attendeeData: AttendeeInfo[]) => {
     setAttendees(attendeeData);
@@ -451,6 +424,33 @@ export default function CartPage() {
                     </AnimatePresence>
                   </div>
 
+                  {/* VIP Upgrade Upsell Banner */}
+                  {showVipUpsell && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className=""
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-md font-bold text-brand-white mb-1">
+                            Want an extra special experience?
+                          </h3>
+                          <p className="text-sm text-brand-gray-light mb-4">
+                            Get an <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">invite to the speaker city tour</strong>, <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">limited edition goodies</strong>, and <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">20% discount to all workshops</strong>. Only 15 VIP seats available!
+                          </p>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleUpgradeToVip}
+                          >
+                            Upgrade to VIP
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
                   {/* Team Package Upsell Banner */}
                   {showTeamUpsell && (
                     <motion.div
@@ -708,7 +708,7 @@ export default function CartPage() {
         {teamTicketInfo && (
           <TeamRequestModal
             isOpen={showTeamModal}
-            onClose={() => setShowTeamModal(false)}
+            onClose={closeTeamModal}
             ticketType={teamTicketInfo.type}
             quantity={teamTicketInfo.quantity}
             onSubmit={handleTeamRequestSubmit}
@@ -730,12 +730,17 @@ export default function CartPage() {
 }
 
 /**
- * Server-side props - Prefetch pricing data and workshop vouchers
+ * Server-side props - Prefetch pricing data, workshop vouchers, and decode cart from URL
  * This eliminates the loading state and prevents UI shifts
+ * Cart is decoded from URL parameter for immediate availability on hydration
  * The dehydrated state is automatically picked up by HydrationBoundary in _app.tsx
  */
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const queryClient = createQueryClient();
+
+  // Decode cart from URL parameter (cart is the encoded state)
+  const encodedCart = typeof query.cart === 'string' ? query.cart : undefined;
+  const initialCart = encodedCart ? decodeCartState(encodedCart) : createEmptyCart();
 
   try {
     // Prefetch both ticket pricing and workshop vouchers in parallel
@@ -751,6 +756,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
   return {
     props: {
       dehydratedState: dehydrate(queryClient),
+      initialCart: initialCart ?? createEmptyCart(),
     },
   };
 };
