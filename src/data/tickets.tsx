@@ -77,7 +77,7 @@ export const STAGE_COPY: Record<
     subtitle: (
       <>
         Grab the <strong>lowest possible price</strong>, before the keynote speakers are revealed.{' '}
-        <strong>Save up to 40%</strong> compared to late bird pricing. <strong>Limited&nbsp;stock</strong>.
+        <strong>Save up to 33%</strong> compared to late bird pricing. <strong>Limited&nbsp;stock</strong>.
       </>
     ),
     countdownTitle: 'Blind Bird phase ends in',
@@ -148,16 +148,6 @@ export const TICKET_FAQ: FAQItem[] = [
     ),
   },
   {
-    question: 'Do prices include VAT? Can I get an invoice?',
-    answer: (
-      <>
-        All prices include 8.1% Swiss VAT. Business invoices with VAT details are provided
-        automatically at checkout. Swiss companies can claim back the VAT. EU companies may qualify
-        for reverse charge VAT rules.
-      </>
-    ),
-  },
-  {
     question: 'Can I transfer my ticket to someone else?',
     answer: (
       <>
@@ -168,6 +158,36 @@ export const TICKET_FAQ: FAQItem[] = [
         </a>{' '}
         with your order number and reason for transfer. We&apos;ll review your request and get
         back to you as soon as possible.
+      </>
+    ),
+  },
+  {
+    question: "Switzerland is expensive – I'm on a budget, what are my options?",
+    answer: (
+      <>
+        We get it – Switzerland can be pricey! But attending ZurichJS Conference on a budget is
+        definitely doable. We&apos;re working on hotel partnerships that will be announced soon.
+        Reach out to us at{' '}
+        <a href="mailto:hello@zurichjs.com" className="underline">
+          hello@zurichjs.com
+        </a>{' '}
+        and we&apos;ll add you to the waitlist to be one of the first to hear about it. We&apos;re
+        also happy to help you work within your budget – whether it&apos;s accommodation tips,
+        transport advice, or affordable places to eat. Many attendees have made it work, and
+        we&apos;ll help you do the same!
+      </>
+    ),
+  },
+  {
+    question: 'When is the best time to arrive and leave?',
+    answer: (
+      <>
+        It depends on your ticket and plans! Community Day on <strong>September 9th</strong> isn&apos;t
+        essential, but if you&apos;re attending a workshop on the 10th, you might as well arrive a
+        day early and enjoy the warm-up meetup. For departures, a flight on the evening of{' '}
+        <strong>September 12th</strong> or <strong>September 13th</strong> works well. If you&apos;re
+        a <strong>VIP ticket holder</strong>, make sure to keep the full day of September 12th free
+        for the exclusive speaker activities!
       </>
     ),
   },

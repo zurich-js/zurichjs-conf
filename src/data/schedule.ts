@@ -8,12 +8,10 @@ import type { ScheduleSectionProps } from '@/components/organisms';
 export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
   title: 'JS Conference by humans, for humans',
   subtitle: 'Join us for four days of community building, learning, and networking. From grassroots meetups to cutting-edge technical sessions, we\'re bringing together JavaScript enthusiasts from around the world.',
-  travelNote: 'We recommend booking flights arriving on the evening of the 9th and departing on the evening of the 12th or 13th.',
-  accommodationNote: 'We will be partnering with hotels in the coming months to create accessible accommodation options. If you need any help and are not a Zurich local, reach out to us at hello@zurichjs.com.',
-  // aboutLink: {
-  //   label: 'More about us',
-  //   href: 'https://zurichjs.com/about',
-  // },
+  aboutLink: {
+    label: 'More about us',
+    href: 'https://conf.zurichjs.com/about',
+  },
   days: [
     {
       id: 'community',
@@ -54,6 +52,7 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       date: 'September 11, 2026',
       description: 'The main conference day featuring keynote presentations, talks, and networking opportunities. Join us for a full day of learning and celebration.',
       tbaMode: false,
+      defaultSelected: true,
       events: [
         {
           time: '08:30 – 09:30',

@@ -40,12 +40,6 @@ const generateSitemap = (baseUrl: string): string => {
       priority: '0.9',
     },
     {
-      loc: `${baseUrl}/schedule`,
-      lastmod: currentDate,
-      changefreq: 'weekly',
-      priority: '0.9',
-    },
-    {
       loc: `${baseUrl}/venue`,
       lastmod: currentDate,
       changefreq: 'monthly',

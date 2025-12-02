@@ -19,6 +19,7 @@ export interface Day {
   date: string;
   description?: string; // General description for TBA mode
   tbaMode?: boolean; // When true, show description instead of detailed events for this day
+  defaultSelected?: boolean; // When true, this day will be selected by default
   events: Event[];
 }
 
@@ -29,8 +30,6 @@ export interface ScheduleSectionProps {
     label: string;
     href: string;
   };
-  travelNote?: string;
-  accommodationNote?: string;
   days: Day[];
 }
 
@@ -43,11 +42,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   title,
   subtitle,
   aboutLink,
-  travelNote,
-  accommodationNote,
   days,
 }) => {
-  const { activeTab, setActiveTab } = useTabs(days[0]?.id || '');
+  const defaultTab = days.find((day) => day.defaultSelected)?.id || days[0]?.id || '';
+  const { activeTab, setActiveTab } = useTabs(defaultTab);
   const prefersReducedMotion = usePrefersReducedMotion();
   const activeDay = days.find((day) => day.id === activeTab);
 
@@ -133,68 +131,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Travel and accommodation notes */}
-      {(travelNote || accommodationNote) && (
-        <div className="mt-8 pt-6 border-t border-brand-gray-light/20 space-y-4">
-          {travelNote && (
-            <div className="flex gap-3">
-              <svg
-                className="w-5 h-5 text-brand-blue shrink-0 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                />
-              </svg>
-              <p className="text-sm text-brand-gray-medium leading-relaxed">
-                <span className="font-semibold text-brand-black">Travel tip:</span>{' '}
-                {travelNote}
-              </p>
-            </div>
-          )}
-          {accommodationNote && (
-            <div className="flex gap-3">
-              <svg
-                className="w-5 h-5 text-brand-blue shrink-0 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-              <p className="text-sm text-brand-gray-medium leading-relaxed">
-                <span className="font-semibold text-brand-black">Accommodation:</span>{' '}
-                {accommodationNote.split(/(hello@zurichjs\.com)/).map((part, i) =>
-                  part === 'hello@zurichjs.com' ? (
-                    <a
-                      key={i}
-                      href="mailto:hello@zurichjs.com"
-                      className="text-brand-blue hover:underline"
-                    >
-                      {part}
-                    </a>
-                  ) : (
-                    part
-                  )
-                )}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
     </SectionSplitView>
   );
 };

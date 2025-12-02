@@ -7,6 +7,7 @@ import {SectionSplitView} from "@/components/organisms/SectionSplitView";
 export interface TimelineEntry {
   id: string;
   dateISO: string;
+  toDateISO?: string; // End date for date ranges (e.g., multi-day events)
   title: string;
   icon?: TimelineIconType;
   body?: string;
@@ -98,6 +99,27 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
     });
   };
 
+  // Format date range for display
+  const formatDateRange = (fromDateISO: string, toDateISO?: string): string => {
+    if (!toDateISO) return formatDate(fromDateISO);
+
+    const fromDate = new Date(fromDateISO);
+    const toDate = new Date(toDateISO);
+    const sameYear = fromDate.getFullYear() === toDate.getFullYear();
+    const sameMonth = sameYear && fromDate.getMonth() === toDate.getMonth();
+
+    if (sameMonth) {
+      // Same month: "Sep 9–12, 2026"
+      return `${fromDate.toLocaleDateString('en-US', { month: 'short' })} ${fromDate.getDate()}–${toDate.getDate()}, ${toDate.getFullYear()}`;
+    } else if (sameYear) {
+      // Same year, different month: "Sep 9 – Oct 12, 2026"
+      return `${fromDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${toDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${toDate.getFullYear()}`;
+    } else {
+      // Different years: "Sep 9, 2026 – Jan 5, 2027"
+      return `${formatDate(fromDateISO)} – ${formatDate(toDateISO)}`;
+    }
+  };
+
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent, index: number, entry: TimelineEntry) => {
@@ -162,10 +184,10 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                       <div className="flex-shrink-0 w-28 pt-1">
                         {isFirstInGroup && (
                           <time
-                            dateTime={entry.dateISO}
+                            dateTime={entry.toDateISO ? `${entry.dateISO}/${entry.toDateISO}` : entry.dateISO}
                             className="text-sm text-brand-gray-medium font-medium"
                           >
-                            {formatDate(entry.dateISO)}
+                            {formatDateRange(entry.dateISO, entry.toDateISO)}
                           </time>
                         )}
                       </div>

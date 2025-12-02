@@ -22,12 +22,16 @@ const faqSchemaData = [
     answer: "Yes! We offer team packages with custom pricing including simplified invoicing and bank transfer payment options. Contact us for team pricing.",
   },
   {
-    question: "Do prices include VAT? Can I get an invoice?",
-    answer: "All prices include 8.1% Swiss VAT. Business invoices with VAT details are provided automatically at checkout. Swiss companies can claim back the VAT.",
-  },
-  {
     question: "Can I transfer my ticket to someone else?",
     answer: "Ticket transfers are evaluated on a case-by-case basis. Email hello@zurichjs.com with your order number and reason for transfer.",
+  },
+  {
+    question: "Switzerland is expensive – I'm on a budget, what are my options?",
+    answer: "Hotel partnerships are coming soon! Email hello@zurichjs.com to join the waitlist and be the first to hear about it. We're happy to help you work within your budget.",
+  },
+  {
+    question: "When is the best time to arrive and leave?",
+    answer: "Community Day (Sept 9th) isn't essential, but if you're attending a workshop on the 10th, come early and enjoy it. Depart evening of Sept 12th or 13th. VIP holders should keep the full day of Sept 12th free for speaker activities.",
   },
 ];
 
@@ -76,8 +80,6 @@ export default function Home({ dehydratedState }: HomeProps) {
             title={scheduleData.title}
             subtitle={scheduleData.subtitle}
             aboutLink={scheduleData.aboutLink}
-            travelNote={scheduleData.travelNote}
-            accommodationNote={scheduleData.accommodationNote}
             days={scheduleData.days}
           />
         </ShapedSection>
