@@ -55,8 +55,8 @@ export default function Home({ dehydratedState }: HomeProps) {
   return (
     <HydrationBoundary state={dehydratedState}>
       <SEO
-        title="ZurichJS Conference 2026 | Sept 11 Zurich | JavaScript & Web Dev"
-        description="Join 300+ developers at Switzerland's premier JavaScript conference. Sep 11, 2026 at Technopark Zürich. Talks, workshops, networking. Tickets from CHF 489."
+        title="ZurichJS Conf 2026 | Sept 11 Zurich | JavaScript & Web Dev"
+        description="Join 300+ developers at Switzerland's premier JavaScript conference on September 11th, 2026 at Technopark Zürich. Expert talks, hands-on workshops, and networking. Tickets starting from CHF 175."
         canonical="/"
         ogType="website"
         keywords="javascript conference, zurich tech conference, javascript switzerland, web development conference, js conference 2026, technopark zurich"

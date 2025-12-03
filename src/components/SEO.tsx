@@ -13,6 +13,33 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com'
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 
+// Default keywords for the site
+const DEFAULT_KEYWORDS = [
+  'zurichjs conf',
+  'zurichjs conference',
+  'zurich js conf',
+  'zurich js conference',
+  'javascript conference zurich',
+  'js conference switzerland',
+  'javascript conference switzerland',
+  'zurich javascript',
+  'swiss javascript conference',
+  'tech conference zurich',
+  'developer conference zurich',
+  'web development conference',
+  'frontend conference',
+  'javascript event zurich',
+  'zurich tech events',
+  'javascript meetup zurich',
+  'zurichjs',
+  'zurich.js',
+  'js conf zurich',
+  'september 11 2026',
+  'technopark zurich',
+  'javascript talks',
+  'javascript workshops',
+].join(', ');
+
 export interface SEOProps {
   /** Page title (without site name suffix) */
   title: string;
@@ -40,14 +67,22 @@ export interface SEOProps {
 
 /**
  * Organization schema - used site-wide
+ * Follows Google's guidelines for logo display in search results
  */
 export const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'ZurichJS - Swiss JavaScript Group',
-  alternateName: 'ZurichJS',
+  name: 'ZurichJS Conf',
+  alternateName: ['ZurichJS Conference', 'ZurichJS', 'Zurich.js', 'ZurichJS - Swiss JavaScript Group'],
   url: BASE_URL,
-  logo: `${BASE_URL}/images/logo/zurichjs-square.png`,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${BASE_URL}/images/logo/zurichjs-square.png`,
+    width: '512',
+    height: '512',
+    contentUrl: `${BASE_URL}/images/logo/zurichjs-square.png`,
+  },
+  image: `${BASE_URL}/images/logo/zurichjs-square.png`,
   sameAs: [
     'https://www.linkedin.com/company/zurichjs',
     'https://www.instagram.com/zurich.js',
@@ -73,9 +108,10 @@ export const organizationSchema = {
 export const eventSchema = {
   '@context': 'https://schema.org',
   '@type': 'Event',
-  name: 'ZurichJS Conference 2026',
+  name: 'ZurichJS Conf 2026',
+  alternateName: ['ZurichJS Conference 2026', 'Zurich.js Conference 2026'],
   description:
-    "Switzerland's premier JavaScript conference. Join 300+ developers for talks, workshops, and networking at Technopark Zürich.",
+    "ZurichJS Conf 2026 - Switzerland's premier JavaScript conference on September 11th, 2026. Join 300+ developers for expert talks, hands-on workshops, and networking at Technopark Zürich. Tickets starting from 175 CHF.",
   startDate: '2026-09-11T08:30:00+02:00',
   endDate: '2026-09-11T18:30:00+02:00',
   eventStatus: 'https://schema.org/EventScheduled',
@@ -140,10 +176,19 @@ export const eventSchema = {
 export const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'ZurichJS Conference',
-  alternateName: 'ZurichJS Conf 2026',
+  name: 'ZurichJS Conf',
+  alternateName: ['ZurichJS Conference', 'ZurichJS Conf 2026', 'ZurichJS Conference 2026', 'Zurich.js Conference'],
   url: BASE_URL,
+  image: `${BASE_URL}/images/logo/zurichjs-square.png`,
   publisher: organizationSchema,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${BASE_URL}/?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
 };
 
 export const SEO: React.FC<SEOProps> = ({
@@ -160,13 +205,18 @@ export const SEO: React.FC<SEOProps> = ({
   modifiedTime,
 }) => {
   // Build full title with site name
-  const fullTitle = `${title} | ZurichJS Conference 2026`;
+  const fullTitle = `${title} | ZurichJS Conf 2026`;
 
   // Build canonical URL
   const canonicalUrl = canonical ? `${BASE_URL}${canonical}` : undefined;
 
   // Build OG image URL (handle both relative and absolute URLs)
   const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${BASE_URL}${ogImage}`;
+
+  // Merge default keywords with custom keywords
+  const allKeywords = keywords 
+    ? `${DEFAULT_KEYWORDS}, ${keywords}` 
+    : DEFAULT_KEYWORDS;
 
   // Prepare JSON-LD script content
   const jsonLdContent = jsonLd
@@ -181,7 +231,7 @@ export const SEO: React.FC<SEOProps> = ({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      {keywords && <meta name="keywords" content={keywords} />}
+      <meta name="keywords" content={allKeywords} />
 
       {/* Robots */}
       {noindex ? (
@@ -196,6 +246,9 @@ export const SEO: React.FC<SEOProps> = ({
       {/* Favicon */}
       <link rel="icon" href="/favicon.ico" />
       <link rel="apple-touch-icon" href="/images/logo/zurichjs-square.png" />
+      
+      {/* Logo for Google Search - helps Google identify and display the logo */}
+      <link rel="image_src" href={`${BASE_URL}/images/logo/zurichjs-square.png`} />
 
       {/* OpenGraph Meta Tags */}
       <meta property="og:title" content={fullTitle} />
@@ -206,8 +259,11 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
       <meta property="og:image:alt" content={title} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
-      <meta property="og:site_name" content="ZurichJS Conference" />
+      <meta property="og:site_name" content="ZurichJS Conf" />
       <meta property="og:locale" content="en_US" />
+      
+      {/* Additional logo reference for better recognition */}
+      <meta property="og:logo" content={`${BASE_URL}/images/logo/zurichjs-square.png`} />
 
       {/* Article-specific OG tags */}
       {ogType === 'article' && publishedTime && (
