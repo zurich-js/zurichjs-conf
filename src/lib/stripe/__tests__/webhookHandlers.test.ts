@@ -111,6 +111,15 @@ vi.mock('@/lib/supabase', () => ({
   })),
 }));
 
+vi.mock('resend', () => ({
+  Resend: class MockResend {
+    emails = {
+      cancel: vi.fn().mockResolvedValue({}),
+      send: vi.fn().mockResolvedValue({ id: 'mock-email-id' }),
+    };
+  },
+}));
+
 // Import after mocks are set up
 import {
   __testing,

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      scheduled_abandonment_emails: {
+        Row: {
+          id: string
+          email: string
+          resend_email_id: string
+          scheduled_for: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          resend_email_id: string
+          scheduled_for: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          resend_email_id?: string
+          scheduled_for?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null

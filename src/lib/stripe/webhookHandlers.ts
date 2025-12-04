@@ -4,6 +4,7 @@
  */
 
 import type Stripe from 'stripe';
+import { Resend } from 'resend';
 import { getStripeClient } from './client';
 import { createTicket } from '@/lib/tickets';
 import type { TicketType, TicketCategory, TicketStage } from '@/lib/types/database';
@@ -15,6 +16,8 @@ import { generateOrderUrl } from '@/lib/auth/orderToken';
 import { serverAnalytics } from '@/lib/analytics/server';
 import type { EventProperties } from '@/lib/analytics/events';
 import { logger } from '@/lib/logger';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Parse ticket info from lookup key: {category}_{stage}
@@ -168,6 +171,46 @@ export async function handleCheckoutSessionCompleted(
       stack: new Error('Customer email is required').stack,
     });
     throw new Error('Customer email is required');
+  }
+
+  // Cancel any scheduled cart abandonment emails for this customer
+  try {
+    const { createServiceRoleClient } = await import('@/lib/supabase');
+    const supabase = createServiceRoleClient();
+
+    const { data: scheduledEmails } = await supabase
+      .from('scheduled_abandonment_emails')
+      .select('resend_email_id')
+      .eq('email', customerEmail);
+
+    if (scheduledEmails && scheduledEmails.length > 0) {
+      log.info('Cancelling scheduled abandonment emails', { count: scheduledEmails.length, email: customerEmail });
+
+      for (const scheduled of scheduledEmails) {
+        try {
+          await resend.emails.cancel(scheduled.resend_email_id);
+          log.debug('Cancelled abandonment email', { emailId: scheduled.resend_email_id });
+        } catch (cancelError) {
+          // Email may already be sent or cancelled, non-fatal
+          log.debug('Could not cancel abandonment email (may already be sent)', {
+            emailId: scheduled.resend_email_id,
+            error: cancelError instanceof Error ? cancelError.message : 'Unknown error',
+          });
+        }
+      }
+
+      // Clean up the records
+      await supabase
+        .from('scheduled_abandonment_emails')
+        .delete()
+        .eq('email', customerEmail);
+    }
+  } catch (error) {
+    // Non-fatal: log but continue with checkout processing
+    log.warn('Failed to cancel abandonment emails', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      email: customerEmail,
+    });
   }
 
   // Extract name parts

@@ -12,11 +12,12 @@ import type { CartAbandonmentEmailProps } from '@/emails/templates/CartAbandonme
 import { getBaseUrl } from '@/lib/url';
 import { serverAnalytics } from '@/lib/analytics/server';
 import type { CartItem as BaseCartItem } from '@/types/cart';
+import { createServiceRoleClient } from '@/lib/supabase';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-/** Delay before sending abandonment email (in minutes) */
-const ABANDONMENT_EMAIL_DELAY_MINUTES = 5;
+/** Delay before sending abandonment email (in hours) */
+const ABANDONMENT_EMAIL_DELAY_HOURS = 24;
 
 /** Cart item for email display (subset of full CartItem) */
 type EmailCartItem = Pick<BaseCartItem, 'title' | 'quantity' | 'price' | 'currency'>;
@@ -88,9 +89,9 @@ export default async function handler(
       });
     }
 
-    // Calculate scheduled time (5 minutes from now)
+    // Calculate scheduled time (24 hours from now)
     const scheduledAt = new Date(
-      Date.now() + ABANDONMENT_EMAIL_DELAY_MINUTES * 60 * 1000
+      Date.now() + ABANDONMENT_EMAIL_DELAY_HOURS * 60 * 60 * 1000
     );
 
     // Build full cart recovery URL with encoded state
@@ -128,6 +129,47 @@ export default async function handler(
         success: false,
         error: result.error.message || 'Failed to schedule email',
       });
+    }
+
+    // Store the scheduled email ID in Supabase for cancellation on successful purchase
+    if (result.data?.id) {
+      try {
+        const supabase = createServiceRoleClient();
+
+        // First, cancel any existing scheduled emails for this user (only keep latest)
+        const { data: existingEmails } = await supabase
+          .from('scheduled_abandonment_emails')
+          .select('resend_email_id')
+          .eq('email', email);
+
+        if (existingEmails && existingEmails.length > 0) {
+          // Cancel previous scheduled emails in Resend
+          for (const existing of existingEmails) {
+            try {
+              await resend.emails.cancel(existing.resend_email_id);
+            } catch {
+              // Ignore errors cancelling old emails (may already be sent/cancelled)
+            }
+          }
+          // Delete old records
+          await supabase
+            .from('scheduled_abandonment_emails')
+            .delete()
+            .eq('email', email);
+        }
+
+        // Insert the new scheduled email record
+        await supabase
+          .from('scheduled_abandonment_emails')
+          .insert({
+            email,
+            resend_email_id: result.data.id,
+            scheduled_for: scheduledAt.toISOString(),
+          });
+      } catch (storageError) {
+        // Non-fatal: log but don't fail the request
+        console.error('[Cart Abandonment] Failed to store email ID for cancellation:', storageError);
+      }
     }
 
     // Track email scheduled event in PostHog

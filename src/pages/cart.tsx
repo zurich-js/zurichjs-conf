@@ -57,6 +57,7 @@ export default function CartPage() {
   const [capturedEmail, setCapturedEmail] = useState<string | null>(null);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
   const { mutate: scheduleAbandonmentEmail } = useCartAbandonmentEmail();
+  const [checkoutCompleted, setCheckoutCompleted] = useState(false);
   const { toasts, showToast } = useToast();
   const router = useRouter();
   const hasTrackedRecovery = useRef(false);
@@ -190,6 +191,9 @@ export default function CartPage() {
       company: data.company,
     } as EventProperties<'checkout_started'>);
 
+    // Mark checkout as completed to prevent abandonment tracking during Stripe redirect
+    setCheckoutCompleted(true);
+
     createCheckout({
       cart,
       customerInfo: {
@@ -218,8 +222,9 @@ export default function CartPage() {
   };
 
   // Track cart abandonment across multiple triggers
+  // Disable when checkout is completed to prevent false abandonment during Stripe redirect
   useCartAbandonment({
-    enabled: !isEmpty,
+    enabled: !isEmpty && !checkoutCompleted,
     currentStep,
     cartData: {
       items: cart.items,
