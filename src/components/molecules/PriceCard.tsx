@@ -8,6 +8,7 @@ import {CrownIcon} from "lucide-react";
 import {Heading} from "@/components/atoms";
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
+import { mapVariantToCategory } from '@/lib/analytics/helpers';
 
 export type CTA =
   | { type: 'link'; href: string; label: string; disabled?: boolean }
@@ -79,7 +80,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
     analytics.track('ticket_button_clicked', {
       button_location: 'price_card',
       ticket_type: title,
-      ticket_category: (variant === 'member' ? 'standard' : variant) as 'standard' | 'vip',
+      ticket_category: mapVariantToCategory(variant),
       ticket_stage: 'general_admission',
       ticket_price: price,
       currency,

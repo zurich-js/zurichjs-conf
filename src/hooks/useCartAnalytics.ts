@@ -7,7 +7,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
-import type { Cart, CartItem } from '@/types/cart';
+import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
+import type { Cart } from '@/types/cart';
 
 interface OrderSummary {
   subtotal: number;
@@ -17,18 +18,6 @@ interface OrderSummary {
 }
 
 export type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
-
-/**
- * Maps cart items to analytics format
- */
-const mapCartItemsToAnalytics = (items: CartItem[]) =>
-  items.map((item) => ({
-    type: item.title.includes('Workshop') ? ('workshop_voucher' as const) : ('ticket' as const),
-    category: item.variant === 'member' ? 'standard' : item.variant,
-    stage: 'general_admission' as const,
-    quantity: item.quantity,
-    price: item.price,
-  }));
 
 export interface UseCartAnalyticsReturn {
   /** Track when user reviews their cart */

@@ -13,3 +13,9 @@ export { useTabs } from './useTabs';
 export { useTicketPricing } from './useTicketPricing';
 export type { TicketPlan } from './useTicketPricing';
 
+export { useFormFieldTracking } from './useFormFieldTracking';
+
+export { useCartAbandonment } from './useCartAbandonment';
+
+export { useCartAbandonmentEmail } from './useCartAbandonmentEmail';
+

@@ -330,8 +330,12 @@ export interface CheckoutAbandonedEvent {
   properties: BaseEventProperties &
     CartProperties &
     UserProperties & {
-      abandonment_stage: 'cart' | 'customer_info' | 'payment'
+      abandonment_stage: 'review' | 'attendees' | 'upsells' | 'checkout'
       time_spent_seconds?: number
+      fields_completed?: string[]
+      fields_touched?: string[]
+      form_completion_percent?: number
+      last_field_interacted?: string
     }
 }
 
@@ -340,6 +344,36 @@ export interface CheckoutFormFieldFocusedEvent {
   properties: BaseEventProperties & {
     field_name: string
     field_type: string
+    step: 'review' | 'attendees' | 'upsells' | 'checkout'
+  }
+}
+
+export interface CheckoutFormFieldBlurredEvent {
+  event: 'checkout_form_field_blurred'
+  properties: BaseEventProperties & {
+    field_name: string
+    field_type: string
+    field_filled: boolean
+    time_spent_seconds?: number
+    step: 'review' | 'attendees' | 'upsells' | 'checkout'
+  }
+}
+
+export interface CheckoutFormFieldCompletedEvent {
+  event: 'checkout_form_field_completed'
+  properties: BaseEventProperties & {
+    field_name: string
+    field_type: string
+    step: 'review' | 'attendees' | 'upsells' | 'checkout'
+  }
+}
+
+export interface CheckoutEmailCapturedEvent {
+  event: 'checkout_email_captured'
+  properties: BaseEventProperties & CartProperties & {
+    email: string
+    step: 'review' | 'attendees' | 'upsells' | 'checkout'
+    time_to_email_seconds?: number
   }
 }
 
@@ -506,6 +540,31 @@ export interface WebhookReceivedEvent {
   }
 }
 
+// ----------------------------------------------------------------------------
+// Email Events
+// ----------------------------------------------------------------------------
+
+export interface CartAbandonmentEmailScheduledEvent {
+  event: 'cart_abandonment_email_scheduled'
+  properties: BaseEventProperties &
+    CartProperties &
+    UserProperties & {
+      email_id?: string
+      scheduled_for: string
+      cart_recovery_url: string
+    }
+}
+
+export interface CartRecoveryClickedEvent {
+  event: 'cart_recovery_clicked'
+  properties: BaseEventProperties &
+    CartProperties & {
+      utm_source: string
+      utm_medium: string
+      utm_campaign: string
+    }
+}
+
 // ============================================================================
 // Union Type of All Events
 // ============================================================================
@@ -540,6 +599,9 @@ export type AnalyticsEvent =
   | CheckoutCompletedEvent
   | CheckoutAbandonedEvent
   | CheckoutFormFieldFocusedEvent
+  | CheckoutFormFieldBlurredEvent
+  | CheckoutFormFieldCompletedEvent
+  | CheckoutEmailCapturedEvent
   | VoucherAppliedEvent
   | VoucherRemovedEvent
   | PaymentSucceededEvent
@@ -555,6 +617,8 @@ export type AnalyticsEvent =
   | ErrorOccurredEvent
   | ApiErrorEvent
   | WebhookReceivedEvent
+  | CartAbandonmentEmailScheduledEvent
+  | CartRecoveryClickedEvent
 
 /**
  * Extract event name from AnalyticsEvent

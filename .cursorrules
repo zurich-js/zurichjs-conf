@@ -489,6 +489,115 @@ feat: add timeline section with auto-highlighting
 - Integration tests: Page-level composition
 - E2E tests: Critical user flows
 
+## Analytics & Cart Abandonment Tracking
+
+### PostHog Integration
+
+The project uses PostHog for comprehensive analytics. All tracking is type-safe via `src/lib/analytics/events.ts`.
+
+### Cart Abandonment System
+
+**Architecture**: Separation of concerns with dedicated hooks:
+- `useCartAbandonment` - Manages abandonment tracking lifecycle
+- `useFormFieldTracking` - Tracks field-level interactions
+
+**Email Capture**: When users enter email in checkout:
+- Capture email via `checkout_email_captured` event
+- Identify user in PostHog with `analytics.identify(email, {...})`
+- Link all anonymous behavior to this email for recovery campaigns
+
+**Field-Level Tracking**: Every form field tracks:
+- `checkout_form_field_focused` - User focuses field
+- `checkout_form_field_blurred` - User leaves field (with filled status, time spent)
+- `checkout_form_field_completed` - Field successfully filled
+
+**Abandonment Triggers**: Track abandonment on:
+- Page visibility change (tab switch)
+- beforeunload (close/navigate)
+- Route change
+- Captures: step, time spent, fields touched/completed, cart contents, email
+
+### Hooks
+
+**`useCartAbandonment`** (`src/hooks/useCartAbandonment.ts`)
+Dedicated hook for cart abandonment tracking with automatic lifecycle management.
+
+```typescript
+useCartAbandonment({
+  enabled: !isCartEmpty,
+  currentStep: 'checkout',
+  cartData: {
+    items: cart.items,
+    total: orderSummary.total,
+    currency: orderSummary.currency,
+  },
+  userEmail: capturedEmail,
+  fieldTrackingStats: getTrackingStats(), // Optional
+  onAbandonment: (data) => { /* callback */ }, // Optional
+});
+```
+
+**Features**:
+- Automatic event listener management
+- Duplicate event prevention
+- Proper cleanup on unmount
+- Type-safe analytics events
+- Optional field tracking stats integration
+
+**`useFormFieldTracking`** (`src/hooks/useFormFieldTracking.ts`)
+Tracks field-level interactions and email capture.
+
+```typescript
+const { trackFieldFocus, trackFieldBlur } = useFormFieldTracking({
+  currentStep: 'checkout',
+  cartData: { 
+    cart_item_count, 
+    cart_total_amount, 
+    cart_currency,
+    cart_items 
+  },
+  onEmailCaptured: (email) => setCapturedEmail(email),
+});
+
+// Wrap register with tracking
+const registerWithTracking = (fieldName, fieldType) => {
+  const registration = register(fieldName);
+  return {
+    ...registration,
+    onFocus: (e) => trackFieldFocus(fieldName, fieldType),
+    onBlur: (e) => trackFieldBlur(fieldName, fieldType, e.target.value),
+  };
+};
+```
+
+### Analytics Events
+
+- `checkout_email_captured` - Email entered in checkout with full cart data
+- `checkout_form_field_focused` - Field focus
+- `checkout_form_field_blurred` - Field blur with completion status and time
+- `checkout_form_field_completed` - Field completed
+- `checkout_abandoned` - Enhanced with field tracking data and cart contents
+
+All events in `src/lib/analytics/events.ts` with full TypeScript types.
+
+### PostHog Insights
+
+Build these insights in PostHog:
+- Abandonment funnel by step
+- Field friction analysis (unfilled fields)
+- Time-to-email distribution
+- Form completion heatmap
+- High-value cart abandonment cohorts
+
+### Production Considerations
+
+- ✅ Duplicate event prevention
+- ✅ Automatic cleanup of listeners
+- ✅ Type-safe event properties
+- ✅ Separation of concerns
+- ✅ Testable hooks
+- ✅ Comprehensive documentation
+
 ## When in Doubt
 
 1. Check existing components for patterns

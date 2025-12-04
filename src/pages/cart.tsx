@@ -5,7 +5,8 @@
  * REQUIRES AUTHENTICATION: Users must be logged in to access the cart
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -14,8 +15,12 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
 import { useTeamRequest } from '@/hooks/useTeamRequest';
+import { useCartAbandonment } from '@/hooks/useCartAbandonment';
+import { useCartAbandonmentEmail } from '@/hooks/useCartAbandonmentEmail';
+import { encodeCartState } from '@/lib/cart-url-state';
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
+import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
 import { CartItem, CartSummary, VoucherInput, WorkshopVoucherCard, ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm } from '@/components/molecules';
 import {Button, Heading} from '@/components/atoms';
 import {PageHeader, CheckoutForm, SectionContainer} from '@/components/organisms';
@@ -49,8 +54,12 @@ export default function CartPage() {
   const { vouchers: workshopVouchers, isLoading: isVouchersLoading } = useWorkshopVouchers();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
   const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
+  const [capturedEmail, setCapturedEmail] = useState<string | null>(null);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
+  const { mutate: scheduleAbandonmentEmail } = useCartAbandonmentEmail();
   const { toasts, showToast } = useToast();
+  const router = useRouter();
+  const hasTrackedRecovery = useRef(false);
 
   // Sync cart with URL state (cart page only)
   // Cart is loaded server-side, this hook only syncs changes back to URL
@@ -176,13 +185,7 @@ export default function CartPage() {
       cart_item_count: cart.items.length,
       cart_total_amount: orderSummary.total,
       cart_currency: orderSummary.currency,
-      cart_items: cart.items.map(item => ({
-        type: item.title.includes('Workshop') ? 'workshop_voucher' as const : 'ticket' as const,
-        category: item.variant === 'member' ? 'standard' : item.variant,
-        stage: 'general_admission',
-        quantity: item.quantity,
-        price: item.price,
-      })),
+      cart_items: mapCartItemsToAnalytics(cart.items),
       email: data.email,
       company: data.company,
     } as EventProperties<'checkout_started'>);
@@ -202,13 +205,7 @@ export default function CartPage() {
       cart_item_count: cart.items.length,
       cart_total_amount: orderSummary.total,
       cart_currency: orderSummary.currency,
-      cart_items: cart.items.map(item => ({
-        type: item.title.includes('Workshop') ? 'workshop_voucher' as const : 'ticket' as const,
-        category: item.variant === 'member' ? 'standard' : item.variant,
-        stage: 'general_admission',
-        quantity: item.quantity,
-        price: item.price,
-      })),
+      cart_items: mapCartItemsToAnalytics(cart.items),
     } as EventProperties<'cart_reviewed'>);
 
     if (needsAttendeeInfo) {
@@ -219,6 +216,36 @@ export default function CartPage() {
       setCurrentStep('checkout');
     }
   };
+
+  // Track cart abandonment across multiple triggers
+  useCartAbandonment({
+    enabled: !isEmpty,
+    currentStep,
+    cartData: {
+      items: cart.items,
+      total: orderSummary.total,
+      currency: orderSummary.currency,
+    },
+    userEmail: capturedEmail,
+    onAbandonment: (data) => {
+      // Only schedule recovery email if we have the user's email
+      if (data.email) {
+        scheduleAbandonmentEmail({
+          email: data.email,
+          cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
+            title,
+            quantity,
+            price,
+            currency,
+          })),
+          cartTotal: orderSummary.total,
+          currency: orderSummary.currency,
+          // Include full cart state so the recovery URL restores the exact cart
+          encodedCartState: encodeCartState(cart),
+        });
+      }
+    },
+  });
 
   // Track step views
   useEffect(() => {
@@ -237,6 +264,36 @@ export default function CartPage() {
       } as EventProperties<'workshop_upsell_viewed'>);
     }
   }, [currentStep, cart.items.length, orderSummary.total, showWorkshopUpsells, bonusPercent, workshopVouchers.length, currentStage]);
+
+  // Track cart recovery visits (from abandonment email)
+  useEffect(() => {
+    const { utm_campaign, utm_source, utm_medium } = router.query;
+
+    // Only track once per session and when coming from recovery email
+    if (
+      !hasTrackedRecovery.current &&
+      utm_campaign === 'cart_recovery' &&
+      utm_source === 'email' &&
+      cart.items.length > 0
+    ) {
+      hasTrackedRecovery.current = true;
+
+      analytics.track('cart_recovery_clicked', {
+        cart_item_count: cart.items.length,
+        cart_total_amount: orderSummary.total,
+        cart_currency: orderSummary.currency,
+        cart_items: mapCartItemsToAnalytics(cart.items),
+        utm_source: utm_source as string,
+        utm_medium: (utm_medium as string) || 'abandonment',
+        utm_campaign: utm_campaign as string,
+      } as EventProperties<'cart_recovery_clicked'>);
+    }
+  }, [router.query, cart.items, orderSummary.total, orderSummary.currency]);
+
+  // Handler for when email is captured
+  const handleEmailCaptured = (email: string) => {
+    setCapturedEmail(email);
+  };
 
   // Empty order state
   if (isEmpty) {
@@ -644,6 +701,13 @@ export default function CartPage() {
                           company: attendees[0].company || '',
                           jobTitle: attendees[0].jobTitle || '',
                         } : undefined}
+                        cartData={{
+                          cart_item_count: cart.items.length,
+                          cart_total_amount: orderSummary.total,
+                          cart_currency: orderSummary.currency,
+                          cart_items: mapCartItemsToAnalytics(cart.items),
+                        }}
+                        onEmailCaptured={handleEmailCaptured}
                       />
                     </div>
 

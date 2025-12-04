@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { checkoutFormSchema, type CheckoutFormData } from '@/lib/validations/checkout';
 import { Input, Button } from '@/components/atoms';
 import Link from 'next/link';
+import { useFormFieldTracking } from '@/hooks/useFormFieldTracking';
 
 export interface CheckoutFormProps {
   /**
@@ -30,11 +31,31 @@ export interface CheckoutFormProps {
    * Default values to pre-fill the form (e.g., from primary attendee)
    */
   defaultValues?: Partial<CheckoutFormData>;
+  /**
+   * Cart data for analytics tracking
+   */
+  cartData?: {
+    cart_item_count: number;
+    cart_total_amount: number;
+    cart_currency: string;
+    cart_items: Array<{
+      type: 'ticket' | 'workshop_voucher';
+      category?: string;
+      stage?: string;
+      quantity: number;
+      price: number;
+    }>;
+  };
+  /**
+   * Called when user's email is captured (for abandonment tracking)
+   */
+  onEmailCaptured?: (email: string) => void;
 }
 
 /**
  * CheckoutForm organism component
  * Complete checkout form with validation using React Hook Form and Zod
+ * Includes comprehensive field-level analytics tracking
  */
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   onSubmit,
@@ -43,6 +64,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   currency,
   onBack,
   defaultValues,
+  cartData,
+  onEmailCaptured,
 }) => {
   const {
     register,
@@ -58,6 +81,33 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     },
   });
 
+  // Initialize field tracking hook
+  const { trackFieldFocus, trackFieldBlur } = useFormFieldTracking({
+    currentStep: 'checkout',
+    cartData,
+    onEmailCaptured,
+  });
+
+  // Create tracking-enabled register wrapper
+  const registerWithTracking = (
+    fieldName: keyof CheckoutFormData,
+    fieldType: string = 'text'
+  ) => {
+    const registration = register(fieldName);
+    
+    return {
+      ...registration,
+      onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+        trackFieldFocus(fieldName, fieldType);
+        registration.onBlur(e);
+      },
+      onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+        trackFieldBlur(fieldName, fieldType, e.target.value);
+        registration.onBlur(e);
+      },
+    };
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Contact Information */}
@@ -71,7 +121,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <Input
               id="email"
               type="email"
-              {...register('email')}
+              {...registerWithTracking('email', 'email')}
               placeholder="john@example.com"
               className="w-full"
               aria-invalid={!!errors.email}
@@ -88,7 +138,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <Input
               id="phone"
               type="tel"
-              {...register('phone')}
+              {...registerWithTracking('phone', 'tel')}
               placeholder="+41 12 345 67 89"
               className="w-full"
             />
@@ -108,7 +158,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <Input
                 id="firstName"
                 type="text"
-                {...register('firstName')}
+                {...registerWithTracking('firstName', 'text')}
                 placeholder="John"
                 className="w-full"
                 aria-invalid={!!errors.firstName}
@@ -125,7 +175,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <Input
                 id="lastName"
                 type="text"
-                {...register('lastName')}
+                {...registerWithTracking('lastName', 'text')}
                 placeholder="Doe"
                 className="w-full"
                 aria-invalid={!!errors.lastName}
@@ -144,7 +194,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <Input
                 id="company"
                 type="text"
-                {...register('company')}
+                {...registerWithTracking('company', 'text')}
                 placeholder="Acme Inc."
                 className="w-full"
                 aria-invalid={!!errors.company}
@@ -161,7 +211,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <Input
                 id="jobTitle"
                 type="text"
-                {...register('jobTitle')}
+                {...registerWithTracking('jobTitle', 'text')}
                 placeholder="Software Engineer"
                 className="w-full"
                 aria-invalid={!!errors.jobTitle}
@@ -179,7 +229,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <Input
               id="addressLine1"
               type="text"
-              {...register('addressLine1')}
+              {...registerWithTracking('addressLine1', 'text')}
               placeholder="123 Main Street"
               className="w-full"
               aria-invalid={!!errors.addressLine1}
@@ -196,7 +246,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <Input
               id="addressLine2"
               type="text"
-              {...register('addressLine2')}
+              {...registerWithTracking('addressLine2', 'text')}
               placeholder="Apartment, suite, etc."
               className="w-full"
             />
@@ -210,7 +260,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <Input
                 id="city"
                 type="text"
-                {...register('city')}
+                {...registerWithTracking('city', 'text')}
                 placeholder="Zurich"
                 className="w-full"
                 aria-invalid={!!errors.city}
@@ -227,7 +277,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <Input
                 id="state"
                 type="text"
-                {...register('state')}
+                {...registerWithTracking('state', 'text')}
                 placeholder="ZH"
                 className="w-full"
               />
@@ -240,7 +290,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               <Input
                 id="postalCode"
                 type="text"
-                {...register('postalCode')}
+                {...registerWithTracking('postalCode', 'text')}
                 placeholder="8001"
                 className="w-full"
                 aria-invalid={!!errors.postalCode}
@@ -258,7 +308,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <Input
               id="country"
               type="text"
-              {...register('country')}
+              {...registerWithTracking('country', 'text')}
               placeholder="Switzerland"
               className="w-full"
               aria-invalid={!!errors.country}

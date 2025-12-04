@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/cart';
 import { CrownIcon, TicketCheck, Trash2Icon, Minus, Plus } from "lucide-react";
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
+import { mapVariantToCategory } from '@/lib/analytics/helpers';
 
 export interface CartItemProps {
   /**
@@ -47,7 +48,7 @@ export const CartItem: React.FC<CartItemProps> = ({
     if (newQuantity !== previousQuantity.current) {
       // Track quantity change
       analytics.track('cart_quantity_updated', {
-        ticket_category: (item.variant === 'member' ? 'standard' : item.variant || 'standard') as 'standard' | 'vip',
+        ticket_category: mapVariantToCategory(item.variant),
         ticket_stage: 'general_admission',
         ticket_price: item.price,
         currency: item.currency,
@@ -64,7 +65,7 @@ export const CartItem: React.FC<CartItemProps> = ({
   const handleRemove = () => {
     // Track item removal
     analytics.track('ticket_removed_from_cart', {
-      ticket_category: (item.variant === 'member' ? 'standard' : item.variant || 'standard') as 'standard' | 'vip',
+      ticket_category: mapVariantToCategory(item.variant),
       ticket_stage: 'general_admission',
       ticket_price: item.price,
       currency: item.currency,

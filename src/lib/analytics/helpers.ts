@@ -6,8 +6,63 @@
  */
 
 import { analytics } from './client'
-import { serverAnalytics } from './server'
 import type { TicketCategory, TicketStage } from '@/lib/types/database'
+
+// ============================================================================
+// Variant Mapping Utilities
+// ============================================================================
+
+/**
+ * UI variant type used in cart and pricing components
+ * 'member' represents the combined Student/Unemployed ticket in the UI
+ */
+export type UIVariant = 'standard' | 'vip' | 'member';
+
+/**
+ * Maps UI variant to analytics TicketCategory
+ *
+ * The UI uses 'member' as a combined variant for Student/Unemployed tickets,
+ * but analytics tracks these as 'student' category.
+ *
+ * Valid categories: standard, student, unemployed, vip
+ * - 'member' → 'student' (combined student/unemployed in UI)
+ * - undefined → 'standard' (fallback)
+ *
+ * @param variant - The UI variant from cart item
+ * @returns The corresponding TicketCategory for analytics
+ */
+export function mapVariantToCategory(variant: UIVariant | string | undefined): TicketCategory {
+  if (variant === 'member') {
+    return 'student';
+  }
+  if (variant === 'standard' || variant === 'student' || variant === 'unemployed' || variant === 'vip') {
+    return variant;
+  }
+  // Fallback for undefined or unknown variants
+  return 'standard';
+}
+
+/**
+ * Maps an array of cart items to analytics format
+ * Centralizes the cart item transformation logic for consistent analytics tracking
+ *
+ * @param items - Array of cart items with variant and other properties
+ * @returns Array of items formatted for analytics events
+ */
+export function mapCartItemsToAnalytics(items: Array<{
+  title: string;
+  variant?: string;
+  quantity: number;
+  price: number;
+}>) {
+  return items.map((item) => ({
+    type: item.title.includes('Workshop') ? ('workshop_voucher' as const) : ('ticket' as const),
+    category: mapVariantToCategory(item.variant),
+    stage: 'general_admission' as TicketStage,
+    quantity: item.quantity,
+    price: item.price,
+  }));
+}
 
 // ============================================================================
 // Client-side Helpers
@@ -114,196 +169,3 @@ export function trackWorkshopViewed(params: {
   })
 }
 
-// ============================================================================
-// Server-side Helpers
-// ============================================================================
-
-/**
- * Track ticket purchase from server (webhook)
- */
-export async function trackTicketPurchaseServer(params: {
-  distinctId: string
-  ticketId: string
-  category: TicketCategory
-  stage: TicketStage
-  price: number
-  currency: string
-  attendeeCount: number
-  attendeeNames?: string[]
-  stripeSessionId: string
-  stripeCustomerId?: string
-  paymentIntentId?: string
-  email: string
-  firstName?: string
-  lastName?: string
-}) {
-  await serverAnalytics.track('ticket_purchased', params.distinctId, {
-    ticket_id: params.ticketId,
-    ticket_category: params.category,
-    ticket_stage: params.stage,
-    ticket_price: params.price,
-    currency: params.currency,
-    ticket_count: params.attendeeCount,
-    attendee_count: params.attendeeCount,
-    attendee_names: params.attendeeNames,
-    stripe_session_id: params.stripeSessionId,
-    stripe_customer_id: params.stripeCustomerId,
-    payment_intent_id: params.paymentIntentId,
-    payment_status: 'succeeded',
-    revenue_amount: params.price,
-    revenue_currency: params.currency,
-    revenue_type: 'ticket' as const,
-    transaction_id: params.stripeSessionId,
-    product_name: `${params.category} ${params.stage} ticket`,
-    product_category: params.category,
-    email: params.email,
-    first_name: params.firstName,
-    last_name: params.lastName,
-  })
-
-  // Also track revenue separately for PostHog revenue analytics
-  await serverAnalytics.revenue(params.distinctId, {
-    amount: params.price,
-    currency: params.currency,
-    type: 'ticket',
-    transactionId: params.stripeSessionId,
-    productName: `${params.category} ${params.stage} ticket`,
-    productCategory: params.category,
-    metadata: {
-      attendee_count: params.attendeeCount,
-      ticket_id: params.ticketId,
-    },
-  })
-}
-
-/**
- * Track workshop voucher purchase from server
- */
-export async function trackWorkshopVoucherPurchaseServer(params: {
-  distinctId: string
-  workshopId: string
-  workshopTitle: string
-  voucherCount: number
-  price: number
-  currency: string
-  stripeSessionId: string
-  stripeCustomerId?: string
-  email: string
-}) {
-  await serverAnalytics.track('workshop_voucher_purchased', params.distinctId, {
-    workshop_id: params.workshopId,
-    workshop_title: params.workshopTitle,
-    voucher_count: params.voucherCount,
-    stripe_session_id: params.stripeSessionId,
-    stripe_customer_id: params.stripeCustomerId,
-    payment_status: 'succeeded',
-    revenue_amount: params.price,
-    revenue_currency: params.currency,
-    revenue_type: 'workshop' as const,
-    transaction_id: params.stripeSessionId,
-    email: params.email,
-  })
-
-  await serverAnalytics.revenue(params.distinctId, {
-    amount: params.price,
-    currency: params.currency,
-    type: 'workshop',
-    transactionId: params.stripeSessionId,
-    productName: params.workshopTitle,
-    productCategory: 'workshop_voucher',
-    metadata: {
-      voucher_count: params.voucherCount,
-      workshop_id: params.workshopId,
-    },
-  })
-}
-
-/**
- * Track checkout completion from server
- */
-export async function trackCheckoutCompletedServer(params: {
-  distinctId: string
-  cartItemCount: number
-  cartTotalAmount: number
-  cartCurrency: string
-  stripeSessionId: string
-  paymentStatus: 'succeeded' | 'failed' | 'pending'
-  email: string
-}) {
-  await serverAnalytics.track('checkout_completed', params.distinctId, {
-    cart_item_count: params.cartItemCount,
-    cart_total_amount: params.cartTotalAmount,
-    cart_currency: params.cartCurrency,
-    cart_items: [], // Can be populated if needed
-    stripe_session_id: params.stripeSessionId,
-    payment_status: params.paymentStatus,
-    revenue_amount: params.cartTotalAmount,
-    revenue_currency: params.cartCurrency,
-    revenue_type: 'ticket' as const,
-    transaction_id: params.stripeSessionId,
-    email: params.email,
-  })
-}
-
-/**
- * Track payment failure from server
- */
-export async function trackPaymentFailedServer(params: {
-  distinctId: string
-  stripeSessionId: string
-  errorMessage: string
-  errorCode?: string
-}) {
-  await serverAnalytics.track('payment_failed', params.distinctId, {
-    stripe_session_id: params.stripeSessionId,
-    payment_status: 'failed',
-    error_message: params.errorMessage,
-    error_type: 'payment' as const,
-    error_severity: 'critical' as const,
-    error_code: params.errorCode,
-  })
-}
-
-/**
- * Track webhook received
- */
-export async function trackWebhookReceivedServer(params: {
-  distinctId: string
-  webhookSource: 'stripe' | 'other'
-  webhookEventType: string
-  webhookId?: string
-  processingTimeMs?: number
-  success: boolean
-}) {
-  await serverAnalytics.track('webhook_received', params.distinctId, {
-    webhook_source: params.webhookSource,
-    webhook_event_type: params.webhookEventType,
-    webhook_id: params.webhookId,
-    webhook_processing_time_ms: params.processingTimeMs,
-    webhook_success: params.success,
-  })
-}
-
-/**
- * Identify user from server
- */
-export async function identifyUserServer(params: {
-  userId: string
-  email: string
-  firstName?: string
-  lastName?: string
-  company?: string
-  jobTitle?: string
-}) {
-  await serverAnalytics.identify(params.userId, {
-    email: params.email,
-    first_name: params.firstName,
-    last_name: params.lastName,
-    name:
-      params.firstName && params.lastName
-        ? `${params.firstName} ${params.lastName}`
-        : undefined,
-    company: params.company,
-    job_title: params.jobTitle,
-  })
-}

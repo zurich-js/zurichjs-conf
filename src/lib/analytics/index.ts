@@ -1,17 +1,18 @@
 /**
- * Analytics Module
+ * Analytics Module - Client-side exports only
  *
- * Central exports for all analytics functionality.
+ * This barrel file only exports client-safe modules.
+ *
+ * For server-side analytics, import directly:
+ *   import { serverAnalytics } from '@/lib/analytics/server'
+ *   import { trackTicketPurchaseServer } from '@/lib/analytics/server-helpers'
  */
 
 // Client-side analytics
 export { analytics } from './client'
 
-// Server-side analytics
-export { serverAnalytics } from './server'
-
-// Event types
+// Event types (types only, no runtime code)
 export type * from './events'
 
-// Helper functions
+// Client-side helper functions (safe for browser)
 export * from './helpers'
