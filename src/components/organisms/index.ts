@@ -15,7 +15,7 @@ export { SponsorsSection } from './SponsorsSection';
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';
 export type { ScheduleSectionProps, Day, Event } from './ScheduleSection';
-export type { TicketsSectionProps, Plan } from './TicketsSection';
+export type { TicketsSectionProps, Plan, StockInfo } from './TicketsSection';
 export type { TicketsSectionWithStripeProps } from './TicketsSectionWithStripe';
 export type { TimelineSectionProps, TimelineEntry } from './TimelineSection';
 export type { SiteFooterProps } from './SiteFooter';

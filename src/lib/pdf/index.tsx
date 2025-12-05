@@ -1,11 +1,13 @@
 /**
  * PDF Generation Module
- * Handles generation of PDF tickets
+ * Handles generation of PDF tickets and invoices
  */
 
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { TicketPDF, type TicketPDFProps } from './ticket-pdf';
+import { InvoicePDF } from './invoice-pdf';
+import type { InvoicePDFProps } from '@/lib/types/b2b';
 
 /**
  * Generate a PDF ticket and return as buffer
@@ -21,6 +23,24 @@ export async function generateTicketPDF(props: TicketPDFProps): Promise<Buffer> 
     return pdfBuffer;
   } catch (error) {
     console.error('[PDF] ❌ Error generating PDF:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate a PDF invoice and return as buffer
+ */
+export async function generateInvoicePDF(props: InvoicePDFProps): Promise<Buffer> {
+  try {
+    console.log('[PDF] Generating PDF for invoice:', props.invoiceNumber);
+
+    const pdfDocument = <InvoicePDF {...props} />;
+    const pdfBuffer = await renderToBuffer(pdfDocument);
+
+    console.log('[PDF] ✅ Invoice PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+    return pdfBuffer;
+  } catch (error) {
+    console.error('[PDF] ❌ Error generating invoice PDF:', error);
     throw error;
   }
 }
@@ -55,3 +75,4 @@ export async function imageUrlToDataUrl(url: string): Promise<string> {
 }
 
 export type { TicketPDFProps } from './ticket-pdf';
+export type { InvoicePDFProps } from '@/lib/types/b2b';

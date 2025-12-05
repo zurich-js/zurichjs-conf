@@ -14,6 +14,18 @@ export type CTA =
   | { type: 'link'; href: string; label: string; disabled?: boolean }
   | { type: 'button'; onClick: () => void; label: string; disabled?: boolean; loading?: boolean };
 
+/**
+ * Stock availability info
+ */
+export interface StockInfo {
+  /** Remaining tickets (null = unlimited) */
+  remaining: number | null;
+  /** Total tickets available (null = unlimited) */
+  total: number | null;
+  /** Whether sold out */
+  soldOut: boolean;
+}
+
 export interface PriceCardProps {
   /**
    * Unique identifier
@@ -55,6 +67,10 @@ export interface PriceCardProps {
    * Animation delay in seconds
    */
   delay?: number;
+  /**
+   * Stock availability info
+   */
+  stock?: StockInfo;
 }
 
 /**
@@ -72,8 +88,10 @@ export const PriceCard: React.FC<PriceCardProps> = ({
   cta,
   variant = 'standard',
   delay = 0,
+  stock,
 }) => {
   const isVip = variant === 'vip';
+  const hasLimitedStock = stock?.total !== null && stock?.remaining !== null;
 
   const handleCTAClick = () => {
     // Track ticket button click
@@ -118,18 +136,25 @@ export const PriceCard: React.FC<PriceCardProps> = ({
           : '',
       }}
     >
-
       <div className="relative z-10 flex flex-col gap-2.5 h-full">
         {/* Header */}
-        <Heading
-          level="h3"
-          className="text-xl lg:text-lg xl:text-xl font-bold text-brand-white flex gap-2.5 items-center"
-        >
-          {isVip && (
-            <CrownIcon size={32} />
+        <div className="flex items-center justify-between">
+          <Heading
+            level="h3"
+            className="text-xl lg:text-lg xl:text-xl font-bold text-brand-white flex gap-2.5 items-center"
+          >
+            {isVip && (
+              <CrownIcon size={32} />
+            )}
+            {title}
+          </Heading>
+          {/* VIP remaining stock badge */}
+          {isVip && hasLimitedStock && !stock?.soldOut && stock?.remaining && (
+            <span className="bg-gray-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+              {stock.remaining} left
+            </span>
           )}
-          {title}
-        </Heading>
+        </div>
         <div className="flex flex-col gap-4 sm:gap-8">
           {blurb && (
             <p className="text-sm text-brand-gray-lightest leading-relaxed">
@@ -146,6 +171,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
               suffix="/ ticket"
             />
           </div>
+
 
           {/* Features */}
           <div className="mb-8 flex-1">

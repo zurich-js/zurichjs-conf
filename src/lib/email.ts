@@ -163,7 +163,7 @@ export async function sendTicketConfirmationEmail(
       from: EMAIL_CONFIG.from,
       to: data.to,
       replyTo: EMAIL_CONFIG.replyTo,
-      subject: `Your ${data.ticketType} for ${data.conferenceName}`,
+      subject: `Your ${data.ticketType} ticket for ${data.conferenceName}`,
       html: emailHtml,
       attachments: attachments.length > 0 ? attachments : undefined,
     });

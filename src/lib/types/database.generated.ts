@@ -14,27 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
-      scheduled_abandonment_emails: {
+      b2b_invoice_attendees: {
         Row: {
-          id: string
-          email: string
-          resend_email_id: string
-          scheduled_for: string
+          company: string | null
           created_at: string
+          email: string
+          email_sent: boolean | null
+          email_sent_at: string | null
+          first_name: string
+          id: string
+          invoice_id: string
+          job_title: string | null
+          last_name: string
+          ticket_id: string | null
+          updated_at: string
         }
         Insert: {
-          id?: string
-          email: string
-          resend_email_id: string
-          scheduled_for: string
+          company?: string | null
           created_at?: string
+          email: string
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          first_name: string
+          id?: string
+          invoice_id: string
+          job_title?: string | null
+          last_name: string
+          ticket_id?: string | null
+          updated_at?: string
         }
         Update: {
-          id?: string
-          email?: string
-          resend_email_id?: string
-          scheduled_for?: string
+          company?: string | null
           created_at?: string
+          email?: string
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          first_name?: string
+          id?: string
+          invoice_id?: string
+          job_title?: string | null
+          last_name?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_invoice_attendees_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_invoice_attendees_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_invoices: {
+        Row: {
+          bank_transfer_reference: string | null
+          billing_address_city: string
+          billing_address_country: string
+          billing_address_postal_code: string
+          billing_address_street: string
+          company_name: string
+          contact_email: string
+          contact_name: string
+          created_at: string
+          currency: string
+          due_date: string
+          id: string
+          invoice_number: string
+          invoice_notes: string | null
+          invoice_pdf_source: string | null
+          invoice_pdf_uploaded_at: string | null
+          invoice_pdf_url: string | null
+          issue_date: string
+          metadata: Json | null
+          notes: string | null
+          paid_at: string | null
+          paid_by: string | null
+          payment_method: string | null
+          status: Database["public"]["Enums"]["b2b_invoice_status"]
+          stripe_payment_link_id: string | null
+          stripe_payment_link_url: string | null
+          subtotal: number
+          ticket_category: string
+          ticket_quantity: number
+          ticket_stage: string
+          total_amount: number
+          unit_price: number
+          updated_at: string
+          vat_amount: number
+          vat_id: string | null
+          vat_rate: number
+        }
+        Insert: {
+          bank_transfer_reference?: string | null
+          billing_address_city: string
+          billing_address_country?: string
+          billing_address_postal_code: string
+          billing_address_street: string
+          company_name: string
+          contact_email: string
+          contact_name: string
+          created_at?: string
+          currency?: string
+          due_date: string
+          id?: string
+          invoice_number: string
+          invoice_notes?: string | null
+          invoice_pdf_source?: string | null
+          invoice_pdf_uploaded_at?: string | null
+          invoice_pdf_url?: string | null
+          issue_date?: string
+          metadata?: Json | null
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_method?: string | null
+          status?: Database["public"]["Enums"]["b2b_invoice_status"]
+          stripe_payment_link_id?: string | null
+          stripe_payment_link_url?: string | null
+          subtotal: number
+          ticket_category: string
+          ticket_quantity: number
+          ticket_stage: string
+          total_amount: number
+          unit_price: number
+          updated_at?: string
+          vat_amount?: number
+          vat_id?: string | null
+          vat_rate?: number
+        }
+        Update: {
+          bank_transfer_reference?: string | null
+          billing_address_city?: string
+          billing_address_country?: string
+          billing_address_postal_code?: string
+          billing_address_street?: string
+          company_name?: string
+          contact_email?: string
+          contact_name?: string
+          created_at?: string
+          currency?: string
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          invoice_notes?: string | null
+          invoice_pdf_source?: string | null
+          invoice_pdf_uploaded_at?: string | null
+          invoice_pdf_url?: string | null
+          issue_date?: string
+          metadata?: Json | null
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_method?: string | null
+          status?: Database["public"]["Enums"]["b2b_invoice_status"]
+          stripe_payment_link_id?: string | null
+          stripe_payment_link_url?: string | null
+          subtotal?: number
+          ticket_category?: string
+          ticket_quantity?: number
+          ticket_stage?: string
+          total_amount?: number
+          unit_price?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_id?: string | null
+          vat_rate?: number
         }
         Relationships: []
       }
@@ -80,6 +233,30 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_abandonment_emails: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          resend_email_id: string
+          scheduled_for: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          resend_email_id: string
+          scheduled_for: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          resend_email_id?: string
+          scheduled_for?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           amount_paid: number
@@ -102,6 +279,9 @@ export type Database = {
           ticket_category: string
           ticket_stage: string
           ticket_type: Database["public"]["Enums"]["ticket_type"]
+          transferred_at: string | null
+          transferred_from_email: string | null
+          transferred_from_name: string | null
           updated_at: string
           user_id: string | null
         }
@@ -126,6 +306,9 @@ export type Database = {
           ticket_category: string
           ticket_stage: string
           ticket_type: Database["public"]["Enums"]["ticket_type"]
+          transferred_at?: string | null
+          transferred_from_email?: string | null
+          transferred_from_name?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -150,6 +333,9 @@ export type Database = {
           ticket_category?: string
           ticket_stage?: string
           ticket_type?: Database["public"]["Enums"]["ticket_type"]
+          transferred_at?: string | null
+          transferred_from_email?: string | null
+          transferred_from_name?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -300,6 +486,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      b2b_invoice_status: "draft" | "sent" | "paid" | "cancelled"
       payment_status: "pending" | "confirmed" | "cancelled" | "refunded"
       ticket_type:
         | "blind_bird"
@@ -438,6 +625,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      b2b_invoice_status: ["draft", "sent", "paid", "cancelled"],
       payment_status: ["pending", "confirmed", "cancelled", "refunded"],
       ticket_type: [
         "blind_bird",

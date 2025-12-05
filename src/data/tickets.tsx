@@ -221,6 +221,9 @@ export const mapStripePlanToTicketPlan = (
   // Special handling for student/unemployed tickets - they need verification
   const isStudentUnemployed = stripePlan.id === 'standard_student_unemployed';
 
+  // Determine if sold out
+  const isSoldOut = stripePlan.stock?.soldOut ?? false;
+
   return {
     id: stripePlan.id,
     title: stripePlan.title,
@@ -230,9 +233,13 @@ export const mapStripePlanToTicketPlan = (
     currency: stripePlan.currency,
     features,
     variant: metadata.variant,
+    stock: stripePlan.stock,
     cta: {
       type: 'button' as const,
       onClick: () => {
+        if (isSoldOut) {
+          return; // Button should be disabled anyway
+        }
         if (isStudentUnemployed) {
           // Open verification modal
           if (openVerificationModal) {
@@ -262,11 +269,14 @@ export const mapStripePlanToTicketPlan = (
           }
         }
       },
-      label: isStudentUnemployed
-        ? 'Verify & Get Ticket'
-        : stripePlan.id === 'vip'
-          ? 'Get the full xp'
-          : 'Get your ticket',
+      label: isSoldOut
+        ? 'Sold Out'
+        : isStudentUnemployed
+          ? 'Verify & Get Ticket'
+          : stripePlan.id === 'vip'
+            ? 'Get the full xp'
+            : 'Get your ticket',
+      disabled: isSoldOut,
     },
   };
 };

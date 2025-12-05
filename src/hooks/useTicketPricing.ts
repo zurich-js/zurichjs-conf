@@ -11,6 +11,15 @@ import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird';
 
 /**
+ * Stock availability info
+ */
+export interface StockInfo {
+  remaining: number | null;
+  total: number | null;
+  soldOut: boolean;
+}
+
+/**
  * Ticket plan from API
  */
 export interface TicketPlan {
@@ -22,6 +31,7 @@ export interface TicketPlan {
   priceId: string;
   lookupKey: string;
   stage: PriceStage;
+  stock: StockInfo;
 }
 
 /**
@@ -30,6 +40,7 @@ export interface TicketPlan {
 interface UseTicketPricingResult {
   plans: TicketPlan[];
   currentStage: PriceStage | null;
+  stageDisplayName: string | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -66,6 +77,7 @@ export const useTicketPricing = (): UseTicketPricingResult => {
   return {
     plans: data?.plans ?? [],
     currentStage: data?.currentStage as PriceStage | null ?? null,
+    stageDisplayName: data?.stageDisplayName ?? null,
     isLoading,
     error: errorMessage,
     refetch: () => {

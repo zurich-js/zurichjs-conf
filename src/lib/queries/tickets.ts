@@ -13,6 +13,7 @@ import type { TicketPlan } from '@/hooks/useTicketPricing';
 export interface TicketPricingResponse {
   plans: TicketPlan[];
   currentStage: string;
+  stageDisplayName?: string;
   error?: string;
 }
 

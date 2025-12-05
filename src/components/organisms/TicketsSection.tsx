@@ -6,6 +6,18 @@ import { Feature } from '@/components/molecules/FeatureList';
 import {Heading, Kicker} from "@/components/atoms";
 import {Countdown} from "@/components/molecules";
 
+/**
+ * Stock availability info for a plan
+ */
+export interface StockInfo {
+  /** Remaining tickets (null = unlimited) */
+  remaining: number | null;
+  /** Total tickets available (null = unlimited) */
+  total: number | null;
+  /** Whether sold out */
+  soldOut: boolean;
+}
+
 export interface Plan {
   /**
    * Unique plan identifier
@@ -43,6 +55,10 @@ export interface Plan {
    * Visual variant
    */
   variant?: 'standard' | 'vip' | 'member';
+  /**
+   * Stock availability info
+   */
+  stock?: StockInfo;
 }
 
 export interface TicketsSectionProps {
@@ -154,6 +170,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
                 cta={plan.cta}
                 variant={plan.variant}
                 delay={index * 0.06}
+                stock={plan.stock}
               />
             )
           )}

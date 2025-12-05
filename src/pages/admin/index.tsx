@@ -3,11 +3,23 @@
  * Password-protected admin panel for managing tickets and viewing financials
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import dynamic from 'next/dynamic';
+import { B2BOrdersTab } from '@/components/admin/B2BOrdersTab';
 
-type Tab = 'tickets' | 'issue' | 'financials';
+// Dynamically import recharts to avoid SSR issues
+const LineChart = dynamic(() => import('recharts').then((mod) => mod.LineChart), { ssr: false });
+const Line = dynamic(() => import('recharts').then((mod) => mod.Line), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then((mod) => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then((mod) => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then((mod) => mod.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then((mod) => mod.ResponsiveContainer), { ssr: false });
+const Legend = dynamic(() => import('recharts').then((mod) => mod.Legend), { ssr: false });
+
+type Tab = 'tickets' | 'issue' | 'financials' | 'b2b';
 
 interface TicketMetadata {
   issuedManually?: boolean;
@@ -42,15 +54,45 @@ interface Ticket {
 
 interface FinancialData {
   summary: {
-    totalRevenue: number;
+    grossRevenue: number;
+    totalStripeFees: number;
+    netRevenue: number;
+    totalRevenue: number; // legacy field
     confirmedTickets: number;
     totalRefunded: number;
     refundedTickets: number;
-    netRevenue: number;
     totalTickets: number;
   };
   byCategory: Record<string, { revenue: number; count: number }>;
   byStage: Record<string, { revenue: number; count: number }>;
+  revenueBreakdown: {
+    individual: {
+      total: { count: number; revenue: number; fees: number };
+      stripe: { count: number; revenue: number; fees: number };
+      bank_transfer: { count: number; revenue: number; fees: number };
+    };
+    b2b: {
+      total: { count: number; revenue: number; fees: number };
+      stripe: { count: number; revenue: number; fees: number };
+      bank_transfer: { count: number; revenue: number; fees: number };
+    };
+    complimentary: { count: number };
+  };
+  b2bSummary: {
+    totalInvoices: number;
+    paidInvoices: number;
+    pendingInvoices: number;
+    draftInvoices: number;
+    paidRevenue: number;
+    pendingRevenue: number;
+  };
+  purchasesTimeSeries: Array<{
+    date: string;
+    count: number;
+    revenue: number;
+    cumulative: number;
+    cumulativeRevenue: number;
+  }>;
 }
 
 export default function AdminDashboard() {
@@ -218,54 +260,86 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Mobile: Dropdown select | Desktop: Inline tabs */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 inline-flex space-x-1 w-full sm:w-auto">
-            <button
-              onClick={() => setActiveTab('tickets')}
-              className={`${
-                activeTab === 'tickets'
-                  ? 'bg-[#F1E271] text-black shadow-sm'
-                  : 'text-gray-600 hover:text-black hover:bg-gray-50'
-              } flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-md font-medium text-xs sm:text-sm transition-all cursor-pointer`}
+          {/* Mobile dropdown */}
+          <div className="sm:hidden">
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value as Tab)}
+              className="block w-full rounded-lg border border-gray-200 bg-white pl-4 pr-10 py-3 text-sm font-medium text-gray-900 shadow-sm focus:border-[#F1E271] focus:ring-2 focus:ring-[#F1E271] focus:outline-none appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.293%207.293a1%201%200%20011.414%200L10%2010.586l3.293-3.293a1%201%200%20111.414%201.414l-4%204a1%201%200%2001-1.414%200l-4-4a1%201%200%20010-1.414z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-[length:20px_20px] bg-[right_12px_center] bg-no-repeat"
             >
-              <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                </svg>
-                <span>Tickets</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('issue')}
-              className={`${
-                activeTab === 'issue'
-                  ? 'bg-[#F1E271] text-black shadow-sm'
-                  : 'text-gray-600 hover:text-black hover:bg-gray-50'
-              } flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-md font-medium text-xs sm:text-sm transition-all cursor-pointer`}
-            >
-              <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>Issue</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('financials')}
-              className={`${
-                activeTab === 'financials'
-                  ? 'bg-[#F1E271] text-black shadow-sm'
-                  : 'text-gray-600 hover:text-black hover:bg-gray-50'
-              } flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-md font-medium text-xs sm:text-sm transition-all cursor-pointer`}
-            >
-              <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Financials</span>
-              </div>
-            </button>
+              <option value="tickets">Tickets</option>
+              <option value="issue">Issue Ticket</option>
+              <option value="financials">Financials</option>
+              <option value="b2b">B2B Orders</option>
+            </select>
+          </div>
+
+          {/* Desktop tabs */}
+          <div className="hidden sm:block">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 inline-flex space-x-1">
+              <button
+                onClick={() => setActiveTab('tickets')}
+                className={`${
+                  activeTab === 'tickets'
+                    ? 'bg-[#F1E271] text-black shadow-sm'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-50'
+                } px-6 py-2.5 rounded-md font-medium text-sm transition-all cursor-pointer`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                  </svg>
+                  <span>Tickets</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('issue')}
+                className={`${
+                  activeTab === 'issue'
+                    ? 'bg-[#F1E271] text-black shadow-sm'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-50'
+                } px-6 py-2.5 rounded-md font-medium text-sm transition-all cursor-pointer`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>Issue</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('financials')}
+                className={`${
+                  activeTab === 'financials'
+                    ? 'bg-[#F1E271] text-black shadow-sm'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-50'
+                } px-6 py-2.5 rounded-md font-medium text-sm transition-all cursor-pointer`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Financials</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('b2b')}
+                className={`${
+                  activeTab === 'b2b'
+                    ? 'bg-[#F1E271] text-black shadow-sm'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-50'
+                } px-6 py-2.5 rounded-md font-medium text-sm transition-all cursor-pointer`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span>B2B Orders</span>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* Tab Content */}
@@ -273,6 +347,7 @@ export default function AdminDashboard() {
             {activeTab === 'tickets' && <TicketsTab />}
             {activeTab === 'issue' && <IssueTicketTab />}
             {activeTab === 'financials' && <FinancialsTab />}
+            {activeTab === 'b2b' && <B2BOrdersTab />}
           </div>
         </div>
       </div>
@@ -615,6 +690,9 @@ interface ToastMessage {
   text: string;
 }
 
+type SortField = 'created_at' | 'first_name' | 'email' | 'amount_paid' | 'status' | 'ticket_category';
+type SortDirection = 'asc' | 'desc';
+
 function TicketsTab() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -627,9 +705,115 @@ function TicketsTab() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
+  // Search, sort, and pagination state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 5000);
+  };
+
+  // Filter, sort, and paginate tickets
+  const filteredAndSortedTickets = useMemo(() => {
+    let result = [...tickets];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (ticket) =>
+          ticket.first_name.toLowerCase().includes(query) ||
+          ticket.last_name.toLowerCase().includes(query) ||
+          ticket.email.toLowerCase().includes(query) ||
+          ticket.id.toLowerCase().includes(query) ||
+          ticket.ticket_category?.toLowerCase().includes(query) ||
+          ticket.ticket_stage?.toLowerCase().includes(query) ||
+          ticket.status.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let aValue: string | number = '';
+      let bValue: string | number = '';
+
+      switch (sortField) {
+        case 'created_at':
+          aValue = a.created_at || '';
+          bValue = b.created_at || '';
+          break;
+        case 'first_name':
+          aValue = `${a.first_name} ${a.last_name}`.toLowerCase();
+          bValue = `${b.first_name} ${b.last_name}`.toLowerCase();
+          break;
+        case 'email':
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        case 'amount_paid':
+          aValue = a.amount_paid;
+          bValue = b.amount_paid;
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'ticket_category':
+          aValue = a.ticket_category || '';
+          bValue = b.ticket_category || '';
+          break;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [tickets, searchQuery, sortField, sortDirection]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedTickets.length / ITEMS_PER_PAGE);
+  const paginatedTickets = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedTickets.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredAndSortedTickets, currentPage]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return (
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
+    }
+    return sortDirection === 'asc' ? (
+      <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+    ) : (
+      <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    );
   };
 
   useEffect(() => {
@@ -779,7 +963,8 @@ function TicketsTab() {
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-black">Ticket Management</h2>
               <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'} total
+                {filteredAndSortedTickets.length} of {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}
+                {searchQuery && ' (filtered)'}
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
@@ -791,6 +976,36 @@ function TicketsTab() {
               </span>
             </div>
           </div>
+          {/* Search Input */}
+          <div className="mt-4">
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search by name, email, ID, status..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         {/* Desktop Table View - Hidden on mobile */}
         <div className="hidden md:block overflow-x-auto">
@@ -800,20 +1015,50 @@ function TicketsTab() {
                 <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   ID
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
-                  Name
+                <th
+                  className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('first_name')}
+                >
+                  <div className="flex items-center gap-1">
+                    Name
+                    <SortIcon field="first_name" />
+                  </div>
                 </th>
-                <th className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
-                  Email
+                <th
+                  className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('email')}
+                >
+                  <div className="flex items-center gap-1">
+                    Email
+                    <SortIcon field="email" />
+                  </div>
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
-                  Type
+                <th
+                  className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('ticket_category')}
+                >
+                  <div className="flex items-center gap-1">
+                    Type
+                    <SortIcon field="ticket_category" />
+                  </div>
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
-                  Amount
+                <th
+                  className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('amount_paid')}
+                >
+                  <div className="flex items-center gap-1">
+                    Amount
+                    <SortIcon field="amount_paid" />
+                  </div>
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
-                  Status
+                <th
+                  className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center gap-1">
+                    Status
+                    <SortIcon field="status" />
+                  </div>
                 </th>
                 <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">
                   Actions
@@ -821,7 +1066,7 @@ function TicketsTab() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {tickets.map((ticket) => (
+              {paginatedTickets.map((ticket) => (
                 <tr key={ticket.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-mono text-black font-medium">
                     {ticket.id.substring(0, 8)}...
@@ -880,7 +1125,7 @@ function TicketsTab() {
 
         {/* Mobile Card View - Shown on mobile only */}
         <div className="md:hidden space-y-4 p-4">
-          {tickets.map((ticket) => (
+          {paginatedTickets.map((ticket) => (
             <div key={ticket.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
               {/* Card Header */}
               <div className="bg-gradient-to-r from-gray-50 to-white px-4 py-3 border-b border-gray-200">
@@ -951,6 +1196,78 @@ function TicketsTab() {
             </div>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedTickets.length)} of {filteredAndSortedTickets.length} results
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 text-sm font-medium rounded-lg cursor-pointer ${
+                          currentPage === pageNum
+                            ? 'bg-[#F1E271] text-black border border-[#F1E271]'
+                            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Ticket Details Modal */}
@@ -1774,13 +2091,19 @@ function FinancialsTab() {
 
   const { summary, byCategory, byStage } = financials;
 
+  // Format currency with thousand separators (Swiss format: 1'234.56)
+  const formatCHF = (cents: number) => {
+    return (cents / 100).toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Gross Revenue */}
         <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Total Revenue</h3>
+            <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Gross Revenue</h3>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1788,30 +2111,32 @@ function FinancialsTab() {
             </div>
           </div>
           <p className="text-xl font-bold text-green-600">
-            {(summary.totalRevenue / 100).toFixed(2)} CHF
+            {formatCHF(summary.grossRevenue)} CHF
           </p>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 font-medium">
             {summary.confirmedTickets} confirmed tickets
           </p>
         </div>
 
+        {/* Stripe Fees */}
         <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Total Refunded</h3>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Stripe Fees</h3>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
             </div>
           </div>
-          <p className="text-xl font-bold text-red-600">
-            {(summary.totalRefunded / 100).toFixed(2)} CHF
+          <p className="text-xl font-bold text-purple-600">
+            -{formatCHF(summary.totalStripeFees)} CHF
           </p>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 font-medium">
-            {summary.refundedTickets} refunded tickets
+            {summary.grossRevenue > 0 ? ((summary.totalStripeFees / summary.grossRevenue) * 100).toFixed(1) : 0}% of gross
           </p>
         </div>
 
+        {/* Net Revenue */}
         <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Net Revenue</h3>
@@ -1822,13 +2147,320 @@ function FinancialsTab() {
             </div>
           </div>
           <p className="text-xl font-bold text-blue-600">
-            {(summary.netRevenue / 100).toFixed(2)} CHF
+            {formatCHF(summary.netRevenue)} CHF
           </p>
           <p className="mt-2 text-xs sm:text-sm text-gray-600 font-medium">
-            {summary.totalTickets} total tickets
+            After Stripe fees
+          </p>
+        </div>
+
+        {/* Refunded */}
+        <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">Total Refunded</h3>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-xl font-bold text-red-600">
+            {formatCHF(summary.totalRefunded)} CHF
+          </p>
+          <p className="mt-2 text-xs sm:text-sm text-gray-600 font-medium">
+            {summary.refundedTickets} refunded tickets
           </p>
         </div>
       </div>
+
+      {/* Revenue by Sales Channel */}
+      {financials.revenueBreakdown && (
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h3 className="text-lg sm:text-xl font-bold text-black">Revenue by Sales Channel</h3>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">Breakdown of revenue by individual sales, B2B sales, and complimentary tickets</p>
+          </div>
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Individual Sales */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border border-blue-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <h4 className="font-bold text-gray-900">Individual Sales</h4>
+                </div>
+                <p className="text-2xl font-bold text-blue-700">
+                  {formatCHF(financials.revenueBreakdown.individual.total.revenue)} CHF
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {financials.revenueBreakdown.individual.total.count.toLocaleString('de-CH')} tickets
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Stripe fees: {formatCHF(financials.revenueBreakdown.individual.total.fees)} CHF
+                </p>
+
+                {/* Payment method breakdown */}
+                <div className="mt-4 pt-3 border-t border-blue-200 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">via Stripe</span>
+                    <span className="font-medium text-gray-900">
+                      {financials.revenueBreakdown.individual.stripe.count.toLocaleString('de-CH')} tickets · {formatCHF(financials.revenueBreakdown.individual.stripe.revenue)} CHF
+                    </span>
+                  </div>
+                  {financials.revenueBreakdown.individual.bank_transfer.count > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">via Bank Transfer</span>
+                      <span className="font-medium text-gray-900">
+                        {financials.revenueBreakdown.individual.bank_transfer.count.toLocaleString('de-CH')} tickets · {formatCHF(financials.revenueBreakdown.individual.bank_transfer.revenue)} CHF
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* B2B Sales */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <h4 className="font-bold text-gray-900">B2B Sales</h4>
+                </div>
+                <p className="text-2xl font-bold text-green-700">
+                  {formatCHF(financials.revenueBreakdown.b2b.total.revenue)} CHF
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {financials.revenueBreakdown.b2b.total.count.toLocaleString('de-CH')} tickets
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Stripe fees: {formatCHF(financials.revenueBreakdown.b2b.total.fees)} CHF
+                </p>
+
+                {/* Payment method breakdown */}
+                <div className="mt-4 pt-3 border-t border-green-200 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">via Bank Transfer</span>
+                    <span className="font-medium text-gray-900">
+                      {financials.revenueBreakdown.b2b.bank_transfer.count.toLocaleString('de-CH')} tickets · {formatCHF(financials.revenueBreakdown.b2b.bank_transfer.revenue)} CHF
+                    </span>
+                  </div>
+                  {financials.revenueBreakdown.b2b.bank_transfer.count > 0 && (
+                    <p className="text-xs text-green-600">No processing fees on bank transfers</p>
+                  )}
+                  {financials.revenueBreakdown.b2b.stripe.count > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">via Stripe</span>
+                      <span className="font-medium text-gray-900">
+                        {financials.revenueBreakdown.b2b.stripe.count.toLocaleString('de-CH')} tickets · {formatCHF(financials.revenueBreakdown.b2b.stripe.revenue)} CHF
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Complimentary */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-5 border border-gray-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                  <h4 className="font-bold text-gray-900">Complimentary</h4>
+                </div>
+                <p className="text-2xl font-bold text-gray-700">
+                  {financials.revenueBreakdown.complimentary.count} tickets
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Free tickets (no payment)
+                </p>
+              </div>
+            </div>
+
+            {/* B2B Invoice Summary */}
+            {financials.b2bSummary && financials.b2bSummary.totalInvoices > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-3">B2B Invoice Pipeline</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Paid Invoices</p>
+                    <p className="font-bold text-green-700">{financials.b2bSummary.paidInvoices}</p>
+                    <p className="text-xs text-gray-500">{formatCHF(financials.b2bSummary.paidRevenue)} CHF</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Pending Payment</p>
+                    <p className="font-bold text-amber-600">{financials.b2bSummary.pendingInvoices}</p>
+                    <p className="text-xs text-gray-500">{formatCHF(financials.b2bSummary.pendingRevenue)} CHF</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Draft Invoices</p>
+                    <p className="font-bold text-gray-600">{financials.b2bSummary.draftInvoices}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Total Invoices</p>
+                    <p className="font-bold text-gray-900">{financials.b2bSummary.totalInvoices}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Ticket Purchases Over Time Chart */}
+      {financials.purchasesTimeSeries && financials.purchasesTimeSeries.length > 0 && (
+        <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h3 className="text-lg sm:text-xl font-bold text-black">Ticket Purchases Over Time</h3>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">Daily ticket sales and cumulative total</p>
+          </div>
+          <div className="p-4 sm:p-6">
+            {/* Mobile: Simple cumulative chart | Desktop: Full chart with dual Y-axis */}
+            <div className="sm:hidden h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={financials.purchasesTimeSeries.map((item) => ({
+                    ...item,
+                    date: new Date(item.date).toLocaleDateString('en-CH', { day: 'numeric', month: 'short' }),
+                  }))}
+                  margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: '#6b7280', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fill: '#6b7280', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={30}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value, name) => {
+                      const numValue = typeof value === 'number' ? value : 0;
+                      if (name === 'Cumulative') return [numValue, 'Total Tickets'];
+                      if (name === 'Daily') return [numValue, 'Daily Sales'];
+                      return [numValue, String(name)];
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="cumulative"
+                    name="Cumulative"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4, fill: '#16a34a' }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    name="Daily"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4, fill: '#f97316' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="flex justify-center gap-4 mt-2 text-xs">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-green-600 inline-block"></span> Total
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-orange-500 inline-block"></span> Daily
+                </span>
+              </div>
+            </div>
+
+            {/* Desktop: Full chart */}
+            <div className="hidden sm:block h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={financials.purchasesTimeSeries.map((item) => ({
+                    ...item,
+                    date: new Date(item.date).toLocaleDateString('en-CH', { month: 'short', day: 'numeric' }),
+                    revenueChf: item.revenue / 100,
+                    cumulativeRevenueChf: item.cumulativeRevenue / 100,
+                  }))}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickLine={{ stroke: '#e5e7eb' }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickLine={{ stroke: '#e5e7eb' }}
+                    label={{ value: 'Tickets', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickLine={{ stroke: '#e5e7eb' }}
+                    label={{ value: 'Revenue (CHF)', angle: 90, position: 'insideRight', fill: '#6b7280' }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value, name) => {
+                      const numValue = typeof value === 'number' ? value : 0;
+                      if (name === 'Daily Sales') return [numValue, 'Daily Sales'];
+                      if (name === 'Cumulative') return [numValue, 'Cumulative Tickets'];
+                      if (name === 'Daily Revenue') return [`${numValue.toFixed(2)} CHF`, 'Daily Revenue'];
+                      return [numValue, String(name)];
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="count"
+                    name="Daily Sales"
+                    stroke="#f97316"
+                    strokeWidth={3}
+                    dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: '#f97316' }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="cumulative"
+                    name="Cumulative"
+                    stroke="#16a34a"
+                    strokeWidth={3}
+                    dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: '#16a34a' }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="revenueChf"
+                    name="Daily Revenue"
+                    stroke="#7c3aed"
+                    strokeWidth={3}
+                    strokeDasharray="5 5"
+                    dot={{ fill: '#7c3aed', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: '#7c3aed' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* By Category */}
       <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">

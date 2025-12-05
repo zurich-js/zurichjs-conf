@@ -1,23 +1,33 @@
 /**
  * Stripe Pricing API Handler
- * Fetches current ticket pricing from Stripe based on lookup keys
+ * Fetches current ticket pricing from Stripe with stock availability
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 
-import { getCurrentStage, type PriceStage } from '@/config/pricing-stages';
+import {
+  getCurrentStage,
+  getStockInfo,
+  GLOBAL_STOCK_LIMITS,
+  type PriceStage,
+  type TicketCategory,
+  type StockInfo,
+} from '@/config/pricing-stages';
+import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
 
-/**
- * Ticket category types
- */
-type TicketCategory = 'standard_student_unemployed' | 'standard' | 'vip';
+// Ticket categories to fetch
+const TICKET_CATEGORIES: TicketCategory[] = ['standard_student_unemployed', 'standard', 'vip'];
 
-/**
- * Response structure for a single ticket plan
- */
+// Category display titles
+const CATEGORY_TITLES: Record<TicketCategory, string> = {
+  standard_student_unemployed: 'Student / Unemployed',
+  standard: 'Standard',
+  vip: 'VIP',
+};
+
 interface TicketPlanResponse {
-  id: string;
+  id: TicketCategory;
   title: string;
   price: number;
   comparePrice?: number;
@@ -25,38 +35,32 @@ interface TicketPlanResponse {
   priceId: string;
   lookupKey: string;
   stage: PriceStage;
+  stock: StockInfo;
 }
 
-/**
- * API response structure
- */
 interface PricingResponse {
   plans: TicketPlanResponse[];
   currentStage: PriceStage;
+  stageDisplayName: string;
   error?: string;
 }
 
 /**
- * Initialize Stripe with secret key from environment variables
+ * Get Stripe client
  */
-const getStripeClient = (): Stripe => {
+const getStripe = (): Stripe => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
-
   if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
+    throw new Error('STRIPE_SECRET_KEY is not configured');
   }
-
-  return new Stripe(secretKey, {
-    apiVersion: '2025-10-29.clover',
-  });
+  return new Stripe(secretKey, { apiVersion: '2025-10-29.clover' });
 };
 
 /**
- * Build lookup key from category and stage
- * Note: Student/Unemployed tickets have fixed pricing regardless of stage
+ * Build Stripe lookup key for a category/stage
  */
 const buildLookupKey = (category: TicketCategory, stage: PriceStage): string => {
-  // Student/Unemployed always uses fixed lookup key
+  // Student/Unemployed has fixed pricing
   if (category === 'standard_student_unemployed') {
     return 'standard_student_unemployed';
   }
@@ -64,148 +68,104 @@ const buildLookupKey = (category: TicketCategory, stage: PriceStage): string => 
 };
 
 /**
- * Get display title for each category
+ * Fetch price from Stripe by lookup key
  */
-const getCategoryTitle = (category: TicketCategory): string => {
-  switch (category) {
-    case 'standard_student_unemployed':
-      return 'Student / Unemployed';
-    case 'standard':
-      return 'Standard';
-    case 'vip':
-      return 'VIP';
-    default:
-      return category;
-  }
-};
-
-/**
- * Fetch a single price from Stripe using lookup key
- */
-const fetchPriceByLookupKey = async (
-  stripe: Stripe,
-  lookupKey: string
-): Promise<Stripe.Price | null> => {
+const fetchPrice = async (stripe: Stripe, lookupKey: string): Promise<Stripe.Price | null> => {
   try {
-    const prices = await stripe.prices.list({
+    const { data } = await stripe.prices.list({
       lookup_keys: [lookupKey],
       active: true,
       limit: 1,
     });
-
-    return prices.data[0] || null;
-  } catch (error) {
-    console.error(`Error fetching price for lookup key ${lookupKey}:`, error);
+    return data[0] || null;
+  } catch {
     return null;
   }
 };
 
-/**
- * Get the comparison price to show savings
- * Always compares against the FINAL/HIGHEST price stage for each category
- */
-const getComparisonPrice = async (
-  stripe: Stripe,
-  category: TicketCategory,
-  currentStage: PriceStage
-): Promise<number | undefined> => {
-  // Student/Unemployed tickets don't have comparison prices (fixed discount)
-  if (category === 'standard_student_unemployed') {
-    return undefined;
-  }
-
-    // Standard and VIP's final stage is 'late_bird'
-  const finalStage: PriceStage = 'late_bird';
-
-  // Don't show comparison if we're already at the final stage
-  if (currentStage === finalStage) {
-    return undefined;
-  }
-
-  // Fetch the final stage price to use as comparison
-  const lookupKey = buildLookupKey(category, finalStage);
-  const price = await fetchPriceByLookupKey(stripe, lookupKey);
-  
-  return price?.unit_amount ?? undefined;
-};
-
-/**
- * Fetch all current ticket prices from Stripe
- */
-const fetchTicketPrices = async (
-  currentStage: PriceStage
-): Promise<TicketPlanResponse[]> => {
-  const stripe = getStripeClient();
-  const categories: TicketCategory[] = ['standard_student_unemployed', 'standard', 'vip'];
-  const plans: TicketPlanResponse[] = [];
-
-  for (const category of categories) {
-    // Student/Unemployed tickets have fixed pricing (always use the same lookup key)
-    const lookupKey = buildLookupKey(category, currentStage);
-    const price = await fetchPriceByLookupKey(stripe, lookupKey);
-
-    if (price && price.unit_amount && price.currency) {
-      // Student/Unemployed tickets don't have comparison prices
-      const comparePrice = category === 'standard_student_unemployed' 
-        ? undefined 
-        : await getComparisonPrice(stripe, category, currentStage);
-      
-      plans.push({
-        id: category,
-        title: getCategoryTitle(category),
-        price: price.unit_amount,
-        comparePrice,
-        currency: price.currency.toUpperCase(),
-        priceId: price.id,
-        lookupKey,
-        stage: category === 'standard_student_unemployed' ? 'standard' : currentStage,
-      });
-    }
-  }
-
-  return plans;
-};
-
-/**
- * API Handler
- */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<PricingResponse>
 ): Promise<void> {
-  // Only allow GET requests
   if (req.method !== 'GET') {
     res.status(405).json({
       plans: [],
       currentStage: 'standard',
+      stageDisplayName: 'Standard',
       error: 'Method not allowed',
     });
     return;
   }
 
   try {
-    // Determine current pricing stage from centralized config
-    const currentStageConfig = getCurrentStage();
+    const stripe = getStripe();
+
+    // Get ticket counts for stock-aware stage determination
+    const { counts } = await getTicketCounts();
+    const currentStageConfig = getCurrentStage(counts);
     const currentStage = currentStageConfig.stage;
 
-    // Fetch prices from Stripe
-    const plans = await fetchTicketPrices(currentStage);
+    // Fetch all prices in parallel
+    const pricePromises = TICKET_CATEGORIES.map(async (category) => {
+      const lookupKey = buildLookupKey(category, currentStage);
+      const price = await fetchPrice(stripe, lookupKey);
 
-    // Return successful response
+      if (!price?.unit_amount || !price?.currency) {
+        return null;
+      }
+
+      // Get comparison price (late_bird price for non-student categories)
+      let comparePrice: number | undefined;
+      if (category !== 'standard_student_unemployed' && currentStage !== 'late_bird') {
+        const lateBirdKey = buildLookupKey(category, 'late_bird');
+        const lateBirdPrice = await fetchPrice(stripe, lateBirdKey);
+        comparePrice = lateBirdPrice?.unit_amount ?? undefined;
+      }
+
+      // Calculate stock info
+      const stock = counts
+        ? getStockInfo(category, currentStage, counts)
+        : { remaining: null, total: null, soldOut: false };
+
+      // For VIP, always show global stock limit
+      const finalStock: StockInfo = category === 'vip'
+        ? {
+            remaining: counts
+              ? Math.max(0, GLOBAL_STOCK_LIMITS.vip - (counts.byCategory.vip || 0))
+              : GLOBAL_STOCK_LIMITS.vip,
+            total: GLOBAL_STOCK_LIMITS.vip,
+            soldOut: counts ? (counts.byCategory.vip || 0) >= GLOBAL_STOCK_LIMITS.vip : false,
+          }
+        : stock;
+
+      return {
+        id: category,
+        title: CATEGORY_TITLES[category],
+        price: price.unit_amount,
+        comparePrice,
+        currency: price.currency.toUpperCase(),
+        priceId: price.id,
+        lookupKey,
+        stage: category === 'standard_student_unemployed' ? 'standard' : currentStage,
+        stock: finalStock,
+      } satisfies TicketPlanResponse;
+    });
+
+    const results = await Promise.all(pricePromises);
+    const plans = results.filter((p): p is NonNullable<typeof p> => p !== null);
+
     res.status(200).json({
       plans,
       currentStage,
+      stageDisplayName: currentStageConfig.displayName,
     });
   } catch (error) {
     console.error('Error fetching ticket prices:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch prices';
-    
     res.status(500).json({
       plans: [],
       currentStage: 'standard',
-      error: errorMessage,
+      stageDisplayName: 'Standard',
+      error: error instanceof Error ? error.message : 'Failed to fetch prices',
     });
   }
 }
-
