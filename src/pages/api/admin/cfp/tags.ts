@@ -1,0 +1,51 @@
+/**
+ * CFP Admin Tags API
+ * GET /api/admin/cfp/tags - List all tags
+ * POST /api/admin/cfp/tags - Create a new tag
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getAdminTags } from '@/lib/cfp/admin';
+import { createTag } from '@/lib/cfp/tags';
+import { verifyAdminToken } from '@/lib/admin/auth';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Verify admin authentication (same as main admin)
+  const token = req.cookies.admin_token;
+  if (!verifyAdminToken(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (req.method === 'GET') {
+    try {
+      const tags = await getAdminTags();
+      return res.status(200).json({ tags });
+    } catch (error) {
+      console.error('[CFP Admin Tags API] Error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  if (req.method === 'POST') {
+    const { name, is_suggested } = req.body;
+
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: 'Tag name is required' });
+    }
+
+    try {
+      const { tag, error } = await createTag(name, is_suggested ?? true);
+
+      if (error) {
+        return res.status(400).json({ error });
+      }
+
+      return res.status(201).json({ tag });
+    } catch (error) {
+      console.error('[CFP Admin Tags API] Error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}

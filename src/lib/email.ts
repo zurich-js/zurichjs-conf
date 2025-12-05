@@ -10,6 +10,8 @@ import { TicketPurchaseEmail } from '@/emails/templates/TicketPurchaseEmail';
 import type { TicketPurchaseEmailProps } from '@/emails/templates/TicketPurchaseEmail';
 import { VoucherPurchaseEmail } from '@/emails/templates/VoucherPurchaseEmail';
 import type { VoucherPurchaseEmailProps } from '@/emails/templates/VoucherPurchaseEmail';
+import { ReviewerInvitationEmail } from '@/emails/templates/ReviewerInvitationEmail';
+import type { ReviewerInvitationEmailProps } from '@/emails/templates/ReviewerInvitationEmail';
 import { getFirstName } from '@/emails/utils/render';
 import { getZurichJSVenueMapUrl } from '@/lib/venue';
 import { getBaseUrl } from '@/lib/url';
@@ -85,6 +87,15 @@ export interface VoucherConfirmationData {
   currency: string;
   bonusPercent?: number;
   orderUrl?: string;
+}
+
+/**
+ * Data structure for reviewer invitation email
+ */
+export interface ReviewerInvitationData {
+  to: string;
+  reviewerName?: string;
+  accessLevel: 'full_access' | 'anonymous' | 'readonly';
 }
 
 /**
@@ -252,6 +263,67 @@ export async function sendVoucherConfirmationEmail(
     console.error('[Email] ❌ Exception sending voucher confirmation email:', error);
     console.error('[Email] Error details:', error instanceof Error ? error.message : 'Unknown error');
     console.error('[Email] Stack trace:', error instanceof Error ? error.stack : 'No stack');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Send reviewer invitation email
+ */
+export async function sendReviewerInvitationEmail(
+  data: ReviewerInvitationData
+): Promise<{ success: boolean; error?: string }> {
+  console.log('[Email] ====== Sending reviewer invitation email ======');
+  console.log('[Email] To:', data.to);
+  console.log('[Email] Reviewer name:', data.reviewerName || '(not provided)');
+  console.log('[Email] Access level:', data.accessLevel);
+
+  try {
+    const resend = getResendClient();
+
+    // Build the login URL - reviewers will use magic link auth
+    const loginUrl = `${getBaseUrl()}/cfp/reviewer/login?email=${encodeURIComponent(data.to)}`;
+
+    // Map data to email template props
+    const emailProps: ReviewerInvitationEmailProps = {
+      reviewerName: data.reviewerName,
+      reviewerEmail: data.to,
+      accessLevel: data.accessLevel,
+      loginUrl,
+      supportEmail: EMAIL_CONFIG.supportEmail,
+    };
+
+    console.log('[Email] Rendering reviewer invitation template...');
+
+    // Render the email template to HTML
+    const emailHtml = await render(
+      React.createElement(ReviewerInvitationEmail, emailProps)
+    );
+    console.log('[Email] ✅ Email template rendered successfully');
+
+    // Send the email
+    console.log('[Email] Sending email via Resend...');
+    const result = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: data.to,
+      replyTo: EMAIL_CONFIG.replyTo,
+      subject: 'You\'re Invited to Review CFP Submissions - ZurichJS Conference 2026',
+      html: emailHtml,
+    });
+
+    if (result.error) {
+      console.error('[Email] ❌ Error sending reviewer invitation email:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    console.log('[Email] ✅ Reviewer invitation email sent successfully!');
+    console.log('[Email] Email ID:', result.data?.id);
+    console.log('[Email] To:', data.to);
+    console.log('[Email] ====== Reviewer invitation email complete ======');
+    return { success: true };
+  } catch (error) {
+    console.error('[Email] ❌ Exception sending reviewer invitation email:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }

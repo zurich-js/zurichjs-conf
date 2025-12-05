@@ -1,0 +1,73 @@
+/**
+ * CFP Admin Reviewer API
+ * PUT /api/admin/cfp/reviewers/[id] - Update reviewer (role, access level)
+ * DELETE /api/admin/cfp/reviewers/[id] - Revoke reviewer access (deactivate)
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { updateReviewer, deactivateReviewer } from '@/lib/cfp/reviewers';
+import { verifyAdminToken } from '@/lib/admin/auth';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Verify admin authentication
+  const token = req.cookies.admin_token;
+  if (!verifyAdminToken(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { id } = req.query;
+
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ error: 'Reviewer ID is required' });
+  }
+
+  // PUT - Update reviewer
+  if (req.method === 'PUT') {
+    try {
+      const { role, can_see_speaker_identity, name } = req.body;
+
+      const updates: {
+        name?: string;
+        role?: 'super_admin' | 'reviewer' | 'readonly';
+        can_see_speaker_identity?: boolean;
+      } = {};
+
+      if (name !== undefined) updates.name = name;
+      if (role !== undefined) updates.role = role;
+      if (can_see_speaker_identity !== undefined) updates.can_see_speaker_identity = can_see_speaker_identity;
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: 'No updates provided' });
+      }
+
+      const { reviewer, error } = await updateReviewer(id, updates);
+
+      if (error) {
+        return res.status(400).json({ error });
+      }
+
+      return res.status(200).json({ reviewer });
+    } catch (error) {
+      console.error('[Admin Reviewer API] Error updating:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  // DELETE - Revoke access (deactivate)
+  if (req.method === 'DELETE') {
+    try {
+      const { success, error } = await deactivateReviewer(id);
+
+      if (error) {
+        return res.status(400).json({ error });
+      }
+
+      return res.status(200).json({ success });
+    } catch (error) {
+      console.error('[Admin Reviewer API] Error deactivating:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
