@@ -2,10 +2,11 @@
  * CFP Auth Callback API
  * POST /api/cfp/auth/callback
  * Creates or links speaker profile after successful magic link authentication
+ * Also sets the session cookies for server-side rendering
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getOrCreateSpeaker } from '@/lib/cfp/auth';
+import { getOrCreateSpeaker, createSupabaseApiClient } from '@/lib/cfp/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -13,12 +14,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { userId, email } = req.body;
+    const { userId, email, access_token, refresh_token } = req.body;
 
     if (!userId || !email) {
       return res.status(400).json({
         error: 'Missing required fields: userId and email'
       });
+    }
+
+    // If tokens are provided, set the session on the server side to establish cookies
+    if (access_token && refresh_token) {
+      const supabase = createSupabaseApiClient(req, res);
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (sessionError) {
+        console.error('[CFP Auth Callback] Session error:', sessionError);
+        // Continue anyway - the speaker profile creation should still work
+      }
     }
 
     // Get or create speaker profile

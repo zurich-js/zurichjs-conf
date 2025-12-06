@@ -3,7 +3,7 @@
  * Edit speaker profile information
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
@@ -22,6 +22,13 @@ export default function CfpProfile({ speaker }: ProfileProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Image upload state
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(speaker.profile_image_url);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageSuccess, setImageSuccess] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<SpeakerProfileFormData>({
     first_name: speaker.first_name || '',
@@ -51,6 +58,61 @@ export default function CfpProfile({ speaker }: ProfileProps) {
 
   const countWords = (text: string) => {
     return text.trim().split(/\s+/).filter(Boolean).length;
+  };
+
+  const handleImageSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setImageError('Invalid file type. Accepted formats: JPG, PNG, WebP, GIF');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setImageError('File too large. Maximum size is 5MB');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setImageError(null);
+    setImageSuccess(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/cfp/speaker/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+
+      setProfileImageUrl(data.imageUrl);
+      setImageSuccess('Profile picture updated!');
+
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -247,6 +309,89 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                     placeholder="Acme Inc."
                     fullWidth
                   />
+                </div>
+              </div>
+            </section>
+
+            {/* Profile Photo */}
+            <section className="bg-brand-gray-dark rounded-2xl p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">Profile Photo</h2>
+              <p className="text-sm text-brand-gray-light mb-4">
+                Upload a professional photo that will be displayed on the conference website if your talk is accepted.
+              </p>
+
+              <div className="flex items-start gap-6">
+                {/* Image Preview */}
+                <div className="flex-shrink-0">
+                  {profileImageUrl ? (
+                    <img
+                      src={profileImageUrl}
+                      alt="Profile"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-brand-gray-medium"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-brand-gray-darkest border-2 border-brand-gray-medium flex items-center justify-center">
+                      <svg className="w-10 h-10 text-brand-gray-medium" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload Controls */}
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleImageSelect}
+                    disabled={isUploadingImage}
+                    className="px-4 py-2 bg-brand-gray-darkest text-white rounded-lg hover:bg-brand-gray-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                  >
+                    {isUploadingImage ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        {profileImageUrl ? 'Change Photo' : 'Upload Photo'}
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-xs text-brand-gray-medium mt-2">
+                    JPG, PNG, WebP or GIF. Max 5MB.
+                  </p>
+
+                  {/* Image Upload Success */}
+                  {imageSuccess && (
+                    <div className="flex items-center gap-2 text-green-400 text-sm mt-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {imageSuccess}
+                    </div>
+                  )}
+
+                  {/* Image Upload Error */}
+                  {imageError && (
+                    <div className="flex items-center gap-2 text-red-400 text-sm mt-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {imageError}
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
