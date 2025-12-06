@@ -9,22 +9,7 @@ import { useRouter } from 'next/router';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
-import type {
-  CfpReviewer,
-  CfpSubmission,
-  CfpSpeaker,
-  CfpTag,
-  CfpReview,
-  CfpSubmissionStats,
-} from '@/lib/types/cfp';
-
-interface SubmissionWithDetails extends Omit<CfpSubmission, 'speaker'> {
-  speaker?: CfpSpeaker | null;
-  tags?: CfpTag[];
-  my_review?: CfpReview | null;
-  all_reviews?: CfpReview[];
-  stats: CfpSubmissionStats;
-}
+import { useCfpReviewerSubmission, useSubmitReview } from '@/hooks/useCfp';
 
 const TYPE_LABELS: Record<string, string> = {
   lightning: 'Lightning Talk (10 min)',
@@ -44,13 +29,9 @@ export default function ReviewerSubmission() {
   const router = useRouter();
   const { id } = router.query;
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [reviewer, setReviewer] = useState<CfpReviewer | null>(null);
-  const [submission, setSubmission] = useState<SubmissionWithDetails | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -64,72 +45,55 @@ export default function ReviewerSubmission() {
   });
   const [privateNotes, setPrivateNotes] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [formInitialized, setFormInitialized] = useState(false);
 
+  // Check authentication
   useEffect(() => {
-    if (!id) return;
+    const checkAuth = async () => {
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
 
-    const loadData = async () => {
-      try {
-        // Check authentication
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !user) {
-          console.log('[Reviewer Submission] No authenticated user');
-          router.replace('/cfp/reviewer/login');
-          return;
-        }
-
-        setUserId(user.id);
-
-        // Fetch submission data
-        const response = await fetch(`/api/cfp/reviewer/submissions/${id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            userId: user.id,
-          }),
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.replace('/cfp/reviewer/login');
-            return;
-          }
-          if (response.status === 404) {
-            setError('Submission not found');
-            return;
-          }
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to load submission');
-        }
-
-        const data = await response.json();
-        setReviewer(data.reviewer);
-        setSubmission(data.submission);
-
-        // Initialize form with existing review
-        if (data.submission.my_review) {
-          setScores({
-            score_overall: data.submission.my_review.score_overall || 0,
-            score_relevance: data.submission.my_review.score_relevance || 0,
-            score_technical_depth: data.submission.my_review.score_technical_depth || 0,
-            score_clarity: data.submission.my_review.score_clarity || 0,
-            score_diversity: data.submission.my_review.score_diversity || 0,
-          });
-          setPrivateNotes(data.submission.my_review.private_notes || '');
-          setFeedback(data.submission.my_review.feedback_to_speaker || '');
-        }
-      } catch (err) {
-        console.error('[Reviewer Submission] Error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load submission');
-      } finally {
-        setLoading(false);
+      if (error || !authUser || !authUser.email) {
+        router.replace('/cfp/reviewer/login');
+        return;
       }
+
+      setUser({ id: authUser.id, email: authUser.email });
+      setAuthChecked(true);
     };
 
-    loadData();
-  }, [id, router]);
+    checkAuth();
+  }, [router]);
+
+  // Fetch submission data using TanStack Query (with 10-min cache)
+  const {
+    submission,
+    reviewer,
+    isLoading,
+    error,
+  } = useCfpReviewerSubmission(
+    (id as string) ?? '',
+    user?.id ?? '',
+    user?.email ?? ''
+  );
+
+  // Submit review mutation
+  const submitReviewMutation = useSubmitReview();
+
+  // Initialize form with existing review data
+  useEffect(() => {
+    if (submission?.my_review && !formInitialized) {
+      setScores({
+        score_overall: submission.my_review.score_overall || 0,
+        score_relevance: submission.my_review.score_relevance || 0,
+        score_technical_depth: submission.my_review.score_technical_depth || 0,
+        score_clarity: submission.my_review.score_clarity || 0,
+        score_diversity: submission.my_review.score_diversity || 0,
+      });
+      setPrivateNotes(submission.my_review.private_notes || '');
+      setFeedback(submission.my_review.feedback_to_speaker || '');
+      setFormInitialized(true);
+    }
+  }, [submission, formInitialized]);
 
   const hasExistingReview = !!submission?.my_review;
 
@@ -145,17 +109,14 @@ export default function ReviewerSubmission() {
       return;
     }
 
-    setIsSubmitting(true);
     setFormError(null);
 
     try {
-      const method = hasExistingReview ? 'PUT' : 'POST';
-      const response = await fetch(`/api/cfp/reviewer/submissions/${submission!.id}/review`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          userId,
+      await submitReviewMutation.mutateAsync({
+        submissionId: submission!.id,
+        userId: user!.id,
+        isUpdate: hasExistingReview,
+        data: {
           score_overall: scores.score_overall,
           score_relevance: scores.score_relevance || undefined,
           score_technical_depth: scores.score_technical_depth || undefined,
@@ -163,14 +124,8 @@ export default function ReviewerSubmission() {
           score_diversity: scores.score_diversity || undefined,
           private_notes: privateNotes || undefined,
           feedback_to_speaker: feedback || undefined,
-        }),
+        },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit review');
-      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -178,12 +133,11 @@ export default function ReviewerSubmission() {
       }, 1500);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  if (loading) {
+  // Show loading while checking auth or loading data
+  if (!authChecked || isLoading) {
     return (
       <div className="min-h-screen bg-brand-gray-darkest flex items-center justify-center">
         <div className="text-center">
@@ -587,8 +541,8 @@ export default function ReviewerSubmission() {
                       type="submit"
                       variant="primary"
                       size="lg"
-                      loading={isSubmitting}
-                      disabled={isSubmitting || scores.score_overall === 0}
+                      loading={submitReviewMutation.isPending}
+                      disabled={submitReviewMutation.isPending || scores.score_overall === 0}
                       className="w-full"
                     >
                       {hasExistingReview ? 'Update Review' : 'Submit Review'}

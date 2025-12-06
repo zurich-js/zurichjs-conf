@@ -9,19 +9,7 @@ import { useRouter } from 'next/router';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
-import type {
-  CfpReviewer,
-  CfpSubmission,
-  CfpTag,
-  CfpReview,
-  CfpSubmissionStats,
-} from '@/lib/types/cfp';
-
-interface SubmissionWithReview extends CfpSubmission {
-  tags?: CfpTag[];
-  my_review?: CfpReview | null;
-  stats: CfpSubmissionStats;
-}
+import { useCfpReviewerDashboard } from '@/hooks/useCfp';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
@@ -55,61 +43,35 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function ReviewerDashboard() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [reviewer, setReviewer] = useState<CfpReviewer | null>(null);
-  const [submissions, setSubmissions] = useState<SubmissionWithReview[]>([]);
-  const [totalSubmissions, setTotalSubmissions] = useState(0);
   const [filter, setFilter] = useState<'all' | 'reviewed' | 'pending'>('all');
-  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
+  // Check authentication
   useEffect(() => {
-    const checkAuthAndLoadData = async () => {
-      try {
-        // Check if user is authenticated
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const checkAuth = async () => {
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
 
-        if (userError || !user) {
-          console.log('[Reviewer Dashboard] No authenticated user');
-          router.replace('/cfp/reviewer/login');
-          return;
-        }
-
-        console.log('[Reviewer Dashboard] User authenticated:', user.email);
-
-        // Fetch reviewer data and submissions from API
-        const response = await fetch('/api/cfp/reviewer/dashboard', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            userId: user.id,
-            email: user.email,
-          }),
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.replace('/cfp/reviewer/login');
-            return;
-          }
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to load dashboard');
-        }
-
-        const data = await response.json();
-        setReviewer(data.reviewer);
-        setSubmissions(data.submissions);
-        setTotalSubmissions(data.total);
-      } catch (err) {
-        console.error('[Reviewer Dashboard] Error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
-      } finally {
-        setLoading(false);
+      if (error || !authUser || !authUser.email) {
+        router.replace('/cfp/reviewer/login');
+        return;
       }
+
+      setUser({ id: authUser.id, email: authUser.email });
+      setAuthChecked(true);
     };
 
-    checkAuthAndLoadData();
+    checkAuth();
   }, [router]);
+
+  // Fetch dashboard data using TanStack Query (with 10-min cache)
+  const {
+    reviewer,
+    submissions,
+    stats,
+    isLoading,
+    error,
+  } = useCfpReviewerDashboard(user?.id ?? '', user?.email ?? '');
 
   const reviewedCount = submissions.filter((s) => s.my_review).length;
   const pendingCount = submissions.filter((s) => !s.my_review).length;
@@ -125,7 +87,8 @@ export default function ReviewerDashboard() {
     router.push('/cfp/reviewer/login');
   };
 
-  if (loading) {
+  // Show loading while checking auth or loading data
+  if (!authChecked || isLoading) {
     return (
       <div className="min-h-screen bg-brand-gray-darkest flex items-center justify-center">
         <div className="text-center">
@@ -186,7 +149,7 @@ export default function ReviewerDashboard() {
           {/* Stats */}
           <div className="grid sm:grid-cols-3 gap-4 mb-8">
             <div className="bg-brand-gray-dark rounded-xl p-6">
-              <div className="text-3xl font-bold text-white mb-1">{totalSubmissions}</div>
+              <div className="text-3xl font-bold text-white mb-1">{stats.total}</div>
               <div className="text-brand-gray-light text-sm">Total Submissions</div>
             </div>
             <div className="bg-brand-gray-dark rounded-xl p-6">
@@ -316,4 +279,3 @@ export default function ReviewerDashboard() {
     </>
   );
 }
-
