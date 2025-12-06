@@ -65,6 +65,48 @@ export const teamRequestKeys = {
 } as const;
 
 /**
+ * CFP (Call for Papers) query keys
+ */
+export const cfpKeys = {
+  /**
+   * Base key for all CFP queries
+   */
+  all: ['cfp'] as const,
+
+  /**
+   * Speaker profile
+   */
+  speaker: () => [...cfpKeys.all, 'speaker'] as const,
+
+  /**
+   * Submissions
+   */
+  submissions: () => [...cfpKeys.all, 'submissions'] as const,
+  submission: (id: string) => [...cfpKeys.submissions(), id] as const,
+
+  /**
+   * Suggested tags for submissions
+   */
+  suggestedTags: () => [...cfpKeys.all, 'suggested-tags'] as const,
+
+  /**
+   * Travel management
+   */
+  travel: () => [...cfpKeys.all, 'travel'] as const,
+  flights: () => [...cfpKeys.travel(), 'flights'] as const,
+  reimbursements: () => [...cfpKeys.travel(), 'reimbursements'] as const,
+
+  /**
+   * Reviewer
+   */
+  reviewer: {
+    all: () => [...cfpKeys.all, 'reviewer'] as const,
+    dashboard: () => [...cfpKeys.reviewer.all(), 'dashboard'] as const,
+    submission: (id: string) => [...cfpKeys.reviewer.all(), 'submission', id] as const,
+  },
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
@@ -72,5 +114,6 @@ export const queryKeys = {
   checkout: checkoutKeys,
   workshops: workshopsKeys,
   teamRequest: teamRequestKeys,
+  cfp: cfpKeys,
 } as const;
 
