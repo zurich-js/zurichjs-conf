@@ -87,7 +87,10 @@ export default function CfpAuthCallback() {
 
         console.log('[CFP Auth Callback] User verified:', user.email);
 
-        // Create/update speaker profile
+        // Get the current session to pass tokens to the API for server-side cookie setting
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+        // Create/update speaker profile and set server-side session cookies
         const response = await fetch('/api/cfp/auth/callback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -95,6 +98,8 @@ export default function CfpAuthCallback() {
           body: JSON.stringify({
             userId: user.id,
             email: user.email,
+            access_token: currentSession?.access_token,
+            refresh_token: currentSession?.refresh_token,
           }),
         });
 

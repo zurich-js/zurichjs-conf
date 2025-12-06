@@ -217,7 +217,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete }
                     ({draftSubmissions.length})
                   </span>
                 </h2>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-4">
                   {draftSubmissions.map((submission) => (
                     <SubmissionCard key={submission.id} submission={submission} />
                   ))}
@@ -234,7 +234,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete }
                     ({submittedSubmissions.length})
                   </span>
                 </h2>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-4">
                   {submittedSubmissions.map((submission) => (
                     <SubmissionCard key={submission.id} submission={submission} />
                   ))}
