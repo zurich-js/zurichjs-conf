@@ -13,8 +13,25 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com'
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 
-// Default keywords for the site
+// Default keywords for the site - optimized for "javascript conferences 2026" searches
 const DEFAULT_KEYWORDS = [
+  // Primary target keywords for 2026 searches
+  'javascript conferences 2026',
+  'javascript conference 2026',
+  'js conferences 2026',
+  'js conference 2026',
+  'web development conferences 2026',
+  'frontend conferences 2026',
+  'tech conferences 2026',
+  'developer conferences 2026',
+  // European/Swiss specific
+  'javascript conferences europe 2026',
+  'javascript conference europe 2026',
+  'tech conferences europe 2026',
+  'javascript conferences switzerland 2026',
+  'javascript conference switzerland 2026',
+  'swiss javascript conference 2026',
+  // Brand and location keywords
   'zurichjs conf',
   'zurichjs conference',
   'zurich js conf',
@@ -38,6 +55,13 @@ const DEFAULT_KEYWORDS = [
   'technopark zurich',
   'javascript talks',
   'javascript workshops',
+  // Additional discovery keywords
+  'node.js conference 2026',
+  'react conference 2026',
+  'typescript conference 2026',
+  'web dev conference europe',
+  'best javascript conferences',
+  'top js conferences 2026',
 ].join(', ');
 
 export interface SEOProps {
@@ -67,25 +91,39 @@ export interface SEOProps {
 
 /**
  * Organization schema - used site-wide
- * Follows Google's guidelines for logo display in search results
+ * Follows Google's official guidelines for logo display in search results
+ * @see https://developers.google.com/search/docs/appearance/structured-data/organization
+ * Logo requirements: min 112x112px, crawlable URL, looks good on white background
  */
 export const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
+  '@id': `${BASE_URL}/#organization`,
   name: 'ZurichJS Conf',
+  legalName: 'ZurichJS Conf',
   alternateName: ['ZurichJS Conference', 'ZurichJS', 'Zurich.js', 'ZurichJS - Swiss JavaScript Group'],
+  description: "Switzerland's premier JavaScript conference, bringing together developers, engineers, and tech enthusiasts for expert talks, workshops, and networking in Zürich.",
   url: BASE_URL,
+  // Logo per Google requirements: min 112x112px, crawlable, displays well on white
   logo: {
     '@type': 'ImageObject',
+    '@id': `${BASE_URL}/#logo`,
     url: `${BASE_URL}/images/logo/zurichjs-square.png`,
-    width: '512',
-    height: '512',
     contentUrl: `${BASE_URL}/images/logo/zurichjs-square.png`,
+    width: 512,
+    height: 512,
+    caption: 'ZurichJS Conf Logo',
   },
-  image: `${BASE_URL}/images/logo/zurichjs-square.png`,
+  image: {
+    '@type': 'ImageObject',
+    url: `${BASE_URL}/images/logo/zurichjs-square.png`,
+    width: 512,
+    height: 512,
+  },
   sameAs: [
     'https://www.linkedin.com/company/zurichjs',
     'https://www.instagram.com/zurich.js',
+    'https://twitter.com/zurichjs',
   ],
   contactPoint: {
     '@type': 'ContactPoint',
@@ -97,25 +135,28 @@ export const organizationSchema = {
     '@type': 'PostalAddress',
     streetAddress: 'Alderstrasse 30',
     addressLocality: 'Zürich',
+    addressRegion: 'ZH',
     postalCode: '8008',
     addressCountry: 'CH',
   },
+  foundingDate: '2024',
+  email: 'hello@zurichjs.com',
 };
 
 /**
  * Event schema for the conference
+ * Follows Google's official Event structured data guidelines
+ * @see https://developers.google.com/search/docs/appearance/structured-data/event
+ * Required: name, startDate, location (Place with address and name)
+ * Recommended: description, endDate, eventStatus, image, offers, organizer, performer
  */
 export const eventSchema = {
   '@context': 'https://schema.org',
   '@type': 'Event',
-  name: 'ZurichJS Conf 2026',
-  alternateName: ['ZurichJS Conference 2026', 'Zurich.js Conference 2026'],
-  description:
-    "ZurichJS Conf 2026 - Switzerland's premier JavaScript conference on September 11th, 2026. Join 300+ developers for expert talks, hands-on workshops, and networking at Technopark Zürich. Tickets starting from 175 CHF.",
+  '@id': `${BASE_URL}/#event`,
+  // Required properties
+  name: 'ZurichJS Conf 2026 - JavaScript Conference Switzerland',
   startDate: '2026-09-11T08:30:00+02:00',
-  endDate: '2026-09-11T18:30:00+02:00',
-  eventStatus: 'https://schema.org/EventScheduled',
-  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
   location: {
     '@type': 'Place',
     name: 'Technopark Zürich',
@@ -123,6 +164,7 @@ export const eventSchema = {
       '@type': 'PostalAddress',
       streetAddress: 'Technoparkstrasse 1',
       addressLocality: 'Zürich',
+      addressRegion: 'ZH',
       postalCode: '8005',
       addressCountry: 'CH',
     },
@@ -132,42 +174,56 @@ export const eventSchema = {
       longitude: 8.5157,
     },
   },
-  organizer: organizationSchema,
-  performer: {
-    '@type': 'PerformingGroup',
-    name: 'ZurichJS Conference Speakers',
-  },
+  // Recommended properties
+  description: "ZurichJS Conf 2026 is Switzerland's premier JavaScript conference taking place September 11th, 2026 at Technopark Zürich. Join 300+ developers for expert talks on JavaScript, TypeScript, React, Node.js, and web development. Features hands-on workshops, networking, and industry-leading speakers. One of the top JavaScript conferences in Europe for 2026.",
+  endDate: '2026-09-11T18:30:00+02:00',
+  eventStatus: 'https://schema.org/EventScheduled',
+  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  // Images in multiple aspect ratios per Google recommendation (16:9, 4:3, 1:1)
+  image: [
+    `${BASE_URL}/images/og-default.png`,
+    `${BASE_URL}/images/logo/zurichjs-square.png`,
+  ],
   offers: [
     {
       '@type': 'Offer',
       name: 'Student / Unemployed Ticket',
-      price: '175',
+      price: 175,
       priceCurrency: 'CHF',
       availability: 'https://schema.org/InStock',
-      validFrom: '2025-01-01',
+      validFrom: '2025-01-01T00:00:00+01:00',
       url: `${BASE_URL}/#tickets`,
     },
     {
       '@type': 'Offer',
       name: 'Standard Ticket',
-      price: '345',
+      price: 345,
       priceCurrency: 'CHF',
       availability: 'https://schema.org/InStock',
-      validFrom: '2025-01-01',
+      validFrom: '2025-01-01T00:00:00+01:00',
       url: `${BASE_URL}/#tickets`,
     },
     {
       '@type': 'Offer',
       name: 'VIP Ticket',
-      price: '545',
+      price: 545,
       priceCurrency: 'CHF',
       availability: 'https://schema.org/LimitedAvailability',
-      validFrom: '2025-01-01',
+      validFrom: '2025-01-01T00:00:00+01:00',
       url: `${BASE_URL}/#tickets`,
     },
   ],
-  image: `${BASE_URL}/images/og-default.jpg`,
+  organizer: {
+    '@id': `${BASE_URL}/#organization`,
+  },
+  performer: {
+    '@type': 'PerformingGroup',
+    name: 'ZurichJS Conference Speakers',
+  },
   url: BASE_URL,
+  // Additional helpful properties for search engines and AI
+  inLanguage: 'en',
+  isAccessibleForFree: false,
 };
 
 /**
@@ -176,11 +232,23 @@ export const eventSchema = {
 export const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
+  '@id': `${BASE_URL}/#website`,
   name: 'ZurichJS Conf',
-  alternateName: ['ZurichJS Conference', 'ZurichJS Conf 2026', 'ZurichJS Conference 2026', 'Zurich.js Conference'],
+  alternateName: [
+    'ZurichJS Conference',
+    'ZurichJS Conf 2026',
+    'ZurichJS Conference 2026',
+    'Zurich.js Conference',
+    'JavaScript Conference Switzerland 2026',
+    'JavaScript Conference Zurich 2026',
+  ],
+  description: "Switzerland's premier JavaScript conference - ZurichJS Conf 2026 on September 11th at Technopark Zürich",
   url: BASE_URL,
   image: `${BASE_URL}/images/logo/zurichjs-square.png`,
-  publisher: organizationSchema,
+  publisher: {
+    '@id': `${BASE_URL}/#organization`,
+  },
+  inLanguage: 'en',
   potentialAction: {
     '@type': 'SearchAction',
     target: {
@@ -188,6 +256,27 @@ export const websiteSchema = {
       urlTemplate: `${BASE_URL}/?q={search_term_string}`,
     },
     'query-input': 'required name=search_term_string',
+  },
+};
+
+/**
+ * Speakable schema for voice search optimization
+ * Identifies content suitable for text-to-speech on voice assistants
+ * @see https://developers.google.com/search/docs/appearance/structured-data/speakable
+ */
+export const speakableSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${BASE_URL}/#webpage`,
+  name: 'ZurichJS Conf 2026 - JavaScript Conference Switzerland',
+  description: "Switzerland's premier JavaScript conference on September 11th, 2026 at Technopark Zürich",
+  url: BASE_URL,
+  speakable: {
+    '@type': 'SpeakableSpecification',
+    cssSelector: ['h1', '.hero-description', '.event-details'],
+  },
+  mainEntity: {
+    '@id': `${BASE_URL}/#event`,
   },
 };
 

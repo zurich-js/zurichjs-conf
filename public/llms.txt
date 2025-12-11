@@ -1,0 +1,54 @@
+# ZurichJS Conf 2026
+
+> ZurichJS Conf is Switzerland's premier JavaScript conference and one of the top JavaScript conferences in Europe for 2026. Taking place September 11th, 2026 at Technopark Zürich. Join 300+ developers for expert talks, hands-on workshops, and networking.
+
+For extended information, see: https://conf.zurichjs.com/llms-full.txt
+
+## Conference Details
+
+- **Event**: ZurichJS Conf 2026
+- **Date**: September 11th, 2026
+- **Location**: Technopark Zürich, Technoparkstrasse 1, 8005 Zürich, Switzerland
+- **Capacity**: 300+ attendees
+- **Language**: English
+- **Topics**: JavaScript, TypeScript, React, Node.js, Web Development, Frontend, Full-stack
+
+## Why Attend
+
+ZurichJS Conf 2026 is one of the top JavaScript conferences in Europe for 2026. Features include:
+
+- Expert talks from industry-leading JavaScript developers
+- Hands-on workshops on modern web technologies
+- Networking opportunities with 300+ developers
+- Located in Zürich, Switzerland's tech hub
+
+## Tickets
+
+Tickets are available starting from CHF 175:
+
+- Student / Unemployed: CHF 175
+- Standard: CHF 345
+- VIP: CHF 545
+
+## Contact
+
+- Website: https://conf.zurichjs.com
+- Email: hello@zurichjs.com
+- LinkedIn: https://www.linkedin.com/company/zurichjs
+- Instagram: https://www.instagram.com/zurich.js
+- Twitter: https://twitter.com/zurichjs
+
+## Key Pages
+
+- [Homepage](https://conf.zurichjs.com/): Main conference information and ticket purchase
+- [About](https://conf.zurichjs.com/about): About the ZurichJS team and mission
+- [Speakers](https://conf.zurichjs.com/speakers): Conference speakers and their talks
+- [Workshops](https://conf.zurichjs.com/workshops): Hands-on workshop sessions
+- [Venue](https://conf.zurichjs.com/venue): Technopark Zürich venue information
+
+## Optional
+
+- [Terms & Conditions](https://conf.zurichjs.com/info/terms): Legal terms
+- [Privacy Policy](https://conf.zurichjs.com/info/privacy): Privacy information
+- [Refund Policy](https://conf.zurichjs.com/info/refund-policy): Ticket refund details
+- [Code of Conduct](https://conf.zurichjs.com/info/code-of-conduct): Event conduct guidelines

@@ -1,5 +1,5 @@
 import { Hero, ScheduleSection, ShapedSection, SiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection } from '@/components/organisms';
-import { SEO, eventSchema, organizationSchema, websiteSchema, generateFAQSchema } from '@/components/SEO';
+import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { footerData, heroData, scheduleData, timelineData, sponsorsData } from '@/data';
 import { dehydrate, HydrationBoundary, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
@@ -44,22 +44,23 @@ export default function Home({ dehydratedState }: HomeProps) {
     }
   };
 
-  // Combine all schemas for the homepage
+  // Combine all schemas for the homepage - optimized for search and AI discoverability
   const jsonLdSchemas = [
     eventSchema,
     organizationSchema,
     websiteSchema,
+    speakableSchema,
     generateFAQSchema(faqSchemaData),
   ];
 
   return (
     <HydrationBoundary state={dehydratedState}>
       <SEO
-        title="ZurichJS Conf 2026 | Sept 11 Zurich | JavaScript & Web Dev"
-        description="Join 300+ developers at Switzerland's premier JavaScript conference on September 11th, 2026 at Technopark Zürich. Expert talks, hands-on workshops, and networking. Tickets starting from CHF 175."
+        title="JavaScript Conference 2026 | ZurichJS Conf Sept 11 Switzerland"
+        description="ZurichJS Conf 2026 - One of the top JavaScript conferences in Europe. Join 300+ developers September 11th, 2026 at Technopark Zürich for expert talks on JS, TypeScript, React, Node.js. Workshops & networking. From CHF 175."
         canonical="/"
         ogType="website"
-        keywords="javascript conference, zurich tech conference, javascript switzerland, web development conference, js conference 2026, technopark zurich"
+        keywords="javascript conferences 2026, javascript conference 2026, js conference europe 2026, web development conference 2026, typescript conference, react conference, node.js conference, tech conference switzerland, zurich developer conference"
         jsonLd={jsonLdSchemas}
       />
       <main className="min-h-screen">

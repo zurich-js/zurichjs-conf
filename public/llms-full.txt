@@ -1,0 +1,156 @@
+# ZurichJS Conf 2026 - Complete Conference Information
+
+> ZurichJS Conf is Switzerland's premier JavaScript conference and one of the top JavaScript conferences in Europe for 2026. Taking place September 11th, 2026 at Technopark Zürich, the event brings together 300+ developers for expert talks, hands-on workshops, and networking opportunities.
+
+## Quick Facts
+
+- **Event Name**: ZurichJS Conf 2026
+- **Date**: Friday, September 11th, 2026
+- **Time**: 8:30 AM - 6:30 PM (CEST)
+- **Venue**: Technopark Zürich
+- **Address**: Technoparkstrasse 1, 8005 Zürich, Switzerland
+- **Capacity**: 300+ attendees
+- **Language**: English
+- **Format**: In-person only
+
+## About the Conference
+
+ZurichJS Conf 2026 is a full-day JavaScript conference organized by ZurichJS, Switzerland's largest JavaScript community. The conference focuses on modern web development technologies including:
+
+- JavaScript (ES2024+)
+- TypeScript
+- React and React ecosystem
+- Node.js and server-side JavaScript
+- Modern frontend frameworks (Vue, Angular, Svelte)
+- Web APIs and browser technologies
+- Performance optimization
+- Testing and tooling
+- Developer experience
+
+### Why ZurichJS Conf?
+
+1. **Expert Speakers**: Industry-leading JavaScript developers share their knowledge
+2. **Hands-on Workshops**: Interactive sessions for practical learning
+3. **Networking**: Connect with 300+ developers from across Europe
+4. **Prime Location**: Zürich is Switzerland's tech hub, accessible from all of Europe
+5. **Single Track**: No FOMO - everyone sees every talk
+6. **Community-Driven**: Organized by developers, for developers
+
+## Schedule Overview
+
+### Pre-Conference Events
+
+- **September 9th, 2026**: Community Day - informal meetup (free)
+- **September 10th, 2026**: Workshop Day - hands-on workshops (separate tickets)
+
+### Main Conference Day - September 11th, 2026
+
+- **8:00 AM**: Doors open, registration
+- **8:30 AM**: Conference begins
+- **Morning**: Keynote and talks
+- **12:30 PM**: Lunch break with networking
+- **Afternoon**: Technical talks
+- **5:30 PM**: Closing keynote
+- **6:30 PM**: Conference ends
+- **Evening**: After-party (details TBA)
+
+### Post-Conference
+
+- **September 12th**: VIP activities with speakers
+
+## Ticket Options
+
+### Student / Unemployed Ticket - CHF 175
+- Full conference access
+- All talks and sessions
+- Lunch and refreshments
+- Conference swag
+- Requires valid student ID or proof of unemployment status
+
+### Standard Ticket - CHF 345
+- Full conference access
+- All talks and sessions
+- Lunch and refreshments
+- Conference swag
+
+### VIP Ticket - CHF 545
+- Everything in Standard
+- Reserved seating
+- VIP lounge access
+- Exclusive speaker dinner invitation
+- Post-conference activities on September 12th
+- Limited availability
+
+## Venue Details
+
+### Technopark Zürich
+
+Technopark is Zürich's premier innovation and technology center, located in the heart of Zürich West district.
+
+**Address**: Technoparkstrasse 1, 8005 Zürich, Switzerland
+
+**Getting There**:
+- **By Train**: Zürich HB (main station) is 10 minutes away by tram
+- **By Tram**: Lines 4, 13, 17 to "Technopark" stop
+- **By Air**: Zürich Airport (ZRH) is 20 minutes by train
+- **By Car**: Parking available nearby (not recommended due to limited availability)
+
+**Coordinates**: 47.3903°N, 8.5157°E
+
+## Team & Organization
+
+ZurichJS Conf is organized by the ZurichJS community, Switzerland's largest JavaScript meetup group with regular monthly events since 2014.
+
+**Organizers**:
+- ZurichJS volunteer team
+- Contact: hello@zurichjs.com
+
+## Frequently Asked Questions
+
+### What if I can't attend?
+All ticket sales are final. Refunds are evaluated case-by-case for exceptional circumstances. Contact hello@zurichjs.com for requests.
+
+### Are there team discounts?
+Yes! Team packages include custom pricing, simplified invoicing, and bank transfer options. Contact us for team pricing.
+
+### Can I transfer my ticket?
+Ticket transfers are evaluated case-by-case. Email hello@zurichjs.com with your order number.
+
+### Are workshops included in the ticket?
+Workshop day (September 10th) requires separate tickets. Main conference ticket covers only September 11th.
+
+### Is the event in English?
+Yes, all talks and materials are in English.
+
+### What should I bring?
+- Conference ticket (digital or printed)
+- ID matching ticket name
+- Laptop for workshops (if attending)
+- Business cards for networking
+
+## Connect With Us
+
+- **Website**: https://conf.zurichjs.com
+- **Email**: hello@zurichjs.com
+- **LinkedIn**: https://www.linkedin.com/company/zurichjs
+- **Instagram**: https://www.instagram.com/zurich.js
+- **Twitter/X**: https://twitter.com/zurichjs
+
+## Key Pages
+
+- [Homepage](https://conf.zurichjs.com/): Tickets and main information
+- [About](https://conf.zurichjs.com/about): Team and mission
+- [Speakers](https://conf.zurichjs.com/speakers): Conference speakers
+- [Workshops](https://conf.zurichjs.com/workshops): Workshop information
+- [Venue](https://conf.zurichjs.com/venue): Location details
+
+## Legal Information
+
+- [Terms & Conditions](https://conf.zurichjs.com/info/terms)
+- [Privacy Policy](https://conf.zurichjs.com/info/privacy)
+- [Refund Policy](https://conf.zurichjs.com/info/refund-policy)
+- [Code of Conduct](https://conf.zurichjs.com/info/code-of-conduct)
+
+## SEO Keywords
+
+JavaScript conferences 2026, JavaScript conference 2026, JS conferences Europe 2026, web development conferences 2026, TypeScript conference, React conference, Node.js conference, frontend conference Europe, tech conference Switzerland, developer conference Zürich, Swiss JavaScript conference, JavaScript event 2026, best JavaScript conferences, top JS conferences 2026
