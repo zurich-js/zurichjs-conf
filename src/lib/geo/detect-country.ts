@@ -28,6 +28,11 @@ const COUNTRY_HEADERS = [
 const DEV_COUNTRY_COOKIE = 'dev_country';
 
 /**
+ * Cookie name set by Edge Middleware (most reliable on Vercel)
+ */
+const VERCEL_COUNTRY_COOKIE = 'vercel-country';
+
+/**
  * Extract a header value from a request object
  * Handles both string and string[] header values
  */
@@ -94,13 +99,14 @@ function parseCookies(cookieHeader: string | undefined): Record<string, string> 
 export function detectCountryFromRequest(req: RequestLike): string | null {
   const { headers } = req;
 
+  // Parse cookies once
+  const cookieHeader = headers.cookie;
+  const cookies = parseCookies(
+    typeof cookieHeader === 'string' ? cookieHeader : cookieHeader?.[0]
+  );
+
   // Development override via cookie (only in non-production)
   if (process.env.NODE_ENV !== 'production') {
-    const cookieHeader = headers.cookie;
-    const cookies = parseCookies(
-      typeof cookieHeader === 'string' ? cookieHeader : cookieHeader?.[0]
-    );
-
     const devCountry = cookies[DEV_COUNTRY_COOKIE];
     if (devCountry && isValidCountryCode(devCountry)) {
       console.log(`[Geo] Using dev override country: ${devCountry.toUpperCase()}`);
@@ -108,11 +114,22 @@ export function detectCountryFromRequest(req: RequestLike): string | null {
     }
   }
 
-  // Production: check CDN headers
+  // 1. First priority: Cookie set by Edge Middleware (most reliable on Vercel)
+  const middlewareCountry = cookies[VERCEL_COUNTRY_COOKIE];
+  if (middlewareCountry && isValidCountryCode(middlewareCountry)) {
+    return middlewareCountry.toUpperCase();
+  }
+
+  // 2. Check response header set by middleware
+  const detectedHeader = getHeaderValue(headers, 'x-detected-country');
+  if (detectedHeader && isValidCountryCode(detectedHeader)) {
+    return detectedHeader.toUpperCase();
+  }
+
+  // 3. Fallback: check CDN headers directly
   for (const headerName of COUNTRY_HEADERS) {
     const value = getHeaderValue(headers, headerName);
     if (value) {
-      // Normalize to uppercase
       return value.toUpperCase();
     }
   }
