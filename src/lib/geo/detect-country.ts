@@ -1,10 +1,9 @@
 /**
  * Server-side geo-detection utilities
- * Detects user country from request headers set by CDN/hosting providers
+ * Detects user country from cookies set by the geo detection API
  *
  * Local Development:
  * - Set cookie `dev_country=DE` to simulate being in Germany
- * - Or add query param `?dev_country=DE` to the URL
  */
 
 import type { GetServerSidePropsContext, NextApiRequest } from 'next';
@@ -13,45 +12,14 @@ import type { IncomingMessage } from 'http';
 type RequestLike = NextApiRequest | IncomingMessage | GetServerSidePropsContext['req'];
 
 /**
- * Header names for country detection from various providers
- * Listed in priority order
- */
-const COUNTRY_HEADERS = [
-  'x-vercel-ip-country', // Vercel Edge Network
-  'cf-ipcountry', // Cloudflare
-  'cloudfront-viewer-country', // AWS CloudFront
-] as const;
-
-/**
  * Cookie name for local development country override
  */
 const DEV_COUNTRY_COOKIE = 'dev_country';
 
 /**
- * Cookie name set by Edge Middleware (most reliable on Vercel)
+ * Cookie name set by geo detection API (/api/geo/detect)
  */
-const VERCEL_COUNTRY_COOKIE = 'vercel-country';
-
-/**
- * Extract a header value from a request object
- * Handles both string and string[] header values
- */
-function getHeaderValue(
-  headers: RequestLike['headers'],
-  headerName: string
-): string | null {
-  const value = headers[headerName];
-
-  if (typeof value === 'string' && value.length > 0) {
-    return value;
-  }
-
-  if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string') {
-    return value[0];
-  }
-
-  return null;
-}
+const DETECTED_COUNTRY_COOKIE = 'detected-country';
 
 /**
  * Parse cookies from cookie header string
@@ -72,12 +40,10 @@ function parseCookies(cookieHeader: string | undefined): Record<string, string> 
 }
 
 /**
- * Detect user's country from request headers
+ * Detect user's country from request cookies
  *
- * Works with:
- * - Vercel Edge Network (x-vercel-ip-country)
- * - Cloudflare (cf-ipcountry)
- * - AWS CloudFront (cloudfront-viewer-country)
+ * The country is detected via /api/geo/detect which uses external IP geolocation APIs.
+ * This function reads the cookie set by that API.
  *
  * Local Development Override:
  * - Set cookie `dev_country=DE` in browser to simulate Germany
@@ -86,15 +52,6 @@ function parseCookies(cookieHeader: string | undefined): Record<string, string> 
  *
  * @param req - Next.js API request or incoming message from getServerSideProps
  * @returns ISO 3166-1 alpha-2 country code (uppercase) or null if not detected
- *
- * @example
- * // In getServerSideProps
- * const country = detectCountryFromRequest(context.req);
- * // Returns 'DE' for Germany, 'CH' for Switzerland, etc.
- *
- * @example
- * // In API route
- * const country = detectCountryFromRequest(req);
  */
 export function detectCountryFromRequest(req: RequestLike): string | null {
   const { headers } = req;
@@ -114,24 +71,10 @@ export function detectCountryFromRequest(req: RequestLike): string | null {
     }
   }
 
-  // 1. First priority: Cookie set by Edge Middleware (most reliable on Vercel)
-  const middlewareCountry = cookies[VERCEL_COUNTRY_COOKIE];
-  if (middlewareCountry && isValidCountryCode(middlewareCountry)) {
-    return middlewareCountry.toUpperCase();
-  }
-
-  // 2. Check response header set by middleware
-  const detectedHeader = getHeaderValue(headers, 'x-detected-country');
-  if (detectedHeader && isValidCountryCode(detectedHeader)) {
-    return detectedHeader.toUpperCase();
-  }
-
-  // 3. Fallback: check CDN headers directly
-  for (const headerName of COUNTRY_HEADERS) {
-    const value = getHeaderValue(headers, headerName);
-    if (value) {
-      return value.toUpperCase();
-    }
+  // Read country from cookie set by /api/geo/detect
+  const detectedCountry = cookies[DETECTED_COUNTRY_COOKIE];
+  if (detectedCountry && isValidCountryCode(detectedCountry)) {
+    return detectedCountry.toUpperCase();
   }
 
   return null;
