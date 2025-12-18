@@ -1,6 +1,7 @@
 /**
  * Stripe Pricing API Handler
  * Fetches current ticket pricing from Stripe with stock availability
+ * Supports multi-currency (CHF/EUR) via query parameter
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -14,6 +15,7 @@ import {
   type TicketCategory,
   type StockInfo,
 } from '@/config/pricing-stages';
+import { parseCurrencyParam, type SupportedCurrency } from '@/config/currency';
 import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
 
 // Ticket categories to fetch
@@ -57,14 +59,23 @@ const getStripe = (): Stripe => {
 };
 
 /**
- * Build Stripe lookup key for a category/stage
+ * Build Stripe lookup key for a category/stage/currency combination
+ * EUR prices use '_eur' suffix (e.g., 'standard_early_bird_eur')
  */
-const buildLookupKey = (category: TicketCategory, stage: PriceStage): string => {
-  // Student/Unemployed has fixed pricing
+const buildLookupKey = (
+  category: TicketCategory,
+  stage: PriceStage,
+  currency: SupportedCurrency
+): string => {
+  // Student/Unemployed has fixed pricing (not stage-dependent)
   if (category === 'standard_student_unemployed') {
-    return 'standard_student_unemployed';
+    return currency === 'EUR'
+      ? 'standard_student_unemployed_eur'
+      : 'standard_student_unemployed';
   }
-  return `${category}_${stage}`;
+
+  const base = `${category}_${stage}`;
+  return currency === 'EUR' ? `${base}_eur` : base;
 };
 
 /**
@@ -100,6 +111,9 @@ export default async function handler(
   try {
     const stripe = getStripe();
 
+    // Parse currency from query parameter (defaults to CHF)
+    const currency = parseCurrencyParam(req.query.currency);
+
     // Get ticket counts for stock-aware stage determination
     const { counts } = await getTicketCounts();
     const currentStageConfig = getCurrentStage(counts);
@@ -107,7 +121,7 @@ export default async function handler(
 
     // Fetch all prices in parallel
     const pricePromises = TICKET_CATEGORIES.map(async (category) => {
-      const lookupKey = buildLookupKey(category, currentStage);
+      const lookupKey = buildLookupKey(category, currentStage, currency);
       const price = await fetchPrice(stripe, lookupKey);
 
       if (!price?.unit_amount || !price?.currency) {
@@ -117,7 +131,7 @@ export default async function handler(
       // Get comparison price (late_bird price for non-student categories)
       let comparePrice: number | undefined;
       if (category !== 'standard_student_unemployed' && currentStage !== 'late_bird') {
-        const lateBirdKey = buildLookupKey(category, 'late_bird');
+        const lateBirdKey = buildLookupKey(category, 'late_bird', currency);
         const lateBirdPrice = await fetchPrice(stripe, lateBirdKey);
         comparePrice = lateBirdPrice?.unit_amount ?? undefined;
       }

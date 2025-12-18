@@ -16,7 +16,8 @@
       "WebSearch",
       "WebFetch(domain:posthog.com)",
       "WebFetch(domain:medium.com)",
-      "Bash(npm run test:run:*)"
+      "Bash(npm run test:run:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

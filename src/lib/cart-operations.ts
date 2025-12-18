@@ -4,20 +4,22 @@
  */
 
 import type { Cart, CartItem, OrderSummary } from '@/types/cart';
+import { DEFAULT_CURRENCY, type SupportedCurrency } from '@/config/currency';
 
 // ============================================================================
 // Cart Creation
 // ============================================================================
 
 /**
- * Create an empty cart
+ * Create an empty cart with the specified currency
+ * @param currency - Currency for the cart (defaults to CHF)
  */
-export function createEmptyCart(): Cart {
+export function createEmptyCart(currency: SupportedCurrency = DEFAULT_CURRENCY): Cart {
   return {
     items: [],
     totalItems: 0,
     totalPrice: 0,
-    currency: 'CHF',
+    currency,
   };
 }
 

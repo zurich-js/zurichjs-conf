@@ -3,6 +3,8 @@
  * Type-safe base URL and endpoint management
  */
 
+import type { SupportedCurrency } from '@/config/currency';
+
 /**
  * API environment configuration
  */
@@ -48,7 +50,10 @@ export const defaultApiConfig: ApiConfig = {
  */
 export const endpoints = {
   tickets: {
-    pricing: () => '/api/tickets/pricing' as const,
+    pricing: (currency?: SupportedCurrency) =>
+      currency
+        ? (`/api/tickets/pricing?currency=${currency}` as const)
+        : ('/api/tickets/pricing' as const),
     purchase: () => '/api/tickets/purchase' as const,
     byId: (id: string) => `/api/tickets/${id}` as const,
   },

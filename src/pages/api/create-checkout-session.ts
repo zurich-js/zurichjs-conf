@@ -7,6 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import type { Cart, CheckoutFormData } from '@/types/cart';
 import { getStripeRedirectUrls } from '@/lib/url';
+import { encodeCartState } from '@/lib/cart-url-state';
 
 /**
  * API request body
@@ -148,8 +149,11 @@ export default async function handler(
       totalTickets: cart.totalItems.toString(),
     };
 
+    // Encode cart state for cancel URL (so user can resume checkout)
+    const encodedCart = encodeCartState(cart);
+
     // Get Stripe redirect URLs using centralized utility
-    const { successUrl, cancelUrl } = getStripeRedirectUrls(req);
+    const { successUrl, cancelUrl } = getStripeRedirectUrls(req, encodedCart);
 
     // Prepare discounts array if coupon was applied
     // Use coupon code for direct coupon application

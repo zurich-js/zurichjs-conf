@@ -9,6 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useWorkshopVouchers } from '@/hooks/useWorkshopVouchers';
 import { useCheckout } from '@/hooks/useCheckout';
@@ -31,10 +32,12 @@ import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 import { dehydrate } from '@tanstack/react-query';
-import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
+import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
 import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
+import { detectCountryFromRequest } from '@/lib/geo/detect-country';
+import { getCurrencyFromCountry } from '@/config/currency';
 import { TicketXIcon } from "lucide-react";
 
 type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
@@ -48,6 +51,9 @@ export default function CartPage() {
     removeVoucher,
     addToCart,
   } = useCart();
+
+  // Get currency from context
+  const { currency } = useCurrency();
 
   // Pricing data is prefetched on server, so isLoading should be false immediately
   const { plans: ticketPlans, currentStage, isLoading: isPricingLoading } = useTicketPricing();
@@ -71,7 +77,8 @@ export default function CartPage() {
 
   // Workshop upsell logic
   // Prevent layout shift by determining this once pricing data and vouchers are loaded
-  const showWorkshopUpsells = !isPricingLoading && !isVouchersLoading && workshopVouchers.length > 0 && (currentStage === 'blind_bird' || currentStage === 'early_bird');
+  // Workshop vouchers are only available for CHF currency (not EUR)
+  const showWorkshopUpsells = currency === 'CHF' && !isPricingLoading && !isVouchersLoading && workshopVouchers.length > 0 && (currentStage === 'blind_bird' || currentStage === 'early_bird');
   const bonusPercent = currentStage === 'blind_bird' ? 25 : currentStage === 'early_bird' ? 15 : 0;
 
   // Filter out workshop vouchers for ticket counting
@@ -796,18 +803,29 @@ export default function CartPage() {
  * This eliminates the loading state and prevents UI shifts
  * Cart is decoded from URL parameter for immediate availability on hydration
  * The dehydrated state is automatically picked up by HydrationBoundary in _app.tsx
+ * Currency is detected from geo-location for proper pricing
  */
-export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+export const getServerSideProps: GetServerSideProps = async ({ query, req }) => {
   const queryClient = createQueryClient();
+
+  // Detect country from request headers (Vercel, Cloudflare, etc.)
+  const countryCode = detectCountryFromRequest(req);
+  const detectedCurrency = getCurrencyFromCountry(countryCode);
 
   // Decode cart from URL parameter (cart is the encoded state)
   const encodedCart = typeof query.cart === 'string' ? query.cart : undefined;
-  const initialCart = encodedCart ? decodeCartState(encodedCart) : createEmptyCart();
+  let initialCart = encodedCart ? decodeCartState(encodedCart) : createEmptyCart(detectedCurrency);
+
+  // If cart exists but currency mismatches, update it to detected currency
+  // Items will be re-validated with current prices on the client side
+  if (initialCart && initialCart.currency !== detectedCurrency) {
+    initialCart = { ...initialCart, currency: detectedCurrency };
+  }
 
   try {
     // Prefetch both ticket pricing and workshop vouchers in parallel
     await Promise.all([
-      queryClient.prefetchQuery(ticketPricingQueryOptions),
+      queryClient.prefetchQuery(createTicketPricingQueryOptions(detectedCurrency)),
       queryClient.prefetchQuery(workshopVouchersQueryOptions),
     ]);
   } catch (error) {
@@ -818,7 +836,8 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   return {
     props: {
       dehydratedState: dehydrate(queryClient),
-      initialCart: initialCart ?? createEmptyCart(),
+      initialCart: initialCart ?? createEmptyCart(detectedCurrency),
+      detectedCurrency,
     },
   };
 };

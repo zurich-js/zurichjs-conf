@@ -3,7 +3,9 @@ import type { AppProps } from "next/app";
 import { Figtree } from "next/font/google";
 import { MotionProvider } from "@/contexts/MotionContext";
 import { CartProvider } from "@/contexts/CartContext";
-import { QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { DEFAULT_CURRENCY, type SupportedCurrency } from "@/config/currency";
+import { QueryClientProvider, HydrationBoundary, type DehydratedState } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
 import { NuqsAdapter } from "nuqs/adapters/next/pages";
@@ -11,6 +13,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
+import type { Cart } from '@/types/cart';
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -18,10 +21,22 @@ const figtree = Figtree({
   display: "swap",
 });
 
-export default function App({ Component, pageProps }: AppProps) {
+/**
+ * Extended page props with optional currency and cart data
+ */
+interface ExtendedPageProps {
+  dehydratedState?: DehydratedState;
+  initialCart?: Cart;
+  detectedCurrency?: SupportedCurrency;
+}
+
+export default function App({ Component, pageProps }: AppProps<ExtendedPageProps>) {
   // Create a stable query client instance per request
   const [queryClient] = useState(() => getQueryClient());
   const router = useRouter();
+
+  // Extract currency from pageProps, default to CHF
+  const currency = pageProps.detectedCurrency ?? DEFAULT_CURRENCY;
 
   // Initialize PostHog
   useEffect(() => {
@@ -85,13 +100,15 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <HydrationBoundary state={pageProps.dehydratedState}>
           <NuqsAdapter>
-            <CartProvider initialCart={pageProps.initialCart}>
-              <MotionProvider>
-                <div className={figtree.variable}>
-                  <Component {...pageProps} />
-                </div>
-              </MotionProvider>
-            </CartProvider>
+            <CurrencyProvider currency={currency}>
+              <CartProvider initialCart={pageProps.initialCart}>
+                <MotionProvider>
+                  <div className={figtree.variable}>
+                    <Component {...pageProps} />
+                  </div>
+                </MotionProvider>
+              </CartProvider>
+            </CurrencyProvider>
           </NuqsAdapter>
         </HydrationBoundary>
         {process.env.NODE_ENV === 'development' && (
