@@ -11,6 +11,7 @@ import React from "react";
 
 interface HomeProps {
   dehydratedState: DehydratedState;
+  detectedCurrency: 'CHF' | 'EUR';
 }
 
 // FAQ data for schema (plain text versions)
@@ -133,6 +134,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async (context)
   return {
     props: {
       dehydratedState: dehydrate(queryClient),
+      detectedCurrency,
     },
   };
 };

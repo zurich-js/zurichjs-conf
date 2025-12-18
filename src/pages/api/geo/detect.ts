@@ -124,9 +124,17 @@ export default async function handler(
     }
   }
 
+  // Log all relevant headers for debugging
+  console.log('[Geo] === Debug Info ===');
+  console.log('[Geo] x-forwarded-for:', req.headers['x-forwarded-for']);
+  console.log('[Geo] x-real-ip:', req.headers['x-real-ip']);
+  console.log('[Geo] x-vercel-forwarded-for:', req.headers['x-vercel-forwarded-for']);
+  console.log('[Geo] x-vercel-ip-country:', req.headers['x-vercel-ip-country']);
+  console.log('[Geo] socket.remoteAddress:', req.socket?.remoteAddress);
+
   // Get the client's IP
   const ip = getClientIP(req);
-  console.log(`[Geo] Detecting country for IP: ${ip}`);
+  console.log(`[Geo] Resolved IP: ${ip}`);
 
   if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
     console.log('[Geo] Local/private IP detected, cannot determine country');
@@ -137,19 +145,23 @@ export default async function handler(
   let source = 'unknown';
 
   // Try ipapi.co first
+  console.log(`[Geo] Trying ipapi.co for IP: ${ip}`);
   country = await fetchFromIpApi(ip);
+  console.log(`[Geo] ipapi.co result: ${country}`);
   if (country) {
     source = 'ipapi.co';
   } else {
     // Fallback to ip-api.com
+    console.log(`[Geo] Trying ip-api.com for IP: ${ip}`);
     country = await fetchFromIpApiCom(ip);
+    console.log(`[Geo] ip-api.com result: ${country}`);
     if (country) {
       source = 'ip-api.com';
     }
   }
 
   if (country) {
-    console.log(`[Geo] Detected country: ${country} from ${source}`);
+    console.log(`[Geo] Final result: country=${country}, source=${source}`);
 
     // Set the cookie for future requests
     res.setHeader(
@@ -157,8 +169,9 @@ export default async function handler(
       `${COUNTRY_COOKIE}=${country}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
     );
   } else {
-    console.log('[Geo] Could not detect country');
+    console.log('[Geo] Could not detect country from any source');
   }
 
+  console.log('[Geo] === End Debug ===');
   return res.status(200).json({ country, source });
 }

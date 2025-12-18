@@ -77,6 +77,16 @@ export function detectCountryFromRequest(req: RequestLike): string | null {
     return detectedCountry.toUpperCase();
   }
 
+  // Fallback: Check Vercel's geo header directly (works on first visit before cookie is set)
+  const vercelCountry = headers['x-vercel-ip-country'];
+  if (vercelCountry) {
+    const country = Array.isArray(vercelCountry) ? vercelCountry[0] : vercelCountry;
+    if (isValidCountryCode(country)) {
+      console.log(`[Geo] Using Vercel geo header: ${country.toUpperCase()}`);
+      return country.toUpperCase();
+    }
+  }
+
   return null;
 }
 
