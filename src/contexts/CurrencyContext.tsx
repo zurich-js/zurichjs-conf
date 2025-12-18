@@ -52,6 +52,14 @@ export function CurrencyProvider({ children, currency: initialCurrency }: Curren
   const [currency, setCurrency] = useState<SupportedCurrency>(initialCurrency ?? DEFAULT_CURRENCY);
   const [isDetecting, setIsDetecting] = useState(!initialCurrency);
 
+  // Sync currency state with initialCurrency prop from server-side detection
+  // This ensures server-detected currency is always used when available
+  useEffect(() => {
+    if (initialCurrency) {
+      setCurrency(initialCurrency);
+    }
+  }, [initialCurrency]);
+
   useEffect(() => {
     // If we already have a valid currency from server-side, no need to detect
     if (initialCurrency) {
