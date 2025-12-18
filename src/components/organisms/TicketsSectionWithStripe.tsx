@@ -41,8 +41,10 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     verificationId,
   } = useStudentVerification();
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading state only when there's no data yet
+  // During hydration, isLoading might be true briefly even with prefetched data
+  // By checking plans.length === 0, we avoid hydration mismatch
+  if (isLoading && plans.length === 0) {
     return (
       <SectionContainer
         className={`relative ${className}`}

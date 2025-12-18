@@ -1,7 +1,7 @@
 import { Hero, ScheduleSection, ShapedSection, SiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { footerData, heroData, scheduleData, timelineData, sponsorsData } from '@/data';
-import { dehydrate, HydrationBoundary, type DehydratedState } from '@tanstack/react-query';
+import { dehydrate, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
@@ -9,7 +9,12 @@ import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 import React from "react";
 
-interface HomeProps {
+/**
+ * Page props passed through _app.tsx for hydration and currency detection
+ * - dehydratedState: Used by HydrationBoundary in _app.tsx
+ * - detectedCurrency: Used by CurrencyProvider in _app.tsx
+ */
+interface HomePageProps {
   dehydratedState: DehydratedState;
   detectedCurrency: 'CHF' | 'EUR';
 }
@@ -38,7 +43,7 @@ const faqSchemaData = [
   },
 ];
 
-export default function Home({ dehydratedState }: HomeProps) {
+export default function Home() {
   const handleCtaClick = () => {
     // Scroll smoothly to the tickets section
     const ticketsSection = document.getElementById('tickets');
@@ -57,7 +62,7 @@ export default function Home({ dehydratedState }: HomeProps) {
   ];
 
   return (
-    <HydrationBoundary state={dehydratedState}>
+    <>
       <SEO
         title="JavaScript Conference 2026 | ZurichJS Conf Sept 11 Switzerland"
         description="ZurichJS Conf 2026 - One of the top JavaScript conferences in Europe. Join 300+ developers September 11th, 2026 at Technopark Zürich for expert talks on JS, TypeScript, React, Node.js. Workshops & networking. From CHF 175."
@@ -113,7 +118,7 @@ export default function Home({ dehydratedState }: HomeProps) {
           <SiteFooter {...footerData} />
         </ShapedSection>
       </main>
-    </HydrationBoundary>
+    </>
   );
 }
 
@@ -121,7 +126,7 @@ export default function Home({ dehydratedState }: HomeProps) {
  * Server-side data fetching with TanStack Query prefetching
  * Detects user currency from geo-location and prefetches appropriate pricing
  */
-export const getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
+export const getServerSideProps: GetServerSideProps<HomePageProps> = async (context) => {
   const queryClient = getQueryClient();
 
   // Detect country from request headers (Vercel, Cloudflare, etc.)
