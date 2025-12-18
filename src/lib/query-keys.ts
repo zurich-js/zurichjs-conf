@@ -3,6 +3,8 @@
  * Centralized management of all query keys
  */
 
+import type { SupportedCurrency } from '@/config/currency';
+
 /**
  * Tickets query keys
  */
@@ -14,8 +16,10 @@ export const ticketsKeys = {
 
   /**
    * Key for pricing queries
+   * Includes currency for proper cache separation between CHF and EUR
    */
-  pricing: () => [...ticketsKeys.all, 'pricing'] as const,
+  pricing: (currency: SupportedCurrency = 'CHF') =>
+    [...ticketsKeys.all, 'pricing', currency] as const,
 } as const;
 
 /**

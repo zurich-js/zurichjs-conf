@@ -1,11 +1,12 @@
 /**
  * Cart Context - Simplified state management
- * 
+ *
  * Architecture:
  * - Pure cart operations in lib/cart-operations.ts
  * - useReducer for predictable state updates
  * - Analytics handled separately via event handlers
  * - URL encoding handled in navigateToCart
+ * - Currency consistency enforced via CurrencyContext
  */
 
 import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
@@ -22,6 +23,7 @@ import { encodeCartState } from '@/lib/cart-url-state';
 import { useVoucherValidation } from '@/hooks/useVoucherValidation';
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
+import { useCurrency } from './CurrencyContext';
 
 // ============================================================================
 // Action Types
@@ -92,8 +94,16 @@ export interface CartProviderProps {
 }
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCart }) => {
-  const [cart, dispatch] = useReducer(cartReducer, initialCart ?? createEmptyCart());
-  
+  // Get currency from context (detected server-side via geo-location)
+  const { currency } = useCurrency();
+
+  // Initialize cart with proper currency
+  // If initialCart is provided, use it; otherwise create empty cart with detected currency
+  const [cart, dispatch] = useReducer(
+    cartReducer,
+    initialCart ?? createEmptyCart(currency)
+  );
+
   // Keep a ref for synchronous access (needed for navigateToCart)
   const cartRef = React.useRef(cart);
   React.useEffect(() => {
@@ -106,10 +116,17 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
   // ---- Actions ----
 
   const addToCart = useCallback((item: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
+    // Validate currency consistency
+    if (item.currency !== currency) {
+      console.warn(
+        `[Cart] Currency mismatch: item currency "${item.currency}" differs from cart currency "${currency}". ` +
+        'This may indicate a geo-detection inconsistency.'
+      );
+    }
     dispatch({ type: 'ADD_ITEM', item, quantity });
     // Sync ref immediately for navigation
     cartRef.current = addItem(cartRef.current, item, quantity);
-  }, []);
+  }, [currency]);
 
   const removeFromCart = useCallback((itemId: string) => {
     dispatch({ type: 'REMOVE_ITEM', itemId });

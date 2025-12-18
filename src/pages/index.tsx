@@ -3,7 +3,9 @@ import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, g
 import { footerData, heroData, scheduleData, timelineData, sponsorsData } from '@/data';
 import { dehydrate, HydrationBoundary, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
+import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
+import { detectCountryFromRequest } from '@/lib/geo/detect-country';
+import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 import React from "react";
 
@@ -116,13 +118,17 @@ export default function Home({ dehydratedState }: HomeProps) {
 
 /**
  * Server-side data fetching with TanStack Query prefetching
- * Prefetches ticket pricing on the server for optimal performance
+ * Detects user currency from geo-location and prefetches appropriate pricing
  */
-export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
+export const getServerSideProps: GetServerSideProps<HomeProps> = async (context) => {
   const queryClient = getQueryClient();
 
-  // Prefetch ticket pricing on the server
-  await queryClient.prefetchQuery(ticketPricingQueryOptions);
+  // Detect country from request headers (Vercel, Cloudflare, etc.)
+  const countryCode = detectCountryFromRequest(context.req);
+  const detectedCurrency = getCurrencyFromCountry(countryCode);
+
+  // Prefetch ticket pricing for the detected currency
+  await queryClient.prefetchQuery(createTicketPricingQueryOptions(detectedCurrency));
 
   return {
     props: {

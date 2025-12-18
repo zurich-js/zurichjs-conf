@@ -70,15 +70,25 @@ export function getAbsoluteUrl(path: string, req?: NextApiRequest | IncomingMess
  * Get Stripe redirect URLs for checkout sessions
  *
  * @param req - Request object for server-side URL generation
+ * @param encodedCartState - Optional encoded cart state to include in cancel URL
  * @returns Object containing success and cancel URLs with placeholders for Stripe
  */
-export function getStripeRedirectUrls(req: NextApiRequest | IncomingMessage): {
+export function getStripeRedirectUrls(
+  req: NextApiRequest | IncomingMessage,
+  encodedCartState?: string
+): {
   successUrl: string;
   cancelUrl: string;
 } {
   const baseUrl = getBaseUrl(req);
+
+  // Include cart state in cancel URL so user can resume checkout
+  const cancelUrl = encodedCartState
+    ? `${baseUrl}/cart?cart=${encodedCartState}`
+    : `${baseUrl}/cart`;
+
   return {
     successUrl: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancelUrl: `${baseUrl}/cart`,
+    cancelUrl,
   };
 }
