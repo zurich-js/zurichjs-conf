@@ -10,9 +10,25 @@ import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
 
+/**
+ * Check if an error indicates an expired or invalid link
+ */
+function isExpiredLinkError(message: string): boolean {
+  const expiredPatterns = [
+    'invalid or has expired',
+    'link is invalid',
+    'link has expired',
+    'otp_expired',
+    'invalid_grant',
+    'expired',
+  ];
+  const lowerMessage = message.toLowerCase();
+  return expiredPatterns.some(pattern => lowerMessage.includes(pattern));
+}
+
 export default function ReviewerAuthCallback() {
   const router = useRouter();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,8 +117,15 @@ export default function ReviewerAuthCallback() {
         }, 1500);
       } catch (err) {
         console.error('[Reviewer Auth Callback] Error:', err);
-        setStatus('error');
-        setErrorMessage(err instanceof Error ? err.message : 'Authentication failed');
+        const message = err instanceof Error ? err.message : 'Authentication failed';
+
+        // Check if this is an expired/invalid link error
+        if (isExpiredLinkError(message)) {
+          setStatus('expired');
+        } else {
+          setStatus('error');
+        }
+        setErrorMessage(message);
       }
     };
 
@@ -145,6 +168,31 @@ export default function ReviewerAuthCallback() {
                 <p className="text-brand-gray-light">
                   Redirecting to your reviewer dashboard...
                 </p>
+              </>
+            )}
+
+            {status === 'expired' && (
+              <>
+                <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <Heading level="h1" className="text-xl font-bold text-white mb-2">
+                  Link Expired
+                </Heading>
+                <p className="text-brand-gray-light mb-2">
+                  This sign-in link has expired or is no longer valid.
+                </p>
+                <p className="text-brand-gray-medium text-sm mb-6">
+                  Magic links expire after 1 hour for security. Please request a new one.
+                </p>
+                <Link
+                  href="/cfp/reviewer/login"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-brand-primary text-black font-semibold rounded-xl hover:bg-brand-primary-dark transition-colors"
+                >
+                  Request New Link
+                </Link>
               </>
             )}
 

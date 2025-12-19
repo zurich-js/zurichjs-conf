@@ -3,6 +3,7 @@ import type { AppProps } from "next/app";
 import { Figtree } from "next/font/google";
 import { MotionProvider } from "@/contexts/MotionContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 import { QueryClientProvider, HydrationBoundary } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
@@ -87,9 +88,11 @@ export default function App({ Component, pageProps }: AppProps) {
           <NuqsAdapter>
             <CartProvider initialCart={pageProps.initialCart}>
               <MotionProvider>
-                <div className={figtree.variable}>
-                  <Component {...pageProps} />
-                </div>
+                <ToastProvider>
+                  <div className={figtree.variable}>
+                    <Component {...pageProps} />
+                  </div>
+                </ToastProvider>
               </MotionProvider>
             </CartProvider>
           </NuqsAdapter>

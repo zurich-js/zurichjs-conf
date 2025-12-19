@@ -211,17 +211,13 @@ export async function fetchReimbursements(): Promise<ReimbursementsResponse> {
 
 /**
  * Fetch reviewer dashboard data
- * Uses POST to pass user credentials in body
+ * Uses session-based authentication via cookies
  */
-export async function fetchReviewerDashboard(
-  userId: string,
-  email: string
-): Promise<ReviewerDashboardResponse> {
+export async function fetchReviewerDashboard(): Promise<ReviewerDashboardResponse> {
   const response = await fetch(endpoints.cfp.reviewerDashboard(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ userId, email }),
   });
 
   if (!response.ok) {
@@ -234,18 +230,15 @@ export async function fetchReviewerDashboard(
 
 /**
  * Fetch a submission for reviewer
- * Uses POST to pass user credentials in body
+ * Uses session-based authentication via cookies
  */
 export async function fetchReviewerSubmission(
-  id: string,
-  userId: string,
-  email: string
+  id: string
 ): Promise<ReviewerSubmissionResponse> {
   const response = await fetch(endpoints.cfp.reviewerSubmission(id), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ userId, email }),
   });
 
   if (!response.ok) {
@@ -335,32 +328,25 @@ export const reimbursementsQueryOptions = queryOptions({
 
 /**
  * Query options for reviewer dashboard
- * Requires userId and email for authentication
+ * Uses session-based authentication
  */
-export function reviewerDashboardQueryOptions(userId: string, email: string) {
-  return queryOptions({
-    queryKey: queryKeys.cfp.reviewer.dashboard(),
-    queryFn: () => fetchReviewerDashboard(userId, email),
-    staleTime: CFP_STALE_TIME,
-    gcTime: CFP_GC_TIME,
-    enabled: !!userId && !!email,
-  });
-}
+export const reviewerDashboardQueryOptions = queryOptions({
+  queryKey: queryKeys.cfp.reviewer.dashboard(),
+  queryFn: fetchReviewerDashboard,
+  staleTime: CFP_STALE_TIME,
+  gcTime: CFP_GC_TIME,
+});
 
 /**
  * Query options for reviewer submission
- * Requires userId and email for authentication
+ * Uses session-based authentication
  */
-export function reviewerSubmissionQueryOptions(
-  id: string,
-  userId: string,
-  email: string
-) {
+export function reviewerSubmissionQueryOptions(id: string) {
   return queryOptions({
     queryKey: queryKeys.cfp.reviewer.submission(id),
-    queryFn: () => fetchReviewerSubmission(id, userId, email),
+    queryFn: () => fetchReviewerSubmission(id),
     staleTime: CFP_STALE_TIME,
     gcTime: CFP_GC_TIME,
-    enabled: !!id && !!userId && !!email,
+    enabled: !!id,
   });
 }

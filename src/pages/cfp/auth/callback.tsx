@@ -10,7 +10,23 @@ import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
 
-type CallbackState = 'loading' | 'success' | 'error';
+type CallbackState = 'loading' | 'success' | 'error' | 'expired';
+
+/**
+ * Check if an error indicates an expired or invalid link
+ */
+function isExpiredLinkError(message: string): boolean {
+  const expiredPatterns = [
+    'invalid or has expired',
+    'link is invalid',
+    'link has expired',
+    'otp_expired',
+    'invalid_grant',
+    'expired',
+  ];
+  const lowerMessage = message.toLowerCase();
+  return expiredPatterns.some(pattern => lowerMessage.includes(pattern));
+}
 
 export default function CfpAuthCallback() {
   const router = useRouter();
@@ -116,8 +132,15 @@ export default function CfpAuthCallback() {
         }, 1500);
       } catch (err) {
         console.error('[CFP Auth Callback] Error:', err);
-        setState('error');
-        setError(err instanceof Error ? err.message : 'Authentication failed');
+        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+
+        // Check if this is an expired/invalid link error
+        if (isExpiredLinkError(errorMessage)) {
+          setState('expired');
+        } else {
+          setState('error');
+        }
+        setError(errorMessage);
       }
     };
 
@@ -180,6 +203,44 @@ export default function CfpAuthCallback() {
               <p className="text-brand-gray-light">
                 Redirecting to your dashboard...
               </p>
+            </div>
+          )}
+
+          {state === 'expired' && (
+            <div className="space-y-4">
+              {/* Clock/Expired Icon */}
+              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto">
+                <svg
+                  className="w-8 h-8 text-orange-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <Heading level="h1" className="text-xl font-semibold text-white">
+                Link Expired
+              </Heading>
+              <p className="text-brand-gray-light">
+                This sign-in link has expired or is no longer valid.
+              </p>
+              <p className="text-brand-gray-medium text-sm">
+                Magic links expire after 1 hour for security. Please request a new one.
+              </p>
+              <div className="pt-4">
+                <Link
+                  href="/cfp/login"
+                  className="inline-block px-6 py-3 bg-brand-primary text-black font-semibold rounded-lg hover:bg-brand-primary/90 transition-colors"
+                >
+                  Request New Link
+                </Link>
+              </div>
             </div>
           )}
 

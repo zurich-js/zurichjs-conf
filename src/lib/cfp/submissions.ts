@@ -3,8 +3,7 @@
  * CRUD operations for talk and workshop submissions
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type {
   CfpSubmission,
   CfpSubmissionWithDetails,
@@ -13,22 +12,6 @@ import type {
   UpdateCfpSubmissionRequest,
   CfpSubmissionStatus,
 } from '@/lib/types/cfp';
-
-/**
- * Create an untyped service role client for CFP tables
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 /**
  * Get submission by ID
@@ -112,7 +95,7 @@ export async function getSubmissionWithDetails(
  */
 export async function getSubmissionsBySpeakerId(
   speakerId: string
-): Promise<CfpSubmission[]> {
+): Promise<{ submissions: CfpSubmission[]; error: string | null }> {
   const supabase = createCfpServiceClient();
 
   const { data, error } = await supabase
@@ -123,10 +106,10 @@ export async function getSubmissionsBySpeakerId(
 
   if (error) {
     console.error('[CFP Submissions] Error fetching submissions:', error.message);
-    return [];
+    return { submissions: [], error: error.message };
   }
 
-  return (data || []) as CfpSubmission[];
+  return { submissions: (data || []) as CfpSubmission[], error: null };
 }
 
 /**

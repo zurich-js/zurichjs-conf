@@ -4,54 +4,27 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
-import { env } from '@/config/env';
-
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  let userId: string;
-  let userEmail: string;
-
   try {
-    // Try to get user from Supabase session first
+    // Authenticate user from session - never trust request body for auth
     const supabase = createSupabaseApiClient(req, res);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (user && user.email) {
-      userId = user.id;
-      userEmail = user.email;
-      console.log('[Reviewer Dashboard API] User from session:', userEmail);
-    } else {
-      // Fallback to request body (client already verified user with getUser())
-      const { userId: bodyUserId, email: bodyEmail } = req.body;
-
-      if (!bodyUserId || !bodyEmail) {
-        console.error('[Reviewer Dashboard API] No user found in session or body');
-        console.error('[Reviewer Dashboard API] Session error:', userError?.message);
-        return res.status(401).json({ error: 'Unauthorized - no user found' });
-      }
-
-      userId = bodyUserId;
-      userEmail = bodyEmail;
-      console.log('[Reviewer Dashboard API] User from body:', userEmail);
+    if (userError || !user || !user.email) {
+      console.error('[Reviewer Dashboard API] Authentication failed:', userError?.message);
+      return res.status(401).json({ error: 'Unauthorized - please log in' });
     }
+
+    const userId = user.id;
+    const userEmail = user.email;
+    console.log('[Reviewer Dashboard API] Authenticated user:', userEmail);
 
     // Get the reviewer record
     const reviewer = await getReviewerByUserId(userId);

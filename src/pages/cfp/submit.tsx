@@ -66,7 +66,7 @@ const INITIAL_FORM_DATA: FormData = {
 const TYPE_INFO = {
   lightning: {
     title: 'Lightning Talk',
-    duration: '10 minutes',
+    duration: '15 minutes',
     description: 'Quick, focused presentations that pack a punch. Great for introducing a concept or sharing a quick tip.',
   },
   standard: {
@@ -316,7 +316,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                     key={type}
                     type="button"
                     onClick={() => updateField('submission_type', type)}
-                    className={`p-6 rounded-xl text-left transition-all ${
+                    className={`p-6 rounded-xl text-left transition-all cursor-pointer ${
                       formData.submission_type === type
                         ? 'bg-brand-primary/20 border-2 border-brand-primary'
                         : 'bg-brand-gray-dark border-2 border-transparent hover:border-brand-gray-medium'
@@ -407,7 +407,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                         key={level}
                         type="button"
                         onClick={() => updateField('talk_level', level)}
-                        className={`p-3 rounded-lg text-left transition-all ${
+                        className={`p-3 rounded-lg text-left transition-all cursor-pointer ${
                           formData.talk_level === level
                             ? 'bg-brand-primary/20 border border-brand-primary'
                             : 'bg-brand-gray-darkest border border-transparent hover:border-brand-gray-medium'
@@ -443,7 +443,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                           <button
                             type="button"
                             onClick={() => removeTag(tag)}
-                            className="hover:text-white"
+                            className="hover:text-white cursor-pointer"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -482,7 +482,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                           type="button"
                           onClick={() => addTag(tag.name)}
                           disabled={formData.tags.length >= 5}
-                          className="px-3 py-1 bg-brand-gray-darkest text-brand-gray-light rounded-full text-sm hover:bg-brand-gray-medium hover:text-white transition-colors disabled:opacity-50"
+                          className="px-3 py-1 bg-brand-gray-darkest text-brand-gray-light rounded-full text-sm hover:bg-brand-gray-medium hover:text-white transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         >
                           + {tag.name}
                         </button>
@@ -556,7 +556,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="text-brand-gray-light hover:text-white transition-colors inline-flex items-center gap-2"
+                  className="text-brand-gray-light hover:text-white transition-colors inline-flex items-center gap-2 cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -629,9 +629,19 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                       id="workshop_expected_compensation"
                       value={formData.workshop_expected_compensation}
                       onChange={(e) => updateField('workshop_expected_compensation', e.target.value)}
-                      placeholder="e.g., CHF 500 per hour"
+                      placeholder="e.g., CHF 50 per hour"
                       fullWidth
                     />
+                    <div className="mt-2 p-3 bg-brand-gray-darkest rounded-lg">
+                      <p className="text-sm text-brand-gray-light">
+                        <span className="text-brand-primary font-medium">Note:</span> ZurichJS Conf is a community-driven conference focused on keeping tickets accessible for everyone.
+                        Workshop compensation is negotiable, but please keep our community mission in mind.
+                        Some compensation amounts may not be financially feasible for us.
+                      </p>
+                      <p className="text-xs text-brand-gray-medium mt-2">
+                        Suggested range: CHF 50-100 per hour depending on workshop complexity and preparation required.
+                      </p>
+                    </div>
                   </div>
 
                   <div>
@@ -722,7 +732,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="text-brand-gray-light hover:text-white transition-colors inline-flex items-center gap-2"
+                  className="text-brand-gray-light hover:text-white transition-colors inline-flex items-center gap-2 cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -762,7 +772,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                   <button
                     type="button"
                     onClick={() => setStep('type')}
-                    className="text-brand-primary text-sm hover:underline"
+                    className="text-brand-primary text-sm hover:underline cursor-pointer"
                   >
                     Edit
                   </button>
@@ -849,7 +859,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="text-brand-gray-light hover:text-white transition-colors inline-flex items-center gap-2"
+                  className="text-brand-gray-light hover:text-white transition-colors inline-flex items-center gap-2 cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

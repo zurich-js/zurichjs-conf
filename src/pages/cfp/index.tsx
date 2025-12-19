@@ -9,16 +9,16 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Heading, Kicker, IconButton, Logo } from '@/components/atoms';
-import { ShapedSection, SiteFooter, SectionContainer } from '@/components/organisms';
+import { ShapedSection, DynamicSiteFooter, SectionContainer } from '@/components/organisms';
 import { SectionSplitView } from '@/components/organisms/SectionSplitView';
 import { BackgroundMedia } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
-import { footerData } from '@/data';
+import { withCfpGate } from '@/components/cfp/CfpGate';
 
 const SUBMISSION_TYPES = [
   {
     type: 'Lightning Talk',
-    duration: '10 min',
+    duration: '15 min',
     description: 'Quick, focused presentations that pack a punch. Perfect for introducing a concept or sharing a discovery.',
   },
   {
@@ -47,7 +47,7 @@ const TIMELINE_ITEMS = [
   { date: 'Sep 11', label: 'Conference Day', description: 'ZurichJS Conf 2026', active: false },
 ];
 
-export default function CfpLanding() {
+function CfpLanding() {
   const { shouldAnimate } = useMotion();
 
   const handleCtaClick = () => {
@@ -264,7 +264,7 @@ export default function CfpLanding() {
 
         {/* Footer */}
         <ShapedSection shape="tighten" variant="dark" dropBottom>
-          <SiteFooter {...footerData} />
+          <DynamicSiteFooter />
         </ShapedSection>
       </main>
     </>
@@ -294,3 +294,5 @@ function CheckIcon() {
     </svg>
   );
 }
+
+export default withCfpGate(CfpLanding);

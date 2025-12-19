@@ -23,6 +23,11 @@ const wordCount = (text: string): number =>
 // ============================================
 
 /**
+ * Available t-shirt sizes
+ */
+export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] as const;
+
+/**
  * Speaker profile validation schema
  */
 export const speakerProfileSchema = z.object({
@@ -43,6 +48,8 @@ export const speakerProfileSchema = z.object({
   twitter_handle: z.string().optional(),
   bluesky_handle: z.string().optional(),
   mastodon_handle: z.string().optional(),
+  tshirt_size: z.enum(TSHIRT_SIZES).optional().nullable(),
+  company_interested_in_sponsoring: z.boolean().optional().nullable(),
 });
 
 export type SpeakerProfileFormData = z.infer<typeof speakerProfileSchema>;

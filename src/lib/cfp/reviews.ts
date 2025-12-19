@@ -3,8 +3,7 @@
  * Functions for managing submission reviews
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type {
   CfpReview,
   CfpSubmission,
@@ -14,22 +13,6 @@ import type {
   CfpReviewer,
   CreateCfpReviewRequest
 } from '../types/cfp';
-
-/**
- * Create untyped Supabase client for CFP tables
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 /**
  * Get a review by ID
@@ -449,14 +432,37 @@ export async function getSubmissionForReview(
     .eq('reviewer_id', reviewer.id)
     .single();
 
-  // Get all reviews only for super_admin
-  let allReviews: CfpReview[] = [];
+  // Get all reviews with reviewer info for super_admin
+  // Using a looser type here since we're attaching partial reviewer info
+  let allReviews: Array<CfpReview & { reviewer?: { name: string | null; email: string } }> = [];
   if (isSuperAdmin) {
-    const { data } = await supabase
+    const { data: reviews } = await supabase
       .from('cfp_reviews')
       .select('*')
-      .eq('submission_id', submissionId);
-    allReviews = (data || []) as CfpReview[];
+      .eq('submission_id', submissionId)
+      .order('created_at', { ascending: false });
+
+    if (reviews && reviews.length > 0) {
+      // Get reviewer info for all reviews
+      const reviewerIds = [...new Set(reviews.map((r: CfpReview) => r.reviewer_id))];
+      const { data: reviewers } = await supabase
+        .from('cfp_reviewers')
+        .select('id, name, email')
+        .in('id', reviewerIds);
+
+      const reviewerMap: Record<string, { name: string | null; email: string }> = {};
+      if (reviewers) {
+        for (const r of reviewers) {
+          reviewerMap[r.id] = { name: r.name, email: r.email };
+        }
+      }
+
+      // Cast to the expected type since we're augmenting with partial reviewer info
+      allReviews = reviews.map((r: CfpReview) => ({
+        ...r,
+        reviewer: reviewerMap[r.reviewer_id],
+      })) as Array<CfpReview & { reviewer?: { name: string | null; email: string } }>;
+    }
   }
 
   // Get stats - for non-super_admin, only show review count (no averages to prevent bias)

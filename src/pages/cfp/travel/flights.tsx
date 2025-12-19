@@ -384,13 +384,13 @@ function FlightSection({
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(flight)}
-            className="text-brand-primary hover:underline text-sm"
+            className="text-brand-primary hover:underline text-sm cursor-pointer"
           >
             Edit
           </button>
           <button
             onClick={() => onDelete(flight.id)}
-            className="text-red-400 hover:underline text-sm"
+            className="text-red-400 hover:underline text-sm cursor-pointer"
           >
             Delete
           </button>

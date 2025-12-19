@@ -12,6 +12,7 @@ const VALID_STATUSES: CfpSubmissionStatus[] = [
   'draft',
   'submitted',
   'under_review',
+  'shortlisted',
   'waitlisted',
   'accepted',
   'rejected',
