@@ -18,28 +18,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Missing submission ID' });
   }
 
-  let userId: string;
-
   try {
-    // Try to get user from Supabase session first
+    // Authenticate user from session - never trust request body for auth
     const supabase = createSupabaseApiClient(req, res);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (user && user.email) {
-      userId = user.id;
-      console.log('[Reviewer Submission API] User from session:', user.email);
-    } else {
-      // Fallback to request body
-      const { userId: bodyUserId } = req.body;
-
-      if (!bodyUserId) {
-        console.error('[Reviewer Submission API] No user found in session or body');
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      userId = bodyUserId;
-      console.log('[Reviewer Submission API] User from body:', userId);
+    if (userError || !user || !user.email) {
+      console.error('[Reviewer Submission API] Authentication failed:', userError?.message);
+      return res.status(401).json({ error: 'Unauthorized - please log in' });
     }
+
+    const userId = user.id;
+    console.log('[Reviewer Submission API] Authenticated user:', user.email);
 
     // Get the reviewer record
     const reviewer = await getReviewerByUserId(userId);

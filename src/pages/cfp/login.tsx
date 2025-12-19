@@ -8,10 +8,11 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Input, Button, Heading } from '@/components/atoms';
 import { cfpLoginSchema } from '@/lib/validations/cfp';
+import { withCfpGate } from '@/components/cfp/CfpGate';
 
 type LoginState = 'idle' | 'loading' | 'success' | 'error';
 
-export default function CfpLogin() {
+function CfpLogin() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<LoginState>('idle');
@@ -111,7 +112,7 @@ export default function CfpLogin() {
                     setState('idle');
                     setEmail('');
                   }}
-                  className="mt-6 text-brand-primary hover:text-brand-primary/80 text-sm font-medium transition-colors"
+                  className="mt-6 text-brand-primary hover:text-brand-primary/80 text-sm font-medium transition-colors cursor-pointer"
                 >
                   Use a different email
                 </button>
@@ -178,3 +179,5 @@ export default function CfpLogin() {
     </>
   );
 }
+
+export default withCfpGate(CfpLogin);

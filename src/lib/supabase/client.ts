@@ -10,6 +10,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/lib/types/database';
 import { env, clientEnv } from '@/config/env';
 
@@ -17,7 +18,7 @@ import { env, clientEnv } from '@/config/env';
  * Browser client instance for client-side operations
  * This client respects RLS policies
  */
-let browserClientInstance: ReturnType<typeof createClient<Database>> | null = null;
+let browserClientInstance: ReturnType<typeof createSSRBrowserClient<Database>> | null = null;
 
 /**
  * Create a Supabase client with service role privileges
@@ -53,6 +54,7 @@ export function createServiceRoleClient() {
 
 /**
  * Get or create browser-compatible Supabase client
+ * Uses @supabase/ssr to properly sync session to cookies for API route auth
  * This client respects RLS policies and can be used in browser/client-side code
  */
 export function createBrowserClient() {
@@ -68,17 +70,11 @@ export function createBrowserClient() {
     throw new Error('[Supabase] ❌ SUPABASE_ANON_KEY is missing');
   }
 
-  browserClientInstance = createClient<Database>(
+  // Use @supabase/ssr's createBrowserClient for proper cookie synchronization
+  // This ensures session is available to API routes via cookies
+  browserClientInstance = createSSRBrowserClient<Database>(
     clientEnv.supabase.url,
-    clientEnv.supabase.anonKey,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce',
-      },
-    }
+    clientEnv.supabase.anonKey
   );
 
   return browserClientInstance;

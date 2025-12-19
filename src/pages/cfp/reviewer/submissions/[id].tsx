@@ -3,16 +3,18 @@
  * View submission and submit/edit review
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
 import { useCfpReviewerSubmission, useSubmitReview } from '@/hooks/useCfp';
+import { ReviewGuide, ReviewGuideButton } from '@/components/cfp/ReviewGuide';
+import { useEscapeKey, useSubmitShortcut } from '@/hooks/useKeyboardShortcuts';
 
 const TYPE_LABELS: Record<string, string> = {
-  lightning: 'Lightning Talk (10 min)',
+  lightning: 'Lightning Talk (15 min)',
   standard: 'Standard Talk (30 min)',
   workshop: 'Workshop',
 };
@@ -25,15 +27,64 @@ const SCORE_LABELS = {
   score_diversity: 'Diversity',
 };
 
+const STATUS_INFO: Record<string, { label: string; description: string; color: string }> = {
+  submitted: {
+    label: 'Submitted',
+    description: 'New submission awaiting initial review',
+    color: 'blue',
+  },
+  under_review: {
+    label: 'In Review',
+    description: 'Being actively reviewed by the committee',
+    color: 'purple',
+  },
+  waitlisted: {
+    label: 'Waitlisted',
+    description: 'Good submission held for final decisions based on schedule and diversity',
+    color: 'orange',
+  },
+  accepted: {
+    label: 'Accepted',
+    description: 'Selected for the conference program - speaker will be notified',
+    color: 'green',
+  },
+  rejected: {
+    label: 'Rejected',
+    description: 'Not selected - speaker will receive feedback if provided',
+    color: 'red',
+  },
+};
+
+const STATUS_ACTIONS: Record<string, { label: string; description: string }> = {
+  under_review: {
+    label: 'Mark In Review',
+    description: 'Move to active review - signals committee is evaluating this submission',
+  },
+  waitlisted: {
+    label: 'Waitlist',
+    description: 'Hold for later - good candidate but need to see full picture before deciding',
+  },
+  accepted: {
+    label: 'Accept',
+    description: 'Confirm for the conference - speaker will be invited to present',
+  },
+  rejected: {
+    label: 'Reject',
+    description: 'Decline submission - speaker will be notified with any feedback provided',
+  },
+};
+
 export default function ReviewerSubmission() {
   const router = useRouter();
   const { id } = router.query;
 
-  const [user, setUser] = useState<{ id: string; email: string } | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [showStatusActions, setShowStatusActions] = useState(false);
 
   // Form state
   const [scores, setScores] = useState({
@@ -47,17 +98,16 @@ export default function ReviewerSubmission() {
   const [feedback, setFeedback] = useState('');
   const [formInitialized, setFormInitialized] = useState(false);
 
-  // Check authentication
+  // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      const { data: { user }, error } = await supabase.auth.getUser();
 
-      if (error || !authUser || !authUser.email) {
+      if (error || !user || !user.email) {
         router.replace('/cfp/reviewer/login');
         return;
       }
 
-      setUser({ id: authUser.id, email: authUser.email });
       setAuthChecked(true);
     };
 
@@ -65,16 +115,13 @@ export default function ReviewerSubmission() {
   }, [router]);
 
   // Fetch submission data using TanStack Query (with 10-min cache)
+  // Uses session-based authentication
   const {
     submission,
     reviewer,
     isLoading,
     error,
-  } = useCfpReviewerSubmission(
-    (id as string) ?? '',
-    user?.id ?? '',
-    user?.email ?? ''
-  );
+  } = useCfpReviewerSubmission((id as string) ?? '');
 
   // Submit review mutation
   const submitReviewMutation = useSubmitReview();
@@ -101,6 +148,32 @@ export default function ReviewerSubmission() {
     setScores((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!submission || statusUpdating) return;
+
+    setStatusUpdating(true);
+    try {
+      const response = await fetch(`/api/cfp/submissions/${submission.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update status');
+      }
+
+      // Reload to get fresh data
+      router.reload();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setStatusUpdating(false);
+      setShowStatusActions(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -114,7 +187,6 @@ export default function ReviewerSubmission() {
     try {
       await submitReviewMutation.mutateAsync({
         submissionId: submission!.id,
-        userId: user!.id,
         isUpdate: hasExistingReview,
         data: {
           score_overall: scores.score_overall,
@@ -135,6 +207,21 @@ export default function ReviewerSubmission() {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
+
+  // Keyboard shortcuts: Cmd/Ctrl + Enter to submit review
+  const handleKeyboardSubmit = useCallback(() => {
+    if (submission && !submitReviewMutation.isPending && !success) {
+      handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submission, submitReviewMutation.isPending, success, scores, privateNotes, feedback]);
+
+  // Register keyboard shortcuts
+  useSubmitShortcut(handleKeyboardSubmit, !!submission && !success);
+  useEscapeKey(() => {
+    if (showStatusActions) setShowStatusActions(false);
+    if (showGuide) setShowGuide(false);
+  }, showStatusActions || showGuide);
 
   // Show loading while checking auth or loading data
   if (!authChecked || isLoading) {
@@ -172,6 +259,9 @@ export default function ReviewerSubmission() {
         noindex
       />
 
+      {/* Review Guide Modal */}
+      <ReviewGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
+
       <div className="min-h-screen bg-brand-gray-darkest">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
@@ -180,15 +270,18 @@ export default function ReviewerSubmission() {
               <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
               <span className="text-white font-semibold">Review Submission</span>
             </Link>
-            <Link
-              href="/cfp/reviewer/dashboard"
-              className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Dashboard
-            </Link>
+            <div className="flex items-center gap-4">
+              <ReviewGuideButton onClick={() => setShowGuide(true)} />
+              <Link
+                href="/cfp/reviewer/dashboard"
+                className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Dashboard
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -199,7 +292,7 @@ export default function ReviewerSubmission() {
               {/* Header */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-3 py-1 bg-brand-primary/20 text-brand-primary rounded-full text-sm font-medium">
+                  <span className="px-3 py-1 bg-brand-primary/20 text-brand-primary rounded-full text-sm font-medium whitespace-nowrap">
                     {TYPE_LABELS[submission.submission_type]}
                   </span>
                   <span className="text-brand-gray-light text-sm capitalize">
@@ -210,6 +303,77 @@ export default function ReviewerSubmission() {
                   {submission.title}
                 </Heading>
               </div>
+
+              {/* Status Section (super_admin only) */}
+              {reviewer.role === 'super_admin' && (
+                <section className="bg-brand-gray-dark rounded-xl p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-sm font-semibold text-brand-gray-medium mb-2">Current Status</h2>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap ${
+                          submission.status === 'submitted' ? 'bg-blue-500/20 text-blue-300' :
+                          submission.status === 'under_review' ? 'bg-purple-500/20 text-purple-300' :
+                          submission.status === 'waitlisted' ? 'bg-orange-500/20 text-orange-300' :
+                          submission.status === 'accepted' ? 'bg-green-500/20 text-green-300' :
+                          submission.status === 'rejected' ? 'bg-red-500/20 text-red-300' :
+                          'bg-gray-500/20 text-gray-300'
+                        }`}>
+                          {STATUS_INFO[submission.status]?.label || submission.status}
+                        </span>
+                        <span className="text-sm text-brand-gray-light">
+                          {STATUS_INFO[submission.status]?.description}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowStatusActions(!showStatusActions)}
+                      className="px-4 py-2 bg-brand-gray-darkest text-white rounded-lg text-sm font-medium hover:bg-brand-gray-medium transition-colors cursor-pointer inline-flex items-center gap-2"
+                    >
+                      Change Status
+                      <svg className={`w-4 h-4 transition-transform ${showStatusActions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Status Actions */}
+                  {showStatusActions && (
+                    <div className="mt-4 pt-4 border-t border-brand-gray-medium">
+                      <p className="text-xs text-brand-gray-medium mb-3">Select a new status for this submission:</p>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {Object.entries(STATUS_ACTIONS)
+                          .filter(([status]) => status !== submission.status)
+                          .map(([status, info]) => (
+                            <button
+                              key={status}
+                              onClick={() => handleStatusChange(status)}
+                              disabled={statusUpdating}
+                              className={`p-3 rounded-lg text-left transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                                status === 'accepted' ? 'bg-green-500/10 border border-green-500/30 hover:bg-green-500/20' :
+                                status === 'rejected' ? 'bg-red-500/10 border border-red-500/30 hover:bg-red-500/20' :
+                                status === 'waitlisted' ? 'bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20' :
+                                'bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20'
+                              }`}
+                            >
+                              <div className={`font-medium text-sm ${
+                                status === 'accepted' ? 'text-green-300' :
+                                status === 'rejected' ? 'text-red-300' :
+                                status === 'waitlisted' ? 'text-orange-300' :
+                                'text-purple-300'
+                              }`}>
+                                {info.label}
+                              </div>
+                              <div className="text-xs text-brand-gray-light mt-1">
+                                {info.description}
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
 
               {/* Speaker Info (super_admin only) */}
               {submission.speaker && reviewer.role === 'super_admin' && (
@@ -409,29 +573,146 @@ export default function ReviewerSubmission() {
                 </div>
               </section>
 
-              {/* Other Reviews (super_admin only) */}
-              {reviewer.role === 'super_admin' && submission.all_reviews && submission.all_reviews.length > 0 && (
+              {/* Committee Reviews (super_admin only) */}
+              {reviewer.role === 'super_admin' && (
                 <section className="bg-brand-gray-dark rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-4">
-                    All Reviews ({submission.all_reviews.length})
-                  </h2>
-                  <div className="space-y-4">
-                    {submission.all_reviews.map((review) => (
-                      <div key={review.id} className="bg-brand-gray-darkest rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white font-medium">
-                            Overall: {review.score_overall}/5
-                          </span>
-                          <span className="text-xs text-brand-gray-medium">
-                            {new Date(review.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {review.private_notes && (
-                          <p className="text-sm text-brand-gray-light">{review.private_notes}</p>
-                        )}
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-white">
+                      Committee Reviews
+                    </h2>
+                    <span className="text-sm text-brand-gray-light">
+                      {submission.all_reviews?.length || 0} review{(submission.all_reviews?.length || 0) !== 1 ? 's' : ''}
+                    </span>
                   </div>
+
+                  {/* Aggregate Stats */}
+                  {submission.stats && submission.stats.review_count > 0 && (
+                    <div className="bg-brand-gray-darkest rounded-xl p-4 mb-4">
+                      <h3 className="text-sm font-medium text-brand-gray-medium mb-3">Average Scores</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        {[
+                          { key: 'avg_overall', label: 'Overall' },
+                          { key: 'avg_relevance', label: 'Relevance' },
+                          { key: 'avg_technical_depth', label: 'Technical' },
+                          { key: 'avg_clarity', label: 'Clarity' },
+                          { key: 'avg_diversity', label: 'Diversity' },
+                        ].map(({ key, label }) => {
+                          const value = submission.stats[key as keyof typeof submission.stats];
+                          return (
+                            <div key={key} className="text-center">
+                              <div className="text-xl font-bold text-white">
+                                {typeof value === 'number' ? value.toFixed(1) : '—'}
+                              </div>
+                              <div className="text-xs text-brand-gray-medium">{label}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Individual Reviews */}
+                  {submission.all_reviews && submission.all_reviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {submission.all_reviews.map((review: {
+                        id: string;
+                        score_overall: number | null;
+                        score_relevance?: number | null;
+                        score_technical_depth?: number | null;
+                        score_clarity?: number | null;
+                        score_diversity?: number | null;
+                        private_notes?: string | null;
+                        feedback_to_speaker?: string | null;
+                        created_at: string;
+                        reviewer?: { name: string | null; email: string };
+                      }) => (
+                        <div key={review.id} className="bg-brand-gray-darkest rounded-xl p-4">
+                          {/* Reviewer Info */}
+                          <div className="flex items-center justify-between mb-3 pb-3 border-b border-brand-gray-medium">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center">
+                                <span className="text-brand-primary text-sm font-medium">
+                                  {(review.reviewer?.name || review.reviewer?.email || '?')[0].toUpperCase()}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="text-white text-sm font-medium">
+                                  {review.reviewer?.name || review.reviewer?.email?.split('@')[0] || 'Reviewer'}
+                                </div>
+                                {review.reviewer?.name && (
+                                  <div className="text-xs text-brand-gray-medium">
+                                    {review.reviewer.email}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs text-brand-gray-medium">
+                              {new Date(review.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          </div>
+
+                          {/* Scores Grid */}
+                          <div className="grid grid-cols-5 gap-2 mb-3">
+                            {[
+                              { key: 'score_overall', label: 'Overall', required: true },
+                              { key: 'score_relevance', label: 'Relevance' },
+                              { key: 'score_technical_depth', label: 'Technical' },
+                              { key: 'score_clarity', label: 'Clarity' },
+                              { key: 'score_diversity', label: 'Diversity' },
+                            ].map(({ key, label, required }) => {
+                              const value = review[key as keyof typeof review] as number | null;
+                              return (
+                                <div key={key} className="text-center">
+                                  <div className={`text-lg font-semibold ${
+                                    value ? (
+                                      value >= 4 ? 'text-green-400' :
+                                      value >= 3 ? 'text-yellow-400' :
+                                      'text-red-400'
+                                    ) : 'text-brand-gray-medium'
+                                  }`}>
+                                    {value || '—'}
+                                  </div>
+                                  <div className="text-xs text-brand-gray-medium">
+                                    {label}{required && '*'}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Notes */}
+                          {review.private_notes && (
+                            <div className="mt-3 pt-3 border-t border-brand-gray-medium">
+                              <h4 className="text-xs font-medium text-brand-gray-medium mb-1">Private Notes</h4>
+                              <p className="text-sm text-brand-gray-light whitespace-pre-wrap">{review.private_notes}</p>
+                            </div>
+                          )}
+
+                          {/* Feedback to Speaker */}
+                          {review.feedback_to_speaker && (
+                            <div className="mt-3 pt-3 border-t border-brand-gray-medium">
+                              <h4 className="text-xs font-medium text-brand-gray-medium mb-1">Feedback to Speaker</h4>
+                              <p className="text-sm text-brand-gray-light whitespace-pre-wrap">{review.feedback_to_speaker}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 bg-brand-gray-darkest rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-6 h-6 text-brand-gray-medium" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-brand-gray-light text-sm">No reviews yet</p>
+                      <p className="text-brand-gray-medium text-xs mt-1">Be the first to review this submission</p>
+                    </div>
+                  )}
                 </section>
               )}
             </div>
@@ -492,7 +773,7 @@ export default function ReviewerSubmission() {
                               key={n}
                               type="button"
                               onClick={() => handleScoreChange(field as keyof typeof scores, n)}
-                              className={`w-10 h-10 rounded-lg font-semibold transition-colors ${
+                              className={`w-10 h-10 rounded-lg font-semibold transition-colors cursor-pointer ${
                                 scores[field as keyof typeof scores] === n
                                   ? 'bg-brand-primary text-black'
                                   : 'bg-brand-gray-darkest text-brand-gray-light hover:bg-brand-gray-medium'

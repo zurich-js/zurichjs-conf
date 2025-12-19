@@ -448,9 +448,10 @@ export interface ReviewerDashboardData {
 
 /**
  * Hook to fetch reviewer dashboard
+ * Uses session-based authentication
  */
-export function useCfpReviewerDashboard(userId: string, email: string) {
-  const query = useQuery(reviewerDashboardQueryOptions(userId, email));
+export function useCfpReviewerDashboard() {
+  const query = useQuery(reviewerDashboardQueryOptions);
 
   return {
     reviewer: query.data?.reviewer ?? null,
@@ -475,9 +476,10 @@ export interface ReviewerSubmissionData {
 
 /**
  * Hook to fetch a submission for reviewer
+ * Uses session-based authentication
  */
-export function useCfpReviewerSubmission(id: string, userId: string, email: string) {
-  const query = useQuery(reviewerSubmissionQueryOptions(id, userId, email));
+export function useCfpReviewerSubmission(id: string) {
+  const query = useQuery(reviewerSubmissionQueryOptions(id));
 
   return {
     submission: query.data?.submission ?? null,
@@ -490,6 +492,7 @@ export function useCfpReviewerSubmission(id: string, userId: string, email: stri
 
 /**
  * Hook to submit a review
+ * Uses session-based authentication
  */
 export function useSubmitReview() {
   const queryClient = useQueryClient();
@@ -498,19 +501,17 @@ export function useSubmitReview() {
     mutationFn: async ({
       submissionId,
       data,
-      userId,
       isUpdate = false,
     }: {
       submissionId: string;
       data: Partial<CfpReview>;
-      userId: string;
       isUpdate?: boolean;
     }) => {
       const response = await fetch(endpoints.cfp.reviewerSubmitReview(submissionId), {
         method: isUpdate ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ...data, userId }),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {

@@ -10,8 +10,8 @@ import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
-import { speakerProfileSchema, type SpeakerProfileFormData } from '@/lib/validations/cfp';
-import type { CfpSpeaker } from '@/lib/types/cfp';
+import { speakerProfileSchema, TSHIRT_SIZES, type SpeakerProfileFormData } from '@/lib/validations/cfp';
+import type { CfpSpeaker, CfpTshirtSize } from '@/lib/types/cfp';
 
 interface ProfileProps {
   speaker: CfpSpeaker;
@@ -42,9 +42,11 @@ export default function CfpProfile({ speaker }: ProfileProps) {
     twitter_handle: speaker.twitter_handle || '',
     bluesky_handle: speaker.bluesky_handle || '',
     mastodon_handle: speaker.mastodon_handle || '',
+    tshirt_size: speaker.tshirt_size || null,
+    company_interested_in_sponsoring: speaker.company_interested_in_sponsoring || null,
   });
 
-  const handleChange = (field: keyof SpeakerProfileFormData, value: string) => {
+  const handleChange = (field: keyof SpeakerProfileFormData, value: string | boolean | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
@@ -352,7 +354,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                     type="button"
                     onClick={handleImageSelect}
                     disabled={isUploadingImage}
-                    className="px-4 py-2 bg-brand-gray-darkest text-white rounded-lg hover:bg-brand-gray-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                    className="px-4 py-2 bg-brand-gray-darkest text-white rounded-lg hover:bg-brand-gray-medium transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-2"
                   >
                     {isUploadingImage ? (
                       <>
@@ -420,6 +422,50 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                     {countWords(formData.bio || '')}/250 words
                   </p>
                 </div>
+              </div>
+            </section>
+
+            {/* Conference Details */}
+            <section className="bg-brand-gray-dark rounded-2xl p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-white mb-4">Conference Details</h2>
+
+              <div>
+                <label htmlFor="tshirt_size" className="block text-sm font-semibold text-white mb-2">
+                  T-Shirt Size
+                </label>
+                <select
+                  id="tshirt_size"
+                  value={formData.tshirt_size || ''}
+                  onChange={(e) => handleChange('tshirt_size', e.target.value as CfpTshirtSize || null)}
+                  className="w-full bg-brand-gray-darkest text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
+                >
+                  <option value="">Select size</option>
+                  {TSHIRT_SIZES.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-brand-gray-medium mt-1">
+                  All accepted speakers receive a conference t-shirt
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.company_interested_in_sponsoring === true}
+                    onChange={(e) => handleChange('company_interested_in_sponsoring', e.target.checked)}
+                    className="mt-1 w-5 h-5 rounded border-brand-gray-medium bg-brand-gray-darkest text-brand-primary focus:ring-brand-primary"
+                  />
+                  <div>
+                    <div className="text-white font-medium">My company may be interested in sponsoring</div>
+                    <div className="text-sm text-brand-gray-light">
+                      Check this if your company might be interested in sponsoring ZurichJS Conf. We&apos;ll reach out with more information about sponsorship opportunities.
+                    </div>
+                  </div>
+                </label>
               </div>
             </section>
 

@@ -118,5 +118,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
+  if (req.method === 'DELETE') {
+    try {
+      // First check if speaker has any submissions
+      const { count: submissionCount } = await supabase
+        .from('cfp_submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('speaker_id', id);
+
+      if (submissionCount && submissionCount > 0) {
+        return res.status(400).json({
+          error: `Cannot delete speaker with ${submissionCount} submission(s). Delete submissions first.`,
+        });
+      }
+
+      // Delete the speaker
+      const { error } = await supabase
+        .from('cfp_speakers')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('[CFP Admin Speaker API] Delete error:', error);
+        return res.status(500).json({ error: 'Failed to delete speaker' });
+      }
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('[CFP Admin Speaker API] DELETE Error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
 }

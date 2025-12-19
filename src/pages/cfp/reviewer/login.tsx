@@ -8,8 +8,9 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input } from '@/components/atoms';
+import { withCfpGate } from '@/components/cfp/CfpGate';
 
-export default function ReviewerLoginPage() {
+function ReviewerLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,3 +160,5 @@ export default function ReviewerLoginPage() {
     </>
   );
 }
+
+export default withCfpGate(ReviewerLoginPage);

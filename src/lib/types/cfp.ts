@@ -24,6 +24,7 @@ export type CfpSubmissionStatus =
   | 'draft'
   | 'submitted'
   | 'under_review'
+  | 'shortlisted'
   | 'waitlisted'
   | 'accepted'
   | 'rejected'
@@ -67,6 +68,11 @@ export type CfpReimbursementType = 'flight' | 'accommodation' | 'transport' | 'o
 // ============================================
 
 /**
+ * T-shirt sizes available for speakers
+ */
+export type CfpTshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL';
+
+/**
  * Speaker profile for CFP
  */
 export interface CfpSpeaker {
@@ -84,6 +90,8 @@ export interface CfpSpeaker {
   bluesky_handle: string | null;
   mastodon_handle: string | null;
   profile_image_url: string | null;
+  tshirt_size: CfpTshirtSize | null;
+  company_interested_in_sponsoring: boolean | null;
   created_at: string;
   updated_at: string;
 }

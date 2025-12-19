@@ -124,7 +124,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete }
               </Link>
               <button
                 onClick={handleSignOut}
-                className="text-brand-gray-light hover:text-white text-sm transition-colors"
+                className="text-brand-gray-light hover:text-white text-sm transition-colors cursor-pointer"
               >
                 Sign Out
               </button>

@@ -6,26 +6,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { CfpSpeaker, CfpReviewer } from '@/lib/types/cfp';
 import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 'next';
-
-/**
- * Create an untyped service role client for CFP tables
- * The CFP tables are not in the generated types yet
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 // ============================================
 // SERVER-SIDE AUTH (for getServerSideProps)

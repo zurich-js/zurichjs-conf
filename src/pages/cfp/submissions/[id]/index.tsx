@@ -47,7 +47,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  lightning: 'Lightning Talk (10 min)',
+  lightning: 'Lightning Talk (15 min)',
   standard: 'Standard Talk (30 min)',
   workshop: 'Workshop',
 };
