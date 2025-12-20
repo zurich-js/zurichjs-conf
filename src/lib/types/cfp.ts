@@ -92,6 +92,7 @@ export interface CfpSpeaker {
   profile_image_url: string | null;
   tshirt_size: CfpTshirtSize | null;
   company_interested_in_sponsoring: boolean | null;
+  is_visible: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -135,6 +136,12 @@ export interface CfpSubmission {
   workshop_compensation_amount: number | null;
   workshop_special_requirements: string | null;
   workshop_max_participants: number | null;
+
+  // Scheduling fields (null = TBD)
+  scheduled_date: string | null;
+  scheduled_start_time: string | null;
+  scheduled_duration_minutes: number | null;
+  room: string | null;
 
   // Status
   status: CfpSubmissionStatus;
@@ -368,6 +375,7 @@ export interface UpdateCfpSpeakerRequest {
   bluesky_handle?: string;
   mastodon_handle?: string;
   profile_image_url?: string;
+  is_visible?: boolean;
 }
 
 /**
@@ -566,4 +574,101 @@ export interface CfpStats {
   travel_assistance_requested: number;
   accepted_speakers_count: number;
   travel_confirmed_count: number;
+}
+
+// ============================================
+// PUBLIC API TYPES
+// ============================================
+
+/**
+ * Session information for public display
+ */
+export interface PublicSession {
+  id: string;
+  title: string;
+  abstract: string;
+  type: CfpSubmissionType;
+  level: CfpTalkLevel;
+  schedule: {
+    date: string | null;
+    start_time: string | null;
+    duration_minutes: number | null;
+    room: string | null;
+  } | null;
+}
+
+/**
+ * Speaker information for public lineup display
+ * Contains only publicly safe information
+ */
+export interface PublicSpeaker {
+  id: string;
+  first_name: string;
+  last_name: string;
+  job_title: string | null;
+  company: string | null;
+  bio: string | null;
+  profile_image_url: string | null;
+  socials: {
+    linkedin_url: string | null;
+    github_url: string | null;
+    twitter_handle: string | null;
+    bluesky_handle: string | null;
+    mastodon_handle: string | null;
+  };
+  sessions: PublicSession[];
+}
+
+// ============================================
+// ADMIN MANAGEMENT TYPES
+// ============================================
+
+/**
+ * Admin request to create a speaker manually (not through CFP flow)
+ */
+export interface AdminCreateSpeakerRequest {
+  email: string;
+  first_name: string;
+  last_name: string;
+  job_title?: string;
+  company?: string;
+  bio?: string;
+  linkedin_url?: string;
+  github_url?: string;
+  twitter_handle?: string;
+  bluesky_handle?: string;
+  mastodon_handle?: string;
+  profile_image_url?: string;
+  is_visible?: boolean;
+}
+
+/**
+ * Admin request to create a session for a speaker
+ */
+export interface AdminCreateSessionRequest {
+  speaker_id: string;
+  title: string;
+  abstract: string;
+  submission_type: CfpSubmissionType;
+  talk_level: CfpTalkLevel;
+  tags?: string[];
+  status?: CfpSubmissionStatus;
+  // Scheduling (all optional for TBD)
+  scheduled_date?: string;
+  scheduled_start_time?: string;
+  scheduled_duration_minutes?: number;
+  room?: string;
+  // Workshop fields
+  workshop_duration_hours?: number;
+  workshop_max_participants?: number;
+}
+
+/**
+ * Admin request to update session scheduling
+ */
+export interface AdminUpdateSessionScheduleRequest {
+  scheduled_date?: string | null;
+  scheduled_start_time?: string | null;
+  scheduled_duration_minutes?: number | null;
+  room?: string | null;
 }

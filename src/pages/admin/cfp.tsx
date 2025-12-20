@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import { useEscapeKey } from '@/hooks/useKeyboardShortcuts';
+import AdminHeader from '@/components/admin/AdminHeader';
 
 type CfpTab = 'submissions' | 'speakers' | 'reviewers' | 'tags';
 
@@ -34,6 +35,7 @@ interface Speaker {
   bluesky_handle: string | null;
   mastodon_handle: string | null;
   profile_image_url: string | null;
+  is_visible: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +49,12 @@ interface Submission {
   status: string;
   submitted_at: string | null;
   created_at: string;
+  // Workshop-specific fields
+  workshop_duration_hours: number | null;
+  workshop_expected_compensation: string | null;
+  workshop_compensation_amount: number | null;
+  workshop_special_requirements: string | null;
+  workshop_max_participants: number | null;
   speaker: {
     first_name: string;
     last_name: string;
@@ -255,9 +263,9 @@ export default function CfpAdminDashboard() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  // Check auth status
+  // Check auth status - shared query key across admin pages
   const { isLoading: isAuthLoading } = useQuery({
-    queryKey: ['cfp', 'auth'],
+    queryKey: ['admin', 'auth'],
     queryFn: async () => {
       const res = await fetch('/api/admin/cfp/stats');
       if (res.ok) {
@@ -329,6 +337,37 @@ export default function CfpAdminDashboard() {
       queryClient.invalidateQueries({ queryKey: cfpQueryKeys.stats });
       queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
       setSelectedSubmission(null);
+    },
+  });
+
+  // Edit submission mutation
+  interface EditSubmissionData {
+    title?: string;
+    abstract?: string;
+    submission_type?: string;
+    talk_level?: string;
+    workshop_duration_hours?: number | null;
+    workshop_expected_compensation?: string | null;
+    workshop_compensation_amount?: number | null;
+    workshop_special_requirements?: string | null;
+    workshop_max_participants?: number | null;
+  }
+  const editSubmissionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: EditSubmissionData }) => {
+      const res = await fetch(`/api/admin/cfp/submissions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to update submission');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cfp', 'submissions'] });
+      toast.success('Submission Updated', 'Talk details have been saved');
+    },
+    onError: () => {
+      toast.error('Update Failed', 'Failed to save submission changes');
     },
   });
 
@@ -490,53 +529,11 @@ export default function CfpAdminDashboard() {
         <title>CFP Admin | ZurichJS</title>
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-3 sm:py-4">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#F1E271] rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-black">CFP Management</h1>
-                  <p className="text-xs sm:text-sm text-black hidden sm:block">ZurichJS Conference 2026</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <Link
-                  href="/admin"
-                  className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-black bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F1E271] transition-all"
-                >
-                  <svg className="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Link>
-                <Link
-                  href="/admin/cfp-travel"
-                  className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-black bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F1E271] transition-all"
-                >
-                  <svg className="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                  <span className="hidden sm:inline">Travel</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-black bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F1E271] transition-all cursor-pointer"
-                >
-                  <svg className="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AdminHeader
+          title="CFP Management"
+          subtitle="ZurichJS Conference 2026"
+          onLogout={handleLogout}
+        />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Stats */}
@@ -878,6 +875,10 @@ export default function CfpAdminDashboard() {
               deleteSubmissionMutation.mutate(selectedSubmission.id);
             }}
             isDeleting={deleteSubmissionMutation.isPending}
+            onEdit={(data) => {
+              editSubmissionMutation.mutate({ id: selectedSubmission.id, data });
+            }}
+            isEditing={editSubmissionMutation.isPending}
           />
         )}
       </div>
@@ -919,6 +920,8 @@ function SubmissionModal({
   isUpdating,
   onDelete,
   isDeleting,
+  onEdit,
+  isEditing,
 }: {
   submission: Submission;
   onClose: () => void;
@@ -926,11 +929,26 @@ function SubmissionModal({
   isUpdating: boolean;
   onDelete: () => void;
   isDeleting: boolean;
+  onEdit: (data: { title?: string; abstract?: string; submission_type?: string; talk_level?: string }) => void;
+  isEditing: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [reviews, setReviews] = useState<ReviewWithReviewer[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: submission.title,
+    abstract: submission.abstract,
+    submission_type: submission.submission_type,
+    talk_level: submission.talk_level,
+    // Workshop fields
+    workshop_duration_hours: submission.workshop_duration_hours,
+    workshop_expected_compensation: submission.workshop_expected_compensation,
+    workshop_compensation_amount: submission.workshop_compensation_amount,
+    workshop_special_requirements: submission.workshop_special_requirements,
+    workshop_max_participants: submission.workshop_max_participants,
+  });
 
   // Fetch detailed reviews when modal opens
   useEffect(() => {
@@ -972,6 +990,26 @@ function SubmissionModal({
     navigator.clipboard.writeText(submission.speaker?.email || '');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveEdit = () => {
+    onEdit(editForm);
+    setIsEditMode(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditForm({
+      title: submission.title,
+      abstract: submission.abstract,
+      submission_type: submission.submission_type,
+      talk_level: submission.talk_level,
+      workshop_duration_hours: submission.workshop_duration_hours,
+      workshop_expected_compensation: submission.workshop_expected_compensation,
+      workshop_compensation_amount: submission.workshop_compensation_amount,
+      workshop_special_requirements: submission.workshop_special_requirements,
+      workshop_max_participants: submission.workshop_max_participants,
+    });
+    setIsEditMode(false);
   };
 
   return (
@@ -1041,29 +1079,221 @@ function SubmissionModal({
 
           {/* Submission Info */}
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Talk Information</h4>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-black font-semibold mb-1">Title</p>
-                <p className="text-base text-black font-medium">{submission.title}</p>
-              </div>
-              <div>
-                <p className="text-xs text-black font-semibold mb-1">Abstract</p>
-                <p className="text-sm text-black whitespace-pre-wrap leading-relaxed">{submission.abstract}</p>
-              </div>
-              {submission.tags && submission.tags.length > 0 && (
-                <div>
-                  <p className="text-xs text-black font-semibold mb-2">Tags</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {submission.tags.map((tag) => (
-                      <span key={tag.id} className="px-2 py-0.5 bg-[#F1E271] rounded text-xs text-black font-medium">
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold text-black uppercase tracking-wide">Talk Information</h4>
+              {!isEditMode && (
+                <button
+                  onClick={() => setIsEditMode(true)}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit
+                </button>
               )}
             </div>
+            {isEditMode ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs text-black font-semibold mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-black font-semibold mb-1">Abstract</label>
+                  <textarea
+                    value={editForm.abstract}
+                    onChange={(e) => setEditForm({ ...editForm, abstract: e.target.value })}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-black font-semibold mb-1">Talk Type</label>
+                    <select
+                      value={editForm.submission_type}
+                      onChange={(e) => setEditForm({ ...editForm, submission_type: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    >
+                      <option value="lightning">Lightning (10 min)</option>
+                      <option value="standard">Standard (30 min)</option>
+                      <option value="workshop">Workshop (90+ min)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-black font-semibold mb-1">Level</label>
+                    <select
+                      value={editForm.talk_level}
+                      onChange={(e) => setEditForm({ ...editForm, talk_level: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                </div>
+                {/* Workshop-specific fields */}
+                {editForm.submission_type === 'workshop' && (
+                  <div className="space-y-4 pt-2 border-t border-gray-200 mt-4">
+                    <p className="text-xs font-bold text-black uppercase tracking-wide">Workshop Details</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-black font-semibold mb-1">Duration (hours)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="8"
+                          step="0.5"
+                          value={editForm.workshop_duration_hours || ''}
+                          onChange={(e) => setEditForm({ ...editForm, workshop_duration_hours: e.target.value ? parseFloat(e.target.value) : null })}
+                          placeholder="e.g., 3"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-black font-semibold mb-1">Max Participants</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={editForm.workshop_max_participants || ''}
+                          onChange={(e) => setEditForm({ ...editForm, workshop_max_participants: e.target.value ? parseInt(e.target.value) : null })}
+                          placeholder="e.g., 30"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-black font-semibold mb-1">Compensation Type</label>
+                        <select
+                          value={editForm.workshop_expected_compensation || ''}
+                          onChange={(e) => setEditForm({ ...editForm, workshop_expected_compensation: e.target.value || null })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                        >
+                          <option value="">Not specified</option>
+                          <option value="none">No compensation needed</option>
+                          <option value="flat_fee">Flat fee</option>
+                          <option value="per_attendee">Per attendee</option>
+                          <option value="negotiable">Negotiable</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-black font-semibold mb-1">Compensation Amount (CHF)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editForm.workshop_compensation_amount || ''}
+                          onChange={(e) => setEditForm({ ...editForm, workshop_compensation_amount: e.target.value ? parseInt(e.target.value) : null })}
+                          placeholder="e.g., 500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-black font-semibold mb-1">Special Requirements</label>
+                      <textarea
+                        value={editForm.workshop_special_requirements || ''}
+                        onChange={(e) => setEditForm({ ...editForm, workshop_special_requirements: e.target.value || null })}
+                        rows={2}
+                        placeholder="Equipment, software, room setup, etc."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={isEditing}
+                    className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                  >
+                    {isEditing ? (
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : null}
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isEditing}
+                    className="px-4 py-2 border border-gray-300 text-black font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-black font-semibold mb-1">Title</p>
+                  <p className="text-base text-black font-medium">{submission.title}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-black font-semibold mb-1">Abstract</p>
+                  <p className="text-sm text-black whitespace-pre-wrap leading-relaxed">{submission.abstract}</p>
+                </div>
+                {submission.tags && submission.tags.length > 0 && (
+                  <div>
+                    <p className="text-xs text-black font-semibold mb-2">Tags</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {submission.tags.map((tag) => (
+                        <span key={tag.id} className="px-2 py-0.5 bg-[#F1E271] rounded text-xs text-black font-medium">
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Workshop details in view mode */}
+                {submission.submission_type === 'workshop' && (
+                  <div className="pt-3 border-t border-gray-200 mt-3">
+                    <p className="text-xs font-bold text-black uppercase tracking-wide mb-2">Workshop Details</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {submission.workshop_duration_hours && (
+                        <div>
+                          <p className="text-xs text-gray-500">Duration</p>
+                          <p className="text-sm font-medium text-black">{submission.workshop_duration_hours} hours</p>
+                        </div>
+                      )}
+                      {submission.workshop_max_participants && (
+                        <div>
+                          <p className="text-xs text-gray-500">Max Participants</p>
+                          <p className="text-sm font-medium text-black">{submission.workshop_max_participants}</p>
+                        </div>
+                      )}
+                      {submission.workshop_expected_compensation && (
+                        <div>
+                          <p className="text-xs text-gray-500">Compensation</p>
+                          <p className="text-sm font-medium text-black capitalize">{submission.workshop_expected_compensation.replace('_', ' ')}</p>
+                        </div>
+                      )}
+                      {submission.workshop_compensation_amount !== null && submission.workshop_compensation_amount !== undefined && (
+                        <div>
+                          <p className="text-xs text-gray-500">Amount</p>
+                          <p className="text-sm font-medium text-black">CHF {submission.workshop_compensation_amount}</p>
+                        </div>
+                      )}
+                    </div>
+                    {submission.workshop_special_requirements && (
+                      <div className="mt-3">
+                        <p className="text-xs text-gray-500">Special Requirements</p>
+                        <p className="text-sm text-black whitespace-pre-wrap">{submission.workshop_special_requirements}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Speaker Info */}
@@ -2175,7 +2405,28 @@ function SpeakersTab({ speakers, isLoading }: { speakers: Speaker[]; isLoading: 
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showAddSpeaker, setShowAddSpeaker] = useState(false);
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  // Toggle visibility mutation
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async ({ id, isVisible }: { id: string; isVisible: boolean }) => {
+      const res = await fetch(`/api/admin/cfp/speakers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_visible: isVisible }),
+      });
+      if (!res.ok) throw new Error('Failed to update visibility');
+    },
+    onSuccess: (_data, { isVisible }) => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
+      toast.success('Visibility Updated', isVisible ? 'Speaker is now visible on the lineup' : 'Speaker is now hidden from the lineup');
+    },
+    onError: () => {
+      toast.error('Error', 'Failed to update speaker visibility');
+    },
+  });
 
   const filteredSpeakers = speakers.filter((s) => {
     if (!searchQuery) return true;
@@ -2217,15 +2468,24 @@ function SpeakersTab({ speakers, isLoading }: { speakers: Speaker[]; isLoading: 
 
   return (
     <div>
-      {/* Search */}
-      <div className="mb-6">
+      {/* Search and Add */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search speakers by name, email, or company..."
-          className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          className="w-full sm:max-w-md px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
         />
+        <button
+          onClick={() => setShowAddSpeaker(true)}
+          className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Speaker
+        </button>
       </div>
 
       {isLoading ? (
@@ -2297,6 +2557,7 @@ function SpeakersTab({ speakers, isLoading }: { speakers: Speaker[]; isLoading: 
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Company</th>
                   <th className="px-4 py-3">Profile</th>
+                  <th className="px-4 py-3">Visible</th>
                   <th className="px-4 py-3">Joined</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
@@ -2338,6 +2599,22 @@ function SpeakersTab({ speakers, isLoading }: { speakers: Speaker[]; isLoading: 
                         <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Incomplete</span>
                       )}
                     </td>
+                    <td className="px-4 py-4">
+                      <button
+                        onClick={() => toggleVisibilityMutation.mutate({ id: s.id, isVisible: !s.is_visible })}
+                        disabled={toggleVisibilityMutation.isPending}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                          s.is_visible ? 'bg-green-500' : 'bg-gray-300'
+                        }`}
+                        title={s.is_visible ? 'Visible on lineup' : 'Hidden from lineup'}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            s.is_visible ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </td>
                     <td className="px-4 py-4 text-sm text-black">
                       {new Date(s.created_at).toLocaleDateString()}
                     </td>
@@ -2353,7 +2630,7 @@ function SpeakersTab({ speakers, isLoading }: { speakers: Speaker[]; isLoading: 
                 ))}
                 {filteredSpeakers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-black">
+                    <td colSpan={7} className="px-4 py-8 text-center text-black">
                       {searchQuery ? 'No speakers match your search' : 'No speakers found'}
                     </td>
                   </tr>
@@ -2398,6 +2675,355 @@ function SpeakersTab({ speakers, isLoading }: { speakers: Speaker[]; isLoading: 
           isDeleting={deleteSpeakerMutation.isPending}
         />
       )}
+
+      {/* Add Speaker Modal */}
+      {showAddSpeaker && (
+        <AddSpeakerModal
+          onClose={() => setShowAddSpeaker(false)}
+          onCreated={() => {
+            queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
+            queryClient.invalidateQueries({ queryKey: cfpQueryKeys.stats });
+            setShowAddSpeaker(false);
+            toast.success('Speaker Added', 'New speaker has been created successfully');
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddSpeakerModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    job_title: '',
+    company: '',
+    bio: '',
+    linkedin_url: '',
+    github_url: '',
+    twitter_handle: '',
+    bluesky_handle: '',
+    mastodon_handle: '',
+    is_visible: false,
+  });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleChange = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Invalid file type. Accepted formats: JPG, PNG, WebP, GIF');
+        return;
+      }
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File too large. Maximum size is 5MB');
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+      setError('');
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      // Step 1: Create the speaker
+      const res = await fetch('/api/admin/cfp/speakers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to create speaker');
+      }
+
+      const { speaker } = await res.json();
+
+      // Step 2: Upload image if selected
+      if (selectedImage && speaker?.id) {
+        const imageFormData = new FormData();
+        imageFormData.append('image', selectedImage);
+
+        const imageRes = await fetch(`/api/admin/cfp/speakers/${speaker.id}/image`, {
+          method: 'POST',
+          body: imageFormData,
+        });
+
+        if (!imageRes.ok) {
+          console.error('Failed to upload image, but speaker was created');
+        }
+      }
+
+      onCreated();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-xl font-bold text-black">Add New Speaker</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Profile Image Upload */}
+          <div className="flex items-start gap-4">
+            <div className="shrink-0">
+              {imagePreview ? (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 cursor-pointer"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                >
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-black mb-1">Profile Photo</p>
+              <p className="text-xs text-gray-500 mb-2">JPG, PNG, WebP or GIF. Max 5MB.</p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-sm text-[#b8a820] hover:text-[#a09020] font-medium cursor-pointer"
+              >
+                {imagePreview ? 'Change photo' : 'Upload photo'}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">Email *</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-3 self-end pb-2">
+              <label className="text-sm font-medium text-black">Visible on Lineup</label>
+              <button
+                type="button"
+                onClick={() => handleChange('is_visible', !formData.is_visible)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                  formData.is_visible ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    formData.is_visible ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">First Name *</label>
+              <input
+                type="text"
+                value={formData.first_name}
+                onChange={(e) => handleChange('first_name', e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">Last Name *</label>
+              <input
+                type="text"
+                value={formData.last_name}
+                onChange={(e) => handleChange('last_name', e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">Job Title</label>
+              <input
+                type="text"
+                value={formData.job_title}
+                onChange={(e) => handleChange('job_title', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">Company</label>
+              <input
+                type="text"
+                value={formData.company}
+                onChange={(e) => handleChange('company', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-black mb-1">Bio</label>
+            <textarea
+              value={formData.bio}
+              onChange={(e) => handleChange('bio', e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            />
+          </div>
+
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <h4 className="text-sm font-semibold text-black mb-3">Social Links (Optional)</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">LinkedIn URL</label>
+                <input
+                  type="url"
+                  value={formData.linkedin_url}
+                  onChange={(e) => handleChange('linkedin_url', e.target.value)}
+                  placeholder="https://linkedin.com/in/..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">GitHub URL</label>
+                <input
+                  type="url"
+                  value={formData.github_url}
+                  onChange={(e) => handleChange('github_url', e.target.value)}
+                  placeholder="https://github.com/..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Twitter Handle</label>
+                <input
+                  type="text"
+                  value={formData.twitter_handle}
+                  onChange={(e) => handleChange('twitter_handle', e.target.value)}
+                  placeholder="username"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Bluesky Handle</label>
+                <input
+                  type="text"
+                  value={formData.bluesky_handle}
+                  onChange={(e) => handleChange('bluesky_handle', e.target.value)}
+                  placeholder="user.bsky.social"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-black hover:bg-gray-100 rounded-lg cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg cursor-pointer disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSubmitting && (
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              Add Speaker
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -2416,6 +3042,7 @@ function SpeakerModal({
   isDeleting: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showAddSession, setShowAddSession] = useState(false);
   const [formData, setFormData] = useState({
     first_name: speaker.first_name || '',
     last_name: speaker.last_name || '',
@@ -2434,6 +3061,8 @@ function SpeakerModal({
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const toast = useToast();
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -2552,8 +3181,8 @@ function SpeakerModal({
           )}
 
           {/* Mode Toggle */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleCopyEmail}
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-black hover:bg-gray-50 transition-all cursor-pointer"
@@ -2566,6 +3195,15 @@ function SpeakerModal({
               >
                 Email Speaker
               </a>
+              <button
+                onClick={() => setShowAddSession(true)}
+                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Session
+              </button>
             </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
