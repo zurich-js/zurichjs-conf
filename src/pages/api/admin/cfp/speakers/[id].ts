@@ -83,9 +83,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'bluesky_handle',
         'mastodon_handle',
         'profile_image_url',
+        'is_visible',
       ];
 
-      const sanitizedUpdates: Record<string, string | null> = {};
+      const sanitizedUpdates: Record<string, string | boolean | null> = {};
       for (const [key, value] of Object.entries(updates)) {
         if (allowedFields.includes(key)) {
           sanitizedUpdates[key] = value === '' ? null : value;

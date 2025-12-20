@@ -112,6 +112,81 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
+  // PUT - Update submission details
+  if (req.method === 'PUT') {
+    try {
+      const supabase = createCfpServiceClient();
+      const {
+        title,
+        abstract,
+        submission_type,
+        talk_level,
+        outline,
+        target_audience,
+        // Workshop-specific fields
+        workshop_duration_hours,
+        workshop_expected_compensation,
+        workshop_compensation_amount,
+        workshop_special_requirements,
+        workshop_max_participants,
+      } = req.body;
+
+      // Validate required fields if provided
+      if (submission_type && !['lightning', 'standard', 'workshop'].includes(submission_type)) {
+        return res.status(400).json({ error: 'Invalid submission type' });
+      }
+      if (talk_level && !['beginner', 'intermediate', 'advanced'].includes(talk_level)) {
+        return res.status(400).json({ error: 'Invalid talk level' });
+      }
+
+      // Build update object with only provided fields
+      const updateData: Record<string, string | number | null> = {};
+      if (title !== undefined) updateData.title = title;
+      if (abstract !== undefined) updateData.abstract = abstract;
+      if (submission_type !== undefined) updateData.submission_type = submission_type;
+      if (talk_level !== undefined) updateData.talk_level = talk_level;
+      if (outline !== undefined) updateData.outline = outline;
+      if (target_audience !== undefined) updateData.target_audience = target_audience;
+
+      // Workshop-specific fields
+      if (workshop_duration_hours !== undefined) updateData.workshop_duration_hours = workshop_duration_hours;
+      if (workshop_expected_compensation !== undefined) updateData.workshop_expected_compensation = workshop_expected_compensation;
+      if (workshop_compensation_amount !== undefined) updateData.workshop_compensation_amount = workshop_compensation_amount;
+      if (workshop_special_requirements !== undefined) updateData.workshop_special_requirements = workshop_special_requirements;
+      if (workshop_max_participants !== undefined) updateData.workshop_max_participants = workshop_max_participants;
+
+      // If switching away from workshop, clear workshop fields
+      if (submission_type && submission_type !== 'workshop') {
+        updateData.workshop_duration_hours = null;
+        updateData.workshop_expected_compensation = null;
+        updateData.workshop_compensation_amount = null;
+        updateData.workshop_special_requirements = null;
+        updateData.workshop_max_participants = null;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: 'No fields to update' });
+      }
+
+      const { data, error } = await supabase
+        .from('cfp_submissions')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[CFP Admin Detail API] PUT Error:', error);
+        return res.status(500).json({ error: 'Failed to update submission' });
+      }
+
+      return res.status(200).json({ submission: data });
+    } catch (error) {
+      console.error('[CFP Admin Detail API] PUT Error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
   // DELETE - Delete submission and all related data
   if (req.method === 'DELETE') {
     try {
