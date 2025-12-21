@@ -67,16 +67,25 @@ export const endpoints = {
   newsletter: {
     subscribe: () => '/api/newsletter/subscribe' as const,
   },
-  // Add more endpoint groups as your API grows
-  // Example:
-  // speakers: {
-  //   list: () => '/api/speakers' as const,
-  //   byId: (id: string) => `/api/speakers/${id}` as const,
-  // },
-  // schedule: {
-  //   list: () => '/api/schedule' as const,
-  //   byDate: (date: string) => `/api/schedule/${date}` as const,
-  // },
+  // CFP (Call for Papers) endpoints
+  cfp: {
+    // Speaker endpoints
+    speaker: () => '/api/cfp/speaker' as const,
+    submissions: () => '/api/cfp/submissions' as const,
+    submission: (id: string) => `/api/cfp/submissions/${id}` as const,
+    submitForReview: (id: string) => `/api/cfp/submissions/${id}/submit` as const,
+    withdrawSubmission: (id: string) => `/api/cfp/submissions/${id}/withdraw` as const,
+    suggestedTags: () => '/api/cfp/tags/suggested' as const,
+    // Travel endpoints
+    travel: () => '/api/cfp/travel' as const,
+    flights: () => '/api/cfp/travel/flights' as const,
+    flight: (id: string) => `/api/cfp/travel/flights/${id}` as const,
+    reimbursements: () => '/api/cfp/travel/reimbursements' as const,
+    // Reviewer endpoints
+    reviewerDashboard: () => '/api/cfp/reviewer/dashboard' as const,
+    reviewerSubmission: (id: string) => `/api/cfp/reviewer/submissions/${id}` as const,
+    reviewerSubmitReview: (id: string) => `/api/cfp/reviewer/submissions/${id}/review` as const,
+  },
 } as const;
 
 /**

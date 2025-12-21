@@ -5,6 +5,7 @@ import { MotionProvider } from "@/contexts/MotionContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { DEFAULT_CURRENCY, type SupportedCurrency } from "@/config/currency";
+import { ToastProvider } from "@/contexts/ToastContext";
 import { QueryClientProvider, HydrationBoundary, type DehydratedState } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
@@ -103,9 +104,11 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
             <CurrencyProvider currency={currency}>
               <CartProvider initialCart={pageProps.initialCart}>
                 <MotionProvider>
-                  <div className={figtree.variable}>
-                    <Component {...pageProps} />
-                  </div>
+                  <ToastProvider>
+                    <div className={figtree.variable}>
+                      <Component {...pageProps} />
+                    </div>
+                  </ToastProvider>
                 </MotionProvider>
               </CartProvider>
             </CurrencyProvider>

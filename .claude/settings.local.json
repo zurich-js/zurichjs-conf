@@ -17,7 +17,10 @@
       "WebFetch(domain:posthog.com)",
       "WebFetch(domain:medium.com)",
       "Bash(npm run test:run:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(npm ls:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
