@@ -7,6 +7,7 @@
 
 import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X, AlertTriangle, Info } from 'lucide-react';
 
 // Toast types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -35,33 +36,26 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+// Toast icon styles
+const iconStyles: Record<ToastType, string> = {
+  success: 'text-green-500',
+  error: 'text-red-500',
+  warning: 'text-orange-500',
+  info: 'text-blue-500',
+};
+
 // Toast icons
 const ToastIcon: React.FC<{ type: ToastType }> = ({ type }) => {
+  const className = `w-5 h-5 ${iconStyles[type]}`;
   switch (type) {
     case 'success':
-      return (
-        <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      );
+      return <Check className={className} />;
     case 'error':
-      return (
-        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      );
+      return <X className={className} />;
     case 'warning':
-      return (
-        <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      );
+      return <AlertTriangle className={className} />;
     case 'info':
-      return (
-        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      );
+      return <Info className={className} />;
   }
 };
 
@@ -126,9 +120,7 @@ const ToastItem: React.FC<{
         className={`flex-shrink-0 p-1 rounded hover:bg-black/5 transition-colors cursor-pointer ${textColors[toast.type]}`}
         aria-label="Dismiss notification"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <X className="w-4 h-4" />
       </button>
     </motion.div>
   );
