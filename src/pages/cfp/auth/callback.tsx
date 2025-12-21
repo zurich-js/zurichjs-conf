@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
+import { analytics } from '@/lib/analytics/client';
 
 type CallbackState = 'loading' | 'success' | 'error' | 'expired';
 
@@ -49,11 +50,15 @@ export default function CfpAuthCallback() {
 
         // If there's a code, exchange it for a session (PKCE flow)
         if (code) {
-          console.log('[CFP Auth Callback] Exchanging code for session...');
+          analytics.track('cfp_auth_started', { auth_type: 'speaker', auth_flow: 'pkce' });
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
-            console.error('[CFP Auth Callback] Code exchange error:', exchangeError);
+            analytics.track('cfp_auth_failed', {
+              auth_type: 'speaker',
+              error_message: exchangeError.message,
+              error_type: 'exchange_failed',
+            });
             throw new Error(exchangeError.message);
           }
 
@@ -61,7 +66,7 @@ export default function CfpAuthCallback() {
             throw new Error('Failed to establish session from code');
           }
 
-          console.log('[CFP Auth Callback] Session established via PKCE');
+          analytics.track('cfp_auth_succeeded', { auth_type: 'speaker', auth_flow: 'pkce' });
         } else {
           // Try hash fragment (implicit flow)
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -91,7 +96,11 @@ export default function CfpAuthCallback() {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         if (userError) {
-          console.error('[CFP Auth Callback] User verification error:', userError);
+          analytics.track('cfp_auth_failed', {
+            auth_type: 'speaker',
+            error_message: userError.message,
+            error_type: 'session_failed',
+          });
           throw userError;
         }
 
@@ -101,7 +110,12 @@ export default function CfpAuthCallback() {
           return;
         }
 
-        console.log('[CFP Auth Callback] User verified:', user.email);
+        analytics.track('cfp_auth_succeeded', {
+          auth_type: 'speaker',
+          auth_flow: code ? 'pkce' : 'hash',
+          user_email: user.email,
+        });
+        analytics.identify(user.id, { email: user.email });
 
         // Get the current session to pass tokens to the API for server-side cookie setting
         const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -131,11 +145,21 @@ export default function CfpAuthCallback() {
           router.replace('/cfp/dashboard');
         }, 1500);
       } catch (err) {
-        console.error('[CFP Auth Callback] Error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        const errorType = isExpiredLinkError(errorMessage) ? 'expired' : 'unknown';
+
+        analytics.track('cfp_auth_failed', {
+          auth_type: 'speaker',
+          error_message: errorMessage,
+          error_type: errorType,
+        });
+        analytics.error(errorMessage, err instanceof Error ? err : undefined, {
+          type: 'auth',
+          severity: 'medium',
+        });
 
         // Check if this is an expired/invalid link error
-        if (isExpiredLinkError(errorMessage)) {
+        if (errorType === 'expired') {
           setState('expired');
         } else {
           setState('error');

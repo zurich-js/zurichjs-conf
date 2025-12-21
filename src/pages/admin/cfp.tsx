@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import { useEscapeKey } from '@/hooks/useKeyboardShortcuts';
 import AdminHeader from '@/components/admin/AdminHeader';
+import { analytics } from '@/lib/analytics/client';
 
 type CfpTab = 'submissions' | 'speakers' | 'reviewers' | 'tags';
 
@@ -448,7 +449,15 @@ export default function CfpAdminDashboard() {
       setIsAuthenticated(false);
       router.reload();
     } catch (error) {
-      console.error('Logout failed:', error);
+      analytics.track('cfp_admin_action', {
+        action: 'logout',
+        success: false,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+      });
+      analytics.error('Logout failed', error instanceof Error ? error : undefined, {
+        type: 'auth',
+        severity: 'low',
+      });
     }
   };
 
@@ -959,7 +968,10 @@ function SubmissionModal({
           setReviews(data.reviews || []);
         }
       } catch (error) {
-        console.error('Failed to fetch reviews:', error);
+        analytics.error('Failed to fetch reviews', error instanceof Error ? error : undefined, {
+          type: 'network',
+          severity: 'low',
+        });
       } finally {
         setIsLoadingReviews(false);
       }
@@ -2784,7 +2796,11 @@ function AddSpeakerModal({
         });
 
         if (!imageRes.ok) {
-          console.error('Failed to upload image, but speaker was created');
+          analytics.track('cfp_admin_action', {
+            action: 'image_upload',
+            success: false,
+            error_message: 'Failed to upload image, but speaker was created',
+          });
         }
       }
 

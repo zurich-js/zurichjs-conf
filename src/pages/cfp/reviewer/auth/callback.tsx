@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
+import { analytics } from '@/lib/analytics/client';
 
 /**
  * Check if an error indicates an expired or invalid link
@@ -47,11 +48,15 @@ export default function ReviewerAuthCallback() {
 
         // If there's a code, exchange it for a session (PKCE flow)
         if (code) {
-          console.log('[Reviewer Auth Callback] Exchanging code for session...');
+          analytics.track('cfp_auth_started', { auth_type: 'reviewer', auth_flow: 'pkce' });
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
-            console.error('[Reviewer Auth Callback] Code exchange error:', exchangeError);
+            analytics.track('cfp_auth_failed', {
+              auth_type: 'reviewer',
+              error_message: exchangeError.message,
+              error_type: 'exchange_failed',
+            });
             throw new Error(exchangeError.message);
           }
 
@@ -59,14 +64,14 @@ export default function ReviewerAuthCallback() {
             throw new Error('Failed to establish session from code');
           }
 
-          console.log('[Reviewer Auth Callback] Session established via PKCE');
+          analytics.track('cfp_auth_succeeded', { auth_type: 'reviewer', auth_flow: 'pkce' });
         } else {
           // Try hash fragment (implicit flow) or existing session
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
           const accessToken = hashParams.get('access_token');
 
           if (accessToken) {
-            console.log('[Reviewer Auth Callback] Setting session from hash tokens...');
+            analytics.track('cfp_auth_started', { auth_type: 'reviewer', auth_flow: 'hash' });
             const { error: setSessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: hashParams.get('refresh_token') || '',
@@ -89,7 +94,12 @@ export default function ReviewerAuthCallback() {
           throw new Error('No authenticated user found. The link may have expired or is invalid.');
         }
 
-        console.log('[Reviewer Auth Callback] User verified:', user.email);
+        analytics.track('cfp_auth_succeeded', {
+          auth_type: 'reviewer',
+          auth_flow: code ? 'pkce' : 'hash',
+          user_email: user.email,
+        });
+        analytics.identify(user.id, { email: user.email });
 
         // Accept the reviewer invite (links user to reviewer record)
         // Pass user info in body since we already verified the user client-side
@@ -116,11 +126,21 @@ export default function ReviewerAuthCallback() {
           router.push('/cfp/reviewer/dashboard');
         }, 1500);
       } catch (err) {
-        console.error('[Reviewer Auth Callback] Error:', err);
         const message = err instanceof Error ? err.message : 'Authentication failed';
+        const errorType = isExpiredLinkError(message) ? 'expired' : 'unknown';
+
+        analytics.track('cfp_auth_failed', {
+          auth_type: 'reviewer',
+          error_message: message,
+          error_type: errorType,
+        });
+        analytics.error(message, err instanceof Error ? err : undefined, {
+          type: 'auth',
+          severity: 'medium',
+        });
 
         // Check if this is an expired/invalid link error
-        if (isExpiredLinkError(message)) {
+        if (errorType === 'expired') {
           setStatus('expired');
         } else {
           setStatus('error');

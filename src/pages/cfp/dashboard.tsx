@@ -14,6 +14,7 @@ import { createSupabaseServerClient, getSpeakerByUserId, isSpeakerProfileComplet
 import type { CfpSpeaker, CfpSubmission } from '@/lib/types/cfp';
 import { supabase } from '@/lib/supabase/client';
 import { env } from '@/config/env';
+import { serverAnalytics } from '@/lib/analytics/server';
 
 interface DashboardProps {
   speaker: CfpSpeaker;
@@ -316,7 +317,11 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async (ctx
     .order('created_at', { ascending: false });
 
   if (submissionsError) {
-    console.error('[CFP Dashboard] Error fetching submissions:', submissionsError);
+    await serverAnalytics.error(session.user.id, submissionsError.message, {
+      type: 'system',
+      severity: 'medium',
+      code: submissionsError.code,
+    });
   }
 
   return {
