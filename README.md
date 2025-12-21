@@ -121,10 +121,11 @@ docs/
 
 ## Documentation
 
-- **[Architecture Overview](./docs/architecture.md)** - System design and architecture decisions
-- **[Implementation Status](./docs/IMPLEMENTATION_STATUS.md)** - Current progress and next steps
-- **[API Documentation](./docs/api.md)** - API endpoints and usage (TODO)
-- **[Deployment Guide](./docs/deployment.md)** - Production deployment instructions (TODO)
+- **[Documentation Index](./docs/README.md)** - All project documentation
+- **[Analytics & Logging](./docs/ANALYTICS_AND_LOGGING.md)** - PostHog integration and structured logging
+- **[CFP Improvements](./docs/CFP_IMPROVEMENTS.md)** - Roadmap for CFP system
+- **[CLAUDE.md](./CLAUDE.md)** - AI assistant quick reference
+- **[.cursorrules](./.cursorrules)** - Detailed coding standards
 
 ## Development
 

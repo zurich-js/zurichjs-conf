@@ -7,6 +7,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getSpeakerFlights, createFlight } from '@/lib/cfp/travel';
+import { flightSchema } from '@/lib/validations/cfp';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Get session
@@ -35,36 +36,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      const {
-        direction,
-        airline,
-        flight_number,
-        departure_airport,
-        arrival_airport,
-        departure_time,
-        arrival_time,
-        booking_reference,
-        cost_amount,
-        cost_currency,
-      } = req.body;
-
-      // Validate required fields
-      if (!direction || !airline || !flight_number || !departure_airport || !arrival_airport) {
-        return res.status(400).json({ error: 'Missing required fields' });
+      // Validate request body with Zod
+      const result = flightSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          issues: result.error.issues,
+        });
       }
 
-      const { flight, error } = await createFlight(speaker.id, {
-        direction,
-        airline,
-        flight_number,
-        departure_airport,
-        arrival_airport,
-        departure_time,
-        arrival_time,
-        booking_reference,
-        cost_amount,
-        cost_currency,
-      });
+      const { flight, error } = await createFlight(speaker.id, result.data);
 
       if (error) {
         return res.status(400).json({ error });

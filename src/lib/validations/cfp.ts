@@ -316,6 +316,7 @@ export const updateSubmissionStatusSchema = z.object({
     'draft',
     'submitted',
     'under_review',
+    'shortlisted',
     'waitlisted',
     'accepted',
     'rejected',
@@ -348,3 +349,22 @@ export const updateReimbursementStatusSchema = z.object({
 export type UpdateReimbursementStatusFormData = z.infer<
   typeof updateReimbursementStatusSchema
 >;
+
+// ============================================
+// ADMIN SPEAKER MANAGEMENT
+// ============================================
+
+/**
+ * Admin create speaker schema
+ */
+export const adminCreateSpeakerSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
+  job_title: z.string().optional(),
+  company: z.string().optional(),
+  bio: z.string().max(2000).optional(),
+  is_visible: z.boolean().default(true),
+});
+
+export type AdminCreateSpeakerFormData = z.infer<typeof adminCreateSpeakerSchema>;

@@ -7,7 +7,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
 import { createReview, updateReview, getReviewBySubmissionAndReviewer } from '@/lib/cfp/reviews';
-import type { CreateCfpReviewRequest } from '@/lib/types/cfp';
+import { reviewSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST' && req.method !== 'PUT') {
@@ -24,13 +25,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const supabase = createSupabaseApiClient(req, res);
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
+  const log = logger.scope('ReviewerReviewAPI', { submissionId: id as string });
+
   if (userError || !user || !user.email) {
-    console.error('[Reviewer Review API] Authentication failed:', userError?.message);
+    log.warn('Authentication failed', { error: userError?.message });
     return res.status(401).json({ error: 'Unauthorized - please log in' });
   }
 
   const userId = user.id;
-  console.log('[Reviewer Review API] Authenticated user:', user.email);
+  log.debug('Authenticated user', { email: user.email });
 
   // Get reviewer
   const reviewer = await getReviewerByUserId(userId);
@@ -44,31 +47,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: 'Readonly reviewers cannot submit reviews' });
   }
 
-  // Validate request body
-  const {
-    score_overall,
-    score_relevance,
-    score_technical_depth,
-    score_clarity,
-    score_diversity,
-    private_notes,
-    feedback_to_speaker,
-  } = req.body;
-
-  if (!score_overall || score_overall < 1 || score_overall > 5) {
-    return res.status(400).json({ error: 'Overall score must be between 1 and 5' });
+  // Validate request body with Zod
+  const result = reviewSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      issues: result.error.issues,
+    });
   }
 
   try {
-    const reviewData: CreateCfpReviewRequest = {
-      score_overall,
-      score_relevance: score_relevance || undefined,
-      score_technical_depth: score_technical_depth || undefined,
-      score_clarity: score_clarity || undefined,
-      score_diversity: score_diversity || undefined,
-      private_notes: private_notes || undefined,
-      feedback_to_speaker: feedback_to_speaker || undefined,
-    };
+    const reviewData = result.data;
 
     if (req.method === 'POST') {
       // Create new review
@@ -96,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ review });
     }
   } catch (error) {
-    console.error('[Reviewer Review API] Error:', error);
+    log.error('Failed to process review', error, { type: 'system' });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

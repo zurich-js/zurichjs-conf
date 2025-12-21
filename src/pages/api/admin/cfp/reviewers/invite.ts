@@ -7,8 +7,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { inviteReviewer } from '@/lib/cfp/reviewers';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { sendReviewerInvitationEmail } from '@/lib/email';
+import { reviewerInviteSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const log = logger.scope('AdminReviewerInviteAPI');
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -19,11 +23,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { email, name, role, can_see_speaker_identity } = req.body;
-
-  if (!email || typeof email !== 'string') {
-    return res.status(400).json({ error: 'Email is required' });
+  // Validate request body with Zod
+  const result = reviewerInviteSchema.safeParse(req.body);
+  if (!result.success) {
+    log.debug('Validation failed', { issues: result.error.issues });
+    return res.status(400).json({
+      error: 'Validation failed',
+      issues: result.error.issues,
+    });
   }
+
+  const { email, name, role, can_see_speaker_identity } = result.data;
 
   try {
     const { reviewer, error } = await inviteReviewer(
@@ -37,6 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     if (error) {
+      log.warn('Failed to invite reviewer', { error, email });
       return res.status(400).json({ error });
     }
 
@@ -56,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!emailResult.success) {
-      console.error('[CFP Admin Invite API] Failed to send email:', emailResult.error);
+      log.warn('Invitation email failed to send', { email, error: emailResult.error });
       // Still return success since the reviewer was created, but include a warning
       return res.status(201).json({
         reviewer,
@@ -64,11 +75,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    console.log(`[CFP Admin Invite API] Invitation email sent to: ${email}`);
+    log.info('Reviewer invited', { email, role, reviewerId: reviewer?.id });
 
     return res.status(201).json({ reviewer });
   } catch (error) {
-    console.error('[CFP Admin Invite API] Error:', error);
+    log.error('Failed to invite reviewer', error, { type: 'system', email });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

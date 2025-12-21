@@ -1,201 +1,108 @@
-# ZurichJS Conference Analytics & Logging Documentation
+# ZurichJS Conference Documentation
 
-Welcome to the comprehensive analytics and logging system documentation!
+## Documentation Index
 
-## 📚 Documentation Index
-
-### Getting Started
-
+### Analytics & Logging
 - **[Quick Start Guide](./ANALYTICS_QUICK_START.md)** - Get up and running in 5 minutes
-- **[Migration Example](./MIGRATION_EXAMPLE.md)** - See how to migrate from console.log
-- **[Component Integration](./COMPONENT_INTEGRATION_EXAMPLES.md)** - Real-world React examples
+- **[Full Analytics Guide](./ANALYTICS_AND_LOGGING.md)** - Complete analytics/logging documentation
+- **[Migration Example](./MIGRATION_EXAMPLE.md)** - Migrate from console.log to structured logging
+- **[Component Examples](./COMPONENT_INTEGRATION_EXAMPLES.md)** - Real-world React integration examples
 
-### Complete Documentation
+### CFP System
+- **[CFP Improvements](./CFP_IMPROVEMENTS.md)** - Roadmap for CFP system enhancements
 
-- **[Full Analytics & Logging Guide](./ANALYTICS_AND_LOGGING.md)** - Complete system documentation
+### Debugging
+- **[Voucher Emails Debug](./DEBUG_VOUCHER_EMAILS.md)** - Debugging voucher email issues
 
-## 🎯 What's Included
+## Project Architecture
 
-### Analytics System
-
-- ✅ **Type-safe event tracking** with full TypeScript support
-- ✅ **Client & server-side** analytics (browser + Node.js)
-- ✅ **Revenue tracking** for conversion analysis
-- ✅ **User identification** and properties
-- ✅ **50+ predefined events** for common actions
-- ✅ **Helper functions** for quick integration
-- ✅ **PostHog integration** with EU hosting
-
-### Logging System
-
-- ✅ **Structured logging** with contextual metadata
-- ✅ **Multiple log levels** (debug, info, warn, error)
-- ✅ **Scoped loggers** for modules/components
-- ✅ **PostHog error tracking** integration
-- ✅ **Development vs production** behavior
-- ✅ **Type-safe** error categorization
-
-## 🚀 Quick Examples
-
-### Track an Event
-
-```typescript
-import { analytics } from '@/lib/analytics/client'
-
-analytics.track('ticket_added_to_cart', {
-  ticket_category: 'standard',
-  ticket_stage: 'early_bird',
-  ticket_price: 4900,
-  currency: 'CHF',
-  ticket_count: 1,
-  quantity: 1,
-})
+### Directory Structure
+```
+src/
+├── pages/              # Next.js pages and API routes
+│   ├── api/           # Backend API endpoints
+│   ├── cfp/           # Call for Papers pages (speaker portal)
+│   ├── admin/         # Admin interface
+│   ├── account/       # User account pages
+│   └── workshops/     # Workshop catalog
+├── lib/               # Domain logic and infrastructure
+│   ├── analytics/     # PostHog client/server tracking
+│   ├── cfp/           # CFP business logic
+│   ├── logger/        # Structured logging
+│   ├── supabase/      # Database client
+│   ├── stripe/        # Payment integration
+│   └── types/         # TypeScript types
+├── components/        # React components (Atomic Design)
+│   ├── atoms/         # Base building blocks
+│   ├── molecules/     # Composite components
+│   ├── organisms/     # Complex page sections
+│   ├── cfp/           # CFP-specific components
+│   └── admin/         # Admin-specific components
+├── hooks/             # Custom React hooks
+├── contexts/          # React contexts
+└── data/              # Static data
 ```
 
-### Use Structured Logging
+### Key Patterns
 
-```typescript
-import { logger } from '@/lib/logger'
+**Atomic Design**: Components organized as atoms (Button, Heading) → molecules (Card, Form) → organisms (Hero, Dashboard)
 
-const log = logger.scope('MyComponent')
+**Domain-Driven**: Code organized by domain (cfp, tickets, workshops) not technical layer
 
-log.info('User action completed', {
-  userId: '123',
-  action: 'purchase',
-})
+**Type Safety**: Strict TypeScript with generated Supabase types
 
-log.error('Operation failed', error, {
-  type: 'payment',
-  severity: 'critical',
-})
+**File Size Limit**: Components should stay under 500 lines; extract into separate files when needed
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 15 (Pages Router) |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth |
+| Payments | Stripe |
+| Email | Resend + React Email |
+| Styling | Tailwind CSS v4 |
+| State | TanStack Query |
+| Analytics | PostHog (EU) |
+| Icons | lucide-react |
+
+## Environment Variables
+
+Required environment variables (see `.env.example`):
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+# Resend
+RESEND_API_KEY=
+
+# PostHog
+NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_POSTHOG_HOST=
 ```
 
-### Track Revenue (Server)
+## Development Commands
 
-```typescript
-import { serverAnalytics } from '@/lib/analytics/server'
-
-await serverAnalytics.revenue(userId, {
-  amount: 4900,
-  currency: 'CHF',
-  type: 'ticket',
-  transactionId: 'tx_123',
-  productName: 'Early Bird Ticket',
-})
-
-await serverAnalytics.flush() // Important!
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run test:run     # Run tests
+npm run typecheck    # TypeScript check
+npm run lint         # ESLint
+npm run email:dev    # Preview email templates
 ```
 
-## 📊 PostHog Insights
+## Related Files
 
-The system tracks:
-
-- **Revenue Analytics**: Total revenue, revenue by ticket type, average order value
-- **Conversion Funnels**: Ticket purchase flow, workshop registration
-- **User Engagement**: Button clicks, form submissions, page views
-- **Error Monitoring**: Errors by type, severity, and frequency
-- **Checkout Metrics**: Cart abandonment, payment success rate
-
-See [full documentation](./ANALYTICS_AND_LOGGING.md#posthog-insights) for creating insights.
-
-## 🏗️ Architecture
-
-```
-src/lib/
-├── analytics/
-│   ├── events.ts       # Event type definitions (50+ events)
-│   ├── client.ts       # Browser analytics client
-│   ├── server.ts       # Node.js analytics client
-│   ├── helpers.ts      # Convenience functions
-│   └── index.ts        # Central exports
-│
-└── logger/
-    └── index.ts        # Structured logging system
-```
-
-## 🎓 Event Categories
-
-### Ticket Events
-- `ticket_viewed`, `ticket_added_to_cart`, `ticket_removed_from_cart`
-- `ticket_purchased`, `ticket_transferred`, `ticket_validated`, `ticket_checked_in`
-
-### Workshop Events
-- `workshop_viewed`, `workshop_voucher_purchased`
-- `workshop_registered`, `workshop_cancelled`
-
-### Checkout & Payment Events
-- `checkout_started`, `checkout_completed`, `checkout_abandoned`
-- `payment_succeeded`, `payment_failed`
-
-### Engagement Events
-- `button_clicked`, `form_submitted`, `form_error`, `link_clicked`
-- `search_performed`, `filter_applied`, `share_clicked`
-
-### System Events
-- `error_occurred`, `api_error`, `webhook_received`
-
-See [events.ts](../src/lib/analytics/events.ts) for all 50+ events.
-
-## 🔒 Privacy & Security
-
-- ✅ Sensitive data automatically sanitized
-- ✅ EU-hosted PostHog instance
-- ✅ Reverse proxy configured (`/ingest` endpoint)
-- ✅ Form input masking enabled
-- ✅ GDPR-compliant data handling
-
-## 📈 Current Status
-
-### Implemented
-- ✅ Complete type-safe event system
-- ✅ Client-side analytics wrapper
-- ✅ Server-side analytics wrapper
-- ✅ Structured logging system
-- ✅ Helper functions
-- ✅ Comprehensive documentation
-- ✅ Migration examples
-
-### Next Steps
-1. Migrate console.log statements to logger (294 instances)
-2. Add analytics tracking to components
-3. Create PostHog dashboards
-4. Set up alerts for critical errors
-
-## 🛠️ Migration Guide
-
-### Console.log → Logger
-
-| Before | After |
-|--------|-------|
-| `console.log('[Module] Message')` | `log.info('Message')` |
-| `console.error('[Module] Error', err)` | `log.error('Error message', err)` |
-| `console.debug('[Module] Debug')` | `log.debug('Debug message')` |
-
-See [Migration Example](./MIGRATION_EXAMPLE.md) for detailed walkthrough.
-
-## 📞 Support
-
-- Read the documentation in this folder
-- Check [PostHog docs](https://posthog.com/docs)
-- Review code examples in components
-- Ask the team for help
-
-## 🎯 Best Practices
-
-1. **Track early**: Track analytics BEFORE performing actions
-2. **Be specific**: Use descriptive event names
-3. **Include context**: Always add relevant metadata
-4. **Type safety**: Let TypeScript guide you
-5. **Flush server events**: Always flush in serverless functions
-6. **Error handling**: Log errors with appropriate severity
-7. **User privacy**: Never track sensitive data
-
-## 📖 Additional Resources
-
-- [PostHog Revenue Analytics](https://posthog.com/docs/web-analytics/revenue-analytics)
-- [PostHog Next.js Guide](https://posthog.com/docs/libraries/next-js)
-- [Event Tracking Best Practices](https://posthog.com/docs/data/events)
-
----
-
-**Questions?** Start with the [Quick Start Guide](./ANALYTICS_QUICK_START.md)!
+- **[CLAUDE.md](../CLAUDE.md)** - AI assistant quick reference
+- **[.cursorrules](../.cursorrules)** - Detailed coding standards
+- **[README.md](../README.md)** - Project overview

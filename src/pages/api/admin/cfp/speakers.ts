@@ -8,9 +8,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminSpeakers } from '@/lib/cfp/admin';
 import { createSpeaker } from '@/lib/cfp/speakers';
 import { verifyAdminToken } from '@/lib/admin/auth';
-import type { AdminCreateSpeakerRequest } from '@/lib/types/cfp';
+import { adminCreateSpeakerSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const log = logger.scope('AdminSpeakersAPI');
+
   // Verify admin authentication (same as main admin)
   const token = req.cookies.admin_token;
   if (!verifyAdminToken(token)) {
@@ -20,39 +23,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       const speakers = await getAdminSpeakers();
+      log.debug('Fetched speakers', { count: speakers.length });
       return res.status(200).json({ speakers });
     } catch (error) {
-      console.error('[CFP Admin Speakers API] GET Error:', error);
+      log.error('Failed to fetch speakers', error, { type: 'system' });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
 
   if (req.method === 'POST') {
     try {
-      const data: AdminCreateSpeakerRequest = req.body;
-
-      // Validate required fields
-      if (!data.email || !data.first_name || !data.last_name) {
+      // Validate request body with Zod
+      const result = adminCreateSpeakerSchema.safeParse(req.body);
+      if (!result.success) {
+        log.debug('Validation failed', { issues: result.error.issues });
         return res.status(400).json({
-          error: 'Email, first name, and last name are required',
+          error: 'Validation failed',
+          issues: result.error.issues,
         });
       }
 
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.email)) {
-        return res.status(400).json({ error: 'Invalid email format' });
-      }
-
-      const { speaker, error } = await createSpeaker(data);
+      const { speaker, error } = await createSpeaker(result.data);
 
       if (error) {
+        log.warn('Failed to create speaker', { error });
         return res.status(400).json({ error });
       }
 
+      log.info('Speaker created', { speakerId: speaker?.id, email: result.data.email });
       return res.status(201).json({ speaker });
     } catch (error) {
-      console.error('[CFP Admin Speakers API] POST Error:', error);
+      log.error('Failed to create speaker', error, { type: 'system' });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
