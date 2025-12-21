@@ -14,6 +14,7 @@ import { SectionSplitView } from '@/components/organisms/SectionSplitView';
 import { BackgroundMedia } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
 import { withCfpGate } from '@/components/cfp/CfpGate';
+import { timelineData } from '@/data';
 
 const SUBMISSION_TYPES = [
   {
@@ -40,12 +41,43 @@ const SPEAKER_BENEFITS = [
   { title: 'Speaker Activities', description: 'Exclusive dinner & networking' },
 ];
 
-const TIMELINE_ITEMS = [
-  { date: 'TBA', label: 'CFP Opens', description: 'Start submitting your proposals', active: true },
-  { date: 'TBA', label: 'CFP Closes', description: 'Final deadline for submissions', active: false },
-  { date: 'TBA', label: 'Speakers Notified', description: 'Decisions sent via email', active: false },
-  { date: 'Sep 11', label: 'Conference Day', description: 'ZurichJS Conf 2026', active: false },
-];
+// Derive CFP-specific timeline items from centralized timeline data
+const CFP_TIMELINE_IDS = ['cfp-starts', 'cfp-ends', 'speaker-review', 'conference-events'] as const;
+
+function formatTimelineDate(dateISO: string): string {
+  const date = new Date(dateISO);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+const TIMELINE_ITEMS = timelineData.entries
+  .filter((entry) => CFP_TIMELINE_IDS.includes(entry.id as (typeof CFP_TIMELINE_IDS)[number]))
+  .map((entry) => {
+    const today = new Date();
+    const entryDate = new Date(entry.dateISO);
+    const isActive = entryDate <= today && (!entry.toDateISO || new Date(entry.toDateISO) >= today);
+
+    // Map timeline entry to CFP-friendly labels
+    const labelMap: Record<string, string> = {
+      'cfp-starts': 'CFP Opens',
+      'cfp-ends': 'CFP Closes',
+      'speaker-review': 'Speakers Notified',
+      'conference-events': 'Conference Day',
+    };
+
+    const descriptionMap: Record<string, string> = {
+      'cfp-starts': 'Start submitting your proposals',
+      'cfp-ends': 'Final deadline for submissions',
+      'speaker-review': 'Decisions sent via email',
+      'conference-events': 'ZurichJS Conf 2026',
+    };
+
+    return {
+      date: formatTimelineDate(entry.dateISO),
+      label: labelMap[entry.id] || entry.title,
+      description: descriptionMap[entry.id] || entry.body?.split('\n')[0] || '',
+      active: isActive,
+    };
+  });
 
 function CfpLanding() {
   const { shouldAnimate } = useMotion();
