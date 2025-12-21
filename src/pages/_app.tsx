@@ -44,7 +44,6 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     // Initialize PostHog on the client side
     if (typeof window !== 'undefined') {
       const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-      const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
 
       if (!key) {
         console.error('[PostHog] API key not configured');
@@ -52,7 +51,8 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
       }
 
       posthog.init(key, {
-        api_host: host,
+        api_host: '/ingest',
+        ui_host: 'https://eu.posthog.com',
         person_profiles: 'always',
         capture_pageview: false,
         capture_pageleave: true,
