@@ -565,6 +565,82 @@ export interface CartRecoveryClickedEvent {
     }
 }
 
+// ----------------------------------------------------------------------------
+// CFP (Call for Papers) Events
+// ----------------------------------------------------------------------------
+
+export interface CfpAuthStartedEvent {
+  event: 'cfp_auth_started'
+  properties: BaseEventProperties & {
+    auth_type: 'speaker' | 'reviewer'
+    auth_flow: 'pkce' | 'implicit' | 'hash'
+  }
+}
+
+export interface CfpAuthSucceededEvent {
+  event: 'cfp_auth_succeeded'
+  properties: BaseEventProperties & {
+    auth_type: 'speaker' | 'reviewer'
+    auth_flow: 'pkce' | 'implicit' | 'hash'
+    user_email?: string
+  }
+}
+
+export interface CfpAuthFailedEvent {
+  event: 'cfp_auth_failed'
+  properties: BaseEventProperties & {
+    auth_type: 'speaker' | 'reviewer'
+    error_message: string
+    error_type: 'expired' | 'invalid' | 'exchange_failed' | 'session_failed' | 'unknown'
+  }
+}
+
+export interface CfpSubmissionViewedEvent {
+  event: 'cfp_submission_viewed'
+  properties: BaseEventProperties & {
+    submission_id: string
+    submission_status?: string
+    viewer_type: 'speaker' | 'reviewer' | 'admin'
+  }
+}
+
+export interface CfpSubmissionCreatedEvent {
+  event: 'cfp_submission_created'
+  properties: BaseEventProperties & {
+    submission_id: string
+    submission_type: string
+    talk_level?: string
+  }
+}
+
+export interface CfpSubmissionUpdatedEvent {
+  event: 'cfp_submission_updated'
+  properties: BaseEventProperties & {
+    submission_id: string
+    updated_fields: string[]
+    new_status?: string
+  }
+}
+
+export interface CfpReviewSubmittedEvent {
+  event: 'cfp_review_submitted'
+  properties: BaseEventProperties & {
+    submission_id: string
+    reviewer_id?: string
+    overall_score?: number
+  }
+}
+
+export interface CfpAdminActionEvent {
+  event: 'cfp_admin_action'
+  properties: BaseEventProperties & {
+    action: 'logout' | 'bulk_update' | 'speaker_create' | 'speaker_update' | 'image_upload'
+    success: boolean
+    error_message?: string
+    affected_count?: number
+  }
+}
+
 // ============================================================================
 // Union Type of All Events
 // ============================================================================
@@ -619,6 +695,14 @@ export type AnalyticsEvent =
   | WebhookReceivedEvent
   | CartAbandonmentEmailScheduledEvent
   | CartRecoveryClickedEvent
+  | CfpAuthStartedEvent
+  | CfpAuthSucceededEvent
+  | CfpAuthFailedEvent
+  | CfpSubmissionViewedEvent
+  | CfpSubmissionCreatedEvent
+  | CfpSubmissionUpdatedEvent
+  | CfpReviewSubmittedEvent
+  | CfpAdminActionEvent
 
 /**
  * Extract event name from AnalyticsEvent
