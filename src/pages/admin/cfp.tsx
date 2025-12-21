@@ -6,7 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import { useEscapeKey } from '@/hooks/useKeyboardShortcuts';
@@ -3042,7 +3041,6 @@ function SpeakerModal({
   isDeleting: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [showAddSession, setShowAddSession] = useState(false);
   const [formData, setFormData] = useState({
     first_name: speaker.first_name || '',
     last_name: speaker.last_name || '',
@@ -3061,8 +3059,6 @@ function SpeakerModal({
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
-  const toast = useToast();
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -3195,15 +3191,6 @@ function SpeakerModal({
               >
                 Email Speaker
               </a>
-              <button
-                onClick={() => setShowAddSession(true)}
-                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Session
-              </button>
             </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
