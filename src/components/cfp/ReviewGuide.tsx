@@ -32,7 +32,7 @@ const CRITERIA = [
   {
     id: 'relevance',
     name: 'Relevance',
-    required: false,
+    required: true,
     description: 'How relevant is this topic to the ZurichJS community and current JavaScript ecosystem?',
     guidance: [
       { score: 5, label: 'Highly Relevant', description: 'Core JS/TS topic or cutting-edge technology that the community is actively discussing.' },
@@ -49,7 +49,7 @@ const CRITERIA = [
   {
     id: 'technical_depth',
     name: 'Technical Depth',
-    required: false,
+    required: true,
     description: 'Does the proposal demonstrate appropriate technical depth for its stated level?',
     guidance: [
       { score: 5, label: 'Excellent Depth', description: 'Shows deep understanding. Proposal hints at insights beyond surface-level coverage.' },
@@ -66,7 +66,7 @@ const CRITERIA = [
   {
     id: 'clarity',
     name: 'Clarity',
-    required: false,
+    required: true,
     description: 'How well-written and clear is the proposal? Can you understand what the talk will cover?',
     guidance: [
       { score: 5, label: 'Crystal Clear', description: 'Exceptionally well-written. Clear structure, defined takeaways, and engaging description.' },
@@ -83,7 +83,7 @@ const CRITERIA = [
   {
     id: 'diversity',
     name: 'Diversity & Inclusion',
-    required: false,
+    required: true,
     description: 'Does this submission contribute to a diverse and inclusive conference program?',
     guidance: [
       { score: 5, label: 'Strong Contribution', description: 'Brings underrepresented perspective, topic, or approach. Helps broaden conference appeal.' },
@@ -146,7 +146,7 @@ export function ReviewGuide({ isOpen, onClose }: ReviewGuideProps) {
                 <div className="text-sm">
                   <p className="text-blue-300 font-medium mb-2">General Guidelines</p>
                   <ul className="text-brand-gray-light space-y-1">
-                    <li>• <strong>Overall score is required</strong>, other criteria are optional but helpful</li>
+                    <li>• <strong>All scoring criteria are required</strong> for fair and consistent assessment</li>
                     <li>• Score based on the proposal quality, not assumptions about the speaker</li>
                     <li>• Consider the stated difficulty level when evaluating depth</li>
                     <li>• Use private notes for concerns you want to discuss with the committee</li>
