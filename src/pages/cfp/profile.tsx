@@ -7,6 +7,7 @@ import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
+import { ChevronLeft, Check, AlertCircle, User, Image } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
@@ -190,9 +191,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
               href="/cfp/dashboard"
               className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="w-4 h-4" />
               Back to Dashboard
             </Link>
           </div>
@@ -212,9 +211,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
           {successMessage && (
             <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-2 text-green-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                <Check className="w-5 h-5" />
                 <span className="font-medium">{successMessage}</span>
               </div>
             </div>
@@ -224,9 +221,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
           {errors._form && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-2 text-red-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <AlertCircle className="w-5 h-5" />
                 <span className="font-medium">{errors._form}</span>
               </div>
             </div>
@@ -333,9 +328,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                     />
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-brand-gray-darkest border-2 border-brand-gray-medium flex items-center justify-center">
-                      <svg className="w-10 h-10 text-brand-gray-medium" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                      <User className="w-10 h-10 text-brand-gray-medium" />
                     </div>
                   )}
                 </div>
@@ -363,9 +356,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                       </>
                     ) : (
                       <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        <Image className="w-4 h-4" />
                         {profileImageUrl ? 'Change Photo' : 'Upload Photo'}
                       </>
                     )}
@@ -378,9 +369,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                   {/* Image Upload Success */}
                   {imageSuccess && (
                     <div className="flex items-center gap-2 text-green-400 text-sm mt-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check className="w-4 h-4" />
                       {imageSuccess}
                     </div>
                   )}
@@ -388,9 +377,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                   {/* Image Upload Error */}
                   {imageError && (
                     <div className="flex items-center gap-2 text-red-400 text-sm mt-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <AlertCircle className="w-4 h-4" />
                       {imageError}
                     </div>
                   )}
