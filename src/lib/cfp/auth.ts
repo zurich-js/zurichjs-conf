@@ -109,10 +109,30 @@ function createServerAuthClient() {
 /**
  * Get base URL from request headers (for API routes)
  * Prioritizes request headers to ensure correct URL in production
+ * Checks x-forwarded-host for reverse proxy environments
  */
 function getBaseUrlFromRequest(req?: NextApiRequest): string {
   if (req?.headers) {
-    // Try origin header first (set by browsers on CORS requests)
+    // Log all relevant headers for debugging
+    console.log('[CFP Auth] Request headers:', {
+      'x-forwarded-host': req.headers['x-forwarded-host'],
+      'x-forwarded-proto': req.headers['x-forwarded-proto'],
+      host: req.headers.host,
+      origin: req.headers.origin,
+    });
+
+    // Check x-forwarded-host first (set by reverse proxies like Vercel, Cloudflare, etc.)
+    const forwardedHost = req.headers['x-forwarded-host'];
+    if (forwardedHost) {
+      const host = Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost;
+      if (host && !host.includes('localhost')) {
+        const proto = req.headers['x-forwarded-proto'];
+        const protocol = proto ? (Array.isArray(proto) ? proto[0] : proto) : 'https';
+        return `${protocol}://${host}`;
+      }
+    }
+
+    // Try origin header (set by browsers on CORS requests)
     const origin = req.headers.origin;
     if (origin && !origin.includes('localhost')) {
       return origin;
