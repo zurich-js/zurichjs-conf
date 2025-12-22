@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Send magic link
-    const { success, error } = await sendSpeakerMagicLink(result.data.email);
+    const { success, error } = await sendSpeakerMagicLink(result.data.email, req);
 
     if (!success) {
       console.error('[CFP Login] Magic link error:', error);

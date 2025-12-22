@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Send magic link
-    const { success, error } = await sendReviewerMagicLink(email.toLowerCase());
+    const { success, error } = await sendReviewerMagicLink(email.toLowerCase(), req);
 
     if (!success) {
       console.error('[Reviewer Login API] Magic link error:', error);
