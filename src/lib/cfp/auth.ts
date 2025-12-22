@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase/client';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { CfpSpeaker, CfpReviewer } from '@/lib/types/cfp';
 import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 'next';
+import { getBaseUrl } from '@/lib/url';
 
 // ============================================
 // SERVER-SIDE AUTH (for getServerSideProps)
@@ -108,8 +109,8 @@ function createServerAuthClient() {
 /**
  * Send magic link email for speaker login
  */
-export async function sendSpeakerMagicLink(email: string): Promise<{ success: boolean; error?: string }> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+export async function sendSpeakerMagicLink(email: string, req?: NextApiRequest): Promise<{ success: boolean; error?: string }> {
+  const baseUrl = getBaseUrl(req);
   const redirectTo = `${baseUrl}/cfp/auth/callback`;
 
   console.log('[CFP Auth] Sending speaker magic link to:', email);
@@ -142,8 +143,8 @@ export async function sendSpeakerMagicLink(email: string): Promise<{ success: bo
 /**
  * Send magic link email for reviewer login
  */
-export async function sendReviewerMagicLink(email: string): Promise<{ success: boolean; error?: string }> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+export async function sendReviewerMagicLink(email: string, req?: NextApiRequest): Promise<{ success: boolean; error?: string }> {
+  const baseUrl = getBaseUrl(req);
   const redirectTo = `${baseUrl}/cfp/reviewer/auth/callback`;
 
   console.log('[CFP Auth] Sending reviewer magic link to:', email);
