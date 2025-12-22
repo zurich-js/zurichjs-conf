@@ -107,10 +107,34 @@ function createServerAuthClient() {
 }
 
 /**
+ * Get base URL from request headers (for API routes)
+ * Prioritizes request headers to ensure correct URL in production
+ */
+function getBaseUrlFromRequest(req?: NextApiRequest): string {
+  if (req?.headers) {
+    // Try origin header first (set by browsers on CORS requests)
+    const origin = req.headers.origin;
+    if (origin && !origin.includes('localhost')) {
+      return origin;
+    }
+
+    // Fall back to host header
+    const host = req.headers.host;
+    if (host && !host.includes('localhost')) {
+      const protocol = 'https';
+      return `${protocol}://${host}`;
+    }
+  }
+
+  // Final fallback to getBaseUrl (env var)
+  return getBaseUrl(req);
+}
+
+/**
  * Send magic link email for speaker login
  */
 export async function sendSpeakerMagicLink(email: string, req?: NextApiRequest): Promise<{ success: boolean; error?: string }> {
-  const baseUrl = getBaseUrl(req);
+  const baseUrl = getBaseUrlFromRequest(req);
   const redirectTo = `${baseUrl}/cfp/auth/callback`;
 
   console.log('[CFP Auth] Sending speaker magic link to:', email);
@@ -144,7 +168,7 @@ export async function sendSpeakerMagicLink(email: string, req?: NextApiRequest):
  * Send magic link email for reviewer login
  */
 export async function sendReviewerMagicLink(email: string, req?: NextApiRequest): Promise<{ success: boolean; error?: string }> {
-  const baseUrl = getBaseUrl(req);
+  const baseUrl = getBaseUrlFromRequest(req);
   const redirectTo = `${baseUrl}/cfp/reviewer/auth/callback`;
 
   console.log('[CFP Auth] Sending reviewer magic link to:', email);
