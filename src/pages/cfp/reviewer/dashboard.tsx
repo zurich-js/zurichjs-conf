@@ -213,22 +213,41 @@ export default function ReviewerDashboard() {
       <div className="min-h-screen bg-brand-gray-darkest">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/cfp/reviewer/dashboard" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
-              <span className="text-white font-semibold">CFP Review</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <ReviewGuideButton onClick={() => setShowGuide(true)} />
-              <span className="text-brand-gray-light text-sm">
-                {reviewer.name || reviewer.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-brand-gray-light hover:text-white text-sm transition-colors cursor-pointer"
-              >
-                Logout
-              </button>
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            {/* Mobile Header */}
+            <div className="flex items-center justify-between sm:hidden">
+              <Link href="/cfp/reviewer/dashboard" className="flex items-center">
+                <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-8 w-8" />
+              </Link>
+              <div className="flex items-center gap-2">
+                <ReviewGuideButton onClick={() => setShowGuide(true)} />
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-brand-gray-light hover:text-white text-sm transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop Header */}
+            <div className="hidden sm:flex items-center justify-between">
+              <Link href="/cfp/reviewer/dashboard" className="flex items-center gap-3">
+                <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
+                <span className="text-white font-semibold">CFP Review</span>
+              </Link>
+              <div className="flex items-center gap-4">
+                <ReviewGuideButton onClick={() => setShowGuide(true)} />
+                <span className="text-brand-gray-light text-sm">
+                  {reviewer.name || reviewer.email}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="text-brand-gray-light hover:text-white text-sm transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </header>

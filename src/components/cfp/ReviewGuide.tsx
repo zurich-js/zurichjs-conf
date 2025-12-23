@@ -220,10 +220,11 @@ export function ReviewGuideButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-brand-gray-light hover:text-white bg-brand-gray-dark hover:bg-brand-gray-medium rounded-lg transition-colors cursor-pointer"
+      className="inline-flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 text-sm text-brand-gray-light hover:text-white bg-brand-gray-dark hover:bg-brand-gray-medium rounded-lg transition-colors cursor-pointer"
+      aria-label="Review Guide"
     >
-      <BookOpen className="w-4 h-4" />
-      Review Guide
+      <BookOpen className="w-5 h-5 sm:w-4 sm:h-4" />
+      <span className="hidden sm:inline">Review Guide</span>
     </button>
   );
 }
