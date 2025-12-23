@@ -1,8 +1,9 @@
 /**
  * Review Form Component
- * Form for submitting or updating a review
+ * Form for submitting or updating a review with all required criteria
  */
 
+import { Check, Eye, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { SCORE_LABELS, ReviewScores, SubmissionStats } from './types';
 
@@ -20,6 +21,18 @@ interface ReviewFormProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
+// Helper to check if all required scores are filled
+function areAllScoresFilled(scores: ReviewScores): boolean {
+  return Object.values(scores).every((score) => score > 0);
+}
+
+// Get missing score labels for validation message
+function getMissingScores(scores: ReviewScores): string[] {
+  return Object.entries(scores)
+    .filter(([, value]) => value === 0)
+    .map(([key]) => SCORE_LABELS[key as keyof typeof SCORE_LABELS]);
+}
+
 export function ReviewForm({
   scores,
   privateNotes,
@@ -33,6 +46,9 @@ export function ReviewForm({
   onFeedbackChange,
   onSubmit,
 }: ReviewFormProps) {
+  const allScoresFilled = areAllScoresFilled(scores);
+  const missingScores = getMissingScores(scores);
+
   return (
     <div className="sticky top-8">
       <form onSubmit={onSubmit} className="bg-brand-gray-dark rounded-2xl p-6 space-y-6">
@@ -41,40 +57,64 @@ export function ReviewForm({
             {hasExistingReview ? 'Update Your Review' : 'Submit Your Review'}
           </h2>
           <p className="text-sm text-brand-gray-light">
-            Rate this submission on a scale of 1-5
+            All scoring criteria are <span className="text-red-400 font-medium">required</span> for fair assessment
           </p>
         </div>
 
         {formError && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <p className="text-red-400 text-sm">{formError}</p>
           </div>
         )}
 
         {/* Score Fields */}
-        {Object.entries(SCORE_LABELS).map(([field, label]) => (
-          <div key={field}>
-            <label className="block text-sm font-semibold text-white mb-2">
-              {label} {field === 'score_overall' && <span className="text-red-400">*</span>}
-            </label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => onScoreChange(field as keyof ReviewScores, n)}
-                  className={`w-10 h-10 rounded-lg font-semibold transition-colors cursor-pointer ${
-                    scores[field as keyof ReviewScores] === n
-                      ? 'bg-brand-primary text-black'
-                      : 'bg-brand-gray-darkest text-brand-gray-light hover:bg-brand-gray-medium'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
+        <div className="space-y-5">
+          {Object.entries(SCORE_LABELS).map(([field, label]) => {
+            const currentScore = scores[field as keyof ReviewScores];
+            const isFilled = currentScore > 0;
+
+            return (
+              <div key={field}>
+                <label className="flex items-center gap-2 text-sm font-semibold text-white mb-2">
+                  {label}
+                  <span className="text-red-400">*</span>
+                  {isFilled && (
+                    <span className="ml-auto flex items-center gap-1 text-xs text-green-400 font-normal">
+                      <Check className="w-3 h-3" />
+                    </span>
+                  )}
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => onScoreChange(field as keyof ReviewScores, n)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        currentScore === n
+                          ? 'bg-brand-primary text-black'
+                          : 'bg-brand-gray-darkest text-brand-gray-light hover:bg-brand-gray-medium'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Missing scores warning */}
+        {!allScoresFilled && missingScores.length > 0 && (
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+            <p className="text-orange-300 text-sm">
+              <span className="font-medium">Missing scores:</span>{' '}
+              {missingScores.join(', ')}
+            </p>
           </div>
-        ))}
+        )}
 
         {/* Private Notes */}
         <div>
@@ -113,11 +153,17 @@ export function ReviewForm({
           variant="primary"
           size="lg"
           loading={isSubmitting}
-          disabled={isSubmitting || scores.score_overall === 0}
+          disabled={isSubmitting || !allScoresFilled}
           className="w-full"
         >
           {hasExistingReview ? 'Update Review' : 'Submit Review'}
         </Button>
+
+        {!allScoresFilled && (
+          <p className="text-xs text-brand-gray-medium text-center">
+            Complete all scoring criteria to submit your review
+          </p>
+        )}
       </form>
 
       {/* Stats Card */}
@@ -149,9 +195,7 @@ export function SuccessMessage({ message = 'Review Submitted!' }: SuccessMessage
     <div className="sticky top-8">
       <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center">
         <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
+          <Check className="w-8 h-8 text-green-400" />
         </div>
         <h2 className="text-lg font-bold text-white mb-2">{message}</h2>
         <p className="text-brand-gray-light">Redirecting to dashboard...</p>
@@ -165,13 +209,12 @@ export function ReadOnlyNotice() {
     <div className="sticky top-8">
       <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-6 text-center">
         <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
+          <Eye className="w-6 h-6 text-orange-400" />
         </div>
         <h2 className="text-lg font-bold text-white mb-2">Read Only Access</h2>
-        <p className="text-brand-gray-light text-sm">You can view submissions but cannot submit reviews.</p>
+        <p className="text-brand-gray-light text-sm">
+          You can view submissions but cannot submit reviews.
+        </p>
       </div>
     </div>
   );

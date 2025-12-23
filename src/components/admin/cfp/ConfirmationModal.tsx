@@ -4,7 +4,7 @@
  */
 
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { useEscapeKey } from '@/hooks/useKeyboardShortcuts';
+import { Modal, ModalBody } from '@/components/atoms';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -27,15 +27,17 @@ export function ConfirmationModal({
   confirmStyle = 'danger',
   isLoading = false,
 }: ConfirmationModalProps) {
-  useEscapeKey(onClose, isOpen && !isLoading);
-
-  if (!isOpen) return null;
-
   const isDanger = confirmStyle === 'danger';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={isLoading ? () => {} : onClose}
+      showCloseButton={false}
+      size="md"
+      zIndex={60}
+    >
+      <ModalBody>
         <div className="flex items-start gap-4">
           <div
             className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
@@ -44,7 +46,7 @@ export function ConfirmationModal({
           >
             <AlertTriangle className={`w-5 h-5 ${isDanger ? 'text-red-600' : 'text-orange-600'}`} />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-black mb-1">{title}</h3>
             <p className="text-sm text-gray-600">{message}</p>
           </div>
@@ -68,7 +70,7 @@ export function ConfirmationModal({
             {confirmText}
           </button>
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 }
