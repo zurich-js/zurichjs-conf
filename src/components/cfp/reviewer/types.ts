@@ -9,12 +9,14 @@ export const TYPE_LABELS: Record<string, string> = {
   workshop: 'Workshop',
 };
 
+// Note: The database field is 'score_diversity' but we display it as 'Originality'
+// to better reflect what we're actually evaluating
 export const SCORE_LABELS = {
   score_overall: 'Overall',
   score_relevance: 'Relevance',
   score_technical_depth: 'Technical Depth',
   score_clarity: 'Clarity',
-  score_diversity: 'Diversity',
+  score_diversity: 'Originality',
 } as const;
 
 export const STATUS_INFO: Record<string, { label: string; description: string; color: string }> = {
@@ -30,7 +32,7 @@ export const STATUS_INFO: Record<string, { label: string; description: string; c
   },
   waitlisted: {
     label: 'Waitlisted',
-    description: 'Good submission held for final decisions based on schedule and diversity',
+    description: 'Good submission held for final decisions based on schedule and program balance',
     color: 'orange',
   },
   accepted: {

@@ -65,7 +65,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
                   <ScoreDisplay value={aggregateScores.relevance} label="Relevance" />
                   <ScoreDisplay value={aggregateScores.technical_depth} label="Depth" />
                   <ScoreDisplay value={aggregateScores.clarity} label="Clarity" />
-                  <ScoreDisplay value={aggregateScores.diversity} label="Diversity" />
+                  <ScoreDisplay value={aggregateScores.diversity} label="Originality" />
                 </div>
               </div>
               {/* Desktop: 5 columns */}
@@ -87,7 +87,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
                   <p className="text-lg font-bold text-black">{aggregateScores.clarity?.toFixed(1) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Diversity</p>
+                  <p className="text-xs text-gray-500">Originality</p>
                   <p className="text-lg font-bold text-black">{aggregateScores.diversity?.toFixed(1) || '-'}</p>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
                   <ScoreDisplay value={review.score_relevance} label="Relevance" />
                   <ScoreDisplay value={review.score_technical_depth} label="Depth" />
                   <ScoreDisplay value={review.score_clarity} label="Clarity" />
-                  <ScoreDisplay value={review.score_diversity} label="Diversity" />
+                  <ScoreDisplay value={review.score_diversity} label="Originality" />
                 </div>
               </div>
 
@@ -153,7 +153,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
                   { label: 'Relevance', value: review.score_relevance },
                   { label: 'Depth', value: review.score_technical_depth },
                   { label: 'Clarity', value: review.score_clarity },
-                  { label: 'Diversity', value: review.score_diversity },
+                  { label: 'Originality', value: review.score_diversity },
                 ].map(({ label, value }) => (
                   <ScoreDisplay key={label} value={value} label={label} />
                 ))}

@@ -5,7 +5,7 @@
 
 import Link from 'next/link';
 import { Search, X, Filter, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { Heading } from '@/components/atoms';
+import { Heading, Select } from '@/components/atoms';
 import {
   TYPE_LABELS,
   STATUS_OPTIONS,
@@ -166,57 +166,38 @@ export function FilterBar({
       {showFilters && (
         <div className="mt-4 pt-4 border-t border-brand-gray-medium">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-brand-gray-light mb-1.5">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => onStatusFilterChange(e.target.value)}
-                className="w-full bg-brand-gray-darkest text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-brand-gray-light mb-1.5">Type</label>
-              <select
-                value={typeFilter}
-                onChange={(e) => onTypeFilterChange(e.target.value)}
-                className="w-full bg-brand-gray-darkest text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer"
-              >
-                {TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-brand-gray-light mb-1.5">Level</label>
-              <select
-                value={levelFilter}
-                onChange={(e) => onLevelFilterChange(e.target.value)}
-                className="w-full bg-brand-gray-darkest text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer"
-              >
-                {LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-brand-gray-light mb-1.5">Sort By</label>
-              <select
-                value={sortBy}
-                onChange={(e) => onSortChange(e.target.value)}
-                className="w-full bg-brand-gray-darkest text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer"
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Status"
+              value={statusFilter}
+              onChange={onStatusFilterChange}
+              options={STATUS_OPTIONS}
+              variant="dark"
+              size="sm"
+            />
+            <Select
+              label="Type"
+              value={typeFilter}
+              onChange={onTypeFilterChange}
+              options={TYPE_OPTIONS}
+              variant="dark"
+              size="sm"
+            />
+            <Select
+              label="Level"
+              value={levelFilter}
+              onChange={onLevelFilterChange}
+              options={LEVEL_OPTIONS}
+              variant="dark"
+              size="sm"
+            />
+            <Select
+              label="Sort By"
+              value={sortBy}
+              onChange={onSortChange}
+              options={SORT_OPTIONS}
+              variant="dark"
+              size="sm"
+            />
           </div>
 
           {hasActiveFilters && (
@@ -256,8 +237,8 @@ export function SubmissionCard({ submission }: { submission: SubmissionCardSubmi
       className="block bg-brand-gray-dark rounded-xl p-6 hover:bg-brand-gray-dark/70 border border-transparent hover:border-brand-gray-medium transition-colors"
     >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <StatusBadge status={submission.status} />
             <span className="text-brand-gray-medium text-sm">
               {TYPE_LABELS[submission.submission_type]}
@@ -266,7 +247,7 @@ export function SubmissionCard({ submission }: { submission: SubmissionCardSubmi
               {submission.talk_level}
             </span>
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">
             {submission.title}
           </h3>
           <p className="text-brand-gray-light text-sm line-clamp-2 mb-3">
@@ -282,14 +263,20 @@ export function SubmissionCard({ submission }: { submission: SubmissionCardSubmi
                   {tag.name}
                 </span>
               ))}
+              {submission.tags.length > 5 && (
+                <span className="px-2 py-0.5 text-brand-gray-medium text-xs">
+                  +{submission.tags.length - 5} more
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex-shrink-0 text-right">
+        <div className="flex-shrink-0 sm:text-right">
           {submission.my_review ? (
             <div className="mb-2">
-              <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm font-medium">
+              <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm font-medium inline-flex items-center gap-1">
+                <Check className="w-3 h-3" />
                 Reviewed
               </span>
               <div className="text-sm text-brand-gray-light mt-1">
@@ -387,6 +374,11 @@ export function Pagination({
       return acc;
     }, []);
 
+  const pageSizeOptions = PAGE_SIZE_OPTIONS.map((size) => ({
+    value: String(size),
+    label: String(size),
+  }));
+
   return (
     <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-4">
@@ -395,15 +387,13 @@ export function Pagination({
         </span>
         <div className="flex items-center gap-2">
           <span className="text-sm text-brand-gray-light">Show:</span>
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="bg-brand-gray-dark text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer"
-          >
-            {PAGE_SIZE_OPTIONS.map((size) => (
-              <option key={size} value={size}>{size}</option>
-            ))}
-          </select>
+          <Select
+            value={String(pageSize)}
+            onChange={(value) => onPageSizeChange(Number(value))}
+            options={pageSizeOptions}
+            variant="dark"
+            size="sm"
+          />
         </div>
       </div>
 

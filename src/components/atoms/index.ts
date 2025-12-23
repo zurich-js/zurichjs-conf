@@ -18,6 +18,9 @@ export { Textarea } from './Textarea';
 export { SocialIcon } from './SocialIcon';
 export { Separator } from './Separator';
 export { AddToCalendar } from './AddToCalendar';
+export { Modal, ModalBody, ModalFooter } from './Modal';
+export { Select } from './Select';
+export { Disclosure, DisclosureGroup, ControlledDisclosure } from './Disclosure';
 
 export type { LogoProps } from './Logo';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
@@ -39,4 +42,7 @@ export type { TextareaProps } from './Textarea';
 export type { SocialIconProps, SocialIconType } from './SocialIcon';
 export type { SeparatorProps, SeparatorVariant, SeparatorColor } from './Separator';
 export type { AddToCalendarProps } from './AddToCalendar';
+export type { ModalProps } from './Modal';
+export type { SelectProps, SelectOption } from './Select';
+export type { DisclosureProps, DisclosureGroupProps, ControlledDisclosureProps } from './Disclosure';
 
