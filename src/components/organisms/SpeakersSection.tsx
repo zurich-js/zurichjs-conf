@@ -31,10 +31,10 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
   }
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full overflow-x-visible overflow-y-visible ${className}`}>
       {/* Mobile: Horizontal scroll */}
-      <div className="block lg:hidden overflow-x-auto overflow-y-visible scrollbar-hide -mx-4 px-4">
-        <div className="flex gap-4 pb-4 pl-4 pr-8" style={{ width: 'max-content' }}>
+      <div className="block lg:hidden overflow-x-auto overscroll-x-contain scrollbar-hide">
+        <div className="flex gap-4 pb-4 px-4 w-max min-w-full">
           {speakers.slice(0, 5).map((speaker) => {
             const fullName = `${speaker.first_name} ${speaker.last_name}`;
             const titleWithCompany = [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');

@@ -35,8 +35,15 @@
   perspective: 500px;
   transform: translate3d(0, 0, 0.1px);
   position: relative;
-  touch-action: none;
   flex-shrink: 0;
+  /* Allow horizontal scrolling on mobile, disable touch for tilt on desktop */
+  touch-action: pan-x pan-y;
+}
+
+@media (min-width: 1024px) {
+  .pc-card-wrapper {
+    touch-action: none;
+  }
 }
 
 .pc-behind {

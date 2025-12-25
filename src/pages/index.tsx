@@ -87,7 +87,7 @@ export default function Home() {
         </div>
 
           {/* Speakers positioned at the diagonal intersection */}
-          <div className="relative z-30 -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-40">
+          <div className="relative z-30 -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-40 overflow-visible">
               <SpeakersSection />
           </div>
 
