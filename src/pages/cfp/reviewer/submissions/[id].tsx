@@ -222,10 +222,10 @@ export default function ReviewerSubmission() {
               {/* Header */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-3 py-1 bg-brand-primary/20 text-brand-primary rounded-full text-sm font-medium whitespace-nowrap">
+                  <span className="px-3 py-1.5 bg-brand-primary/20 border border-brand-primary/30 text-brand-primary rounded-full text-sm font-medium whitespace-nowrap">
                     {TYPE_LABELS[submission.submission_type]}
                   </span>
-                  <span className="text-brand-gray-light text-sm capitalize">
+                  <span className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-sm font-medium capitalize">
                     {submission.talk_level}
                   </span>
                 </div>

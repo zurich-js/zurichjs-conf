@@ -43,7 +43,7 @@ export function ReviewForm({
   const allScoresFilled = areAllScoresFilled(scores);
 
   return (
-    <div className="lg:sticky lg:top-8 w-full overflow-hidden">
+    <div className="lg:sticky lg:top-8 w-full">
       <form onSubmit={onSubmit} className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 w-full">
         {/* Header with Guidelines link */}
         <div className="flex justify-between items-center">
@@ -79,7 +79,7 @@ export function ReviewForm({
                   {label}
                   <span className="group relative">
                     <HelpCircle className="w-3.5 h-3.5 text-brand-gray-medium cursor-help" />
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg border border-brand-gray-medium">
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
                       {description}
                     </span>
                   </span>
@@ -119,7 +119,7 @@ export function ReviewForm({
             Speaker feedback
             <span className="group relative">
               <HelpCircle className="w-3.5 h-3.5 text-brand-gray-medium cursor-help" />
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg border border-brand-gray-medium">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
                 Optional feedback shared with the speaker
               </span>
             </span>
@@ -140,7 +140,7 @@ export function ReviewForm({
             Internal Notes
             <span className="group relative">
               <HelpCircle className="w-3.5 h-3.5 text-brand-gray-medium cursor-help" />
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg border border-brand-gray-medium">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
                 Private notes visible only to reviewers
               </span>
             </span>

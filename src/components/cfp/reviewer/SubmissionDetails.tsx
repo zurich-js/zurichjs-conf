@@ -49,7 +49,7 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
         {/* Duration */}
         <div>
           <span className="text-brand-gray-medium text-xs block mb-1.5">Duration</span>
-          <span className="px-3 py-1.5 bg-brand-gray-darkest text-brand-gray-light rounded-full text-xs inline-block">
+          <span className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 text-blue-300 rounded-full text-xs font-medium inline-block">
             {getDurationLabel(submission.submission_type, submission.workshop_duration_hours)}
           </span>
         </div>
@@ -58,7 +58,7 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
         {submission.talk_level && (
           <div>
             <span className="text-brand-gray-medium text-xs block mb-1.5">Expertise</span>
-            <span className="px-3 py-1.5 bg-brand-gray-darkest text-brand-gray-light rounded-full text-xs inline-block capitalize">
+            <span className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-xs font-medium inline-block capitalize">
               {submission.talk_level}
             </span>
           </div>
@@ -72,7 +72,7 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
               {submission.tags.map(tag => (
                 <span
                   key={tag.id}
-                  className="px-3 py-1.5 bg-brand-gray-darkest text-brand-gray-light rounded-full text-xs"
+                  className="px-3 py-1.5 bg-teal-500/20 border border-teal-500/30 text-teal-300 rounded-full text-xs font-medium"
                 >
                   {tag.name}
                 </span>
