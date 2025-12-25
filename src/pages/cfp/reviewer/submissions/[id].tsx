@@ -182,7 +182,7 @@ export default function ReviewerSubmission() {
 
       <ReviewGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
 
-      <div className="min-h-screen bg-brand-gray-darkest">
+      <div className="min-h-screen bg-brand-gray-darkest overflow-x-hidden">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -216,33 +216,9 @@ export default function ReviewerSubmission() {
               {submission.title}
             </span>
           </nav>
-          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Review Form - shown first on mobile */}
-            <div className="lg:col-span-1 lg:order-2">
-              {reviewer.role === 'readonly' && <ReadOnlyNotice />}
-
-              {success ? (
-                <SuccessMessage />
-              ) : reviewer.role !== 'readonly' ? (
-                <ReviewForm
-                  scores={scores}
-                  privateNotes={privateNotes}
-                  feedback={feedback}
-                  hasExistingReview={hasExistingReview}
-                  isSubmitting={submitReviewMutation.isPending}
-                  formError={formError}
-                  stats={submission.stats}
-                  onScoreChange={handleScoreChange}
-                  onPrivateNotesChange={setPrivateNotes}
-                  onFeedbackChange={setFeedback}
-                  onSubmit={handleSubmit}
-                  onShowGuidelines={() => setShowGuide(true)}
-                />
-              ) : null}
-            </div>
-
-            {/* Submission Details */}
-            <div className="lg:col-span-2 lg:order-1 space-y-6">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Submission Details - shown first on mobile */}
+            <div className="order-1 lg:col-span-2 space-y-6 min-w-0">
               {/* Header */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -277,6 +253,30 @@ export default function ReviewerSubmission() {
                   stats={submission.stats}
                 />
               )}
+            </div>
+
+            {/* Review Form - shown after submission on mobile */}
+            <div className="order-2 lg:col-span-1 min-w-0">
+              {reviewer.role === 'readonly' && <ReadOnlyNotice />}
+
+              {success ? (
+                <SuccessMessage />
+              ) : reviewer.role !== 'readonly' ? (
+                <ReviewForm
+                  scores={scores}
+                  privateNotes={privateNotes}
+                  feedback={feedback}
+                  hasExistingReview={hasExistingReview}
+                  isSubmitting={submitReviewMutation.isPending}
+                  formError={formError}
+                  stats={submission.stats}
+                  onScoreChange={handleScoreChange}
+                  onPrivateNotesChange={setPrivateNotes}
+                  onFeedbackChange={setFeedback}
+                  onSubmit={handleSubmit}
+                  onShowGuidelines={() => setShowGuide(true)}
+                />
+              ) : null}
             </div>
           </div>
         </main>

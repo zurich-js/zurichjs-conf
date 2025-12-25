@@ -35,7 +35,7 @@ function getDurationLabel(type: string, workshopHours?: number | null): string {
 
 export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetailsProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Anonymous Notice */}
       {isAnonymous && (
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-full text-xs font-semibold uppercase tracking-wide">
@@ -45,20 +45,20 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
       )}
 
       {/* Metadata Badges */}
-      <div className="flex flex-wrap items-start gap-x-4 sm:gap-x-6 gap-y-3 text-sm border-b border-brand-gray-dark pb-4">
+      <div className="flex flex-wrap gap-4 sm:gap-6 border-b border-brand-gray-dark pb-4">
         {/* Duration */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-          <span className="text-brand-gray-medium text-xs">Duration</span>
-          <span className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs">
+        <div>
+          <span className="text-brand-gray-medium text-xs block mb-1.5">Duration</span>
+          <span className="px-3 py-1.5 bg-brand-gray-darkest text-brand-gray-light rounded-full text-xs inline-block">
             {getDurationLabel(submission.submission_type, submission.workshop_duration_hours)}
           </span>
         </div>
 
         {/* Expertise Level */}
         {submission.talk_level && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-            <span className="text-brand-gray-medium text-xs">Expertise</span>
-            <span className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs capitalize">
+          <div>
+            <span className="text-brand-gray-medium text-xs block mb-1.5">Expertise</span>
+            <span className="px-3 py-1.5 bg-brand-gray-darkest text-brand-gray-light rounded-full text-xs inline-block capitalize">
               {submission.talk_level}
             </span>
           </div>
@@ -66,13 +66,13 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
 
         {/* Tags */}
         {submission.tags && submission.tags.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 w-full sm:w-auto">
-            <span className="text-brand-gray-medium text-xs shrink-0">Tags</span>
+          <div className="flex-1 min-w-0">
+            <span className="text-brand-gray-medium text-xs block mb-1.5">Tags</span>
             <div className="flex flex-wrap gap-1.5">
               {submission.tags.map(tag => (
                 <span
                   key={tag.id}
-                  className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs"
+                  className="px-3 py-1.5 bg-brand-gray-darkest text-brand-gray-light rounded-full text-xs"
                 >
                   {tag.name}
                 </span>
@@ -85,14 +85,14 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
       {/* Abstract */}
       <section>
         <h2 className="text-lg font-bold text-white mb-4">Abstract</h2>
-        <p className="text-brand-gray-light whitespace-pre-wrap">{submission.abstract}</p>
+        <p className="text-brand-gray-light whitespace-pre-wrap break-words">{submission.abstract}</p>
       </section>
 
       {/* Outline */}
       {submission.outline && (
         <section>
           <h2 className="text-lg font-bold text-white mb-4">Outline</h2>
-          <p className="text-brand-gray-light whitespace-pre-wrap">{submission.outline}</p>
+          <p className="text-brand-gray-light whitespace-pre-wrap break-words">{submission.outline}</p>
         </section>
       )}
 
@@ -100,7 +100,7 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
       {submission.additional_notes && (
         <section>
           <h2 className="text-lg font-bold text-white mb-4">Speaker notes</h2>
-          <p className="text-brand-gray-light whitespace-pre-wrap">{submission.additional_notes}</p>
+          <p className="text-brand-gray-light whitespace-pre-wrap break-words">{submission.additional_notes}</p>
         </section>
       )}
 

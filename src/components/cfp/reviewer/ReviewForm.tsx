@@ -43,8 +43,8 @@ export function ReviewForm({
   const allScoresFilled = areAllScoresFilled(scores);
 
   return (
-    <div className="lg:sticky lg:top-8">
-      <form onSubmit={onSubmit} className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
+    <div className="lg:sticky lg:top-8 w-full overflow-hidden">
+      <form onSubmit={onSubmit} className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 w-full">
         {/* Header with Guidelines link */}
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-bold text-white">Your review</h2>
