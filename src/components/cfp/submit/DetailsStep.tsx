@@ -20,6 +20,9 @@ interface DetailsStepProps {
   removeTag: (tag: string) => void;
   onNext: () => void;
   onBack: () => void;
+  isEditMode?: boolean;
+  onSaveDraft?: () => void;
+  isSubmitting?: boolean;
 }
 
 export function DetailsStep({
@@ -34,6 +37,9 @@ export function DetailsStep({
   removeTag,
   onNext,
   onBack,
+  isEditMode,
+  onSaveDraft,
+  isSubmitting,
 }: DetailsStepProps) {
   return (
     <div className="space-y-6">
@@ -245,9 +251,22 @@ export function DetailsStep({
           <ChevronLeft className="w-4 h-4" />
           Back
         </button>
-        <Button onClick={onNext} variant="primary" size="lg">
-          Continue
-        </Button>
+        <div className="flex gap-3">
+          {isEditMode && onSaveDraft && (
+            <Button
+              onClick={onSaveDraft}
+              variant="outline"
+              size="lg"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+            >
+              Save as Draft
+            </Button>
+          )}
+          <Button onClick={onNext} variant="primary" size="lg">
+            Continue
+          </Button>
+        </div>
       </div>
     </div>
   );

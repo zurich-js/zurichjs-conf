@@ -9,6 +9,7 @@ interface SubmissionDetailsProps {
   submission: {
     abstract: string;
     submission_type: string;
+    talk_level?: string;
     tags?: { id: string; name: string }[];
     outline?: string | null;
     additional_notes?: string | null;
@@ -21,55 +22,85 @@ interface SubmissionDetailsProps {
   isAnonymous: boolean;
 }
 
+// Helper to get duration label
+function getDurationLabel(type: string, workshopHours?: number | null): string {
+  if (type === 'workshop') {
+    return workshopHours ? `${workshopHours}h - Workshop` : 'Workshop';
+  }
+  if (type === 'lightning') {
+    return '15 min - Lightning talk';
+  }
+  return '30 min - Standard talk';
+}
+
 export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetailsProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Anonymous Notice */}
       {isAnonymous && (
-        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-purple-300">
-            <Eye className="w-5 h-5" />
-            <span className="text-sm font-medium">Anonymous Review Mode</span>
-          </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-full text-xs font-semibold uppercase tracking-wide">
+          <Eye className="w-3.5 h-3.5" />
+          Anonymous Review
         </div>
       )}
 
-      {/* Abstract */}
-      <section className="bg-brand-gray-dark rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Abstract</h2>
-        <p className="text-brand-gray-light whitespace-pre-wrap">{submission.abstract}</p>
-      </section>
+      {/* Metadata Badges */}
+      <div className="flex flex-wrap gap-4 sm:gap-6 border-b border-brand-gray-dark pb-4">
+        {/* Duration */}
+        <div>
+          <span className="text-brand-gray-medium text-xs block mb-1.5">Duration</span>
+          <span className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 text-blue-300 rounded-full text-xs font-medium inline-block">
+            {getDurationLabel(submission.submission_type, submission.workshop_duration_hours)}
+          </span>
+        </div>
 
-      {/* Tags */}
-      {submission.tags && submission.tags.length > 0 && (
-        <section className="bg-brand-gray-dark rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Tags</h2>
-          <div className="flex flex-wrap gap-2">
-            {submission.tags.map((tag) => (
-              <span
-                key={tag.id}
-                className="px-3 py-1 bg-brand-gray-darkest text-brand-gray-light rounded-full text-sm"
-              >
-                {tag.name}
-              </span>
-            ))}
+        {/* Expertise Level */}
+        {submission.talk_level && (
+          <div>
+            <span className="text-brand-gray-medium text-xs block mb-1.5">Expertise</span>
+            <span className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-xs font-medium inline-block capitalize">
+              {submission.talk_level}
+            </span>
           </div>
-        </section>
-      )}
+        )}
+
+        {/* Tags */}
+        {submission.tags && submission.tags.length > 0 && (
+          <div className="flex-1 min-w-0">
+            <span className="text-brand-gray-medium text-xs block mb-1.5">Tags</span>
+            <div className="flex flex-wrap gap-1.5">
+              {submission.tags.map(tag => (
+                <span
+                  key={tag.id}
+                  className="px-3 py-1.5 bg-teal-500/20 border border-teal-500/30 text-teal-300 rounded-full text-xs font-medium"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Abstract */}
+      <section>
+        <h2 className="text-lg font-bold text-white mb-4">Abstract</h2>
+        <p className="text-brand-gray-light whitespace-pre-wrap break-words">{submission.abstract}</p>
+      </section>
 
       {/* Outline */}
       {submission.outline && (
-        <section className="bg-brand-gray-dark rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Outline</h2>
-          <p className="text-brand-gray-light whitespace-pre-wrap">{submission.outline}</p>
+        <section>
+          <h2 className="text-lg font-bold text-white mb-4">Outline</h2>
+          <p className="text-brand-gray-light whitespace-pre-wrap break-words">{submission.outline}</p>
         </section>
       )}
 
-      {/* Additional Notes */}
+      {/* Speaker Notes */}
       {submission.additional_notes && (
-        <section className="bg-brand-gray-dark rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Notes from Speaker</h2>
-          <p className="text-brand-gray-light whitespace-pre-wrap">{submission.additional_notes}</p>
+        <section>
+          <h2 className="text-lg font-bold text-white mb-4">Speaker notes</h2>
+          <p className="text-brand-gray-light whitespace-pre-wrap break-words">{submission.additional_notes}</p>
         </section>
       )}
 

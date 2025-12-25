@@ -21,6 +21,8 @@ export { AddToCalendar } from './AddToCalendar';
 export { Modal, ModalBody, ModalFooter } from './Modal';
 export { Select } from './Select';
 export { Disclosure, DisclosureGroup, ControlledDisclosure } from './Disclosure';
+export { SearchableSelect } from './SearchableSelect';
+export { AirportInput } from './AirportInput';
 
 export type { LogoProps } from './Logo';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';

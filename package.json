@@ -26,6 +26,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@hookform/resolvers": "^5.2.2",
+    "@nwpr/airport-codes": "^3.0.3",
     "@react-email/components": "^0.5.7",
     "@react-email/render": "^1.4.0",
     "@react-pdf/renderer": "^4.3.1",
@@ -37,6 +38,7 @@
     "@types/qrcode": "^1.5.6",
     "add-to-calendar-button-react": "^2.12.13",
     "cookie": "^1.0.2",
+    "countries-list": "^3.2.2",
     "formidable": "^3.5.4",
     "framer-motion": "^12.23.24",
     "ics": "^3.8.1",

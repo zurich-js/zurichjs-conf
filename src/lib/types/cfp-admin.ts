@@ -27,6 +27,12 @@ export interface CfpAdminSpeaker {
   mastodon_handle: string | null;
   profile_image_url: string | null;
   is_visible: boolean;
+  city: string | null;
+  country: string | null;
+  travel_assistance_required: boolean | null;
+  assistance_type: 'travel' | 'accommodation' | 'both' | null;
+  departure_airport: string | null;
+  special_requirements: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +68,12 @@ export interface CfpAdminSubmission {
     profile_image_url?: string | null;
     tshirt_size?: string | null;
     company_interested_in_sponsoring?: boolean | null;
+    city?: string | null;
+    country?: string | null;
+    travel_assistance_required?: boolean | null;
+    assistance_type?: 'travel' | 'accommodation' | 'both' | null;
+    departure_airport?: string | null;
+    special_requirements?: string | null;
   };
   tags: Array<{ id: string; name: string }>;
   stats: {
@@ -108,7 +120,7 @@ export interface CfpReviewWithReviewer {
   };
 }
 
-export type ReviewerRole = 'full_access' | 'anonymous' | 'readonly';
+export type ReviewerRole = 'super_admin' | 'anonymous' | 'readonly';
 
 // Query keys for React Query
 export const cfpQueryKeys = {

@@ -6,17 +6,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
 import { useCfpReviewerSubmission, useSubmitReview } from '@/hooks/useCfp';
-import { ReviewGuide, ReviewGuideButton } from '@/components/cfp/ReviewGuide';
+import { ReviewGuide } from '@/components/cfp/ReviewGuide';
 import { useEscapeKey, useSubmitShortcut } from '@/hooks/useKeyboardShortcuts';
 import {
   TYPE_LABELS,
   ReviewScores,
-  StatusSection,
   SpeakerInfo,
   ReviewForm,
   SuccessMessage,
@@ -33,8 +32,6 @@ export default function ReviewerSubmission() {
   const [showGuide, setShowGuide] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [statusUpdating, setStatusUpdating] = useState(false);
-  const [showStatusActions, setShowStatusActions] = useState(false);
 
   // Form state
   const [scores, setScores] = useState<ReviewScores>({
@@ -92,36 +89,16 @@ export default function ReviewerSubmission() {
     setScores((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!submission || statusUpdating) return;
-
-    setStatusUpdating(true);
-    try {
-      const response = await fetch(`/api/cfp/submissions/${submission.id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to update status');
-      }
-
-      router.reload();
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to update status');
-    } finally {
-      setStatusUpdating(false);
-      setShowStatusActions(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (scores.score_overall < 1 || scores.score_overall > 5) {
-      setFormError('Overall score is required (1-5)');
+    // Validate all dimensions are rated
+    const missingScores = Object.entries(scores)
+      .filter(([, value]) => value < 1 || value > 5)
+      .map(([key]) => key.replace('score_', '').replace(/_/g, ' '));
+
+    if (missingScores.length > 0) {
+      setFormError(`Please rate all dimensions. Missing: ${missingScores.join(', ')}`);
       return;
     }
 
@@ -133,10 +110,10 @@ export default function ReviewerSubmission() {
         isUpdate: hasExistingReview,
         data: {
           score_overall: scores.score_overall,
-          score_relevance: scores.score_relevance || undefined,
-          score_technical_depth: scores.score_technical_depth || undefined,
-          score_clarity: scores.score_clarity || undefined,
-          score_diversity: scores.score_diversity || undefined,
+          score_relevance: scores.score_relevance,
+          score_technical_depth: scores.score_technical_depth,
+          score_clarity: scores.score_clarity,
+          score_diversity: scores.score_diversity,
           private_notes: privateNotes || undefined,
           feedback_to_speaker: feedback || undefined,
         },
@@ -161,9 +138,8 @@ export default function ReviewerSubmission() {
 
   useSubmitShortcut(handleKeyboardSubmit, !!submission && !success);
   useEscapeKey(() => {
-    if (showStatusActions) setShowStatusActions(false);
     if (showGuide) setShowGuide(false);
-  }, showStatusActions || showGuide);
+  }, showGuide);
 
   // Loading state
   if (!authChecked || isLoading) {
@@ -194,6 +170,7 @@ export default function ReviewerSubmission() {
   }
 
   const isSuperAdmin = reviewer.role === 'super_admin';
+  const canSeeSpeakerIdentity = isSuperAdmin || reviewer.can_see_speaker_identity;
 
   return (
     <>
@@ -205,16 +182,15 @@ export default function ReviewerSubmission() {
 
       <ReviewGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
 
-      <div className="min-h-screen bg-brand-gray-darkest">
+      <div className="min-h-screen bg-brand-gray-darkest overflow-x-hidden">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href="/cfp/reviewer/dashboard" className="flex items-center gap-3">
               <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
-              <span className="text-white font-semibold">Review Submission</span>
+              <span className="text-white font-semibold">Zurich JS Conf 2026</span>
             </Link>
             <div className="flex items-center gap-4">
-              <ReviewGuideButton onClick={() => setShowGuide(true)} />
               <Link
                 href="/cfp/reviewer/dashboard"
                 className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
@@ -227,16 +203,29 @@ export default function ReviewerSubmission() {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Submission Details */}
-            <div className="lg:col-span-2 space-y-6">
+          {/* Breadcrumb Navigation */}
+          <nav className="flex items-center gap-2 text-sm mb-6">
+            <Link
+              href="/cfp/reviewer/dashboard"
+              className="text-white font-semibold hover:text-brand-primary transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight className="w-4 h-4 text-brand-gray-medium" />
+            <span className="text-brand-gray-light truncate max-w-[300px]">
+              {submission.title}
+            </span>
+          </nav>
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Submission Details - shown first on mobile */}
+            <div className="order-1 lg:col-span-2 space-y-6 min-w-0">
               {/* Header */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-3 py-1 bg-brand-primary/20 text-brand-primary rounded-full text-sm font-medium whitespace-nowrap">
+                  <span className="px-3 py-1.5 bg-brand-primary/20 border border-brand-primary/30 text-brand-primary rounded-full text-sm font-medium whitespace-nowrap">
                     {TYPE_LABELS[submission.submission_type]}
                   </span>
-                  <span className="text-brand-gray-light text-sm capitalize">
+                  <span className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-sm font-medium capitalize">
                     {submission.talk_level}
                   </span>
                 </div>
@@ -245,26 +234,16 @@ export default function ReviewerSubmission() {
                 </Heading>
               </div>
 
-              {/* Status Section (super_admin only) */}
-              {isSuperAdmin && (
-                <StatusSection
-                  status={submission.status}
-                  showActions={showStatusActions}
-                  isUpdating={statusUpdating}
-                  onToggleActions={() => setShowStatusActions(!showStatusActions)}
-                  onStatusChange={handleStatusChange}
-                />
-              )}
 
-              {/* Speaker Info (super_admin only) */}
-              {submission.speaker && isSuperAdmin && (
+              {/* Speaker Info (visible to super_admin or those with can_see_speaker_identity) */}
+              {submission.speaker && canSeeSpeakerIdentity && (
                 <SpeakerInfo speaker={submission.speaker} />
               )}
 
               {/* Submission Content */}
               <SubmissionDetails
                 submission={submission}
-                isAnonymous={!isSuperAdmin}
+                isAnonymous={!canSeeSpeakerIdentity}
               />
 
               {/* Committee Reviews (super_admin only) */}
@@ -276,8 +255,8 @@ export default function ReviewerSubmission() {
               )}
             </div>
 
-            {/* Review Form Sidebar */}
-            <div className="lg:col-span-1">
+            {/* Review Form - shown after submission on mobile */}
+            <div className="order-2 lg:col-span-1 min-w-0">
               {reviewer.role === 'readonly' && <ReadOnlyNotice />}
 
               {success ? (
@@ -295,6 +274,7 @@ export default function ReviewerSubmission() {
                   onPrivateNotesChange={setPrivateNotes}
                   onFeedbackChange={setFeedback}
                   onSubmit={handleSubmit}
+                  onShowGuidelines={() => setShowGuide(true)}
                 />
               ) : null}
             </div>

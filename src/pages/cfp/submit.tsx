@@ -9,6 +9,7 @@ import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
 import { AlertCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
+import { useToast } from '@/contexts/ToastContext';
 import { createSupabaseServerClient, getSpeakerByUserId, isSpeakerProfileComplete } from '@/lib/cfp/auth';
 import type { CfpSpeaker, CfpTag } from '@/lib/types/cfp';
 import { getSubmissionCount } from '@/lib/cfp/submissions';
@@ -31,11 +32,13 @@ interface SubmitPageProps {
 
 export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
   const router = useRouter();
+  const toast = useToast();
   const [step, setStep] = useState<WizardStep>('type');
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const isWorkshop = formData.submission_type === 'workshop';
 
@@ -87,22 +90,41 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Get the steps based on submission type (workshops include logistics, talks don't)
+  const getSteps = (): WizardStep[] => {
+    if (isWorkshop) {
+      return ['type', 'details', 'logistics', 'review'];
+    }
+    return ['type', 'details', 'review'];
+  };
+
   const nextStep = () => {
     if (!validateStep(step)) return;
 
-    const steps: WizardStep[] = ['type', 'details', 'logistics', 'review'];
+    const steps = getSteps();
     const currentIndex = steps.indexOf(step);
     if (currentIndex < steps.length - 1) {
-      setStep(steps[currentIndex + 1]);
+      const nextStepValue = steps[currentIndex + 1];
+      setStep(nextStepValue);
+      // Reset edit mode when reaching review step
+      if (nextStepValue === 'review') {
+        setIsEditMode(false);
+      }
     }
   };
 
   const prevStep = () => {
-    const steps: WizardStep[] = ['type', 'details', 'logistics', 'review'];
+    const steps = getSteps();
     const currentIndex = steps.indexOf(step);
     if (currentIndex > 0) {
       setStep(steps[currentIndex - 1]);
     }
+  };
+
+  // Navigate to a step in edit mode (called from ReviewStep)
+  const goToStepForEdit = (targetStep: WizardStep) => {
+    setIsEditMode(true);
+    setStep(targetStep);
   };
 
   const handleSubmit = async (asDraft: boolean = true) => {
@@ -121,9 +143,6 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
         additional_notes: formData.additional_notes || undefined,
         slides_url: formData.slides_url || undefined,
         previous_recording_url: formData.previous_recording_url || undefined,
-        travel_assistance_required: formData.travel_assistance_required,
-        travel_origin: formData.travel_origin || undefined,
-        company_can_cover_travel: formData.company_can_cover_travel,
         special_requirements: formData.special_requirements || undefined,
       };
 
@@ -155,6 +174,13 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
           const submitData = await submitResponse.json();
           throw new Error(submitData.error || 'Failed to submit for review');
         }
+
+        toast.success(
+          'Proposal Submitted!',
+          'Your proposal has been submitted for review. You can track its status on your dashboard.'
+        );
+      } else {
+        toast.success('Draft Saved', 'Your proposal has been saved as a draft.');
       }
 
       router.push('/cfp/dashboard');
@@ -167,7 +193,9 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
     }
   };
 
-  const stepNumber = ['type', 'details', 'logistics', 'review'].indexOf(step) + 1;
+  const steps = getSteps();
+  const stepLabels = isWorkshop ? ['Type', 'Details', 'Logistics', 'Review'] : ['Type', 'Details', 'Review'];
+  const stepNumber = steps.indexOf(step) + 1;
 
   return (
     <>
@@ -197,7 +225,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
         {/* Progress Bar */}
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-2">
-            {['Type', 'Details', 'Logistics', 'Review'].map((label, index) => (
+            {stepLabels.map((label, index) => (
               <div key={label} className="flex items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
@@ -213,7 +241,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
                 }`}>
                   {label}
                 </span>
-                {index < 3 && (
+                {index < stepLabels.length - 1 && (
                   <div className={`w-12 sm:w-24 h-0.5 mx-2 ${
                     index + 1 < stepNumber ? 'bg-brand-primary' : 'bg-brand-gray-dark'
                   }`} />
@@ -239,6 +267,9 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
               formData={formData}
               updateField={updateField}
               onNext={nextStep}
+              isEditMode={isEditMode}
+              onSaveDraft={() => handleSubmit(true)}
+              isSubmitting={isSubmitting}
             />
           )}
 
@@ -255,10 +286,13 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
               removeTag={removeTag}
               onNext={nextStep}
               onBack={prevStep}
+              isEditMode={isEditMode}
+              onSaveDraft={() => handleSubmit(true)}
+              isSubmitting={isSubmitting}
             />
           )}
 
-          {step === 'logistics' && (
+          {step === 'logistics' && isWorkshop && (
             <LogisticsStep
               formData={formData}
               updateField={updateField}
@@ -266,6 +300,9 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
               isWorkshop={isWorkshop}
               onNext={nextStep}
               onBack={prevStep}
+              isEditMode={isEditMode}
+              onSaveDraft={() => handleSubmit(true)}
+              isSubmitting={isSubmitting}
             />
           )}
 
@@ -274,7 +311,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
               formData={formData}
               isWorkshop={isWorkshop}
               isSubmitting={isSubmitting}
-              setStep={setStep}
+              setStep={goToStepForEdit}
               onSubmit={handleSubmit}
               onBack={prevStep}
             />

@@ -28,14 +28,21 @@ const wordCount = (text: string): number =>
 export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] as const;
 
 /**
+ * Assistance types for travel/accommodation
+ */
+export const ASSISTANCE_TYPES = ['travel', 'accommodation', 'both'] as const;
+
+/**
  * Speaker profile validation schema
  */
 export const speakerProfileSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  job_title: z.string().optional(),
-  company: z.string().optional(),
+  job_title: z.string().min(1, 'Job title is required'),
+  company: z.string().min(1, 'Company is required'),
+  city: z.string().min(1, 'City is required'),
+  country: z.string().min(1, 'Country is required'),
   bio: z
     .string()
     .max(2000, 'Bio is too long')
@@ -48,7 +55,13 @@ export const speakerProfileSchema = z.object({
   twitter_handle: z.string().optional(),
   bluesky_handle: z.string().optional(),
   mastodon_handle: z.string().optional(),
-  tshirt_size: z.enum(TSHIRT_SIZES).optional().nullable(),
+  tshirt_size: z.enum(TSHIRT_SIZES).nullable().refine((val) => val !== null, {
+    message: 'T-shirt size is required',
+  }),
+  travel_assistance_required: z.boolean().optional().nullable(),
+  assistance_type: z.enum(ASSISTANCE_TYPES).optional().nullable(),
+  departure_airport: z.string().optional().nullable(),
+  special_requirements: z.string().max(2000, 'Special requirements is too long').optional().nullable(),
   company_interested_in_sponsoring: z.boolean().optional().nullable(),
 });
 
@@ -81,8 +94,9 @@ const baseSubmissionSchema = z.object({
     .url('Invalid URL')
     .optional()
     .or(z.literal('')),
-  travel_assistance_required: z.boolean(),
-  company_can_cover_travel: z.boolean(),
+  // Travel fields are now at the speaker profile level (deprecated here)
+  travel_assistance_required: z.boolean().optional(),
+  company_can_cover_travel: z.boolean().optional(),
   special_requirements: z
     .string()
     .max(1000, 'Requirements text is too long')

@@ -16,9 +16,6 @@ export interface FormData {
   additional_notes: string;
   slides_url: string;
   previous_recording_url: string;
-  travel_assistance_required: boolean;
-  travel_origin: string;
-  company_can_cover_travel: boolean;
   special_requirements: string;
   // Workshop-specific
   workshop_duration_hours: number;
@@ -37,9 +34,6 @@ export const INITIAL_FORM_DATA: FormData = {
   additional_notes: '',
   slides_url: '',
   previous_recording_url: '',
-  travel_assistance_required: false,
-  travel_origin: '',
-  company_can_cover_travel: false,
   special_requirements: '',
   workshop_duration_hours: 4,
   workshop_expected_compensation: '',

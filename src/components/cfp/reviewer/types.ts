@@ -12,11 +12,19 @@ export const TYPE_LABELS: Record<string, string> = {
 // Note: The database field is 'score_diversity' but we display it as 'Originality'
 // to better reflect what we're actually evaluating
 export const SCORE_LABELS = {
-  score_overall: 'Overall',
   score_relevance: 'Relevance',
   score_technical_depth: 'Technical Depth',
   score_clarity: 'Clarity',
   score_diversity: 'Originality',
+  score_overall: 'Overall Score',
+} as const;
+
+export const SCORE_DESCRIPTIONS = {
+  score_relevance: 'How relevant is this to our audience?',
+  score_technical_depth: 'Quality of technical content',
+  score_clarity: 'How clear is the proposal?',
+  score_diversity: 'Unique perspective or fresh topic',
+  score_overall: 'Your overall impression',
 } as const;
 
 export const STATUS_INFO: Record<string, { label: string; description: string; color: string }> = {
@@ -149,6 +157,7 @@ export interface Reviewer {
   role: 'reviewer' | 'readonly' | 'super_admin';
   name?: string | null;
   email: string;
+  can_see_speaker_identity: boolean;
 }
 
 // Dashboard filter options

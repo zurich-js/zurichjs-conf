@@ -9,8 +9,8 @@ import { cfpQueryKeys, type ReviewerRole } from '@/lib/types/cfp-admin';
 
 const REVIEWER_ROLES: { value: ReviewerRole; label: string; description: string }[] = [
   {
-    value: 'full_access',
-    label: 'Full Access',
+    value: 'super_admin',
+    label: 'Super Admin',
     description: 'Can see speaker names, emails, and all details. Can score and leave feedback.',
   },
   {
@@ -61,8 +61,8 @@ export function InviteReviewerForm() {
     e.preventDefault();
     if (!email) return;
 
-    const apiRole = role === 'readonly' ? 'readonly' : 'reviewer';
-    const canSeeSpeakerIdentity = role === 'full_access';
+    const apiRole = role === 'readonly' ? 'readonly' : role === 'super_admin' ? 'super_admin' : 'reviewer';
+    const canSeeSpeakerIdentity = role === 'super_admin';
 
     inviteMutation.mutate({
       email,

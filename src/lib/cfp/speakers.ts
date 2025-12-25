@@ -181,10 +181,13 @@ export async function uploadSpeakerImage(
     .from('cfp-images')
     .getPublicUrl(filePath);
 
-  // Update speaker profile with new image URL
+  // Add cache-busting parameter to prevent browser caching when image is replaced
+  const cacheBustedUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+
+  // Update speaker profile with new image URL (including cache buster)
   const { error: updateError } = await supabase
     .from('cfp_speakers')
-    .update({ profile_image_url: urlData.publicUrl })
+    .update({ profile_image_url: cacheBustedUrl })
     .eq('id', speakerId);
 
   if (updateError) {
@@ -192,7 +195,7 @@ export async function uploadSpeakerImage(
     return { url: null, error: updateError.message };
   }
 
-  return { url: urlData.publicUrl };
+  return { url: cacheBustedUrl };
 }
 
 /**

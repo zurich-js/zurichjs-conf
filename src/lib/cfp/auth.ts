@@ -420,6 +420,27 @@ export function isSpeakerProfileComplete(speaker: CfpSpeaker): boolean {
   return !!(
     speaker.first_name &&
     speaker.last_name &&
-    speaker.bio
+    speaker.job_title &&
+    speaker.company &&
+    speaker.city &&
+    speaker.country &&
+    speaker.bio &&
+    speaker.tshirt_size
   );
+}
+
+/**
+ * Get list of missing required profile fields
+ */
+export function getMissingProfileFields(speaker: CfpSpeaker): string[] {
+  const missing: string[] = [];
+  if (!speaker.first_name) missing.push('First name');
+  if (!speaker.last_name) missing.push('Last name');
+  if (!speaker.job_title) missing.push('Job title');
+  if (!speaker.company) missing.push('Company');
+  if (!speaker.city) missing.push('City');
+  if (!speaker.country) missing.push('Country');
+  if (!speaker.bio) missing.push('Bio');
+  if (!speaker.tshirt_size) missing.push('T-shirt size');
+  return missing;
 }
