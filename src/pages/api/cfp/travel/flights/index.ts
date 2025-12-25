@@ -8,6 +8,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getSpeakerFlights, createFlight } from '@/lib/cfp/travel';
 import { flightSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Flights API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Get session
@@ -29,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const flights = await getSpeakerFlights(speaker.id);
       return res.status(200).json({ flights });
     } catch (error) {
-      console.error('[CFP Flights API] Error:', error);
+      log.error('Failed to get flights', error, { speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -51,9 +54,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error });
       }
 
+      log.info('Flight created', { speakerId: speaker.id, flightId: flight?.id });
       return res.status(201).json({ flight });
     } catch (error) {
-      console.error('[CFP Flights API] Error:', error);
+      log.error('Failed to create flight', error, { speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -6,6 +6,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { withdrawSubmission, getSubmissionById } from '@/lib/cfp/submissions';
+import { logger } from '@/lib/logger';
+import { serverAnalytics } from '@/lib/analytics/server';
+
+const log = logger.scope('CFP Withdraw API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -50,9 +54,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: error || 'Failed to withdraw' });
     }
 
+    // Track submission withdrawal
+    await serverAnalytics.track('cfp_submission_withdrawn', speaker.id, {
+      submission_id: id,
+      submission_title: submission.title,
+      speaker_id: speaker.id,
+    });
+
+    log.info('Submission withdrawn', {
+      submissionId: id,
+      speakerId: speaker.id,
+      title: submission.title,
+    });
+
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('[CFP Withdraw API] Error:', error);
+    log.error('Failed to withdraw submission', error, { submissionId: id });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

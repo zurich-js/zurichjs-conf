@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { getStripeClient } from '@/lib/stripe/client';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Stripe Payment');
 
 interface PaymentDetails {
   id: string;
@@ -62,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           metadata: paymentIntent.metadata || {},
         };
       } catch (error) {
-        console.error('Error fetching payment intent:', error);
+        log.error('Error fetching payment intent', error);
         return res.status(404).json({ error: 'Payment not found' });
       }
     }
@@ -83,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           metadata: charge.metadata || {},
         };
       } catch (error) {
-        console.error('Error fetching charge:', error);
+        log.error('Error fetching charge', error);
         return res.status(404).json({ error: 'Payment not found' });
       }
     }
@@ -111,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
         };
       } catch (error) {
-        console.error('Error fetching checkout session:', error);
+        log.error('Error fetching checkout session', error);
         return res.status(404).json({ error: 'Payment not found' });
       }
     } else {
@@ -122,7 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ payment: paymentDetails });
   } catch (error) {
-    console.error('Admin stripe payment API error:', error);
+    log.error('Error looking up payment', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

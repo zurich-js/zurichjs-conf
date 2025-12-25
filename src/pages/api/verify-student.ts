@@ -5,6 +5,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sendVerificationRequestEmail } from '@/lib/email';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Student Verification API');
 
 /**
  * Verification request body
@@ -96,8 +99,8 @@ const storeVerificationRequest = async (
   // 1. Save to database with status 'pending'
   // 2. Set up a review system for admins
   // 3. Track verification expiry dates
-  
-  console.log('Verification Request:', {
+
+  log.info('Verification Request received', {
     verificationId,
     ...data,
     timestamp: new Date().toISOString(),
@@ -134,15 +137,15 @@ const sendNotifications = async (
       verificationId,
       verificationType: data.verificationType,
     });
-    console.log(`Verification confirmation email sent to ${data.email}`);
+    log.info('Verification confirmation email sent', { email: data.email });
   } catch (error) {
-    console.error('Failed to send confirmation email:', error);
+    log.error('Failed to send confirmation email', error);
     // Don't fail the request if email fails
   }
 
   // Send notification to admin (in production)
   // This would notify the admin team to review the verification
-  console.log('Admin notification would be sent here for verification:', verificationId);
+  log.info('Admin notification would be sent here for verification', { verificationId });
   
   // TODO: Send to admin
   // await sendAdminNotificationEmail({
@@ -203,8 +206,8 @@ export default async function handler(
       message: 'Verification request submitted successfully. You will receive an email within 24 hours.',
     });
   } catch (error) {
-    console.error('Error processing verification request:', error);
-    
+    log.error('Error processing verification request', error);
+
     const errorMessage = error instanceof Error ? error.message : 'An error occurred';
     
     res.status(500).json({

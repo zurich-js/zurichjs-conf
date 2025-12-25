@@ -14,6 +14,9 @@ import {
   deleteInvoice,
 } from '@/lib/b2b';
 import type { UpdateB2BInvoiceRequest, B2BInvoiceStatus } from '@/lib/types/b2b';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoice API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -55,7 +58,7 @@ async function handleGet(invoiceId: string, res: NextApiResponse) {
 
     return res.status(200).json(invoice);
   } catch (error) {
-    console.error('Error fetching invoice:', error);
+    log.error('Error fetching invoice', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to fetch invoice',
     });
@@ -90,7 +93,7 @@ async function handleUpdate(
 
     return res.status(200).json(updated);
   } catch (error) {
-    console.error('Error updating invoice:', error);
+    log.error('Error updating invoice', error);
     const message = error instanceof Error ? error.message : 'Failed to update invoice';
 
     // Return 400 for validation errors
@@ -110,7 +113,7 @@ async function handleDelete(invoiceId: string, res: NextApiResponse) {
     await deleteInvoice(invoiceId);
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting invoice:', error);
+    log.error('Error deleting invoice', error);
     const message = error instanceof Error ? error.message : 'Failed to delete invoice';
 
     if (message.includes('Cannot') || message.includes('not found')) {

@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateSessionSchedule } from '@/lib/cfp/speakers';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import type { AdminUpdateSessionScheduleRequest } from '@/lib/types/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Session Schedule API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -61,9 +64,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: error || 'Failed to update schedule' });
     }
 
+    log.info('Session schedule updated', { sessionId: id });
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('[CFP Admin Session Schedule API] PUT Error:', error);
+    log.error('Error updating session schedule', error, { sessionId: id });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

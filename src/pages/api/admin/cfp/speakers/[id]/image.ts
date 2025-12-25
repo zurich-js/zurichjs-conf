@@ -10,6 +10,9 @@ import { verifyAdminToken } from '@/lib/admin/auth';
 import { uploadSpeakerImage } from '@/lib/cfp/speakers';
 import formidable from 'formidable';
 import fs from 'fs';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Speaker Image Upload');
 
 // Disable default body parser to handle file uploads
 export const config = {
@@ -84,12 +87,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: error || 'Failed to upload image' });
     }
 
+    log.info('Speaker image uploaded', { speakerId: id });
     return res.status(200).json({
       success: true,
       imageUrl: url,
     });
   } catch (error) {
-    console.error('[Admin Speaker Image Upload] Error:', error);
+    log.error('Error uploading speaker image', error, { speakerId: id });
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to upload image',
     });

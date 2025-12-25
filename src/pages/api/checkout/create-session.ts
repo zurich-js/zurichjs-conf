@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { getStripeRedirectUrls } from '@/lib/url';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Checkout Create Session');
 
 /**
  * Response structure for checkout session creation
@@ -94,7 +97,7 @@ export default async function handler(
       url: session.url || undefined,
     });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    log.error('Error creating checkout session', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to create checkout session';
 

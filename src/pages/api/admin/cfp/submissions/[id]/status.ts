@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateSubmissionStatus } from '@/lib/cfp/admin';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { updateSubmissionStatusSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Status API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
@@ -41,9 +44,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: error || 'Failed to update status' });
     }
 
+    log.info('Submission status updated', { submissionId: id, status: result.data.status });
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('[CFP Admin Status API] Error:', error);
+    log.error('Error updating submission status', error, { submissionId: id });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

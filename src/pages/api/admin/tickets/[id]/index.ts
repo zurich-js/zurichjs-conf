@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Ticket Delete');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'DELETE') {
@@ -45,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', id);
 
     if (deleteError) {
-      console.error('Error deleting ticket:', deleteError);
+      log.error('Error deleting ticket', deleteError);
       return res.status(500).json({ error: 'Failed to delete ticket' });
     }
 
@@ -59,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
   } catch (error) {
-    console.error('Delete ticket error:', error);
+    log.error('Error deleting ticket', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

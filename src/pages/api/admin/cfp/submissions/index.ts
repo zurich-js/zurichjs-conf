@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminSubmissions } from '@/lib/cfp/admin';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import type { CfpSubmissionStatus, CfpSubmissionType, CfpTalkLevel } from '@/lib/types/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Submissions API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -44,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ submissions, total });
   } catch (error) {
-    console.error('[CFP Admin Submissions API] Error:', error);
+    log.error('Error fetching submissions', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

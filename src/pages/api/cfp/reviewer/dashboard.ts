@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Reviewer Dashboard API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -18,23 +21,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user || !user.email) {
-      console.error('[Reviewer Dashboard API] Authentication failed:', userError?.message);
+      log.warn('Authentication failed', { error: userError?.message });
       return res.status(401).json({ error: 'Unauthorized - please log in' });
     }
 
     const userId = user.id;
     const userEmail = user.email;
-    console.log('[Reviewer Dashboard API] Authenticated user:', userEmail);
+    log.info('Authenticated reviewer', { email: userEmail });
 
     // Get the reviewer record
     const reviewer = await getReviewerByUserId(userId);
 
     if (!reviewer) {
-      console.log('[Reviewer Dashboard API] No reviewer found for user:', userId);
+      log.warn('No reviewer found for user', { userId });
       return res.status(401).json({ error: 'Not authorized as a reviewer' });
     }
 
-    console.log('[Reviewer Dashboard API] Reviewer found:', reviewer.email);
+    log.info('Reviewer found', { email: reviewer.email, reviewerId: reviewer.id });
 
     // Fetch submissions for review
     const supabaseAdmin = createCfpServiceClient();
@@ -52,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .order('submitted_at', { ascending: false });
 
     if (submissionsError) {
-      console.error('[Reviewer Dashboard API] Error fetching submissions:', submissionsError);
+      log.error('Error fetching submissions', submissionsError);
       return res.status(500).json({ error: 'Failed to fetch submissions' });
     }
 
@@ -63,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('reviewer_id', reviewer.id);
 
     if (reviewsError) {
-      console.error('[Reviewer Dashboard API] Error fetching reviews:', reviewsError);
+      log.error('Error fetching reviews', reviewsError);
     }
 
     // Get review stats for each submission
@@ -72,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select('submission_id, score_overall');
 
     if (statsError) {
-      console.error('[Reviewer Dashboard API] Error fetching stats:', statsError);
+      log.error('Error fetching stats', statsError);
     }
 
     // Create a map of my reviews by submission_id
@@ -117,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
-    console.log('[Reviewer Dashboard API] Returning', formattedSubmissions.length, 'submissions');
+    log.info('Returning submissions', { count: formattedSubmissions.length, reviewerId: reviewer.id });
 
     return res.status(200).json({
       reviewer,
@@ -125,7 +128,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       total: formattedSubmissions.length,
     });
   } catch (error) {
-    console.error('[Reviewer Dashboard API] Error:', error);
+    log.error('Error in reviewer dashboard', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

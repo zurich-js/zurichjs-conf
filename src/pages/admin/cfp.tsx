@@ -3,10 +3,11 @@
  * Manage submissions, reviewers, and speakers
  */
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pagination } from '@/components/atoms';
 import { useToast } from '@/contexts/ToastContext';
 import AdminHeader from '@/components/admin/AdminHeader';
 import {
@@ -69,7 +70,6 @@ async function updateSubmissionStatus(id: string, status: string): Promise<void>
 }
 
 export default function CfpAdminDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState<CfpTab>('submissions');
@@ -81,50 +81,52 @@ export default function CfpAdminDashboard() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  // Check auth status
-  const { isLoading: isAuthLoading } = useQuery({
-    queryKey: ['admin', 'auth'],
+  // Check auth status - use query result directly instead of local state
+  const { data: isAuthenticated, isLoading: isAuthLoading } = useQuery({
+    queryKey: ['admin', 'cfp', 'auth'],
     queryFn: async () => {
       const res = await fetch('/api/admin/cfp/stats');
-      if (res.ok) {
-        setIsAuthenticated(true);
-        return true;
-      }
-      setIsAuthenticated(false);
-      return false;
+      return res.ok;
     },
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Fetch data
+  // Fetch data with proper staleTime to prevent flickering on navigation
   const { data: stats } = useQuery({
     queryKey: cfpQueryKeys.stats,
     queryFn: fetchStats,
     enabled: isAuthenticated === true,
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   const { data: submissionsData, isLoading: isLoadingSubmissions } = useQuery({
     queryKey: cfpQueryKeys.submissions(statusFilter),
     queryFn: () => fetchSubmissions(statusFilter),
     enabled: isAuthenticated === true && activeTab === 'submissions',
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   const { data: speakersData, isLoading: isLoadingSpeakers } = useQuery({
     queryKey: cfpQueryKeys.speakers,
     queryFn: fetchSpeakers,
     enabled: isAuthenticated === true && activeTab === 'speakers',
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   const { data: reviewersData, isLoading: isLoadingReviewers } = useQuery({
     queryKey: cfpQueryKeys.reviewers,
     queryFn: fetchReviewers,
     enabled: isAuthenticated === true && activeTab === 'reviewers',
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   const { data: tagsData, isLoading: isLoadingTags } = useQuery({
     queryKey: cfpQueryKeys.tags,
     queryFn: fetchTags,
     enabled: isAuthenticated === true && activeTab === 'tags',
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   // Mutations
@@ -224,9 +226,10 @@ export default function CfpAdminDashboard() {
         body: JSON.stringify({ password }),
       });
       if (response.ok) {
-        setIsAuthenticated(true);
         setPassword('');
-        queryClient.invalidateQueries();
+        // Invalidate auth query to re-check and all other queries
+        queryClient.invalidateQueries({ queryKey: ['admin', 'cfp', 'auth'] });
+        queryClient.invalidateQueries({ queryKey: ['cfp'] });
       } else {
         setLoginError('Invalid password');
       }
@@ -238,7 +241,8 @@ export default function CfpAdminDashboard() {
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/logout', { method: 'POST' });
-      setIsAuthenticated(false);
+      // Clear all queries and invalidate auth
+      queryClient.clear();
       router.reload();
     } catch (error) {
       console.error('Logout failed:', error);
@@ -251,7 +255,7 @@ export default function CfpAdminDashboard() {
   const tags = tagsData?.tags || [];
 
   // Loading state
-  if (isAuthLoading || isAuthenticated === null) {
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -477,27 +481,96 @@ function SubmissionsTabContent({
   bulkUpdateStatusMutation: ReturnType<typeof useMutation<void, Error, { ids: string[]; status: string }>>;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // Filter submissions
+  const filteredSubmissions = useMemo(() => {
+    let result = [...submissions];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.title.toLowerCase().includes(query) ||
+          s.abstract.toLowerCase().includes(query) ||
+          s.speaker?.first_name?.toLowerCase().includes(query) ||
+          s.speaker?.last_name?.toLowerCase().includes(query) ||
+          s.speaker?.email?.toLowerCase().includes(query)
+      );
+    }
+
+    // Type filter
+    if (typeFilter !== 'all') {
+      result = result.filter((s) => s.submission_type === typeFilter);
+    }
+
+    return result;
+  }, [submissions, searchQuery, typeFilter]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE);
+  const paginatedSubmissions = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSubmissions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredSubmissions, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, typeFilter, statusFilter]);
+
   return (
     <div>
-      {/* Filters and Bulk Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-        >
-          <option value="all">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="submitted">Submitted</option>
-          <option value="under_review">Under Review</option>
-          <option value="shortlisted">Shortlisted</option>
-          <option value="accepted">Accepted</option>
-          <option value="rejected">Rejected</option>
-          <option value="waitlisted">Waitlisted</option>
-        </select>
+      {/* Search and Filters */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, abstract, or speaker..."
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            />
+          </div>
 
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="all">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under Review</option>
+            <option value="shortlisted">Shortlisted</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+            <option value="waitlisted">Waitlisted</option>
+          </select>
+
+          {/* Type Filter */}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="all">All Types</option>
+            <option value="talk">Talk</option>
+            <option value="workshop">Workshop</option>
+            <option value="lightning">Lightning Talk</option>
+          </select>
+        </div>
+
+        {/* Bulk Actions */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 ml-auto bg-gray-100 rounded-lg px-4 py-2">
+          <div className="flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-2 w-fit">
             <span className="text-sm font-medium text-black">{selectedIds.size} selected</span>
             <div className="h-4 w-px bg-gray-300" />
             <select
@@ -536,18 +609,18 @@ function SubmissionsTabContent({
         <>
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
-            {submissions.length > 0 && (
+            {paginatedSubmissions.length > 0 && (
               <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
                 <input
                   type="checkbox"
-                  checked={selectedIds.size === submissions.length && submissions.length > 0}
+                  checked={selectedIds.size === paginatedSubmissions.length && paginatedSubmissions.length > 0}
                   onChange={toggleSelectAll}
                   className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
                 />
-                <span className="text-sm text-gray-600">Select all</span>
+                <span className="text-sm text-gray-600">Select all on page</span>
               </div>
             )}
-            {submissions.map((s) => (
+            {paginatedSubmissions.map((s) => (
               <div
                 key={s.id}
                 className={`bg-gray-50 rounded-xl p-4 border transition-all ${
@@ -587,7 +660,7 @@ function SubmissionsTabContent({
                 </div>
               </div>
             ))}
-            {submissions.length === 0 && <div className="text-center py-8 text-gray-500">No submissions found</div>}
+            {paginatedSubmissions.length === 0 && <div className="text-center py-8 text-gray-500">No submissions found</div>}
           </div>
 
           {/* Desktop Table View */}
@@ -598,7 +671,7 @@ function SubmissionsTabContent({
                   <th className="px-4 py-3 w-10">
                     <input
                       type="checkbox"
-                      checked={selectedIds.size === submissions.length && submissions.length > 0}
+                      checked={selectedIds.size === paginatedSubmissions.length && paginatedSubmissions.length > 0}
                       onChange={toggleSelectAll}
                       className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
                     />
@@ -613,7 +686,7 @@ function SubmissionsTabContent({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {submissions.map((s) => (
+                {paginatedSubmissions.map((s) => (
                   <tr key={s.id} className={`hover:bg-gray-50 ${selectedIds.has(s.id) ? 'bg-yellow-50' : ''}`}>
                     <td className="px-4 py-4">
                       <input
@@ -655,7 +728,7 @@ function SubmissionsTabContent({
                     </td>
                   </tr>
                 ))}
-                {submissions.length === 0 && (
+                {paginatedSubmissions.length === 0 && (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-black">
                       No submissions found
@@ -665,6 +738,16 @@ function SubmissionsTabContent({
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageSize={ITEMS_PER_PAGE}
+            totalItems={filteredSubmissions.length}
+            variant="light"
+          />
         </>
       )}
     </div>

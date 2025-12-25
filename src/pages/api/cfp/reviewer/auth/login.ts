@@ -5,6 +5,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sendReviewerMagicLink, getReviewerByEmail } from '@/lib/cfp/auth';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Reviewer Login');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -26,18 +29,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ success: true });
     }
 
+    // Log the login request
+    log.info('Reviewer login requested', { email: email.toLowerCase(), reviewerId: reviewer.id });
+
     // Send magic link
     const { success, error } = await sendReviewerMagicLink(email.toLowerCase(), req);
 
     if (!success) {
-      console.error('[Reviewer Login API] Magic link error:', error);
+      log.error('Magic link error', { error, email: email.toLowerCase() });
       // Return actual error for debugging (in production you might want to hide this)
       return res.status(500).json({ error: error || 'Failed to send login link' });
     }
 
+    log.info('Magic link sent', { email: email.toLowerCase() });
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('[Reviewer Login API] Error:', error);
+    log.error('Error in reviewer login', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -27,6 +27,7 @@ export interface CfpAdminSpeaker {
   mastodon_handle: string | null;
   profile_image_url: string | null;
   is_visible: boolean;
+  is_featured: boolean;
   city: string | null;
   country: string | null;
   travel_assistance_required: boolean | null;

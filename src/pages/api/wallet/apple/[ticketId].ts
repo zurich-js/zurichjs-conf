@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { createAppleWalletPass, areWalletPassesConfigured } from '@/lib/wallet';
 import { getBaseUrl } from '@/lib/url';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Apple Wallet Pass API');
 
 export default async function handler(
   req: NextApiRequest,
@@ -82,7 +85,7 @@ export default async function handler(
     );
     res.send(result.passData);
   } catch (error) {
-    console.error('[API] Error generating Apple Wallet pass:', error);
+    log.error('Error generating Apple Wallet pass', error);
     res.status(500).json({
       error: 'Failed to generate Apple Wallet pass',
       message: error instanceof Error ? error.message : 'Unknown error',

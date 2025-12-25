@@ -7,6 +7,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { updateFlight, deleteFlight } from '@/lib/cfp/travel';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Flight API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -61,9 +64,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error });
       }
 
+      log.info('Flight updated', { speakerId: speaker.id, flightId: id });
       return res.status(200).json({ flight });
     } catch (error) {
-      console.error('[CFP Flight API] Error:', error);
+      log.error('Failed to update flight', error, { speakerId: speaker.id, flightId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -76,9 +80,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error });
       }
 
+      log.info('Flight deleted', { speakerId: speaker.id, flightId: id });
       return res.status(200).json({ success });
     } catch (error) {
-      console.error('[CFP Flight API] Error:', error);
+      log.error('Failed to delete flight', error, { speakerId: speaker.id, flightId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

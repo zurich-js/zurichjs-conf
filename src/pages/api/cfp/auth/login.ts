@@ -7,6 +7,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sendSpeakerMagicLink } from '@/lib/cfp/auth';
 import { cfpLoginSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
+import { serverAnalytics } from '@/lib/analytics/server';
+
+const log = logger.scope('CFP Login');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -28,18 +32,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { success, error } = await sendSpeakerMagicLink(result.data.email, req);
 
     if (!success) {
-      console.error('[CFP Login] Magic link error:', error);
+      log.error('Failed to send magic link', error, { email: result.data.email });
       return res.status(500).json({
         error: error || 'Failed to send magic link'
       });
     }
+
+    // Track login attempt
+    await serverAnalytics.track('cfp_login_requested', result.data.email, {
+      email: result.data.email,
+    });
+
+    log.info('Magic link sent successfully', { email: result.data.email });
 
     return res.status(200).json({
       success: true,
       message: 'Magic link sent successfully'
     });
   } catch (error) {
-    console.error('[CFP Login] Unexpected error:', error);
+    log.error('Unexpected error in login', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

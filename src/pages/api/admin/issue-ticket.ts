@@ -11,6 +11,9 @@ import { TICKET_CATEGORIES, TICKET_STAGES } from '@/lib/types/ticket-constants';
 import { sendTicketConfirmationEmailsQueued, type TicketConfirmationData } from '@/lib/email';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Issue Ticket');
 
 interface IssueTicketRequest {
   // Ticket type
@@ -149,7 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!ticketResult.success || !ticketResult.ticket) {
-      console.error('Failed to create ticket:', ticketResult.error);
+      log.error('Failed to create ticket', { error: ticketResult.error });
       return res.status(500).json({ error: ticketResult.error || 'Failed to create ticket' });
     }
 
@@ -182,7 +185,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               notes: isComplimentary ? 'Complimentary ticket' : undefined,
             });
           } catch (pdfError) {
-            console.error('Error generating PDF:', pdfError);
+            log.error('Error generating PDF', pdfError);
             // Continue without PDF
           }
         }
@@ -212,11 +215,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const emailSuccess = emailResults.some(r => r.success);
 
         if (!emailSuccess) {
-          console.error('Failed to send confirmation email');
+          log.error('Failed to send confirmation email');
           // Don't fail the request, ticket was created
         }
       } catch (emailError) {
-        console.error('Error sending confirmation email:', emailError);
+        log.error('Error sending confirmation email', emailError);
         // Don't fail the request, ticket was created
       }
     }
@@ -238,7 +241,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       emailSent: body.sendEmail,
     });
   } catch (error) {
-    console.error('Admin issue ticket API error:', error);
+    log.error('Admin issue ticket API error', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

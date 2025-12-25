@@ -13,6 +13,9 @@ import { getBaseUrl } from '@/lib/url';
 import { serverAnalytics } from '@/lib/analytics/server';
 import type { CartItem as BaseCartItem } from '@/types/cart';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Cart Abandonment');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -82,7 +85,7 @@ export default async function handler(
 
     // Check if Resend API key is configured
     if (!process.env.RESEND_API_KEY) {
-      console.error('[Cart Abandonment] RESEND_API_KEY is not configured');
+      log.error('RESEND_API_KEY is not configured');
       return res.status(500).json({
         success: false,
         error: 'Email service not configured',
@@ -124,7 +127,7 @@ export default async function handler(
     });
 
     if (result.error) {
-      console.error('[Cart Abandonment] Failed to schedule email:', result.error);
+      log.error('Failed to schedule email', result.error);
       return res.status(500).json({
         success: false,
         error: result.error.message || 'Failed to schedule email',
@@ -168,7 +171,7 @@ export default async function handler(
           });
       } catch (storageError) {
         // Non-fatal: log but don't fail the request
-        console.error('[Cart Abandonment] Failed to store email ID for cancellation:', storageError);
+        log.error('Failed to store email ID for cancellation', storageError);
       }
     }
 
@@ -192,7 +195,7 @@ export default async function handler(
     // Flush analytics to ensure event is sent before response
     await serverAnalytics.flush();
 
-    console.log('[Cart Abandonment] Email scheduled successfully:', {
+    log.info('Email scheduled successfully', {
       emailId: result.data?.id,
       to: email,
       scheduledFor: scheduledAt.toISOString(),
@@ -206,7 +209,7 @@ export default async function handler(
       scheduledFor: scheduledAt.toISOString(),
     });
   } catch (error) {
-    console.error('[Cart Abandonment] Error:', error);
+    log.error('Error processing cart abandonment', error);
 
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to schedule abandonment email';

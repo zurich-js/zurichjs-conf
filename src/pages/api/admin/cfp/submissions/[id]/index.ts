@@ -9,6 +9,9 @@ import { verifyAdminToken } from '@/lib/admin/auth';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
 import type { CfpSubmissionWithStats } from '@/lib/types/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Submission Detail API');
 
 interface ReviewWithReviewer {
   id: string;
@@ -107,7 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(response);
     } catch (error) {
-      console.error('[CFP Admin Detail API] GET Error:', error);
+      log.error('Error fetching submission detail', error, { submissionId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -176,13 +179,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .single();
 
       if (error) {
-        console.error('[CFP Admin Detail API] PUT Error:', error);
+        log.error('Error updating submission', error, { submissionId: id });
         return res.status(500).json({ error: 'Failed to update submission' });
       }
 
+      log.info('Submission updated', { submissionId: id });
       return res.status(200).json({ submission: data });
     } catch (error) {
-      console.error('[CFP Admin Detail API] PUT Error:', error);
+      log.error('Error updating submission', error, { submissionId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -210,7 +214,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('submission_id', id);
 
       if (reviewsError) {
-        console.error('[CFP Admin Detail API] Error deleting reviews:', reviewsError);
+        log.error('Error deleting reviews', reviewsError, { submissionId: id });
         return res.status(500).json({ error: 'Failed to delete submission reviews' });
       }
 
@@ -221,7 +225,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('submission_id', id);
 
       if (tagsError) {
-        console.error('[CFP Admin Detail API] Error deleting tags:', tagsError);
+        log.error('Error deleting tags', tagsError, { submissionId: id });
         return res.status(500).json({ error: 'Failed to delete submission tags' });
       }
 
@@ -232,14 +236,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('id', id);
 
       if (deleteError) {
-        console.error('[CFP Admin Detail API] Error deleting submission:', deleteError);
+        log.error('Error deleting submission', deleteError, { submissionId: id });
         return res.status(500).json({ error: 'Failed to delete submission' });
       }
 
-      console.log(`[CFP Admin Detail API] Deleted submission: ${submission.title} (${id})`);
+      log.info('Deleted submission', { submissionId: id, title: submission.title });
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('[CFP Admin Detail API] DELETE Error:', error);
+      log.error('Error deleting submission', error, { submissionId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

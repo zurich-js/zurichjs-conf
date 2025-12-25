@@ -11,6 +11,9 @@ import {
   listInvoices,
 } from '@/lib/b2b';
 import type { CreateB2BInvoiceRequest, B2BInvoiceStatus } from '@/lib/types/b2b';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoices API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -46,7 +49,7 @@ async function handleList(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Error listing invoices:', error);
+    log.error('Error listing invoices', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to list invoices',
     });
@@ -101,7 +104,7 @@ async function handleCreate(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(201).json(invoice);
   } catch (error) {
-    console.error('Error creating invoice:', error);
+    log.error('Error creating invoice', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to create invoice',
     });

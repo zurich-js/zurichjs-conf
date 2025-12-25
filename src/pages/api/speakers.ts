@@ -15,6 +15,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getVisibleSpeakersWithSessions } from '@/lib/cfp/speakers';
 import type { PublicSpeaker } from '@/lib/types/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Speakers API');
 
 interface SpeakersResponse {
   speakers: PublicSpeaker[];
@@ -40,7 +43,7 @@ export default async function handler(
 
     return res.status(200).json({ speakers });
   } catch (error) {
-    console.error('[Speakers API] Error:', error);
+    log.error('Error fetching speakers', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

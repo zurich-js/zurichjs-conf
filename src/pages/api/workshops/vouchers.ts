@@ -5,6 +5,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Workshop Vouchers API');
 
 /**
  * Response structure for a single workshop voucher
@@ -108,7 +111,7 @@ export default async function handler(
       vouchers,
     });
   } catch (error) {
-    console.error('Error fetching workshop vouchers:', error);
+    log.error('Error fetching workshop vouchers', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch workshop vouchers';
 

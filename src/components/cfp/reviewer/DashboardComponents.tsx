@@ -4,7 +4,7 @@
  */
 
 import Link from 'next/link';
-import { Search, X, Filter, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, X, Filter, Check } from 'lucide-react';
 import { Heading, Select } from '@/components/atoms';
 import {
   TYPE_LABELS,
@@ -12,7 +12,6 @@ import {
   TYPE_OPTIONS,
   LEVEL_OPTIONS,
   SORT_OPTIONS,
-  PAGE_SIZE_OPTIONS,
   ReviewFilterType,
 } from './types';
 
@@ -336,124 +335,5 @@ export function EmptyState({ reviewFilter, hasActiveFilters, onClearFilters }: E
   );
 }
 
-// Pagination
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  pageSize: number;
-  totalItems: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-}
-
-export function Pagination({
-  currentPage,
-  totalPages,
-  pageSize,
-  totalItems,
-  onPageChange,
-  onPageSizeChange,
-}: PaginationProps) {
-  if (totalPages <= 1) return null;
-
-  const startItem = ((currentPage - 1) * pageSize) + 1;
-  const endItem = Math.min(currentPage * pageSize, totalItems);
-
-  // Generate page numbers to show
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((page) => {
-      if (page === 1 || page === totalPages) return true;
-      if (Math.abs(page - currentPage) <= 1) return true;
-      return false;
-    })
-    .reduce<(number | 'ellipsis')[]>((acc, page, idx, arr) => {
-      if (idx > 0 && page - (arr[idx - 1] as number) > 1) {
-        acc.push('ellipsis');
-      }
-      acc.push(page);
-      return acc;
-    }, []);
-
-  const pageSizeOptions = PAGE_SIZE_OPTIONS.map((size) => ({
-    value: String(size),
-    label: String(size),
-  }));
-
-  return (
-    <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-brand-gray-light">
-          Showing {startItem} - {endItem} of {totalItems}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-brand-gray-light">Show:</span>
-          <Select
-            value={String(pageSize)}
-            onChange={(value) => onPageSizeChange(Number(value))}
-            options={pageSizeOptions}
-            variant="dark"
-            size="sm"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onPageChange(1)}
-          disabled={currentPage === 1}
-          className="p-2 rounded-lg bg-brand-gray-dark text-brand-gray-light hover:text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          title="First page"
-        >
-          <ChevronsLeft className="w-4 h-4" />
-        </button>
-
-        <button
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-          className="p-2 rounded-lg bg-brand-gray-dark text-brand-gray-light hover:text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          title="Previous page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-
-        <div className="flex items-center gap-1">
-          {pages.map((item, idx) =>
-            item === 'ellipsis' ? (
-              <span key={`ellipsis-${idx}`} className="px-2 text-brand-gray-medium">...</span>
-            ) : (
-              <button
-                key={item}
-                onClick={() => onPageChange(item)}
-                className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                  currentPage === item
-                    ? 'bg-brand-primary text-black'
-                    : 'bg-brand-gray-dark text-brand-gray-light hover:text-white'
-                }`}
-              >
-                {item}
-              </button>
-            )
-          )}
-        </div>
-
-        <button
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
-          className="p-2 rounded-lg bg-brand-gray-dark text-brand-gray-light hover:text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          title="Next page"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-
-        <button
-          onClick={() => onPageChange(totalPages)}
-          disabled={currentPage === totalPages}
-          className="p-2 rounded-lg bg-brand-gray-dark text-brand-gray-light hover:text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          title="Last page"
-        >
-          <ChevronsRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
+// Re-export Pagination from atoms for backwards compatibility
+export { Pagination } from '@/components/atoms';

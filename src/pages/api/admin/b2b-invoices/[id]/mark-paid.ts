@@ -10,6 +10,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { markInvoiceAsPaidAndCreateTickets, getPaymentSummary } from '@/lib/b2b';
 import type { MarkPaidRequest } from '@/lib/types/b2b';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoice Mark Paid');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -45,7 +48,7 @@ async function handleGetSummary(invoiceId: string, res: NextApiResponse) {
     const summary = await getPaymentSummary(invoiceId);
     return res.status(200).json(summary);
   } catch (error) {
-    console.error('Error getting payment summary:', error);
+    log.error('Error getting payment summary', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to get payment summary',
     });
@@ -85,7 +88,7 @@ async function handleMarkPaid(
 
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Error marking invoice as paid:', error);
+    log.error('Error marking invoice as paid', error);
     const message = error instanceof Error ? error.message : 'Failed to mark invoice as paid';
 
     // Return 400 for validation errors

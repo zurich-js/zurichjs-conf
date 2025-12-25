@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { createGoogleWalletPass, areWalletPassesConfigured } from '@/lib/wallet';
 import { getBaseUrl } from '@/lib/url';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Google Wallet Pass API');
 
 export default async function handler(
   req: NextApiRequest,
@@ -77,7 +80,7 @@ export default async function handler(
     // Redirect to Google Wallet "Save" URL
     res.redirect(302, result.url);
   } catch (error) {
-    console.error('[API] Error generating Google Wallet pass:', error);
+    log.error('Error generating Google Wallet pass', error);
     res.status(500).json({
       error: 'Failed to generate Google Wallet pass',
       message: error instanceof Error ? error.message : 'Unknown error',

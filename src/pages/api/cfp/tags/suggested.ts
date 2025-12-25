@@ -5,6 +5,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSuggestedTags, searchTags } from '@/lib/cfp/tags';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Tags API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -24,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tags = await getSuggestedTags();
     return res.status(200).json({ tags });
   } catch (error) {
-    console.error('[CFP Tags API] Error:', error);
+    log.error('Failed to get tags', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

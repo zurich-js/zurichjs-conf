@@ -6,6 +6,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Verify');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -21,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ authenticated: true });
   } catch (error) {
-    console.error('Admin verify error:', error);
+    log.error('Admin verify error', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

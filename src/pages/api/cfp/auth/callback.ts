@@ -7,6 +7,10 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getOrCreateSpeaker, createSupabaseApiClient } from '@/lib/cfp/auth';
+import { logger } from '@/lib/logger';
+import { serverAnalytics } from '@/lib/analytics/server';
+
+const log = logger.scope('CFP Auth Callback');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -31,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       if (sessionError) {
-        console.error('[CFP Auth Callback] Session error:', sessionError);
+        log.warn('Session error during auth callback', { error: sessionError.message, userId });
         // Continue anyway - the speaker profile creation should still work
       }
     }
@@ -40,11 +44,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { speaker, error } = await getOrCreateSpeaker(userId, email);
 
     if (error || !speaker) {
-      console.error('[CFP Auth Callback] Speaker error:', error);
+      log.error('Failed to get or create speaker', error, { userId, email });
       return res.status(500).json({
         error: error || 'Failed to set up speaker profile'
       });
     }
+
+    // Identify speaker in PostHog for analytics tracking
+    await serverAnalytics.identify(speaker.id, {
+      email: speaker.email,
+      first_name: speaker.first_name || undefined,
+      last_name: speaker.last_name || undefined,
+      company: speaker.company || undefined,
+      job_title: speaker.job_title || undefined,
+    });
+
+    // Track successful CFP login
+    await serverAnalytics.track('cfp_speaker_authenticated', speaker.id, {
+      speaker_id: speaker.id,
+      is_new_speaker: !speaker.first_name, // New speakers don't have first name yet
+      is_profile_complete: !!(speaker.first_name && speaker.last_name && speaker.bio),
+    });
+
+    log.info('Speaker authenticated successfully', {
+      speakerId: speaker.id,
+      email: speaker.email,
+      isProfileComplete: !!(speaker.first_name && speaker.last_name && speaker.bio)
+    });
 
     return res.status(200).json({
       success: true,
@@ -57,7 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (error) {
-    console.error('[CFP Auth Callback] Unexpected error:', error);
+    log.error('Unexpected error in auth callback', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -13,6 +13,9 @@ import {
   deleteSubmission,
 } from '@/lib/cfp/submissions';
 import { updateSubmissionSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Submission API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -50,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ submission });
     } catch (error) {
-      console.error('[CFP Submission API] GET error:', error);
+      log.error('Failed to get submission', error, { submissionId: id, speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -76,9 +79,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ error: 'Submission not found' });
       }
 
+      log.info('Submission updated', { submissionId: id, speakerId: speaker.id });
       return res.status(200).json({ submission });
     } catch (error) {
-      console.error('[CFP Submission API] PUT error:', error);
+      log.error('Failed to update submission', error, { submissionId: id, speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -91,9 +95,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: error || 'Failed to delete submission' });
       }
 
+      log.info('Submission deleted', { submissionId: id, speakerId: speaker.id });
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('[CFP Submission API] DELETE error:', error);
+      log.error('Failed to delete submission', error, { submissionId: id, speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -8,6 +8,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminTags } from '@/lib/cfp/admin';
 import { createTag } from '@/lib/cfp/tags';
 import { verifyAdminToken } from '@/lib/admin/auth';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Tags API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication (same as main admin)
@@ -21,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const tags = await getAdminTags();
       return res.status(200).json({ tags });
     } catch (error) {
-      console.error('[CFP Admin Tags API] Error:', error);
+      log.error('Error fetching tags', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -40,9 +43,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error });
       }
 
+      log.info('Tag created', { name, is_suggested });
       return res.status(201).json({ tag });
     } catch (error) {
-      console.error('[CFP Admin Tags API] Error:', error);
+      log.error('Error creating tag', error, { name });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminPassword, generateAdminToken } from '@/lib/admin/auth';
 import { serialize } from 'cookie';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Login');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -20,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (!verifyAdminPassword(password)) {
+      log.warn('Invalid admin login attempt');
       return res.status(401).json({ error: 'Invalid password' });
     }
 
@@ -38,9 +42,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     );
 
+    log.info('Admin login successful');
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Admin login error:', error);
+    log.error('Admin login error', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

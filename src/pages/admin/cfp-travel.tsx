@@ -3,11 +3,12 @@
  * Manage speaker travel, flights, and reimbursements
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import type { GetServerSideProps } from 'next';
 import AdminHeader from '@/components/admin/AdminHeader';
+import { Pagination } from '@/components/atoms';
 import {
   getTravelDashboardStats,
   getAcceptedSpeakersWithTravel,
@@ -59,6 +60,12 @@ export default function AdminTravelPage({
   const [flightDirection, setFlightDirection] = useState<'all' | 'inbound' | 'outbound'>('all');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
+  // Pagination state
+  const ITEMS_PER_PAGE = 10;
+  const [speakersPage, setSpeakersPage] = useState(1);
+  const [flightsPage, setFlightsPage] = useState(1);
+  const [reimbursementsPage, setReimbursementsPage] = useState(1);
+
   const filteredReimbursements = reimbursementFilter === 'all'
     ? reimbursements
     : reimbursements.filter(r => r.status === reimbursementFilter);
@@ -66,6 +73,34 @@ export default function AdminTravelPage({
   const filteredFlights = flightDirection === 'all'
     ? flights
     : flights.filter(f => f.direction === flightDirection);
+
+  // Pagination calculations
+  const speakersTotalPages = Math.ceil(speakers.length / ITEMS_PER_PAGE);
+  const paginatedSpeakers = useMemo(() => {
+    const startIndex = (speakersPage - 1) * ITEMS_PER_PAGE;
+    return speakers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [speakers, speakersPage]);
+
+  const flightsTotalPages = Math.ceil(filteredFlights.length / ITEMS_PER_PAGE);
+  const paginatedFlights = useMemo(() => {
+    const startIndex = (flightsPage - 1) * ITEMS_PER_PAGE;
+    return filteredFlights.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredFlights, flightsPage]);
+
+  const reimbursementsTotalPages = Math.ceil(filteredReimbursements.length / ITEMS_PER_PAGE);
+  const paginatedReimbursements = useMemo(() => {
+    const startIndex = (reimbursementsPage - 1) * ITEMS_PER_PAGE;
+    return filteredReimbursements.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredReimbursements, reimbursementsPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setFlightsPage(1);
+  }, [flightDirection]);
+
+  useEffect(() => {
+    setReimbursementsPage(1);
+  }, [reimbursementFilter]);
 
   const handleLogout = async () => {
     try {
@@ -209,7 +244,7 @@ export default function AdminTravelPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {speakers.map((speaker) => (
+                    {paginatedSpeakers.map((speaker) => (
                       <tr key={speaker.id} className="hover:bg-gray-50">
                         <td className="px-4 py-4">
                           <div className="font-medium text-gray-900">{speaker.first_name} {speaker.last_name}</div>
@@ -242,7 +277,7 @@ export default function AdminTravelPage({
                         </td>
                       </tr>
                     ))}
-                    {speakers.length === 0 && (
+                    {paginatedSpeakers.length === 0 && (
                       <tr>
                         <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No accepted speakers found</td>
                       </tr>
@@ -250,6 +285,14 @@ export default function AdminTravelPage({
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={speakersPage}
+                totalPages={speakersTotalPages}
+                onPageChange={setSpeakersPage}
+                pageSize={ITEMS_PER_PAGE}
+                totalItems={speakers.length}
+                variant="light"
+              />
             </div>
           )}
 
@@ -288,12 +331,12 @@ export default function AdminTravelPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredFlights.length === 0 ? (
+                    {paginatedFlights.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No flights found</td>
                       </tr>
                     ) : (
-                      filteredFlights.map((flight) => (
+                      paginatedFlights.map((flight) => (
                         <tr key={flight.id} className="hover:bg-gray-50">
                           <td className="px-4 py-4 font-medium text-gray-900">
                             {flight.speaker.first_name} {flight.speaker.last_name}
@@ -338,6 +381,14 @@ export default function AdminTravelPage({
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={flightsPage}
+                totalPages={flightsTotalPages}
+                onPageChange={setFlightsPage}
+                pageSize={ITEMS_PER_PAGE}
+                totalItems={filteredFlights.length}
+                variant="light"
+              />
             </div>
           )}
 
@@ -363,12 +414,12 @@ export default function AdminTravelPage({
                 </div>
               </div>
 
-              {filteredReimbursements.length === 0 ? (
+              {paginatedReimbursements.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
                   <p className="text-gray-500">No reimbursements found</p>
                 </div>
               ) : (
-                filteredReimbursements.map((reimbursement) => (
+                paginatedReimbursements.map((reimbursement) => (
                   <div key={reimbursement.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -437,6 +488,15 @@ export default function AdminTravelPage({
                   </div>
                 ))
               )}
+
+              <Pagination
+                currentPage={reimbursementsPage}
+                totalPages={reimbursementsTotalPages}
+                onPageChange={setReimbursementsPage}
+                pageSize={ITEMS_PER_PAGE}
+                totalItems={filteredReimbursements.length}
+                variant="light"
+              />
             </div>
           )}
         </main>

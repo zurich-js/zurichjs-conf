@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminReviewers } from '@/lib/cfp/admin';
 import { verifyAdminToken } from '@/lib/admin/auth';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Reviewers API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -22,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const reviewers = await getAdminReviewers();
     return res.status(200).json({ reviewers });
   } catch (error) {
-    console.error('[CFP Admin Reviewers API] Error:', error);
+    log.error('Error fetching reviewers', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
