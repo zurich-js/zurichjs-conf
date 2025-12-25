@@ -44,31 +44,40 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
         </div>
       )}
 
-      {/* Metadata Row */}
-      <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm border-b border-brand-gray-dark pb-4">
+      {/* Metadata Badges */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm border-b border-brand-gray-dark pb-4">
         {/* Duration */}
-        <div>
-          <span className="text-brand-gray-medium block text-xs mb-1">Duration</span>
-          <span className="text-brand-gray-light">
+        <div className="flex items-center gap-2">
+          <span className="text-brand-gray-medium text-xs">Duration</span>
+          <span className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs">
             {getDurationLabel(submission.submission_type, submission.workshop_duration_hours)}
           </span>
         </div>
 
         {/* Expertise Level */}
         {submission.talk_level && (
-          <div>
-            <span className="text-brand-gray-medium block text-xs mb-1">Expertise</span>
-            <span className="text-brand-gray-light capitalize">{submission.talk_level}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-brand-gray-medium text-xs">Expertise</span>
+            <span className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs capitalize">
+              {submission.talk_level}
+            </span>
           </div>
         )}
 
-        {/* Tags inline */}
+        {/* Tags */}
         {submission.tags && submission.tags.length > 0 && (
-          <div>
-            <span className="text-brand-gray-medium block text-xs mb-1">Tags</span>
-            <span className="text-brand-gray-light">
-              {submission.tags.map(t => t.name).join(', ')}
-            </span>
+          <div className="flex items-center gap-2">
+            <span className="text-brand-gray-medium text-xs">Tags</span>
+            <div className="flex flex-wrap gap-1.5">
+              {submission.tags.map(tag => (
+                <span
+                  key={tag.id}
+                  className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>
