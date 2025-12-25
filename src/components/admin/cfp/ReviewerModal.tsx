@@ -11,8 +11,8 @@ import { ConfirmationModal } from './ConfirmationModal';
 
 const REVIEWER_ROLE_OPTIONS = [
   {
-    value: 'full_access' as const,
-    label: 'Full Access',
+    value: 'super_admin',
+    label: 'Super Admin',
     description: 'Can see speaker names, emails, and all details. Can score and leave feedback.',
   },
   {
@@ -46,14 +46,26 @@ export function ReviewerModal({
 }: ReviewerModalProps) {
   const [selectedRole, setSelectedRole] = useState<ReviewerRole>(() => {
     if (reviewer.role === 'readonly') return 'readonly';
-    if (reviewer.can_see_speaker_identity) return 'full_access';
+    if (reviewer.role === 'super_admin') return 'super_admin';
+    // Regular reviewer - check if they can see speaker identity
+    if (reviewer.can_see_speaker_identity) return 'super_admin';
     return 'anonymous';
   });
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
 
   const handleUpdateRole = () => {
-    const apiRole = selectedRole === 'readonly' ? 'readonly' : 'reviewer';
-    const canSeeSpeakerIdentity = selectedRole === 'full_access';
+    const { apiRole, canSeeSpeakerIdentity } = (() => {
+      switch (selectedRole) {
+        case 'super_admin':
+          return { apiRole: 'super_admin', canSeeSpeakerIdentity: true };
+        case 'anonymous':
+          return { apiRole: 'reviewer', canSeeSpeakerIdentity: false };
+        case 'readonly':
+        default:
+          return { apiRole: 'readonly', canSeeSpeakerIdentity: false };
+      }
+    })();
+
     onUpdate({ role: apiRole, can_see_speaker_identity: canSeeSpeakerIdentity });
   };
 

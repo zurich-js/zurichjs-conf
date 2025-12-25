@@ -94,26 +94,12 @@ export function ReviewStep({
           </div>
         )}
 
-        <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-brand-gray-medium">
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-1">Travel Assistance</h4>
-            <p className="text-brand-gray-light">
-              {formData.travel_assistance_required ? 'Requested' : 'Not needed'}
-            </p>
+        {formData.special_requirements && (
+          <div className="pt-4 border-t border-brand-gray-medium">
+            <h4 className="text-sm font-semibold text-white mb-1">Special Requirements</h4>
+            <p className="text-brand-gray-light whitespace-pre-wrap">{formData.special_requirements}</p>
           </div>
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-1">Company Covers Travel</h4>
-            <p className="text-brand-gray-light">
-              {formData.company_can_cover_travel ? 'Yes' : 'No'}
-            </p>
-          </div>
-          {formData.travel_origin && (
-            <div className="sm:col-span-2">
-              <h4 className="text-sm font-semibold text-white mb-1">Traveling From</h4>
-              <p className="text-brand-gray-light">{formData.travel_origin}</p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Submission Info */}

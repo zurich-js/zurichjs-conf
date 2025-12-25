@@ -9,6 +9,7 @@ interface SubmissionDetailsProps {
   submission: {
     abstract: string;
     submission_type: string;
+    talk_level?: string;
     tags?: { id: string; name: string }[];
     outline?: string | null;
     additional_notes?: string | null;
@@ -21,54 +22,75 @@ interface SubmissionDetailsProps {
   isAnonymous: boolean;
 }
 
+// Helper to get duration label
+function getDurationLabel(type: string, workshopHours?: number | null): string {
+  if (type === 'workshop') {
+    return workshopHours ? `${workshopHours}h - Workshop` : 'Workshop';
+  }
+  if (type === 'lightning') {
+    return '15 min - Lightning talk';
+  }
+  return '30 min - Standard talk';
+}
+
 export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetailsProps) {
   return (
     <div className="space-y-6">
       {/* Anonymous Notice */}
       {isAnonymous && (
-        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-purple-300">
-            <Eye className="w-5 h-5" />
-            <span className="text-sm font-medium">Anonymous Review Mode</span>
-          </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-full text-xs font-semibold uppercase tracking-wide">
+          <Eye className="w-3.5 h-3.5" />
+          Anonymous Review
         </div>
       )}
 
+      {/* Metadata Row */}
+      <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm border-b border-brand-gray-dark pb-4">
+        {/* Duration */}
+        <div>
+          <span className="text-brand-gray-medium block text-xs mb-1">Duration</span>
+          <span className="text-brand-gray-light">
+            {getDurationLabel(submission.submission_type, submission.workshop_duration_hours)}
+          </span>
+        </div>
+
+        {/* Expertise Level */}
+        {submission.talk_level && (
+          <div>
+            <span className="text-brand-gray-medium block text-xs mb-1">Expertise</span>
+            <span className="text-brand-gray-light capitalize">{submission.talk_level}</span>
+          </div>
+        )}
+
+        {/* Tags inline */}
+        {submission.tags && submission.tags.length > 0 && (
+          <div>
+            <span className="text-brand-gray-medium block text-xs mb-1">Tags</span>
+            <span className="text-brand-gray-light">
+              {submission.tags.map(t => t.name).join(', ')}
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Abstract */}
-      <section className="bg-brand-gray-dark rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Abstract</h2>
+      <section>
+        <h2 className="text-lg font-bold text-white mb-4">Abstract</h2>
         <p className="text-brand-gray-light whitespace-pre-wrap">{submission.abstract}</p>
       </section>
 
-      {/* Tags */}
-      {submission.tags && submission.tags.length > 0 && (
-        <section className="bg-brand-gray-dark rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Tags</h2>
-          <div className="flex flex-wrap gap-2">
-            {submission.tags.map((tag) => (
-              <span
-                key={tag.id}
-                className="px-3 py-1 bg-brand-gray-darkest text-brand-gray-light rounded-full text-sm"
-              >
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Outline */}
       {submission.outline && (
-        <section className="bg-brand-gray-dark rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Outline</h2>
+        <section>
+          <h2 className="text-lg font-bold text-white mb-4">Outline</h2>
           <p className="text-brand-gray-light whitespace-pre-wrap">{submission.outline}</p>
         </section>
       )}
 
-      {/* Additional Notes */}
+      {/* Speaker Notes */}
       {submission.additional_notes && (
-        <section className="bg-brand-gray-dark rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Notes from Speaker</h2>
+        <section>
+          <h2 className="text-lg font-bold text-white mb-4">Speaker notes</h2>
           <p className="text-brand-gray-light whitespace-pre-wrap">{submission.additional_notes}</p>
         </section>
       )}

@@ -8,9 +8,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { AlertCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
-import { createSupabaseServerClient, getSpeakerByUserId, isSpeakerProfileComplete } from '@/lib/cfp/auth';
+import { createSupabaseServerClient, getSpeakerByUserId, isSpeakerProfileComplete, getMissingProfileFields } from '@/lib/cfp/auth';
 import type { CfpSpeaker, CfpSubmission } from '@/lib/types/cfp';
 import { supabase } from '@/lib/supabase/client';
 import { env } from '@/config/env';
@@ -19,6 +20,7 @@ interface DashboardProps {
   speaker: CfpSpeaker;
   submissions: CfpSubmission[];
   isProfileComplete: boolean;
+  missingFields: string[];
 }
 
 const StatusBadge = ({ status }: { status: CfpSubmission['status'] }) => {
@@ -84,7 +86,7 @@ const SubmissionCard = ({ submission }: { submission: CfpSubmission }) => {
   );
 };
 
-export default function CfpDashboard({ speaker, submissions, isProfileComplete }: DashboardProps) {
+export default function CfpDashboard({ speaker, submissions, isProfileComplete, missingFields }: DashboardProps) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -145,16 +147,29 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete }
 
           {/* Profile Incomplete Warning */}
           {!isProfileComplete && (
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-8">
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-8">
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+                <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-orange-400 font-semibold mb-1">Complete Your Profile</h3>
-                  <p className="text-brand-gray-light text-sm mb-3">
-                    Your profile is incomplete. Please add your name and bio before submitting proposals.
-                  </p>
+                  <h3 className="text-sm font-semibold text-amber-400 mb-1">
+                    Profile Incomplete
+                  </h3>
+                  {missingFields && missingFields.length > 0 ? (
+                    <>
+                      <p className="text-sm text-amber-200/80 mb-2">
+                        Please complete the following required fields to submit proposals:
+                      </p>
+                      <ul className="text-sm text-amber-200/80 list-disc list-inside mb-3">
+                        {missingFields.map((field) => (
+                          <li key={field}>{field}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p className="text-sm text-amber-200/80 mb-3">
+                      Please fill in your details before submitting proposals.
+                    </p>
+                  )}
                   <Link href="/cfp/profile">
                     <Button variant="outline" size="sm">
                       Complete Profile
@@ -324,6 +339,7 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async (ctx
       speaker,
       submissions: (submissions || []) as CfpSubmission[],
       isProfileComplete: isSpeakerProfileComplete(speaker),
+      missingFields: getMissingProfileFields(speaker),
     },
   };
 };

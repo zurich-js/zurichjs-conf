@@ -73,6 +73,11 @@ export type CfpReimbursementType = 'flight' | 'accommodation' | 'transport' | 'o
 export type CfpTshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL';
 
 /**
+ * Type of travel/accommodation assistance needed
+ */
+export type CfpAssistanceType = 'travel' | 'accommodation' | 'both' | null;
+
+/**
  * Speaker profile for CFP
  */
 export interface CfpSpeaker {
@@ -83,6 +88,8 @@ export interface CfpSpeaker {
   last_name: string;
   job_title: string | null;
   company: string | null;
+  city: string | null; // City for travel logistics
+  country: string | null; // Country for travel logistics
   bio: string | null;
   linkedin_url: string | null;
   github_url: string | null;
@@ -91,6 +98,10 @@ export interface CfpSpeaker {
   mastodon_handle: string | null;
   profile_image_url: string | null;
   tshirt_size: CfpTshirtSize | null;
+  travel_assistance_required: boolean | null; // Whether speaker needs travel/accommodation covered
+  assistance_type: CfpAssistanceType; // What type of assistance: travel, accommodation, or both
+  departure_airport: string | null; // Closest airport IATA code for travel planning
+  special_requirements: string | null; // Accessibility needs, dietary restrictions, etc.
   company_interested_in_sponsoring: boolean | null;
   is_visible: boolean;
   created_at: string;
@@ -368,6 +379,8 @@ export interface UpdateCfpSpeakerRequest {
   last_name?: string;
   job_title?: string;
   company?: string;
+  city?: string;
+  country?: string;
   bio?: string;
   linkedin_url?: string;
   github_url?: string;
@@ -375,6 +388,11 @@ export interface UpdateCfpSpeakerRequest {
   bluesky_handle?: string;
   mastodon_handle?: string;
   profile_image_url?: string;
+  tshirt_size?: CfpTshirtSize | null;
+  travel_assistance_required?: boolean | null;
+  assistance_type?: CfpAssistanceType;
+  departure_airport?: string | null;
+  company_interested_in_sponsoring?: boolean | null;
   is_visible?: boolean;
 }
 
@@ -391,9 +409,10 @@ export interface CreateTalkSubmissionRequest {
   outline?: string;
   slides_url?: string;
   previous_recording_url?: string;
-  travel_assistance_required: boolean;
+  // Travel fields are now at speaker profile level (deprecated)
+  travel_assistance_required?: boolean;
   travel_origin?: string;
-  company_can_cover_travel: boolean;
+  company_can_cover_travel?: boolean;
   special_requirements?: string;
 }
 
@@ -410,9 +429,10 @@ export interface CreateWorkshopSubmissionRequest {
   outline?: string;
   slides_url?: string;
   previous_recording_url?: string;
-  travel_assistance_required: boolean;
+  // Travel fields are now at speaker profile level (deprecated)
+  travel_assistance_required?: boolean;
   travel_origin?: string;
-  company_can_cover_travel: boolean;
+  company_can_cover_travel?: boolean;
   special_requirements?: string;
   workshop_duration_hours: number;
   workshop_expected_compensation?: string;

@@ -3,7 +3,7 @@
  * Displays speaker details in the submission modal
  */
 
-import { Check, Linkedin, Github } from 'lucide-react';
+import { Check, Linkedin, Github, MapPin, Plane, HelpCircle } from 'lucide-react';
 
 interface SpeakerInfo {
   first_name: string;
@@ -20,6 +20,12 @@ interface SpeakerInfo {
   profile_image_url?: string | null;
   tshirt_size?: string | null;
   company_interested_in_sponsoring?: boolean | null;
+  city?: string | null;
+  country?: string | null;
+  travel_assistance_required?: boolean | null;
+  assistance_type?: 'travel' | 'accommodation' | 'both' | null;
+  departure_airport?: string | null;
+  special_requirements?: string | null;
 }
 
 interface SpeakerInfoSectionProps {
@@ -149,6 +155,44 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
             </div>
           )}
 
+          {/* Location & Travel Info */}
+          {(speaker.city || speaker.country || speaker.travel_assistance_required !== null) && (
+            <div className="pt-2 border-t border-gray-200">
+              <p className="text-xs text-gray-500 font-semibold mb-2">Location & Travel</p>
+              <div className="flex flex-wrap gap-3">
+                {/* Location */}
+                {(speaker.city || speaker.country) && (
+                  <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                    <MapPin className="w-3 h-3" />
+                    {[speaker.city, speaker.country].filter(Boolean).join(', ')}
+                  </div>
+                )}
+
+                {/* Travel Assistance Status */}
+                {speaker.travel_assistance_required === true && (
+                  <div className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">
+                    <HelpCircle className="w-3 h-3" />
+                    Needs {speaker.assistance_type === 'travel' ? 'Travel' : speaker.assistance_type === 'accommodation' ? 'Accommodation' : speaker.assistance_type === 'both' ? 'Travel + Accommodation' : 'Assistance'}
+                  </div>
+                )}
+                {speaker.travel_assistance_required === false && (
+                  <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                    <Check className="w-3 h-3" />
+                    Self-funded Travel
+                  </div>
+                )}
+
+                {/* Departure Airport */}
+                {speaker.departure_airport && (
+                  <div className="inline-flex items-center gap-1 px-2 py-1 bg-sky-100 text-sky-700 rounded text-xs">
+                    <Plane className="w-3 h-3" />
+                    {speaker.departure_airport}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* T-Shirt Size & Sponsorship Interest */}
           <div className="flex flex-wrap gap-4 pt-2 border-t border-gray-200">
             {speaker.tshirt_size && (
@@ -164,6 +208,14 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
               </div>
             )}
           </div>
+
+          {/* Special Requirements */}
+          {speaker.special_requirements && (
+            <div className="pt-2 border-t border-gray-200">
+              <p className="text-xs text-gray-500 font-semibold mb-1">Special Requirements</p>
+              <p className="text-sm text-black whitespace-pre-wrap">{speaker.special_requirements}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

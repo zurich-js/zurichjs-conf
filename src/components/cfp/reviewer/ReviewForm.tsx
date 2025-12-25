@@ -3,7 +3,7 @@
  * Form for submitting or updating a review with all required criteria
  */
 
-import { Check, Eye, AlertCircle } from 'lucide-react';
+import { Check, Eye, AlertCircle, Settings2 } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { SCORE_LABELS, ReviewScores, SubmissionStats } from './types';
 
@@ -19,6 +19,7 @@ interface ReviewFormProps {
   onPrivateNotesChange: (value: string) => void;
   onFeedbackChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onShowGuidelines?: () => void;
 }
 
 // Helper to check if all required scores are filled
@@ -45,6 +46,7 @@ export function ReviewForm({
   onPrivateNotesChange,
   onFeedbackChange,
   onSubmit,
+  onShowGuidelines,
 }: ReviewFormProps) {
   const allScoresFilled = areAllScoresFilled(scores);
   const missingScores = getMissingScores(scores);
@@ -52,13 +54,26 @@ export function ReviewForm({
   return (
     <div className="sticky top-8">
       <form onSubmit={onSubmit} className="bg-brand-gray-dark rounded-2xl p-6 space-y-6">
-        <div>
-          <h2 className="text-lg font-bold text-white mb-2">
-            {hasExistingReview ? 'Update Your Review' : 'Submit Your Review'}
-          </h2>
-          <p className="text-sm text-brand-gray-light">
-            All scoring criteria are <span className="text-red-400 font-medium">required</span> for fair assessment
-          </p>
+        {/* Header with Guidelines link */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-lg font-bold text-white mb-2">
+              {hasExistingReview ? 'Update Your Review' : 'Submit Your Review'}
+            </h2>
+            <p className="text-sm text-brand-gray-light">
+              All scoring criteria are <span className="text-red-400 font-medium">required</span> for fair assessment
+            </p>
+          </div>
+          {onShowGuidelines && (
+            <button
+              type="button"
+              onClick={onShowGuidelines}
+              className="text-sm text-brand-primary hover:text-brand-primary/80 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Settings2 className="w-4 h-4" />
+              Guidelines
+            </button>
+          )}
         </div>
 
         {formError && (
@@ -116,26 +131,10 @@ export function ReviewForm({
           </div>
         )}
 
-        {/* Private Notes */}
-        <div>
-          <label htmlFor="private_notes" className="block text-sm font-semibold text-white mb-2">
-            Private Notes
-            <span className="font-normal text-brand-gray-medium ml-2">(committee only)</span>
-          </label>
-          <textarea
-            id="private_notes"
-            value={privateNotes}
-            onChange={(e) => onPrivateNotesChange(e.target.value)}
-            placeholder="Notes visible only to reviewers..."
-            rows={3}
-            className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
-          />
-        </div>
-
-        {/* Feedback to Speaker */}
+        {/* Speaker Feedback */}
         <div>
           <label htmlFor="feedback" className="block text-sm font-semibold text-white mb-2">
-            Feedback to Speaker
+            Speaker feedback
             <span className="font-normal text-brand-gray-medium ml-2">(optional)</span>
           </label>
           <textarea
@@ -143,6 +142,22 @@ export function ReviewForm({
             value={feedback}
             onChange={(e) => onFeedbackChange(e.target.value)}
             placeholder="Constructive feedback for the speaker..."
+            rows={3}
+            className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
+          />
+        </div>
+
+        {/* Internal Notes */}
+        <div>
+          <label htmlFor="private_notes" className="block text-sm font-semibold text-white mb-2">
+            Internal Notes
+            <span className="font-normal text-brand-gray-medium ml-2">(committee only)</span>
+          </label>
+          <textarea
+            id="private_notes"
+            value={privateNotes}
+            onChange={(e) => onPrivateNotesChange(e.target.value)}
+            placeholder="Notes visible only to reviewers..."
             rows={3}
             className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
           />

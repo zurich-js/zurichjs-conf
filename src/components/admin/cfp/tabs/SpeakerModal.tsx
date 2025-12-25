@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, User, Trash2 } from 'lucide-react';
+import { X, User, Trash2, MapPin, Plane, HelpCircle, Check } from 'lucide-react';
 import type { CfpAdminSpeaker } from '@/lib/types/cfp-admin';
 import { ConfirmationModal } from '../ConfirmationModal';
 
@@ -360,6 +360,49 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 )}
               </div>
             )}
+          </div>
+
+          {/* Location & Travel */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Location & Travel</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 font-semibold mb-1">Location</p>
+                {speaker.city || speaker.country ? (
+                  <div className="inline-flex items-center gap-1.5 text-sm text-black">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    {[speaker.city, speaker.country].filter(Boolean).join(', ')}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">Not provided</p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-semibold mb-1">Travel Assistance</p>
+                {speaker.travel_assistance_required === true ? (
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium">
+                    <HelpCircle className="w-4 h-4" />
+                    Needs {speaker.assistance_type === 'travel' ? 'Travel Only' : speaker.assistance_type === 'accommodation' ? 'Accommodation Only' : speaker.assistance_type === 'both' ? 'Travel + Accommodation' : 'Assistance'}
+                  </div>
+                ) : speaker.travel_assistance_required === false ? (
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
+                    <Check className="w-4 h-4" />
+                    Self-funded
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">Not specified</p>
+                )}
+              </div>
+              {speaker.departure_airport && (
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500 font-semibold mb-1">Departure Airport</p>
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium">
+                    <Plane className="w-4 h-4" />
+                    {speaker.departure_airport}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Timestamps */}

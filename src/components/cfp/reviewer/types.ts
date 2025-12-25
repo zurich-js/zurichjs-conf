@@ -149,6 +149,7 @@ export interface Reviewer {
   role: 'reviewer' | 'readonly' | 'super_admin';
   name?: string | null;
   email: string;
+  can_see_speaker_identity: boolean;
 }
 
 // Dashboard filter options

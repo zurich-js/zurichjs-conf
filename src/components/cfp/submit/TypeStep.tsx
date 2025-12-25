@@ -11,9 +11,12 @@ interface TypeStepProps {
   formData: FormData;
   updateField: <K extends keyof FormData>(field: K, value: FormData[K]) => void;
   onNext: () => void;
+  isEditMode?: boolean;
+  onSaveDraft?: () => void;
+  isSubmitting?: boolean;
 }
 
-export function TypeStep({ formData, updateField, onNext }: TypeStepProps) {
+export function TypeStep({ formData, updateField, onNext, isEditMode, onSaveDraft, isSubmitting }: TypeStepProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -52,7 +55,18 @@ export function TypeStep({ formData, updateField, onNext }: TypeStepProps) {
         ))}
       </div>
 
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-end pt-4 gap-3">
+        {isEditMode && onSaveDraft && (
+          <Button
+            onClick={onSaveDraft}
+            variant="outline"
+            size="lg"
+            loading={isSubmitting}
+            disabled={isSubmitting}
+          >
+            Save as Draft
+          </Button>
+        )}
         <Button onClick={onNext} variant="primary" size="lg">
           Continue
         </Button>
