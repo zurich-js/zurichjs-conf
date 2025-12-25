@@ -199,13 +199,14 @@ export async function uploadSpeakerImage(
 }
 
 /**
- * Get visible speakers with their accepted sessions for public display
- * Returns only speakers with is_visible=true who have at least one accepted submission
+ * Get visible and featured speakers for public display
+ * Returns speakers with is_visible=true AND is_featured=true
+ * Includes their accepted sessions if any
  */
 export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
   const supabase = createCfpServiceClient();
 
-  // Fetch visible speakers with their accepted submissions
+  // Fetch visible AND featured speakers with their submissions
   const { data, error } = await supabase
     .from('cfp_speakers')
     .select(`
@@ -216,6 +217,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       company,
       bio,
       profile_image_url,
+      is_featured,
       linkedin_url,
       github_url,
       twitter_handle,
@@ -235,6 +237,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       )
     `)
     .eq('is_visible', true)
+    .eq('is_featured', true)
     .order('first_name', { ascending: true });
 
   if (error) {
@@ -256,11 +259,11 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     room: string | null;
   }
 
-  // Transform to public format and filter to only include speakers with accepted sessions
+  // Transform to public format
   const publicSpeakers: PublicSpeaker[] = [];
 
   for (const speaker of data || []) {
-    // Filter to only accepted submissions
+    // Get accepted sessions (may be empty)
     const acceptedSessions = (speaker.cfp_submissions || [])
       .filter((s: SubmissionData) => s.status === 'accepted')
       .map((s: SubmissionData): PublicSession => ({
@@ -279,26 +282,25 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
           : null,
       }));
 
-    // Only include speakers with at least one accepted session
-    if (acceptedSessions.length > 0) {
-      publicSpeakers.push({
-        id: speaker.id,
-        first_name: speaker.first_name,
-        last_name: speaker.last_name,
-        job_title: speaker.job_title,
-        company: speaker.company,
-        bio: speaker.bio,
-        profile_image_url: speaker.profile_image_url,
-        socials: {
-          linkedin_url: speaker.linkedin_url,
-          github_url: speaker.github_url,
-          twitter_handle: speaker.twitter_handle,
-          bluesky_handle: speaker.bluesky_handle,
-          mastodon_handle: speaker.mastodon_handle,
-        },
-        sessions: acceptedSessions,
-      });
-    }
+    // Include all visible+featured speakers regardless of sessions
+    publicSpeakers.push({
+      id: speaker.id,
+      first_name: speaker.first_name,
+      last_name: speaker.last_name,
+      job_title: speaker.job_title,
+      company: speaker.company,
+      bio: speaker.bio,
+      profile_image_url: speaker.profile_image_url,
+      is_featured: speaker.is_featured ?? false,
+      socials: {
+        linkedin_url: speaker.linkedin_url,
+        github_url: speaker.github_url,
+        twitter_handle: speaker.twitter_handle,
+        bluesky_handle: speaker.bluesky_handle,
+        mastodon_handle: speaker.mastodon_handle,
+      },
+      sessions: acceptedSessions,
+    });
   }
 
   return publicSpeakers;

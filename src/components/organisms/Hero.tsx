@@ -134,10 +134,6 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
 
       </SectionContainer>
-
-        {/*<div className="relative z-10 mt-auto">*/}
-        {/*  <SpeakerGrid speakers={speakers} />*/}
-        {/*</div>*/}
     </ShapedSection>
   );
 };

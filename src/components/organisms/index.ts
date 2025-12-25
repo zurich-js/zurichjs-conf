@@ -12,6 +12,7 @@ export { ShapedSection } from './ShapedSection';
 export { SectionContainer } from './SectionContainer';
 export { FAQSection } from './FAQSection';
 export { SponsorsSection } from './SponsorsSection';
+export { SpeakersSection } from './SpeakersSection';
 
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';

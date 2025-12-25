@@ -3,11 +3,12 @@
  * Manages CFP speakers - list, add, edit, delete
  */
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, User } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminSpeaker } from '@/lib/types/cfp-admin';
+import { Pagination } from '@/components/atoms';
 import { SpeakerModal } from './SpeakerModal';
 import { AddSpeakerModal } from './AddSpeakerModal';
 
@@ -19,8 +20,12 @@ interface SpeakersTabProps {
 export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
   const [selectedSpeaker, setSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [profileFilter, setProfileFilter] = useState<string>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showAddSpeaker, setShowAddSpeaker] = useState(false);
+  const ITEMS_PER_PAGE = 10;
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -43,16 +48,69 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
     },
   });
 
-  const filteredSpeakers = speakers.filter((s) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      s.first_name?.toLowerCase().includes(query) ||
-      s.last_name?.toLowerCase().includes(query) ||
-      s.email.toLowerCase().includes(query) ||
-      s.company?.toLowerCase().includes(query)
-    );
+  // Toggle featured mutation
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ id, isFeatured }: { id: string; isFeatured: boolean }) => {
+      const res = await fetch(`/api/admin/cfp/speakers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_featured: isFeatured }),
+      });
+      if (!res.ok) throw new Error('Failed to update featured status');
+    },
+    onSuccess: (_data, { isFeatured }) => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
+      toast.success('Featured Status Updated', isFeatured ? 'Speaker is now featured' : 'Speaker is no longer featured');
+    },
+    onError: () => {
+      toast.error('Error', 'Failed to update featured status');
+    },
   });
+
+  // Filter speakers
+  const filteredSpeakers = useMemo(() => {
+    let result = [...speakers];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.first_name?.toLowerCase().includes(query) ||
+          s.last_name?.toLowerCase().includes(query) ||
+          s.email.toLowerCase().includes(query) ||
+          s.company?.toLowerCase().includes(query)
+      );
+    }
+
+    // Profile status filter
+    if (profileFilter === 'complete') {
+      result = result.filter((s) => s.bio);
+    } else if (profileFilter === 'incomplete') {
+      result = result.filter((s) => !s.bio);
+    }
+
+    // Visibility filter
+    if (visibilityFilter === 'visible') {
+      result = result.filter((s) => s.is_visible);
+    } else if (visibilityFilter === 'hidden') {
+      result = result.filter((s) => !s.is_visible);
+    }
+
+    return result;
+  }, [speakers, searchQuery, profileFilter, visibilityFilter]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredSpeakers.length / ITEMS_PER_PAGE);
+  const paginatedSpeakers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSpeakers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredSpeakers, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, profileFilter, visibilityFilter]);
 
   const handleSpeakerUpdated = () => {
     queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
@@ -83,22 +141,42 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
 
   return (
     <div>
-      {/* Search and Add */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search speakers by name, email, or company..."
-          className="w-full sm:max-w-md px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-        />
-        <button
-          onClick={() => setShowAddSpeaker(true)}
-          className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Add Speaker
-        </button>
+      {/* Search and Filters */}
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search speakers by name, email, or company..."
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          />
+          <select
+            value={profileFilter}
+            onChange={(e) => setProfileFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="all">All Profiles</option>
+            <option value="complete">Complete</option>
+            <option value="incomplete">Incomplete</option>
+          </select>
+          <select
+            value={visibilityFilter}
+            onChange={(e) => setVisibilityFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="all">All Visibility</option>
+            <option value="visible">Visible</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <button
+            onClick={() => setShowAddSpeaker(true)}
+            className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Add Speaker
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -109,7 +187,7 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
         <>
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
-            {filteredSpeakers.map((s) => (
+            {paginatedSpeakers.map((s) => (
               <div key={s.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div className="flex items-start gap-3 mb-3">
                   {s.profile_image_url ? (
@@ -152,9 +230,9 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
                 </div>
               </div>
             ))}
-            {filteredSpeakers.length === 0 && (
+            {paginatedSpeakers.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                {searchQuery ? 'No speakers match your search' : 'No speakers found'}
+                {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
               </div>
             )}
           </div>
@@ -169,12 +247,13 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
                   <th className="px-4 py-3">Company</th>
                   <th className="px-4 py-3">Profile</th>
                   <th className="px-4 py-3">Visible</th>
+                  <th className="px-4 py-3">Featured</th>
                   <th className="px-4 py-3">Joined</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredSpeakers.map((s) => (
+                {paginatedSpeakers.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -224,6 +303,22 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
                         />
                       </button>
                     </td>
+                    <td className="px-4 py-4">
+                      <button
+                        onClick={() => toggleFeaturedMutation.mutate({ id: s.id, isFeatured: !s.is_featured })}
+                        disabled={toggleFeaturedMutation.isPending}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                          s.is_featured ? 'bg-[#F1E271]' : 'bg-gray-300'
+                        }`}
+                        title={s.is_featured ? 'Featured speaker' : 'Not featured'}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            s.is_featured ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </td>
                     <td className="px-4 py-4 text-sm text-black">
                       {new Date(s.created_at).toLocaleDateString()}
                     </td>
@@ -237,16 +332,26 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
                     </td>
                   </tr>
                 ))}
-                {filteredSpeakers.length === 0 && (
+                {paginatedSpeakers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-black">
-                      {searchQuery ? 'No speakers match your search' : 'No speakers found'}
+                    <td colSpan={8} className="px-4 py-8 text-center text-black">
+                      {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageSize={ITEMS_PER_PAGE}
+            totalItems={filteredSpeakers.length}
+            variant="light"
+          />
         </>
       )}
 

@@ -1,4 +1,4 @@
-import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection } from '@/components/organisms';
+import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, timelineData, sponsorsData } from '@/data';
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
@@ -7,7 +7,6 @@ import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
-import React from "react";
 
 /**
  * Page props passed through _app.tsx for hydration and currency detection
@@ -72,19 +71,27 @@ export default function Home() {
         jsonLd={jsonLdSchemas}
       />
       <main className="min-h-screen">
-        <Hero
-          title={heroData.title}
-          kicker={heroData.kicker}
-          dateTimeISO={heroData.dateTimeISO}
-          venue={heroData.venue}
-          city={heroData.city}
-          ctaLabel={heroData.ctaLabel}
-          onCtaClick={handleCtaClick}
-          speakers={heroData.speakers}
-          background={heroData.background}
-        />
+        {/* Hero with speakers overlapping the diagonal */}
+        <div className="relative">
+          <Hero
+            title={heroData.title}
+            kicker={heroData.kicker}
+            dateTimeISO={heroData.dateTimeISO}
+            venue={heroData.venue}
+            city={heroData.city}
+            ctaLabel={heroData.ctaLabel}
+            onCtaClick={handleCtaClick}
+            speakers={heroData.speakers}
+            background={heroData.background}
+          />
+        </div>
 
-        <ShapedSection shape="widen" variant="light" id="schedule">
+          {/* Speakers positioned at the diagonal intersection */}
+          <div className="relative z-30 -mt-16 sm:-mt-24 md:-mt-32 lg:-mt-40">
+              <SpeakersSection />
+          </div>
+
+        <ShapedSection shape="widen" variant="light" id="schedule" className="relative z-20">
           <ScheduleSection
             title={scheduleData.title}
             subtitle={scheduleData.subtitle}

@@ -20,7 +20,18 @@
       "Bash(cat:*)",
       "Bash(find:*)",
       "Bash(npm ls:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "WebFetch(domain:www.reactbits.dev)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx jsrepo add github/DavidHDev/react-bits/ts-tailwind/Components/ProfileCard)",
+      "WebFetch(domain:reactbits.dev)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl:*)",
+      "Bash(yes:*)",
+      "Bash(npx jsrepo@latest init:*)",
+      "Bash(npx jsrepo@latest add reactbits.dev/ts-tailwind/Components/ProfileCard)",
+      "Bash(npx jsrepo@latest add:*)"
     ],
     "deny": [],
     "ask": []

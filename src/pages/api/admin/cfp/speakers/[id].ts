@@ -84,6 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'mastodon_handle',
         'profile_image_url',
         'is_visible',
+        'is_featured',
       ];
 
       const sanitizedUpdates: Record<string, string | boolean | null> = {};
