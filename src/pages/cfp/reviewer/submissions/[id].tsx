@@ -216,9 +216,33 @@ export default function ReviewerSubmission() {
               {submission.title}
             </span>
           </nav>
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Review Form - shown first on mobile */}
+            <div className="lg:col-span-1 lg:order-2">
+              {reviewer.role === 'readonly' && <ReadOnlyNotice />}
+
+              {success ? (
+                <SuccessMessage />
+              ) : reviewer.role !== 'readonly' ? (
+                <ReviewForm
+                  scores={scores}
+                  privateNotes={privateNotes}
+                  feedback={feedback}
+                  hasExistingReview={hasExistingReview}
+                  isSubmitting={submitReviewMutation.isPending}
+                  formError={formError}
+                  stats={submission.stats}
+                  onScoreChange={handleScoreChange}
+                  onPrivateNotesChange={setPrivateNotes}
+                  onFeedbackChange={setFeedback}
+                  onSubmit={handleSubmit}
+                  onShowGuidelines={() => setShowGuide(true)}
+                />
+              ) : null}
+            </div>
+
             {/* Submission Details */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 lg:order-1 space-y-6">
               {/* Header */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -253,30 +277,6 @@ export default function ReviewerSubmission() {
                   stats={submission.stats}
                 />
               )}
-            </div>
-
-            {/* Review Form Sidebar */}
-            <div className="lg:col-span-1">
-              {reviewer.role === 'readonly' && <ReadOnlyNotice />}
-
-              {success ? (
-                <SuccessMessage />
-              ) : reviewer.role !== 'readonly' ? (
-                <ReviewForm
-                  scores={scores}
-                  privateNotes={privateNotes}
-                  feedback={feedback}
-                  hasExistingReview={hasExistingReview}
-                  isSubmitting={submitReviewMutation.isPending}
-                  formError={formError}
-                  stats={submission.stats}
-                  onScoreChange={handleScoreChange}
-                  onPrivateNotesChange={setPrivateNotes}
-                  onFeedbackChange={setFeedback}
-                  onSubmit={handleSubmit}
-                  onShowGuidelines={() => setShowGuide(true)}
-                />
-              ) : null}
             </div>
           </div>
         </main>

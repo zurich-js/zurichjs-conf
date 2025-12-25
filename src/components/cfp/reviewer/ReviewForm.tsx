@@ -43,8 +43,8 @@ export function ReviewForm({
   const allScoresFilled = areAllScoresFilled(scores);
 
   return (
-    <div className="sticky top-8">
-      <form onSubmit={onSubmit} className="bg-brand-gray-dark rounded-2xl p-6 space-y-5">
+    <div className="lg:sticky lg:top-8">
+      <form onSubmit={onSubmit} className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
         {/* Header with Guidelines link */}
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-bold text-white">Your review</h2>
@@ -84,14 +84,14 @@ export function ReviewForm({
                     </span>
                   </span>
                 </label>
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1.5">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex gap-1 sm:gap-1.5 flex-1 sm:flex-none">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
                         key={n}
                         type="button"
                         onClick={() => onScoreChange(field as keyof ReviewScores, n)}
-                        className={`w-9 h-9 rounded-lg font-medium text-sm transition-colors cursor-pointer ${
+                        className={`flex-1 sm:flex-none sm:w-9 h-10 sm:h-9 rounded-lg font-medium text-sm transition-colors cursor-pointer active:scale-95 ${
                           currentScore === n
                             ? 'bg-brand-primary text-black'
                             : 'bg-brand-gray-darkest text-brand-gray-light hover:bg-brand-gray-medium'
@@ -101,8 +101,8 @@ export function ReviewForm({
                       </button>
                     ))}
                   </div>
-                  <div className="flex items-baseline ml-auto">
-                    <span className={`text-2xl font-bold ${currentScore > 0 ? 'text-brand-primary' : 'text-brand-gray-medium'}`}>
+                  <div className="flex items-baseline shrink-0">
+                    <span className={`text-xl sm:text-2xl font-bold ${currentScore > 0 ? 'text-brand-primary' : 'text-brand-gray-medium'}`}>
                       {currentScore > 0 ? currentScore : '-'}
                     </span>
                     <span className="text-brand-gray-medium text-sm">/5</span>

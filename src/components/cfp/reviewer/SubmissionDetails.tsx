@@ -45,9 +45,9 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
       )}
 
       {/* Metadata Badges */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm border-b border-brand-gray-dark pb-4">
+      <div className="flex flex-wrap items-start gap-x-4 sm:gap-x-6 gap-y-3 text-sm border-b border-brand-gray-dark pb-4">
         {/* Duration */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
           <span className="text-brand-gray-medium text-xs">Duration</span>
           <span className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs">
             {getDurationLabel(submission.submission_type, submission.workshop_duration_hours)}
@@ -56,7 +56,7 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
 
         {/* Expertise Level */}
         {submission.talk_level && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span className="text-brand-gray-medium text-xs">Expertise</span>
             <span className="px-2.5 py-1 bg-brand-gray-darkest text-brand-gray-light rounded text-xs capitalize">
               {submission.talk_level}
@@ -66,8 +66,8 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
 
         {/* Tags */}
         {submission.tags && submission.tags.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-brand-gray-medium text-xs">Tags</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 w-full sm:w-auto">
+            <span className="text-brand-gray-medium text-xs shrink-0">Tags</span>
             <div className="flex flex-wrap gap-1.5">
               {submission.tags.map(tag => (
                 <span
