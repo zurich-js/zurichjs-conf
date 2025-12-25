@@ -31,7 +31,8 @@
       "Bash(yes:*)",
       "Bash(npx jsrepo@latest init:*)",
       "Bash(npx jsrepo@latest add reactbits.dev/ts-tailwind/Components/ProfileCard)",
-      "Bash(npx jsrepo@latest add:*)"
+      "Bash(npx jsrepo@latest add:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

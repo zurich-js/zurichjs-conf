@@ -7,6 +7,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getSpeakerTravel, upsertSpeakerTravel } from '@/lib/cfp/travel';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Travel API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Get session
@@ -28,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const travel = await getSpeakerTravel(speaker.id);
       return res.status(200).json({ travel });
     } catch (error) {
-      console.error('[CFP Travel API] Error:', error);
+      log.error('Failed to get travel details', error, { speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -57,9 +60,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error });
       }
 
+      log.info('Travel details updated', { speakerId: speaker.id });
       return res.status(200).json({ travel });
     } catch (error) {
-      console.error('[CFP Travel API] Error:', error);
+      log.error('Failed to update travel details', error, { speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -7,6 +7,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getSpeakerReimbursements, createReimbursement } from '@/lib/cfp/travel';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Reimbursements API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Get session
@@ -28,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const reimbursements = await getSpeakerReimbursements(speaker.id);
       return res.status(200).json({ reimbursements });
     } catch (error) {
-      console.error('[CFP Reimbursements API] Error:', error);
+      log.error('Failed to get reimbursements', error, { speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -66,9 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error });
       }
 
+      log.info('Reimbursement created', { speakerId: speaker.id, reimbursementId: reimbursement?.id });
       return res.status(201).json({ reimbursement });
     } catch (error) {
-      console.error('[CFP Reimbursements API] Error:', error);
+      log.error('Failed to create reimbursement', error, { speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
