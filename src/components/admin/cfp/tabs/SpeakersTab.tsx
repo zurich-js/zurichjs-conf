@@ -216,14 +216,49 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
                     <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs font-medium shrink-0">Incomplete</span>
                   )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
+                {/* Visibility and Featured Toggles */}
+                <div className="flex items-center gap-4 mb-3 py-2 border-t border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">Visible</span>
+                    <button
+                      onClick={() => toggleVisibilityMutation.mutate({ id: s.id, isVisible: !s.is_visible })}
+                      disabled={toggleVisibilityMutation.isPending}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                        s.is_visible ? 'bg-green-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          s.is_visible ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">Featured</span>
+                    <button
+                      onClick={() => toggleFeaturedMutation.mutate({ id: s.id, isFeatured: !s.is_featured })}
+                      disabled={toggleFeaturedMutation.isPending}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                        s.is_featured ? 'bg-[#F1E271]' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          s.is_featured ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs text-gray-500 min-w-0 truncate">
                     {s.company && <span className="mr-2">{s.company}</span>}
                     <span>Joined {new Date(s.created_at).toLocaleDateString()}</span>
                   </div>
                   <button
                     onClick={() => setSelectedSpeaker(s)}
-                    className="px-3 py-1.5 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap"
                   >
                     View / Edit
                   </button>

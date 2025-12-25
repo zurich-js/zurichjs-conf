@@ -3,8 +3,9 @@
  * Admin interface for managing B2B invoices and bulk ticket orders
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { B2BInvoice, B2BInvoiceWithAttendees, B2BInvoiceStatus } from '@/lib/types/b2b';
+import { Pagination } from '@/components/atoms';
 
 // Status badge colors - using darker text for better contrast
 const statusColors: Record<B2BInvoiceStatus, string> = {
@@ -28,6 +29,8 @@ function formatDate(dateStr: string): string {
   });
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function B2BOrdersTab() {
   const [invoices, setInvoices] = useState<B2BInvoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +39,7 @@ export function B2BOrdersTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<B2BInvoiceWithAttendees | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   // Fetch invoices
   const fetchInvoices = useCallback(async () => {
     try {
@@ -71,6 +75,18 @@ export function B2BOrdersTab() {
       .filter((i) => i.status === 'paid')
       .reduce((sum, i) => sum + i.total_amount, 0),
   };
+
+  // Pagination
+  const totalPages = Math.ceil(invoices.length / ITEMS_PER_PAGE);
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return invoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [invoices, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -180,7 +196,7 @@ export function B2BOrdersTab() {
         <>
           {/* Mobile Card View */}
           <div className="block md:hidden space-y-4">
-            {invoices.map((invoice) => (
+            {paginatedInvoices.map((invoice) => (
               <div
                 key={invoice.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
@@ -257,7 +273,7 @@ export function B2BOrdersTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {invoices.map((invoice) => (
+                  {paginatedInvoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
                         {invoice.invoice_number}
@@ -307,6 +323,16 @@ export function B2BOrdersTab() {
               </table>
             </div>
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageSize={ITEMS_PER_PAGE}
+            totalItems={invoices.length}
+            variant="light"
+          />
         </>
       )}
 
