@@ -4,6 +4,9 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Geo Detection');
 
 const COUNTRY_COOKIE = 'detected-country';
 const COOKIE_MAX_AGE = 60 * 60 * 24; // 24 hours
@@ -52,7 +55,7 @@ async function fetchFromIpApi(ip: string): Promise<string | null> {
     });
 
     if (!response.ok) {
-      console.error(`[Geo] ipapi.co returned ${response.status}`);
+      log.error('ipapi.co returned error status', { status: response.status });
       return null;
     }
 
@@ -65,7 +68,7 @@ async function fetchFromIpApi(ip: string): Promise<string | null> {
 
     return null;
   } catch (error) {
-    console.error('[Geo] ipapi.co fetch failed:', error);
+    log.error('ipapi.co fetch failed', error);
     return null;
   }
 }
@@ -83,7 +86,7 @@ async function fetchFromIpApiCom(ip: string): Promise<string | null> {
     });
 
     if (!response.ok) {
-      console.error(`[Geo] ip-api.com returned ${response.status}`);
+      log.error('ip-api.com returned error status', { status: response.status });
       return null;
     }
 
@@ -95,7 +98,7 @@ async function fetchFromIpApiCom(ip: string): Promise<string | null> {
 
     return null;
   } catch (error) {
-    console.error('[Geo] ip-api.com fetch failed:', error);
+    log.error('ip-api.com fetch failed', error);
     return null;
   }
 }
@@ -119,25 +122,26 @@ export default async function handler(
     const devCountry = req.cookies['dev_country'];
     if (devCountry && /^[A-Z]{2}$/i.test(devCountry)) {
       const country = devCountry.toUpperCase();
-      console.log(`[Geo] Using dev override: ${country}`);
+      log.info('Using dev override', { country });
       return res.status(200).json({ country, source: 'dev_override' });
     }
   }
 
   // Log all relevant headers for debugging
-  console.log('[Geo] === Debug Info ===');
-  console.log('[Geo] x-forwarded-for:', req.headers['x-forwarded-for']);
-  console.log('[Geo] x-real-ip:', req.headers['x-real-ip']);
-  console.log('[Geo] x-vercel-forwarded-for:', req.headers['x-vercel-forwarded-for']);
-  console.log('[Geo] x-vercel-ip-country:', req.headers['x-vercel-ip-country']);
-  console.log('[Geo] socket.remoteAddress:', req.socket?.remoteAddress);
+  log.info('Debug info', {
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-real-ip': req.headers['x-real-ip'],
+    'x-vercel-forwarded-for': req.headers['x-vercel-forwarded-for'],
+    'x-vercel-ip-country': req.headers['x-vercel-ip-country'],
+    'socket.remoteAddress': req.socket?.remoteAddress,
+  });
 
   // Get the client's IP
   const ip = getClientIP(req);
-  console.log(`[Geo] Resolved IP: ${ip}`);
+  log.info('Resolved IP', { ip });
 
   if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
-    console.log('[Geo] Local/private IP detected, cannot determine country');
+    log.info('Local/private IP detected, cannot determine country');
     return res.status(200).json({ country: null, source: 'local_ip' });
   }
 
@@ -145,23 +149,23 @@ export default async function handler(
   let source = 'unknown';
 
   // Try ipapi.co first
-  console.log(`[Geo] Trying ipapi.co for IP: ${ip}`);
+  log.info('Trying ipapi.co', { ip });
   country = await fetchFromIpApi(ip);
-  console.log(`[Geo] ipapi.co result: ${country}`);
+  log.info('ipapi.co result', { country });
   if (country) {
     source = 'ipapi.co';
   } else {
     // Fallback to ip-api.com
-    console.log(`[Geo] Trying ip-api.com for IP: ${ip}`);
+    log.info('Trying ip-api.com', { ip });
     country = await fetchFromIpApiCom(ip);
-    console.log(`[Geo] ip-api.com result: ${country}`);
+    log.info('ip-api.com result', { country });
     if (country) {
       source = 'ip-api.com';
     }
   }
 
   if (country) {
-    console.log(`[Geo] Final result: country=${country}, source=${source}`);
+    log.info('Final result', { country, source });
 
     // Set the cookie for future requests
     res.setHeader(
@@ -169,9 +173,8 @@ export default async function handler(
       `${COUNTRY_COOKIE}=${country}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
     );
   } else {
-    console.log('[Geo] Could not detect country from any source');
+    log.info('Could not detect country from any source');
   }
 
-  console.log('[Geo] === End Debug ===');
   return res.status(200).json({ country, source });
 }

@@ -11,6 +11,9 @@ import { getInvoice, updateInvoicePDF } from '@/lib/b2b';
 import { createServiceRoleClient } from '@/lib/supabase';
 import formidable from 'formidable';
 import fs from 'fs';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoice PDF Upload');
 
 // Disable default body parser to handle file uploads
 export const config = {
@@ -73,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
     if (uploadError) {
-      console.error('Error uploading PDF:', uploadError);
+      log.error('Error uploading PDF', uploadError);
       return res.status(500).json({ error: 'Failed to upload PDF to storage' });
     }
 
@@ -94,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       source: 'uploaded',
     });
   } catch (error) {
-    console.error('Error uploading invoice PDF:', error);
+    log.error('Error uploading invoice PDF', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to upload PDF',
     });

@@ -38,11 +38,26 @@
   flex-shrink: 0;
   /* Allow horizontal scrolling on mobile, disable touch for tilt on desktop */
   touch-action: pan-x pan-y;
+  /* Prevent dragging on mobile */
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Prevent image dragging */
+.pc-card-wrapper img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
 }
 
 @media (min-width: 1024px) {
   .pc-card-wrapper {
     touch-action: none;
+  }
+
+  /* Re-enable pointer events on desktop for tilt effect */
+  .pc-card-wrapper img {
+    pointer-events: auto;
   }
 }
 

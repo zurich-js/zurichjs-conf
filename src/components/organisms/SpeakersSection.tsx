@@ -32,7 +32,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
 
   return (
     <div className={`w-full overflow-x-visible overflow-y-visible ${className}`}>
-      {/* Mobile: Horizontal scroll */}
+      {/* Mobile: Horizontal scroll - tilt disabled for smooth scrolling */}
       <div className="block lg:hidden overflow-x-auto overscroll-x-contain scrollbar-hide">
         <div className="flex gap-4 pb-4 px-4 w-max min-w-full">
           {speakers.slice(0, 5).map((speaker) => {
@@ -46,7 +46,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
                 title={titleWithCompany || 'Speaker'}
                 avatarUrl={speaker.profile_image_url || ''}
                 showUserInfo={false}
-                enableTilt={true}
+                enableTilt={false}
                 enableMobileTilt={false}
                 behindGlowEnabled={true}
                 behindGlowColor="rgba(255, 204, 0, 0.5)"

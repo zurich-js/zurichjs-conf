@@ -7,6 +7,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateReviewer, deactivateReviewer } from '@/lib/cfp/reviewers';
 import { verifyAdminToken } from '@/lib/admin/auth';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Reviewer API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -48,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ reviewer });
     } catch (error) {
-      console.error('[Admin Reviewer API] Error updating:', error);
+      log.error('Error updating reviewer', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -64,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({ success });
     } catch (error) {
-      console.error('[Admin Reviewer API] Error deactivating:', error);
+      log.error('Error deactivating reviewer', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

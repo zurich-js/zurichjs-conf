@@ -350,6 +350,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 src={displayAvatarUrl}
                 alt={`${name || 'User'} avatar`}
                 loading="lazy"
+                draggable={false}
                 onError={e => {
                   const t = e.target as HTMLImageElement;
                   t.style.display = 'none';
@@ -363,6 +364,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                         src={miniAvatarUrl || displayAvatarUrl}
                         alt={`${name || 'User'} mini avatar`}
                         loading="lazy"
+                        draggable={false}
                         onError={e => {
                           const t = e.target as HTMLImageElement;
                           t.style.opacity = '0.5';

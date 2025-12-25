@@ -6,6 +6,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { logger } from '@/lib/logger';
 
 import {
   getCurrentStage,
@@ -17,6 +18,8 @@ import {
 } from '@/config/pricing-stages';
 import { parseCurrencyParam, type SupportedCurrency } from '@/config/currency';
 import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
+
+const log = logger.scope('Ticket Pricing API');
 
 // Ticket categories to fetch
 const TICKET_CATEGORIES: TicketCategory[] = ['standard_student_unemployed', 'standard', 'vip'];
@@ -174,7 +177,7 @@ export default async function handler(
       stageDisplayName: currentStageConfig.displayName,
     });
   } catch (error) {
-    console.error('Error fetching ticket prices:', error);
+    log.error('Error fetching ticket prices', error);
     res.status(500).json({
       plans: [],
       currentStage: 'standard',

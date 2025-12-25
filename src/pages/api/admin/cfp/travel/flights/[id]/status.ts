@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateFlightStatus } from '@/lib/cfp/admin-travel';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import type { CfpFlightStatus } from '@/lib/types/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Flight Status API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication (same as main admin)
@@ -44,9 +47,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error });
       }
 
+      log.info('Flight status updated', { flightId: id, status });
       return res.status(200).json({ success });
     } catch (error) {
-      console.error('[Admin Flight Status API] Error:', error);
+      log.error('Error updating flight status', error, { flightId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

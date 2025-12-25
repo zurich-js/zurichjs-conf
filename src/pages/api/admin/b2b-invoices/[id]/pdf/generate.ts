@@ -12,6 +12,9 @@ import { getInvoice, updateInvoicePDF } from '@/lib/b2b';
 import { generateInvoicePDF } from '@/lib/pdf';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { InvoicePDFProps } from '@/lib/types/b2b';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoice PDF Generate');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -111,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     } catch (cleanupError) {
-      console.warn('Failed to cleanup old PDF files:', cleanupError);
+      log.warn('Failed to cleanup old PDF files', { error: cleanupError instanceof Error ? cleanupError.message : 'Unknown error' });
       // Continue anyway - not critical
     }
 
@@ -123,7 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
     if (uploadError) {
-      console.error('Error uploading PDF:', uploadError);
+      log.error('Error uploading PDF', uploadError);
       return res.status(500).json({ error: 'Failed to upload PDF to storage' });
     }
 
@@ -141,7 +144,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       source: 'generated',
     });
   } catch (error) {
-    console.error('Error generating invoice PDF:', error);
+    log.error('Error generating invoice PDF', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to generate PDF',
     });

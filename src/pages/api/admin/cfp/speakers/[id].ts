@@ -9,6 +9,9 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { env } from '@/config/env';
 import type { CfpSpeaker, UpdateCfpSpeakerRequest } from '@/lib/types/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Speaker API');
 
 function createCfpServiceClient() {
   return createClient(env.supabase.url, env.supabase.serviceRoleKey, {
@@ -61,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         submissions: submissions || [],
       });
     } catch (error) {
-      console.error('[CFP Admin Speaker API] GET Error:', error);
+      log.error('Error fetching speaker', error, { speakerId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -109,13 +112,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .single();
 
       if (error) {
-        console.error('[CFP Admin Speaker API] Update error:', error);
+        log.error('Error updating speaker', error, { speakerId: id });
         return res.status(500).json({ error: 'Failed to update speaker' });
       }
 
+      log.info('Speaker updated', { speakerId: id });
       return res.status(200).json({ speaker: speaker as CfpSpeaker });
     } catch (error) {
-      console.error('[CFP Admin Speaker API] PUT Error:', error);
+      log.error('Error updating speaker', error, { speakerId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -141,13 +145,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('id', id);
 
       if (error) {
-        console.error('[CFP Admin Speaker API] Delete error:', error);
+        log.error('Error deleting speaker', error, { speakerId: id });
         return res.status(500).json({ error: 'Failed to delete speaker' });
       }
 
+      log.info('Speaker deleted', { speakerId: id });
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error('[CFP Admin Speaker API] DELETE Error:', error);
+      log.error('Error deleting speaker', error, { speakerId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

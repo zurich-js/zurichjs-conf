@@ -17,6 +17,9 @@ import {
   validateAttendeeCount,
 } from '@/lib/b2b';
 import type { AttendeeInput, UpdateAttendeeRequest } from '@/lib/types/b2b';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoice Attendees API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -62,7 +65,7 @@ async function handleGet(invoiceId: string, res: NextApiResponse) {
       validation,
     });
   } catch (error) {
-    console.error('Error fetching attendees:', error);
+    log.error('Error fetching attendees', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to fetch attendees',
     });
@@ -129,7 +132,7 @@ async function handlePost(
       validation,
     });
   } catch (error) {
-    console.error('Error adding attendees:', error);
+    log.error('Error adding attendees', error);
     const message = error instanceof Error ? error.message : 'Failed to add attendees';
 
     if (message.includes('Cannot') || message.includes('not found')) {
@@ -156,7 +159,7 @@ async function handleUpdate(req: NextApiRequest, res: NextApiResponse) {
 
     return res.status(200).json(updated);
   } catch (error) {
-    console.error('Error updating attendee:', error);
+    log.error('Error updating attendee', error);
     const message = error instanceof Error ? error.message : 'Failed to update attendee';
 
     if (message.includes('Cannot') || message.includes('not found')) {
@@ -192,7 +195,7 @@ async function handleDelete(
     await deleteAttendee(attendeeId);
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting attendee:', error);
+    log.error('Error deleting attendee', error);
     const message = error instanceof Error ? error.message : 'Failed to delete attendee';
 
     if (message.includes('Cannot') || message.includes('not found')) {

@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
 import { getSubmissionForReview } from '@/lib/cfp/reviews';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Reviewer Submission API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -24,23 +27,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user || !user.email) {
-      console.error('[Reviewer Submission API] Authentication failed:', userError?.message);
+      log.warn('Authentication failed', { error: userError?.message });
       return res.status(401).json({ error: 'Unauthorized - please log in' });
     }
 
     const userId = user.id;
-    console.log('[Reviewer Submission API] Authenticated user:', user.email);
+    log.info('Authenticated user', { email: user.email });
 
     // Get the reviewer record
     const reviewer = await getReviewerByUserId(userId);
 
     if (!reviewer) {
-      console.log('[Reviewer Submission API] No reviewer found for user:', userId);
+      log.warn('No reviewer found for user', { userId });
       return res.status(401).json({ error: 'Not authorized as a reviewer' });
     }
 
     if (!reviewer.accepted_at) {
-      console.log('[Reviewer Submission API] Reviewer has not accepted invite:', reviewer.email);
+      log.warn('Reviewer has not accepted invite', { email: reviewer.email });
       return res.status(401).json({ error: 'Invitation not accepted' });
     }
 
@@ -48,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { submission, error: submissionError } = await getSubmissionForReview(id, reviewer);
 
     if (submissionError || !submission) {
-      console.log('[Reviewer Submission API] Submission not found:', id);
+      log.warn('Submission not found', { submissionId: id });
       return res.status(404).json({ error: 'Submission not found' });
     }
 
@@ -57,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       submission,
     });
   } catch (error) {
-    console.error('[Reviewer Submission API] Error:', error);
+    log.error('Error fetching submission for review', error, { submissionId: id });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

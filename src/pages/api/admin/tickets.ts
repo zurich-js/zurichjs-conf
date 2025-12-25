@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Tickets API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -28,13 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching tickets:', error);
+      log.error('Error fetching tickets', error);
       return res.status(500).json({ error: 'Failed to fetch tickets' });
     }
 
     return res.status(200).json({ tickets });
   } catch (error) {
-    console.error('Admin tickets API error:', error);
+    log.error('Admin tickets API error', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

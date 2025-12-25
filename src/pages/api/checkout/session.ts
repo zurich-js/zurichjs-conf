@@ -5,6 +5,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Checkout Session');
 
 /**
  * Response structure for session details
@@ -74,7 +77,7 @@ export default async function handler(
       session_id: session.id,
     });
   } catch (error) {
-    console.error('Error retrieving checkout session:', error);
+    log.error('Error retrieving checkout session', error);
 
     // Handle Stripe-specific errors
     if (error instanceof Stripe.errors.StripeError) {
