@@ -80,8 +80,8 @@ export interface StockInfo {
  * Pricing stage configurations
  *
  * Timeline dates (from timeline.ts):
- * - Blind bird: Nov 14, 2025 -> Dec 25, 2025 (ENDED - OR 30 tickets sold)
- * - Early bird: Dec 25, 2025 -> May 15, 2026
+ * - Blind bird: Nov 14, 2025 -> Jan 1, 2026 (OR 30 tickets sold)
+ * - Early bird: Jan 1, 2026 -> May 15, 2026
  * - Standard (General Admission): May 15, 2026 -> Aug 1, 2026
  * - Late bird: Aug 1, 2026 -> Sep 11, 2026
  *

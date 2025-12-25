@@ -13,12 +13,12 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
     {
       id: 'announcement-blindbird',
       dateISO: '2025-11-14',
-      title: 'Blind bird tickets on sale',
+      title: 'Blind tickets go on sale',
       icon: 'ticket',
-      body: 'The first 30 tickets are available at the lowest possible price before speakers are announced. Get them while they last!',
+      body: 'We\'re releasing 30 tickets before we announce speakers. This is the lowest possible price point for what is already the most affordable conference in zurich?\n\nOnce sold out, Early bird tickets become available.',
       tags: [
-        { label: '-30%', tone: 'success' },
-        { label: 'Limited', tone: 'accent' },
+        { label: '-33%', tone: 'success' },
+        { label: 'Limited stock', tone: 'neutral' },
       ],
       href: '#tickets',
       emphasis: true,
@@ -26,13 +26,14 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
     {
       id: 'initial-speakers-early-bird',
       dateISO: '2026-01-01',
-      title: 'Early Bird tickets on sale',
+      title: 'Early Bird tickets go on sale',
       icon: 'ticket',
-      body: 'Early bird tickets are now available! Get your tickets at a discounted price while speaker announcements start rolling in. Save before prices increase.',
+      body: 'After blind bird tickets sell out, early bird tickets become available. Get your tickets at a discounted price while speaker announcements start rolling in.',
       tags: [
-        { label: '-23%', tone: 'success' },
+        { label: '-23%', tone: 'accent' },
       ],
       href: '#tickets',
+      emphasis: true,
     },
     {
       id: 'cfp-starts',
