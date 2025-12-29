@@ -22,7 +22,7 @@ function SpeakerCard({ name, title, avatarUrl }: SpeakerCardProps) {
   const displayAvatarUrl = avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&size=400`;
 
   return (
-    <div className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px] lg:w-[230px] xl:w-[260px]">
+    <div className="flex-shrink-0 w-[240px] sm:w-[220px] md:w-[240px] lg:w-[230px] xl:w-[260px]">
       <div className="relative rounded-2xl overflow-hidden bg-gray-900">
         {/* Image container */}
         <div className="aspect-[3/4] relative">
@@ -90,8 +90,8 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
         </div>
       </div>
 
-      {/* CTA to apply to speak */}
-      <p className="text-center text-gray-600 text-base mt-6 px-4">
+      {/* CTA to apply to speak - positioned to appear in white section below */}
+      <p className="text-center text-gray-600 text-base mt-16 sm:mt-20 md:mt-24 lg:mt-28 px-4">
         Want to share your knowledge at ZurichJS?{' '}
         <Link href="/cfp" className="text-brand-blue hover:text-blue-800 duration-300 ease-in-out">
           Apply&nbsp;to&nbsp;speak
