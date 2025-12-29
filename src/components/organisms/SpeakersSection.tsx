@@ -41,10 +41,10 @@ function SpeakerCard({ name, title, avatarUrl }: SpeakerCardProps) {
           <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black via-black/80 to-transparent" />
         </div>
 
-        {/* Text content */}
+        {/* Text content - title has fixed height for 2 lines to keep names aligned */}
         <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
           <h3 className="text-white font-bold text-base leading-tight mb-1">{name}</h3>
-          <p className="text-[#F1E271] text-sm opacity-90 leading-tight">{title}</p>
+          <p className="text-[#F1E271] text-sm opacity-90 leading-tight line-clamp-2 min-h-[2.5em]">{title}</p>
         </div>
       </div>
     </div>
