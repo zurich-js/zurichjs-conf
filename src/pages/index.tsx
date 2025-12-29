@@ -7,7 +7,6 @@ import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
-import Link from 'next/link';
 
 /**
  * Page props passed through _app.tsx for hydration and currency detection
@@ -88,18 +87,11 @@ export default function Home() {
         </div>
 
         {/* Speakers positioned at the diagonal intersection */}
-        <div className="relative z-30 -mt-12 sm:-mt-16 md:-mt-24 lg:-mt-32 overflow-visible">
+        <div className="relative z-30 -mt-12 sm:-mt-16 md:-mt-24 lg:-mt-32">
           <SpeakersSection />
         </div>
 
         <ShapedSection shape="widen" variant="light" id="schedule" className="relative z-20">
-          {/* CTA to apply to speak - pulled up to sit closer to speaker cards */}
-          <p className="text-center text-gray-600 text-base px-4 pb-8 relative -top-4 sm:-top-6 md:-top-8">
-            Want to share your knowledge at ZurichJS?{' '}
-            <Link href="/cfp" className="text-brand-blue hover:text-blue-800 duration-300 ease-in-out">
-              Apply&nbsp;to&nbsp;speak
-            </Link>
-          </p>
           <ScheduleSection
             title={scheduleData.title}
             subtitle={scheduleData.subtitle}
