@@ -22,6 +22,7 @@ import {
   DetailsStep,
   LogisticsStep,
   ReviewStep,
+  ShareSuccessModal,
 } from '@/components/cfp/submit';
 
 interface SubmitPageProps {
@@ -30,7 +31,7 @@ interface SubmitPageProps {
   currentSubmissionCount: number;
 }
 
-export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
+export default function SubmitPage({ speaker, suggestedTags, currentSubmissionCount }: SubmitPageProps) {
   const router = useRouter();
   const toast = useToast();
   const [step, setStep] = useState<WizardStep>('type');
@@ -39,6 +40,7 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const isWorkshop = formData.submission_type === 'workshop';
 
@@ -179,6 +181,12 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
           'Proposal Submitted!',
           'Your proposal has been submitted for review. You can track its status on your dashboard.'
         );
+
+        // Show share modal on first submission
+        if (currentSubmissionCount === 0) {
+          setShowShareModal(true);
+          return; // Don't redirect yet - modal will handle it
+        }
       } else {
         toast.success('Draft Saved', 'Your proposal has been saved as a draft.');
       }
@@ -318,6 +326,17 @@ export default function SubmitPage({ suggestedTags }: SubmitPageProps) {
           )}
         </main>
       </div>
+
+      {/* Social Share Modal - shown after first submission */}
+      <ShareSuccessModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          router.push('/cfp/dashboard');
+        }}
+        speakerName={`${speaker.first_name} ${speaker.last_name}`}
+        talkTitle={formData.title}
+      />
     </>
   );
 }

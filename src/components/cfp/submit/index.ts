@@ -8,3 +8,4 @@ export * from './TypeStep';
 export * from './DetailsStep';
 export * from './LogisticsStep';
 export * from './ReviewStep';
+export * from './ShareSuccessModal';

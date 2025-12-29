@@ -211,7 +211,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   className="group relative shrink-0 py-2.5 outline-none min-h-[44px]
                   flex flex-col gap-2.5 items-start justify-center focus-visible:ring-2 focus-visible:ring-brand-yellow-main/40 focus-visible:ring-offset-2
-                  focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation"
+                  focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation cursor-pointer"
                   style={{
                     WebkitTapHighlightColor: 'transparent',
                   }}
