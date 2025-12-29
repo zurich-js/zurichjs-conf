@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Input, Button, Heading } from '@/components/atoms';
 import { cfpLoginSchema } from '@/lib/validations/cfp';
-import { withCfpGate } from '@/components/cfp/CfpGate';
 
 type LoginState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -180,4 +179,4 @@ function CfpLogin() {
   );
 }
 
-export default withCfpGate(CfpLogin);
+export default CfpLogin;

@@ -93,11 +93,11 @@ export default function CfpAdminDashboard() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  // Check auth status - use query result directly instead of local state
+  // Check auth status using dedicated verify endpoint
   const { data: isAuthenticated, isLoading: isAuthLoading } = useQuery({
-    queryKey: ['admin', 'cfp', 'auth'],
+    queryKey: ['admin', 'auth'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/cfp/stats');
+      const res = await fetch('/api/admin/verify');
       return res.ok;
     },
     retry: false,
