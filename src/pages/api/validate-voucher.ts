@@ -5,6 +5,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Voucher Validation API');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover',
@@ -69,9 +72,9 @@ export default async function handler(
     // Retrieve coupon directly by ID/code
     let coupon: Stripe.Coupon;
     try {
-      console.log('[ValidateVoucher] Retrieving coupon with code:', code.trim());
+      log.info('Retrieving coupon with code', { code: code.trim() });
       coupon = await stripe.coupons.retrieve(code.trim());
-      console.log('[ValidateVoucher] ✅ Found coupon:', {
+      log.info('Found coupon', {
         id: coupon.id,
         name: coupon.name,
         percentOff: coupon.percent_off,
@@ -79,7 +82,7 @@ export default async function handler(
         valid: coupon.valid,
       });
     } catch (error) {
-      console.error('[ValidateVoucher] ❌ Error retrieving coupon:', error);
+      log.error('Error retrieving coupon', error);
       return res.status(200).json({
         valid: false,
         error: 'Invalid voucher code',
@@ -95,7 +98,7 @@ export default async function handler(
           productIds.push(price.product);
         }
       } catch (error) {
-        console.error(`Error fetching price ${priceId}:`, error);
+        log.error('Error fetching price', { priceId, error });
       }
     }
 
@@ -160,7 +163,7 @@ export default async function handler(
         currency: coupon.currency,
         minPurchase: 0,
       };
-      console.log('[ValidateVoucher] ✅ Returning fixed discount response:', response);
+      log.info('Returning fixed discount response', response);
       return res.status(200).json(response);
     } else if (coupon.percent_off) {
       // Percentage discount
@@ -173,7 +176,7 @@ export default async function handler(
         percentOff: coupon.percent_off,
         minPurchase: 0,
       };
-      console.log('[ValidateVoucher] ✅ Returning percentage discount response:', response);
+      log.info('Returning percentage discount response', response);
       return res.status(200).json(response);
     } else {
       return res.status(200).json({
@@ -182,7 +185,7 @@ export default async function handler(
       });
     }
   } catch (error) {
-    console.error('Error validating voucher:', error);
+    log.error('Error validating voucher', error);
     return res.status(500).json({
       valid: false,
       error: 'Failed to validate voucher. Please try again.',

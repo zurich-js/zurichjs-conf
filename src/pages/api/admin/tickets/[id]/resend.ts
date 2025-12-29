@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Ticket Resend');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -60,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ success: true, message: 'Ticket email resent successfully' });
   } catch (error) {
-    console.error('Resend ticket error:', error);
+    log.error('Resend ticket error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

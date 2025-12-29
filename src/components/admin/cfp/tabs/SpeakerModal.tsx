@@ -346,14 +346,14 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                   </a>
                 )}
                 {speaker.twitter_handle && (
-                  <a href={`https://twitter.com/${speaker.twitter_handle.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium hover:bg-sky-200 transition-colors">
-                    {speaker.twitter_handle}
+                  <a href={`https://twitter.com/${speaker.twitter_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium hover:bg-sky-200 transition-colors">
+                    {speaker.twitter_handle.startsWith('@') ? speaker.twitter_handle : `@${speaker.twitter_handle}`}
                   </a>
                 )}
                 {speaker.bluesky_handle && (
-                  <span className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-                    {speaker.bluesky_handle}
-                  </span>
+                  <a href={`https://bsky.app/profile/${speaker.bluesky_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors">
+                    {speaker.bluesky_handle.startsWith('@') ? speaker.bluesky_handle : `@${speaker.bluesky_handle}`}
+                  </a>
                 )}
                 {!speaker.linkedin_url && !speaker.github_url && !speaker.twitter_handle && !speaker.bluesky_handle && (
                   <p className="text-sm text-gray-500">No social links provided</p>
@@ -365,13 +365,13 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
           {/* Location & Travel */}
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Location & Travel</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
                 <p className="text-xs text-gray-500 font-semibold mb-1">Location</p>
                 {speaker.city || speaker.country ? (
                   <div className="inline-flex items-center gap-1.5 text-sm text-black">
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    {[speaker.city, speaker.country].filter(Boolean).join(', ')}
+                    <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <span className="break-words">{[speaker.city, speaker.country].filter(Boolean).join(', ')}</span>
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">Not provided</p>
@@ -380,13 +380,13 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               <div>
                 <p className="text-xs text-gray-500 font-semibold mb-1">Travel Assistance</p>
                 {speaker.travel_assistance_required === true ? (
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium">
-                    <HelpCircle className="w-4 h-4" />
-                    Needs {speaker.assistance_type === 'travel' ? 'Travel Only' : speaker.assistance_type === 'accommodation' ? 'Accommodation Only' : speaker.assistance_type === 'both' ? 'Travel + Accommodation' : 'Assistance'}
+                  <div className="inline-flex items-start sm:items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium">
+                    <HelpCircle className="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0" />
+                    <span>Needs {speaker.assistance_type === 'travel' ? 'Travel Only' : speaker.assistance_type === 'accommodation' ? 'Accommodation Only' : speaker.assistance_type === 'both' ? 'Travel + Accommodation' : 'Assistance'}</span>
                   </div>
                 ) : speaker.travel_assistance_required === false ? (
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-                    <Check className="w-4 h-4" />
+                    <Check className="w-4 h-4 flex-shrink-0" />
                     Self-funded
                   </div>
                 ) : (
@@ -394,10 +394,10 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 )}
               </div>
               {speaker.departure_airport && (
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <p className="text-xs text-gray-500 font-semibold mb-1">Departure Airport</p>
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium">
-                    <Plane className="w-4 h-4" />
+                    <Plane className="w-4 h-4 flex-shrink-0" />
                     {speaker.departure_airport}
                   </div>
                 </div>
@@ -408,25 +408,25 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
           {/* Timestamps */}
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Account Info</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <p className="text-xs text-gray-500 font-semibold mb-1">Joined</p>
-                <p className="text-sm text-black">{new Date(speaker.created_at).toLocaleString()}</p>
+                <p className="text-sm text-black">{new Date(speaker.created_at).toLocaleDateString()}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-semibold mb-1">Last Updated</p>
-                <p className="text-sm text-black">{new Date(speaker.updated_at).toLocaleString()}</p>
+                <p className="text-sm text-black">{new Date(speaker.updated_at).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
 
           {/* Save Button */}
           {isEditing && (
-            <div className="flex justify-end pt-4 border-t border-gray-200">
+            <div className="flex justify-center sm:justify-end pt-4 border-t border-gray-200">
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-6 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium rounded-lg disabled:opacity-50 transition-all cursor-pointer"
+                className="w-full sm:w-auto px-6 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium rounded-lg disabled:opacity-50 transition-all cursor-pointer"
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -440,12 +440,12 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-red-50 border border-red-300 hover:bg-red-100 text-red-700 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 bg-red-50 border border-red-300 hover:bg-red-100 text-red-700 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center sm:justify-start gap-2"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete Speaker
               </button>
-              <p className="text-xs text-red-500 mt-1 max-w-[300px]">Permanently delete this speaker account. Only possible if they have no submissions.</p>
+              <p className="text-xs text-red-500 mt-2 text-center sm:text-left">Permanently delete this speaker account. Only possible if they have no submissions.</p>
             </div>
           </div>
         </div>

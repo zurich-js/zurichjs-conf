@@ -33,6 +33,16 @@ export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] as const;
 export const ASSISTANCE_TYPES = ['travel', 'accommodation', 'both'] as const;
 
 /**
+ * Normalize social handle to always include @ prefix
+ */
+const normalizeHandle = (handle: string | undefined): string => {
+  if (!handle) return '';
+  const trimmed = handle.trim();
+  if (!trimmed) return '';
+  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
+};
+
+/**
  * Speaker profile validation schema
  */
 export const speakerProfileSchema = z.object({
@@ -52,9 +62,9 @@ export const speakerProfileSchema = z.object({
     .optional(),
   linkedin_url: z.string().url('Invalid URL').optional().or(z.literal('')),
   github_url: z.string().url('Invalid URL').optional().or(z.literal('')),
-  twitter_handle: z.string().optional(),
-  bluesky_handle: z.string().optional(),
-  mastodon_handle: z.string().optional(),
+  twitter_handle: z.string().transform(normalizeHandle).optional(),
+  bluesky_handle: z.string().transform(normalizeHandle).optional(),
+  mastodon_handle: z.string().transform(normalizeHandle).optional(),
   tshirt_size: z.enum(TSHIRT_SIZES).nullable().refine((val) => val !== null, {
     message: 'T-shirt size is required',
   }),
@@ -63,7 +73,22 @@ export const speakerProfileSchema = z.object({
   departure_airport: z.string().optional().nullable(),
   special_requirements: z.string().max(2000, 'Special requirements is too long').optional().nullable(),
   company_interested_in_sponsoring: z.boolean().optional().nullable(),
-});
+}).refine(
+  (data) => {
+    // At least one social link is required
+    return !!(
+      data.linkedin_url ||
+      data.github_url ||
+      data.twitter_handle ||
+      data.bluesky_handle ||
+      data.mastodon_handle
+    );
+  },
+  {
+    message: 'At least one social link is required',
+    path: ['linkedin_url'], // Show error on first social field
+  }
+);
 
 export type SpeakerProfileFormData = z.infer<typeof speakerProfileSchema>;
 

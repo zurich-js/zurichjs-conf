@@ -132,19 +132,19 @@ export default function FlightsPage({ flights }: FlightsPageProps) {
       <div className="min-h-screen bg-brand-gray-darkest">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/cfp/travel" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
-              <span className="text-white font-semibold">Flights</span>
+          <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+            <Link href="/cfp/travel" className="flex items-center gap-2 sm:gap-3">
+              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-8 w-8 sm:h-10 sm:w-10" />
+              <span className="text-white font-semibold text-sm sm:text-base">Flights</span>
             </Link>
             <Link
               href="/cfp/travel"
-              className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
+              className="text-brand-gray-light hover:text-white text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Travel
+              <span className="hidden xs:inline">Back to</span> Travel
             </Link>
           </div>
         </header>
@@ -197,8 +197,8 @@ export default function FlightsPage({ flights }: FlightsPageProps) {
 
           {/* Add/Edit Form */}
           {showForm && (
-            <section className="bg-brand-gray-dark rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-white mb-6">
+            <section className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6">
                 {editingFlight ? 'Edit Flight' : 'Add Flight'}
               </h2>
 
@@ -324,11 +324,12 @@ export default function FlightsPage({ flights }: FlightsPageProps) {
                   />
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={resetForm}
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
@@ -337,6 +338,7 @@ export default function FlightsPage({ flights }: FlightsPageProps) {
                     variant="primary"
                     loading={isSubmitting}
                     disabled={isSubmitting}
+                    className="w-full sm:w-auto"
                   >
                     {editingFlight ? 'Update Flight' : 'Add Flight'}
                   </Button>
@@ -365,32 +367,32 @@ function FlightSection({
 }) {
   if (!flight) {
     return (
-      <div className="bg-brand-gray-dark rounded-2xl p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">{label}</h3>
-          <Button variant="outline" size="sm" onClick={onAdd}>
+      <div className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h3 className="text-base sm:text-lg font-semibold text-white">{label}</h3>
+          <Button variant="outline" size="sm" onClick={onAdd} className="w-full sm:w-auto">
             Add Flight
           </Button>
         </div>
-        <p className="text-brand-gray-light mt-2">No flight added yet.</p>
+        <p className="text-brand-gray-light mt-2 text-sm">No flight added yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-brand-gray-dark rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">{label}</h3>
-        <div className="flex gap-2">
+    <div className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-white">{label}</h3>
+        <div className="flex gap-3">
           <button
             onClick={() => onEdit(flight)}
-            className="text-brand-primary hover:underline text-sm cursor-pointer"
+            className="text-brand-primary hover:underline text-xs sm:text-sm cursor-pointer"
           >
             Edit
           </button>
           <button
             onClick={() => onDelete(flight.id)}
-            className="text-red-400 hover:underline text-sm cursor-pointer"
+            className="text-red-400 hover:underline text-xs sm:text-sm cursor-pointer"
           >
             Delete
           </button>
@@ -398,39 +400,76 @@ function FlightSection({
       </div>
 
       <div className="bg-brand-gray-darkest rounded-xl p-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <div className="text-2xl font-bold text-white">{flight.departure_airport}</div>
-            <div className="text-sm text-brand-gray-light">
-              {flight.departure_time
-                ? new Date(flight.departure_time).toLocaleString()
-                : 'TBD'}
+        {/* Mobile: Compact layout */}
+        <div className="sm:hidden">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-xl font-bold text-white">{flight.departure_airport}</div>
+              <div className="text-xs text-brand-gray-light">
+                {flight.departure_time
+                  ? new Date(flight.departure_time).toLocaleDateString()
+                  : 'TBD'}
+              </div>
             </div>
-          </div>
-          <div className="flex-1 flex items-center gap-2 px-4">
-            <div className="h-px flex-1 bg-brand-gray-medium" />
-            <svg className="w-4 h-4 text-brand-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+            <svg className="w-5 h-5 text-brand-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-white">{flight.arrival_airport}</div>
-            <div className="text-sm text-brand-gray-light">
-              {flight.arrival_time
-                ? new Date(flight.arrival_time).toLocaleString()
-                : 'TBD'}
+            <div className="text-right">
+              <div className="text-xl font-bold text-white">{flight.arrival_airport}</div>
+              <div className="text-xs text-brand-gray-light">
+                {flight.arrival_time
+                  ? new Date(flight.arrival_time).toLocaleDateString()
+                  : 'TBD'}
+              </div>
             </div>
+          </div>
+          <div className="pt-3 border-t border-brand-gray-medium">
+            <div className="text-sm text-brand-gray-light">
+              {flight.airline} {flight.flight_number}
+            </div>
+            {flight.booking_reference && (
+              <div className="text-xs text-brand-gray-light mt-1">
+                Ref: {flight.booking_reference}
+              </div>
+            )}
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t border-brand-gray-medium flex items-center justify-between">
-          <div className="text-sm text-brand-gray-light">
-            {flight.airline} {flight.flight_number}
-          </div>
-          {flight.booking_reference && (
-            <div className="text-sm text-brand-gray-light">
-              Ref: {flight.booking_reference}
+        {/* Desktop: Full layout */}
+        <div className="hidden sm:block">
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="text-2xl font-bold text-white">{flight.departure_airport}</div>
+              <div className="text-sm text-brand-gray-light">
+                {flight.departure_time
+                  ? new Date(flight.departure_time).toLocaleString()
+                  : 'TBD'}
+              </div>
             </div>
-          )}
+            <div className="flex-1 flex items-center gap-2 px-4">
+              <div className="h-px flex-1 bg-brand-gray-medium" />
+              <svg className="w-4 h-4 text-brand-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-white">{flight.arrival_airport}</div>
+              <div className="text-sm text-brand-gray-light">
+                {flight.arrival_time
+                  ? new Date(flight.arrival_time).toLocaleString()
+                  : 'TBD'}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-brand-gray-medium flex items-center justify-between">
+            <div className="text-sm text-brand-gray-light">
+              {flight.airline} {flight.flight_number}
+            </div>
+            {flight.booking_reference && (
+              <div className="text-sm text-brand-gray-light">
+                Ref: {flight.booking_reference}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

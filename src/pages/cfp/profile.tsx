@@ -570,36 +570,35 @@ export default function CfpProfile({ speaker }: ProfileProps) {
               </div>
 
               {/* Travel Assistance Card */}
-              <div className="bg-brand-gray-darkest rounded-xl p-5 border border-brand-gray-medium">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Plane className="w-5 h-5 text-brand-primary" />
-                      <h3 className="font-semibold text-white">Travel & Accommodation Assistance</h3>
-                    </div>
-                    <p className="text-sm text-brand-gray-light mb-3">
-                      Do you need help with travel and accommodation costs?
-                    </p>
-                    <div className="bg-brand-gray-dark rounded-lg p-3 text-sm space-y-2">
-                      <p className="text-brand-gray-light">
-                        <span className="text-brand-primary font-medium">Community Note:</span> We&apos;ll try our best to support you with this.
-                      </p>
-                      <ul className="text-brand-gray-light text-xs space-y-1 ml-4 list-disc">
-                        <li><strong>European travel</strong> (flight, train, driving): Our budget is <span className="text-brand-primary font-medium">250 CHF/EUR</span></li>
-                        <li><strong>Outside Europe</strong>: Evaluated on a case-by-case basis after talk selection</li>
-                      </ul>
-                      <p className="text-brand-gray-light text-xs mt-2">
-                        If your company can cover travel costs, they&apos;ll receive recognition as a <span className="text-brand-primary font-medium">&quot;Supporter&quot;</span> sponsor with logo placement on our website and event materials.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 pt-1">
-                    <ToggleSwitch
-                      checked={formData.travel_assistance_required === true}
-                      onChange={(checked) => handleChange('travel_assistance_required', checked)}
-                    />
-                  </div>
+              <div className="bg-brand-gray-darkest rounded-xl p-5 border border-brand-gray-medium space-y-4">
+                <div className="flex items-center gap-2">
+                  <Plane className="w-5 h-5 text-brand-primary" />
+                  <h3 className="font-semibold text-white">Travel & Accommodation Assistance</h3>
                 </div>
+
+                <div className="bg-brand-gray-dark rounded-lg p-3 text-sm space-y-2">
+                  <p className="text-brand-gray-light">
+                    <span className="text-brand-primary font-medium">Community Note:</span> We&apos;ll try our best to support you with this.
+                  </p>
+                  <ul className="text-brand-gray-light text-xs space-y-1 ml-4 list-disc">
+                    <li><strong>European travel</strong> (flight, train, driving): Our budget is <span className="text-brand-primary font-medium">250 CHF/EUR</span></li>
+                    <li><strong>Outside Europe</strong>: Evaluated on a case-by-case basis after talk selection</li>
+                  </ul>
+                  <p className="text-brand-gray-light text-xs mt-2">
+                    If your company can cover travel costs, they&apos;ll receive recognition as a <span className="text-brand-primary font-medium">&quot;Supporter&quot;</span> sponsor with logo placement on our website and event materials.
+                  </p>
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <ToggleSwitch
+                    checked={formData.travel_assistance_required === true}
+                    onChange={(checked) => handleChange('travel_assistance_required', checked)}
+                  />
+                  <span className="font-medium text-white group-hover:text-brand-primary transition-colors">
+                    I need travel assistance
+                  </span>
+                </label>
+
                 {formData.travel_assistance_required && (
                   <div className="mt-4 pt-4 border-t border-brand-gray-medium space-y-4">
                     {/* Assistance Type Selection */}
@@ -634,7 +633,11 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                         <Check className="w-4 h-4" />
                         <span>
                           {isEuropean
-                            ? `We'll support your ${formData.assistance_type === 'both' ? 'travel & accommodation' : formData.assistance_type} with up to 250 CHF/EUR`
+                            ? formData.assistance_type === 'travel'
+                              ? "We'll support your travel with up to 250 CHF/EUR"
+                              : formData.assistance_type === 'accommodation'
+                              ? "We'll arrange your accommodation"
+                              : "We'll support your travel (up to 250 CHF/EUR) and arrange accommodation"
                             : `We'll evaluate your ${formData.assistance_type === 'both' ? 'travel & accommodation' : formData.assistance_type} support after talk selection`}
                         </span>
                       </div>
@@ -644,7 +647,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                     {(formData.assistance_type === 'travel' || formData.assistance_type === 'both') && (
                       <div>
                         <label htmlFor="departure_airport" className="block text-sm font-medium text-white mb-2">
-                          Closest Airport <span className="text-brand-gray-medium">(if flying)</span>
+                          Where are you flying from?
                         </label>
                         <AirportInput
                           id="departure_airport"
@@ -653,6 +656,9 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                           placeholder="Search by city or airport code..."
                           error={errors.departure_airport}
                         />
+                        <p className="text-xs text-brand-gray-medium mt-1">
+                          Could be your closest airport or another location if you&apos;re already travelling
+                        </p>
                       </div>
                     )}
                   </div>
@@ -660,34 +666,48 @@ export default function CfpProfile({ speaker }: ProfileProps) {
               </div>
 
               {/* Company Sponsorship Interest Card */}
-              <div className="bg-brand-gray-darkest rounded-xl p-5 border border-brand-gray-medium">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Heart className="w-5 h-5 text-pink-400" />
-                      <h3 className="font-semibold text-white">Conference Sponsorship Interest</h3>
-                    </div>
-                    <p className="text-sm text-brand-gray-light mb-3">
-                      Is your company interested in sponsoring ZurichJS Conf?
-                    </p>
-                    <div className="bg-brand-gray-dark rounded-lg p-3 text-sm">
-                      <p className="text-brand-gray-light">
-                        <span className="text-pink-400 font-medium">Become a Sponsor:</span> We&apos;ll send you our sponsorship prospectus with information about sponsorship tiers and benefits for companies looking to support the JavaScript community.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 pt-1">
-                    <ToggleSwitch
-                      checked={formData.company_interested_in_sponsoring === true}
-                      onChange={(checked) => handleChange('company_interested_in_sponsoring', checked)}
-                    />
-                  </div>
+              <div className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 rounded-xl p-5 border border-pink-500/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <Heart className="w-5 h-5 text-pink-400" />
+                  <h3 className="font-semibold text-white">Partner with ZurichJS</h3>
                 </div>
+                <p className="text-sm text-brand-gray-light mb-3">
+                  Connect your company with 300+ JavaScript developers and tech leaders at Switzerland&apos;s premier JS conference.
+                </p>
+                <ul className="text-sm text-brand-gray-light space-y-1.5 mb-4">
+                  <li className="flex items-center gap-2">
+                    <span className="text-pink-400">•</span>
+                    Brand visibility to an engaged developer audience
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-pink-400">•</span>
+                    Recruiting opportunities with top talent
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-pink-400">•</span>
+                    Logo placement on recordings and event materials
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-pink-400">•</span>
+                    Networking with the Swiss tech community
+                  </li>
+                </ul>
+
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <ToggleSwitch
+                    checked={formData.company_interested_in_sponsoring === true}
+                    onChange={(checked) => handleChange('company_interested_in_sponsoring', checked)}
+                  />
+                  <span className="font-medium text-white group-hover:text-pink-400 transition-colors">
+                    My company is interested in sponsoring
+                  </span>
+                </label>
+
                 {formData.company_interested_in_sponsoring && (
-                  <div className="mt-4 pt-4 border-t border-brand-gray-medium">
+                  <div className="mt-4 pt-4 border-t border-pink-500/20">
                     <div className="flex items-center gap-2 text-green-400 text-sm">
                       <Check className="w-4 h-4" />
-                      <span>We&apos;ll reach out with our sponsorship prospectus</span>
+                      <span>We&apos;ll reach out with sponsorship packages after your submission</span>
                     </div>
                   </div>
                 )}

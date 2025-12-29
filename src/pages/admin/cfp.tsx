@@ -69,6 +69,18 @@ async function updateSubmissionStatus(id: string, status: string): Promise<void>
   if (!res.ok) throw new Error('Failed to update status');
 }
 
+async function deleteTag(id: string): Promise<void> {
+  const res = await fetch('/api/admin/cfp/tags', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Failed to delete tag');
+  }
+}
+
 export default function CfpAdminDashboard() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -195,6 +207,17 @@ export default function CfpAdminDashboard() {
     },
     onError: (error: Error) => {
       toast.error('Bulk Update Failed', error.message);
+    },
+  });
+
+  const deleteTagMutation = useMutation({
+    mutationFn: (id: string) => deleteTag(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.tags });
+      toast.success('Tag Deleted', 'The tag has been removed');
+    },
+    onError: (error: Error) => {
+      toast.error('Delete Failed', error.message);
     },
   });
 
@@ -420,12 +443,22 @@ export default function CfpAdminDashboard() {
                       {tags.map((tag) => (
                         <span
                           key={tag.id}
-                          className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
                             tag.is_suggested ? 'bg-[#F1E271] text-black' : 'bg-gray-100 text-black'
                           }`}
                         >
                           {tag.name}
-                          {tag.is_suggested && <span className="ml-1 text-xs opacity-75">suggested</span>}
+                          {tag.is_suggested && <span className="text-xs opacity-75">suggested</span>}
+                          <button
+                            onClick={() => deleteTagMutation.mutate(tag.id)}
+                            disabled={deleteTagMutation.isPending}
+                            className="ml-1 w-4 h-4 rounded-full bg-black/10 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                            title="Delete tag"
+                          >
+                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </span>
                       ))}
                       {tags.length === 0 && <p className="text-black">No tags found</p>}

@@ -102,7 +102,7 @@ export default async function handler(
         message: 'Ticket checked in successfully',
       });
     } catch (error) {
-      console.error('[API] Error checking in ticket:', error);
+      log.error('Error checking in ticket', error);
       res.status(500).json({
         success: false,
         error: 'Failed to check in ticket',

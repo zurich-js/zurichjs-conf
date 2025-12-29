@@ -132,16 +132,19 @@ export default function TravelOverview({
       <div className="min-h-screen bg-brand-gray-darkest">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/cfp/dashboard" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
-              <span className="text-white font-semibold">Travel</span>
+          <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+            <Link href="/cfp/dashboard" className="flex items-center gap-2 sm:gap-3">
+              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-8 w-8 sm:h-10 sm:w-10" />
+              <span className="text-white font-semibold text-sm sm:text-base">Travel</span>
             </Link>
             <Link
               href="/cfp/dashboard"
-              className="text-brand-gray-light hover:text-white text-sm transition-colors"
+              className="text-brand-gray-light hover:text-white text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
             >
-              Back to Dashboard
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="hidden xs:inline">Back to</span> Dashboard
             </Link>
           </div>
         </header>
@@ -172,8 +175,8 @@ export default function TravelOverview({
           )}
 
           {/* Travel Details */}
-          <section className="bg-brand-gray-dark rounded-2xl p-6 mb-6">
-            <h2 className="text-lg font-bold text-white mb-6">Attendance Details</h2>
+          <section className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6 mb-6">
+            <h2 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6">Attendance Details</h2>
 
             <div className="space-y-6">
               {/* Dates */}
@@ -279,11 +282,11 @@ export default function TravelOverview({
           </section>
 
           {/* Flights */}
-          <section className="bg-brand-gray-dark rounded-2xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-white">Flights</h2>
+          <section className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-bold text-white">Flights</h2>
               <Link href="/cfp/travel/flights">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   Manage Flights
                 </Button>
               </Link>
@@ -337,11 +340,11 @@ export default function TravelOverview({
           )}
 
           {/* Reimbursements */}
-          <section className="bg-brand-gray-dark rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-white">Expense Reimbursements</h2>
+          <section className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-bold text-white">Expense Reimbursements</h2>
               <Link href="/cfp/travel/reimbursements">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   Submit Expense
                 </Button>
               </Link>
@@ -356,19 +359,37 @@ export default function TravelOverview({
                 {reimbursements.slice(0, 5).map((r) => (
                   <div
                     key={r.id}
-                    className="bg-brand-gray-darkest rounded-xl p-4 flex items-center justify-between"
+                    className="bg-brand-gray-darkest rounded-xl p-4"
                   >
-                    <div>
-                      <div className="text-white font-medium">{r.description}</div>
-                      <div className="text-sm text-brand-gray-light capitalize">{r.expense_type}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-white font-semibold">
-                        {r.currency} {(r.amount / 100).toFixed(2)}
+                    {/* Mobile: Stacked layout */}
+                    <div className="sm:hidden">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="text-white font-medium text-sm">{r.description}</div>
+                        <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ${STATUS_COLORS[r.status]}`}>
+                          {r.status}
+                        </span>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[r.status]}`}>
-                        {r.status}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-brand-gray-light capitalize">{r.expense_type}</div>
+                        <div className="text-white font-semibold text-sm">
+                          {r.currency} {(r.amount / 100).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Desktop: Horizontal layout */}
+                    <div className="hidden sm:flex sm:items-center sm:justify-between">
+                      <div>
+                        <div className="text-white font-medium">{r.description}</div>
+                        <div className="text-sm text-brand-gray-light capitalize">{r.expense_type}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-semibold">
+                          {r.currency} {(r.amount / 100).toFixed(2)}
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[r.status]}`}>
+                          {r.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -392,34 +413,60 @@ export default function TravelOverview({
 function FlightCard({ flight, label }: { flight: CfpSpeakerFlight; label: string }) {
   return (
     <div className="bg-brand-gray-darkest rounded-xl p-4">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-brand-gray-light">{label}</span>
         <span className="text-xs px-2 py-0.5 rounded bg-brand-gray-medium text-brand-gray-light capitalize">
           {flight.flight_status}
         </span>
       </div>
-      <div className="flex items-center gap-4">
-        <div>
-          <div className="text-2xl font-bold text-white">{flight.departure_airport}</div>
-          <div className="text-sm text-brand-gray-light">
-            {flight.departure_time ? new Date(flight.departure_time).toLocaleString() : 'TBD'}
+      {/* Mobile: Stacked layout */}
+      <div className="sm:hidden space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xl font-bold text-white">{flight.departure_airport}</div>
+            <div className="text-xs text-brand-gray-light">
+              {flight.departure_time ? new Date(flight.departure_time).toLocaleDateString() : 'TBD'}
+            </div>
           </div>
-        </div>
-        <div className="flex-1 flex items-center gap-2 px-4">
-          <div className="h-px flex-1 bg-brand-gray-medium" />
-          <svg className="w-4 h-4 text-brand-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+          <svg className="w-5 h-5 text-brand-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-white">{flight.arrival_airport}</div>
-          <div className="text-sm text-brand-gray-light">
-            {flight.arrival_time ? new Date(flight.arrival_time).toLocaleString() : 'TBD'}
+          <div className="text-right">
+            <div className="text-xl font-bold text-white">{flight.arrival_airport}</div>
+            <div className="text-xs text-brand-gray-light">
+              {flight.arrival_time ? new Date(flight.arrival_time).toLocaleDateString() : 'TBD'}
+            </div>
           </div>
+        </div>
+        <div className="text-sm text-brand-gray-light">
+          {flight.airline} {flight.flight_number}
         </div>
       </div>
-      <div className="mt-2 text-sm text-brand-gray-light">
-        {flight.airline} {flight.flight_number}
+      {/* Desktop: Horizontal layout */}
+      <div className="hidden sm:block">
+        <div className="flex items-center gap-4">
+          <div>
+            <div className="text-2xl font-bold text-white">{flight.departure_airport}</div>
+            <div className="text-sm text-brand-gray-light">
+              {flight.departure_time ? new Date(flight.departure_time).toLocaleString() : 'TBD'}
+            </div>
+          </div>
+          <div className="flex-1 flex items-center gap-2 px-4">
+            <div className="h-px flex-1 bg-brand-gray-medium" />
+            <svg className="w-4 h-4 text-brand-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-white">{flight.arrival_airport}</div>
+            <div className="text-sm text-brand-gray-light">
+              {flight.arrival_time ? new Date(flight.arrival_time).toLocaleString() : 'TBD'}
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 text-sm text-brand-gray-light">
+          {flight.airline} {flight.flight_number}
+        </div>
       </div>
     </div>
   );

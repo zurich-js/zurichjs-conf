@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
 import type { TeamRequestData } from '@/components/molecules';
 import { getBaseUrl } from '@/lib/url';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Team Request API');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -50,7 +53,7 @@ export default async function handler(
 
     // Check if Resend API key is configured
     if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY is not configured');
+      log.error('RESEND_API_KEY is not configured');
       return res.status(500).json({
         success: false,
         error: 'Email service not configured',
@@ -147,7 +150,7 @@ export default async function handler(
     });
 
     if (customerEmailResult.error) {
-      console.error('Failed to send customer email:', customerEmailResult.error);
+      log.error('Failed to send customer email', customerEmailResult.error);
       // Don't fail the request if customer email fails, but log it
     }
 
@@ -262,7 +265,7 @@ export default async function handler(
     });
 
     if (salesEmailResult.error) {
-      console.error('Failed to send sales email:', salesEmailResult.error);
+      log.error('Failed to send sales email', salesEmailResult.error);
       // Still return success to user even if sales notification fails
     }
 
@@ -271,7 +274,7 @@ export default async function handler(
       message: 'Team request submitted successfully',
     });
   } catch (error) {
-    console.error('Team request error:', error);
+    log.error('Error processing team request', error);
 
     // Provide more detailed error information
     const errorMessage = error instanceof Error ? error.message : 'Failed to submit team request';

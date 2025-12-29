@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { generateZurichJSConferenceCalendar } from '@/lib/calendar';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Calendar API');
 
 export default async function handler(
   req: NextApiRequest,
@@ -59,7 +62,7 @@ export default async function handler(
     res.setHeader('Cache-Control', 'no-cache');
     res.send(result.icsContent);
   } catch (error) {
-    console.error('[API] Error generating calendar:', error);
+    log.error('Error generating calendar', error);
     res.status(500).json({
       error: 'Failed to generate calendar',
       message: error instanceof Error ? error.message : 'Unknown error',

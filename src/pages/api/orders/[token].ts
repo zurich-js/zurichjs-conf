@@ -8,6 +8,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyOrderToken } from '@/lib/auth/orderToken';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Ticket } from '@/lib/types/database';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Order Details API');
 
 export interface OrderDetailsResponse {
   ticket: Ticket;
@@ -49,7 +52,7 @@ export default async function handler(
       .single();
 
     if (fetchError || !data) {
-      console.error('Error fetching ticket:', fetchError);
+      log.error('Error fetching ticket', fetchError);
       return res.status(404).json({ error: 'Order not found' });
     }
 
@@ -72,7 +75,7 @@ export default async function handler(
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('Get order details error:', error);
+    log.error('Error getting order details', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
