@@ -606,7 +606,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                       <label className="block text-sm font-medium text-white mb-3">
                         What do you need help with?
                       </label>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {[
                           { value: 'travel', label: 'Travel Only' },
                           { value: 'accommodation', label: 'Accommodation Only' },
@@ -616,7 +616,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                             key={option.value}
                             type="button"
                             onClick={() => handleChange('assistance_type', option.value as CfpAssistanceType)}
-                            className={`cursor-pointer px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                            className={`cursor-pointer px-3 py-2 rounded-lg text-sm font-medium transition-all border text-center ${
                               formData.assistance_type === option.value
                                 ? 'bg-brand-primary text-black border-brand-primary'
                                 : 'bg-brand-gray-dark text-white border-brand-gray-medium hover:border-brand-primary hover:text-brand-primary'
