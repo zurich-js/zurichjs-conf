@@ -4,7 +4,6 @@
  * Always horizontally scrollable on all screen sizes
  */
 
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import type { PublicSpeaker } from '@/lib/types/cfp';
 
@@ -89,14 +88,6 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
           })}
         </div>
       </div>
-
-      {/* CTA to apply to speak - positioned to appear in white section below */}
-      <p className="text-center text-gray-600 text-base mt-16 sm:mt-20 md:mt-24 lg:mt-28 px-4">
-        Want to share your knowledge at ZurichJS?{' '}
-        <Link href="/cfp" className="text-brand-blue hover:text-blue-800 duration-300 ease-in-out">
-          Apply&nbsp;to&nbsp;speak
-        </Link>
-      </p>
     </div>
   );
 }
