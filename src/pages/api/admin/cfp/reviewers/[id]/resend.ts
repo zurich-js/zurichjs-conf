@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getReviewerById } from '@/lib/cfp/reviewers';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { sendReviewerInvitationEmail } from '@/lib/email';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Resend Invitation API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -53,18 +56,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!emailResult.success) {
-      console.error('[Resend Invitation] Failed to send email:', emailResult.error);
+      log.error('Failed to send email', { error: emailResult.error });
       return res.status(500).json({ error: emailResult.error || 'Failed to send email' });
     }
 
-    console.log(`[Resend Invitation] Successfully sent invitation email to: ${reviewer.email}`);
+    log.info('Successfully sent invitation email', { email: reviewer.email });
 
     return res.status(200).json({
       success: true,
       message: `Invitation resent to ${reviewer.email}`
     });
   } catch (error) {
-    console.error('[Admin Resend Invitation API] Error:', error);
+    log.error('Error resending invitation', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

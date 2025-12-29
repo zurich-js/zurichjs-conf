@@ -13,7 +13,6 @@ import { ShapedSection, DynamicSiteFooter, SectionContainer } from '@/components
 import { SectionSplitView } from '@/components/organisms/SectionSplitView';
 import { BackgroundMedia } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
-import { withCfpGate } from '@/components/cfp/CfpGate';
 import { timelineData } from '@/data';
 
 const SUBMISSION_TYPES = [
@@ -327,4 +326,4 @@ function CheckIcon() {
   );
 }
 
-export default withCfpGate(CfpLanding);
+export default CfpLanding;

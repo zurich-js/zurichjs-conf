@@ -3,9 +3,20 @@
  * Workshop-specific details (only shown for workshop submissions)
  */
 
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Info } from 'lucide-react';
 import { Button, Heading, Input } from '@/components/atoms';
 import { FormData } from './types';
+
+// Character limit display with color-coding
+function CharacterCount({ current, max }: { current: number; max: number }) {
+  const percentage = (current / max) * 100;
+  const color = percentage >= 100
+    ? 'text-red-400'
+    : percentage >= 80
+    ? 'text-yellow-400'
+    : 'text-brand-gray-medium';
+  return <span className={`text-xs ${color}`}>{current.toLocaleString()}/{max.toLocaleString()}</span>;
+}
 
 interface LogisticsStepProps {
   formData: FormData;
@@ -78,27 +89,59 @@ export function LogisticsStep({
           </div>
         </div>
 
-        <div>
-          <label htmlFor="workshop_expected_compensation" className="block text-sm font-semibold text-white mb-2">
-            Expected Compensation <span className="text-brand-gray-medium">(optional)</span>
-          </label>
-          <Input
-            id="workshop_expected_compensation"
-            value={formData.workshop_expected_compensation}
-            onChange={(e) => updateField('workshop_expected_compensation', e.target.value)}
-            placeholder="e.g., CHF 50 per hour"
-            fullWidth
-          />
-          <div className="mt-2 p-3 bg-brand-gray-darkest rounded-lg">
-            <p className="text-sm text-brand-gray-light">
-              <span className="text-brand-primary font-medium">Note:</span> ZurichJS Conf is a community-driven conference focused on keeping tickets accessible for everyone.
-              Workshop compensation is negotiable, but please keep our community mission in mind.
-              Some compensation amounts may not be financially feasible for us.
-            </p>
-            <p className="text-xs text-brand-gray-medium mt-2">
-              Suggested range: CHF 50-100 per hour depending on workshop complexity and preparation required.
-            </p>
+        {/* Compensation Section */}
+        <div className="space-y-4">
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4">
+            <div className="flex gap-3">
+              <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-blue-300">A Note on Compensation</h4>
+                <p className="text-sm text-blue-200/80 mt-1">
+                  We&apos;re committed to keeping ZurichJS Conf accessible and affordable for everyone
+                  in the community. At the same time, we value your time and expertise.
+                </p>
+                <p className="text-sm text-blue-200/80 mt-2">
+                  While we can&apos;t always offer compensation, we want to understand if it&apos;s
+                  a blocker for you. If compensation is required, let us know below and we&apos;ll
+                  do our best to work something out.
+                </p>
+              </div>
+            </div>
           </div>
+
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={formData.workshop_needs_compensation}
+                onChange={(e) => updateField('workshop_needs_compensation', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-brand-gray-darkest rounded-full peer-checked:bg-brand-primary transition-colors" />
+              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full peer-checked:translate-x-5 transition-transform" />
+            </div>
+            <span className="font-medium text-white group-hover:text-brand-primary transition-colors">
+              Compensation is required for me to run this workshop
+            </span>
+          </label>
+
+          {formData.workshop_needs_compensation && (
+            <div className="p-4 bg-brand-gray-darkest rounded-lg border border-brand-gray-medium">
+              <label htmlFor="workshop_expected_compensation" className="block text-sm font-semibold text-white mb-2">
+                What compensation would you need?
+              </label>
+              <Input
+                id="workshop_expected_compensation"
+                value={formData.workshop_expected_compensation}
+                onChange={(e) => updateField('workshop_expected_compensation', e.target.value)}
+                placeholder="e.g., 400 CHF total, or 50 EUR/hour"
+                fullWidth
+              />
+              <p className="text-xs text-brand-gray-medium mt-2">
+                Please state your desired currency (ideally CHF or EUR, but we&apos;ll do our best with others). We&apos;ll discuss this with you if your workshop is selected.
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
@@ -111,11 +154,15 @@ export function LogisticsStep({
             onChange={(e) => updateField('workshop_special_requirements', e.target.value)}
             placeholder="e.g., Participants need laptops with Node.js installed..."
             rows={3}
+            maxLength={2000}
             className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
           />
-          <p className="text-sm text-brand-gray-medium mt-1">
-            What participants should bring or install before the workshop
-          </p>
+          <div className="flex justify-between mt-1">
+            <p className="text-xs text-brand-gray-medium">
+              What participants should bring or install before the workshop
+            </p>
+            <CharacterCount current={formData.workshop_special_requirements.length} max={2000} />
+          </div>
         </div>
       </div>
 

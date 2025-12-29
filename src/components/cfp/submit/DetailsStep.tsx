@@ -8,6 +8,20 @@ import { Button, Heading, Input } from '@/components/atoms';
 import type { CfpTag, CfpTalkLevel } from '@/lib/types/cfp';
 import { LEVEL_INFO, FormData } from './types';
 
+// Character limit display with color-coding
+function CharacterCount({ current, max, min }: { current: number; max: number; min?: number }) {
+  const percentage = (current / max) * 100;
+  const isBelowMin = min && current < min;
+  const color = percentage >= 100
+    ? 'text-red-400'
+    : percentage >= 80
+    ? 'text-yellow-400'
+    : isBelowMin
+    ? 'text-brand-gray-medium'
+    : 'text-green-400';
+  return <span className={`text-xs ${color}`}>{current.toLocaleString()}/{max.toLocaleString()}</span>;
+}
+
 interface DetailsStepProps {
   formData: FormData;
   updateField: <K extends keyof FormData>(field: K, value: FormData[K]) => void;
@@ -85,9 +99,7 @@ export function DetailsStep({
             <p className={`text-xs ${errors.abstract ? 'text-red-400' : 'text-brand-gray-medium'}`}>
               {errors.abstract || 'Minimum 100 characters'}
             </p>
-            <p className="text-xs text-brand-gray-medium">
-              {formData.abstract.length} characters
-            </p>
+            <CharacterCount current={formData.abstract.length} max={3000} min={100} />
           </div>
         </div>
 
@@ -194,8 +206,12 @@ export function DetailsStep({
             onChange={(e) => updateField('outline', e.target.value)}
             placeholder="Break down the structure of your session..."
             rows={4}
+            maxLength={3000}
             className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
           />
+          <div className="flex justify-end mt-1">
+            <CharacterCount current={formData.outline.length} max={3000} />
+          </div>
         </div>
 
         {/* Additional Notes */}
@@ -209,8 +225,12 @@ export function DetailsStep({
             onChange={(e) => updateField('additional_notes', e.target.value)}
             placeholder="Anything else reviewers should know..."
             rows={3}
+            maxLength={2000}
             className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
           />
+          <div className="flex justify-end mt-1">
+            <CharacterCount current={formData.additional_notes.length} max={2000} />
+          </div>
         </div>
 
         {/* Links */}

@@ -124,19 +124,19 @@ export default function ReimbursementsPage({ reimbursements }: ReimbursementsPag
       <div className="min-h-screen bg-brand-gray-darkest">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/cfp/travel" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
-              <span className="text-white font-semibold">Reimbursements</span>
+          <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+            <Link href="/cfp/travel" className="flex items-center gap-2 sm:gap-3">
+              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-8 w-8 sm:h-10 sm:w-10" />
+              <span className="text-white font-semibold text-sm sm:text-base">Reimbursements</span>
             </Link>
             <Link
               href="/cfp/travel"
-              className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
+              className="text-brand-gray-light hover:text-white text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Travel
+              <span className="hidden xs:inline">Back to</span> Travel
             </Link>
           </div>
         </header>
@@ -175,8 +175,8 @@ export default function ReimbursementsPage({ reimbursements }: ReimbursementsPag
 
           {/* Submit Form */}
           {showForm && (
-            <section className="bg-brand-gray-dark rounded-2xl p-6 mb-6">
-              <h2 className="text-lg font-bold text-white mb-6">Submit Expense</h2>
+            <section className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6 mb-6">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6">Submit Expense</h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
@@ -310,8 +310,8 @@ export default function ReimbursementsPage({ reimbursements }: ReimbursementsPag
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <Button type="button" variant="outline" onClick={resetForm}>
+                <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
+                  <Button type="button" variant="outline" onClick={resetForm} className="w-full sm:w-auto">
                     Cancel
                   </Button>
                   <Button
@@ -319,6 +319,7 @@ export default function ReimbursementsPage({ reimbursements }: ReimbursementsPag
                     variant="primary"
                     loading={isSubmitting}
                     disabled={isSubmitting}
+                    className="w-full sm:w-auto"
                   >
                     Submit Request
                   </Button>
@@ -328,11 +329,11 @@ export default function ReimbursementsPage({ reimbursements }: ReimbursementsPag
           )}
 
           {/* Reimbursements List */}
-          <section className="bg-brand-gray-dark rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-white mb-6">Your Requests</h2>
+          <section className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-bold text-white mb-4 sm:mb-6">Your Requests</h2>
 
             {reimbursements.length === 0 ? (
-              <p className="text-brand-gray-light text-center py-8">
+              <p className="text-brand-gray-light text-center py-8 text-sm">
                 No reimbursement requests yet.
               </p>
             ) : (
@@ -342,28 +343,49 @@ export default function ReimbursementsPage({ reimbursements }: ReimbursementsPag
                     key={r.id}
                     className="bg-brand-gray-darkest rounded-xl p-4"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-white font-medium">{r.description}</div>
-                        <div className="text-sm text-brand-gray-light capitalize mt-1">
-                          {r.expense_type}
-                        </div>
-                        <div className="text-xs text-brand-gray-medium mt-2">
-                          Submitted {new Date(r.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-white">
-                          {r.currency} {(r.amount / 100).toFixed(2)}
-                        </div>
-                        <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded ${STATUS_COLORS[r.status]}`}>
+                    {/* Mobile: Stacked layout */}
+                    <div className="sm:hidden">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="text-white font-medium text-sm">{r.description}</div>
+                        <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded ${STATUS_COLORS[r.status]}`}>
                           {STATUS_LABELS[r.status]}
                         </span>
+                      </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-xs text-brand-gray-light capitalize">{r.expense_type}</div>
+                        <div className="text-base font-bold text-white">
+                          {r.currency} {(r.amount / 100).toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="text-xs text-brand-gray-medium">
+                        Submitted {new Date(r.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    {/* Desktop: Horizontal layout */}
+                    <div className="hidden sm:block">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-white font-medium">{r.description}</div>
+                          <div className="text-sm text-brand-gray-light capitalize mt-1">
+                            {r.expense_type}
+                          </div>
+                          <div className="text-xs text-brand-gray-medium mt-2">
+                            Submitted {new Date(r.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-white">
+                            {r.currency} {(r.amount / 100).toFixed(2)}
+                          </div>
+                          <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded ${STATUS_COLORS[r.status]}`}>
+                            {STATUS_LABELS[r.status]}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {r.admin_notes && (
                       <div className="mt-3 pt-3 border-t border-brand-gray-medium">
-                        <p className="text-sm text-brand-gray-light">
+                        <p className="text-xs sm:text-sm text-brand-gray-light">
                           <span className="text-brand-gray-medium">Note:</span> {r.admin_notes}
                         </p>
                       </div>

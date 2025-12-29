@@ -3,10 +3,11 @@
  * Manages CFP reviewers - list, invite, update, revoke
  */
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminReviewer } from '@/lib/types/cfp-admin';
+import { Pagination } from '@/components/atoms';
 import { InviteReviewerForm } from '../InviteReviewerForm';
 import { ReviewerModal } from '../ReviewerModal';
 
@@ -17,6 +18,11 @@ interface ReviewersTabProps {
 
 export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const [selectedReviewer, setSelectedReviewer] = useState<CfpAdminReviewer | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -97,12 +103,80 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
     }
   };
 
-  const activeReviewers = reviewers.filter(r => r.is_active);
+  // Filter reviewers
+  const filteredReviewers = useMemo(() => {
+    let result = reviewers.filter(r => r.is_active);
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.name?.toLowerCase().includes(query) ||
+          r.email.toLowerCase().includes(query)
+      );
+    }
+
+    // Role filter
+    if (roleFilter !== 'all') {
+      result = result.filter((r) => r.role === roleFilter);
+    }
+
+    // Status filter
+    if (statusFilter === 'active') {
+      result = result.filter((r) => r.accepted_at);
+    } else if (statusFilter === 'pending') {
+      result = result.filter((r) => !r.accepted_at);
+    }
+
+    return result;
+  }, [reviewers, searchQuery, roleFilter, statusFilter]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredReviewers.length / ITEMS_PER_PAGE);
+  const paginatedReviewers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredReviewers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredReviewers, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter, statusFilter]);
 
   return (
     <div>
-      <div className="mb-6">
+      {/* Invite Form and Filters */}
+      <div className="mb-6 flex flex-col gap-4">
         <InviteReviewerForm />
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search reviewers by name or email..."
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          />
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="all">All Roles</option>
+            <option value="super_admin">Super Admin</option>
+            <option value="reviewer">Reviewer</option>
+            <option value="readonly">Read Only</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
       </div>
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -112,7 +186,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
         <>
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
-            {activeReviewers.map((r) => (
+            {paginatedReviewers.map((r) => (
               <div key={r.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
@@ -152,8 +226,10 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 </div>
               </div>
             ))}
-            {activeReviewers.length === 0 && (
-              <div className="text-center py-8 text-gray-500">No reviewers found</div>
+            {paginatedReviewers.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                {searchQuery || roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
+              </div>
             )}
           </div>
 
@@ -171,7 +247,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {activeReviewers.map((r) => (
+                {paginatedReviewers.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 font-medium text-black">{r.name || '-'}</td>
                     <td className="px-4 py-4 text-sm text-black">{r.email}</td>
@@ -213,16 +289,26 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                     </td>
                   </tr>
                 ))}
-                {activeReviewers.length === 0 && (
+                {paginatedReviewers.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-black">
-                      No reviewers found
+                      {searchQuery || roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageSize={ITEMS_PER_PAGE}
+            totalItems={filteredReviewers.length}
+            variant="light"
+          />
         </>
       )}
 

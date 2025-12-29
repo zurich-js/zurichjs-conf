@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSession } from '@/lib/cfp/speakers';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import type { AdminCreateSessionRequest } from '@/lib/types/cfp';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('CFP Admin Sessions API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -47,9 +50,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error });
     }
 
+    log.info('Session created', { speakerId: data.speaker_id, title: data.title });
     return res.status(201).json({ session: submission });
   } catch (error) {
-    console.error('[CFP Admin Sessions API] POST Error:', error);
+    log.error('Error creating session', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

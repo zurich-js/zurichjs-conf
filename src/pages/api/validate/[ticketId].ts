@@ -6,6 +6,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateTicket, checkInTicket } from '@/lib/qrcode';
 import { verifyAdminToken } from '@/lib/admin/auth';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Ticket Validation API');
 
 export default async function handler(
   req: NextApiRequest,
@@ -36,7 +39,7 @@ export default async function handler(
         ticket: result.ticket,
       });
     } catch (error) {
-      console.error('[API] Error validating ticket:', error);
+      log.error('Error validating ticket', error);
       res.status(500).json({
         valid: false,
         error: 'Failed to validate ticket',
@@ -99,7 +102,7 @@ export default async function handler(
         message: 'Ticket checked in successfully',
       });
     } catch (error) {
-      console.error('[API] Error checking in ticket:', error);
+      log.error('Error checking in ticket', error);
       res.status(500).json({
         success: false,
         error: 'Failed to check in ticket',

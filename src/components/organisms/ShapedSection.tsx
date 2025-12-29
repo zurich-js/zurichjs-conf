@@ -88,47 +88,47 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
   // Calculate padding and margin based on drop configuration
 
   const spaceWithoutBottom = [
-    '-mt-16 pt-16 pb-32',
-    'sm:-mt-20 sm:pt-20 sm:pb-40',
-    'md:-mt-28 md:pt-28 md:pb-56',
-    'lg:-mt-40 lg:pt-40 lg:pb-64',
-    'xl:-mt-40 2xl:pt-40 2xl:pb-64',
-    '2xl:-mt-48 2xl:pt-48 2xl:pb-72',
-    '3xl:-mt-64 3xl:pt-64 3xl:pb-96',
-    '4xl:-mt-76 4xl:pt-76 4xl:pb-112',
+    '-mt-12 pt-12 pb-24',
+    'sm:-mt-16 sm:pt-16 sm:pb-32',
+    'md:-mt-20 md:pt-20 md:pb-40',
+    'lg:-mt-28 lg:pt-28 lg:pb-48',
+    'xl:-mt-28 xl:pt-28 xl:pb-48',
+    '2xl:-mt-36 2xl:pt-36 2xl:pb-56',
+    '3xl:-mt-48 3xl:pt-48 3xl:pb-72',
+    '4xl:-mt-56 4xl:pt-56 4xl:pb-84',
   ].join(' ')
 
   const spaceWithoutTop = [
-    '-mt-16 pb-16 pt-32',
-    'sm:-mt-20 sm:pb-20 sm:pt-40',
-    'md:-mt-28 md:pb-28 md:pt-56',
-    'lg:-mt-40 lg:pb-40 lg:pt-64',
-    'xl:-mt-40 2xl:pb-40 2xl:pt-64',
-    '2xl:-mt-48 2xl:pb-48 2xl:pt-72',
-    '3xl:-mt-64 3xl:pb-64 3xl:pt-96',
-    '4xl:-mt-76 4xl:pb-76 4xl:pt-112',
+    '-mt-12 pb-12 pt-24',
+    'sm:-mt-16 sm:pb-16 sm:pt-32',
+    'md:-mt-20 md:pb-20 md:pt-40',
+    'lg:-mt-28 lg:pb-28 lg:pt-48',
+    'xl:-mt-28 xl:pb-28 xl:pt-48',
+    '2xl:-mt-36 2xl:pb-36 2xl:pt-56',
+    '3xl:-mt-48 3xl:pb-48 3xl:pt-72',
+    '4xl:-mt-56 4xl:pb-56 4xl:pt-84',
   ].join(' ')
 
   const spaceStraight = [
-    '-my-16 py-32',
-    'sm:-my-20 sm:py-40',
-    'md:-my-28 md:py-56',
-    'lg:-my-40 lg:py-64',
-    'xl:-my-40 2xl:py-64',
-    '2xl:-my-48 2xl:py-72',
-    '3xl:-my-64 3xl:py-96',
-    '4xl:-my-76 4xl:py-112',
+    '-my-12 py-24',
+    'sm:-my-16 sm:py-32',
+    'md:-my-20 md:py-40',
+    'lg:-my-28 lg:py-48',
+    'xl:-my-28 xl:py-48',
+    '2xl:-my-36 2xl:py-56',
+    '3xl:-my-48 3xl:py-72',
+    '4xl:-my-56 4xl:py-84',
   ].join(' ')
 
   const spaceWithBoth = [
-    'py-16',
-    'sm:py-20',
-    'md:py-28',
-    'lg:py-40',
-    '2xl:py-40',
-    '2xl:py-48',
-    '3xl:py-64',
-    '4xl:py-76',
+    'py-12',
+    'sm:py-16',
+    'md:py-20',
+    'lg:py-28',
+    'xl:py-28',
+    '2xl:py-36',
+    '3xl:py-48',
+    '4xl:py-56',
   ].join(' ')
 
   const spacingClasses = dropTop && !dropBottom ? spaceWithoutBottom :

@@ -9,6 +9,9 @@ import { verifyOrderToken } from '@/lib/auth/orderToken';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Ticket Reassign API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -49,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (fetchError || !currentTicket) {
-      console.error('Error fetching ticket:', fetchError);
+      log.error('Error fetching ticket', fetchError);
       return res.status(404).json({ error: 'Ticket not found' });
     }
 
@@ -75,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (updateError || !ticket) {
-      console.error('Error updating ticket:', updateError);
+      log.error('Error updating ticket', updateError);
       return res.status(500).json({ error: 'Failed to reassign ticket' });
     }
 
@@ -102,7 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!emailResult.success) {
-      console.error('Failed to send email to new owner:', emailResult.error);
+      log.error('Failed to send email to new owner', { error: emailResult.error });
       // Don't fail the request, ticket was reassigned successfully
     }
 
@@ -112,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ticket,
     });
   } catch (error) {
-    console.error('Reassign ticket error:', error);
+    log.error('Error reassigning ticket', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

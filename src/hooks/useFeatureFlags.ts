@@ -10,7 +10,7 @@ import posthog from 'posthog-js';
 /**
  * Available feature flags
  */
-export type FeatureFlag = 'cfp' | 'workshops' | 'schedule' | 'speakers' | 'venue';
+export type FeatureFlag = 'workshops' | 'schedule' | 'speakers' | 'venue';
 
 /**
  * Fetches feature flag status from PostHog
@@ -49,14 +49,6 @@ export function useFeatureFlag(flag: FeatureFlag) {
   });
 
   return { isEnabled, isLoading };
-}
-
-/**
- * Hook to check if the CFP feature is enabled
- */
-export function useCfpFeatureFlag() {
-  const { isEnabled, isLoading } = useFeatureFlag('cfp');
-  return { isCfpEnabled: isEnabled, isLoading };
 }
 
 /**

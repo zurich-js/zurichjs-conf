@@ -5,6 +5,10 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, acceptReviewerInvite } from '@/lib/cfp/auth';
+import { logger } from '@/lib/logger';
+import { serverAnalytics } from '@/lib/analytics/server';
+
+const log = logger.scope('CFP Reviewer Auth Callback');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -22,20 +26,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Got user from session
     userId = user.id;
     userEmail = user.email;
-    console.log('[Reviewer Auth Callback API] User from session:', userEmail);
+    log.info('User from session', { email: userEmail });
   } else {
     // Fallback to request body (client already verified user with getUser())
     const { userId: bodyUserId, email: bodyEmail } = req.body;
 
     if (!bodyUserId || !bodyEmail) {
-      console.error('[Reviewer Auth Callback API] No user found in session or body');
-      console.error('[Reviewer Auth Callback API] Session error:', userError?.message);
+      log.error('No user found in session or body', { sessionError: userError?.message });
       return res.status(401).json({ error: 'Unauthorized - no user found' });
     }
 
     userId = bodyUserId;
     userEmail = bodyEmail;
-    console.log('[Reviewer Auth Callback API] User from body:', userEmail);
+    log.info('User from body', { email: userEmail });
   }
 
   try {
@@ -43,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { reviewer, error } = await acceptReviewerInvite(userId, userEmail);
 
     if (error) {
-      console.error('[Reviewer Auth Callback API] Accept invite error:', error);
+      log.error('Accept invite error', { error, email: userEmail });
       return res.status(400).json({ error });
     }
 
@@ -51,10 +54,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'No invitation found for this email' });
     }
 
-    console.log('[Reviewer Auth Callback API] Successfully accepted invite for:', userEmail);
+    // Identify reviewer in PostHog
+    await serverAnalytics.identify(reviewer.id, {
+      email: reviewer.email,
+      name: reviewer.name || undefined,
+    });
+
+    // Track reviewer authenticated
+    await serverAnalytics.track('cfp_reviewer_authenticated', reviewer.id, {
+      reviewer_id: reviewer.id,
+      reviewer_email: reviewer.email,
+    });
+
+    log.info('Successfully accepted invite', { email: userEmail, reviewerId: reviewer.id });
     return res.status(200).json({ reviewer });
   } catch (error) {
-    console.error('[Reviewer Auth Callback API] Error:', error);
+    log.error('Error in reviewer auth callback', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import "@/styles/ProfileCard.css";
 import type { AppProps } from "next/app";
 import { Figtree } from "next/font/google";
 import { MotionProvider } from "@/contexts/MotionContext";

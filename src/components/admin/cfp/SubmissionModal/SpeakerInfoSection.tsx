@@ -123,17 +123,17 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
                 )}
                 {speaker.twitter_handle && (
                   <a
-                    href={`https://twitter.com/${speaker.twitter_handle}`}
+                    href={`https://twitter.com/${speaker.twitter_handle.replace(/^@/, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-2 py-1 bg-sky-100 text-sky-700 rounded text-xs hover:bg-sky-200 transition-colors"
                   >
-                    @{speaker.twitter_handle}
+                    {speaker.twitter_handle.startsWith('@') ? speaker.twitter_handle : `@${speaker.twitter_handle}`}
                   </a>
                 )}
                 {speaker.bluesky_handle && (
                   <a
-                    href={`https://bsky.app/profile/${speaker.bluesky_handle}`}
+                    href={`https://bsky.app/profile/${speaker.bluesky_handle.replace(/^@/, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition-colors"

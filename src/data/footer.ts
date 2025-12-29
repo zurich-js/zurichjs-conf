@@ -15,7 +15,7 @@ export const footerData: SiteFooterProps = {
   conference: {
     title: 'Conference',
     links: [
-      { label: 'Call for Papers', href: '/cfp', locked: true }, // Unlocked when 'cfp' feature flag is enabled
+      { label: 'Call for Papers', href: '/cfp' },
       { label: 'Speakers', href: '/speakers', locked: true },
       { label: 'Schedule', href: '/schedule', locked: true },
       { label: 'Venue', href: '/venue', locked: true },

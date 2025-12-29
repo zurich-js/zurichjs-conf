@@ -6,6 +6,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { logger } from '@/lib/logger';
+import { serverAnalytics } from '@/lib/analytics/server';
+
+const log = logger.scope('CFP Status API');
 
 const VALID_STATUSES = ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted', 'rejected'];
 
@@ -66,11 +70,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', id);
 
     if (updateError) {
-      console.error('[Status API] Update error:', updateError);
+      log.error('Failed to update submission status', updateError, { submissionId: id, status });
       return res.status(500).json({ error: 'Failed to update status' });
     }
 
-    console.log(`[Status API] Submission ${id} status changed from ${submission.status} to ${status} by ${reviewer.email}`);
+    // Track status change
+    await serverAnalytics.track('cfp_submission_status_changed', reviewer.id, {
+      submission_id: id,
+      submission_title: '', // We don't have title in this query
+      old_status: submission.status,
+      new_status: status,
+      changed_by: reviewer.email,
+    });
+
+    log.info('Submission status changed', {
+      submissionId: id,
+      previousStatus: submission.status,
+      newStatus: status,
+      changedBy: reviewer.email,
+    });
 
     return res.status(200).json({
       success: true,
@@ -78,7 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       newStatus: status,
     });
   } catch (error) {
-    console.error('[Status API] Error:', error);
+    log.error('Failed to update status', error, { submissionId: id });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

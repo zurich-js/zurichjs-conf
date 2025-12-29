@@ -8,7 +8,6 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input } from '@/components/atoms';
-import { withCfpGate } from '@/components/cfp/CfpGate';
 
 function ReviewerLoginPage() {
   const router = useRouter();
@@ -161,4 +160,4 @@ function ReviewerLoginPage() {
   );
 }
 
-export default withCfpGate(ReviewerLoginPage);
+export default ReviewerLoginPage;

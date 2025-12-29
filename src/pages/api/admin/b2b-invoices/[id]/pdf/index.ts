@@ -8,6 +8,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { getInvoice, removeInvoicePDF } from '@/lib/b2b';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoice PDF');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -63,7 +66,7 @@ async function handleDownload(invoiceId: string, res: NextApiResponse) {
       .download(filePath);
 
     if (error) {
-      console.error('Error downloading PDF:', error);
+      log.error('Error downloading PDF', error);
       return res.status(500).json({ error: 'Failed to download PDF' });
     }
 
@@ -78,7 +81,7 @@ async function handleDownload(invoiceId: string, res: NextApiResponse) {
 
     return res.send(buffer);
   } catch (error) {
-    console.error('Error downloading PDF:', error);
+    log.error('Error downloading PDF', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to download PDF',
     });
@@ -113,7 +116,7 @@ async function handleDelete(invoiceId: string, res: NextApiResponse) {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error deleting PDF:', error);
+    log.error('Error deleting PDF', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to delete PDF',
     });

@@ -7,6 +7,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getStripeClient } from '@/lib/stripe/client';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Financials API');
 
 /**
  * Fetch Stripe fees for a list of payment intent IDs
@@ -46,7 +49,7 @@ async function getStripeFees(paymentIntentIds: string[]): Promise<Map<string, nu
           }
         } catch (err) {
           // Log but don't fail - some payments might not have fees (e.g., complimentary)
-          console.warn(`Could not fetch fee for payment intent ${paymentIntentId}:`, err);
+          log.warn('Could not fetch fee for payment intent', { paymentIntentId, error: err });
         }
       })
     );
@@ -76,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching tickets:', error);
+      log.error('Error fetching tickets', error);
       return res.status(500).json({ error: 'Failed to fetch tickets' });
     }
 
@@ -296,7 +299,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       purchasesTimeSeries,
     });
   } catch (error) {
-    console.error('Admin financials API error:', error);
+    log.error('Error fetching financials', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

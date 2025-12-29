@@ -5,6 +5,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { generateTicketQRCode } from '@/lib/qrcode';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('QR Code API');
 
 export default async function handler(
   req: NextApiRequest,
@@ -36,7 +39,7 @@ export default async function handler(
     res.setHeader('Access-Control-Allow-Origin', '*'); // Allow emails to load the image
     res.send(imageBuffer);
   } catch (error) {
-    console.error('[API] Error generating QR code:', error);
+    log.error('Error generating QR code', error);
     res.status(500).json({
       error: 'Failed to generate QR code',
       message: error instanceof Error ? error.message : 'Unknown error',

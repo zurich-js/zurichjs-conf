@@ -8,6 +8,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { updateSpeaker } from '@/lib/cfp/speakers';
 import { speakerProfileSchema } from '@/lib/validations/cfp';
+import { logger } from '@/lib/logger';
+import { serverAnalytics } from '@/lib/analytics/server';
+
+const log = logger.scope('CFP Speaker API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Create Supabase client with request cookies
@@ -58,12 +62,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      // Update user identification in PostHog
+      await serverAnalytics.identify(speaker.id, {
+        email: speaker.email,
+        first_name: updatedSpeaker.first_name || undefined,
+        last_name: updatedSpeaker.last_name || undefined,
+        company: updatedSpeaker.company || undefined,
+        job_title: updatedSpeaker.job_title || undefined,
+      });
+
+      log.info('Speaker profile updated', { speakerId: speaker.id });
+
       return res.status(200).json({
         success: true,
         speaker: updatedSpeaker,
       });
     } catch (error) {
-      console.error('[CFP Speaker API] Update error:', error);
+      log.error('Failed to update speaker profile', error, { speakerId: speaker.id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

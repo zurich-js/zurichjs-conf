@@ -19,6 +19,7 @@ export interface FormData {
   special_requirements: string;
   // Workshop-specific
   workshop_duration_hours: number;
+  workshop_needs_compensation: boolean;
   workshop_expected_compensation: string;
   workshop_special_requirements: string;
   workshop_max_participants: number;
@@ -36,6 +37,7 @@ export const INITIAL_FORM_DATA: FormData = {
   previous_recording_url: '',
   special_requirements: '',
   workshop_duration_hours: 4,
+  workshop_needs_compensation: false,
   workshop_expected_compensation: '',
   workshop_special_requirements: '',
   workshop_max_participants: 30,

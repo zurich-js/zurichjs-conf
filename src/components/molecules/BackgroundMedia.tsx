@@ -32,8 +32,8 @@ export const BackgroundMedia: React.FC<BackgroundMediaProps> = ({
 
   return (
     <div className={`absolute inset-0 overflow-hidden w-full h-full ${className}`}>
-      {/* Media Layer - Top Half Only */}
-      <div className="absolute top-0 left-0 right-0 h-1/2">
+      {/* Media Layer - Top 85% of screen */}
+      <div className="absolute top-0 left-0 right-0 h-[85%]">
         {videoSrc && !videoError ? (
           <video
             autoPlay
@@ -72,16 +72,16 @@ export const BackgroundMedia: React.FC<BackgroundMediaProps> = ({
           <div
             className="absolute inset-0"
             style={{
-              background: 'linear-gradient(to bottom, transparent 0%, transparent 50%, rgba(0, 0, 0, 0.6) 75%, #000000 100%)',
+              background: 'linear-gradient(to bottom, transparent 0%, transparent 80%, rgba(0, 0, 0, 0.6) 90%, #000000 100%)',
             }}
             aria-hidden="true"
           />
         )}
       </div>
 
-      {/* Solid black for bottom half of screen */}
+      {/* Solid black for bottom 15% of screen */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-1/2 bg-black"
+        className="absolute bottom-0 left-0 right-0 h-[15%] bg-black"
         aria-hidden="true"
       />
     </div>

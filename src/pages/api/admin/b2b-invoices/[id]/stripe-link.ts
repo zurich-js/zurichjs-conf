@@ -10,6 +10,9 @@ import { verifyAdminToken } from '@/lib/admin/auth';
 import { getInvoice } from '@/lib/b2b';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getStripeClient } from '@/lib/stripe/client';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Invoice Stripe Link');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -127,7 +130,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', id);
 
     if (updateError) {
-      console.error('Error updating invoice with payment link:', updateError);
+      log.error('Error updating invoice with payment link', updateError);
       // Don't fail - the payment link was created, we just failed to save it
     }
 
@@ -137,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       paymentLinkId: paymentLink.id,
     });
   } catch (error) {
-    console.error('Error creating Stripe payment link:', error);
+    log.error('Error creating Stripe payment link', error);
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to create payment link',
     });

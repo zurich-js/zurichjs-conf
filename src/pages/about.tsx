@@ -62,7 +62,7 @@ export default function AboutUs() {
             </Link>
             <Link href="/#tickets">
               <Button variant="primary" size="sm">
-                Render ticket
+                Get your ticket
               </Button>
             </Link>
           </div>

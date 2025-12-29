@@ -9,7 +9,7 @@ export const heroData = {
   dateTimeISO: '2026-09-11T08:30:00+02:00',
   venue: 'Technopark Zurich',
   city: 'Switzerland',
-  ctaLabel: 'Render ticket',
+  ctaLabel: 'Get your ticket',
   background: {
     // videoSrc: '/video/zurich-aerial.mp4',
     posterSrc: '/images/technopark.png',

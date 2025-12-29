@@ -8,6 +8,9 @@ import Stripe from 'stripe';
 import type { Cart, CheckoutFormData } from '@/types/cart';
 import { getStripeRedirectUrls } from '@/lib/url';
 import { encodeCartState } from '@/lib/cart-url-state';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Create Checkout Session');
 
 /**
  * API request body
@@ -161,16 +164,15 @@ export default async function handler(
       ? [{ coupon: cart.couponCode }]
       : undefined;
 
-    console.log('[CreateCheckout] Cart coupon info:', {
+    log.info('Cart coupon info', {
       couponCode: cart.couponCode,
       discountAmount: cart.discountAmount,
       hasDiscounts: !!discounts,
-      discounts,
     });
 
     // Get or create Stripe Customer to avoid duplicates
     // First check if customer exists with this email
-    console.log('[CreateCheckout] Searching for existing customer with email:', customerInfo.email);
+    log.info('Searching for existing customer', { email: customerInfo.email });
     const existingCustomers = await stripe.customers.list({
       email: customerInfo.email,
       limit: 1,
@@ -181,7 +183,7 @@ export default async function handler(
     if (existingCustomers.data.length > 0) {
       // Reuse existing customer
       customer = existingCustomers.data[0];
-      console.log('[CreateCheckout] ✅ Found existing customer:', customer.id);
+      log.info('Found existing customer', { customerId: customer.id });
 
       // Update customer with latest information
       customer = await stripe.customers.update(customer.id, {
@@ -200,10 +202,10 @@ export default async function handler(
           jobTitle: customerInfo.jobTitle || '',
         },
       });
-      console.log('[CreateCheckout] Updated existing customer info');
+      log.info('Updated existing customer info', { customerId: customer.id });
     } else {
       // Create new customer if none exists
-      console.log('[CreateCheckout] No existing customer found, creating new one...');
+      log.info('No existing customer found, creating new one', { email: customerInfo.email });
       customer = await stripe.customers.create({
         name: `${customerInfo.firstName} ${customerInfo.lastName}`,
         email: customerInfo.email,
@@ -221,7 +223,7 @@ export default async function handler(
           jobTitle: customerInfo.jobTitle || '',
         },
       });
-      console.log('[CreateCheckout] ✅ Created new customer:', customer.id);
+      log.info('Created new customer', { customerId: customer.id });
     }
 
     // Create Stripe Checkout Session
@@ -249,12 +251,14 @@ export default async function handler(
     // Apply pre-validated coupon if available
     if (discounts && discounts.length > 0) {
       sessionParams.discounts = discounts;
-      console.log('[CreateCheckout] ✅ Applying coupon to checkout session:', discounts);
+      log.info('Applying coupon to checkout session', { couponCode: cart.couponCode });
     }
 
-    console.log('[CreateCheckout] Creating session with params:', JSON.stringify(sessionParams, null, 2));
+    log.info('Creating checkout session', { customerId: customer.id, totalItems: cart.totalItems });
 
     const session = await stripe.checkout.sessions.create(sessionParams);
+
+    log.info('Checkout session created', { sessionId: session.id });
 
     // Return the checkout URL
     res.status(200).json({
@@ -262,7 +266,7 @@ export default async function handler(
       sessionId: session.id,
     });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    log.error('Error creating checkout session', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to create checkout session';
 
