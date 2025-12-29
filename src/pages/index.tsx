@@ -7,6 +7,7 @@ import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
+import Link from 'next/link';
 
 /**
  * Page props passed through _app.tsx for hydration and currency detection
@@ -92,6 +93,12 @@ export default function Home() {
         </div>
 
         <ShapedSection shape="widen" variant="light" id="schedule" className="relative z-20">
+          <p className="text-brand-gray-medium text-md text-center px-4 pb-8 relative -top-4 sm:-top-6 md:-top-8">
+            Want to share your knowledge at ZurichJS?{' '}
+            <Link href="/cfp" className="text-md text-brand-blue hover:text-blue-700 duration-300 ease-in-out">
+              Apply&nbsp;to&nbsp;speak
+            </Link>
+          </p>
           <ScheduleSection
             title={scheduleData.title}
             subtitle={scheduleData.subtitle}
