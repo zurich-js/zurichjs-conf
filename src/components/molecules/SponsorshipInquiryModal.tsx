@@ -153,7 +153,7 @@ export const SponsorshipInquiryModal: React.FC<SponsorshipInquiryModalProps> = (
                 aria-label="Close modal"
                 autoFocus
               >
-                <XIcon size={20} className="fill-brand-white" />
+                <XIcon size={20} className="text-brand-white" />
               </button>
 
               {isSuccess ? (
@@ -288,7 +288,7 @@ export const SponsorshipInquiryModal: React.FC<SponsorshipInquiryModalProps> = (
                     </div>
 
                     {/* Buttons */}
-                    <div className="flex flex-col justify-between sm:flex-row gap-3 pt-2">
+                    <div className="flex flex-col-reverse justify-between sm:flex-row gap-3 pt-2">
                       <Button
                         type="button"
                         variant="ghost"

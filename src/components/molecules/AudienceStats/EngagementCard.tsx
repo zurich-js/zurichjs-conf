@@ -48,8 +48,7 @@ export const EngagementCard: React.FC<EngagementCardProps> = ({
           <motion.div
             className="h-full rounded-full bg-brand-yellow-main"
             initial={{ width: 0 }}
-            whileInView={{ width: `${percentage}%` }}
-            viewport={{ once: true, margin: '-50px' }}
+            animate={{ width: `${percentage}%` }}
             transition={{
               duration: 0.8,
               delay: delay + 0.2,

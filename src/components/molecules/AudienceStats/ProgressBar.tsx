@@ -45,8 +45,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           className={`h-full rounded-full ${barClass}`}
           style={barStyle}
           initial={{ width: 0 }}
-          whileInView={{ width: `${percentage}%` }}
-          viewport={{ once: true, margin: '-50px' }}
+          animate={{ width: `${percentage}%` }}
           transition={{
             duration: 0.8,
             delay,
