@@ -14,10 +14,6 @@ import type {
 
 const log = logger.scope('PartnershipVouchers');
 
-// Type helper for untyped tables (until migration is run and types regenerated)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedTable = any;
-
 /**
  * Auto-activate partnership if currently pending
  */
@@ -25,8 +21,8 @@ async function autoActivatePartnership(partnershipId: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
   // Check current status
-  const { data: partnership, error: fetchError } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data: partnership, error: fetchError } = await supabase
+    .from('partnerships')
     .select('status')
     .eq('id', partnershipId)
     .single();
@@ -38,8 +34,8 @@ async function autoActivatePartnership(partnershipId: string): Promise<void> {
 
   // Only activate if currently pending
   if (partnership.status === 'pending') {
-    const { error: updateError } = await (supabase
-      .from('partnerships' as UntypedTable) as UntypedTable)
+    const { error: updateError } = await supabase
+      .from('partnerships')
       .update({ status: 'active' })
       .eq('id', partnershipId);
 
@@ -73,8 +69,8 @@ function generateVoucherCode(purpose: VoucherPurpose): string {
 export async function listVouchers(partnershipId: string): Promise<PartnershipVoucher[]> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { data, error } = await supabase
+    .from('partnership_vouchers')
     .select('*')
     .eq('partnership_id', partnershipId)
     .order('created_at', { ascending: false });
@@ -93,8 +89,8 @@ export async function listVouchers(partnershipId: string): Promise<PartnershipVo
 export async function getVoucher(id: string): Promise<PartnershipVoucher | null> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { data, error } = await supabase
+    .from('partnership_vouchers')
     .select('*')
     .eq('id', id)
     .single();
@@ -116,8 +112,8 @@ export async function getVoucher(id: string): Promise<PartnershipVoucher | null>
 export async function getVoucherByCode(code: string): Promise<PartnershipVoucher | null> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { data, error } = await supabase
+    .from('partnership_vouchers')
     .select('*')
     .eq('code', code.toUpperCase())
     .single();
@@ -189,8 +185,8 @@ export async function createVouchers(
     }
 
     // Store in database
-    const { data: voucher, error } = await (supabase
-      .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+    const { data: voucher, error } = await supabase
+      .from('partnership_vouchers')
       .insert({
         partnership_id: data.partnership_id,
         stripe_coupon_id: stripeCoupon.id,
@@ -238,8 +234,8 @@ export async function markVoucherRedeemed(
 ): Promise<PartnershipVoucher> {
   const supabase = createServiceRoleClient();
 
-  const { data: voucher, error } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { data: voucher, error } = await supabase
+    .from('partnership_vouchers')
     .update({
       is_redeemed: true,
       redeemed_at: new Date().toISOString(),
@@ -267,8 +263,8 @@ export async function deleteVoucher(voucherId: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
   // Get the voucher from database
-  const { data: voucher, error: fetchError } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { data: voucher, error: fetchError } = await supabase
+    .from('partnership_vouchers')
     .select('stripe_coupon_id, stripe_promotion_code_id, is_redeemed')
     .eq('id', voucherId)
     .single();
@@ -296,8 +292,8 @@ export async function deleteVoucher(voucherId: string): Promise<void> {
   }
 
   // Delete from database
-  const { error } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { error } = await supabase
+    .from('partnership_vouchers')
     .delete()
     .eq('id', voucherId);
 
@@ -330,8 +326,8 @@ export async function getVoucherStats(partnershipId: string): Promise<{
 }> {
   const supabase = createServiceRoleClient();
 
-  const { data: vouchers, error } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { data: vouchers, error } = await supabase
+    .from('partnership_vouchers')
     .select('purpose, amount, is_redeemed')
     .eq('partnership_id', partnershipId);
 

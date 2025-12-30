@@ -23,10 +23,6 @@ import { generateTrackingUrl } from './partnerships';
 
 const log = logger.scope('PartnershipEmails');
 
-// Type helper for untyped tables (until migration is run and types regenerated)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedTable = any;
-
 /**
  * Email configuration
  */
@@ -55,8 +51,8 @@ export async function sendPartnershipEmail(
   const supabase = createServiceRoleClient();
 
   // Fetch the partnership with coupons and vouchers
-  const { data: partnership, error: partnershipError } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data: partnership, error: partnershipError } = await supabase
+    .from('partnerships')
     .select(`
       *,
       coupons:partnership_coupons(*),
@@ -153,8 +149,8 @@ export async function sendPartnershipEmail(
     }
 
     // Record the email in database
-    const { error: recordError } = await (supabase
-      .from('partnership_emails' as UntypedTable) as UntypedTable)
+    const { error: recordError } = await supabase
+      .from('partnership_emails')
       .insert({
         partnership_id: data.partnership_id,
         recipient_email: p.contact_email,
@@ -203,8 +199,8 @@ export async function getEmailHistory(
 }>> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await (supabase
-    .from('partnership_emails' as UntypedTable) as UntypedTable)
+  const { data, error } = await supabase
+    .from('partnership_emails')
     .select('id, recipient_email, subject, sent_at, status')
     .eq('partnership_id', partnershipId)
     .order('sent_at', { ascending: false });

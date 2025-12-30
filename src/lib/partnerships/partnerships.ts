@@ -15,10 +15,6 @@ import type {
 
 const log = logger.scope('Partnerships');
 
-// Type helper for untyped tables (until migration is run and types regenerated)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedTable = any;
-
 interface ListPartnershipsOptions {
   type?: PartnershipType;
   status?: PartnershipStatus;
@@ -44,8 +40,8 @@ export async function listPartnerships(
   const supabase = createServiceRoleClient();
   const { type, status, search, page = 1, limit = 20 } = options;
 
-  let query = (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  let query = supabase
+    .from('partnerships')
     .select('*', { count: 'exact' });
 
   // Apply filters
@@ -89,8 +85,8 @@ export async function listPartnerships(
 export async function getPartnership(id: string): Promise<Partnership | null> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data, error } = await supabase
+    .from('partnerships')
     .select('*')
     .eq('id', id)
     .single();
@@ -112,8 +108,8 @@ export async function getPartnership(id: string): Promise<Partnership | null> {
 export async function getPartnershipWithDetails(id: string): Promise<Partnership | null> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data, error } = await supabase
+    .from('partnerships')
     .select(`
       *,
       coupons:partnership_coupons(*),
@@ -147,8 +143,8 @@ export async function createPartnership(
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
-  const { data: partnership, error } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data: partnership, error } = await supabase
+    .from('partnerships')
     .insert({
       name: data.name,
       type: data.type,
@@ -199,8 +195,8 @@ export async function updatePartnership(
   if (data.company_logo_url !== undefined) updateData.company_logo_url = data.company_logo_url;
   if (data.notes !== undefined) updateData.notes = data.notes;
 
-  const { data: partnership, error } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data: partnership, error } = await supabase
+    .from('partnerships')
     .update(updateData)
     .eq('id', id)
     .select()
@@ -222,8 +218,8 @@ export async function updatePartnership(
 export async function deletePartnership(id: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
-  const { error } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { error } = await supabase
+    .from('partnerships')
     .delete()
     .eq('id', id);
 
@@ -264,8 +260,8 @@ export async function getPartnershipStats(): Promise<{
   const supabase = createServiceRoleClient();
 
   // Get partnerships count by type and status
-  const { data: partnerships, error: partnershipsError } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data: partnerships, error: partnershipsError } = await supabase
+    .from('partnerships')
     .select('type, status');
 
   if (partnershipsError) {
@@ -274,8 +270,8 @@ export async function getPartnershipStats(): Promise<{
   }
 
   // Get active coupons count
-  const { count: activeCoupons, error: couponsError } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { count: activeCoupons, error: couponsError } = await supabase
+    .from('partnership_coupons')
     .select('*', { count: 'exact', head: true })
     .eq('is_active', true);
 
@@ -285,8 +281,8 @@ export async function getPartnershipStats(): Promise<{
   }
 
   // Get unredeemed vouchers count
-  const { count: activeVouchers, error: vouchersError } = await (supabase
-    .from('partnership_vouchers' as UntypedTable) as UntypedTable)
+  const { count: activeVouchers, error: vouchersError } = await supabase
+    .from('partnership_vouchers')
     .select('*', { count: 'exact', head: true })
     .eq('is_redeemed', false);
 

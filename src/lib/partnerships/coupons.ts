@@ -15,10 +15,6 @@ import type Stripe from 'stripe';
 
 const log = logger.scope('PartnershipCoupons');
 
-// Type helper for untyped tables (until migration is run and types regenerated)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedTable = any;
-
 /**
  * Auto-activate partnership if currently pending
  */
@@ -26,8 +22,8 @@ async function autoActivatePartnership(partnershipId: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
   // Check current status
-  const { data: partnership, error: fetchError } = await (supabase
-    .from('partnerships' as UntypedTable) as UntypedTable)
+  const { data: partnership, error: fetchError } = await supabase
+    .from('partnerships')
     .select('status')
     .eq('id', partnershipId)
     .single();
@@ -39,8 +35,8 @@ async function autoActivatePartnership(partnershipId: string): Promise<void> {
 
   // Only activate if currently pending
   if (partnership.status === 'pending') {
-    const { error: updateError } = await (supabase
-      .from('partnerships' as UntypedTable) as UntypedTable)
+    const { error: updateError } = await supabase
+      .from('partnerships')
       .update({ status: 'active' })
       .eq('id', partnershipId);
 
@@ -58,8 +54,8 @@ async function autoActivatePartnership(partnershipId: string): Promise<void> {
 export async function listCoupons(partnershipId: string): Promise<PartnershipCoupon[]> {
   const supabase = createServiceRoleClient();
 
-  const { data, error } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { data, error } = await supabase
+    .from('partnership_coupons')
     .select('*')
     .eq('partnership_id', partnershipId)
     .order('created_at', { ascending: false });
@@ -164,8 +160,8 @@ export async function createCoupon(data: CreateCouponRequest): Promise<Partnersh
   }
 
   // Store in database
-  const { data: coupon, error } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { data: coupon, error } = await supabase
+    .from('partnership_coupons')
     .insert({
       partnership_id: data.partnership_id,
       stripe_coupon_id: stripeCoupon.id,
@@ -212,8 +208,8 @@ export async function deactivateCoupon(couponId: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
   // Get the coupon from database
-  const { data: coupon, error: fetchError } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { data: coupon, error: fetchError } = await supabase
+    .from('partnership_coupons')
     .select('stripe_coupon_id, stripe_promotion_code_id')
     .eq('id', couponId)
     .single();
@@ -237,8 +233,8 @@ export async function deactivateCoupon(couponId: string): Promise<void> {
   }
 
   // Update database
-  const { error } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { error } = await supabase
+    .from('partnership_coupons')
     .update({ is_active: false })
     .eq('id', couponId);
 
@@ -258,8 +254,8 @@ export async function syncCouponRedemptions(couponId: string): Promise<number> {
   const supabase = createServiceRoleClient();
 
   // Get the coupon from database
-  const { data: coupon, error: fetchError } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { data: coupon, error: fetchError } = await supabase
+    .from('partnership_coupons')
     .select('stripe_coupon_id')
     .eq('id', couponId)
     .single();
@@ -279,8 +275,8 @@ export async function syncCouponRedemptions(couponId: string): Promise<number> {
   }
 
   // Update database
-  const { error } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { error } = await supabase
+    .from('partnership_coupons')
     .update({ current_redemptions: redemptions })
     .eq('id', couponId);
 
@@ -300,8 +296,8 @@ export async function deleteCoupon(couponId: string): Promise<void> {
   const supabase = createServiceRoleClient();
 
   // Get the coupon from database
-  const { data: coupon, error: fetchError } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { data: coupon, error: fetchError } = await supabase
+    .from('partnership_coupons')
     .select('stripe_coupon_id, stripe_promotion_code_id')
     .eq('id', couponId)
     .single();
@@ -325,8 +321,8 @@ export async function deleteCoupon(couponId: string): Promise<void> {
   }
 
   // Delete from database
-  const { error } = await (supabase
-    .from('partnership_coupons' as UntypedTable) as UntypedTable)
+  const { error } = await supabase
+    .from('partnership_coupons')
     .delete()
     .eq('id', couponId);
 
