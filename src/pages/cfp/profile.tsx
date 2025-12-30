@@ -7,7 +7,20 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import { ChevronLeft, Check, AlertCircle, User, Image, MapPin, Building2, Briefcase, Heart, Plane, Share2, Linkedin, Github, Twitter, AtSign } from 'lucide-react';
+import {
+  ChevronLeft,
+  Check,
+  AlertCircle,
+  User,
+  ImageIcon,
+  Plane,
+  Heart,
+  Shirt,
+  Github,
+  Linkedin,
+  ExternalLink,
+  Mail
+} from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input, SearchableSelect, AirportInput } from '@/components/atoms';
 import { useToast } from '@/contexts/ToastContext';
@@ -15,6 +28,9 @@ import { createSupabaseServerClient, getSpeakerByUserId, getMissingProfileFields
 import { speakerProfileSchema, TSHIRT_SIZES, type SpeakerProfileFormData } from '@/lib/validations/cfp';
 import { COUNTRIES, isEuropeanCountry } from '@/lib/constants/countries';
 import type { CfpSpeaker, CfpTshirtSize, CfpAssistanceType } from '@/lib/types/cfp';
+
+// Travel assistance options
+type TravelOption = 'employer_covers' | 'self_managed' | 'need_assistance';
 
 interface ProfileProps {
   speaker: CfpSpeaker;
@@ -86,6 +102,18 @@ export default function CfpProfile({ speaker }: ProfileProps) {
     company_interested_in_sponsoring: speaker.company_interested_in_sponsoring || false,
   });
 
+  // Travel option state derived from form data
+  const [travelOption, setTravelOption] = useState<TravelOption | null>(() => {
+    if (speaker.travel_assistance_required === false) {
+      // Could be employer covers or self-managed - default to self-managed if not set
+      return 'self_managed';
+    }
+    if (speaker.travel_assistance_required === true) {
+      return 'need_assistance';
+    }
+    return null;
+  });
+
   // Check if speaker is from Europe (for travel budget messaging)
   const isEuropean = useMemo(() => {
     return formData.country ? isEuropeanCountry(formData.country) : false;
@@ -93,6 +121,18 @@ export default function CfpProfile({ speaker }: ProfileProps) {
 
   // Get missing required fields for the banner
   const missingFields = useMemo(() => getMissingProfileFields(speaker), [speaker]);
+
+  // Handle travel option change
+  const handleTravelOptionChange = (option: TravelOption) => {
+    setTravelOption(option);
+    if (option === 'employer_covers' || option === 'self_managed') {
+      handleChange('travel_assistance_required', false);
+      handleChange('assistance_type', null);
+      handleChange('departure_airport', null);
+    } else {
+      handleChange('travel_assistance_required', true);
+    }
+  };
 
   // Scroll to first error when errors change
   useEffect(() => {
@@ -236,11 +276,6 @@ export default function CfpProfile({ speaker }: ProfileProps) {
     }
   };
 
-  // Calculate completion progress
-  const requiredFields = ['first_name', 'last_name', 'job_title', 'company', 'city', 'country', 'bio'];
-  const completedFields = requiredFields.filter(f => formData[f as keyof SpeakerProfileFormData]);
-  const completionPercent = Math.round((completedFields.length / requiredFields.length) * 100);
-
   return (
     <>
       <SEO
@@ -252,7 +287,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
       <div className="min-h-screen bg-brand-gray-darkest">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href="/cfp/dashboard" className="flex items-center gap-3">
               <img
                 src="/images/logo/zurichjs-square.png"
@@ -271,31 +306,20 @@ export default function CfpProfile({ speaker }: ProfileProps) {
           </div>
         </header>
 
-        <main className="max-w-2xl mx-auto px-4 py-8">
-          {/* Page Header with Progress */}
-          <div className="mb-8">
-            <Heading level="h1" className="text-2xl font-bold text-white mb-2">
-              Speaker Profile
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          {/* Page Header */}
+          <div className="mb-8 max-w-2xl">
+            <Heading level="h1" className="text-3xl font-bold text-white mb-3">
+              Your speaker profile
             </Heading>
-            <p className="text-brand-gray-light mb-4">
-              This information will be displayed on the conference website if your talk is accepted.
-            </p>
-
-            {/* Progress Bar */}
-            <div className="bg-brand-gray-dark rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-brand-primary h-full transition-all duration-300"
-                style={{ width: `${completionPercent}%` }}
-              />
-            </div>
-            <p className="text-xs text-brand-gray-medium mt-2">
-              Profile {completionPercent}% complete
+            <p className="text-brand-gray-light">
+              Provide us the details we require to ensure a smooth experience both for yourself as well as our conference attendees. If there&apos;s anything missing, don&apos;t hesitate to let us know.
             </p>
           </div>
 
-          {/* Incomplete Profile Banner */}
+          {/* Alerts */}
           {missingFields.length > 0 && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6">
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 max-w-2xl">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
@@ -315,9 +339,8 @@ export default function CfpProfile({ speaker }: ProfileProps) {
             </div>
           )}
 
-          {/* Success Message */}
           {successMessage && (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6">
+            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6 max-w-2xl">
               <div className="flex items-center gap-2 text-green-400">
                 <Check className="w-5 h-5" />
                 <span className="font-medium">{successMessage}</span>
@@ -325,9 +348,8 @@ export default function CfpProfile({ speaker }: ProfileProps) {
             </div>
           )}
 
-          {/* Form Error */}
           {errors._form && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 max-w-2xl">
               <div className="flex items-center gap-2 text-red-400">
                 <AlertCircle className="w-5 h-5" />
                 <span className="font-medium">{errors._form}</span>
@@ -335,536 +357,670 @@ export default function CfpProfile({ speaker }: ProfileProps) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Profile Photo - Prominent placement */}
-            <section className="bg-brand-gray-dark rounded-2xl p-6">
-              <div className="flex items-center gap-6">
-                {/* Image Preview */}
-                <div className="flex-shrink-0">
-                  {profileImageUrl ? (
-                    <img
-                      key={profileImageUrl}
-                      src={profileImageUrl}
-                      alt="Profile"
-                      className="w-24 h-24 rounded-full object-cover border-2 border-brand-primary"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-brand-gray-darkest border-2 border-dashed border-brand-gray-medium flex items-center justify-center">
-                      <User className="w-10 h-10 text-brand-gray-medium" />
-                    </div>
-                  )}
-                </div>
+          {/* Two-column layout: Main content + Sidebar */}
+          <form onSubmit={handleSubmit}>
+            {/* Profile Photo Card - Mobile Only */}
+            <div className="lg:hidden mb-8">
+              <div className="bg-brand-gray-dark rounded-2xl p-6">
+                <div className="flex gap-4 mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Profile photo<span className="text-red-400">*</span>
+                    </h3>
+                    <p className="text-sm text-brand-gray-light">
+                      Upload a professional photo for the conference website. Preferably at least 600x600 pixels.
+                    </p>
+                  </div>
 
-                {/* Upload Controls */}
-                <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-white mb-1">Profile Photo</h2>
-                  <p className="text-sm text-brand-gray-light mb-3">
-                    A professional photo for the conference website
-                  </p>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={handleImageSelect}
-                    disabled={isUploadingImage}
-                    className="px-4 py-2 bg-brand-gray-darkest text-white rounded-lg hover:bg-brand-gray-medium transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-2 text-sm"
-                  >
-                    {isUploadingImage ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Uploading...
-                      </>
+                  {/* Image Preview */}
+                  <div className="flex-shrink-0">
+                    {profileImageUrl ? (
+                      <img
+                        key={profileImageUrl}
+                        src={profileImageUrl}
+                        alt="Profile"
+                        className="w-16 h-16 rounded-lg object-cover border border-dashed border-brand-gray-medium"
+                      />
                     ) : (
-                      <>
-                        <Image className="w-4 h-4" />
-                        {profileImageUrl ? 'Change Photo' : 'Upload Photo'}
-                      </>
+                      <div className="w-16 h-16 rounded-lg bg-brand-gray-darkest border border-dashed border-brand-gray-medium flex items-center justify-center">
+                        <ImageIcon className="w-6 h-6 text-brand-gray-medium" />
+                      </div>
                     )}
-                  </button>
-
-                  <p className="text-xs text-brand-gray-medium mt-2">
-                    JPG, PNG, WebP or GIF. Max 5MB.
-                  </p>
-
-                  {imageSuccess && (
-                    <div className="flex items-center gap-2 text-green-400 text-sm mt-2">
-                      <Check className="w-4 h-4" />
-                      {imageSuccess}
-                    </div>
-                  )}
-
-                  {imageError && (
-                    <div className="flex items-center gap-2 text-red-400 text-sm mt-2">
-                      <AlertCircle className="w-4 h-4" />
-                      {imageError}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Personal Information */}
-            <section className="bg-brand-gray-dark rounded-2xl p-6 space-y-5">
-              <div className="flex items-center gap-2 mb-2">
-                <User className="w-5 h-5 text-brand-primary" />
-                <h2 className="text-lg font-semibold text-white">Personal Information</h2>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="first_name" className="block text-sm font-medium text-white mb-2">
-                    First Name <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => handleChange('first_name', e.target.value)}
-                    placeholder="John"
-                    fullWidth
-                    error={errors.first_name}
-                  />
+                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="last_name" className="block text-sm font-medium text-white mb-2">
-                    Last Name <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => handleChange('last_name', e.target.value)}
-                    placeholder="Doe"
-                    fullWidth
-                    error={errors.last_name}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  placeholder="john@example.com"
-                  fullWidth
-                  disabled
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="mobile-image-upload"
                 />
-                <p className="text-xs text-brand-gray-medium mt-1">
-                  Email cannot be changed. Contact us if you need to update it.
-                </p>
-              </div>
 
-              <div>
-                <label htmlFor="bio" className="block text-sm font-medium text-white mb-2">
-                  Bio <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => handleChange('bio', e.target.value)}
-                  placeholder="Tell us about yourself, your experience, and what you're passionate about..."
-                  rows={4}
-                  className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
-                />
-                <div className="flex justify-between mt-2">
-                  <p className={`text-xs ${errors.bio ? 'text-red-400' : 'text-brand-gray-medium'}`}>
-                    {errors.bio || 'This will be displayed on your speaker profile'}
-                  </p>
-                  <p className={`text-xs ${countWords(formData.bio || '') > 250 ? 'text-red-400' : 'text-brand-gray-medium'}`}>
-                    {countWords(formData.bio || '')}/250 words
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Professional Information */}
-            <section className="bg-brand-gray-dark rounded-2xl p-6 space-y-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Briefcase className="w-5 h-5 text-brand-primary" />
-                <h2 className="text-lg font-semibold text-white">Professional Information</h2>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="job_title" className="block text-sm font-medium text-white mb-2">
-                    Job Title <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id="job_title"
-                    value={formData.job_title}
-                    onChange={(e) => handleChange('job_title', e.target.value)}
-                    placeholder="Senior Developer"
-                    fullWidth
-                    error={errors.job_title}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-white mb-2">
-                    Company <span className="text-red-400">*</span>
-                  </label>
-                  <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => handleChange('company', e.target.value)}
-                    placeholder="Acme Inc."
-                    fullWidth
-                    error={errors.company}
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-brand-primary" />
-                  <span className="text-sm font-medium text-white">Location</span>
-                  <span className="text-xs text-brand-gray-medium">(helps us plan travel logistics)</span>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="city" className="block text-sm font-medium text-white mb-2">
-                      City <span className="text-red-400">*</span>
-                    </label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => handleChange('city', e.target.value)}
-                      placeholder="Berlin"
-                      fullWidth
-                      error={errors.city}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-white mb-2">
-                      Country <span className="text-red-400">*</span>
-                    </label>
-                    <SearchableSelect
-                      id="country"
-                      value={formData.country}
-                      onChange={(value) => handleChange('country', value)}
-                      options={COUNTRIES}
-                      placeholder="Select country..."
-                      error={errors.country}
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Travel & Sponsorship */}
-            <section className="bg-brand-gray-dark rounded-2xl p-6 space-y-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Plane className="w-5 h-5 text-brand-primary" />
-                <h2 className="text-lg font-semibold text-white">Travel & Support</h2>
-              </div>
-
-              {/* Travel Assistance Card */}
-              <div className="bg-brand-gray-darkest rounded-xl p-5 border border-brand-gray-medium space-y-4">
-                <div className="flex items-center gap-2">
-                  <Plane className="w-5 h-5 text-brand-primary" />
-                  <h3 className="font-semibold text-white">Travel & Accommodation Assistance</h3>
-                </div>
-
-                <div className="bg-brand-gray-dark rounded-lg p-3 text-sm space-y-2">
-                  <p className="text-brand-gray-light">
-                    <span className="text-brand-primary font-medium">Community Note:</span> We&apos;ll try our best to support you with this.
-                  </p>
-                  <ul className="text-brand-gray-light text-xs space-y-1 ml-4 list-disc">
-                    <li><strong>European travel</strong> (flight, train, driving): Our budget is <span className="text-brand-primary font-medium">250 CHF/EUR</span></li>
-                    <li><strong>Outside Europe</strong>: Evaluated on a case-by-case basis after talk selection</li>
-                  </ul>
-                  <p className="text-brand-gray-light text-xs mt-2">
-                    If your company can cover travel costs, they&apos;ll receive recognition as a <span className="text-brand-primary font-medium">&quot;Supporter&quot;</span> sponsor with logo placement on our website and event materials.
-                  </p>
-                </div>
-
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <ToggleSwitch
-                    checked={formData.travel_assistance_required === true}
-                    onChange={(checked) => handleChange('travel_assistance_required', checked)}
-                  />
-                  <span className="font-medium text-white group-hover:text-brand-primary transition-colors">
-                    I need travel assistance
-                  </span>
-                </label>
-
-                {formData.travel_assistance_required && (
-                  <div className="mt-4 pt-4 border-t border-brand-gray-medium space-y-4">
-                    {/* Assistance Type Selection */}
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-3">
-                        What do you need help with?
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {[
-                          { value: 'travel', label: 'Travel Only' },
-                          { value: 'accommodation', label: 'Accommodation Only' },
-                          { value: 'both', label: 'Both' },
-                        ].map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => handleChange('assistance_type', option.value as CfpAssistanceType)}
-                            className={`cursor-pointer px-3 py-2 rounded-lg text-sm font-medium transition-all border text-center ${
-                              formData.assistance_type === option.value
-                                ? 'bg-brand-primary text-black border-brand-primary'
-                                : 'bg-brand-gray-dark text-white border-brand-gray-medium hover:border-brand-primary hover:text-brand-primary'
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {formData.assistance_type && (
-                      <div className="flex items-center gap-2 text-green-400 text-sm">
-                        <Check className="w-4 h-4" />
-                        <span>
-                          {isEuropean
-                            ? formData.assistance_type === 'travel'
-                              ? "We'll support your travel with up to 250 CHF/EUR"
-                              : formData.assistance_type === 'accommodation'
-                              ? "We'll arrange your accommodation"
-                              : "We'll support your travel (up to 250 CHF/EUR) and arrange accommodation"
-                            : `We'll evaluate your ${formData.assistance_type === 'both' ? 'travel & accommodation' : formData.assistance_type} support after talk selection`}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Airport Field - only show if travel assistance is needed */}
-                    {(formData.assistance_type === 'travel' || formData.assistance_type === 'both') && (
-                      <div>
-                        <label htmlFor="departure_airport" className="block text-sm font-medium text-white mb-2">
-                          Where are you flying from?
-                        </label>
-                        <AirportInput
-                          id="departure_airport"
-                          value={formData.departure_airport ?? null}
-                          onChange={(value) => handleChange('departure_airport', value)}
-                          placeholder="Search by city or airport code..."
-                          error={errors.departure_airport}
-                        />
-                        <p className="text-xs text-brand-gray-medium mt-1">
-                          Could be your closest airport or another location if you&apos;re already travelling
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Company Sponsorship Interest Card */}
-              <div className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 rounded-xl p-5 border border-pink-500/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <Heart className="w-5 h-5 text-pink-400" />
-                  <h3 className="font-semibold text-white">Partner with ZurichJS</h3>
-                </div>
-                <p className="text-sm text-brand-gray-light mb-3">
-                  Connect your company with 300+ JavaScript developers and tech leaders at Switzerland&apos;s premier JS conference.
-                </p>
-                <ul className="text-sm text-brand-gray-light space-y-1.5 mb-4">
-                  <li className="flex items-center gap-2">
-                    <span className="text-pink-400">•</span>
-                    Brand visibility to an engaged developer audience
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-pink-400">•</span>
-                    Recruiting opportunities with top talent
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-pink-400">•</span>
-                    Logo placement on recordings and event materials
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-pink-400">•</span>
-                    Networking with the Swiss tech community
-                  </li>
-                </ul>
-
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <ToggleSwitch
-                    checked={formData.company_interested_in_sponsoring === true}
-                    onChange={(checked) => handleChange('company_interested_in_sponsoring', checked)}
-                  />
-                  <span className="font-medium text-white group-hover:text-pink-400 transition-colors">
-                    My company is interested in sponsoring
-                  </span>
-                </label>
-
-                {formData.company_interested_in_sponsoring && (
-                  <div className="mt-4 pt-4 border-t border-pink-500/20">
-                    <div className="flex items-center gap-2 text-green-400 text-sm">
-                      <Check className="w-4 h-4" />
-                      <span>We&apos;ll reach out with sponsorship packages after your submission</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Conference Details */}
-            <section className="bg-brand-gray-dark rounded-2xl p-6 space-y-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Building2 className="w-5 h-5 text-brand-primary" />
-                <h2 className="text-lg font-semibold text-white">Conference Details</h2>
-              </div>
-
-              <div>
-                <label htmlFor="tshirt_size" className="block text-sm font-medium text-white mb-2">
-                  T-Shirt Size <span className="text-red-400">*</span>
-                </label>
-                <select
-                  id="tshirt_size"
-                  value={formData.tshirt_size || ''}
-                  onChange={(e) => handleChange('tshirt_size', e.target.value as CfpTshirtSize || null)}
-                  className={`w-full bg-brand-gray-darkest text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
-                    errors.tshirt_size ? 'ring-2 ring-red-500 focus:ring-red-500' : 'focus:ring-brand-primary'
+                <label
+                  htmlFor="mobile-image-upload"
+                  className={`w-full px-4 py-3 bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 ${
+                    isUploadingImage ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                 >
-                  <option value="">Select size</option>
-                  {TSHIRT_SIZES.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-                {errors.tshirt_size ? (
-                  <p className="text-xs text-red-400 mt-1">{errors.tshirt_size}</p>
-                ) : (
-                  <p className="text-xs text-brand-gray-medium mt-1">
-                    All accepted speakers receive a conference t-shirt
-                  </p>
+                  {isUploadingImage ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      Uploading...
+                    </>
+                  ) : profileImageUrl ? (
+                    'Upload new photo'
+                  ) : (
+                    'Upload photo'
+                  )}
+                </label>
+
+                {imageSuccess && (
+                  <div className="flex items-center gap-2 text-green-400 text-sm mt-3">
+                    <Check className="w-4 h-4" />
+                    {imageSuccess}
+                  </div>
+                )}
+
+                {imageError && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm mt-3">
+                    <AlertCircle className="w-4 h-4" />
+                    {imageError}
+                  </div>
                 )}
               </div>
+            </div>
 
-              <div>
-                <label htmlFor="special_requirements" className="block text-sm font-medium text-white mb-2">
-                  Special Requirements <span className="text-brand-gray-medium">(optional)</span>
-                </label>
-                <textarea
-                  id="special_requirements"
-                  value={formData.special_requirements || ''}
-                  onChange={(e) => handleChange('special_requirements', e.target.value)}
-                  placeholder="Any accessibility needs, dietary restrictions, A/V requirements, or other needs we should know about..."
-                  rows={3}
-                  className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
-                />
-                <p className="text-xs text-brand-gray-medium mt-1">
-                  Help us make your experience comfortable and accessible
-                </p>
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Main Content Column */}
+              <div className="flex-1 space-y-8 min-w-0">
+                {/* Personal Information */}
+                <section className="space-y-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="w-5 h-5 text-brand-primary" />
+                      <h2 className="text-lg font-semibold text-white">Personal information</h2>
+                    </div>
+                    <p className="text-sm text-brand-gray-light">
+                      We&apos;ll use this information on all marketing materials, including, but not limited to the website and social media.
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="first_name" className="block text-sm font-medium text-white mb-2">
+                        First name<span className="text-red-400">*</span>
+                      </label>
+                      <Input
+                        id="first_name"
+                        value={formData.first_name}
+                        onChange={(e) => handleChange('first_name', e.target.value)}
+                        placeholder="John"
+                        fullWidth
+                        error={errors.first_name}
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="last_name" className="block text-sm font-medium text-white mb-2">
+                        Last name<span className="text-red-400">*</span>
+                      </label>
+                      <Input
+                        id="last_name"
+                        value={formData.last_name}
+                        onChange={(e) => handleChange('last_name', e.target.value)}
+                        placeholder="Doe"
+                        fullWidth
+                        error={errors.last_name}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                      E-mail address<span className="text-red-400">*</span>
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange('email', e.target.value)}
+                      placeholder="john@example.com"
+                      fullWidth
+                      disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="bio" className="block text-sm font-medium text-white mb-2">
+                      Bio<span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={(e) => handleChange('bio', e.target.value)}
+                      placeholder="Tell us about yourself, your experience, and what you're passionate about."
+                      rows={4}
+                      className="w-full bg-brand-gray-dark text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <p className={`text-xs ${countWords(formData.bio || '') > 250 ? 'text-red-400' : 'text-brand-gray-medium'}`}>
+                        {countWords(formData.bio || '')}/250 words
+                      </p>
+                    </div>
+                    {errors.bio && (
+                      <p className="text-xs text-red-400 mt-1">{errors.bio}</p>
+                    )}
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="job_title" className="block text-sm font-medium text-white mb-2">
+                        Job title<span className="text-red-400">*</span>
+                      </label>
+                      <Input
+                        id="job_title"
+                        value={formData.job_title}
+                        onChange={(e) => handleChange('job_title', e.target.value)}
+                        placeholder="Senior Developer"
+                        fullWidth
+                        error={errors.job_title}
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="company" className="block text-sm font-medium text-white mb-2">
+                        Company<span className="text-red-400">*</span>
+                      </label>
+                      <Input
+                        id="company"
+                        value={formData.company}
+                        onChange={(e) => handleChange('company', e.target.value)}
+                        placeholder="Acme Inc."
+                        fullWidth
+                        error={errors.company}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium text-white mb-2">
+                        City<span className="text-red-400">*</span>
+                      </label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => handleChange('city', e.target.value)}
+                        placeholder="Zurich"
+                        fullWidth
+                        error={errors.city}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="country" className="block text-sm font-medium text-white mb-2">
+                        Country<span className="text-red-400">*</span>
+                      </label>
+                      <SearchableSelect
+                        id="country"
+                        value={formData.country}
+                        onChange={(value) => handleChange('country', value)}
+                        options={COUNTRIES}
+                        placeholder="Select country"
+                        error={errors.country}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Travel Section */}
+                <section className="space-y-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Plane className="w-5 h-5 text-brand-primary" />
+                      <h2 className="text-lg font-semibold text-white">Travel</h2>
+                    </div>
+                    <p className="text-sm text-brand-gray-light">
+                      As a non-profit community conference, we&apos;ll try our best to support you with travel and accommodation.
+                    </p>
+                  </div>
+
+                  <ul className="text-sm text-brand-gray-light space-y-1 list-disc list-inside">
+                    <li>
+                      for <strong className="text-white">European travel</strong> (flight, train, driving, cycling etc): we can help out with up to <strong className="text-brand-primary">250 CHF/EUR</strong>.
+                    </li>
+                    <li>
+                      for <strong className="text-white">outside Europe</strong>, we can only make decisions on a case-by-case basis after the talk selection.
+                    </li>
+                  </ul>
+
+                  <p className="text-sm text-brand-gray-light">
+                    <strong className="text-brand-primary">If your company can cover travel costs</strong>, we&apos;ll be more than happy to include them as a &quot;Supporter&quot; sponsor with all the associated perks.
+                  </p>
+
+                  {/* Travel Option Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleTravelOptionChange('employer_covers')}
+                      className={`cursor-pointer p-4 rounded-xl text-sm font-medium transition-all border text-center ${
+                        travelOption === 'employer_covers'
+                          ? 'bg-white text-black border-white'
+                          : 'bg-transparent text-white border-brand-gray-medium hover:border-brand-gray-light'
+                      }`}
+                    >
+                      My employer covers travel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTravelOptionChange('self_managed')}
+                      className={`cursor-pointer p-4 rounded-xl text-sm font-medium transition-all border text-center ${
+                        travelOption === 'self_managed'
+                          ? 'bg-white text-black border-white'
+                          : 'bg-transparent text-white border-brand-gray-medium hover:border-brand-gray-light'
+                      }`}
+                    >
+                      I&apos;ll sort it on my own
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTravelOptionChange('need_assistance')}
+                      className={`cursor-pointer p-4 rounded-xl text-sm font-medium transition-all border text-center ${
+                        travelOption === 'need_assistance'
+                          ? 'bg-white text-black border-white'
+                          : 'bg-transparent text-white border-brand-gray-medium hover:border-brand-gray-light'
+                      }`}
+                    >
+                      I need travel assistance
+                    </button>
+                  </div>
+
+                  {/* Assistance Type Selection - only show when need_assistance is selected */}
+                  {travelOption === 'need_assistance' && (
+                    <div className="space-y-4 pt-4 border-t border-brand-gray-medium">
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-3">
+                          What do you need help with?
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {[
+                            { value: 'travel', label: 'Travel Only' },
+                            { value: 'accommodation', label: 'Accommodation Only' },
+                            { value: 'both', label: 'Both' },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => handleChange('assistance_type', option.value as CfpAssistanceType)}
+                              className={`cursor-pointer px-3 py-2 rounded-lg text-sm font-medium transition-all border text-center ${
+                                formData.assistance_type === option.value
+                                  ? 'bg-brand-primary text-black border-brand-primary'
+                                  : 'bg-brand-gray-dark text-white border-brand-gray-medium hover:border-brand-primary hover:text-brand-primary'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {formData.assistance_type && (
+                        <div className="flex items-center gap-2 text-green-400 text-sm">
+                          <Check className="w-4 h-4" />
+                          <span>
+                            {isEuropean
+                              ? formData.assistance_type === 'travel'
+                                ? "We'll support your travel with up to 250 CHF/EUR"
+                                : formData.assistance_type === 'accommodation'
+                                ? "We'll arrange your accommodation"
+                                : "We'll support your travel (up to 250 CHF/EUR) and arrange accommodation"
+                              : `We'll evaluate your ${formData.assistance_type === 'both' ? 'travel & accommodation' : formData.assistance_type} support after talk selection`}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Airport Field - only show if travel assistance is needed */}
+                      {(formData.assistance_type === 'travel' || formData.assistance_type === 'both') && (
+                        <div>
+                          <label htmlFor="departure_airport" className="block text-sm font-medium text-white mb-2">
+                            Where are you flying from?
+                          </label>
+                          <AirportInput
+                            id="departure_airport"
+                            value={formData.departure_airport ?? null}
+                            onChange={(value) => handleChange('departure_airport', value)}
+                            placeholder="Search by city or airport code..."
+                            error={errors.departure_airport}
+                          />
+                          <p className="text-xs text-brand-gray-medium mt-1">
+                            Could be your closest airport or another location if you&apos;re already travelling
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                {/* Support Section */}
+                <section className="space-y-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Heart className="w-5 h-5 text-brand-primary" />
+                      <h2 className="text-lg font-semibold text-white">Support</h2>
+                    </div>
+                    <p className="text-sm text-brand-gray-light">
+                      And speaking of supporting communities...
+                    </p>
+                  </div>
+
+                  <div className="text-sm text-brand-gray-light">
+                    <p className="mb-3">
+                      If you think your company would be interested in our audience profile and/or investing in community conferences, <strong className="text-brand-primary">we&apos;d love intros</strong>!
+                    </p>
+                    <ul className="space-y-1.5 list-disc list-inside">
+                      <li>Get brand visibility with an engaged developer audience and advocates in Swiss companies</li>
+                      <li>Find recruiting opportunities with some the world&apos;s top talent</li>
+                      <li>Get the company logo on recordings and event materials</li>
+                      <li>Network with the Swiss tech community</li>
+                    </ul>
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <ToggleSwitch
+                      checked={formData.company_interested_in_sponsoring === true}
+                      onChange={(checked) => handleChange('company_interested_in_sponsoring', checked)}
+                    />
+                    <span className="font-medium text-white group-hover:text-brand-primary transition-colors">
+                      My company might be interested in sponsoring
+                    </span>
+                  </label>
+                </section>
+
+                {/* Conference Details */}
+                <section className="space-y-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shirt className="w-5 h-5 text-brand-primary" />
+                      <h2 className="text-lg font-semibold text-white">Conference details</h2>
+                    </div>
+                    <p className="text-sm text-brand-gray-light">
+                      All accepted speakers receive a limited edition conference T-shirt.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="tshirt_size" className="block text-sm font-medium text-white mb-2">
+                      T-Shirt size<span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      id="tshirt_size"
+                      value={formData.tshirt_size || ''}
+                      onChange={(e) => handleChange('tshirt_size', e.target.value as CfpTshirtSize || null)}
+                      className={`w-full bg-brand-gray-dark text-white rounded-lg px-4 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 transition-all appearance-none ${
+                        errors.tshirt_size ? 'ring-2 ring-red-500 focus:ring-red-500' : 'focus:ring-brand-primary focus:border-transparent'
+                      }`}
+                    >
+                      <option value="">Select size...</option>
+                      {TSHIRT_SIZES.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.tshirt_size && (
+                      <p className="text-xs text-red-400 mt-1">{errors.tshirt_size}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="special_requirements" className="block text-sm font-medium text-white mb-2">
+                      Special requirements
+                    </label>
+                    <textarea
+                      id="special_requirements"
+                      value={formData.special_requirements || ''}
+                      onChange={(e) => handleChange('special_requirements', e.target.value)}
+                      placeholder="Accessibility needs, dietary restrictions, A/V requirements, or other needs we should know about"
+                      rows={4}
+                      className="w-full bg-brand-gray-dark text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <p className="text-xs text-brand-gray-medium">
+                        {countWords(formData.special_requirements || '')}/250 words
+                      </p>
+                    </div>
+                  </div>
+                </section>
               </div>
-            </section>
 
-            {/* Social Links */}
-            <section className="bg-brand-gray-dark rounded-2xl p-6 space-y-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Share2 className="w-5 h-5 text-brand-primary" />
-                <h2 className="text-lg font-semibold text-white">Social Links</h2>
+              {/* Sidebar Column */}
+              <div className="lg:w-80 flex-shrink-0 space-y-6">
+                <div className="lg:sticky lg:top-8 space-y-6">
+                  {/* Profile Photo Card - Desktop Only */}
+                  <div className="hidden lg:block bg-brand-gray-dark rounded-2xl p-6">
+                    <div className="flex gap-4 mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-white mb-2">
+                          Profile photo<span className="text-red-400">*</span>
+                        </h3>
+                        <p className="text-sm text-brand-gray-light">
+                          Upload a professional photo for the conference website. Preferably at least 600x600 pixels.
+                        </p>
+                      </div>
+
+                      {/* Image Preview */}
+                      <div className="flex-shrink-0">
+                        {profileImageUrl ? (
+                          <img
+                            key={profileImageUrl}
+                            src={profileImageUrl}
+                            alt="Profile"
+                            className="w-16 h-16 rounded-lg object-cover border border-dashed border-brand-gray-medium"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-brand-gray-darkest border border-dashed border-brand-gray-medium flex items-center justify-center">
+                            <ImageIcon className="w-6 h-6 text-brand-gray-medium" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleImageSelect}
+                      disabled={isUploadingImage}
+                      className="w-full px-4 py-3 bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                    >
+                      {isUploadingImage ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                          Uploading...
+                        </>
+                      ) : profileImageUrl ? (
+                        'Upload new photo'
+                      ) : (
+                        'Upload photo'
+                      )}
+                    </button>
+
+                    {imageSuccess && (
+                      <div className="flex items-center gap-2 text-green-400 text-sm mt-3">
+                        <Check className="w-4 h-4" />
+                        {imageSuccess}
+                      </div>
+                    )}
+
+                    {imageError && (
+                      <div className="flex items-center gap-2 text-red-400 text-sm mt-3">
+                        <AlertCircle className="w-4 h-4" />
+                        {imageError}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Social Links Card */}
+                  <div className="bg-brand-gray-dark rounded-2xl p-6">
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Social links<span className="text-red-400">*</span>
+                    </h3>
+                    <p className="text-sm text-brand-gray-light mb-4">
+                      Add <strong className="text-white">at least one social profile</strong> so attendees can follow or connect with you.
+                    </p>
+
+                    <div className="space-y-4">
+                      {/* GitHub */}
+                      <div>
+                        <label htmlFor="github_url" className="block text-sm font-medium text-white mb-2">
+                          GitHub
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Github className="w-4 h-4 text-brand-gray-light" />
+                          </div>
+                          <input
+                            id="github_url"
+                            value={formData.github_url}
+                            onChange={(e) => handleChange('github_url', e.target.value)}
+                            placeholder="mygithubhandle"
+                            className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 pr-10 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                          />
+                          {formData.github_url && (
+                            <a
+                              href={formData.github_url.startsWith('http') ? formData.github_url : `https://github.com/${formData.github_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-brand-gray-light hover:text-white transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                        {errors.github_url && (
+                          <p className="text-xs text-red-400 mt-1">{errors.github_url}</p>
+                        )}
+                      </div>
+
+                      {/* LinkedIn */}
+                      <div>
+                        <label htmlFor="linkedin_url" className="block text-sm font-medium text-white mb-2">
+                          LinkedIn
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Linkedin className="w-4 h-4 text-brand-gray-light" />
+                          </div>
+                          <input
+                            id="linkedin_url"
+                            value={formData.linkedin_url}
+                            onChange={(e) => handleChange('linkedin_url', e.target.value)}
+                            placeholder="johndoe"
+                            className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                          />
+                        </div>
+                        {errors.linkedin_url && (
+                          <p className="text-xs text-red-400 mt-1">{errors.linkedin_url}</p>
+                        )}
+                      </div>
+
+                      {/* X.com / Twitter */}
+                      <div>
+                        <label htmlFor="twitter_handle" className="block text-sm font-medium text-white mb-2">
+                          X.com
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="w-4 h-4 text-brand-gray-light" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                          </div>
+                          <input
+                            id="twitter_handle"
+                            value={formData.twitter_handle}
+                            onChange={(e) => handleChange('twitter_handle', e.target.value)}
+                            placeholder="doe"
+                            className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Bluesky */}
+                      <div>
+                        <label htmlFor="bluesky_handle" className="block text-sm font-medium text-white mb-2">
+                          Bluesky
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="w-4 h-4 text-brand-gray-light" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.05 9.271 7.733 4.308 4.267-4.308 1.172-6.498-2.74-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.79.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z" />
+                            </svg>
+                          </div>
+                          <input
+                            id="bluesky_handle"
+                            value={formData.bluesky_handle}
+                            onChange={(e) => handleChange('bluesky_handle', e.target.value)}
+                            placeholder="johndoe"
+                            className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Mastodon */}
+                      <div>
+                        <label htmlFor="mastodon_handle" className="block text-sm font-medium text-white mb-2">
+                          Mastodon
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="w-4 h-4 text-brand-gray-light" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.668 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z" />
+                            </svg>
+                          </div>
+                          <input
+                            id="mastodon_handle"
+                            value={formData.mastodon_handle}
+                            onChange={(e) => handleChange('mastodon_handle', e.target.value)}
+                            placeholder="johndoe"
+                            className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Card */}
+                  <div className="bg-brand-gray-dark rounded-2xl p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Actions</h3>
+
+                    <div className="space-y-3">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="lg"
+                        loading={isSubmitting}
+                        className="w-full"
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save changes'}
+                      </Button>
+
+                      <a
+                        href="mailto:hello@zurichjs.com?subject=CFP%20Question"
+                        className="w-full px-4 py-3 bg-transparent text-white font-medium rounded-lg border border-brand-gray-medium hover:border-brand-gray-light transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Contact the team
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-brand-gray-light -mt-3">
-                Optional: Add your social profiles so attendees can connect with you.
-              </p>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="linkedin_url" className="flex items-center gap-2 text-sm font-medium text-white mb-2">
-                    <Linkedin className="w-4 h-4 text-[#0A66C2]" />
-                    LinkedIn
-                  </label>
-                  <Input
-                    id="linkedin_url"
-                    value={formData.linkedin_url}
-                    onChange={(e) => handleChange('linkedin_url', e.target.value)}
-                    placeholder="https://linkedin.com/in/johndoe"
-                    fullWidth
-                    error={errors.linkedin_url}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="github_url" className="flex items-center gap-2 text-sm font-medium text-white mb-2">
-                    <Github className="w-4 h-4" />
-                    GitHub
-                  </label>
-                  <Input
-                    id="github_url"
-                    value={formData.github_url}
-                    onChange={(e) => handleChange('github_url', e.target.value)}
-                    placeholder="https://github.com/johndoe"
-                    fullWidth
-                    error={errors.github_url}
-                  />
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="twitter_handle" className="flex items-center gap-2 text-sm font-medium text-white mb-2">
-                    <Twitter className="w-4 h-4" />
-                    Twitter/X
-                  </label>
-                  <Input
-                    id="twitter_handle"
-                    value={formData.twitter_handle}
-                    onChange={(e) => handleChange('twitter_handle', e.target.value)}
-                    placeholder="@johndoe"
-                    fullWidth
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="bluesky_handle" className="flex items-center gap-2 text-sm font-medium text-white mb-2">
-                    <AtSign className="w-4 h-4 text-[#0085FF]" />
-                    Bluesky
-                  </label>
-                  <Input
-                    id="bluesky_handle"
-                    value={formData.bluesky_handle}
-                    onChange={(e) => handleChange('bluesky_handle', e.target.value)}
-                    placeholder="@johndoe.bsky.social"
-                    fullWidth
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="mastodon_handle" className="flex items-center gap-2 text-sm font-medium text-white mb-2">
-                    <AtSign className="w-4 h-4 text-[#6364FF]" />
-                    Mastodon
-                  </label>
-                  <Input
-                    id="mastodon_handle"
-                    value={formData.mastodon_handle}
-                    onChange={(e) => handleChange('mastodon_handle', e.target.value)}
-                    placeholder="@johndoe@mastodon.social"
-                    fullWidth
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Submit */}
-            <div className="flex items-center justify-between pt-4 pb-8">
-              <Link
-                href="/cfp/dashboard"
-                className="text-brand-gray-light hover:text-white text-sm transition-colors"
-              >
-                Cancel
-              </Link>
-              <Button type="submit" variant="primary" size="lg" loading={isSubmitting}>
-                {isSubmitting ? 'Saving...' : 'Save Profile'}
-              </Button>
             </div>
           </form>
         </main>
