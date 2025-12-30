@@ -214,6 +214,8 @@ export const mapStripePlanToTicketPlan = (
 
   // Convert from cents to base units (Stripe stores amounts in cents)
   const price = Math.round(stripePlan.price / 100);
+
+  // Use the late bird comparison price
   const comparePrice = stripePlan.comparePrice
     ? Math.round(stripePlan.comparePrice / 100)
     : undefined;

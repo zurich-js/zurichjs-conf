@@ -14,6 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
+      partnership_emails: {
+        Row: {
+          id: string
+          partnership_id: string
+          recipient_email: string
+          recipient_name: string
+          subject: string
+          resend_message_id: string | null
+          included_coupons: boolean
+          included_vouchers: boolean
+          included_logo: boolean
+          included_banner: boolean | null
+          custom_message: string | null
+          status: string
+          sent_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partnership_id: string
+          recipient_email: string
+          recipient_name: string
+          subject: string
+          resend_message_id?: string | null
+          included_coupons?: boolean
+          included_vouchers?: boolean
+          included_logo?: boolean
+          included_banner?: boolean | null
+          custom_message?: string | null
+          status?: string
+          sent_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partnership_id?: string
+          recipient_email?: string
+          recipient_name?: string
+          subject?: string
+          resend_message_id?: string | null
+          included_coupons?: boolean
+          included_vouchers?: boolean
+          included_logo?: boolean
+          included_banner?: boolean | null
+          custom_message?: string | null
+          status?: string
+          sent_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnership_emails_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partnership_coupons: {
+        Row: {
+          id: string
+          partnership_id: string
+          stripe_coupon_id: string
+          stripe_promotion_code_id: string | null
+          code: string
+          type: "percentage" | "fixed_amount"
+          discount_percent: number | null
+          discount_amount: number | null
+          currency: "EUR" | "CHF" | null
+          restricted_product_ids: string[]
+          max_redemptions: number | null
+          current_redemptions: number
+          expires_at: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          partnership_id: string
+          stripe_coupon_id: string
+          stripe_promotion_code_id?: string | null
+          code: string
+          type: "percentage" | "fixed_amount"
+          discount_percent?: number | null
+          discount_amount?: number | null
+          currency?: "EUR" | "CHF" | null
+          restricted_product_ids?: string[]
+          max_redemptions?: number | null
+          current_redemptions?: number
+          expires_at?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          partnership_id?: string
+          stripe_coupon_id?: string
+          stripe_promotion_code_id?: string | null
+          code?: string
+          type?: "percentage" | "fixed_amount"
+          discount_percent?: number | null
+          discount_amount?: number | null
+          currency?: "EUR" | "CHF" | null
+          restricted_product_ids?: string[]
+          max_redemptions?: number | null
+          current_redemptions?: number
+          expires_at?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnership_coupons_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partnership_vouchers: {
+        Row: {
+          id: string
+          partnership_id: string
+          stripe_coupon_id: string
+          stripe_promotion_code_id: string | null
+          code: string
+          purpose: "community_discount" | "raffle" | "giveaway" | "organizer_discount"
+          amount: number
+          currency: "EUR" | "CHF"
+          recipient_name: string | null
+          recipient_email: string | null
+          is_redeemed: boolean
+          redeemed_at: string | null
+          redeemed_by_email: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          partnership_id: string
+          stripe_coupon_id: string
+          stripe_promotion_code_id?: string | null
+          code: string
+          purpose: "community_discount" | "raffle" | "giveaway" | "organizer_discount"
+          amount: number
+          currency: "EUR" | "CHF"
+          recipient_name?: string | null
+          recipient_email?: string | null
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by_email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          partnership_id?: string
+          stripe_coupon_id?: string
+          stripe_promotion_code_id?: string | null
+          code?: string
+          purpose?: "community_discount" | "raffle" | "giveaway" | "organizer_discount"
+          amount?: number
+          currency?: "EUR" | "CHF"
+          recipient_name?: string | null
+          recipient_email?: string | null
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by_email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnership_vouchers_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partnerships: {
+        Row: {
+          id: string
+          name: string
+          type: "community" | "individual" | "company" | "sponsor"
+          status: "active" | "inactive" | "pending" | "expired"
+          contact_name: string
+          contact_email: string
+          contact_phone: string | null
+          company_name: string | null
+          company_website: string | null
+          company_logo_url: string | null
+          utm_source: string
+          utm_medium: string
+          utm_campaign: string
+          notes: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          type: "community" | "individual" | "company" | "sponsor"
+          status?: "active" | "inactive" | "pending" | "expired"
+          contact_name: string
+          contact_email: string
+          contact_phone?: string | null
+          company_name?: string | null
+          company_website?: string | null
+          company_logo_url?: string | null
+          utm_source: string
+          utm_medium: string
+          utm_campaign: string
+          notes?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          type?: "community" | "individual" | "company" | "sponsor"
+          status?: "active" | "inactive" | "pending" | "expired"
+          contact_name?: string
+          contact_email?: string
+          contact_phone?: string | null
+          company_name?: string | null
+          company_website?: string | null
+          company_logo_url?: string | null
+          utm_source?: string
+          utm_medium?: string
+          utm_campaign?: string
+          notes?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       b2b_invoice_attendees: {
         Row: {
           company: string | null

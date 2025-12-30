@@ -76,6 +76,12 @@ export interface Ticket {
   transferred_from_name: string | null; // Name of original owner if ticket was transferred
   transferred_from_email: string | null; // Email of original owner if ticket was transferred
   transferred_at: string | null; // When the ticket was transferred
+  // Partnership tracking fields
+  coupon_code: string | null; // The coupon/voucher code applied at checkout
+  partnership_coupon_id: string | null; // Reference to partnership_coupons table
+  partnership_voucher_id: string | null; // Reference to partnership_vouchers table
+  partnership_id: string | null; // Reference to partnerships table
+  discount_amount: number; // Discount amount in cents
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

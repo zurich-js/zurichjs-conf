@@ -7,6 +7,7 @@ import type Stripe from 'stripe';
 import { Resend } from 'resend';
 import { getStripeClient } from './client';
 import { createTicket } from '@/lib/tickets';
+import { createServiceRoleClient } from '@/lib/supabase';
 import type { TicketType, TicketCategory, TicketStage } from '@/lib/types/database';
 import { TICKET_CATEGORIES, LOOKUP_KEY_STAGES, STAGE_LOOKUP_MAP } from '@/lib/types/ticket-constants';
 import { sendTicketConfirmationEmailsQueued, sendVoucherConfirmationEmail, addNewsletterContact, type TicketConfirmationData } from '@/lib/email';
@@ -20,36 +21,52 @@ import { logger } from '@/lib/logger';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
- * Parse ticket info from lookup key: {category}_{stage}
+ * Strip currency suffix from lookup key if present
+ * Handles patterns like "standard_blind_bird_eur" -> "standard_blind_bird"
+ */
+function stripCurrencySuffix(lookupKey: string): string {
+  // Remove _eur or _chf suffix if present
+  if (lookupKey.endsWith('_eur') || lookupKey.endsWith('_chf')) {
+    return lookupKey.slice(0, -4);
+  }
+  return lookupKey;
+}
+
+/**
+ * Parse ticket info from lookup key: {category}_{stage} or {category}_{stage}_{currency}
  * Called after isTicketProduct() validation
  * Handles multi-part stage names like "blind_bird" correctly
+ * Handles currency suffix like "_eur" or "_chf"
  */
 function parseTicketInfo(lookupKey: string): {
   category: TicketCategory;
   stage: TicketStage;
 } {
+  // Strip currency suffix before parsing
+  const normalizedKey = stripCurrencySuffix(lookupKey);
+
   // Special cases
-  if (lookupKey.includes('student')) {
+  if (normalizedKey.includes('student')) {
     return { category: 'student', stage: 'general_admission' };
   }
-  if (lookupKey.includes('unemployed')) {
+  if (normalizedKey.includes('unemployed')) {
     return { category: 'unemployed', stage: 'general_admission' };
   }
 
   // Parse category_stage pattern
   // Split only on first underscore to handle multi-part stage names like "blind_bird"
-  const firstUnderscoreIndex = lookupKey.indexOf('_');
+  const firstUnderscoreIndex = normalizedKey.indexOf('_');
   if (firstUnderscoreIndex === -1) {
     // No underscore found, treat entire key as category
     return {
-      category: lookupKey as TicketCategory,
+      category: normalizedKey as TicketCategory,
       stage: 'general_admission',
     };
   }
 
-  const category = lookupKey.substring(0, firstUnderscoreIndex);
-  const stageKey = lookupKey.substring(firstUnderscoreIndex + 1);
-  
+  const category = normalizedKey.substring(0, firstUnderscoreIndex);
+  const stageKey = normalizedKey.substring(firstUnderscoreIndex + 1);
+
   return {
     category: category as TicketCategory,
     stage: STAGE_LOOKUP_MAP[stageKey] || 'general_admission',
@@ -89,13 +106,15 @@ function toLegacyType(category: TicketCategory, stage: TicketStage): TicketType 
 
 /**
  * Check if a price is a valid conference ticket product
- * Validates based on lookup key pattern: {category}_{stage}
+ * Validates based on lookup key pattern: {category}_{stage} or {category}_{stage}_{currency}
  * Handles multi-part stage names like "blind_bird" correctly
+ * Handles currency suffix like "_eur" or "_chf"
  */
 function isTicketProduct(price: Stripe.Price | undefined): boolean {
   if (!price?.lookup_key) return false;
 
-  const lookupKey = price.lookup_key;
+  // Strip currency suffix before validation
+  const lookupKey = stripCurrencySuffix(price.lookup_key);
 
   // Special cases: student/unemployed tickets
   if (lookupKey === 'standard_student_unemployed' ||
@@ -114,7 +133,7 @@ function isTicketProduct(price: Stripe.Price | undefined): boolean {
 
   const category = lookupKey.substring(0, firstUnderscoreIndex);
   const stageKey = lookupKey.substring(firstUnderscoreIndex + 1);
-  
+
   return (TICKET_CATEGORIES as readonly string[]).includes(category) &&
          (LOOKUP_KEY_STAGES as readonly string[]).includes(stageKey);
 }
@@ -131,6 +150,84 @@ function isWorkshopVoucher(price: Stripe.Price | undefined): boolean {
 
   const productId = typeof price.product === 'string' ? price.product : price.product?.id;
   return productId === workshopVoucherProductId;
+}
+
+/**
+ * Partnership discount info extracted from checkout session
+ */
+interface PartnershipDiscountInfo {
+  couponCode: string | null;
+  partnershipCouponId: string | null;
+  partnershipVoucherId: string | null;
+  partnershipId: string | null;
+  discountAmount: number;
+}
+
+/**
+ * Extract partnership discount info from checkout session
+ * Looks up coupon/voucher codes in our database to link to partnerships
+ */
+async function extractPartnershipDiscountInfo(
+  session: Stripe.Checkout.Session
+): Promise<PartnershipDiscountInfo> {
+  const result: PartnershipDiscountInfo = {
+    couponCode: null,
+    partnershipCouponId: null,
+    partnershipVoucherId: null,
+    partnershipId: null,
+    discountAmount: session.total_details?.amount_discount || 0,
+  };
+
+  // Get coupon code from session metadata (set during checkout creation)
+  const couponCode = session.metadata?.couponCode;
+  if (!couponCode) {
+    return result;
+  }
+
+  result.couponCode = couponCode;
+
+  // Look up in our database to get partnership linkage
+  const supabase = createServiceRoleClient();
+
+  // First, try to find it as a partnership coupon
+  // Note: partnership_coupons table not yet in generated types, using type assertion
+  const { data: coupon } = await supabase
+    .from('partnership_coupons' as 'tickets')
+    .select('id, partnership_id')
+    .eq('code', couponCode.toUpperCase())
+    .single();
+
+  const couponData = coupon as unknown as { id: string; partnership_id: string } | null;
+  if (couponData) {
+    result.partnershipCouponId = couponData.id;
+    result.partnershipId = couponData.partnership_id;
+    return result;
+  }
+
+  // If not found as coupon, try as a voucher
+  const { data: voucher } = await supabase
+    .from('partnership_vouchers' as 'tickets')
+    .select('id, partnership_id')
+    .eq('code', couponCode.toUpperCase())
+    .single();
+
+  const voucherData = voucher as unknown as { id: string; partnership_id: string } | null;
+  if (voucherData) {
+    result.partnershipVoucherId = voucherData.id;
+    result.partnershipId = voucherData.partnership_id;
+
+    // Mark voucher as redeemed
+    await supabase
+      .from('partnership_vouchers' as 'tickets')
+      .update({
+        is_redeemed: true,
+        redeemed_at: new Date().toISOString(),
+        redeemed_by_email: session.customer_details?.email || null,
+      } as unknown as Record<string, unknown>)
+      .eq('id', voucherData.id);
+  }
+
+  return result;
 }
 
 /**
@@ -175,7 +272,6 @@ export async function handleCheckoutSessionCompleted(
 
   // Cancel any scheduled cart abandonment emails for this customer
   try {
-    const { createServiceRoleClient } = await import('@/lib/supabase');
     const supabase = createServiceRoleClient();
 
     const { data: scheduledEmails } = await supabase
@@ -415,6 +511,18 @@ export async function handleCheckoutSessionCompleted(
   if (ticketLineItems.length > 0 && ticketInfo && ticketDisplayName) {
     log.info('Processing tickets', { ticketCount: ticketLineItems.length });
 
+    // Extract partnership discount info (coupon/voucher tracking)
+    const partnershipDiscountInfo = await extractPartnershipDiscountInfo(session);
+    if (partnershipDiscountInfo.couponCode) {
+      log.info('Partnership discount applied', {
+        couponCode: partnershipDiscountInfo.couponCode,
+        partnershipId: partnershipDiscountInfo.partnershipId,
+        discountAmount: partnershipDiscountInfo.discountAmount,
+        isCoupon: !!partnershipDiscountInfo.partnershipCouponId,
+        isVoucher: !!partnershipDiscountInfo.partnershipVoucherId,
+      });
+    }
+
     // Extract additional customer info from metadata
     const jobTitle = session.metadata?.jobTitle || null;
     const company = session.metadata?.company || null;
@@ -458,7 +566,6 @@ export async function handleCheckoutSessionCompleted(
 
     // Check if tickets already exist for this session (idempotency for emails)
     log.debug('Checking for existing tickets with session ID', { sessionId: session.id });
-    const { createServiceRoleClient } = await import('@/lib/supabase');
     const supabase = createServiceRoleClient();
 
     const { data: existingTickets, error: checkError } = await supabase
@@ -530,6 +637,12 @@ export async function handleCheckoutSessionCompleted(
           amountPaid: Math.round((session.amount_total || 0) / attendees.length), // Distribute cost across tickets
           currency: session.currency?.toUpperCase() || 'CHF',
           status: 'confirmed',
+          // Partnership tracking - link ticket to coupon/voucher/partnership
+          couponCode: partnershipDiscountInfo.couponCode,
+          partnershipCouponId: partnershipDiscountInfo.partnershipCouponId,
+          partnershipVoucherId: partnershipDiscountInfo.partnershipVoucherId,
+          partnershipId: partnershipDiscountInfo.partnershipId,
+          discountAmount: Math.round(partnershipDiscountInfo.discountAmount / attendees.length), // Distribute discount
           metadata: {
             session_metadata: session.metadata,
             attendeeIndex: i,
@@ -827,6 +940,7 @@ export async function handlePaymentIntentSucceeded(
 
 // Export internal functions for testing
 export const __testing = {
+  stripCurrencySuffix,
   parseTicketInfo,
   getTicketDisplayName,
   toLegacyType,

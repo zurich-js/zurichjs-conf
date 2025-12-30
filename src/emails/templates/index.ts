@@ -14,3 +14,6 @@ export type { SponsorshipInquiryEmailProps } from './SponsorshipInquiryEmail';
 
 export { SponsorshipConfirmationEmail } from './SponsorshipConfirmationEmail';
 export type { SponsorshipConfirmationEmailProps } from './SponsorshipConfirmationEmail';
+
+export { PartnershipPackageEmail } from './PartnershipPackageEmail';
+export type { PartnershipPackageEmailProps } from './PartnershipPackageEmail';

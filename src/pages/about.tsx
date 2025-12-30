@@ -49,7 +49,7 @@ export default function AboutUs() {
     <>
       <SEO
         title="About ZurichJS Conference | Team, Venue & Mission"
-        description="Meet the team behind ZurichJS Conference 2026. Learn about our mission to unite the JavaScript community at Technopark Zürich. 300 attendees, 20+ speakers, 5+ workshops."
+        description="Meet the team behind ZurichJS Conference 2026. Learn about our mission to unite the JavaScript community at Technopark Zürich. 300 attendees, ~15 speakers, 5+ workshops."
         canonical="/about"
         keywords="zurichjs team, javascript community zurich, swiss javascript group, technopark zurich conference"
         jsonLd={[organizationSchema, breadcrumbSchema]}
