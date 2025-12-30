@@ -17,4 +17,5 @@ export {
 export { timelineData } from './timeline';
 export { footerData } from './footer';
 export { sponsorsData } from './sponsors';
+export { sponsorshipPageData } from './sponsorship';
 

@@ -19,6 +19,7 @@ interface VerificationRequest {
   studentId?: string;
   university?: string;
   linkedInUrl?: string;
+  ravRegistrationDate?: string;
   additionalInfo?: string;
   priceId: string;
 }
@@ -63,9 +64,6 @@ const validateRequest = (body: VerificationRequest): string | null => {
   }
 
   if (body.verificationType === 'student') {
-    if (!body.studentId?.trim()) {
-      return 'Student ID is required';
-    }
     if (!body.university?.trim()) {
       return 'University name is required';
     }
@@ -78,6 +76,7 @@ const validateRequest = (body: VerificationRequest): string | null => {
     if (!/^https?:\/\/(www\.)?linkedin\.com\/.+/.test(body.linkedInUrl)) {
       return 'Invalid LinkedIn profile URL';
     }
+    // RAV registration date is optional (only for Switzerland)
   }
 
   if (!body.priceId?.trim()) {
@@ -129,32 +128,27 @@ const sendNotifications = async (
   verificationId: string,
   data: VerificationRequest
 ): Promise<void> => {
-  // Send confirmation email to user
+  // Send confirmation email to user and detailed admin notification
   try {
     await sendVerificationRequestEmail({
       to: data.email,
       name: data.name,
       verificationId,
       verificationType: data.verificationType,
+      // Student-specific fields
+      university: data.university,
+      studentId: data.studentId,
+      // Unemployed-specific fields
+      linkedInUrl: data.linkedInUrl,
+      ravRegistrationDate: data.ravRegistrationDate,
+      // Common optional field
+      additionalInfo: data.additionalInfo,
     });
-    log.info('Verification confirmation email sent', { email: data.email });
+    log.info('Verification emails sent (user confirmation + admin notification)', { email: data.email });
   } catch (error) {
-    log.error('Failed to send confirmation email', error);
+    log.error('Failed to send verification emails', error);
     // Don't fail the request if email fails
   }
-
-  // Send notification to admin (in production)
-  // This would notify the admin team to review the verification
-  log.info('Admin notification would be sent here for verification', { verificationId });
-  
-  // TODO: Send to admin
-  // await sendAdminNotificationEmail({
-  //   verificationId,
-  //   name: data.name,
-  //   email: data.email,
-  //   verificationType: data.verificationType,
-  //   details: data,
-  // });
 };
 
 /**

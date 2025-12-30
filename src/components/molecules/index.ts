@@ -20,8 +20,19 @@ export { WorkshopVoucherCard } from './WorkshopVoucherCard';
 export { ToastContainer } from './Toast';
 export { TeamRequestModal } from './TeamRequestModal';
 export { TeamRequestSuccessDialog } from './TeamRequestSuccessDialog';
+export { SponsorshipInquiryModal } from './SponsorshipInquiryModal';
 export { AttendeeForm, AttendeeTicketForm } from './AttendeeForm';
 export { PhotoSwiper } from './PhotoSwiper';
+export { TierCard } from './TierCard';
+export {
+  StatHighlightCard,
+  ProgressBar,
+  HorizontalBarChart,
+  ExperienceChart,
+  ExperienceLevelsCard,
+  EngagementCard,
+  TagCloud,
+} from './AudienceStats';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -45,5 +56,19 @@ export type { WorkshopVoucherCardProps } from './WorkshopVoucherCard';
 export type { ToastContainerProps } from './Toast';
 export type { TeamRequestModalProps, TeamRequestData } from './TeamRequestModal';
 export type { TeamRequestSuccessDialogProps } from './TeamRequestSuccessDialog';
+export type { SponsorshipInquiryModalProps } from './SponsorshipInquiryModal';
 export type { AttendeeFormProps, AttendeeTicketFormProps } from './AttendeeForm';
 export type { PhotoSwiperProps, PhotoSlide, PhotoLayout, NestedContainer } from './PhotoSwiper';
+export type { TierCardProps, TierBenefit } from './TierCard';
+export type {
+  StatHighlightCardProps,
+  ProgressBarProps,
+  HorizontalBarChartProps,
+  BarItem,
+  ExperienceChartProps,
+  ExperienceLevel,
+  EngagementStat,
+  ExperienceLevelsCardProps,
+  EngagementCardProps,
+  TagCloudProps,
+} from './AudienceStats';

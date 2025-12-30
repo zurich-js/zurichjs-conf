@@ -105,9 +105,6 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
     }
 
     if (formData.verificationType === 'student') {
-      if (!formData.studentId?.trim()) {
-        errors.studentId = 'Student ID is required';
-      }
       if (!formData.university?.trim()) {
         errors.university = 'University name is required';
       }
@@ -116,9 +113,6 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
         errors.linkedInUrl = 'LinkedIn profile URL is required';
       } else if (!/^https?:\/\/(www\.)?linkedin\.com\/.+/.test(formData.linkedInUrl)) {
         errors.linkedInUrl = 'Please enter a valid LinkedIn profile URL';
-      }
-      if (!formData.ravRegistrationDate?.trim()) {
-        errors.ravRegistrationDate = 'RAV registration date is required';
       }
     }
 
@@ -324,7 +318,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
                   <div>
                     <label htmlFor="studentId" className="block text-sm font-semibold text-brand-white mb-2">
-                      Student ID Number <span className="text-brand-red">*</span>
+                      Student ID Number <span className="text-brand-gray-light font-normal">(if you have one)</span>
                     </label>
                     <Input
                       id="studentId"
@@ -332,16 +326,8 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                       value={formData.studentId}
                       onChange={(e) => handleInputChange('studentId', e.target.value)}
                       placeholder="123456789"
-                      required
                       className="w-full"
-                      aria-invalid={!!validationErrors.studentId}
-                      aria-describedby={validationErrors.studentId ? 'studentId-error' : undefined}
                     />
-                    {validationErrors.studentId && (
-                      <p id="studentId-error" className="text-brand-red text-sm font-medium mt-1">
-                        {validationErrors.studentId}
-                      </p>
-                    )}
                   </div>
                 </>
               )}
@@ -373,23 +359,18 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
                   <div>
                     <label htmlFor="ravRegistrationDate" className="block text-sm font-semibold text-brand-white mb-2">
-                      RAV Registration Date <span className="text-brand-red">*</span>
+                      RAV Registration Date <span className="text-brand-gray-light font-normal">(Switzerland only)</span>
                     </label>
+                    <p className="text-xs text-brand-gray-light mb-2">
+                      Leave blank if outside Switzerland. You can add details in the comments below.
+                    </p>
                     <Input
                       id="ravRegistrationDate"
                       type="date"
                       value={formData.ravRegistrationDate}
                       onChange={(e) => handleInputChange('ravRegistrationDate', e.target.value)}
-                      required
                       className="w-full"
-                      aria-invalid={!!validationErrors.ravRegistrationDate}
-                      aria-describedby={validationErrors.ravRegistrationDate ? 'ravRegistrationDate-error' : undefined}
                     />
-                    {validationErrors.ravRegistrationDate && (
-                      <p id="ravRegistrationDate-error" className="text-brand-red text-sm font-medium mt-1">
-                        {validationErrors.ravRegistrationDate}
-                      </p>
-                    )}
                   </div>
                 </>
               )}

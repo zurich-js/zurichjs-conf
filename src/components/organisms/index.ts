@@ -13,6 +13,14 @@ export { SectionContainer } from './SectionContainer';
 export { FAQSection } from './FAQSection';
 export { SponsorsSection } from './SponsorsSection';
 export { SpeakersSection } from './SpeakersSection';
+export {
+  SponsorshipHeroSection,
+  SponsorshipMissionSection,
+  SponsorshipAudienceSection,
+  SponsorshipValuesSection,
+  SponsorshipTiersSection,
+  SponsorshipContactSection,
+} from './sponsorship';
 
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';
@@ -26,4 +34,12 @@ export type { CheckoutFormProps } from './CheckoutForm';
 export type { ShapedSectionProps } from './ShapedSection';
 export type { SponsorsSectionProps, Sponsor } from './SponsorsSection';
 export type { PhotoSlide, PhotoLayout } from '@/components/molecules';
+export type {
+  SponsorshipHeroSectionProps,
+  SponsorshipMissionSectionProps,
+  SponsorshipAudienceSectionProps,
+  SponsorshipValuesSectionProps,
+  SponsorshipTiersSectionProps,
+  SponsorshipContactSectionProps,
+} from './sponsorship';
 
