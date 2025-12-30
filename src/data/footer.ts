@@ -20,7 +20,7 @@ export const footerData: SiteFooterProps = {
       { label: 'Schedule', href: '/schedule', locked: true },
       { label: 'Venue', href: '/venue', locked: true },
       { label: 'Workshops', href: '/workshops', locked: true },
-      { label: 'Sponsor us', href: 'mailto:hello@zurichjs.com' },
+      { label: 'Sponsor us', href: '/sponsorship' },
     ],
   },
   legal: {

@@ -12,6 +12,10 @@ import { VoucherPurchaseEmail } from '@/emails/templates/VoucherPurchaseEmail';
 import type { VoucherPurchaseEmailProps } from '@/emails/templates/VoucherPurchaseEmail';
 import { ReviewerInvitationEmail } from '@/emails/templates/ReviewerInvitationEmail';
 import type { ReviewerInvitationEmailProps } from '@/emails/templates/ReviewerInvitationEmail';
+import { SponsorshipInquiryEmail } from '@/emails/templates/SponsorshipInquiryEmail';
+import type { SponsorshipInquiryEmailProps } from '@/emails/templates/SponsorshipInquiryEmail';
+import { SponsorshipConfirmationEmail } from '@/emails/templates/SponsorshipConfirmationEmail';
+import type { SponsorshipConfirmationEmailProps } from '@/emails/templates/SponsorshipConfirmationEmail';
 import { getFirstName } from '@/emails/utils/render';
 import { getZurichJSVenueMapUrl } from '@/lib/venue';
 import { getBaseUrl } from '@/lib/url';
@@ -74,6 +78,14 @@ export interface VerificationRequestData {
   name: string;
   verificationId: string;
   verificationType: 'student' | 'unemployed';
+  // Student-specific fields
+  university?: string;
+  studentId?: string;
+  // Unemployed-specific fields
+  linkedInUrl?: string;
+  ravRegistrationDate?: string;
+  // Common optional field
+  additionalInfo?: string;
 }
 
 /**
@@ -96,6 +108,17 @@ export interface ReviewerInvitationData {
   to: string;
   reviewerName?: string;
   accessLevel: 'full_access' | 'anonymous' | 'readonly';
+}
+
+/**
+ * Data structure for sponsorship inquiry email
+ */
+export interface SponsorshipInquiryData {
+  name: string;
+  company: string;
+  email: string;
+  message: string;
+  inquiryId: string;
 }
 
 /**
@@ -427,7 +450,7 @@ export async function sendVerificationRequestEmail(
 </html>
     `.trim();
 
-    // Send the email
+    // Send the email to the user
     const result = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: data.to,
@@ -442,6 +465,175 @@ export async function sendVerificationRequestEmail(
     }
 
     console.log('Verification email sent successfully:', result.data?.id);
+
+    // Send detailed admin notification to hello@zurichjs.com with all verification data
+    try {
+      const submittedAt = new Date().toLocaleString('en-CH', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Europe/Zurich',
+      });
+
+      // Build details section based on verification type
+      let detailsHtml = '';
+      if (data.verificationType === 'student') {
+        detailsHtml = `
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+              <strong style="color: #6b7280;">University/School:</strong>
+            </td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+              ${data.university || 'Not provided'}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+              <strong style="color: #6b7280;">Student ID:</strong>
+            </td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+              ${data.studentId || 'Not provided'}
+            </td>
+          </tr>
+        `;
+      } else {
+        detailsHtml = `
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+              <strong style="color: #6b7280;">LinkedIn Profile:</strong>
+            </td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+              ${data.linkedInUrl ? `<a href="${data.linkedInUrl}" style="color: #258BCC; text-decoration: underline;">${data.linkedInUrl}</a>` : 'Not provided'}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+              <strong style="color: #6b7280;">RAV Registration Date:</strong>
+            </td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+              ${data.ravRegistrationDate || 'Not provided (outside Switzerland)'}
+            </td>
+          </tr>
+        `;
+      }
+
+      const adminEmailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Verification Request</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #F1E271; padding: 30px; text-align: center;">
+              <h1 style="margin: 0; color: #000000; font-size: 24px; font-weight: bold;">New ${typeLabel} Verification Request</h1>
+              <p style="margin: 8px 0 0 0; color: #374151; font-size: 14px;">Action required - Review and approve/reject</p>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 30px;">
+              <!-- Verification ID -->
+              <div style="background-color: #000000; color: #ffffff; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                <p style="margin: 0 0 4px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af;">Verification ID</p>
+                <p style="margin: 0; font-size: 20px; font-weight: bold; font-family: monospace;">${data.verificationId}</p>
+              </div>
+
+              <!-- Contact Information -->
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 18px; font-weight: bold; border-bottom: 2px solid #F1E271; padding-bottom: 8px;">Contact Information</h2>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; width: 140px;">
+                    <strong style="color: #6b7280;">Name:</strong>
+                  </td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+                    ${data.name}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <strong style="color: #6b7280;">Email:</strong>
+                  </td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <a href="mailto:${data.to}" style="color: #258BCC; text-decoration: underline;">${data.to}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <strong style="color: #6b7280;">Type:</strong>
+                  </td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <span style="background-color: ${data.verificationType === 'student' ? '#DBEAFE' : '#FEF3C7'}; color: ${data.verificationType === 'student' ? '#1E40AF' : '#92400E'}; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+                      ${typeLabel}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Verification Details -->
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 18px; font-weight: bold; border-bottom: 2px solid #F1E271; padding-bottom: 8px;">Verification Details</h2>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                ${detailsHtml}
+              </table>
+
+              <!-- Additional Information -->
+              ${data.additionalInfo ? `
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 18px; font-weight: bold; border-bottom: 2px solid #F1E271; padding-bottom: 8px;">Additional Information</h2>
+              <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                <p style="margin: 0; color: #374151; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${data.additionalInfo}</p>
+              </div>
+              ` : ''}
+
+              <!-- Meta Information -->
+              <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; font-size: 12px; color: #6b7280;">
+                <p style="margin: 0 0 4px 0;"><strong>Submitted:</strong> ${submittedAt}</p>
+                <p style="margin: 0;"><strong>Reply to:</strong> <a href="mailto:${data.to}" style="color: #258BCC;">${data.to}</a></p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #111827; padding: 20px; text-align: center;">
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                This is an automated admin notification from ZurichJS Conference
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+      `.trim();
+
+      const adminResult = await resend.emails.send({
+        from: EMAIL_CONFIG.from,
+        to: 'hello@zurichjs.com',
+        replyTo: data.to, // Reply goes to the person who submitted
+        subject: `[Action Required] ${typeLabel} Verification - ${data.verificationId} - ${data.name}`,
+        html: adminEmailHtml,
+      });
+
+      if (adminResult.error) {
+        console.error('Error sending admin verification email:', adminResult.error);
+        // Don't fail the request if admin email fails
+      } else {
+        console.log('Admin verification email sent:', adminResult.data?.id);
+      }
+    } catch (adminError) {
+      console.error('Exception sending admin verification email:', adminError);
+      // Don't fail the request if admin email fails
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Error sending verification request email:', error);
@@ -539,6 +731,93 @@ export async function addNewsletterContact(
       code: 'NEWSLETTER_SUBSCRIPTION_ERROR',
     });
 
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Send sponsorship inquiry emails (to admin and confirmation to sender)
+ */
+export async function sendSponsorshipInquiryEmails(
+  data: SponsorshipInquiryData
+): Promise<{ success: boolean; error?: string }> {
+  console.log('[Email] ====== Sending sponsorship inquiry emails ======');
+  console.log('[Email] From:', data.name, 'at', data.company);
+  console.log('[Email] Email:', data.email);
+  console.log('[Email] Inquiry ID:', data.inquiryId);
+
+  try {
+    const resend = getResendClient();
+    const submittedAt = new Date().toLocaleString('en-CH', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Europe/Zurich',
+    });
+
+    // 1. Send notification to admin (hello@zurichjs.com)
+    const adminEmailProps: SponsorshipInquiryEmailProps = {
+      name: data.name,
+      company: data.company,
+      email: data.email,
+      message: data.message,
+      inquiryId: data.inquiryId,
+      submittedAt,
+    };
+
+    console.log('[Email] Rendering admin notification email...');
+    const adminEmailHtml = await render(
+      React.createElement(SponsorshipInquiryEmail, adminEmailProps)
+    );
+
+    console.log('[Email] Sending admin notification to hello@zurichjs.com...');
+    const adminResult = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: 'hello@zurichjs.com',
+      replyTo: data.email, // Reply goes to the person who submitted
+      subject: `New Sponsorship Inquiry from ${data.company} - ${data.inquiryId}`,
+      html: adminEmailHtml,
+    });
+
+    if (adminResult.error) {
+      console.error('[Email] ❌ Error sending admin notification:', adminResult.error);
+      return { success: false, error: adminResult.error.message };
+    }
+    console.log('[Email] ✅ Admin notification sent:', adminResult.data?.id);
+
+    // 2. Send confirmation to the person who submitted
+    const confirmationEmailProps: SponsorshipConfirmationEmailProps = {
+      name: data.name,
+      company: data.company,
+      inquiryId: data.inquiryId,
+      supportEmail: EMAIL_CONFIG.supportEmail,
+    };
+
+    console.log('[Email] Rendering confirmation email...');
+    const confirmationEmailHtml = await render(
+      React.createElement(SponsorshipConfirmationEmail, confirmationEmailProps)
+    );
+
+    console.log('[Email] Sending confirmation to:', data.email);
+    const confirmationResult = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: data.email,
+      replyTo: EMAIL_CONFIG.replyTo,
+      subject: `Sponsorship Inquiry Received - ${data.inquiryId}`,
+      html: confirmationEmailHtml,
+    });
+
+    if (confirmationResult.error) {
+      console.error('[Email] ❌ Error sending confirmation:', confirmationResult.error);
+      // Don't fail if confirmation fails, admin was notified
+    } else {
+      console.log('[Email] ✅ Confirmation email sent:', confirmationResult.data?.id);
+    }
+
+    console.log('[Email] ====== Sponsorship inquiry emails complete ======');
+    return { success: true };
+  } catch (error) {
+    console.error('[Email] ❌ Exception sending sponsorship inquiry emails:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
 }

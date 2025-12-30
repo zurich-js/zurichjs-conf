@@ -8,3 +8,9 @@ export type { TicketPurchaseEmailProps } from './TicketPurchaseEmail';
 
 export { VoucherPurchaseEmail } from './VoucherPurchaseEmail';
 export type { VoucherPurchaseEmailProps } from './VoucherPurchaseEmail';
+
+export { SponsorshipInquiryEmail } from './SponsorshipInquiryEmail';
+export type { SponsorshipInquiryEmailProps } from './SponsorshipInquiryEmail';
+
+export { SponsorshipConfirmationEmail } from './SponsorshipConfirmationEmail';
+export type { SponsorshipConfirmationEmailProps } from './SponsorshipConfirmationEmail';
