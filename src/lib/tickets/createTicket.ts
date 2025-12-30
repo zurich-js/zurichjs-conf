@@ -24,6 +24,12 @@ export interface CreateTicketParams {
   currency: string;
   status?: PaymentStatus;
   metadata?: Record<string, unknown>;
+  // Partnership tracking fields
+  couponCode?: string | null;
+  partnershipCouponId?: string | null;
+  partnershipVoucherId?: string | null;
+  partnershipId?: string | null;
+  discountAmount?: number;
 }
 
 export interface CreateTicketResult {
@@ -97,6 +103,12 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       currency: params.currency,
       status: params.status || 'confirmed',
       metadata: (params.metadata || {}) as Json,
+      // Partnership tracking fields
+      coupon_code: params.couponCode || null,
+      partnership_coupon_id: params.partnershipCouponId || null,
+      partnership_voucher_id: params.partnershipVoucherId || null,
+      partnership_id: params.partnershipId || null,
+      discount_amount: params.discountAmount || 0,
     };
 
     console.log('[createTicket] Inserting ticket with data:', ticketData);

@@ -9,3 +9,4 @@ export { StatsCards } from './StatsCards';
 export { AddPartnershipModal } from './AddPartnershipModal';
 export { PartnershipDetailModal } from './PartnershipDetailModal';
 export { SendEmailModal } from './SendEmailModal';
+export { ProductMultiSelect } from './ProductMultiSelect';

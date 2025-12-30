@@ -16,6 +16,7 @@ export type {
   UpdatePartnershipRequest,
   CreateCouponRequest,
   CreateVoucherRequest,
+  PartnershipAnalyticsResponse,
 } from '@/lib/types/partnership';
 
 export interface PartnershipStats {

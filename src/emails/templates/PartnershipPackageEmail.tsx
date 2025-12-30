@@ -186,12 +186,12 @@ export const PartnershipPackageEmail: React.FC<PartnershipPackageEmailProps> = (
       <Section style={footerSectionStyle}>
         <Text style={footerTextStyle}>
           Questions? Reply to this email or reach out to us at{' '}
-          <Link href="mailto:partners@zurichjs.com" style={linkStyle}>
-            partners@zurichjs.com
+          <Link href="mailto:hello@zurichjs.com" style={linkStyle}>
+            hello@zurichjs.com
           </Link>
         </Text>
         <Text style={footerTextStyle}>
-          ZurichJS Conference 2026 • June 21, 2026 • Technopark Zürich
+          ZurichJS Conference 2026 • September 11, 2026 • Technopark Zürich
         </Text>
       </Section>
     </EmailLayout>

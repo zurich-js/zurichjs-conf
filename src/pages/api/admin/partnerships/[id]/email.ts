@@ -16,7 +16,7 @@ const sendEmailSchema = z.object({
   include_coupons: z.boolean().default(true),
   include_vouchers: z.boolean().default(true),
   include_logo: z.boolean().default(true),
-  include_banner: z.boolean().default(true),
+  include_banner: z.boolean().optional().default(false),
   custom_message: z.string().optional(),
 });
 

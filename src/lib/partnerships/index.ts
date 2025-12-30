@@ -43,3 +43,9 @@ export {
   sendPartnershipEmail,
   getEmailHistory,
 } from './email';
+
+// Analytics operations
+export {
+  getPartnershipAnalytics,
+  getAggregatePartnershipStats,
+} from './analytics';

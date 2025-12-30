@@ -153,6 +153,77 @@ export interface PartnershipAnalytics {
 }
 
 /**
+ * Detailed partnership analytics response
+ */
+export interface PartnershipAnalyticsResponse {
+  partnership: Partnership;
+
+  // Summary stats
+  summary: {
+    totalTicketsSold: number;
+    grossRevenue: number; // In cents
+    totalDiscountsGiven: number; // In cents
+    netRevenue: number; // In cents
+    totalCouponRedemptions: number;
+    totalVouchersRedeemed: number;
+  };
+
+  // Coupon breakdown
+  coupons: {
+    total: number;
+    active: number;
+    byCode: Array<{
+      id: string;
+      code: string;
+      type: CouponType;
+      discountPercent?: number;
+      discountAmount?: number;
+      currency?: VoucherCurrency;
+      redemptions: number;
+      maxRedemptions?: number;
+      discountGiven: number; // Total discount given by this coupon in cents
+      isActive: boolean;
+    }>;
+  };
+
+  // Voucher breakdown
+  vouchers: {
+    total: number;
+    redeemed: number;
+    unredeemed: number;
+    totalValueIssued: number; // In cents
+    totalValueRedeemed: number; // In cents
+    byPurpose: Record<VoucherPurpose, { total: number; redeemed: number; value: number }>;
+    redemptions: Array<{
+      id: string;
+      code: string;
+      purpose: VoucherPurpose;
+      value: number;
+      currency: VoucherCurrency;
+      redeemedAt?: string;
+      redeemedByEmail?: string;
+    }>;
+  };
+
+  // Linked tickets
+  tickets: {
+    total: number;
+    recent: Array<{
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      ticketCategory: string;
+      ticketStage: string;
+      amountPaid: number;
+      discountAmount: number;
+      couponCode?: string;
+      createdAt: string;
+    }>;
+  };
+}
+
+/**
  * Partnership email package - what gets sent to partners
  */
 export interface PartnershipEmailPackage {
@@ -187,7 +258,7 @@ export interface PartnershipEmailPackage {
 
   // Assets
   include_logo: boolean;
-  include_banner: boolean;
+  include_banner?: boolean;
   custom_message?: string;
 }
 
@@ -274,6 +345,6 @@ export interface SendPartnershipEmailRequest {
   include_coupons: boolean;
   include_vouchers: boolean;
   include_logo: boolean;
-  include_banner: boolean;
+  include_banner?: boolean;
   custom_message?: string;
 }

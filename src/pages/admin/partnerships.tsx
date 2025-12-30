@@ -310,7 +310,6 @@ export default function PartnershipsDashboard() {
         include_coupons: boolean;
         include_vouchers: boolean;
         include_logo: boolean;
-        include_banner: boolean;
         custom_message?: string;
       };
     }) => {
@@ -363,10 +362,10 @@ export default function PartnershipsDashboard() {
   // Loading state
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-[#F1E271] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4">Loading...</p>
         </div>
       </div>
     );
@@ -375,7 +374,7 @@ export default function PartnershipsDashboard() {
   // Login form
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 text-black">
         <Head>
           <title>Admin Login | ZurichJS Conference</title>
         </Head>
@@ -392,7 +391,7 @@ export default function PartnershipsDashboard() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+              className="w-full px-4 py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
             />
             {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
             <button
@@ -408,7 +407,7 @@ export default function PartnershipsDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 text-black">
       <Head>
         <title>Partnerships | ZurichJS Admin</title>
       </Head>
@@ -431,13 +430,13 @@ export default function PartnershipsDashboard() {
           <div className="flex flex-wrap gap-3">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" />
               <input
                 type="text"
                 placeholder="Search partnerships..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
               />
             </div>
 
@@ -445,7 +444,7 @@ export default function PartnershipsDashboard() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as PartnershipType | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
             >
               <option value="">All Types</option>
               <option value="community">Community</option>
@@ -458,7 +457,7 @@ export default function PartnershipsDashboard() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as PartnershipStatus | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
             >
               <option value="">All Statuses</option>
               <option value="active">Active</option>

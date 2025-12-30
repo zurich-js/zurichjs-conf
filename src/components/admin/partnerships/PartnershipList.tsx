@@ -76,9 +76,9 @@ export function PartnershipList({
   if (partnerships.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-        <Users className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No partnerships</h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <Users className="mx-auto h-12 w-12 text-black" />
+        <h3 className="mt-2 text-sm font-medium text-black">No partnerships</h3>
+        <p className="mt-1 text-sm text-black">
           Get started by creating a new partnership.
         </p>
       </div>
@@ -86,23 +86,23 @@ export function PartnershipList({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-200 text-black">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
               Partnership
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
               Type
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
               Status
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
               Contact
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
               Tracking
             </th>
             <th className="relative px-6 py-3">
@@ -118,14 +118,14 @@ export function PartnershipList({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-gray-600" />
+                      <Icon className="h-5 w-5 text-black" />
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-black">
                         {partnership.name}
                       </div>
                       {partnership.company_name && (
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-black">
                           {partnership.company_name}
                         </div>
                       )}
@@ -145,13 +145,13 @@ export function PartnershipList({
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{partnership.contact_name}</div>
-                  <div className="text-sm text-gray-500">{partnership.contact_email}</div>
+                  <div className="text-sm text-black">{partnership.contact_name}</div>
+                  <div className="text-sm text-black">{partnership.contact_email}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button
                     onClick={() => copyTrackingUrl(partnership)}
-                    className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+                    className="inline-flex items-center text-sm text-black hover:text-black cursor-pointer"
                   >
                     {copiedId === partnership.id ? (
                       <>
@@ -172,9 +172,9 @@ export function PartnershipList({
                       onClick={() =>
                         setOpenMenuId(openMenuId === partnership.id ? null : partnership.id)
                       }
-                      className="p-2 rounded-lg hover:bg-gray-100"
+                      className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
                     >
-                      <MoreVertical className="h-4 w-4 text-gray-500" />
+                      <MoreVertical className="h-4 w-4 text-black" />
                     </button>
 
                     {openMenuId === partnership.id && (
@@ -189,7 +189,7 @@ export function PartnershipList({
                               onView(partnership);
                               setOpenMenuId(null);
                             }}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                            className="w-full px-4 py-2 text-left text-sm text-black hover:bg-gray-100 flex items-center cursor-pointer"
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
@@ -199,7 +199,7 @@ export function PartnershipList({
                               onEdit(partnership);
                               setOpenMenuId(null);
                             }}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                            className="w-full px-4 py-2 text-left text-sm text-black hover:bg-gray-100 flex items-center cursor-pointer"
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
@@ -209,7 +209,7 @@ export function PartnershipList({
                               onEmail(partnership);
                               setOpenMenuId(null);
                             }}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                            className="w-full px-4 py-2 text-left text-sm text-black hover:bg-gray-100 flex items-center cursor-pointer"
                           >
                             <Mail className="h-4 w-4 mr-2" />
                             Send Email
@@ -219,7 +219,7 @@ export function PartnershipList({
                               href={partnership.company_website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                              className="w-full px-4 py-2 text-left text-sm text-black hover:bg-gray-100 flex items-center cursor-pointer"
                               onClick={() => setOpenMenuId(null)}
                             >
                               <ExternalLink className="h-4 w-4 mr-2" />
@@ -232,7 +232,7 @@ export function PartnershipList({
                               onDelete(partnership);
                               setOpenMenuId(null);
                             }}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center cursor-pointer"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete

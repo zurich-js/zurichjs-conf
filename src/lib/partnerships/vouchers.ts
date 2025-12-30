@@ -19,6 +19,39 @@ const log = logger.scope('PartnershipVouchers');
 type UntypedTable = any;
 
 /**
+ * Auto-activate partnership if currently pending
+ */
+async function autoActivatePartnership(partnershipId: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  // Check current status
+  const { data: partnership, error: fetchError } = await (supabase
+    .from('partnerships' as UntypedTable) as UntypedTable)
+    .select('status')
+    .eq('id', partnershipId)
+    .single();
+
+  if (fetchError || !partnership) {
+    log.warn('Could not fetch partnership for auto-activation', { partnershipId });
+    return;
+  }
+
+  // Only activate if currently pending
+  if (partnership.status === 'pending') {
+    const { error: updateError } = await (supabase
+      .from('partnerships' as UntypedTable) as UntypedTable)
+      .update({ status: 'active' })
+      .eq('id', partnershipId);
+
+    if (updateError) {
+      log.warn('Failed to auto-activate partnership', { partnershipId, error: updateError });
+    } else {
+      log.info('Partnership auto-activated', { partnershipId });
+    }
+  }
+}
+
+/**
  * Generate a unique voucher code
  */
 function generateVoucherCode(purpose: VoucherPurpose): string {
@@ -189,6 +222,9 @@ export async function createVouchers(
       purpose: data.purpose,
     });
   }
+
+  // Auto-activate partnership if pending
+  await autoActivatePartnership(data.partnership_id);
 
   return vouchers;
 }

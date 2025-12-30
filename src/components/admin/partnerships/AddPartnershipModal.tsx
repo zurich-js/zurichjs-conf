@@ -113,13 +113,13 @@ export function AddPartnershipModal({
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose} />
 
-        <div className="relative inline-block w-full max-w-2xl bg-white rounded-lg text-left overflow-hidden shadow-xl transform sm:my-8">
+        <div className="relative inline-block w-full max-w-2xl mx-4 sm:mx-auto bg-white rounded-lg text-left overflow-hidden shadow-xl transform my-4 sm:my-8 text-black">
           {/* Header */}
           <div className="bg-[#F1E271] px-6 py-4 flex items-center justify-between">
             <h3 className="text-lg font-bold text-black">Add New Partnership</h3>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-black/10"
+              className="p-1 rounded-lg hover:bg-black/10 cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -128,16 +128,16 @@ export function AddPartnershipModal({
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Partnership Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-black mb-3">
                 Partnership Type
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PARTNERSHIP_TYPES.map((type) => (
                   <button
                     key={type.value}
                     type="button"
                     onClick={() => handleChange('type', type.value)}
-                    className={`flex items-start p-3 rounded-lg border-2 text-left transition-all ${
+                    className={`flex items-start p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
                       formData.type === type.value
                         ? 'border-[#F1E271] bg-[#F1E271]/10'
                         : 'border-gray-200 hover:border-gray-300'
@@ -145,18 +145,18 @@ export function AddPartnershipModal({
                   >
                     <type.icon
                       className={`h-5 w-5 mt-0.5 mr-3 ${
-                        formData.type === type.value ? 'text-black' : 'text-gray-400'
+                        formData.type === type.value ? 'text-black' : 'text-black'
                       }`}
                     />
                     <div>
                       <p
                         className={`font-medium ${
-                          formData.type === type.value ? 'text-black' : 'text-gray-700'
+                          formData.type === type.value ? 'text-black' : 'text-black'
                         }`}
                       >
                         {type.label}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{type.description}</p>
+                      <p className="text-xs text-black mt-0.5">{type.description}</p>
                     </div>
                   </button>
                 ))}
@@ -165,7 +165,7 @@ export function AddPartnershipModal({
 
             {/* Partnership Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Partnership Name *
               </label>
               <input
@@ -173,7 +173,7 @@ export function AddPartnershipModal({
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
                 placeholder="e.g., React Zurich Meetup"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
+                className={`w-full px-3 py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -181,9 +181,9 @@ export function AddPartnershipModal({
             </div>
 
             {/* Contact Information */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-black mb-1">
                   Contact Name *
                 </label>
                 <input
@@ -191,7 +191,7 @@ export function AddPartnershipModal({
                   value={formData.contact_name}
                   onChange={(e) => handleChange('contact_name', e.target.value)}
                   placeholder="John Doe"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
+                  className={`w-full px-3 py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
                     errors.contact_name ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -200,7 +200,7 @@ export function AddPartnershipModal({
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-black mb-1">
                   Contact Email *
                 </label>
                 <input
@@ -208,7 +208,7 @@ export function AddPartnershipModal({
                   value={formData.contact_email}
                   onChange={(e) => handleChange('contact_email', e.target.value)}
                   placeholder="john@example.com"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
+                  className={`w-full px-3 py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
                     errors.contact_email ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -219,7 +219,7 @@ export function AddPartnershipModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Contact Phone
               </label>
               <input
@@ -227,7 +227,7 @@ export function AddPartnershipModal({
                 value={formData.contact_phone}
                 onChange={(e) => handleChange('contact_phone', e.target.value)}
                 placeholder="+41 79 123 4567"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
               />
             </div>
 
@@ -235,7 +235,7 @@ export function AddPartnershipModal({
             {(formData.type === 'company' || formData.type === 'sponsor') && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-black mb-1">
                     Company Name
                   </label>
                   <input
@@ -243,11 +243,11 @@ export function AddPartnershipModal({
                     value={formData.company_name}
                     onChange={(e) => handleChange('company_name', e.target.value)}
                     placeholder="Acme Inc."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-black mb-1">
                     Company Website
                   </label>
                   <input
@@ -255,7 +255,7 @@ export function AddPartnershipModal({
                     value={formData.company_website}
                     onChange={(e) => handleChange('company_website', e.target.value)}
                     placeholder="https://example.com"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
+                    className={`w-full px-3 py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] ${
                       errors.company_website ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
@@ -268,7 +268,7 @@ export function AddPartnershipModal({
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-black mb-1">
                 Notes
               </label>
               <textarea
@@ -276,7 +276,7 @@ export function AddPartnershipModal({
                 onChange={(e) => handleChange('notes', e.target.value)}
                 placeholder="Any additional notes about this partnership..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
               />
             </div>
 
@@ -285,14 +285,14 @@ export function AddPartnershipModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2 text-black bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-[#F1E271] text-black font-medium rounded-lg hover:bg-[#E5D665] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#F1E271] text-black font-medium rounded-lg hover:bg-[#E5D665] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSubmitting ? 'Creating...' : 'Create Partnership'}
               </button>

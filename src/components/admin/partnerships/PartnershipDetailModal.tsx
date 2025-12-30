@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   X,
   Copy,
@@ -15,7 +16,10 @@ import {
   Trash2,
   Mail,
   ExternalLink,
+  BarChart3,
+  TrendingUp,
 } from 'lucide-react';
+import { ProductMultiSelect } from './ProductMultiSelect';
 import type {
   Partnership,
   PartnershipCoupon,
@@ -24,6 +28,7 @@ import type {
   CouponType,
   VoucherPurpose,
   VoucherCurrency,
+  PartnershipAnalyticsResponse,
 } from './types';
 
 interface PartnershipDetailModalProps {
@@ -75,17 +80,36 @@ export function PartnershipDetailModal({
   onDeleteVoucher,
   onSendEmail,
 }: PartnershipDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'coupons' | 'vouchers' | 'tracking'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'coupons' | 'vouchers' | 'tracking' | 'analytics'>('overview');
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [showVoucherForm, setShowVoucherForm] = useState(false);
+
+  // Fetch analytics using TanStack Query - only fetch when tab is active
+  const {
+    data: analytics,
+    isLoading: isLoadingAnalytics,
+  } = useQuery<PartnershipAnalyticsResponse>({
+    queryKey: ['partnership-analytics', partnership.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/partnerships/${partnership.id}/analytics`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+      return res.json();
+    },
+    enabled: activeTab === 'analytics' && isOpen,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+  });
 
   // Coupon form state
   const [couponData, setCouponData] = useState({
     code: '',
     type: 'percentage' as CouponType,
     discount_percent: 10,
-    discount_amount: 1000,
+    discount_amount: 10,
     currency: 'CHF' as VoucherCurrency,
     restricted_product_ids: [] as string[],
     max_redemptions: undefined as number | undefined,
@@ -95,7 +119,7 @@ export function PartnershipDetailModal({
   // Voucher form state
   const [voucherData, setVoucherData] = useState({
     purpose: 'raffle' as VoucherPurpose,
-    amount: 5000,
+    amount: 50,
     currency: 'CHF' as VoucherCurrency,
     quantity: 1,
     recipient_name: '',
@@ -121,7 +145,8 @@ export function PartnershipDetailModal({
         code: couponData.code,
         type: couponData.type,
         discount_percent: couponData.type === 'percentage' ? couponData.discount_percent : undefined,
-        discount_amount: couponData.type === 'fixed_amount' ? couponData.discount_amount : undefined,
+        // Convert amount to cents for API
+        discount_amount: couponData.type === 'fixed_amount' ? couponData.discount_amount * 100 : undefined,
         currency: couponData.type === 'fixed_amount' ? couponData.currency : undefined,
         restricted_product_ids: couponData.restricted_product_ids,
         max_redemptions: couponData.max_redemptions,
@@ -132,7 +157,7 @@ export function PartnershipDetailModal({
         code: '',
         type: 'percentage',
         discount_percent: 10,
-        discount_amount: 1000,
+        discount_amount: 10,
         currency: 'CHF',
         restricted_product_ids: [],
         max_redemptions: undefined,
@@ -146,11 +171,17 @@ export function PartnershipDetailModal({
   const handleCreateVouchers = async () => {
     setIsSubmitting(true);
     try {
-      await onCreateVouchers(voucherData);
+      // Convert amount to cents and clean up empty strings
+      await onCreateVouchers({
+        ...voucherData,
+        amount: voucherData.amount * 100, // Convert to cents for API
+        recipient_name: voucherData.recipient_name || undefined,
+        recipient_email: voucherData.recipient_email || undefined,
+      });
       setShowVoucherForm(false);
       setVoucherData({
         purpose: 'raffle',
-        amount: 5000,
+        amount: 50,
         currency: 'CHF',
         quantity: 1,
         recipient_name: '',
@@ -170,7 +201,7 @@ export function PartnershipDetailModal({
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose} />
 
-        <div className="relative inline-block w-full max-w-4xl bg-white rounded-lg text-left overflow-hidden shadow-xl transform sm:my-8">
+        <div className="relative inline-block w-full max-w-4xl mx-4 sm:mx-auto bg-white rounded-lg text-left overflow-hidden shadow-xl transform my-4 sm:my-8 text-black">
           {/* Header */}
           <div className="bg-[#F1E271] px-6 py-4 flex items-center justify-between">
             <div>
@@ -187,7 +218,7 @@ export function PartnershipDetailModal({
               </button>
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg hover:bg-black/10"
+                className="p-1 rounded-lg hover:bg-black/10 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -197,14 +228,14 @@ export function PartnershipDetailModal({
           {/* Tabs */}
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px">
-              {(['overview', 'coupons', 'vouchers', 'tracking'] as const).map((tab) => (
+              {(['overview', 'coupons', 'vouchers', 'tracking', 'analytics'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 text-sm font-medium border-b-2 ${
+                  className={`px-6 py-3 text-sm font-medium border-b-2 cursor-pointer ${
                     activeTab === tab
                       ? 'border-[#F1E271] text-black'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      : 'border-transparent text-black hover:text-black'
                   }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -228,40 +259,40 @@ export function PartnershipDetailModal({
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Contact Information</h4>
+                    <h4 className="text-sm font-medium text-black mb-2">Contact Information</h4>
                     <dl className="space-y-2">
                       <div>
-                        <dt className="text-xs text-gray-400">Name</dt>
+                        <dt className="text-xs text-black">Name</dt>
                         <dd className="text-sm font-medium">{partnership.contact_name}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-gray-400">Email</dt>
+                        <dt className="text-xs text-black">Email</dt>
                         <dd className="text-sm">{partnership.contact_email}</dd>
                       </div>
                       {partnership.contact_phone && (
                         <div>
-                          <dt className="text-xs text-gray-400">Phone</dt>
+                          <dt className="text-xs text-black">Phone</dt>
                           <dd className="text-sm">{partnership.contact_phone}</dd>
                         </div>
                       )}
                     </dl>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Partnership Details</h4>
+                    <h4 className="text-sm font-medium text-black mb-2">Partnership Details</h4>
                     <dl className="space-y-2">
                       <div>
-                        <dt className="text-xs text-gray-400">Type</dt>
+                        <dt className="text-xs text-black">Type</dt>
                         <dd className="text-sm font-medium capitalize">{partnership.type}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-gray-400">Status</dt>
+                        <dt className="text-xs text-black">Status</dt>
                         <dd className="text-sm capitalize">{partnership.status}</dd>
                       </div>
                       {partnership.company_name && (
                         <div>
-                          <dt className="text-xs text-gray-400">Company</dt>
+                          <dt className="text-xs text-black">Company</dt>
                           <dd className="text-sm">{partnership.company_name}</dd>
                         </div>
                       )}
@@ -270,8 +301,8 @@ export function PartnershipDetailModal({
                 </div>
                 {partnership.notes && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Notes</h4>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{partnership.notes}</p>
+                    <h4 className="text-sm font-medium text-black mb-2">Notes</h4>
+                    <p className="text-sm text-black whitespace-pre-wrap">{partnership.notes}</p>
                   </div>
                 )}
               </div>
@@ -281,10 +312,10 @@ export function PartnershipDetailModal({
             {activeTab === 'coupons' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-medium text-gray-900">Discount Codes</h4>
+                  <h4 className="text-sm font-medium text-black">Discount Codes</h4>
                   <button
                     onClick={() => setShowCouponForm(!showCouponForm)}
-                    className="px-3 py-1.5 bg-[#F1E271] text-black text-sm font-medium rounded-lg hover:bg-[#E5D665] flex items-center gap-1"
+                    className="px-3 py-1.5 bg-[#F1E271] text-black text-sm font-medium rounded-lg hover:bg-[#E5D665] flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     Add Coupon
@@ -294,9 +325,9 @@ export function PartnershipDetailModal({
                 {/* Coupon Creation Form */}
                 {showCouponForm && (
                   <div className="bg-gray-50 rounded-lg p-4 space-y-4 border">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-black mb-1">
                           Coupon Code
                         </label>
                         <input
@@ -306,11 +337,11 @@ export function PartnershipDetailModal({
                             setCouponData((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))
                           }
                           placeholder="ZURICHJS20"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-black mb-1">
                           Discount Type
                         </label>
                         <select
@@ -321,7 +352,7 @@ export function PartnershipDetailModal({
                               type: e.target.value as CouponType,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         >
                           <option value="percentage">Percentage</option>
                           <option value="fixed_amount">Fixed Amount</option>
@@ -329,10 +360,10 @@ export function PartnershipDetailModal({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {couponData.type === 'percentage' ? (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-black mb-1">
                             Discount Percentage
                           </label>
                           <input
@@ -346,18 +377,18 @@ export function PartnershipDetailModal({
                                 discount_percent: parseInt(e.target.value),
                               }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                           />
                         </div>
                       ) : (
                         <>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Amount (in cents)
+                            <label className="block text-sm font-medium text-black mb-1">
+                              Amount
                             </label>
                             <input
                               type="number"
-                              min="100"
+                              min="1"
                               value={couponData.discount_amount}
                               onChange={(e) =>
                                 setCouponData((prev) => ({
@@ -365,11 +396,11 @@ export function PartnershipDetailModal({
                                   discount_amount: parseInt(e.target.value),
                                 }))
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-black mb-1">
                               Currency
                             </label>
                             <select
@@ -380,7 +411,7 @@ export function PartnershipDetailModal({
                                   currency: e.target.value as VoucherCurrency,
                                 }))
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                             >
                               <option value="CHF">CHF</option>
                               <option value="EUR">EUR</option>
@@ -391,47 +422,28 @@ export function PartnershipDetailModal({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-black mb-1">
                         Restrict to Products
                       </label>
-                      <div className="border border-gray-300 rounded-lg p-2 max-h-32 overflow-y-auto">
-                        {products.map((product) => (
-                          <label
-                            key={product.id}
-                            className="flex items-center gap-2 py-1 hover:bg-gray-50 px-2 rounded cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={couponData.restricted_product_ids.includes(product.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setCouponData((prev) => ({
-                                    ...prev,
-                                    restricted_product_ids: [...prev.restricted_product_ids, product.id],
-                                  }));
-                                } else {
-                                  setCouponData((prev) => ({
-                                    ...prev,
-                                    restricted_product_ids: prev.restricted_product_ids.filter(
-                                      (id) => id !== product.id
-                                    ),
-                                  }));
-                                }
-                              }}
-                              className="rounded"
-                            />
-                            <span className="text-sm">{product.name}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <ProductMultiSelect
+                        products={products}
+                        selectedIds={couponData.restricted_product_ids}
+                        onChange={(ids) =>
+                          setCouponData((prev) => ({
+                            ...prev,
+                            restricted_product_ids: ids,
+                          }))
+                        }
+                        placeholder="Search and select products..."
+                      />
+                      <p className="text-xs text-black mt-1">
                         Leave empty to allow coupon on all products
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-black mb-1">
                           Max Redemptions
                         </label>
                         <input
@@ -445,11 +457,11 @@ export function PartnershipDetailModal({
                             }))
                           }
                           placeholder="Unlimited"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-black mb-1">
                           Expires At
                         </label>
                         <input
@@ -458,7 +470,7 @@ export function PartnershipDetailModal({
                           onChange={(e) =>
                             setCouponData((prev) => ({ ...prev, expires_at: e.target.value }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         />
                       </div>
                     </div>
@@ -466,14 +478,14 @@ export function PartnershipDetailModal({
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setShowCouponForm(false)}
-                        className="px-3 py-1.5 text-gray-700 bg-gray-100 rounded-lg text-sm hover:bg-gray-200"
+                        className="px-3 py-1.5 text-black bg-gray-100 rounded-lg text-sm hover:bg-gray-200 cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleCreateCoupon}
                         disabled={!couponData.code || isSubmitting}
-                        className="px-3 py-1.5 bg-[#F1E271] text-black font-medium rounded-lg text-sm hover:bg-[#E5D665] disabled:opacity-50"
+                        className="px-3 py-1.5 bg-[#F1E271] text-black font-medium rounded-lg text-sm hover:bg-[#E5D665] disabled:opacity-50 cursor-pointer"
                       >
                         {isSubmitting ? 'Creating...' : 'Create Coupon'}
                       </button>
@@ -489,10 +501,10 @@ export function PartnershipDetailModal({
                       className="flex items-center justify-between p-3 bg-white border rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <Ticket className="h-5 w-5 text-gray-400" />
+                        <Ticket className="h-5 w-5 text-black" />
                         <div>
                           <code className="text-sm font-bold">{coupon.code}</code>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-black">
                             {coupon.type === 'percentage'
                               ? `${coupon.discount_percent}% off`
                               : formatAmount(coupon.discount_amount || 0, coupon.currency || 'CHF')}
@@ -513,7 +525,7 @@ export function PartnershipDetailModal({
                         </span>
                         <button
                           onClick={() => onDeleteCoupon(coupon.id)}
-                          className="p-1 text-gray-400 hover:text-red-500"
+                          className="p-1 text-black hover:text-red-500"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -521,7 +533,7 @@ export function PartnershipDetailModal({
                     </div>
                   ))}
                   {(!partnership.coupons || partnership.coupons.length === 0) && !showCouponForm && (
-                    <p className="text-sm text-gray-500 text-center py-4">
+                    <p className="text-sm text-black text-center py-4">
                       No coupons created yet
                     </p>
                   )}
@@ -533,10 +545,10 @@ export function PartnershipDetailModal({
             {activeTab === 'vouchers' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-medium text-gray-900">Voucher Codes</h4>
+                  <h4 className="text-sm font-medium text-black">Voucher Codes</h4>
                   <button
                     onClick={() => setShowVoucherForm(!showVoucherForm)}
-                    className="px-3 py-1.5 bg-[#F1E271] text-black text-sm font-medium rounded-lg hover:bg-[#E5D665] flex items-center gap-1"
+                    className="px-3 py-1.5 bg-[#F1E271] text-black text-sm font-medium rounded-lg hover:bg-[#E5D665] flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     Add Vouchers
@@ -546,9 +558,9 @@ export function PartnershipDetailModal({
                 {/* Voucher Creation Form */}
                 {showVoucherForm && (
                   <div className="bg-gray-50 rounded-lg p-4 space-y-4 border">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-black mb-1">
                           Purpose
                         </label>
                         <select
@@ -559,7 +571,7 @@ export function PartnershipDetailModal({
                               purpose: e.target.value as VoucherPurpose,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         >
                           <option value="raffle">Raffle Prize</option>
                           <option value="giveaway">Giveaway</option>
@@ -568,7 +580,7 @@ export function PartnershipDetailModal({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-black mb-1">
                           Quantity
                         </label>
                         <input
@@ -582,19 +594,19 @@ export function PartnershipDetailModal({
                               quantity: parseInt(e.target.value),
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Value (in cents)
+                        <label className="block text-sm font-medium text-black mb-1">
+                          Value
                         </label>
                         <input
                           type="number"
-                          min="100"
+                          min="1"
                           value={voucherData.amount}
                           onChange={(e) =>
                             setVoucherData((prev) => ({
@@ -602,11 +614,11 @@ export function PartnershipDetailModal({
                               amount: parseInt(e.target.value),
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-black mb-1">
                           Currency
                         </label>
                         <select
@@ -617,7 +629,7 @@ export function PartnershipDetailModal({
                               currency: e.target.value as VoucherCurrency,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         >
                           <option value="CHF">CHF</option>
                           <option value="EUR">EUR</option>
@@ -626,9 +638,9 @@ export function PartnershipDetailModal({
                     </div>
 
                     {voucherData.purpose === 'organizer_discount' && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-black mb-1">
                             Recipient Name
                           </label>
                           <input
@@ -640,11 +652,11 @@ export function PartnershipDetailModal({
                                 recipient_name: e.target.value,
                               }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-black mb-1">
                             Recipient Email
                           </label>
                           <input
@@ -656,7 +668,7 @@ export function PartnershipDetailModal({
                                 recipient_email: e.target.value,
                               }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                           />
                         </div>
                       </div>
@@ -665,14 +677,14 @@ export function PartnershipDetailModal({
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setShowVoucherForm(false)}
-                        className="px-3 py-1.5 text-gray-700 bg-gray-100 rounded-lg text-sm hover:bg-gray-200"
+                        className="px-3 py-1.5 text-black bg-gray-100 rounded-lg text-sm hover:bg-gray-200 cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleCreateVouchers}
                         disabled={isSubmitting}
-                        className="px-3 py-1.5 bg-[#F1E271] text-black font-medium rounded-lg text-sm hover:bg-[#E5D665] disabled:opacity-50"
+                        className="px-3 py-1.5 bg-[#F1E271] text-black font-medium rounded-lg text-sm hover:bg-[#E5D665] disabled:opacity-50 cursor-pointer"
                       >
                         {isSubmitting
                           ? 'Creating...'
@@ -690,10 +702,10 @@ export function PartnershipDetailModal({
                       className="flex items-center justify-between p-3 bg-white border rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <Gift className="h-5 w-5 text-gray-400" />
+                        <Gift className="h-5 w-5 text-black" />
                         <div>
                           <code className="text-sm font-bold">{voucher.code}</code>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-black">
                             {formatAmount(voucher.amount, voucher.currency)} •{' '}
                             {VOUCHER_PURPOSE_LABELS[voucher.purpose]}
                             {voucher.recipient_name && ` • ${voucher.recipient_name}`}
@@ -713,7 +725,7 @@ export function PartnershipDetailModal({
                         {!voucher.is_redeemed && (
                           <button
                             onClick={() => onDeleteVoucher(voucher.id)}
-                            className="p-1 text-gray-400 hover:text-red-500"
+                            className="p-1 text-black hover:text-red-500"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -722,7 +734,7 @@ export function PartnershipDetailModal({
                     </div>
                   ))}
                   {(!partnership.vouchers || partnership.vouchers.length === 0) && !showVoucherForm && (
-                    <p className="text-sm text-gray-500 text-center py-4">
+                    <p className="text-sm text-black text-center py-4">
                       No vouchers created yet
                     </p>
                   )}
@@ -734,45 +746,45 @@ export function PartnershipDetailModal({
             {activeTab === 'tracking' && (
               <div className="space-y-6">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Tracking URL</h4>
+                  <h4 className="text-sm font-medium text-black mb-2">Tracking URL</h4>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-gray-50 border rounded-lg p-3 font-mono text-sm break-all">
                       {trackingUrl}
                     </div>
                     <button
                       onClick={copyTrackingUrl}
-                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
                     >
                       {copiedUrl ? (
                         <Check className="h-5 w-5 text-green-600" />
                       ) : (
-                        <Copy className="h-5 w-5 text-gray-600" />
+                        <Copy className="h-5 w-5 text-black" />
                       )}
                     </button>
                     <a
                       href={trackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
                     >
-                      <ExternalLink className="h-5 w-5 text-gray-600" />
+                      <ExternalLink className="h-5 w-5 text-black" />
                     </a>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">UTM Parameters</h4>
+                  <h4 className="text-sm font-medium text-black mb-2">UTM Parameters</h4>
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">utm_source</span>
+                      <span className="text-black">utm_source</span>
                       <span className="font-mono">{partnership.utm_source}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">utm_medium</span>
+                      <span className="text-black">utm_medium</span>
                       <span className="font-mono">{partnership.utm_medium}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">utm_campaign</span>
+                      <span className="text-black">utm_campaign</span>
                       <span className="font-mono">{partnership.utm_campaign}</span>
                     </div>
                   </div>
@@ -790,6 +802,166 @@ export function PartnershipDetailModal({
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Analytics Tab */}
+            {activeTab === 'analytics' && (
+              <div className="space-y-6">
+                {isLoadingAnalytics ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black" />
+                  </div>
+                ) : analytics ? (
+                  <>
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ticket className="h-4 w-4 text-black" />
+                          <span className="text-xs text-black font-medium">Tickets Sold</span>
+                        </div>
+                        <p className="text-2xl font-bold text-black">{analytics.summary.totalTicketsSold}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-green-600" />
+                          <span className="text-xs text-black font-medium">Revenue</span>
+                        </div>
+                        <p className="text-2xl font-bold text-black">
+                          CHF {(analytics.summary.grossRevenue / 100).toFixed(0)}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ticket className="h-4 w-4 text-[#B8A830]" />
+                          <span className="text-xs text-black font-medium">Coupon Uses</span>
+                        </div>
+                        <p className="text-2xl font-bold text-black">{analytics.summary.totalCouponRedemptions}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Gift className="h-4 w-4 text-pink-600" />
+                          <span className="text-xs text-black font-medium">Vouchers Used</span>
+                        </div>
+                        <p className="text-2xl font-bold text-black">{analytics.summary.totalVouchersRedeemed}</p>
+                      </div>
+                    </div>
+
+                    {/* Coupon Performance */}
+                    {analytics.coupons.byCode.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-black mb-3">Coupon Performance</h4>
+                        <div className="bg-white border rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="text-left px-4 py-2 text-black font-medium">Code</th>
+                                <th className="text-left px-4 py-2 text-black font-medium">Discount</th>
+                                <th className="text-right px-4 py-2 text-black font-medium">Redemptions</th>
+                                <th className="text-right px-4 py-2 text-black font-medium">Discount Given</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {analytics.coupons.byCode.map((coupon) => (
+                                <tr key={coupon.id} className="border-t">
+                                  <td className="px-4 py-2">
+                                    <code className="font-mono font-bold">{coupon.code}</code>
+                                  </td>
+                                  <td className="px-4 py-2 text-black">
+                                    {coupon.type === 'percentage'
+                                      ? `${coupon.discountPercent}%`
+                                      : `${coupon.currency} ${((coupon.discountAmount || 0) / 100).toFixed(0)}`}
+                                  </td>
+                                  <td className="px-4 py-2 text-right text-black">
+                                    {coupon.redemptions}
+                                    {coupon.maxRedemptions && ` / ${coupon.maxRedemptions}`}
+                                  </td>
+                                  <td className="px-4 py-2 text-right text-black">
+                                    CHF {(coupon.discountGiven / 100).toFixed(0)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent Voucher Redemptions */}
+                    {analytics.vouchers.redemptions.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-black mb-3">Recent Voucher Redemptions</h4>
+                        <div className="space-y-2">
+                          {analytics.vouchers.redemptions.slice(0, 5).map((voucher) => (
+                            <div key={voucher.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <code className="text-sm font-bold">{voucher.code}</code>
+                                <p className="text-xs text-black mt-0.5">
+                                  {voucher.redeemedByEmail} &bull;{' '}
+                                  {voucher.redeemedAt && new Date(voucher.redeemedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span className="text-sm font-medium text-black">
+                                {voucher.currency} {(voucher.value / 100).toFixed(0)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent Tickets */}
+                    {analytics.tickets.recent.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-black mb-3">
+                          Recent Ticket Purchases ({analytics.tickets.total} total)
+                        </h4>
+                        <div className="space-y-2">
+                          {analytics.tickets.recent.slice(0, 5).map((ticket) => (
+                            <div key={ticket.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="text-sm font-medium text-black">
+                                  {ticket.firstName} {ticket.lastName}
+                                </p>
+                                <p className="text-xs text-black mt-0.5">
+                                  {ticket.email} &bull; {new Date(ticket.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-black">
+                                  CHF {(ticket.amountPaid / 100).toFixed(0)}
+                                </p>
+                                {ticket.discountAmount > 0 && (
+                                  <p className="text-xs text-green-600">
+                                    -{(ticket.discountAmount / 100).toFixed(0)} discount
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No Data State */}
+                    {analytics.tickets.total === 0 && analytics.coupons.total === 0 && analytics.vouchers.total === 0 && (
+                      <div className="text-center py-8">
+                        <BarChart3 className="h-12 w-12 text-black mx-auto mb-3" />
+                        <h4 className="text-sm font-medium text-black">No analytics data yet</h4>
+                        <p className="text-xs text-black mt-1">
+                          Analytics will appear here once tickets are purchased using this partnership&apos;s coupons or vouchers.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <BarChart3 className="h-12 w-12 text-black mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-black">Failed to load analytics</h4>
+                    <p className="text-xs text-black mt-1">Please try again later.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

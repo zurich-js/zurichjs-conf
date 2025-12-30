@@ -129,8 +129,34 @@ import {
   handlePaymentIntentSucceeded,
 } from '../webhookHandlers';
 
-const { parseTicketInfo, getTicketDisplayName, toLegacyType, isTicketProduct, isWorkshopVoucher } =
+const { stripCurrencySuffix, parseTicketInfo, getTicketDisplayName, toLegacyType, isTicketProduct, isWorkshopVoucher } =
   __testing;
+
+// ============================================================================
+// stripCurrencySuffix Tests
+// ============================================================================
+describe('stripCurrencySuffix', () => {
+  it('should strip _eur suffix', () => {
+    expect(stripCurrencySuffix('standard_blind_bird_eur')).toBe('standard_blind_bird');
+    expect(stripCurrencySuffix('vip_early_bird_eur')).toBe('vip_early_bird');
+  });
+
+  it('should strip _chf suffix', () => {
+    expect(stripCurrencySuffix('standard_blind_bird_chf')).toBe('standard_blind_bird');
+    expect(stripCurrencySuffix('vip_early_bird_chf')).toBe('vip_early_bird');
+  });
+
+  it('should not modify keys without currency suffix', () => {
+    expect(stripCurrencySuffix('standard_blind_bird')).toBe('standard_blind_bird');
+    expect(stripCurrencySuffix('vip')).toBe('vip');
+    expect(stripCurrencySuffix('student')).toBe('student');
+  });
+
+  it('should not strip partial matches', () => {
+    expect(stripCurrencySuffix('standard_euro')).toBe('standard_euro');
+    expect(stripCurrencySuffix('eur_standard')).toBe('eur_standard');
+  });
+});
 
 // ============================================================================
 // parseTicketInfo Tests
@@ -204,6 +230,38 @@ describe('parseTicketInfo', () => {
     it('should treat entire key as category for vip', () => {
       const result = parseTicketInfo('vip');
       expect(result).toEqual({ category: 'vip', stage: 'general_admission' });
+    });
+  });
+
+  describe('EUR currency suffix', () => {
+    it('should parse standard_blind_bird_eur correctly', () => {
+      const result = parseTicketInfo('standard_blind_bird_eur');
+      expect(result).toEqual({ category: 'standard', stage: 'blind_bird' });
+    });
+
+    it('should parse standard_early_bird_eur correctly', () => {
+      const result = parseTicketInfo('standard_early_bird_eur');
+      expect(result).toEqual({ category: 'standard', stage: 'early_bird' });
+    });
+
+    it('should parse vip_blind_bird_eur correctly', () => {
+      const result = parseTicketInfo('vip_blind_bird_eur');
+      expect(result).toEqual({ category: 'vip', stage: 'blind_bird' });
+    });
+
+    it('should parse vip_early_bird_eur correctly', () => {
+      const result = parseTicketInfo('vip_early_bird_eur');
+      expect(result).toEqual({ category: 'vip', stage: 'early_bird' });
+    });
+
+    it('should parse standard_late_bird_eur correctly', () => {
+      const result = parseTicketInfo('standard_late_bird_eur');
+      expect(result).toEqual({ category: 'standard', stage: 'late_bird' });
+    });
+
+    it('should parse standard_general_eur correctly', () => {
+      const result = parseTicketInfo('standard_general_eur');
+      expect(result).toEqual({ category: 'standard', stage: 'general_admission' });
     });
   });
 });
@@ -380,6 +438,37 @@ describe('isTicketProduct', () => {
     it('should return false for invalid key without underscore', () => {
       expect(isTicketProduct(createMockPrice('premium'))).toBe(false);
       expect(isTicketProduct(createMockPrice('gold'))).toBe(false);
+    });
+  });
+
+  describe('EUR currency suffix patterns', () => {
+    it('should return true for standard_blind_bird_eur', () => {
+      expect(isTicketProduct(createMockPrice('standard_blind_bird_eur'))).toBe(true);
+    });
+
+    it('should return true for standard_early_bird_eur', () => {
+      expect(isTicketProduct(createMockPrice('standard_early_bird_eur'))).toBe(true);
+    });
+
+    it('should return true for standard_late_bird_eur', () => {
+      expect(isTicketProduct(createMockPrice('standard_late_bird_eur'))).toBe(true);
+    });
+
+    it('should return true for standard_general_eur', () => {
+      expect(isTicketProduct(createMockPrice('standard_general_eur'))).toBe(true);
+    });
+
+    it('should return true for vip_blind_bird_eur', () => {
+      expect(isTicketProduct(createMockPrice('vip_blind_bird_eur'))).toBe(true);
+    });
+
+    it('should return true for vip_early_bird_eur', () => {
+      expect(isTicketProduct(createMockPrice('vip_early_bird_eur'))).toBe(true);
+    });
+
+    it('should return false for invalid category with _eur suffix', () => {
+      expect(isTicketProduct(createMockPrice('premium_blind_bird_eur'))).toBe(false);
+      expect(isTicketProduct(createMockPrice('gold_early_bird_eur'))).toBe(false);
     });
   });
 });
