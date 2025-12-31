@@ -1,9 +1,11 @@
 /**
  * Partnership Analytics
- * Functions for retrieving detailed partnership analytics and statistics
+ * Functions for retrieving partnership analytics and statistics.
+ * Gracefully handles cases where partnership tracking columns may not exist.
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import { serverAnalytics } from '@/lib/analytics/server';
 import type {
   Partnership,
   PartnershipCoupon,
@@ -12,7 +14,7 @@ import type {
   VoucherPurpose,
 } from '@/lib/types/partnership';
 
-// Extended ticket type with partnership tracking fields
+// Types for ticket data with partnership fields
 interface TicketWithPartnership {
   id: string;
   email: string;
@@ -29,6 +31,35 @@ interface TicketWithPartnership {
   created_at: string;
 }
 
+interface AggregateTicket {
+  partnership_id: string;
+  amount_paid: number;
+  discount_amount: number;
+}
+
+interface AggregateCoupon {
+  current_redemptions: number;
+}
+
+interface AggregateVoucher {
+  is_redeemed: boolean;
+  amount: number;
+}
+
+/** Check if error is due to missing schema columns */
+function isSchemaError(error: { message?: string } | null): boolean {
+  return !!error?.message?.includes('schema cache');
+}
+
+/** Track schema error silently */
+function trackSchemaError(context?: string): void {
+  serverAnalytics.error('system', `Partnership columns missing: ${context || 'query'}`, {
+    type: 'system',
+    severity: 'low',
+    code: 'SCHEMA_CACHE_MISSING_COLUMNS',
+  }).catch(() => {});
+}
+
 /**
  * Get comprehensive analytics for a specific partnership
  */
@@ -37,9 +68,9 @@ export async function getPartnershipAnalytics(
 ): Promise<PartnershipAnalyticsResponse | null> {
   const supabase = createServiceRoleClient();
 
-  // Fetch partnership - using explicit table reference for types not yet in generated schema
+  // Fetch partnership
   const { data: partnership, error: partnershipError } = await supabase
-    .from('partnerships' as 'tickets') // Type assertion since partnerships table not in generated types
+    .from('partnerships' as 'tickets')
     .select('*')
     .eq('id', partnershipId)
     .single();
@@ -49,35 +80,45 @@ export async function getPartnershipAnalytics(
     return null;
   }
 
-  // Fetch coupons
-  const { data: coupons } = await supabase
-    .from('partnership_coupons' as 'tickets')
-    .select('*')
-    .eq('partnership_id', partnershipId)
-    .order('created_at', { ascending: false });
+  // Fetch coupons and vouchers
+  const [{ data: coupons }, { data: vouchers }] = await Promise.all([
+    supabase
+      .from('partnership_coupons' as 'tickets')
+      .select('*')
+      .eq('partnership_id', partnershipId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('partnership_vouchers' as 'tickets')
+      .select('*')
+      .eq('partnership_id', partnershipId)
+      .order('created_at', { ascending: false }),
+  ]);
 
-  // Fetch vouchers
-  const { data: vouchers } = await supabase
-    .from('partnership_vouchers' as 'tickets')
-    .select('*')
-    .eq('partnership_id', partnershipId)
-    .order('created_at', { ascending: false });
-
-  // Fetch tickets linked to this partnership
-  const { data: ticketsRaw } = await supabase
+  // Fetch tickets with partnership tracking (may fail if columns don't exist)
+  let tickets: TicketWithPartnership[] = [];
+  const { data: ticketsRaw, error: ticketsError } = await supabase
     .from('tickets')
     .select('id, email, first_name, last_name, ticket_category, ticket_stage, amount_paid, discount_amount, coupon_code, partnership_coupon_id, partnership_voucher_id, partnership_id, created_at')
     .eq('partnership_id', partnershipId)
     .order('created_at', { ascending: false });
 
-  const tickets = (ticketsRaw || []) as unknown as TicketWithPartnership[];
+  if (ticketsError) {
+    if (isSchemaError(ticketsError)) {
+      trackSchemaError('partnership analytics');
+    } else {
+      console.error('[PartnershipAnalytics] Error fetching tickets:', ticketsError);
+    }
+  } else {
+    tickets = (ticketsRaw || []) as unknown as TicketWithPartnership[];
+  }
 
-  // Calculate coupon stats
+  // Process data
   const couponList = (coupons || []) as unknown as PartnershipCoupon[];
+  const voucherList = (vouchers || []) as unknown as PartnershipVoucher[];
   const activeCoupons = couponList.filter((c) => c.is_active);
-  const totalCouponRedemptions = couponList.reduce((sum, c) => sum + (c.current_redemptions || 0), 0);
+  const redeemedVouchers = voucherList.filter((v) => v.is_redeemed);
 
-  // Calculate discount given per coupon from linked tickets
+  // Calculate coupon discount map
   const couponDiscountMap: Record<string, number> = {};
   for (const ticket of tickets) {
     if (ticket.partnership_coupon_id && ticket.discount_amount) {
@@ -85,12 +126,6 @@ export async function getPartnershipAnalytics(
         (couponDiscountMap[ticket.partnership_coupon_id] || 0) + ticket.discount_amount;
     }
   }
-
-  // Calculate voucher stats
-  const voucherList = (vouchers || []) as unknown as PartnershipVoucher[];
-  const redeemedVouchers = voucherList.filter((v) => v.is_redeemed);
-  const totalValueIssued = voucherList.reduce((sum, v) => sum + (v.amount || 0), 0);
-  const totalValueRedeemed = redeemedVouchers.reduce((sum, v) => sum + (v.amount || 0), 0);
 
   // Group vouchers by purpose
   const byPurpose: Record<VoucherPurpose, { total: number; redeemed: number; value: number }> = {
@@ -105,28 +140,23 @@ export async function getPartnershipAnalytics(
     if (byPurpose[purpose]) {
       byPurpose[purpose].total++;
       byPurpose[purpose].value += voucher.amount || 0;
-      if (voucher.is_redeemed) {
-        byPurpose[purpose].redeemed++;
-      }
+      if (voucher.is_redeemed) byPurpose[purpose].redeemed++;
     }
   }
 
-  // Calculate ticket stats
   const grossRevenue = tickets.reduce((sum, t) => sum + (t.amount_paid || 0), 0);
   const totalDiscounts = tickets.reduce((sum, t) => sum + (t.discount_amount || 0), 0);
 
   return {
     partnership: partnership as unknown as Partnership,
-
     summary: {
       totalTicketsSold: tickets.length,
       grossRevenue,
       totalDiscountsGiven: totalDiscounts,
-      netRevenue: grossRevenue, // Amount paid is already after discount
-      totalCouponRedemptions,
+      netRevenue: grossRevenue,
+      totalCouponRedemptions: couponList.reduce((sum, c) => sum + (c.current_redemptions || 0), 0),
       totalVouchersRedeemed: redeemedVouchers.length,
     },
-
     coupons: {
       total: couponList.length,
       active: activeCoupons.length,
@@ -143,13 +173,12 @@ export async function getPartnershipAnalytics(
         isActive: c.is_active,
       })),
     },
-
     vouchers: {
       total: voucherList.length,
       redeemed: redeemedVouchers.length,
       unredeemed: voucherList.length - redeemedVouchers.length,
-      totalValueIssued,
-      totalValueRedeemed,
+      totalValueIssued: voucherList.reduce((sum, v) => sum + (v.amount || 0), 0),
+      totalValueRedeemed: redeemedVouchers.reduce((sum, v) => sum + (v.amount || 0), 0),
       byPurpose,
       redemptions: redeemedVouchers.map((v) => ({
         id: v.id,
@@ -161,7 +190,6 @@ export async function getPartnershipAnalytics(
         redeemedByEmail: v.redeemed_by_email,
       })),
     },
-
     tickets: {
       total: tickets.length,
       recent: tickets.slice(0, 10).map((t) => ({
@@ -180,53 +208,38 @@ export async function getPartnershipAnalytics(
   };
 }
 
-// Type for aggregate ticket data
-interface AggregateTicket {
-  partnership_id: string;
-  amount_paid: number;
-  discount_amount: number;
-}
-
-interface AggregateCoupon {
-  current_redemptions: number;
-}
-
-interface AggregateVoucher {
-  is_redeemed: boolean;
-  amount: number;
-}
-
 /**
  * Get aggregate analytics across all partnerships
  */
 export async function getAggregatePartnershipStats() {
   const supabase = createServiceRoleClient();
 
-  // Get all tickets with partnership links
-  const { data: ticketsRaw } = await supabase
+  // Fetch tickets with partnership links (may fail if columns don't exist)
+  let ticketList: AggregateTicket[] = [];
+  const { data: ticketsRaw, error: ticketsError } = await supabase
     .from('tickets')
     .select('partnership_id, amount_paid, discount_amount')
     .not('partnership_id', 'is', null);
 
-  // Get coupon redemption totals
-  const { data: couponsRaw } = await supabase
-    .from('partnership_coupons' as 'tickets')
-    .select('current_redemptions');
+  if (ticketsError) {
+    if (isSchemaError(ticketsError)) {
+      trackSchemaError('aggregate stats');
+    } else {
+      console.error('[PartnershipAnalytics] Error fetching aggregate tickets:', ticketsError);
+    }
+  } else {
+    ticketList = (ticketsRaw || []) as unknown as AggregateTicket[];
+  }
 
-  // Get voucher redemption totals
-  const { data: vouchersRaw } = await supabase
-    .from('partnership_vouchers' as 'tickets')
-    .select('is_redeemed, amount');
+  // Fetch coupon and voucher data
+  const [{ data: couponsRaw }, { data: vouchersRaw }] = await Promise.all([
+    supabase.from('partnership_coupons' as 'tickets').select('current_redemptions'),
+    supabase.from('partnership_vouchers' as 'tickets').select('is_redeemed, amount'),
+  ]);
 
-  const ticketList = (ticketsRaw || []) as unknown as AggregateTicket[];
   const couponList = (couponsRaw || []) as unknown as AggregateCoupon[];
   const voucherList = (vouchersRaw || []) as unknown as AggregateVoucher[];
-
-  const totalRevenue = ticketList.reduce((sum, t) => sum + (t.amount_paid || 0), 0);
-  const totalDiscounts = ticketList.reduce((sum, t) => sum + (t.discount_amount || 0), 0);
-  const totalCouponRedemptions = couponList.reduce((sum, c) => sum + (c.current_redemptions || 0), 0);
   const redeemedVouchers = voucherList.filter((v) => v.is_redeemed);
-  const totalVoucherValueRedeemed = redeemedVouchers.reduce((sum, v) => sum + (v.amount || 0), 0);
 
   // Group by partnership for top performers
   const partnershipRevenue: Record<string, number> = {};
@@ -239,11 +252,11 @@ export async function getAggregatePartnershipStats() {
 
   return {
     totalTicketsFromPartnerships: ticketList.length,
-    totalRevenue,
-    totalDiscounts,
-    totalCouponRedemptions,
+    totalRevenue: ticketList.reduce((sum, t) => sum + (t.amount_paid || 0), 0),
+    totalDiscounts: ticketList.reduce((sum, t) => sum + (t.discount_amount || 0), 0),
+    totalCouponRedemptions: couponList.reduce((sum, c) => sum + (c.current_redemptions || 0), 0),
     totalVouchersRedeemed: redeemedVouchers.length,
-    totalVoucherValueRedeemed,
+    totalVoucherValueRedeemed: redeemedVouchers.reduce((sum, v) => sum + (v.amount || 0), 0),
     topPartnershipsByRevenue: Object.entries(partnershipRevenue)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)

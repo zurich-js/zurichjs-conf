@@ -6,25 +6,26 @@
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Ticket, TicketType, TicketCategory, TicketStage, PaymentStatus, Json } from '@/lib/types/database';
 import { generateAndStoreTicketQRCode } from '@/lib/qrcode';
+import { serverAnalytics } from '@/lib/analytics/server';
 
 export interface CreateTicketParams {
-  userId?: string; // Optional - tickets can be created without user authentication
-  ticketType: TicketType; // Legacy field for backward compatibility
-  ticketCategory: TicketCategory; // NEW: Type of ticket (standard, student, vip, etc)
-  ticketStage: TicketStage; // NEW: Purchase stage (blind_bird, early_bird, etc)
+  userId?: string;
+  ticketType: TicketType;
+  ticketCategory: TicketCategory;
+  ticketStage: TicketStage;
   firstName: string;
   lastName: string;
   email: string;
   company?: string | null;
-  jobTitle?: string | null; // NEW: Job title/role
+  jobTitle?: string | null;
   stripeCustomerId: string;
   stripeSessionId: string;
   stripePaymentIntentId?: string;
-  amountPaid: number; // in cents
+  amountPaid: number;
   currency: string;
   status?: PaymentStatus;
   metadata?: Record<string, unknown>;
-  // Partnership tracking fields
+  // Partnership tracking fields (optional - columns may not exist)
   couponCode?: string | null;
   partnershipCouponId?: string | null;
   partnershipVoucherId?: string | null;
@@ -38,32 +39,30 @@ export interface CreateTicketResult {
   error?: string;
 }
 
+/** Track error to PostHog silently (never throws) */
+function trackError(distinctId: string, message: string, context: Record<string, unknown>): void {
+  serverAnalytics.error(distinctId, message, {
+    type: 'system',
+    severity: context.severity as 'low' | 'medium' | 'high' | 'critical' || 'medium',
+    code: context.code as string,
+    ...context,
+  }).catch(() => {});
+}
+
+/** Check if error is due to missing schema columns */
+function isSchemaError(error: { message?: string } | null): boolean {
+  return !!error?.message?.includes('schema cache');
+}
+
 /**
  * Create a ticket for a user after successful payment
  * This should only be called from the Stripe webhook handler
  */
 export async function createTicket(params: CreateTicketParams): Promise<CreateTicketResult> {
-  console.log('[createTicket] Starting ticket creation with params:', {
-    ticketType: params.ticketType,
-    ticketCategory: params.ticketCategory,
-    ticketStage: params.ticketStage,
-    email: params.email,
-    firstName: params.firstName,
-    lastName: params.lastName,
-    company: params.company,
-    jobTitle: params.jobTitle,
-    stripeSessionId: params.stripeSessionId,
-    stripeCustomerId: params.stripeCustomerId,
-    amountPaid: params.amountPaid,
-    currency: params.currency,
-  });
-
   const supabase = createServiceRoleClient();
-  console.log('[createTicket] Supabase service role client created');
 
   try {
-    // Check if ticket already exists (idempotency)
-    console.log('[createTicket] Checking for existing ticket with session ID:', params.stripeSessionId);
+    // Check for existing ticket (idempotency)
     const { data: existing, error: checkError } = await supabase
       .from('tickets')
       .select('*')
@@ -71,31 +70,24 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 is "not found" which is expected
-      console.error('[createTicket] Error checking for existing ticket:', checkError);
+      console.error('[createTicket] Error checking existing ticket:', checkError);
     }
 
     if (existing) {
-      console.log('[createTicket] Ticket already exists for session:', params.stripeSessionId, 'ticket ID:', existing.id);
-      return {
-        success: true,
-        ticket: existing as Ticket,
-      };
+      return { success: true, ticket: existing as Ticket };
     }
 
-    console.log('[createTicket] No existing ticket found, creating new ticket');
-
-    // Prepare ticket data
-    const ticketData = {
-      user_id: params.userId || null, // Can be null for guest purchases
-      ticket_type: params.ticketType, // Legacy field
-      ticket_category: params.ticketCategory, // NEW: Separate category
-      ticket_stage: params.ticketStage, // NEW: Separate stage
+    // Core ticket data (always available)
+    const coreData = {
+      user_id: params.userId || null,
+      ticket_type: params.ticketType,
+      ticket_category: params.ticketCategory,
+      ticket_stage: params.ticketStage,
       first_name: params.firstName,
       last_name: params.lastName,
       email: params.email,
       company: params.company || null,
-      job_title: params.jobTitle || null, // NEW: Job title
+      job_title: params.jobTitle || null,
       stripe_customer_id: params.stripeCustomerId,
       stripe_session_id: params.stripeSessionId,
       stripe_payment_intent_id: params.stripePaymentIntentId || null,
@@ -103,7 +95,10 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       currency: params.currency,
       status: params.status || 'confirmed',
       metadata: (params.metadata || {}) as Json,
-      // Partnership tracking fields
+    };
+
+    // Partnership fields (may not exist in schema)
+    const partnershipData = {
       coupon_code: params.couponCode || null,
       partnership_coupon_id: params.partnershipCouponId || null,
       partnership_voucher_id: params.partnershipVoucherId || null,
@@ -111,69 +106,94 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       discount_amount: params.discountAmount || 0,
     };
 
-    console.log('[createTicket] Inserting ticket with data:', ticketData);
+    const hasPartnershipData = !!(
+      params.couponCode || params.partnershipCouponId ||
+      params.partnershipVoucherId || params.partnershipId ||
+      (params.discountAmount && params.discountAmount > 0)
+    );
 
-    // Create the ticket
-    const { data: ticket, error } = await supabase
-      .from('tickets')
-      .insert([ticketData])
-      .select()
-      .single();
+    // Try insert with partnership fields, fall back to core-only on schema error
+    let ticket: Ticket | null = null;
+    let error: { code?: string; message: string; details?: string; hint?: string } | null = null;
 
-    if (error) {
-      console.error('[createTicket] Database error creating ticket:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-      });
-      return {
-        success: false,
-        error: error.message,
-      };
+    if (hasPartnershipData) {
+      const result = await supabase
+        .from('tickets')
+        .insert([{ ...coreData, ...partnershipData }])
+        .select()
+        .single();
+
+      if (isSchemaError(result.error)) {
+        console.warn('[createTicket] Partnership columns missing, retrying without them');
+        trackError(params.email, 'Partnership columns missing from schema', {
+          code: 'SCHEMA_CACHE_MISSING_COLUMNS',
+          severity: 'medium',
+          couponCode: params.couponCode,
+          partnershipId: params.partnershipId,
+        });
+
+        const fallback = await supabase
+          .from('tickets')
+          .insert([coreData])
+          .select()
+          .single();
+
+        ticket = fallback.data as Ticket | null;
+        error = fallback.error;
+
+        if (ticket && (params.couponCode || params.partnershipId)) {
+          trackError(params.email, 'Partnership data skipped', {
+            code: 'PARTNERSHIP_DATA_SKIPPED',
+            severity: 'low',
+            ticketId: ticket.id,
+            couponCode: params.couponCode,
+            partnershipId: params.partnershipId,
+          });
+        }
+      } else {
+        ticket = result.data as Ticket | null;
+        error = result.error;
+      }
+    } else {
+      const result = await supabase
+        .from('tickets')
+        .insert([coreData])
+        .select()
+        .single();
+
+      ticket = result.data as Ticket | null;
+      error = result.error;
     }
 
-    console.log('[createTicket] ✅ Ticket created successfully:', {
-      ticketId: ticket?.id,
-      email: ticket?.email,
-      ticketType: ticket?.ticket_type,
-      ticketCategory: ticket?.ticket_category,
-      ticketStage: ticket?.ticket_stage,
-      company: ticket?.company,
-      jobTitle: ticket?.job_title,
-    });
+    if (error) {
+      console.error('[createTicket] Database error:', error.message);
+      trackError(params.email, `Failed to create ticket: ${error.message}`, {
+        code: error.code || 'TICKET_CREATION_FAILED',
+        severity: 'critical',
+      });
+      return { success: false, error: error.message };
+    }
 
-    // Generate and store QR code
-    console.log('[createTicket] Generating and storing QR code for ticket:', ticket.id);
+    if (!ticket) {
+      return { success: false, error: 'No ticket returned after insert' };
+    }
+
+    // Generate QR code (non-blocking)
     const qrResult = await generateAndStoreTicketQRCode(ticket.id);
-
     if (qrResult.success && qrResult.url) {
-      console.log('[createTicket] QR code stored successfully:', qrResult.url);
-
-      // Update ticket with QR code URL
       const { error: updateError } = await supabase
         .from('tickets')
         .update({ qr_code_url: qrResult.url })
         .eq('id', ticket.id);
 
-      if (updateError) {
-        console.error('[createTicket] ⚠️ Failed to update ticket with QR URL:', updateError);
-        // Non-fatal, ticket was still created
-      } else {
-        // Update the ticket object with the QR URL
+      if (!updateError) {
         ticket.qr_code_url = qrResult.url;
       }
-    } else {
-      console.error('[createTicket] ⚠️ Failed to generate QR code:', qrResult.error);
-      // Non-fatal, ticket was still created, QR can be generated on-demand
     }
 
-    return {
-      success: true,
-      ticket: ticket as Ticket,
-    };
+    return { success: true, ticket };
   } catch (error) {
-    console.error('[createTicket] ❌ Unexpected error in createTicket:', error);
+    console.error('[createTicket] Unexpected error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
