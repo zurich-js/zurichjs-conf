@@ -374,16 +374,16 @@ export default function PartnershipsDashboard() {
   // Login form
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 text-black">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8 text-black">
         <Head>
           <title>Admin Login | ZurichJS Conference</title>
         </Head>
-        <div className="max-w-sm w-full bg-white rounded-lg shadow-md p-6">
-          <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-[#F1E271] flex items-center justify-center mx-auto mb-3">
-              <span className="text-xl font-bold">Z</span>
+        <div className="max-w-sm w-full bg-white rounded-lg shadow-md p-5 sm:p-6">
+          <div className="text-center mb-5 sm:mb-6">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#F1E271] flex items-center justify-center mx-auto mb-3">
+              <span className="text-lg sm:text-xl font-bold">Z</span>
             </div>
-            <h1 className="text-xl font-bold">Admin Login</h1>
+            <h1 className="text-lg sm:text-xl font-bold">Admin Login</h1>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <input
@@ -391,12 +391,12 @@ export default function PartnershipsDashboard() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
-              className="w-full px-4 py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+              className="w-full px-4 py-2.5 sm:py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
             />
             {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
             <button
               type="submit"
-              className="w-full bg-[#F1E271] text-black font-medium py-2 rounded-lg hover:bg-[#E5D665]"
+              className="w-full bg-[#F1E271] text-black font-medium py-2.5 sm:py-2 rounded-lg hover:bg-[#E5D665]"
             >
               Login
             </button>
@@ -418,7 +418,7 @@ export default function PartnershipsDashboard() {
         onLogout={handleLogout}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Stats */}
         <StatsCards
           stats={stats || { total: 0, byType: {}, byStatus: {}, activeCoupons: 0, activeVouchers: 0 }}
@@ -426,54 +426,61 @@ export default function PartnershipsDashboard() {
         />
 
         {/* Actions and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <div className="flex flex-wrap gap-3">
+        <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:gap-4 sm:justify-between sm:items-center">
+          {/* Add Button - shown at top on mobile */}
+          <div className="sm:order-2">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-[#F1E271] text-black font-medium rounded-lg hover:bg-[#E5D665] flex items-center justify-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Partnership
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:order-1">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search partnerships..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+                className="w-full sm:w-auto pl-10 pr-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
               />
             </div>
 
-            {/* Type Filter */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as PartnershipType | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
-            >
-              <option value="">All Types</option>
-              <option value="community">Community</option>
-              <option value="individual">Individual</option>
-              <option value="company">Company</option>
-              <option value="sponsor">Sponsor</option>
-            </select>
+            {/* Filter dropdowns - side by side on mobile */}
+            <div className="flex gap-2">
+              {/* Type Filter */}
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as PartnershipType | '')}
+                className="flex-1 sm:flex-none px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] bg-white"
+              >
+                <option value="">All Types</option>
+                <option value="community">Community</option>
+                <option value="individual">Individual</option>
+                <option value="company">Company</option>
+                <option value="sponsor">Sponsor</option>
+              </select>
 
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as PartnershipStatus | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
-            >
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="inactive">Inactive</option>
-              <option value="expired">Expired</option>
-            </select>
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as PartnershipStatus | '')}
+                className="flex-1 sm:flex-none px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271] bg-white"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="inactive">Inactive</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
           </div>
-
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-[#F1E271] text-black font-medium rounded-lg hover:bg-[#E5D665] flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Partnership
-          </button>
         </div>
 
         {/* Partnerships List */}

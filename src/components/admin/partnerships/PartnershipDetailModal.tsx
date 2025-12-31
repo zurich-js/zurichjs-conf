@@ -198,41 +198,44 @@ export function PartnershipDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+      <div className="flex items-center justify-center min-h-screen px-2 sm:px-4 pt-4 pb-20 text-center sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose} />
 
-        <div className="relative inline-block w-full max-w-4xl mx-4 sm:mx-auto bg-white rounded-lg text-left overflow-hidden shadow-xl transform my-4 sm:my-8 text-black">
+        <div className="relative inline-block w-full max-w-4xl mx-0 sm:mx-4 bg-white rounded-lg text-left overflow-hidden shadow-xl transform my-2 sm:my-8 text-black max-h-[95vh] sm:max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="bg-[#F1E271] px-6 py-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-black">{partnership.name}</h3>
-              <p className="text-sm text-black/70">{partnership.contact_email}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onSendEmail}
-                className="px-3 py-1.5 bg-black text-white text-sm rounded-lg hover:bg-black/80 flex items-center gap-1"
-              >
-                <Mail className="h-4 w-4" />
-                Send Package
-              </button>
-              <button
-                onClick={onClose}
-                className="p-1 rounded-lg hover:bg-black/10 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <div className="bg-[#F1E271] px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1 pr-2">
+                <h3 className="text-base sm:text-lg font-bold text-black truncate">{partnership.name}</h3>
+                <p className="text-xs sm:text-sm text-black/70 truncate">{partnership.contact_email}</p>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <button
+                  onClick={onSendEmail}
+                  className="px-2 sm:px-3 py-1.5 bg-black text-white text-xs sm:text-sm rounded-lg hover:bg-black/80 flex items-center gap-1"
+                >
+                  <Mail className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Send Package</span>
+                  <span className="sm:hidden">Send</span>
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 sm:p-1 rounded-lg hover:bg-black/10 cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
+          {/* Tabs - Scrollable on mobile */}
+          <div className="border-b border-gray-200 flex-shrink-0">
+            <nav className="flex -mb-px overflow-x-auto scrollbar-hide">
               {(['overview', 'coupons', 'vouchers', 'tracking', 'analytics'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 text-sm font-medium border-b-2 cursor-pointer ${
+                  className={`px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 cursor-pointer whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab
                       ? 'border-[#F1E271] text-black'
                       : 'border-transparent text-black hover:text-black'
@@ -240,12 +243,12 @@ export function PartnershipDetailModal({
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   {tab === 'coupons' && partnership.coupons && (
-                    <span className="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-xs">
+                    <span className="ml-1 sm:ml-2 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-full text-xs">
                       {partnership.coupons.length}
                     </span>
                   )}
                   {tab === 'vouchers' && partnership.vouchers && (
-                    <span className="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-xs">
+                    <span className="ml-1 sm:ml-2 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-full text-xs">
                       {partnership.vouchers.length}
                     </span>
                   )}
@@ -255,7 +258,7 @@ export function PartnershipDetailModal({
           </div>
 
           {/* Content */}
-          <div className="p-6 max-h-[60vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1">
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
@@ -498,37 +501,39 @@ export function PartnershipDetailModal({
                   {partnership.coupons?.map((coupon) => (
                     <div
                       key={coupon.id}
-                      className="flex items-center justify-between p-3 bg-white border rounded-lg"
+                      className="p-3 bg-white border rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
-                        <Ticket className="h-5 w-5 text-black" />
-                        <div>
-                          <code className="text-sm font-bold">{coupon.code}</code>
-                          <p className="text-xs text-black">
-                            {coupon.type === 'percentage'
-                              ? `${coupon.discount_percent}% off`
-                              : formatAmount(coupon.discount_amount || 0, coupon.currency || 'CHF')}
-                            {coupon.max_redemptions &&
-                              ` • ${coupon.current_redemptions}/${coupon.max_redemptions} used`}
-                          </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                          <Ticket className="h-5 w-5 text-black flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            <code className="text-sm font-bold break-all">{coupon.code}</code>
+                            <p className="text-xs text-black mt-0.5">
+                              {coupon.type === 'percentage'
+                                ? `${coupon.discount_percent}% off`
+                                : formatAmount(coupon.discount_amount || 0, coupon.currency || 'CHF')}
+                              {coupon.max_redemptions &&
+                                ` • ${coupon.current_redemptions}/${coupon.max_redemptions} used`}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            coupon.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {coupon.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                        <button
-                          onClick={() => onDeleteCoupon(coupon.id)}
-                          className="p-1 text-black hover:text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              coupon.is_active
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {coupon.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                          <button
+                            onClick={() => onDeleteCoupon(coupon.id)}
+                            className="p-1 text-black hover:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -699,37 +704,39 @@ export function PartnershipDetailModal({
                   {partnership.vouchers?.map((voucher) => (
                     <div
                       key={voucher.id}
-                      className="flex items-center justify-between p-3 bg-white border rounded-lg"
+                      className="p-3 bg-white border rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
-                        <Gift className="h-5 w-5 text-black" />
-                        <div>
-                          <code className="text-sm font-bold">{voucher.code}</code>
-                          <p className="text-xs text-black">
-                            {formatAmount(voucher.amount, voucher.currency)} •{' '}
-                            {VOUCHER_PURPOSE_LABELS[voucher.purpose]}
-                            {voucher.recipient_name && ` • ${voucher.recipient_name}`}
-                          </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                          <Gift className="h-5 w-5 text-black flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            <code className="text-sm font-bold break-all">{voucher.code}</code>
+                            <p className="text-xs text-black mt-0.5">
+                              {formatAmount(voucher.amount, voucher.currency)} •{' '}
+                              {VOUCHER_PURPOSE_LABELS[voucher.purpose]}
+                              {voucher.recipient_name && ` • ${voucher.recipient_name}`}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            voucher.is_redeemed
-                              ? 'bg-gray-100 text-gray-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {voucher.is_redeemed ? 'Redeemed' : 'Available'}
-                        </span>
-                        {!voucher.is_redeemed && (
-                          <button
-                            onClick={() => onDeleteVoucher(voucher.id)}
-                            className="p-1 text-black hover:text-red-500"
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${
+                              voucher.is_redeemed
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                            {voucher.is_redeemed ? 'Redeemed' : 'Available'}
+                          </span>
+                          {!voucher.is_redeemed && (
+                            <button
+                              onClick={() => onDeleteVoucher(voucher.id)}
+                              className="p-1 text-black hover:text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -744,31 +751,40 @@ export function PartnershipDetailModal({
 
             {/* Tracking Tab */}
             {activeTab === 'tracking' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h4 className="text-sm font-medium text-black mb-2">Tracking URL</h4>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-50 border rounded-lg p-3 font-mono text-sm break-all">
+                  <div className="bg-gray-50 border rounded-lg p-3">
+                    <div className="font-mono text-xs sm:text-sm break-all mb-3">
                       {trackingUrl}
                     </div>
-                    <button
-                      onClick={copyTrackingUrl}
-                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    >
-                      {copiedUrl ? (
-                        <Check className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <Copy className="h-5 w-5 text-black" />
-                      )}
-                    </button>
-                    <a
-                      href={trackingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    >
-                      <ExternalLink className="h-5 w-5 text-black" />
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={copyTrackingUrl}
+                        className="flex-1 sm:flex-none px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        {copiedUrl ? (
+                          <>
+                            <Check className="h-4 w-4 text-green-600" />
+                            <span className="text-sm text-green-600">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 text-black" />
+                            <span className="text-sm text-black">Copy URL</span>
+                          </>
+                        )}
+                      </button>
+                      <a
+                        href={trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4 text-black" />
+                        <span className="text-sm text-black hidden sm:inline">Open</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
 
@@ -815,36 +831,36 @@ export function PartnershipDetailModal({
                 ) : analytics ? (
                   <>
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Ticket className="h-4 w-4 text-black" />
-                          <span className="text-xs text-black font-medium">Tickets Sold</span>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                      <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                          <Ticket className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black" />
+                          <span className="text-xs text-black font-medium">Tickets</span>
                         </div>
-                        <p className="text-2xl font-bold text-black">{analytics.summary.totalTicketsSold}</p>
+                        <p className="text-xl sm:text-2xl font-bold text-black">{analytics.summary.totalTicketsSold}</p>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-4 w-4 text-green-600" />
+                      <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                          <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
                           <span className="text-xs text-black font-medium">Revenue</span>
                         </div>
-                        <p className="text-2xl font-bold text-black">
+                        <p className="text-xl sm:text-2xl font-bold text-black">
                           CHF {(analytics.summary.grossRevenue / 100).toFixed(0)}
                         </p>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Ticket className="h-4 w-4 text-[#B8A830]" />
-                          <span className="text-xs text-black font-medium">Coupon Uses</span>
+                      <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                          <Ticket className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#B8A830]" />
+                          <span className="text-xs text-black font-medium">Coupons</span>
                         </div>
-                        <p className="text-2xl font-bold text-black">{analytics.summary.totalCouponRedemptions}</p>
+                        <p className="text-xl sm:text-2xl font-bold text-black">{analytics.summary.totalCouponRedemptions}</p>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Gift className="h-4 w-4 text-pink-600" />
-                          <span className="text-xs text-black font-medium">Vouchers Used</span>
+                      <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                          <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-pink-600" />
+                          <span className="text-xs text-black font-medium">Vouchers</span>
                         </div>
-                        <p className="text-2xl font-bold text-black">{analytics.summary.totalVouchersRedeemed}</p>
+                        <p className="text-xl sm:text-2xl font-bold text-black">{analytics.summary.totalVouchersRedeemed}</p>
                       </div>
                     </div>
 
@@ -852,7 +868,27 @@ export function PartnershipDetailModal({
                     {analytics.coupons.byCode.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-black mb-3">Coupon Performance</h4>
-                        <div className="bg-white border rounded-lg overflow-hidden">
+                        {/* Mobile: Card view */}
+                        <div className="space-y-2 sm:hidden">
+                          {analytics.coupons.byCode.map((coupon) => (
+                            <div key={coupon.id} className="bg-white border rounded-lg p-3">
+                              <div className="flex items-start justify-between mb-2">
+                                <code className="font-mono font-bold text-sm break-all">{coupon.code}</code>
+                                <span className="text-xs bg-gray-100 px-2 py-0.5 rounded ml-2 flex-shrink-0">
+                                  {coupon.type === 'percentage'
+                                    ? `${coupon.discountPercent}%`
+                                    : `${coupon.currency} ${((coupon.discountAmount || 0) / 100).toFixed(0)}`}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-xs text-black">
+                                <span>Redemptions: {coupon.redemptions}{coupon.maxRedemptions && ` / ${coupon.maxRedemptions}`}</span>
+                                <span>Saved: CHF {(coupon.discountGiven / 100).toFixed(0)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Desktop: Table view */}
+                        <div className="hidden sm:block bg-white border rounded-lg overflow-hidden overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead className="bg-gray-50">
                               <tr>
@@ -894,17 +930,21 @@ export function PartnershipDetailModal({
                         <h4 className="text-sm font-medium text-black mb-3">Recent Voucher Redemptions</h4>
                         <div className="space-y-2">
                           {analytics.vouchers.redemptions.slice(0, 5).map((voucher) => (
-                            <div key={voucher.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <code className="text-sm font-bold">{voucher.code}</code>
-                                <p className="text-xs text-black mt-0.5">
-                                  {voucher.redeemedByEmail} &bull;{' '}
-                                  {voucher.redeemedAt && new Date(voucher.redeemedAt).toLocaleDateString()}
-                                </p>
+                            <div key={voucher.id} className="p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <code className="text-sm font-bold break-all">{voucher.code}</code>
+                                  <p className="text-xs text-black mt-0.5 truncate">
+                                    {voucher.redeemedByEmail}
+                                  </p>
+                                  <p className="text-xs text-black/60">
+                                    {voucher.redeemedAt && new Date(voucher.redeemedAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <span className="text-sm font-medium text-black flex-shrink-0">
+                                  {voucher.currency} {(voucher.value / 100).toFixed(0)}
+                                </span>
                               </div>
-                              <span className="text-sm font-medium text-black">
-                                {voucher.currency} {(voucher.value / 100).toFixed(0)}
-                              </span>
                             </div>
                           ))}
                         </div>
@@ -919,24 +959,29 @@ export function PartnershipDetailModal({
                         </h4>
                         <div className="space-y-2">
                           {analytics.tickets.recent.slice(0, 5).map((ticket) => (
-                            <div key={ticket.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <p className="text-sm font-medium text-black">
-                                  {ticket.firstName} {ticket.lastName}
-                                </p>
-                                <p className="text-xs text-black mt-0.5">
-                                  {ticket.email} &bull; {new Date(ticket.createdAt).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium text-black">
-                                  CHF {(ticket.amountPaid / 100).toFixed(0)}
-                                </p>
-                                {ticket.discountAmount > 0 && (
-                                  <p className="text-xs text-green-600">
-                                    -{(ticket.discountAmount / 100).toFixed(0)} discount
+                            <div key={ticket.id} className="p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-black truncate">
+                                    {ticket.firstName} {ticket.lastName}
                                   </p>
-                                )}
+                                  <p className="text-xs text-black mt-0.5 truncate">
+                                    {ticket.email}
+                                  </p>
+                                  <p className="text-xs text-black/60">
+                                    {new Date(ticket.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="text-sm font-medium text-black">
+                                    CHF {(ticket.amountPaid / 100).toFixed(0)}
+                                  </p>
+                                  {ticket.discountAmount > 0 && (
+                                    <p className="text-xs text-green-600">
+                                      -{(ticket.discountAmount / 100).toFixed(0)} off
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
