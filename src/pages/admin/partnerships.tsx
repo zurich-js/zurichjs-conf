@@ -71,7 +71,6 @@ async function fetchProducts(): Promise<{ products: StripeProductInfo[] }> {
 }
 
 export default function PartnershipsDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const queryClient = useQueryClient();
@@ -91,20 +90,16 @@ export default function PartnershipsDashboard() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailPartnership, setEmailPartnership] = useState<Partnership | null>(null);
 
-  // Check auth status
-  const { isLoading: isAuthLoading } = useQuery({
+  // Check auth status using dedicated verify endpoint
+  const { data: isAuthenticated, isLoading: isAuthLoading } = useQuery({
     queryKey: ['admin', 'auth'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/partnerships/stats');
-      if (res.ok) {
-        setIsAuthenticated(true);
-        return true;
-      }
-      setIsAuthenticated(false);
-      return false;
+      const res = await fetch('/api/admin/verify');
+      return res.ok;
     },
     retry: false,
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Fetch partnerships
@@ -343,8 +338,10 @@ export default function PartnershipsDashboard() {
         body: JSON.stringify({ password }),
       });
       if (response.ok) {
-        setIsAuthenticated(true);
         setPassword('');
+        // Invalidate auth query to re-check and all other queries
+        queryClient.invalidateQueries({ queryKey: ['admin', 'auth'] });
+        queryClient.invalidateQueries({ queryKey: ['partnerships'] });
       } else {
         setLoginError('Invalid password');
       }
@@ -354,9 +351,14 @@ export default function PartnershipsDashboard() {
   };
 
   const handleLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
-    setIsAuthenticated(false);
-    queryClient.clear();
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      // Clear all queries and reload
+      queryClient.clear();
+      window.location.reload();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   // Loading state
@@ -431,7 +433,7 @@ export default function PartnershipsDashboard() {
           <div className="sm:order-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-[#F1E271] text-black font-medium rounded-lg hover:bg-[#E5D665] flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-[#F1E271] text-black font-medium rounded-lg hover:bg-[#E5D665] flex items-center justify-center gap-2 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               Add Partnership

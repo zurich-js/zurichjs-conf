@@ -188,7 +188,7 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             {paginatedSpeakers.map((s) => (
-              <div key={s.id} className="bg-[#F1E271] rounded-xl p-4 border border-gray-200">
+              <div key={s.id} className="bg-white rounded-xl p-4 border border-gray-200">
                 <div className="flex items-start gap-3 mb-3">
                   {s.profile_image_url ? (
                     <img

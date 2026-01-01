@@ -656,8 +656,8 @@ function SubmissionsTabContent({
             {paginatedSubmissions.map((s) => (
               <div
                 key={s.id}
-                className={`bg-gray-50 rounded-xl p-4 border transition-all ${
-                  selectedIds.has(s.id) ? 'border-[#F1E271] ring-1 ring-[#F1E271]' : 'border-gray-200'
+                className={`rounded-xl p-4 border border-gray-200 transition-all ${
+                  selectedIds.has(s.id) ? 'bg-yellow-50' : 'bg-white'
                 }`}
               >
                 <div className="flex items-start gap-3 mb-3">

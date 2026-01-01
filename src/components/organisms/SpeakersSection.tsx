@@ -65,6 +65,15 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
 
   const speakers = data?.speakers || [];
 
+  // Sort speakers so those with names come first
+  const sortedSpeakers = [...speakers].sort((a, b) => {
+    const aHasName = Boolean(a.first_name?.trim() || a.last_name?.trim());
+    const bHasName = Boolean(b.first_name?.trim() || b.last_name?.trim());
+    if (aHasName && !bHasName) return -1;
+    if (!aHasName && bHasName) return 1;
+    return 0;
+  });
+
   // Don't render if no speakers or loading
   if (isLoading || speakers.length === 0) {
     return null;
@@ -75,7 +84,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
       {/* Always horizontally scrollable */}
       <div className="overflow-x-auto overscroll-x-contain scrollbar-hide">
         <div className="flex gap-4 md:gap-6 pb-4 px-4 md:px-8 w-max min-w-full justify-start lg:justify-center">
-          {speakers.slice(0, 5).map((speaker) => {
+          {sortedSpeakers.slice(0, 5).map((speaker) => {
             const fullName = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
             const titleWithCompany = [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');
 

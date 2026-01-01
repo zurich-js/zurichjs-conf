@@ -197,13 +197,14 @@ export function PartnershipDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-2 sm:px-4 pt-4 pb-20 text-center sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
 
-        <div className="relative inline-block w-full max-w-4xl mx-0 sm:mx-4 bg-white rounded-lg text-left overflow-hidden shadow-xl transform my-2 sm:my-8 text-black max-h-[95vh] sm:max-h-[90vh] flex flex-col">
-          {/* Header */}
-          <div className="bg-[#F1E271] px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+      {/* Modal - full width on mobile, slides up from bottom */}
+      <div className="relative w-full sm:max-w-4xl sm:mx-4 bg-white sm:rounded-xl text-black shadow-xl flex flex-col max-h-[100dvh] sm:max-h-[85vh]">
+        {/* Header - sticky */}
+        <div className="bg-[#F1E271] px-4 py-3 shrink-0 sm:rounded-t-xl">
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1 pr-2">
                 <h3 className="text-base sm:text-lg font-bold text-black truncate">{partnership.name}</h3>
@@ -229,7 +230,7 @@ export function PartnershipDetailModal({
           </div>
 
           {/* Tabs - Scrollable on mobile */}
-          <div className="border-b border-gray-200 flex-shrink-0">
+          <div className="border-b border-gray-200 shrink-0">
             <nav className="flex -mb-px overflow-x-auto scrollbar-hide">
               {(['overview', 'coupons', 'vouchers', 'tracking', 'analytics'] as const).map((tab) => (
                 <button
@@ -258,7 +259,7 @@ export function PartnershipDetailModal({
           </div>
 
           {/* Content */}
-          <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
@@ -1012,6 +1013,5 @@ export function PartnershipDetailModal({
           </div>
         </div>
       </div>
-    </div>
   );
 }
