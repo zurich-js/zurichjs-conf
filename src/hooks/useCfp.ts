@@ -17,6 +17,7 @@ import {
   reviewerSubmissionQueryOptions,
 } from '@/lib/queries/cfp';
 import { endpoints } from '@/lib/api';
+import { trackCfpSubmissionError, trackCfpReviewError, captureException } from '@/lib/analytics/helpers';
 import type {
   CfpSpeaker,
   CfpTag,
@@ -71,6 +72,14 @@ export function useUpdateSpeaker() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.speaker() });
+    },
+    onError: (error) => {
+      captureException(error, {
+        type: 'network',
+        severity: 'medium',
+        flow: 'cfp_speaker',
+        action: 'update_profile',
+      });
     },
   });
 }
@@ -132,6 +141,12 @@ export function useCreateSubmission() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submissions() });
     },
+    onError: (error) => {
+      trackCfpSubmissionError({
+        action: 'create',
+        errorMessage: error instanceof Error ? error.message : 'Failed to create submission',
+      });
+    },
   });
 }
 
@@ -161,6 +176,13 @@ export function useUpdateSubmission() {
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submissions() });
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submission(variables.id) });
     },
+    onError: (error, variables) => {
+      trackCfpSubmissionError({
+        action: 'update',
+        submissionId: variables.id,
+        errorMessage: error instanceof Error ? error.message : 'Failed to update submission',
+      });
+    },
   });
 }
 
@@ -187,6 +209,13 @@ export function useSubmitForReview() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submissions() });
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submission(id) });
+    },
+    onError: (error, id) => {
+      trackCfpSubmissionError({
+        action: 'submit',
+        submissionId: id,
+        errorMessage: error instanceof Error ? error.message : 'Failed to submit for review',
+      });
     },
   });
 }
@@ -215,6 +244,13 @@ export function useWithdrawSubmission() {
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submissions() });
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submission(id) });
     },
+    onError: (error, id) => {
+      trackCfpSubmissionError({
+        action: 'withdraw',
+        submissionId: id,
+        errorMessage: error instanceof Error ? error.message : 'Failed to withdraw submission',
+      });
+    },
   });
 }
 
@@ -240,6 +276,13 @@ export function useDeleteSubmission() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.submissions() });
+    },
+    onError: (error, id) => {
+      trackCfpSubmissionError({
+        action: 'delete',
+        submissionId: id,
+        errorMessage: error instanceof Error ? error.message : 'Failed to delete submission',
+      });
     },
   });
 }
@@ -524,6 +567,13 @@ export function useSubmitReview() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.reviewer.dashboard() });
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.reviewer.submission(variables.submissionId) });
+    },
+    onError: (error, variables) => {
+      trackCfpReviewError({
+        action: variables.isUpdate ? 'update' : 'submit',
+        submissionId: variables.submissionId,
+        errorMessage: error instanceof Error ? error.message : 'Failed to submit review',
+      });
     },
   });
 }

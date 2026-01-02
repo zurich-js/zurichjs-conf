@@ -8,6 +8,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input } from '@/components/atoms';
+import { trackCfpLoginAttempt } from '@/lib/analytics/helpers';
 
 function ReviewerLoginPage() {
   const router = useRouter();
@@ -41,9 +42,15 @@ function ReviewerLoginPage() {
         throw new Error(data.error || 'Failed to send login link');
       }
 
+      // Track successful login request
+      trackCfpLoginAttempt({ type: 'reviewer', email, success: true });
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+
+      // Track failed login attempt
+      trackCfpLoginAttempt({ type: 'reviewer', email, success: false, errorMessage });
     } finally {
       setIsSubmitting(false);
     }

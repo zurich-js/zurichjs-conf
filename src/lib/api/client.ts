@@ -4,6 +4,7 @@
  */
 
 import { buildUrl, defaultApiConfig, type ApiConfig } from './config';
+import { captureException } from '@/lib/analytics/helpers';
 
 /**
  * API error class with structured error information
@@ -26,6 +27,8 @@ export class ApiError extends Error {
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
   config?: Partial<ApiConfig>;
+  /** Skip error capturing for this request (default: false) */
+  skipErrorCapture?: boolean;
 }
 
 /**
@@ -51,38 +54,83 @@ function buildUrlWithParams(endpoint: string, params?: Record<string, string | n
 }
 
 /**
- * Base fetch wrapper with error handling
+ * Get severity based on HTTP status code
+ */
+function getSeverityFromStatus(status: number): 'low' | 'medium' | 'high' | 'critical' {
+  if (status >= 500) return 'high';
+  if (status === 401 || status === 403) return 'medium';
+  if (status === 429) return 'medium'; // Rate limiting
+  return 'low';
+}
+
+/**
+ * Base fetch wrapper with error handling and automatic error capturing
  */
 async function fetchApi<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { params, config, ...fetchOptions } = options;
+  const { params, config, skipErrorCapture, ...fetchOptions } = options;
   const apiConfig = { ...defaultApiConfig, ...config };
-  
+
   const url = buildUrlWithParams(endpoint, params);
-  
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers: {
-      ...apiConfig.headers,
-      ...fetchOptions.headers,
-    },
-    signal: fetchOptions.signal ?? AbortSignal.timeout(apiConfig.timeout),
-  });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new ApiError(
-      errorData.error || `Request failed: ${response.statusText}`,
-      response.status,
-      endpoint,
-      errorData
-    );
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers: {
+        ...apiConfig.headers,
+        ...fetchOptions.headers,
+      },
+      signal: fetchOptions.signal ?? AbortSignal.timeout(apiConfig.timeout),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const apiError = new ApiError(
+        errorData.error || `Request failed: ${response.statusText}`,
+        response.status,
+        endpoint,
+        errorData
+      );
+
+      // Capture the error to PostHog unless explicitly skipped
+      if (!skipErrorCapture) {
+        captureException(apiError, {
+          type: 'network',
+          severity: getSeverityFromStatus(response.status),
+          code: `HTTP_${response.status}`,
+          flow: 'api_request',
+          action: fetchOptions.method || 'GET',
+          context: {
+            endpoint,
+            status: response.status,
+            statusText: response.statusText,
+          },
+        });
+      }
+
+      throw apiError;
+    }
+
+    const data = await response.json();
+    return data as T;
+  } catch (error) {
+    // Capture non-HTTP errors (network errors, timeouts, etc.)
+    if (!(error instanceof ApiError) && !skipErrorCapture) {
+      captureException(error, {
+        type: 'network',
+        severity: 'high',
+        flow: 'api_request',
+        action: fetchOptions.method || 'GET',
+        context: {
+          endpoint,
+          error_type: error instanceof Error ? error.name : 'unknown',
+        },
+      });
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  return data as T;
 }
 
 /**

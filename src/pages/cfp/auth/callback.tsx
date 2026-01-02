@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
+import { trackCfpAuthCallback, captureException } from '@/lib/analytics/helpers';
 
 type CallbackState = 'loading' | 'success' | 'error' | 'expired';
 
@@ -124,6 +125,8 @@ export default function CfpAuthCallback() {
           throw new Error(data.error || 'Failed to set up speaker profile');
         }
 
+        // Track successful authentication
+        trackCfpAuthCallback({ type: 'speaker', success: true });
         setState('success');
 
         // Redirect to dashboard after short delay
@@ -133,9 +136,28 @@ export default function CfpAuthCallback() {
       } catch (err) {
         console.error('[CFP Auth Callback] Error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        const isExpired = isExpiredLinkError(errorMessage);
+
+        // Track auth callback error
+        trackCfpAuthCallback({
+          type: 'speaker',
+          success: false,
+          errorMessage,
+          isExpired,
+        });
+
+        // Also capture the exception for detailed error tracking
+        if (!isExpired) {
+          captureException(err, {
+            type: 'auth',
+            severity: 'high',
+            flow: 'cfp_speaker_auth_callback',
+            action: 'verify_session',
+          });
+        }
 
         // Check if this is an expired/invalid link error
-        if (isExpiredLinkError(errorMessage)) {
+        if (isExpired) {
           setState('expired');
         } else {
           setState('error');

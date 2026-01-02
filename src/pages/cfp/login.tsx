@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Input, Button, Heading } from '@/components/atoms';
 import { cfpLoginSchema } from '@/lib/validations/cfp';
+import { trackCfpLoginAttempt, captureValidationError } from '@/lib/analytics/helpers';
 
 type LoginState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -23,7 +24,13 @@ function CfpLogin() {
     // Validate email
     const result = cfpLoginSchema.safeParse({ email });
     if (!result.success) {
-      setError(result.error.issues[0].message);
+      const errorMessage = result.error.issues[0].message;
+      setError(errorMessage);
+      captureValidationError(errorMessage, {
+        flow: 'cfp_speaker_login',
+        action: 'validate_email',
+        userEmail: email,
+      });
       return;
     }
 
@@ -42,10 +49,16 @@ function CfpLogin() {
         throw new Error(data.error || 'Failed to send magic link');
       }
 
+      // Track successful login request
+      trackCfpLoginAttempt({ type: 'speaker', email, success: true });
       setState('success');
     } catch (err) {
       setState('error');
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+
+      // Track failed login attempt
+      trackCfpLoginAttempt({ type: 'speaker', email, success: false, errorMessage });
     }
   };
 

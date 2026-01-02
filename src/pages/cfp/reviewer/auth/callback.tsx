@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
+import { trackCfpAuthCallback, captureException } from '@/lib/analytics/helpers';
 
 /**
  * Check if an error indicates an expired or invalid link
@@ -109,6 +110,8 @@ export default function ReviewerAuthCallback() {
           throw new Error(data.error || 'Failed to complete login');
         }
 
+        // Track successful authentication
+        trackCfpAuthCallback({ type: 'reviewer', success: true });
         setStatus('success');
 
         // Redirect to dashboard
@@ -118,9 +121,28 @@ export default function ReviewerAuthCallback() {
       } catch (err) {
         console.error('[Reviewer Auth Callback] Error:', err);
         const message = err instanceof Error ? err.message : 'Authentication failed';
+        const isExpired = isExpiredLinkError(message);
+
+        // Track auth callback error
+        trackCfpAuthCallback({
+          type: 'reviewer',
+          success: false,
+          errorMessage: message,
+          isExpired,
+        });
+
+        // Also capture the exception for detailed error tracking
+        if (!isExpired) {
+          captureException(err, {
+            type: 'auth',
+            severity: 'high',
+            flow: 'cfp_reviewer_auth_callback',
+            action: 'verify_session',
+          });
+        }
 
         // Check if this is an expired/invalid link error
-        if (isExpiredLinkError(message)) {
+        if (isExpired) {
           setStatus('expired');
         } else {
           setStatus('error');
