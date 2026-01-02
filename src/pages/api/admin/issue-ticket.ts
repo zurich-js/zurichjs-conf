@@ -28,12 +28,15 @@ interface IssueTicketRequest {
   jobTitle?: string;
 
   // Payment type
-  paymentType: 'complimentary' | 'stripe';
+  paymentType: 'complimentary' | 'stripe' | 'bank_transfer';
 
   // Stripe details (only required if paymentType is 'stripe')
   stripePaymentId?: string;
   amountPaid?: number;
   currency?: string;
+
+  // Bank transfer details (only required if paymentType is 'bank_transfer')
+  bankTransferReference?: string;
 
   // Complimentary details
   complimentaryReason?: string;
@@ -119,12 +122,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    // Validate bank transfer payment if applicable
+    if (body.paymentType === 'bank_transfer') {
+      if (body.amountPaid === undefined || body.amountPaid < 0) {
+        return res.status(400).json({ error: 'Valid amount is required for bank transfer tickets' });
+      }
+    }
+
     // Prepare ticket data
     const ticketType = toLegacyType(body.ticketCategory, body.ticketStage);
     const isComplimentary = body.paymentType === 'complimentary';
+    const isBankTransfer = body.paymentType === 'bank_transfer';
 
     // Generate unique session ID for manual tickets
     const manualSessionId = `manual_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+    // Determine customer ID based on payment type
+    const getCustomerId = () => {
+      if (isComplimentary) return `comp_${manualSessionId}`;
+      if (isBankTransfer) return `bank_${manualSessionId}`;
+      return `stripe_${body.stripePaymentId}`;
+    };
 
     // Create the ticket
     const ticketResult = await createTicket({
@@ -136,9 +154,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email: body.email,
       company: body.company || null,
       jobTitle: body.jobTitle || null,
-      stripeCustomerId: isComplimentary ? `comp_${manualSessionId}` : `stripe_${body.stripePaymentId}`,
+      stripeCustomerId: getCustomerId(),
       stripeSessionId: manualSessionId,
-      stripePaymentIntentId: isComplimentary ? undefined : body.stripePaymentId,
+      stripePaymentIntentId: body.paymentType === 'stripe' ? body.stripePaymentId : undefined,
       amountPaid: isComplimentary ? 0 : (body.amountPaid || 0),
       currency: body.currency || 'CHF',
       status: 'confirmed',
@@ -147,7 +165,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         issuedAt: new Date().toISOString(),
         paymentType: body.paymentType,
         complimentaryReason: isComplimentary ? body.complimentaryReason : undefined,
-        stripePaymentId: body.stripePaymentId,
+        stripePaymentId: body.paymentType === 'stripe' ? body.stripePaymentId : undefined,
+        bankTransferReference: isBankTransfer ? body.bankTransferReference : undefined,
       },
     });
 
@@ -182,7 +201,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               venueName: 'Technopark Zürich',
               venueAddress: 'Technoparkstrasse 1, 8005 Zürich',
               qrCodeDataUrl,
-              notes: isComplimentary ? 'Complimentary ticket' : undefined,
+              notes: isComplimentary ? 'Complimentary ticket' : isBankTransfer ? 'Bank transfer payment' : undefined,
             });
           } catch (pdfError) {
             log.error('Error generating PDF', pdfError);
@@ -207,7 +226,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ticketId: ticket.id,
           qrCodeUrl: ticket.qr_code_url || undefined,
           orderUrl,
-          notes: isComplimentary ? 'This is a complimentary ticket.' : undefined,
+          notes: isComplimentary ? 'This is a complimentary ticket.' : isBankTransfer ? 'Payment received via bank transfer.' : undefined,
           pdfAttachment: pdfBuffer,
         };
 

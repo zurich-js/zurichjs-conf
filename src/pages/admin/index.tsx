@@ -25,9 +25,10 @@ type Tab = 'tickets' | 'issue' | 'financials' | 'b2b';
 interface TicketMetadata {
   issuedManually?: boolean;
   issuedAt?: string;
-  paymentType?: 'complimentary' | 'stripe';
+  paymentType?: 'complimentary' | 'stripe' | 'bank_transfer';
   complimentaryReason?: string;
   stripePaymentId?: string;
+  bankTransferReference?: string;
   [key: string]: unknown;
 }
 
@@ -502,9 +503,20 @@ function TicketDetailsModal({
                 <p className="text-xs text-gray-500 mb-0.5">Payment Type</p>
                 <p className="text-xs text-gray-400 mb-1">How this ticket was acquired</p>
                 <p className="text-sm text-black capitalize">
-                  {ticket.metadata?.paymentType || (ticket.amount_paid === 0 ? 'Complimentary' : 'Stripe')}
+                  {ticket.metadata?.paymentType === 'bank_transfer'
+                    ? 'Bank Transfer'
+                    : ticket.metadata?.paymentType || (ticket.amount_paid === 0 ? 'Complimentary' : 'Stripe')}
                 </p>
               </div>
+              {ticket.metadata?.paymentType === 'bank_transfer' && ticket.metadata?.bankTransferReference && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Bank Transfer Reference</p>
+                  <p className="text-xs text-gray-400 mb-1">Reference or notes for the bank transfer</p>
+                  <p className="text-sm text-emerald-700 font-medium">
+                    {ticket.metadata.bankTransferReference}
+                  </p>
+                </div>
+              )}
               {isComplimentary && ticket.metadata?.complimentaryReason && (
                 <div className="sm:col-span-2">
                   <p className="text-xs text-gray-500 mb-0.5">Complimentary Reason</p>
@@ -1607,11 +1619,16 @@ interface StripePaymentDetails {
 }
 
 function IssueTicketTab() {
-  const [paymentType, setPaymentType] = useState<'complimentary' | 'stripe'>('complimentary');
+  const [paymentType, setPaymentType] = useState<'complimentary' | 'stripe' | 'bank_transfer'>('complimentary');
   const [stripePaymentId, setStripePaymentId] = useState('');
   const [stripePayment, setStripePayment] = useState<StripePaymentDetails | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState('');
+
+  // Bank transfer fields
+  const [bankTransferAmount, setBankTransferAmount] = useState('');
+  const [bankTransferCurrency, setBankTransferCurrency] = useState('CHF');
+  const [bankTransferReference, setBankTransferReference] = useState('');
 
   const [ticketCategory, setTicketCategory] = useState<string>('standard');
   const [ticketStage, setTicketStage] = useState<string>('general_admission');
@@ -1686,8 +1703,17 @@ function IssueTicketTab() {
           jobTitle: jobTitle || undefined,
           paymentType,
           stripePaymentId: paymentType === 'stripe' ? stripePaymentId : undefined,
-          amountPaid: paymentType === 'stripe' && stripePayment ? stripePayment.amount : 0,
-          currency: paymentType === 'stripe' && stripePayment ? stripePayment.currency : 'CHF',
+          amountPaid: paymentType === 'stripe' && stripePayment
+            ? stripePayment.amount
+            : paymentType === 'bank_transfer'
+              ? Math.round(parseFloat(bankTransferAmount) * 100)
+              : 0,
+          currency: paymentType === 'stripe' && stripePayment
+            ? stripePayment.currency
+            : paymentType === 'bank_transfer'
+              ? bankTransferCurrency
+              : 'CHF',
+          bankTransferReference: paymentType === 'bank_transfer' ? bankTransferReference : undefined,
           complimentaryReason: paymentType === 'complimentary' ? complimentaryReason : undefined,
           sendEmail,
         }),
@@ -1705,6 +1731,9 @@ function IssueTicketTab() {
       // Reset form
       setStripePaymentId('');
       setStripePayment(null);
+      setBankTransferAmount('');
+      setBankTransferCurrency('CHF');
+      setBankTransferReference('');
       setFirstName('');
       setLastName('');
       setEmail('');
@@ -1764,7 +1793,7 @@ function IssueTicketTab() {
           {/* Payment Type Selection */}
           <div>
             <label className="block text-sm font-bold text-black mb-3">Payment Type *</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setPaymentType('complimentary')}
@@ -1784,7 +1813,7 @@ function IssueTicketTab() {
                   </div>
                   <div>
                     <p className="font-bold text-black">Complimentary</p>
-                    <p className="text-xs text-gray-600">Free ticket (speaker, sponsor, etc.)</p>
+                    <p className="text-xs text-gray-600">Free ticket (speaker, etc.)</p>
                   </div>
                 </div>
               </button>
@@ -1808,6 +1837,29 @@ function IssueTicketTab() {
                   <div>
                     <p className="font-bold text-black">Stripe Payment</p>
                     <p className="text-xs text-gray-600">Link to existing payment</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentType('bank_transfer')}
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                  paymentType === 'bank_transfer'
+                    ? 'border-[#F1E271] bg-[#F1E271]/10'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    paymentType === 'bank_transfer' ? 'bg-[#F1E271]' : 'bg-gray-100'
+                  }`}>
+                    <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-black">Bank Transfer</p>
+                    <p className="text-xs text-gray-600">Manual payment received</p>
                   </div>
                 </div>
               </button>
@@ -1865,6 +1917,56 @@ function IssueTicketTab() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Bank Transfer Details */}
+          {paymentType === 'bank_transfer' && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <label className="block text-sm font-bold text-black mb-3">Bank Transfer Details</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Amount Received *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={bankTransferAmount}
+                    onChange={(e) => setBankTransferAmount(e.target.value)}
+                    placeholder="150.00"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Currency *</label>
+                  <select
+                    value={bankTransferCurrency}
+                    onChange={(e) => setBankTransferCurrency(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  >
+                    <option value="CHF">CHF</option>
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Reference / Notes (optional)</label>
+                  <input
+                    type="text"
+                    value={bankTransferReference}
+                    onChange={(e) => setBankTransferReference(e.target.value)}
+                    placeholder="e.g. Bank reference, invoice number, company name"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                  />
+                </div>
+              </div>
+              {bankTransferAmount && (
+                <div className="mt-3 p-3 bg-white rounded-lg border border-emerald-200">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Payment Summary</p>
+                  <p className="text-lg font-bold text-black">{parseFloat(bankTransferAmount).toFixed(2)} {bankTransferCurrency}</p>
                 </div>
               )}
             </div>
@@ -2011,13 +2113,20 @@ function IssueTicketTab() {
           <div className="border-t border-gray-200 pt-6">
             <button
               type="submit"
-              disabled={isSubmitting || (paymentType === 'stripe' && !stripePayment)}
+              disabled={
+                isSubmitting ||
+                (paymentType === 'stripe' && !stripePayment) ||
+                (paymentType === 'bank_transfer' && (!bankTransferAmount || parseFloat(bankTransferAmount) <= 0))
+              }
               className="w-full sm:w-auto px-8 py-3 bg-[#F1E271] text-black rounded-lg text-base font-medium hover:bg-[#e8d95e] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               {isSubmitting ? 'Issuing Ticket...' : 'Issue Ticket'}
             </button>
             {paymentType === 'stripe' && !stripePayment && (
               <p className="mt-2 text-xs text-gray-500">Please lookup the Stripe payment first</p>
+            )}
+            {paymentType === 'bank_transfer' && (!bankTransferAmount || parseFloat(bankTransferAmount) <= 0) && (
+              <p className="mt-2 text-xs text-gray-500">Please enter the bank transfer amount</p>
             )}
           </div>
         </form>
