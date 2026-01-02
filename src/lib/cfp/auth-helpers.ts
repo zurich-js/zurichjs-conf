@@ -1,62 +1,19 @@
 /**
  * CFP Authentication Helpers
  * Shared utilities for speaker and reviewer authentication flows
+ * NOTE: This file is server-side only due to logger/analytics imports
  */
 
 import { GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
 import { createSupabaseServerClient } from './auth';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
+import { isExpiredLinkError } from './auth-constants';
 
 const log = logger.scope('CFP Auth');
 
-// ============================================
-// CONSTANTS
-// ============================================
-
-/**
- * PostgreSQL error code for unique constraint violation
- * Used to detect race conditions during speaker/reviewer creation
- */
-export const POSTGRES_DUPLICATE_KEY_ERROR = '23505';
-
-/**
- * Patterns that indicate an expired or invalid magic link
- */
-const EXPIRED_LINK_PATTERNS = [
-  'invalid or has expired',
-  'link is invalid',
-  'link has expired',
-  'otp_expired',
-  'invalid_grant',
-  'expired',
-  'code verifier',
-] as const;
-
-// ============================================
-// ERROR DETECTION
-// ============================================
-
-/**
- * Check if an error message indicates an expired or invalid magic link
- * Used to show appropriate UI (expired vs generic error)
- */
-export function isExpiredLinkError(message: string): boolean {
-  const lowerMessage = message.toLowerCase();
-  return EXPIRED_LINK_PATTERNS.some(pattern => lowerMessage.includes(pattern));
-}
-
-/**
- * Check if a Supabase/Postgres error is a duplicate key violation
- * Indicates a race condition where another request already created the record
- */
-export function isDuplicateKeyError(error: { code?: string; message?: string }): boolean {
-  return (
-    error.code === POSTGRES_DUPLICATE_KEY_ERROR ||
-    error.message?.includes('duplicate key') ||
-    false
-  );
-}
+// Re-export client-safe utilities for convenience
+export { isExpiredLinkError, isDuplicateKeyError, POSTGRES_DUPLICATE_KEY_ERROR } from './auth-constants';
 
 // ============================================
 // SHARED CALLBACK HANDLER

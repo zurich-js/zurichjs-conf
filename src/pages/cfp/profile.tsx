@@ -24,7 +24,8 @@ import {
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Input, SearchableSelect, AirportInput } from '@/components/atoms';
 import { useToast } from '@/contexts/ToastContext';
-import { createSupabaseServerClient, getSpeakerByUserId, getMissingProfileFields } from '@/lib/cfp/auth';
+import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
+import { getMissingProfileFields } from '@/lib/cfp/auth-constants';
 import { speakerProfileSchema, TSHIRT_SIZES, type SpeakerProfileFormData } from '@/lib/validations/cfp';
 import { COUNTRIES, isEuropeanCountry } from '@/lib/constants/countries';
 import type { CfpSpeaker, CfpTshirtSize, CfpAssistanceType } from '@/lib/types/cfp';

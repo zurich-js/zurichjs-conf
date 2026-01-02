@@ -7,13 +7,10 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
-import { logger } from '@/lib/logger';
-import { isDuplicateKeyError } from './auth-helpers';
+import { isDuplicateKeyError } from './auth-constants';
 import type { CfpSpeaker, CfpReviewer } from '@/lib/types/cfp';
 import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from 'next';
 import { getBaseUrl } from '@/lib/url';
-
-const log = logger.scope('CFP Auth');
 
 // ============================================
 // SERVER-SIDE AUTH (for getServerSideProps)
@@ -96,7 +93,7 @@ function createServerAuthClient() {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
-    log.error('Missing Supabase configuration', {
+    console.error("[CFP Auth]", 'Missing Supabase configuration', {
       hasUrl: !!url,
       hasAnonKey: !!anonKey,
     });
@@ -118,7 +115,7 @@ export async function sendSpeakerMagicLink(email: string, req?: NextApiRequest):
   const baseUrl = getBaseUrl(req);
   const redirectTo = `${baseUrl}/cfp/auth/callback`;
 
-  log.info('Sending speaker magic link', { email, baseUrl, redirectTo });
+  console.log("[CFP Auth]", 'Sending speaker magic link', { email, baseUrl, redirectTo });
 
   try {
     const serverClient = createServerAuthClient();
@@ -131,14 +128,14 @@ export async function sendSpeakerMagicLink(email: string, req?: NextApiRequest):
     });
 
     if (error) {
-      log.error('Speaker magic link error', error, { email });
+      console.error("[CFP Auth]", 'Speaker magic link error', error, { email });
       return { success: false, error: error.message };
     }
 
-    log.info('Speaker magic link sent successfully', { email });
+    console.log("[CFP Auth]", 'Speaker magic link sent successfully', { email });
     return { success: true };
   } catch (err) {
-    log.error('Exception sending speaker magic link', err, { email });
+    console.error("[CFP Auth]", 'Exception sending speaker magic link', err, { email });
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }
 }
@@ -150,7 +147,7 @@ export async function sendReviewerMagicLink(email: string, req?: NextApiRequest)
   const baseUrl = getBaseUrl(req);
   const redirectTo = `${baseUrl}/cfp/reviewer/auth/callback`;
 
-  log.info('Sending reviewer magic link', { email, baseUrl, redirectTo });
+  console.log("[CFP Auth]", 'Sending reviewer magic link', { email, baseUrl, redirectTo });
 
   try {
     const serverClient = createServerAuthClient();
@@ -163,14 +160,14 @@ export async function sendReviewerMagicLink(email: string, req?: NextApiRequest)
     });
 
     if (error) {
-      log.error('Reviewer magic link error', error, { email });
+      console.error("[CFP Auth]", 'Reviewer magic link error', error, { email });
       return { success: false, error: error.message };
     }
 
-    log.info('Reviewer magic link sent successfully', { email });
+    console.log("[CFP Auth]", 'Reviewer magic link sent successfully', { email });
     return { success: true };
   } catch (err) {
-    log.error('Exception sending reviewer magic link', err, { email });
+    console.error("[CFP Auth]", 'Exception sending reviewer magic link', err, { email });
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }
 }
@@ -212,7 +209,7 @@ export async function getOrCreateSpeaker(
     // Speaker exists by email - link to user if not already linked
     if (speakerByEmail.user_id && speakerByEmail.user_id !== userId) {
       // Speaker is already linked to a different user - this shouldn't happen normally
-      log.error('Speaker already linked to different user', {
+      console.error("[CFP Auth]", 'Speaker already linked to different user', {
         email,
         existingUserId: speakerByEmail.user_id,
         attemptedUserId: userId,
@@ -236,7 +233,7 @@ export async function getOrCreateSpeaker(
     if (updateError) {
       // Handle race condition - if duplicate key error, fetch the existing speaker
       if (isDuplicateKeyError(updateError)) {
-        log.info('Race condition detected during speaker link, fetching existing', { userId, email });
+        console.log("[CFP Auth]", 'Race condition detected during speaker link, fetching existing', { userId, email });
         const { data: raceSpeaker, error: raceError } = await supabaseAdmin
           .from('cfp_speakers')
           .select('*')
@@ -244,7 +241,7 @@ export async function getOrCreateSpeaker(
           .single();
 
         if (raceError) {
-          log.error('Failed to recover from race condition during speaker link', raceError, { userId, email });
+          console.error("[CFP Auth]", 'Failed to recover from race condition during speaker link', raceError, { userId, email });
           return { speaker: null, error: 'Failed to link speaker profile' };
         }
 
@@ -252,11 +249,11 @@ export async function getOrCreateSpeaker(
           return { speaker: raceSpeaker as CfpSpeaker };
         }
 
-        log.error('Race condition recovery found no speaker', { userId, email });
+        console.error("[CFP Auth]", 'Race condition recovery found no speaker', { userId, email });
         return { speaker: null, error: 'Failed to link speaker profile' };
       }
 
-      log.error('Error linking speaker', updateError, { userId, email });
+      console.error("[CFP Auth]", 'Error linking speaker', updateError, { userId, email });
       return { speaker: null, error: updateError.message };
     }
 
@@ -278,7 +275,7 @@ export async function getOrCreateSpeaker(
   if (createError) {
     // Handle race condition - if duplicate key error, fetch the existing speaker
     if (isDuplicateKeyError(createError)) {
-      log.info('Race condition detected during speaker creation, fetching existing', { userId, email });
+      console.log("[CFP Auth]", 'Race condition detected during speaker creation, fetching existing', { userId, email });
       const { data: raceSpeaker, error: raceError } = await supabaseAdmin
         .from('cfp_speakers')
         .select('*')
@@ -286,7 +283,7 @@ export async function getOrCreateSpeaker(
         .single();
 
       if (raceError) {
-        log.error('Failed to recover from race condition during speaker creation', raceError, { userId, email });
+        console.error("[CFP Auth]", 'Failed to recover from race condition during speaker creation', raceError, { userId, email });
         return { speaker: null, error: 'Failed to create speaker profile' };
       }
 
@@ -294,11 +291,11 @@ export async function getOrCreateSpeaker(
         return { speaker: raceSpeaker as CfpSpeaker };
       }
 
-      log.error('Race condition recovery found no speaker after create', { userId, email });
+      console.error("[CFP Auth]", 'Race condition recovery found no speaker after create', { userId, email });
       return { speaker: null, error: 'Failed to create speaker profile' };
     }
 
-    log.error('Error creating speaker', createError, { userId, email });
+    console.error("[CFP Auth]", 'Error creating speaker', createError, { userId, email });
     return { speaker: null, error: createError.message };
   }
 
@@ -353,7 +350,7 @@ export async function getSpeakerByEmail(email: string): Promise<CfpSpeaker | nul
 export async function getReviewerByUserId(userId: string): Promise<CfpReviewer | null> {
   const supabaseAdmin = createCfpServiceClient();
 
-  log.debug('Getting reviewer by user_id', { userId });
+  console.debug("[CFP Auth]", 'Getting reviewer by user_id', { userId });
 
   const { data, error } = await supabaseAdmin
     .from('cfp_reviewers')
@@ -363,16 +360,16 @@ export async function getReviewerByUserId(userId: string): Promise<CfpReviewer |
     .single();
 
   if (error) {
-    log.debug('Error getting reviewer by user_id', { userId, error: error.message });
+    console.debug("[CFP Auth]", 'Error getting reviewer by user_id', { userId, error: error.message });
     return null;
   }
 
   if (!data) {
-    log.debug('No reviewer found for user_id', { userId });
+    console.debug("[CFP Auth]", 'No reviewer found for user_id', { userId });
     return null;
   }
 
-  log.debug('Found reviewer', { userId, email: data.email });
+  console.debug("[CFP Auth]", 'Found reviewer', { userId, email: data.email });
   return data as CfpReviewer;
 }
 
@@ -406,7 +403,7 @@ export async function acceptReviewerInvite(
   const supabaseAdmin = createCfpServiceClient();
   const normalizedEmail = email.toLowerCase();
 
-  log.info('Accepting reviewer invite', { email: normalizedEmail, userId });
+  console.log("[CFP Auth]", 'Accepting reviewer invite', { email: normalizedEmail, userId });
 
   // Find invited reviewer by email (case-insensitive)
   const { data: reviewer, error: fetchError } = await supabaseAdmin
@@ -417,16 +414,16 @@ export async function acceptReviewerInvite(
     .single();
 
   if (fetchError) {
-    log.error('Error finding reviewer', fetchError, { email: normalizedEmail });
+    console.error("[CFP Auth]", 'Error finding reviewer', fetchError, { email: normalizedEmail });
     return { reviewer: null, error: `No invitation found for ${normalizedEmail}` };
   }
 
   if (!reviewer) {
-    log.warn('No reviewer found for email', { email: normalizedEmail });
+    console.warn("[CFP Auth]", 'No reviewer found for email', { email: normalizedEmail });
     return { reviewer: null, error: `No invitation found for ${normalizedEmail}` };
   }
 
-  log.debug('Found reviewer', { reviewerId: reviewer.id, currentUserId: reviewer.user_id });
+  console.debug("[CFP Auth]", 'Found reviewer', { reviewerId: reviewer.id, currentUserId: reviewer.user_id });
 
   // Update with user_id and accepted_at
   const { data: updatedReviewer, error: updateError } = await supabaseAdmin
@@ -440,11 +437,11 @@ export async function acceptReviewerInvite(
     .single();
 
   if (updateError) {
-    log.error('Error accepting reviewer invite', updateError, { reviewerId: reviewer.id, userId });
+    console.error("[CFP Auth]", 'Error accepting reviewer invite', updateError, { reviewerId: reviewer.id, userId });
     return { reviewer: null, error: updateError.message };
   }
 
-  log.info('Reviewer invite accepted', { reviewerId: reviewer.id, userId });
+  console.log("[CFP Auth]", 'Reviewer invite accepted', { reviewerId: reviewer.id, userId });
   return { reviewer: updatedReviewer as CfpReviewer };
 }
 
@@ -467,41 +464,12 @@ export async function getCurrentUser() {
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error) {
-    log.error('User verification error', error);
+    console.error("[CFP Auth]", 'User verification error', error);
     return null;
   }
 
   return user;
 }
 
-/**
- * Check if speaker profile is complete (has required fields)
- */
-export function isSpeakerProfileComplete(speaker: CfpSpeaker): boolean {
-  return !!(
-    speaker.first_name &&
-    speaker.last_name &&
-    speaker.job_title &&
-    speaker.company &&
-    speaker.city &&
-    speaker.country &&
-    speaker.bio &&
-    speaker.tshirt_size
-  );
-}
-
-/**
- * Get list of missing required profile fields
- */
-export function getMissingProfileFields(speaker: CfpSpeaker): string[] {
-  const missing: string[] = [];
-  if (!speaker.first_name) missing.push('First name');
-  if (!speaker.last_name) missing.push('Last name');
-  if (!speaker.job_title) missing.push('Job title');
-  if (!speaker.company) missing.push('Company');
-  if (!speaker.city) missing.push('City');
-  if (!speaker.country) missing.push('Country');
-  if (!speaker.bio) missing.push('Bio');
-  if (!speaker.tshirt_size) missing.push('T-shirt size');
-  return missing;
-}
+// Re-export client-safe utilities for backwards compatibility
+export { isSpeakerProfileComplete, getMissingProfileFields } from './auth-constants';
