@@ -1,42 +1,116 @@
 /**
  * CFP Auth Callback Page
- * Handles magic link authentication redirect from Supabase
- * Uses getServerSideProps to process auth server-side (runs exactly once)
+ * Handles magic link authentication redirect from Supabase (implicit flow)
  */
 
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
-import { getOrCreateSpeaker } from '@/lib/cfp/auth';
-import { createAuthCallbackHandler, AuthCallbackPageProps } from '@/lib/cfp/auth-helpers';
-import { serverAnalytics } from '@/lib/analytics/server';
+import { supabase } from '@/lib/supabase/client';
+import { isExpiredLinkError } from '@/lib/cfp/auth-constants';
 
-export const getServerSideProps = createAuthCallbackHandler({
-  flowType: 'speaker',
-  loginPath: '/cfp/login',
-  dashboardPath: '/cfp/dashboard',
-  onAuthenticated: async (userId, email) => {
-    const { speaker, error } = await getOrCreateSpeaker(userId, email);
-    return { data: speaker, error };
-  },
-  trackSuccess: async (speaker) => {
-    await serverAnalytics.identify(speaker.id, {
-      email: speaker.email,
-      first_name: speaker.first_name || undefined,
-      last_name: speaker.last_name || undefined,
-      company: speaker.company || undefined,
-      job_title: speaker.job_title || undefined,
-    });
+type CallbackStatus = 'loading' | 'success' | 'error' | 'expired';
 
-    await serverAnalytics.track('cfp_speaker_authenticated', speaker.id, {
-      speaker_id: speaker.id,
-      is_new_speaker: !speaker.first_name,
-      is_profile_complete: !!(speaker.first_name && speaker.last_name && speaker.bio),
-    });
-  },
-});
+export default function CfpAuthCallback() {
+  const router = useRouter();
+  const [status, setStatus] = useState<CallbackStatus>('loading');
+  const [error, setError] = useState<string>();
+  const hasProcessed = useRef(false);
 
-export default function CfpAuthCallback({ status, error }: AuthCallbackPageProps) {
+  useEffect(() => {
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
+
+    const handleAuth = async () => {
+      try {
+        // Check for error in query params
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorParam = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        if (errorParam) {
+          const errorMessage = errorDescription || errorParam;
+          const isExpired = isExpiredLinkError(errorMessage);
+          setStatus(isExpired ? 'expired' : 'error');
+          setError(errorMessage);
+          return;
+        }
+
+        // Check for tokens in hash fragment (implicit flow)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const hashError = hashParams.get('error_description');
+
+        if (hashError) {
+          const isExpired = isExpiredLinkError(hashError);
+          setStatus(isExpired ? 'expired' : 'error');
+          setError(hashError);
+          return;
+        }
+
+        if (!accessToken) {
+          router.replace('/cfp/login?error=no_tokens');
+          return;
+        }
+
+        // Set session from hash tokens
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        });
+
+        if (sessionError) {
+          throw sessionError;
+        }
+
+        // Verify user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          throw new Error(userError?.message || 'Failed to verify user');
+        }
+
+        if (!user.email) {
+          throw new Error('No email associated with account');
+        }
+
+        // Create speaker profile via API
+        const response = await fetch('/api/cfp/auth/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to set up speaker profile');
+        }
+
+        setStatus('success');
+
+        // Redirect to dashboard
+        setTimeout(() => {
+          router.replace('/cfp/dashboard');
+        }, 1000);
+      } catch (err) {
+        console.error('[CFP Auth Callback] Error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        const isExpired = isExpiredLinkError(errorMessage);
+        setStatus(isExpired ? 'expired' : 'error');
+        setError(errorMessage);
+      }
+    };
+
+    handleAuth();
+  }, [router]);
+
   return (
     <>
       <SEO
@@ -47,7 +121,6 @@ export default function CfpAuthCallback({ status, error }: AuthCallbackPageProps
 
       <main className="min-h-screen bg-brand-gray-darkest flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
-          {/* Logo */}
           <Link href="/" className="inline-block mb-8">
             <img
               src="/images/logo/zurichjs-square.png"
@@ -56,22 +129,23 @@ export default function CfpAuthCallback({ status, error }: AuthCallbackPageProps
             />
           </Link>
 
+          {status === 'loading' && (
+            <div className="space-y-4">
+              <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              <Heading level="h1" className="text-xl font-semibold text-white">
+                Signing you in...
+              </Heading>
+              <p className="text-brand-gray-light">
+                Please wait while we verify your credentials
+              </p>
+            </div>
+          )}
+
           {status === 'success' && (
             <div className="space-y-4">
-              {/* Success Icon */}
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
-                <svg
-                  className="w-8 h-8 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <Heading level="h1" className="text-xl font-semibold text-white">
@@ -85,20 +159,9 @@ export default function CfpAuthCallback({ status, error }: AuthCallbackPageProps
 
           {status === 'expired' && (
             <div className="space-y-4">
-              {/* Clock/Expired Icon */}
               <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto">
-                <svg
-                  className="w-8 h-8 text-orange-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <Heading level="h1" className="text-xl font-semibold text-white">
@@ -123,20 +186,9 @@ export default function CfpAuthCallback({ status, error }: AuthCallbackPageProps
 
           {status === 'error' && (
             <div className="space-y-4">
-              {/* Error Icon */}
               <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
-                <svg
-                  className="w-8 h-8 text-red-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
               <Heading level="h1" className="text-xl font-semibold text-white">

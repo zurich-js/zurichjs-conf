@@ -1,38 +1,115 @@
 /**
  * CFP Reviewer Auth Callback
- * Handles Supabase magic link redirect for reviewers
- * Uses getServerSideProps to process auth server-side (runs exactly once)
+ * Handles magic link authentication redirect from Supabase (implicit flow)
  */
 
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
-import { acceptReviewerInvite } from '@/lib/cfp/auth';
-import { createAuthCallbackHandler, AuthCallbackPageProps } from '@/lib/cfp/auth-helpers';
-import { serverAnalytics } from '@/lib/analytics/server';
+import { supabase } from '@/lib/supabase/client';
+import { isExpiredLinkError } from '@/lib/cfp/auth-constants';
 
-export const getServerSideProps = createAuthCallbackHandler({
-  flowType: 'reviewer',
-  loginPath: '/cfp/reviewer/login',
-  dashboardPath: '/cfp/reviewer/dashboard',
-  onAuthenticated: async (userId, email) => {
-    const { reviewer, error } = await acceptReviewerInvite(userId, email);
-    return { data: reviewer, error };
-  },
-  trackSuccess: async (reviewer) => {
-    await serverAnalytics.identify(reviewer.id, {
-      email: reviewer.email,
-      name: reviewer.name || undefined,
-    });
+type CallbackStatus = 'loading' | 'success' | 'error' | 'expired';
 
-    await serverAnalytics.track('cfp_reviewer_authenticated', reviewer.id, {
-      reviewer_id: reviewer.id,
-      reviewer_email: reviewer.email,
-    });
-  },
-});
+export default function ReviewerAuthCallback() {
+  const router = useRouter();
+  const [status, setStatus] = useState<CallbackStatus>('loading');
+  const [error, setError] = useState<string>();
+  const hasProcessed = useRef(false);
 
-export default function ReviewerAuthCallback({ status, error }: AuthCallbackPageProps) {
+  useEffect(() => {
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
+
+    const handleAuth = async () => {
+      try {
+        // Check for error in query params
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorParam = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        if (errorParam) {
+          const errorMessage = errorDescription || errorParam;
+          const isExpired = isExpiredLinkError(errorMessage);
+          setStatus(isExpired ? 'expired' : 'error');
+          setError(errorMessage);
+          return;
+        }
+
+        // Check for tokens in hash fragment (implicit flow)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const hashError = hashParams.get('error_description');
+
+        if (hashError) {
+          const isExpired = isExpiredLinkError(hashError);
+          setStatus(isExpired ? 'expired' : 'error');
+          setError(hashError);
+          return;
+        }
+
+        if (!accessToken) {
+          router.replace('/cfp/reviewer/login?error=no_tokens');
+          return;
+        }
+
+        // Set session from hash tokens
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        });
+
+        if (sessionError) {
+          throw sessionError;
+        }
+
+        // Verify user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          throw new Error(userError?.message || 'Failed to verify user');
+        }
+
+        if (!user.email) {
+          throw new Error('No email associated with account');
+        }
+
+        // Accept reviewer invite via API
+        const response = await fetch('/api/cfp/reviewer/auth/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to accept invitation');
+        }
+
+        setStatus('success');
+
+        setTimeout(() => {
+          router.replace('/cfp/reviewer/dashboard');
+        }, 1000);
+      } catch (err) {
+        console.error('[Reviewer Auth Callback] Error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        const isExpired = isExpiredLinkError(errorMessage);
+        setStatus(isExpired ? 'expired' : 'error');
+        setError(errorMessage);
+      }
+    };
+
+    handleAuth();
+  }, [router]);
+
   return (
     <>
       <SEO
@@ -44,6 +121,18 @@ export default function ReviewerAuthCallback({ status, error }: AuthCallbackPage
       <div className="min-h-screen bg-brand-gray-darkest flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="bg-brand-gray-dark rounded-2xl p-8 text-center">
+            {status === 'loading' && (
+              <>
+                <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-6" />
+                <Heading level="h1" className="text-xl font-bold text-white mb-2">
+                  Signing you in...
+                </Heading>
+                <p className="text-brand-gray-light">
+                  Please wait while we verify your credentials
+                </p>
+              </>
+            )}
+
             {status === 'success' && (
               <>
                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
