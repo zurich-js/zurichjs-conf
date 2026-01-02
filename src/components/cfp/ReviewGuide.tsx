@@ -13,10 +13,9 @@ interface ReviewGuideProps {
 }
 
 const SCORE_GUIDE = [
-  { score: 5, label: 'Excellent', color: 'text-green-400' },
-  { score: 4, label: 'Good', color: 'text-green-300' },
-  { score: 3, label: 'Average', color: 'text-yellow-400' },
-  { score: 2, label: 'Below Average', color: 'text-orange-400' },
+  { score: 4, label: 'Excellent', color: 'text-green-400' },
+  { score: 3, label: 'Good', color: 'text-green-300' },
+  { score: 2, label: 'Fair', color: 'text-yellow-400' },
   { score: 1, label: 'Poor', color: 'text-red-400' },
 ];
 

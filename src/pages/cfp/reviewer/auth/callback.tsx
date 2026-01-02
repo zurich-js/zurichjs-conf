@@ -1,159 +1,38 @@
 /**
  * CFP Reviewer Auth Callback
  * Handles Supabase magic link redirect for reviewers
+ * Uses getServerSideProps to process auth server-side (runs exactly once)
  */
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
-import { supabase } from '@/lib/supabase/client';
-import { trackCfpAuthCallback, captureException } from '@/lib/analytics/helpers';
+import { acceptReviewerInvite } from '@/lib/cfp/auth';
+import { createAuthCallbackHandler, AuthCallbackPageProps } from '@/lib/cfp/auth-helpers';
+import { serverAnalytics } from '@/lib/analytics/server';
 
-/**
- * Check if an error indicates an expired or invalid link
- */
-function isExpiredLinkError(message: string): boolean {
-  const expiredPatterns = [
-    'invalid or has expired',
-    'link is invalid',
-    'link has expired',
-    'otp_expired',
-    'invalid_grant',
-    'expired',
-  ];
-  const lowerMessage = message.toLowerCase();
-  return expiredPatterns.some(pattern => lowerMessage.includes(pattern));
-}
+export const getServerSideProps = createAuthCallbackHandler({
+  flowType: 'reviewer',
+  loginPath: '/cfp/reviewer/login',
+  dashboardPath: '/cfp/reviewer/dashboard',
+  onAuthenticated: async (userId, email) => {
+    const { reviewer, error } = await acceptReviewerInvite(userId, email);
+    return { data: reviewer, error };
+  },
+  trackSuccess: async (reviewer) => {
+    await serverAnalytics.identify(reviewer.id, {
+      email: reviewer.email,
+      name: reviewer.name || undefined,
+    });
 
-export default function ReviewerAuthCallback() {
-  const router = useRouter();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired'>('loading');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    await serverAnalytics.track('cfp_reviewer_authenticated', reviewer.id, {
+      reviewer_id: reviewer.id,
+      reviewer_email: reviewer.email,
+    });
+  },
+});
 
-  useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        // First check if there's a code in the URL query params (PKCE flow)
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const errorParam = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-
-        // Handle error from Supabase
-        if (errorParam) {
-          throw new Error(errorDescription || errorParam);
-        }
-
-        // If there's a code, exchange it for a session (PKCE flow)
-        if (code) {
-          console.log('[Reviewer Auth Callback] Exchanging code for session...');
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-          if (exchangeError) {
-            console.error('[Reviewer Auth Callback] Code exchange error:', exchangeError);
-            throw new Error(exchangeError.message);
-          }
-
-          if (!data.session) {
-            throw new Error('Failed to establish session from code');
-          }
-
-          console.log('[Reviewer Auth Callback] Session established via PKCE');
-        } else {
-          // Try hash fragment (implicit flow) or existing session
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-
-          if (accessToken) {
-            console.log('[Reviewer Auth Callback] Setting session from hash tokens...');
-            const { error: setSessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: hashParams.get('refresh_token') || '',
-            });
-
-            if (setSessionError) {
-              throw new Error(setSessionError.message);
-            }
-          }
-        }
-
-        // Verify the user with Supabase Auth server (more secure than getSession)
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-        if (userError) {
-          throw new Error(userError.message);
-        }
-
-        if (!user) {
-          throw new Error('No authenticated user found. The link may have expired or is invalid.');
-        }
-
-        console.log('[Reviewer Auth Callback] User verified:', user.email);
-
-        // Accept the reviewer invite (links user to reviewer record)
-        // Pass user info in body since we already verified the user client-side
-        const response = await fetch('/api/cfp/reviewer/auth/callback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // Include cookies for session
-          body: JSON.stringify({
-            userId: user.id,
-            email: user.email,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to complete login');
-        }
-
-        // Track successful authentication
-        trackCfpAuthCallback({ type: 'reviewer', success: true });
-        setStatus('success');
-
-        // Redirect to dashboard
-        setTimeout(() => {
-          router.push('/cfp/reviewer/dashboard');
-        }, 1500);
-      } catch (err) {
-        console.error('[Reviewer Auth Callback] Error:', err);
-        const message = err instanceof Error ? err.message : 'Authentication failed';
-        const isExpired = isExpiredLinkError(message);
-
-        // Track auth callback error
-        trackCfpAuthCallback({
-          type: 'reviewer',
-          success: false,
-          errorMessage: message,
-          isExpired,
-        });
-
-        // Also capture the exception for detailed error tracking
-        if (!isExpired) {
-          captureException(err, {
-            type: 'auth',
-            severity: 'high',
-            flow: 'cfp_reviewer_auth_callback',
-            action: 'verify_session',
-          });
-        }
-
-        // Check if this is an expired/invalid link error
-        if (isExpired) {
-          setStatus('expired');
-        } else {
-          setStatus('error');
-        }
-        setErrorMessage(message);
-      }
-    };
-
-    handleCallback();
-  }, [router]);
-
+export default function ReviewerAuthCallback({ status, error }: AuthCallbackPageProps) {
   return (
     <>
       <SEO
@@ -165,18 +44,6 @@ export default function ReviewerAuthCallback() {
       <div className="min-h-screen bg-brand-gray-darkest flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="bg-brand-gray-dark rounded-2xl p-8 text-center">
-            {status === 'loading' && (
-              <>
-                <div className="w-16 h-16 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-                <Heading level="h1" className="text-xl font-bold text-white mb-2">
-                  Completing Login...
-                </Heading>
-                <p className="text-brand-gray-light">
-                  Please wait while we verify your credentials.
-                </p>
-              </>
-            )}
-
             {status === 'success' && (
               <>
                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -229,7 +96,7 @@ export default function ReviewerAuthCallback() {
                   Login Failed
                 </Heading>
                 <p className="text-brand-gray-light mb-6">
-                  {errorMessage || 'Something went wrong. Please try again.'}
+                  {error || 'Something went wrong. Please try again.'}
                 </p>
                 <Link
                   href="/cfp/reviewer/login"

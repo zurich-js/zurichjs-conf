@@ -279,7 +279,7 @@ export function SubmissionCard({ submission }: { submission: SubmissionCardSubmi
                 Reviewed
               </span>
               <div className="text-sm text-brand-gray-light mt-1">
-                Score: {submission.my_review.score_overall}/5
+                Score: {submission.my_review.score_overall}/4
               </div>
             </div>
           ) : (
@@ -292,7 +292,7 @@ export function SubmissionCard({ submission }: { submission: SubmissionCardSubmi
             {submission.stats.review_count} review{submission.stats.review_count !== 1 ? 's' : ''}
             {submission.stats.avg_overall && (
               <span className="ml-2">
-                Avg: {submission.stats.avg_overall.toFixed(1)}/5
+                Avg: {submission.stats.avg_overall.toFixed(1)}/4
               </span>
             )}
           </div>

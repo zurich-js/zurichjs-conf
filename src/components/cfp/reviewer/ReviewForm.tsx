@@ -86,12 +86,12 @@ export function ReviewForm({
                 </label>
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="flex gap-1 sm:gap-1.5 flex-1 sm:flex-none">
-                    {[1, 2, 3, 4, 5].map((n) => (
+                    {[1, 2, 3, 4].map((n) => (
                       <button
                         key={n}
                         type="button"
                         onClick={() => onScoreChange(field as keyof ReviewScores, n)}
-                        className={`flex-1 sm:flex-none sm:w-9 h-10 sm:h-9 rounded-lg font-medium text-sm transition-colors cursor-pointer active:scale-95 ${
+                        className={`flex-1 sm:flex-none sm:w-10 h-10 sm:h-9 rounded-lg font-medium text-sm transition-colors cursor-pointer active:scale-95 ${
                           currentScore === n
                             ? 'bg-brand-primary text-black'
                             : 'bg-brand-gray-darkest text-brand-gray-light hover:bg-brand-gray-medium'
@@ -105,7 +105,7 @@ export function ReviewForm({
                     <span className={`text-xl sm:text-2xl font-bold ${currentScore > 0 ? 'text-brand-primary' : 'text-brand-gray-medium'}`}>
                       {currentScore > 0 ? currentScore : '-'}
                     </span>
-                    <span className="text-brand-gray-medium text-sm">/5</span>
+                    <span className="text-brand-gray-medium text-sm">/4</span>
                   </div>
                 </div>
               </div>

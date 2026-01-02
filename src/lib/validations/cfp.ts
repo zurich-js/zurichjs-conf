@@ -228,11 +228,11 @@ export const reviewSchema = z.object({
     .number()
     .int('Score must be a whole number')
     .min(1, 'Minimum score is 1')
-    .max(5, 'Maximum score is 5'),
-  score_relevance: z.number().int().min(1).max(5).optional(),
-  score_technical_depth: z.number().int().min(1).max(5).optional(),
-  score_clarity: z.number().int().min(1).max(5).optional(),
-  score_diversity: z.number().int().min(1).max(5).optional(),
+    .max(4, 'Maximum score is 4'),
+  score_relevance: z.number().int().min(1).max(4).optional(),
+  score_technical_depth: z.number().int().min(1).max(4).optional(),
+  score_clarity: z.number().int().min(1).max(4).optional(),
+  score_diversity: z.number().int().min(1).max(4).optional(),
   private_notes: z.string().max(5000, 'Notes are too long').optional(),
   feedback_to_speaker: z.string().max(2000, 'Feedback is too long').optional(),
 });

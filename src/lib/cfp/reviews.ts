@@ -110,9 +110,9 @@ export async function createReview(
     return { review: null, error: 'You have already reviewed this submission' };
   }
 
-  // Validate scores (1-5)
-  if (request.score_overall < 1 || request.score_overall > 5) {
-    return { review: null, error: 'Overall score must be between 1 and 5' };
+  // Validate scores (1-4)
+  if (request.score_overall < 1 || request.score_overall > 4) {
+    return { review: null, error: 'Overall score must be between 1 and 4' };
   }
 
   const { data, error } = await supabase

@@ -235,6 +235,52 @@ class ServerAnalyticsClient {
   }
 
   /**
+   * Capture an exception for error tracking
+   * Similar to client-side captureException but for server-side use
+   */
+  captureException(
+    error: Error | unknown,
+    context?: {
+      distinctId?: string
+      type?: 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
+      severity?: 'low' | 'medium' | 'high' | 'critical'
+      flow?: string
+      action?: string
+      [key: string]: unknown
+    }
+  ): void {
+    if (!this.initialized) {
+      this.init()
+    }
+
+    if (!this.client) {
+      return
+    }
+
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    const distinctId = context?.distinctId || 'anonymous'
+
+    this.client.capture({
+      distinctId,
+      event: '$exception',
+      properties: {
+        $exception_message: errorObj.message,
+        $exception_type: errorObj.name,
+        $exception_stack_trace_raw: errorObj.stack,
+        error_type: context?.type || 'unknown',
+        error_severity: context?.severity || 'medium',
+        flow: context?.flow,
+        action: context?.action,
+        ...context,
+      },
+    })
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ServerAnalytics] Exception captured:', errorObj.message, context)
+    }
+  }
+
+  /**
    * Flush all pending events
    * Call this before serverless function terminates
    */

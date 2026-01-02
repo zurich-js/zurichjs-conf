@@ -33,6 +33,10 @@ export interface SelectProps {
   disabled?: boolean;
   /** Additional class name for the button */
   className?: string;
+  /** Dropdown anchor position */
+  anchor?: 'bottom' | 'top';
+  /** Compact mode - smaller padding, no checkmark icon */
+  compact?: boolean;
 }
 
 export function Select({
@@ -45,6 +49,8 @@ export function Select({
   size = 'md',
   disabled = false,
   className = '',
+  anchor = 'bottom',
+  compact = false,
 }: SelectProps) {
   const isDark = variant === 'dark';
   const selectedOption = options.find((opt) => opt.value === value);
@@ -82,7 +88,9 @@ export function Select({
           </ListboxButton>
 
           <ListboxOptions
-            className={`absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-lg py-1 shadow-lg focus:outline-none ${
+            className={`absolute z-50 w-full max-h-60 overflow-auto rounded-lg py-1 shadow-lg focus:outline-none ${
+              anchor === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+            } ${
               isDark ? 'bg-brand-gray-dark border border-brand-gray-medium' : 'bg-white border border-gray-200'
             }`}
           >
@@ -91,7 +99,9 @@ export function Select({
                 key={option.value}
                 value={option.value}
                 disabled={option.disabled}
-                className={`relative cursor-pointer select-none py-2 pl-10 pr-4 transition-colors ${
+                className={`relative cursor-pointer select-none py-2 transition-colors ${
+                  compact ? 'px-3' : 'pl-10 pr-4'
+                } ${
                   isDark
                     ? 'text-white ui-active:bg-brand-gray-medium ui-selected:bg-brand-primary/20 ui-disabled:text-brand-gray-medium ui-disabled:cursor-not-allowed'
                     : 'text-black ui-active:bg-gray-100 ui-selected:bg-brand-primary/10 ui-disabled:text-gray-400 ui-disabled:cursor-not-allowed'
@@ -111,7 +121,7 @@ export function Select({
                         {option.description}
                       </span>
                     )}
-                    {selected && (
+                    {selected && !compact && (
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-brand-primary">
                         <Check className="w-4 h-4" />
                       </span>

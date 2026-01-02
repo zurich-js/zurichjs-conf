@@ -37,7 +37,7 @@ export default function ReviewerDashboard() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
 
   // Check authentication on mount
   useEffect(() => {
@@ -283,14 +283,19 @@ export default function ReviewerDashboard() {
             </div>
           )}
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={filteredSubmissions.length}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-          />
+          {filteredSubmissions.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={filteredSubmissions.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              showPageSizeSelector={true}
+              pageSizeOptions={[10, 25, 50, 100]}
+              variant="dark"
+            />
+          )}
         </main>
       </div>
     </>

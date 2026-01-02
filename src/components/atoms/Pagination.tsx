@@ -36,7 +36,8 @@ export function Pagination({
   showFirstLastButtons = true,
   variant = 'light',
 }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  // Hide pagination if only 1 page and no page size selector
+  if (totalPages <= 1 && !showPageSizeSelector) return null;
 
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalItems);
@@ -81,8 +82,10 @@ export function Pagination({
 
   const s = styles[variant];
 
+  const borderClass = variant === 'dark' ? 'border-brand-gray-dark' : 'border-gray-200';
+
   return (
-    <div className="mt-6 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className={`mt-6 pt-6 border-t ${borderClass} flex flex-col sm:flex-row items-center justify-between gap-4`}>
       <div className="flex items-center gap-4">
         {showItemCount && totalItems > 0 && (
           <span className={`text-sm ${s.text}`}>
@@ -100,6 +103,9 @@ export function Pagination({
               options={pageSizeSelectOptions}
               variant={variant === 'light' ? 'default' : 'dark'}
               size="sm"
+              anchor="top"
+              compact
+              className="w-16"
             />
           </div>
         )}

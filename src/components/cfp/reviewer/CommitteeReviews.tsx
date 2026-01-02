@@ -12,8 +12,9 @@ interface CommitteeReviewsProps {
 }
 
 function ScoreCell({ value, label, required }: { value: number | null | undefined; label: string; required?: boolean }) {
+  // Color scale for 1-4 scoring: 4/3 = green, 2 = yellow, 1 = red
   const colorClass = value
-    ? value >= 4 ? 'text-green-400' : value >= 3 ? 'text-yellow-400' : 'text-red-400'
+    ? value >= 3 ? 'text-green-400' : value >= 2 ? 'text-yellow-400' : 'text-red-400'
     : 'text-brand-gray-medium';
 
   return (

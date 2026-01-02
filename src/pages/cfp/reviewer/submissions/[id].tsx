@@ -92,9 +92,9 @@ export default function ReviewerSubmission() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate all dimensions are rated
+    // Validate all dimensions are rated (scores must be 1-4)
     const missingScores = Object.entries(scores)
-      .filter(([, value]) => value < 1 || value > 5)
+      .filter(([, value]) => value < 1 || value > 4)
       .map(([key]) => key.replace('score_', '').replace(/_/g, ' '));
 
     if (missingScores.length > 0) {

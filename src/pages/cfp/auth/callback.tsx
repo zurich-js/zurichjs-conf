@@ -1,174 +1,42 @@
 /**
  * CFP Auth Callback Page
  * Handles magic link authentication redirect from Supabase
+ * Uses getServerSideProps to process auth server-side (runs exactly once)
  */
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
-import { supabase } from '@/lib/supabase/client';
-import { trackCfpAuthCallback, captureException } from '@/lib/analytics/helpers';
+import { getOrCreateSpeaker } from '@/lib/cfp/auth';
+import { createAuthCallbackHandler, AuthCallbackPageProps } from '@/lib/cfp/auth-helpers';
+import { serverAnalytics } from '@/lib/analytics/server';
 
-type CallbackState = 'loading' | 'success' | 'error' | 'expired';
+export const getServerSideProps = createAuthCallbackHandler({
+  flowType: 'speaker',
+  loginPath: '/cfp/login',
+  dashboardPath: '/cfp/dashboard',
+  onAuthenticated: async (userId, email) => {
+    const { speaker, error } = await getOrCreateSpeaker(userId, email);
+    return { data: speaker, error };
+  },
+  trackSuccess: async (speaker) => {
+    await serverAnalytics.identify(speaker.id, {
+      email: speaker.email,
+      first_name: speaker.first_name || undefined,
+      last_name: speaker.last_name || undefined,
+      company: speaker.company || undefined,
+      job_title: speaker.job_title || undefined,
+    });
 
-/**
- * Check if an error indicates an expired or invalid link
- */
-function isExpiredLinkError(message: string): boolean {
-  const expiredPatterns = [
-    'invalid or has expired',
-    'link is invalid',
-    'link has expired',
-    'otp_expired',
-    'invalid_grant',
-    'expired',
-  ];
-  const lowerMessage = message.toLowerCase();
-  return expiredPatterns.some(pattern => lowerMessage.includes(pattern));
-}
+    await serverAnalytics.track('cfp_speaker_authenticated', speaker.id, {
+      speaker_id: speaker.id,
+      is_new_speaker: !speaker.first_name,
+      is_profile_complete: !!(speaker.first_name && speaker.last_name && speaker.bio),
+    });
+  },
+});
 
-export default function CfpAuthCallback() {
-  const router = useRouter();
-  const [state, setState] = useState<CallbackState>('loading');
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        // First check if there's a code in the URL query params (PKCE flow)
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const errorParam = urlParams.get('error');
-        const errorDescriptionParam = urlParams.get('error_description');
-
-        // Handle error from Supabase in query params
-        if (errorParam) {
-          throw new Error(errorDescriptionParam || errorParam);
-        }
-
-        // If there's a code, exchange it for a session (PKCE flow)
-        if (code) {
-          console.log('[CFP Auth Callback] Exchanging code for session...');
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-          if (exchangeError) {
-            console.error('[CFP Auth Callback] Code exchange error:', exchangeError);
-            throw new Error(exchangeError.message);
-          }
-
-          if (!data.session) {
-            throw new Error('Failed to establish session from code');
-          }
-
-          console.log('[CFP Auth Callback] Session established via PKCE');
-        } else {
-          // Try hash fragment (implicit flow)
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          const errorDescription = hashParams.get('error_description');
-
-          // Check for error in URL hash
-          if (errorDescription) {
-            throw new Error(errorDescription);
-          }
-
-          // If we have tokens in the hash, set the session
-          if (accessToken && refreshToken) {
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-
-            if (sessionError) {
-              throw sessionError;
-            }
-          }
-        }
-
-        // Verify the user with Supabase Auth server (more secure than getSession)
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-        if (userError) {
-          console.error('[CFP Auth Callback] User verification error:', userError);
-          throw userError;
-        }
-
-        if (!user) {
-          // No authenticated user - redirect to login
-          router.replace('/cfp/login');
-          return;
-        }
-
-        console.log('[CFP Auth Callback] User verified:', user.email);
-
-        // Get the current session to pass tokens to the API for server-side cookie setting
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-        // Create/update speaker profile and set server-side session cookies
-        const response = await fetch('/api/cfp/auth/callback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // Include cookies for session
-          body: JSON.stringify({
-            userId: user.id,
-            email: user.email,
-            access_token: currentSession?.access_token,
-            refresh_token: currentSession?.refresh_token,
-          }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to set up speaker profile');
-        }
-
-        // Track successful authentication
-        trackCfpAuthCallback({ type: 'speaker', success: true });
-        setState('success');
-
-        // Redirect to dashboard after short delay
-        setTimeout(() => {
-          router.replace('/cfp/dashboard');
-        }, 1500);
-      } catch (err) {
-        console.error('[CFP Auth Callback] Error:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
-        const isExpired = isExpiredLinkError(errorMessage);
-
-        // Track auth callback error
-        trackCfpAuthCallback({
-          type: 'speaker',
-          success: false,
-          errorMessage,
-          isExpired,
-        });
-
-        // Also capture the exception for detailed error tracking
-        if (!isExpired) {
-          captureException(err, {
-            type: 'auth',
-            severity: 'high',
-            flow: 'cfp_speaker_auth_callback',
-            action: 'verify_session',
-          });
-        }
-
-        // Check if this is an expired/invalid link error
-        if (isExpired) {
-          setState('expired');
-        } else {
-          setState('error');
-        }
-        setError(errorMessage);
-      }
-    };
-
-    handleAuthCallback();
-  }, [router]);
-
+export default function CfpAuthCallback({ status, error }: AuthCallbackPageProps) {
   return (
     <>
       <SEO
@@ -188,20 +56,7 @@ export default function CfpAuthCallback() {
             />
           </Link>
 
-          {state === 'loading' && (
-            <div className="space-y-4">
-              {/* Loading Spinner */}
-              <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              <Heading level="h1" className="text-xl font-semibold text-white">
-                Signing you in...
-              </Heading>
-              <p className="text-brand-gray-light">
-                Please wait while we verify your credentials
-              </p>
-            </div>
-          )}
-
-          {state === 'success' && (
+          {status === 'success' && (
             <div className="space-y-4">
               {/* Success Icon */}
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
@@ -228,7 +83,7 @@ export default function CfpAuthCallback() {
             </div>
           )}
 
-          {state === 'expired' && (
+          {status === 'expired' && (
             <div className="space-y-4">
               {/* Clock/Expired Icon */}
               <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto">
@@ -266,7 +121,7 @@ export default function CfpAuthCallback() {
             </div>
           )}
 
-          {state === 'error' && (
+          {status === 'error' && (
             <div className="space-y-4">
               {/* Error Icon */}
               <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
