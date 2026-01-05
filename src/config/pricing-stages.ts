@@ -81,8 +81,8 @@ export interface StockInfo {
  *
  * Timeline dates (from timeline.ts):
  * - Blind bird: Nov 14, 2025 -> Jan 1, 2026 (OR 30 tickets sold)
- * - Early bird: Jan 1, 2026 -> May 15, 2026
- * - Standard (General Admission): May 15, 2026 -> Aug 1, 2026
+ * - Early bird: Jan 1, 2026 -> Apr 1, 2026
+ * - Standard (General Admission): Apr 1, 2026 -> Aug 1, 2026
  * - Late bird: Aug 1, 2026 -> Sep 11, 2026
  *
  * Stock limits:
@@ -106,14 +106,14 @@ export const PRICING_STAGES: StageConfig[] = [
     stage: 'early_bird',
     displayName: 'Early Bird',
     startDate: new Date('2026-01-01T00:00:00.000Z'),
-    endDate: new Date('2026-05-15T00:00:00.000Z'),
+    endDate: new Date('2026-04-01T00:00:00.000Z'),
     priority: 2,
     description: 'Save now - early bird pricing',
   },
   {
     stage: 'standard',
     displayName: 'General Admission',
-    startDate: new Date('2026-05-15T00:00:00.000Z'),
+    startDate: new Date('2026-04-01T00:00:00.000Z'),
     endDate: new Date('2026-08-01T00:00:00.000Z'),
     priority: 3,
     description: 'Regular pricing',

@@ -58,7 +58,7 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
     },
     {
       id: 'full-lineup-standard-tickets',
-      dateISO: '2026-05-15',
+      dateISO: '2026-04-01',
       title: 'General Admission tickets',
       icon: 'ticket',
       body: 'Full speaker lineup announced! Standard pricing tickets are now available. Secure your spot before late bird pricing kicks in.',
