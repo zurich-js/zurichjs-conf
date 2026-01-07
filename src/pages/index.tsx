@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="JavaScript Conference 2026 | ZurichJS Conf Sept 11 Switzerland"
+        title="JavaScript Conference Sept 11 2026 Switzerland"
         description="ZurichJS Conf 2026 - One of the top JavaScript conferences in Europe. Join 300+ developers September 11th, 2026 at Technopark Zürich for expert talks on JS, TypeScript, React, Node.js. Workshops & networking. From CHF 175."
         canonical="/"
         ogType="website"

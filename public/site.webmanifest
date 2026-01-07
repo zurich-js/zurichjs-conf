@@ -1,0 +1,22 @@
+{
+  "name": "ZurichJS Conf 2026",
+  "short_name": "ZurichJS",
+  "description": "Switzerland's premier JavaScript conference - September 11, 2026 at Technopark Zurich",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#F5E663",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/logo/zurichjs-square.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -249,14 +249,6 @@ export const websiteSchema = {
     '@id': `${BASE_URL}/#organization`,
   },
   inLanguage: 'en',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: {
-      '@type': 'EntryPoint',
-      urlTemplate: `${BASE_URL}/?q={search_term_string}`,
-    },
-    'query-input': 'required name=search_term_string',
-  },
 };
 
 /**
@@ -332,10 +324,6 @@ export const SEO: React.FC<SEOProps> = ({
       {/* Canonical URL */}
       {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 
-      {/* Favicon */}
-      <link rel="icon" href="/favicon.ico" />
-      <link rel="apple-touch-icon" href="/images/logo/zurichjs-square.png" />
-      
       {/* Logo for Google Search - helps Google identify and display the logo */}
       <link rel="image_src" href={`${BASE_URL}/images/logo/zurichjs-square.png`} />
 

@@ -140,14 +140,13 @@ Yes, all talks and materials are in English.
 
 - [Homepage](https://conf.zurichjs.com/): Tickets and main information
 - [About](https://conf.zurichjs.com/about): Team and mission
-- [Speakers](https://conf.zurichjs.com/speakers): Conference speakers
-- [Workshops](https://conf.zurichjs.com/workshops): Workshop information
-- [Venue](https://conf.zurichjs.com/venue): Location details
+- [Call for Papers](https://conf.zurichjs.com/cfp): Submit a talk proposal
+- [Sponsorship](https://conf.zurichjs.com/sponsorship): Partner with the conference
 
 ## Legal Information
 
-- [Terms & Conditions](https://conf.zurichjs.com/info/terms)
-- [Privacy Policy](https://conf.zurichjs.com/info/privacy)
+- [Terms of Service](https://conf.zurichjs.com/info/terms-of-service)
+- [Privacy Policy](https://conf.zurichjs.com/info/privacy-policy)
 - [Refund Policy](https://conf.zurichjs.com/info/refund-policy)
 - [Code of Conduct](https://conf.zurichjs.com/info/code-of-conduct)
 

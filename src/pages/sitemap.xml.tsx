@@ -33,23 +33,18 @@ const generateSitemap = (baseUrl: string): string => {
       changefreq: 'monthly',
       priority: '0.8',
     },
+    // CFP and Sponsorship - important indexable pages
     {
-      loc: `${baseUrl}/speakers`,
-      lastmod: currentDate,
-      changefreq: 'weekly',
-      priority: '0.9',
-    },
-    {
-      loc: `${baseUrl}/venue`,
+      loc: `${baseUrl}/cfp`,
       lastmod: currentDate,
       changefreq: 'monthly',
-      priority: '0.8',
+      priority: '0.7',
     },
     {
-      loc: `${baseUrl}/workshops`,
+      loc: `${baseUrl}/sponsorship`,
       lastmod: currentDate,
-      changefreq: 'weekly',
-      priority: '0.8',
+      changefreq: 'monthly',
+      priority: '0.7',
     },
     // Info pages (terms, privacy, refund, code of conduct)
     ...infoSlugs.map((slug) => ({

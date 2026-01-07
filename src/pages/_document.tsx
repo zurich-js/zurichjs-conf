@@ -18,6 +18,11 @@ export default function Document() {
         {/* Preconnect to PostHog analytics */}
         <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
 
+        {/* Favicons and PWA */}
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+
         {/* Base meta tags */}
         <meta charSet="utf-8" />
         <meta name="theme-color" content="#000000" />

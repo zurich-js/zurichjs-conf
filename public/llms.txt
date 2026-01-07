@@ -42,13 +42,12 @@ Tickets are available starting from CHF 175:
 
 - [Homepage](https://conf.zurichjs.com/): Main conference information and ticket purchase
 - [About](https://conf.zurichjs.com/about): About the ZurichJS team and mission
-- [Speakers](https://conf.zurichjs.com/speakers): Conference speakers and their talks
-- [Workshops](https://conf.zurichjs.com/workshops): Hands-on workshop sessions
-- [Venue](https://conf.zurichjs.com/venue): Technopark Zürich venue information
+- [Call for Papers](https://conf.zurichjs.com/cfp): Submit a talk proposal
+- [Sponsorship](https://conf.zurichjs.com/sponsorship): Partner with the conference
 
-## Optional
+## Legal
 
-- [Terms & Conditions](https://conf.zurichjs.com/info/terms): Legal terms
-- [Privacy Policy](https://conf.zurichjs.com/info/privacy): Privacy information
+- [Terms of Service](https://conf.zurichjs.com/info/terms-of-service): Legal terms
+- [Privacy Policy](https://conf.zurichjs.com/info/privacy-policy): Privacy information
 - [Refund Policy](https://conf.zurichjs.com/info/refund-policy): Ticket refund details
 - [Code of Conduct](https://conf.zurichjs.com/info/code-of-conduct): Event conduct guidelines

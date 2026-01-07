@@ -4,7 +4,7 @@
  */
 
 export const heroData = {
-  title: 'Zurich JS Conf 2026',
+  title: 'ZurichJS Conf 2026',
   kicker: 'The International Community Conference',
   dateTimeISO: '2026-09-11T08:30:00+02:00',
   venue: 'Technopark Zurich',
