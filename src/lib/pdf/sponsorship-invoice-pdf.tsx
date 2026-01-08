@@ -1,11 +1,11 @@
 /**
- * PDF Invoice Template
- * Generates a PDF invoice for B2B sales
+ * Sponsorship Invoice PDF Template
+ * Generates a PDF invoice for sponsorship deals
  */
 
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import type { InvoicePDFProps } from '@/lib/types/b2b';
+import type { SponsorshipInvoicePDFProps } from '@/lib/types/sponsorship';
 
 // Define styles for the PDF
 const styles = StyleSheet.create({
@@ -44,6 +44,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginBottom: 10,
   },
+  invoiceSubtitle: {
+    fontSize: 10,
+    color: '#666666',
+    marginBottom: 8,
+  },
   invoiceNumber: {
     fontSize: 12,
     fontWeight: 'bold',
@@ -80,6 +85,18 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: 2,
   },
+  tierBadge: {
+    marginTop: 8,
+    padding: '4 8',
+    backgroundColor: '#F1E271',
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  tierText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
   table: {
     marginBottom: 20,
   },
@@ -102,9 +119,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderBottom: '1px solid #E5E7EB',
   },
+  tableRowCredit: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderBottom: '1px solid #E5E7EB',
+    backgroundColor: '#F0FDF4',
+  },
+  tableRowAdjustment: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderBottom: '1px solid #E5E7EB',
+    backgroundColor: '#FEF3C7',
+  },
   tableCell: {
     fontSize: 10,
     color: '#000000',
+  },
+  tableCellMuted: {
+    fontSize: 9,
+    color: '#666666',
+    fontStyle: 'italic',
   },
   descriptionCol: {
     width: '50%',
@@ -124,7 +160,7 @@ const styles = StyleSheet.create({
   totalsSection: {
     marginTop: 20,
     marginLeft: 'auto',
-    width: '40%',
+    width: '45%',
   },
   totalRow: {
     flexDirection: 'row',
@@ -132,13 +168,31 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderBottom: '1px solid #E5E7EB',
   },
+  totalRowCredit: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottom: '1px solid #E5E7EB',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 6,
+    marginHorizontal: -6,
+  },
   totalLabel: {
     fontSize: 10,
     color: '#666666',
   },
+  totalLabelCredit: {
+    fontSize: 10,
+    color: '#15803D',
+  },
   totalValue: {
     fontSize: 10,
     color: '#000000',
+    fontWeight: 'bold',
+  },
+  totalValueCredit: {
+    fontSize: 10,
+    color: '#15803D',
     fontWeight: 'bold',
   },
   grandTotalRow: {
@@ -222,23 +276,30 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#666666',
   },
+  creditIndicator: {
+    fontSize: 8,
+    color: '#15803D',
+    marginTop: 2,
+  },
 });
 
 /**
  * Format amount from cents to currency string with comma delimiters
  */
 function formatAmount(cents: number, currency: string): string {
+  const absAmount = Math.abs(cents);
   const formatted = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(cents / 100);
-  return `${formatted} ${currency.toUpperCase()}`;
+  }).format(absAmount / 100);
+  const sign = cents < 0 ? '-' : '';
+  return `${sign}${formatted} ${currency.toUpperCase()}`;
 }
 
 /**
- * PDF Invoice Document Component
+ * Sponsorship Invoice PDF Document Component
  */
-export const InvoicePDF: React.FC<InvoicePDFProps> = ({
+export const SponsorshipInvoicePDF: React.FC<SponsorshipInvoicePDFProps> = ({
   invoiceNumber,
   issueDate,
   dueDate,
@@ -247,14 +308,20 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
   billingAddress,
   contactName,
   contactEmail,
+  tierName,
   lineItems,
   subtotal,
-  vatRate,
-  vatAmount,
+  creditApplied,
+  adjustmentsTotal,
   total,
   currency,
   invoiceNotes,
 }) => {
+  // Separate line items by type for grouping
+  const tierBaseItems = lineItems.filter((item) => item.type === 'tier_base');
+  const addonItems = lineItems.filter((item) => item.type === 'addon');
+  const adjustmentItems = lineItems.filter((item) => item.type === 'adjustment');
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -269,6 +336,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
           </View>
           <View style={styles.invoiceInfo}>
             <Text style={styles.invoiceTitle}>INVOICE</Text>
+            <Text style={styles.invoiceSubtitle}>Sponsorship</Text>
             <Text style={styles.invoiceNumber}>{invoiceNumber}</Text>
             <Text style={styles.invoiceDate}>Issue Date: {issueDate}</Text>
             <Text style={styles.invoiceDate}>Due Date: {dueDate}</Text>
@@ -289,6 +357,9 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
           <Text style={styles.billToText}>{billingAddress.country}</Text>
           {vatId && <Text style={styles.billToText}>VAT ID: {vatId}</Text>}
           <Text style={styles.billToText}>{contactEmail}</Text>
+          <View style={styles.tierBadge}>
+            <Text style={styles.tierText}>{tierName} Sponsor</Text>
+          </View>
         </View>
 
         {/* Line Items Table */}
@@ -301,9 +372,42 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
             <Text style={[styles.tableHeaderCell, styles.totalCol]}>Total</Text>
           </View>
 
-          {/* Table Rows */}
-          {lineItems.map((item, index) => (
-            <View key={index} style={styles.tableRow}>
+          {/* Tier Base Items */}
+          {tierBaseItems.map((item, index) => (
+            <View key={`tier-${index}`} style={styles.tableRow}>
+              <Text style={[styles.tableCell, styles.descriptionCol]}>{item.description}</Text>
+              <Text style={[styles.tableCell, styles.quantityCol]}>{item.quantity}</Text>
+              <Text style={[styles.tableCell, styles.priceCol]}>
+                {formatAmount(item.unitPrice, currency)}
+              </Text>
+              <Text style={[styles.tableCell, styles.totalCol]}>
+                {formatAmount(item.total, currency)}
+              </Text>
+            </View>
+          ))}
+
+          {/* Add-on Items */}
+          {addonItems.map((item, index) => (
+            <View key={`addon-${index}`} style={styles.tableRow}>
+              <View style={styles.descriptionCol}>
+                <Text style={styles.tableCell}>{item.description}</Text>
+                {item.usesCredit && (
+                  <Text style={styles.creditIndicator}>* Eligible for add-on credit</Text>
+                )}
+              </View>
+              <Text style={[styles.tableCell, styles.quantityCol]}>{item.quantity}</Text>
+              <Text style={[styles.tableCell, styles.priceCol]}>
+                {formatAmount(item.unitPrice, currency)}
+              </Text>
+              <Text style={[styles.tableCell, styles.totalCol]}>
+                {formatAmount(item.total, currency)}
+              </Text>
+            </View>
+          ))}
+
+          {/* Adjustment Items */}
+          {adjustmentItems.map((item, index) => (
+            <View key={`adj-${index}`} style={styles.tableRowAdjustment}>
               <Text style={[styles.tableCell, styles.descriptionCol]}>{item.description}</Text>
               <Text style={[styles.tableCell, styles.quantityCol]}>{item.quantity}</Text>
               <Text style={[styles.tableCell, styles.priceCol]}>
@@ -322,12 +426,21 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
             <Text style={styles.totalLabel}>Subtotal</Text>
             <Text style={styles.totalValue}>{formatAmount(subtotal, currency)}</Text>
           </View>
-          {vatRate > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>VAT ({vatRate}%)</Text>
-              <Text style={styles.totalValue}>{formatAmount(vatAmount, currency)}</Text>
+
+          {creditApplied > 0 && (
+            <View style={styles.totalRowCredit}>
+              <Text style={styles.totalLabelCredit}>Add-on Credit Applied</Text>
+              <Text style={styles.totalValueCredit}>-{formatAmount(creditApplied, currency)}</Text>
             </View>
           )}
+
+          {adjustmentsTotal !== 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Adjustments</Text>
+              <Text style={styles.totalValue}>{formatAmount(adjustmentsTotal, currency)}</Text>
+            </View>
+          )}
+
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>Total Due</Text>
             <Text style={styles.grandTotalValue}>{formatAmount(total, currency)}</Text>
@@ -374,11 +487,11 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Thank you for your business!</Text>
+          <Text style={styles.footerText}>Thank you for sponsoring ZurichJS Conference!</Text>
+          <Text style={styles.footerText}>Questions? Contact us at hello@zurichjs.com</Text>
           <Text style={styles.footerText}>
-            Questions? Contact us at hello@zurichjs.com
+            Swiss JavaScript Group · Alderstrasse 30 · 8008 Zürich · CHE-255.581.547
           </Text>
-          <Text style={styles.footerText}>Swiss JavaScript Group · Alderstrasse 30 · 8008 Zürich · CHE-255.581.547</Text>
         </View>
       </Page>
     </Document>

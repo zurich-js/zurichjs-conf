@@ -111,6 +111,39 @@ export const cfpKeys = {
 } as const;
 
 /**
+ * Sponsorship query keys
+ */
+export const sponsorshipKeys = {
+  /**
+   * Base key for all sponsorship queries
+   */
+  all: ['sponsorships'] as const,
+
+  /**
+   * Tiers list
+   */
+  tiers: () => [...sponsorshipKeys.all, 'tiers'] as const,
+
+  /**
+   * Stats
+   */
+  stats: () => [...sponsorshipKeys.all, 'stats'] as const,
+
+  /**
+   * Deals
+   */
+  deals: (filters?: { status?: string; tier?: string; currency?: string; search?: string }) =>
+    [...sponsorshipKeys.all, 'deals', filters] as const,
+  deal: (id: string) => [...sponsorshipKeys.all, 'deal', id] as const,
+
+  /**
+   * Sponsors
+   */
+  sponsors: () => [...sponsorshipKeys.all, 'sponsors'] as const,
+  sponsor: (id: string) => [...sponsorshipKeys.sponsors(), id] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
@@ -119,5 +152,6 @@ export const queryKeys = {
   workshops: workshopsKeys,
   teamRequest: teamRequestKeys,
   cfp: cfpKeys,
+  sponsorships: sponsorshipKeys,
 } as const;
 

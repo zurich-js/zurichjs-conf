@@ -88,6 +88,16 @@ interface FinancialData {
     paidRevenue: number;
     pendingRevenue: number;
   };
+  sponsorshipSummary?: {
+    totalDeals: number;
+    paidDeals: number;
+    pendingDeals: number;
+    revenueByCurrency: {
+      CHF: { paid: number; pending: number };
+      EUR: { paid: number; pending: number };
+    };
+    byTier: Record<string, { count: number; revenueCHF: number; revenueEUR: number }>;
+  };
   purchasesTimeSeries: Array<{
     date: string;
     count: number;
@@ -2378,6 +2388,35 @@ function FinancialsTab() {
                   <div>
                     <p className="text-gray-600">Total Invoices</p>
                     <p className="font-bold text-gray-900">{financials.b2bSummary.totalInvoices}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sponsorship Revenue Summary */}
+            {financials.sponsorshipSummary && financials.sponsorshipSummary.totalDeals > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-3">Sponsorship Revenue</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Paid (CHF)</p>
+                    <p className="font-bold text-green-700">{financials.sponsorshipSummary.paidDeals} deals</p>
+                    <p className="text-xs text-gray-500">{formatCHF(financials.sponsorshipSummary.revenueByCurrency.CHF.paid)} CHF</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Paid (EUR)</p>
+                    <p className="font-bold text-green-700">
+                      {formatCHF(financials.sponsorshipSummary.revenueByCurrency.EUR.paid)} EUR
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Pending (CHF)</p>
+                    <p className="font-bold text-amber-600">{financials.sponsorshipSummary.pendingDeals} deals</p>
+                    <p className="text-xs text-gray-500">{formatCHF(financials.sponsorshipSummary.revenueByCurrency.CHF.pending)} CHF</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Total Deals</p>
+                    <p className="font-bold text-gray-900">{financials.sponsorshipSummary.totalDeals}</p>
                   </div>
                 </div>
               </div>

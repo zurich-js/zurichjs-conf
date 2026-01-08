@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, type LucideIcon } from 'lucide-react';
+import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, type LucideIcon } from 'lucide-react';
 
 interface AdminHeaderProps {
   title: string;
@@ -31,6 +31,7 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
     { href: '/admin/cfp-travel', label: 'Travel', icon: Plane },
     { href: '/admin/speakers', label: 'Speakers', icon: Users },
     { href: '/admin/partnerships', label: 'Partners', icon: Handshake },
+    { href: '/admin/sponsorships', label: 'Sponsors', icon: Building2 },
   ];
 
   const toggleMobileMenu = () => {

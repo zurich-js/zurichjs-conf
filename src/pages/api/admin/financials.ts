@@ -243,6 +243,68 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       pendingRevenue: b2bInvoices?.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + inv.total_amount, 0) || 0,
     };
 
+    // Get sponsorship revenue data
+    const { data: sponsorshipDeals } = await supabase
+      .from('sponsorship_deals')
+      .select(`
+        id,
+        status,
+        currency,
+        tier_id,
+        sponsorship_invoices (
+          total_amount,
+          currency
+        )
+      `)
+      .neq('status', 'cancelled');
+
+    // Calculate sponsorship summary by currency
+    const sponsorshipSummary = {
+      totalDeals: sponsorshipDeals?.length || 0,
+      paidDeals: sponsorshipDeals?.filter(d => d.status === 'paid').length || 0,
+      pendingDeals: sponsorshipDeals?.filter(d => ['invoiced', 'invoice_sent'].includes(d.status)).length || 0,
+      revenueByCurrency: {
+        CHF: {
+          paid: 0,
+          pending: 0,
+        },
+        EUR: {
+          paid: 0,
+          pending: 0,
+        },
+      },
+      byTier: {} as Record<string, { count: number; revenueCHF: number; revenueEUR: number }>,
+    };
+
+    for (const deal of sponsorshipDeals || []) {
+      const invoice = Array.isArray(deal.sponsorship_invoices)
+        ? deal.sponsorship_invoices[0]
+        : deal.sponsorship_invoices;
+      const amount = invoice?.total_amount || 0;
+      const currency = deal.currency as 'CHF' | 'EUR';
+
+      // Track revenue by status and currency
+      if (deal.status === 'paid') {
+        sponsorshipSummary.revenueByCurrency[currency].paid += amount;
+      } else if (['invoiced', 'invoice_sent'].includes(deal.status)) {
+        sponsorshipSummary.revenueByCurrency[currency].pending += amount;
+      }
+
+      // Track by tier
+      const tierId = deal.tier_id;
+      if (!sponsorshipSummary.byTier[tierId]) {
+        sponsorshipSummary.byTier[tierId] = { count: 0, revenueCHF: 0, revenueEUR: 0 };
+      }
+      sponsorshipSummary.byTier[tierId].count += 1;
+      if (deal.status === 'paid') {
+        if (currency === 'CHF') {
+          sponsorshipSummary.byTier[tierId].revenueCHF += amount;
+        } else {
+          sponsorshipSummary.byTier[tierId].revenueEUR += amount;
+        }
+      }
+    }
+
     // Generate ticket purchases over time (daily aggregation for confirmed tickets)
     const purchasesOverTime = tickets
       .filter((t) => t.status === 'confirmed' && t.created_at)
@@ -296,6 +358,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       byStage: ticketsByStage,
       revenueBreakdown,
       b2bSummary,
+      sponsorshipSummary,
       purchasesTimeSeries,
     });
   } catch (error) {

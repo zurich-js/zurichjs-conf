@@ -7,7 +7,9 @@ import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { TicketPDF, type TicketPDFProps } from './ticket-pdf';
 import { InvoicePDF } from './invoice-pdf';
+import { SponsorshipInvoicePDF } from './sponsorship-invoice-pdf';
 import type { InvoicePDFProps } from '@/lib/types/b2b';
+import type { SponsorshipInvoicePDFProps } from '@/lib/types/sponsorship';
 
 /**
  * Generate a PDF ticket and return as buffer
@@ -74,5 +76,30 @@ export async function imageUrlToDataUrl(url: string): Promise<string> {
   }
 }
 
+/**
+ * Generate a sponsorship invoice PDF and return as buffer
+ */
+export async function generateSponsorshipInvoicePDF(
+  props: SponsorshipInvoicePDFProps
+): Promise<Buffer> {
+  try {
+    console.log('[PDF] Generating PDF for sponsorship invoice:', props.invoiceNumber);
+
+    const pdfDocument = <SponsorshipInvoicePDF {...props} />;
+    const pdfBuffer = await renderToBuffer(pdfDocument);
+
+    console.log(
+      '[PDF] ✅ Sponsorship invoice PDF generated successfully, size:',
+      pdfBuffer.length,
+      'bytes'
+    );
+    return pdfBuffer;
+  } catch (error) {
+    console.error('[PDF] ❌ Error generating sponsorship invoice PDF:', error);
+    throw error;
+  }
+}
+
 export type { TicketPDFProps } from './ticket-pdf';
 export type { InvoicePDFProps } from '@/lib/types/b2b';
+export type { SponsorshipInvoicePDFProps } from '@/lib/types/sponsorship';
