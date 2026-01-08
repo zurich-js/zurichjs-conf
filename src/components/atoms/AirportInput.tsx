@@ -45,11 +45,7 @@ function useKeyboardNavigation(
 ) {
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const listRef = useRef<HTMLDivElement>(null);
-
-  // Reset highlight when results change
-  useEffect(() => {
-    setHighlightedIndex(-1);
-  }, [results]);
+  const prevResultsRef = useRef(results);
 
   // Scroll highlighted item into view
   useEffect(() => {
@@ -61,6 +57,12 @@ function useKeyboardNavigation(
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen || results.length === 0) return;
+
+    // Reset highlight if results changed
+    if (prevResultsRef.current !== results) {
+      setHighlightedIndex(-1);
+      prevResultsRef.current = results;
+    }
 
     const handlers: Record<string, () => void> = {
       ArrowDown: () => setHighlightedIndex(i => Math.min(i + 1, results.length - 1)),
@@ -201,6 +203,12 @@ export function AirportInput({
     setQuery('');
   });
 
+  const handleSelect = (airport: Airport) => {
+    onChange(`${airport.iata} - ${airport.city}, ${airport.country}`);
+    setQuery('');
+    setIsOpen(false);
+  };
+
   // Keyboard navigation
   const { highlightedIndex, setHighlightedIndex, listRef, handleKeyDown } = useKeyboardNavigation(
     results,
@@ -208,12 +216,6 @@ export function AirportInput({
     (airport) => handleSelect(airport),
     () => { setIsOpen(false); setQuery(''); }
   );
-
-  const handleSelect = (airport: Airport) => {
-    onChange(`${airport.iata} - ${airport.city}, ${airport.country}`);
-    setQuery('');
-    setIsOpen(false);
-  };
 
   const handleClear = () => {
     onChange(null);
