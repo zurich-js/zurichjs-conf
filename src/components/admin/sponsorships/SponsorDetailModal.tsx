@@ -4,7 +4,7 @@
  * Self-contained with internal API calls
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Building2,
@@ -17,6 +17,9 @@ import {
   ChevronRight,
   DollarSign,
   CheckSquare,
+  Edit2,
+  Check,
+  Globe,
 } from 'lucide-react';
 import Image from 'next/image';
 import { StatusBadge } from './StatusBadge';
@@ -42,7 +45,42 @@ export function SponsorDetailModal({
   const [error, setError] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState('');
 
+  // Edit mode for sponsor details
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    companyName: '',
+    companyWebsite: '',
+    vatId: '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    billingAddressStreet: '',
+    billingAddressCity: '',
+    billingAddressPostalCode: '',
+    billingAddressCountry: '',
+    internalNotes: '',
+  });
+
   const { sponsor, tier, line_items, perks, invoice } = deal;
+
+  // Initialize edit form when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      setEditForm({
+        companyName: sponsor.company_name,
+        companyWebsite: sponsor.company_website || '',
+        vatId: sponsor.vat_id || '',
+        contactName: sponsor.contact_name,
+        contactEmail: sponsor.contact_email,
+        contactPhone: sponsor.contact_phone || '',
+        billingAddressStreet: sponsor.billing_address_street,
+        billingAddressCity: sponsor.billing_address_city,
+        billingAddressPostalCode: sponsor.billing_address_postal_code,
+        billingAddressCountry: sponsor.billing_address_country,
+        internalNotes: sponsor.internal_notes || '',
+      });
+    }
+  }, [isEditing, sponsor]);
 
   // Format currency for display with comma delimiters
   const formatAmount = (cents: number, currency: string) => {
@@ -108,6 +146,31 @@ export function SponsorDetailModal({
     });
   };
 
+  const handleSaveSponsorDetails = async () => {
+    await apiCall(`/api/admin/sponsorships/${sponsor.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyName: editForm.companyName,
+        companyWebsite: editForm.companyWebsite || null,
+        vatId: editForm.vatId || null,
+        contactName: editForm.contactName,
+        contactEmail: editForm.contactEmail,
+        contactPhone: editForm.contactPhone || null,
+        billingAddressStreet: editForm.billingAddressStreet,
+        billingAddressCity: editForm.billingAddressCity,
+        billingAddressPostalCode: editForm.billingAddressPostalCode,
+        billingAddressCountry: editForm.billingAddressCountry,
+        internalNotes: editForm.internalNotes || null,
+      }),
+    });
+    setIsEditing(false);
+  };
+
+  const updateEditForm = (field: keyof typeof editForm, value: string) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   // Calculate totals from line items
   const tierBase = line_items.filter(li => li.type === 'tier_base').reduce((sum, li) => sum + li.unit_price * li.quantity, 0);
   const addons = line_items.filter(li => li.type === 'addon').reduce((sum, li) => sum + li.unit_price * li.quantity, 0);
@@ -163,9 +226,10 @@ export function SponsorDetailModal({
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="px-4 sm:px-6 border-b border-gray-200 overflow-x-auto">
-          <nav className="flex gap-1 sm:gap-6 min-w-max">
+        {/* Tabs - Mobile: segmented control, Desktop: underline tabs */}
+        <div className="px-4 sm:px-6 py-2 sm:py-0 border-b border-gray-200">
+          {/* Mobile: Segmented control style */}
+          <nav className="flex sm:hidden bg-gray-100 rounded-lg p-1">
             {[
               { id: 'details', label: 'Details', icon: Building2 },
               { id: 'pricing', label: 'Pricing', icon: DollarSign },
@@ -175,14 +239,37 @@ export function SponsorDetailModal({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-0 py-3 sm:py-4 border-b-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-md text-xs font-medium transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Desktop: Underline tabs */}
+          <nav className="hidden sm:flex gap-6">
+            {[
+              { id: 'details', label: 'Details', icon: Building2 },
+              { id: 'pricing', label: 'Pricing', icon: DollarSign },
+              { id: 'perks', label: 'Perks', icon: CheckSquare },
+              { id: 'invoice', label: 'Invoice', icon: FileText },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-[#F1E271] text-black'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
                 <tab.icon className="h-4 w-4" />
-                <span className="hidden xs:inline sm:inline">{tab.label}</span>
+                <span>{tab.label}</span>
               </button>
             ))}
           </nav>
@@ -216,38 +303,273 @@ export function SponsorDetailModal({
                 </div>
               )}
 
-              {/* Sponsor Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Contact
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <p className="text-sm font-medium">{sponsor.contact_name}</p>
-                    <p className="text-sm text-gray-600">{sponsor.contact_email}</p>
-                    {sponsor.contact_phone && (
-                      <p className="text-sm text-gray-600">{sponsor.contact_phone}</p>
-                    )}
-                  </div>
+              {/* Sponsor Info - Edit/View Toggle */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-700">Sponsor Information</h3>
+                  {!isEditing ? (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Edit
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        disabled={isUpdating}
+                        className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveSponsorDetails}
+                        disabled={isUpdating}
+                        className="text-sm font-medium text-black bg-[#F1E271] hover:bg-[#e6d766] px-3 py-1 rounded flex items-center gap-1 disabled:opacity-50"
+                      >
+                        <Check className="h-4 w-4" />
+                        Save
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Billing Address
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-1">
-                    <p className="text-sm">{sponsor.billing_address_street}</p>
-                    <p className="text-sm">
-                      {sponsor.billing_address_postal_code} {sponsor.billing_address_city}
-                    </p>
-                    <p className="text-sm">{sponsor.billing_address_country}</p>
-                    {sponsor.vat_id && (
-                      <p className="text-sm text-gray-600 mt-2">VAT: {sponsor.vat_id}</p>
-                    )}
+                {isEditing ? (
+                  /* Edit Form */
+                  <div className="space-y-6">
+                    {/* Company Info */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5" />
+                        Company
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Company Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editForm.companyName}
+                            onChange={(e) => updateEditForm('companyName', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Website
+                          </label>
+                          <input
+                            type="url"
+                            value={editForm.companyWebsite}
+                            onChange={(e) => updateEditForm('companyWebsite', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                            placeholder="https://example.com"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            VAT ID
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.vatId}
+                            onChange={(e) => updateEditForm('vatId', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                            placeholder="CHE-123.456.789"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contact */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2">
+                        <User className="h-3.5 w-3.5" />
+                        Contact Person
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editForm.contactName}
+                            onChange={(e) => updateEditForm('contactName', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email *
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={editForm.contactEmail}
+                            onChange={(e) => updateEditForm('contactEmail', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Phone
+                          </label>
+                          <input
+                            type="tel"
+                            value={editForm.contactPhone}
+                            onChange={(e) => updateEditForm('contactPhone', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                            placeholder="+41 44 123 45 67"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Billing Address */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5" />
+                        Billing Address
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Street *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editForm.billingAddressStreet}
+                            onChange={(e) => updateEditForm('billingAddressStreet', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            City *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editForm.billingAddressCity}
+                            onChange={(e) => updateEditForm('billingAddressCity', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Postal Code *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editForm.billingAddressPostalCode}
+                            onChange={(e) => updateEditForm('billingAddressPostalCode', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Country *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editForm.billingAddressCountry}
+                            onChange={(e) => updateEditForm('billingAddressCountry', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Internal Notes */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-medium text-gray-500 uppercase">
+                        Internal Notes
+                      </h4>
+                      <textarea
+                        value={editForm.internalNotes}
+                        onChange={(e) => updateEditForm('internalNotes', e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent resize-none"
+                        placeholder="Add any internal notes (not visible on invoices)"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* Read-only View */
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Company & Contact */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5" />
+                        Company
+                      </h4>
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                        <p className="text-sm font-medium">{sponsor.company_name}</p>
+                        {sponsor.company_website && (
+                          <a
+                            href={sponsor.company_website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <Globe className="h-3.5 w-3.5" />
+                            {sponsor.company_website}
+                          </a>
+                        )}
+                        {sponsor.vat_id && (
+                          <p className="text-sm text-gray-600">VAT: {sponsor.vat_id}</p>
+                        )}
+                      </div>
+
+                      <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2 pt-2">
+                        <User className="h-3.5 w-3.5" />
+                        Contact
+                      </h4>
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                        <p className="text-sm font-medium">{sponsor.contact_name}</p>
+                        <p className="text-sm text-gray-600">{sponsor.contact_email}</p>
+                        {sponsor.contact_phone && (
+                          <p className="text-sm text-gray-600">{sponsor.contact_phone}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Billing Address */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5" />
+                        Billing Address
+                      </h4>
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-1">
+                        <p className="text-sm">{sponsor.billing_address_street}</p>
+                        <p className="text-sm">
+                          {sponsor.billing_address_postal_code} {sponsor.billing_address_city}
+                        </p>
+                        <p className="text-sm">{sponsor.billing_address_country}</p>
+                      </div>
+
+                      {sponsor.internal_notes && (
+                        <>
+                          <h4 className="text-xs font-medium text-gray-500 uppercase pt-2">
+                            Internal Notes
+                          </h4>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-sm text-gray-600 whitespace-pre-wrap">{sponsor.internal_notes}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Deal Info */}

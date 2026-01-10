@@ -17,7 +17,7 @@ interface LineItemsEditorProps {
 
 interface EditingItem {
   id: string | null; // null for new item
-  type: 'addon' | 'adjustment';
+  type: 'tier_base' | 'addon' | 'adjustment';
   description: string;
   quantity: number;
   unitPrice: number; // in cents
@@ -190,7 +190,7 @@ export function LineItemsEditor({
     setEditingId(item.id);
     setEditingItem({
       id: item.id,
-      type: item.type as 'addon' | 'adjustment',
+      type: item.type as 'tier_base' | 'addon' | 'adjustment',
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unit_price,
@@ -214,132 +214,146 @@ export function LineItemsEditor({
   };
 
   // Render form row
-  const renderEditForm = (isNew: boolean) => (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
-          <select
-            value={editingItem.type}
-            onChange={(e) => setEditingItem({ ...editingItem, type: e.target.value as 'addon' | 'adjustment' })}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
-            disabled={!isNew}
-          >
-            <option value="addon">Add-on</option>
-            <option value="adjustment">Adjustment</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Quantity</label>
-          <input
-            type="number"
-            min="1"
-            value={editingItem.quantity}
-            onChange={(e) => setEditingItem({ ...editingItem, quantity: parseInt(e.target.value) || 1 })}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
-          />
-        </div>
-      </div>
+  const renderEditForm = (isNew: boolean) => {
+    const isTierBase = editingItem.type === 'tier_base';
 
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
-        <input
-          type="text"
-          value={editingItem.description}
-          onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-          placeholder="e.g., Extra booth space, Workshop sponsorship"
-          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Price ({currency}) {editingItem.type === 'adjustment' && '(can be negative)'}
-          </label>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={editingItem.unitPriceDisplay}
-            onChange={(e) => {
-              const value = e.target.value;
-              // Allow typing numbers, decimals, and negative sign
-              if (value === '' || value === '-' || /^-?\d*\.?\d*$/.test(value)) {
-                setEditingItem({
-                  ...editingItem,
-                  unitPriceDisplay: value,
-                  unitPrice: parseToCents(value),
-                });
-              }
-            }}
-            onBlur={() => {
-              // Format on blur
-              const cents = parseToCents(editingItem.unitPriceDisplay);
-              setEditingItem({
-                ...editingItem,
-                unitPrice: cents,
-                unitPriceDisplay: cents === 0 ? '0' : (cents / 100).toString(),
-              });
-            }}
-            placeholder="0.00"
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
-          />
-        </div>
-        {editingItem.type === 'addon' && (
-          <div className="flex flex-col justify-end">
-            <label className="flex items-center gap-2 cursor-pointer pb-1.5">
-              <input
-                type="checkbox"
-                checked={editingItem.usesCredit}
-                onChange={(e) => setEditingItem({ ...editingItem, usesCredit: e.target.checked })}
-                className="rounded border-gray-300 text-[#F1E271] focus:ring-[#F1E271]"
-              />
-              <span className="text-sm text-gray-700">Eligible for tier credit</span>
-            </label>
+    return (
+      <div className={`border rounded-lg p-3 sm:p-4 space-y-3 ${
+        isTierBase ? 'bg-purple-50 border-purple-200' : 'bg-blue-50 border-blue-200'
+      }`}>
+        {isTierBase && (
+          <div className="text-xs text-purple-700 font-medium">
+            Editing Tier Base Price (negotiated amount)
           </div>
         )}
-      </div>
 
-      {editingItem.type === 'addon' && (
-        <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 -mt-1">
-          <p className="font-medium mb-1">What is &quot;Eligible for tier credit&quot;?</p>
-          <p className="mb-2">
-            Each sponsorship tier includes a <strong>free add-on budget</strong>. When an add-on is marked as
-            &quot;eligible&quot;, it gets automatically deducted from this budget, reducing the final invoice.
-          </p>
-          <p className="font-medium">Example:</p>
-          <ul className="list-disc list-inside mt-1 space-y-0.5">
-            <li>Gold tier: CHF 8,000 base + CHF 1,000 add-on credit</li>
-            <li>Sponsor wants &quot;Extra Booth Table&quot; (CHF 500, credit eligible)</li>
-            <li>Invoice: CHF 8,000 + CHF 500 - CHF 500 credit = <strong>CHF 8,000</strong></li>
-          </ul>
-          <p className="mt-2 text-amber-700">
-            Leave unchecked for items that should always be charged (e.g., special custom requests).
-          </p>
+        {!isTierBase && (
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+              <select
+                value={editingItem.type}
+                onChange={(e) => setEditingItem({ ...editingItem, type: e.target.value as 'addon' | 'adjustment' })}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                disabled={!isNew}
+              >
+                <option value="addon">Add-on</option>
+                <option value="adjustment">Adjustment</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Quantity</label>
+              <input
+                type="number"
+                min="1"
+                value={editingItem.quantity}
+                onChange={(e) => setEditingItem({ ...editingItem, quantity: parseInt(e.target.value) || 1 })}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+              />
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+          <input
+            type="text"
+            value={editingItem.description}
+            onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+            placeholder={isTierBase ? 'e.g., Gold Tier Sponsorship' : 'e.g., Extra booth space, Workshop sponsorship'}
+            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+          />
         </div>
-      )}
 
-      <div className="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={cancelEditing}
-          disabled={isSubmitting}
-          className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={isNew ? handleAddItem : handleUpdateItem}
-          disabled={isSubmitting}
-          className="px-3 py-1.5 text-sm font-medium text-black bg-[#F1E271] hover:bg-[#e6d766] rounded transition-colors disabled:opacity-50 flex items-center gap-1"
-        >
-          <Check className="h-4 w-4" />
-          {isNew ? 'Add' : 'Save'}
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Price ({currency}) {editingItem.type === 'adjustment' && '(can be negative)'}
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={editingItem.unitPriceDisplay}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow typing numbers, decimals, and negative sign
+                if (value === '' || value === '-' || /^-?\d*\.?\d*$/.test(value)) {
+                  setEditingItem({
+                    ...editingItem,
+                    unitPriceDisplay: value,
+                    unitPrice: parseToCents(value),
+                  });
+                }
+              }}
+              onBlur={() => {
+                // Format on blur
+                const cents = parseToCents(editingItem.unitPriceDisplay);
+                setEditingItem({
+                  ...editingItem,
+                  unitPrice: cents,
+                  unitPriceDisplay: cents === 0 ? '0' : (cents / 100).toString(),
+                });
+              }}
+              placeholder="0.00"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+            />
+          </div>
+          {editingItem.type === 'addon' && (
+            <div className="flex flex-col justify-end">
+              <label className="flex items-center gap-2 cursor-pointer pb-1.5">
+                <input
+                  type="checkbox"
+                  checked={editingItem.usesCredit}
+                  onChange={(e) => setEditingItem({ ...editingItem, usesCredit: e.target.checked })}
+                  className="rounded border-gray-300 text-[#F1E271] focus:ring-[#F1E271]"
+                />
+                <span className="text-sm text-gray-700">Eligible for tier credit</span>
+              </label>
+            </div>
+          )}
+        </div>
+
+        {editingItem.type === 'addon' && (
+          <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 -mt-1">
+            <p className="font-medium mb-1">What is &quot;Eligible for tier credit&quot;?</p>
+            <p className="mb-2">
+              Each sponsorship tier includes a <strong>free add-on budget</strong>. When an add-on is marked as
+              &quot;eligible&quot;, it gets automatically deducted from this budget, reducing the final invoice.
+            </p>
+            <p className="font-medium">Example:</p>
+            <ul className="list-disc list-inside mt-1 space-y-0.5">
+              <li>Gold tier: CHF 8,000 base + CHF 1,000 add-on credit</li>
+              <li>Sponsor wants &quot;Extra Booth Table&quot; (CHF 500, credit eligible)</li>
+              <li>Invoice: CHF 8,000 + CHF 500 - CHF 500 credit = <strong>CHF 8,000</strong></li>
+            </ul>
+            <p className="mt-2 text-amber-700">
+              Leave unchecked for items that should always be charged (e.g., special custom requests).
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={cancelEditing}
+            disabled={isSubmitting}
+            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={isNew ? handleAddItem : handleUpdateItem}
+            disabled={isSubmitting}
+            className="px-3 py-1.5 text-sm font-medium text-black bg-[#F1E271] hover:bg-[#e6d766] rounded transition-colors disabled:opacity-50 flex items-center gap-1"
+          >
+            <Check className="h-4 w-4" />
+            {isNew ? 'Add' : 'Save'}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -382,15 +396,16 @@ export function LineItemsEditor({
                     <span className={`text-sm font-medium ${item.unit_price < 0 ? 'text-red-600' : ''}`}>
                       {formatAmount(item.unit_price * item.quantity)}
                     </span>
-                    {item.type !== 'tier_base' && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => startEditing(item)}
-                          disabled={isSubmitting}
-                          className="p-1.5 sm:p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => startEditing(item)}
+                        disabled={isSubmitting}
+                        className="p-1.5 sm:p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                        title={item.type === 'tier_base' ? 'Edit negotiated price' : 'Edit item'}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      {item.type !== 'tier_base' && (
                         <button
                           onClick={() => handleDeleteItem(item.id)}
                           disabled={isSubmitting}
@@ -398,8 +413,8 @@ export function LineItemsEditor({
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
