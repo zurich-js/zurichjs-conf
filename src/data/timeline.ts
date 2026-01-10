@@ -51,14 +51,14 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
     },
     {
       id: 'speaker-review',
-      dateISO: '2026-05-01',
+      dateISO: '2026-04-15',
       title: 'Speaker submissions review deadline',
       icon: 'flag',
       body: 'Our team will have reviewed all submissions by this date. Speakers will be notified of their acceptance shortly after.',
     },
     {
       id: 'full-lineup-standard-tickets',
-      dateISO: '2026-04-01',
+      dateISO: '2026-04-20',
       title: 'General Admission tickets',
       icon: 'ticket',
       body: 'Full speaker lineup announced! Standard pricing tickets are now available. Secure your spot before late bird pricing kicks in.',
