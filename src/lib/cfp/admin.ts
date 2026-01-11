@@ -48,7 +48,7 @@ export async function getAdminSubmissions(
     search,
     sort_by = 'created_at',
     sort_order = 'desc',
-    limit = 50,
+    limit,
     offset = 0,
   } = filters;
 
@@ -89,8 +89,15 @@ export async function getAdminSubmissions(
   // Apply sorting
   query = query.order(sort_by, { ascending: sort_order === 'asc' });
 
-  // Apply pagination
-  const { data: submissions, count, error } = await query.range(offset, offset + limit - 1);
+  // Apply pagination (if limit is provided)
+  let queryResult;
+  if (limit) {
+    queryResult = await query.range(offset, offset + limit - 1);
+  } else {
+    queryResult = await query;
+  }
+
+  const { data: submissions, count, error } = queryResult;
 
   if (error || !submissions) {
     console.error('[CFP Admin] Error fetching submissions:', error);
