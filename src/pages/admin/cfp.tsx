@@ -423,7 +423,7 @@ export default function CfpAdminDashboard() {
               )}
 
               {/* Speakers Tab */}
-              {activeTab === 'speakers' && <SpeakersTab speakers={speakers} isLoading={isLoadingSpeakers} />}
+              {activeTab === 'speakers' && <SpeakersTab speakers={speakers} isLoading={isLoadingSpeakers} onSelectSubmission={setSelectedSubmission} />}
 
               {/* Reviewers Tab */}
               {activeTab === 'reviewers' && <ReviewersTab reviewers={reviewers} isLoading={isLoadingReviewers} />}

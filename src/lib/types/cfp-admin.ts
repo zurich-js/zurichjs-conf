@@ -83,6 +83,13 @@ export interface CfpAdminSubmission {
   };
 }
 
+export interface CfpSpeakerSubmission {
+  id: string;
+  title: string;
+  status: string;
+  submission_type: string;
+}
+
 export interface CfpAdminReviewer {
   id: string;
   email: string;

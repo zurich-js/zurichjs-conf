@@ -4,9 +4,11 @@
  */
 
 import React, { useState } from 'react';
-import { X, User, Trash2, MapPin, Plane, HelpCircle, Check } from 'lucide-react';
-import type { CfpAdminSpeaker } from '@/lib/types/cfp-admin';
+import { useQuery } from '@tanstack/react-query';
+import { X, User, Trash2, MapPin, Plane, HelpCircle, Check, FileText, ExternalLink } from 'lucide-react';
+import type { CfpAdminSpeaker, CfpSpeakerSubmission, CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { ConfirmationModal } from '../ConfirmationModal';
+import { StatusBadge } from '../StatusBadge';
 
 interface SpeakerModalProps {
   speaker: CfpAdminSpeaker;
@@ -14,9 +16,28 @@ interface SpeakerModalProps {
   onUpdated: () => void;
   onDeleted: () => void;
   isDeleting: boolean;
+  onSelectSubmission?: (submission: CfpAdminSubmission) => void;
 }
 
-export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeleting }: SpeakerModalProps) {
+// Fetch speaker details including submissions
+async function fetchSpeakerDetails(speakerId: string): Promise<{
+  speaker: CfpAdminSpeaker;
+  submissions: CfpSpeakerSubmission[];
+}> {
+  const res = await fetch(`/api/admin/cfp/speakers/${speakerId}`);
+  if (!res.ok) throw new Error('Failed to fetch speaker details');
+  return res.json();
+}
+
+// Fetch full submission details for clicking
+async function fetchSubmissionDetails(submissionId: string): Promise<CfpAdminSubmission> {
+  const res = await fetch(`/api/admin/cfp/submissions/${submissionId}`);
+  if (!res.ok) throw new Error('Failed to fetch submission');
+  const data = await res.json();
+  return data.submission;
+}
+
+export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeleting, onSelectSubmission }: SpeakerModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     first_name: speaker.first_name || '',
@@ -35,7 +56,32 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [loadingSubmissionId, setLoadingSubmissionId] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch speaker details including submissions
+  const { data: speakerDetails, isLoading: isLoadingSubmissions } = useQuery({
+    queryKey: ['cfp', 'speaker', speaker.id],
+    queryFn: () => fetchSpeakerDetails(speaker.id),
+    staleTime: 30 * 1000,
+  });
+
+  const submissions = speakerDetails?.submissions || [];
+
+  const handleViewSubmission = async (submissionId: string) => {
+    if (!onSelectSubmission) return;
+
+    setLoadingSubmissionId(submissionId);
+    try {
+      const submission = await fetchSubmissionDetails(submissionId);
+      onClose();
+      onSelectSubmission(submission);
+    } catch {
+      setError('Failed to load submission details');
+    } finally {
+      setLoadingSubmissionId(null);
+    }
+  };
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -418,6 +464,58 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 <p className="text-sm text-black">{new Date(speaker.updated_at).toLocaleDateString()}</p>
               </div>
             </div>
+          </div>
+
+          {/* Submissions Section */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-4 h-4 text-gray-600" />
+              <h4 className="text-xs font-bold text-black uppercase tracking-wide">
+                Submissions ({submissions.length})
+              </h4>
+            </div>
+            {isLoadingSubmissions ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
+              </div>
+            ) : submissions.length === 0 ? (
+              <p className="text-sm text-gray-500">No submissions from this speaker</p>
+            ) : (
+              <div className="space-y-2">
+                {submissions.map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0 mr-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-black truncate">{submission.title}</span>
+                        <span className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600 capitalize shrink-0">
+                          {submission.submission_type}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <StatusBadge status={submission.status} />
+                      {onSelectSubmission && (
+                        <button
+                          onClick={() => handleViewSubmission(submission.id)}
+                          disabled={loadingSubmissionId === submission.id}
+                          className="p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded transition-colors cursor-pointer disabled:opacity-50"
+                          title="View submission"
+                        >
+                          {loadingSubmissionId === submission.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                          ) : (
+                            <ExternalLink className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Save Button */}

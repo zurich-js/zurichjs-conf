@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, User } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
-import { cfpQueryKeys, type CfpAdminSpeaker } from '@/lib/types/cfp-admin';
+import { cfpQueryKeys, type CfpAdminSpeaker, type CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { Pagination } from '@/components/atoms';
 import { SpeakerModal } from './SpeakerModal';
 import { AddSpeakerModal } from './AddSpeakerModal';
@@ -15,9 +15,10 @@ import { AddSpeakerModal } from './AddSpeakerModal';
 interface SpeakersTabProps {
   speakers: CfpAdminSpeaker[];
   isLoading: boolean;
+  onSelectSubmission?: (submission: CfpAdminSubmission) => void;
 }
 
-export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
+export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: SpeakersTabProps) {
   const [selectedSpeaker, setSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [profileFilter, setProfileFilter] = useState<string>('all');
@@ -417,6 +418,7 @@ export function SpeakersTab({ speakers, isLoading }: SpeakersTabProps) {
             deleteSpeakerMutation.mutate(selectedSpeaker.id);
           }}
           isDeleting={deleteSpeakerMutation.isPending}
+          onSelectSubmission={onSelectSubmission}
         />
       )}
 
