@@ -53,7 +53,7 @@ export const Hero: React.FC<HeroProps> = ({
   });
 
   return (
-    <ShapedSection shape="tighten" variant="dark" dropTop disableContainer>
+    <ShapedSection shape="widen" variant="dark" dropTop disableContainer>
         {/* Background Video/Image with Overlay */}
         <BackgroundMedia
           videoSrc={background.videoSrc}

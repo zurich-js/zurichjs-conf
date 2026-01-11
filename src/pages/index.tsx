@@ -8,6 +8,7 @@ import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
+import {LearnSection} from "@/components/organisms/LearnSection";
 
 /**
  * Page props passed through _app.tsx for hydration and currency detection
@@ -90,26 +91,33 @@ export default function Home() {
         {/* Speakers positioned at the diagonal intersection */}
         <div className="relative z-30 -mt-12 sm:-mt-16 md:-mt-24 lg:-mt-32">
           <SpeakersSection />
-        </div>
-
-        <ShapedSection shape="widen" variant="light" id="schedule" className="relative z-20">
-          <p className="text-brand-gray-medium text-md text-center px-4 pb-8 relative -top-4 sm:-top-6 md:-top-8">
-            Want to share your knowledge at ZurichJS?{' '}
-            <Link href="/cfp" className="text-md text-brand-blue hover:text-blue-700 duration-300 ease-in-out">
-              Apply&nbsp;to&nbsp;speak
+          <p className="text-brand-gray-medium text-md text-center px-4 pb-8 relative bottom-0">
+            Wanna share your knowledge in Zurich?{' '}
+            <Link href="/cfp" className="text-md text-brand-blue hover:text-brand-dark duration-300 ease-in-out">
+                Apply&nbsp;to&nbsp;speak
             </Link>
           </p>
-          <ScheduleSection
-            title={scheduleData.title}
-            subtitle={scheduleData.subtitle}
-            aboutLink={scheduleData.aboutLink}
-            days={scheduleData.days}
+        </div>
+
+        <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
+          <LearnSection
+            title="Learn from Industry Experts"
+            subtitle="Join us for an immersive experience where you'll gain insights from leading JavaScript professionals. Our carefully curated sessions are designed to enhance your skills and keep you ahead in the ever-evolving tech landscape."
           />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="dark" id="sponsors-photos" disableContainer>
+        <ShapedSection shape="widen" variant="dark" id="sponsors-photos" disableContainer>
           <SponsorsSection {...sponsorsData} />
         </ShapedSection>
+
+      <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
+          <ScheduleSection
+              title={scheduleData.title}
+              subtitle={scheduleData.subtitle}
+              aboutLink={scheduleData.aboutLink}
+              days={scheduleData.days}
+          />
+      </ShapedSection>
 
         <ShapedSection shape="widen" variant="medium" id="timeline">
           <TimelineSection

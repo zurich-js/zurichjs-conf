@@ -2,7 +2,7 @@ import {Heading, Kicker, LinkText} from "@/components/atoms";
 import React from "react";
 import {useMotion} from "@/contexts";
 
-interface SectionSplitViewProps {
+export interface SectionSplitViewProps {
   kicker: string;
   title: string | React.ReactNode;
   subtitle?: string | React.ReactNode;
