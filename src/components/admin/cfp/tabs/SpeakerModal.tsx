@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, User, Trash2, MapPin, Plane, HelpCircle, Check, FileText, ExternalLink } from 'lucide-react';
+import { X, User, Trash2, MapPin, Plane, HelpCircle, Check, FileText, ExternalLink, Building2 } from 'lucide-react';
 import type { CfpAdminSpeaker, CfpSpeakerSubmission, CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { StatusBadge } from '../StatusBadge';
@@ -314,6 +314,19 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               </div>
             )}
           </div>
+
+          {/* Sponsorship Interest */}
+          {speaker.company_interested_in_sponsoring && (
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-purple-600" />
+                <h4 className="text-sm font-bold text-purple-800">Company Interested in Sponsoring</h4>
+              </div>
+              <p className="text-sm text-purple-700 mt-1">
+                {speaker.company || 'Their company'} has expressed interest in sponsoring the conference.
+              </p>
+            </div>
+          )}
 
           {/* Bio */}
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">

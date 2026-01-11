@@ -34,6 +34,7 @@ export interface CfpAdminSpeaker {
   assistance_type: 'travel' | 'accommodation' | 'both' | null;
   departure_airport: string | null;
   special_requirements: string | null;
+  company_interested_in_sponsoring: boolean | null;
   created_at: string;
   updated_at: string;
 }

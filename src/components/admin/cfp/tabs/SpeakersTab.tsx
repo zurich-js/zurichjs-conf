@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, User } from 'lucide-react';
+import { Plus, User, Building2 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminSpeaker, type CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { Pagination } from '@/components/atoms';
@@ -23,6 +23,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
   const [searchQuery, setSearchQuery] = useState('');
   const [profileFilter, setProfileFilter] = useState<string>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<string>('all');
+  const [sponsorFilter, setSponsorFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showAddSpeaker, setShowAddSpeaker] = useState(false);
@@ -98,8 +99,15 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
       result = result.filter((s) => !s.is_visible);
     }
 
+    // Sponsorship interest filter
+    if (sponsorFilter === 'interested') {
+      result = result.filter((s) => s.company_interested_in_sponsoring === true);
+    } else if (sponsorFilter === 'not_interested') {
+      result = result.filter((s) => s.company_interested_in_sponsoring !== true);
+    }
+
     return result;
-  }, [speakers, searchQuery, profileFilter, visibilityFilter]);
+  }, [speakers, searchQuery, profileFilter, visibilityFilter, sponsorFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSpeakers.length / ITEMS_PER_PAGE);
@@ -111,7 +119,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, profileFilter, visibilityFilter]);
+  }, [searchQuery, profileFilter, visibilityFilter, sponsorFilter]);
 
   const handleSpeakerUpdated = () => {
     queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
@@ -170,6 +178,15 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             <option value="visible">Visible</option>
             <option value="hidden">Hidden</option>
           </select>
+          <select
+            value={sponsorFilter}
+            onChange={(e) => setSponsorFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="all">All Sponsorship</option>
+            <option value="interested">Interested in Sponsoring</option>
+            <option value="not_interested">Not Interested</option>
+          </select>
           <button
             onClick={() => setShowAddSpeaker(true)}
             className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 shrink-0"
@@ -211,11 +228,19 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
                     )}
                     <div className="text-xs text-gray-600 truncate mt-0.5">{s.email}</div>
                   </div>
-                  {s.bio ? (
-                    <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium shrink-0">Complete</span>
-                  ) : (
-                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs font-medium shrink-0">Incomplete</span>
-                  )}
+                  <div className="flex flex-col gap-1 shrink-0">
+                    {s.bio ? (
+                      <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium">Complete</span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Incomplete</span>
+                    )}
+                    {s.company_interested_in_sponsoring && (
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-medium flex items-center gap-1">
+                        <Building2 className="w-3 h-3" />
+                        Sponsor
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {/* Visibility and Featured Toggles */}
                 <div className="flex items-center gap-4 mb-3 py-2 border-t border-gray-200">
@@ -268,7 +293,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             ))}
             {paginatedSpeakers.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
+                {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || sponsorFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
               </div>
             )}
           </div>
@@ -282,6 +307,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Company</th>
                   <th className="px-4 py-3">Profile</th>
+                  <th className="px-4 py-3">Sponsor</th>
                   <th className="px-4 py-3">Visible</th>
                   <th className="px-4 py-3">Featured</th>
                   <th className="px-4 py-3">Joined</th>
@@ -321,6 +347,16 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Complete</span>
                       ) : (
                         <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Incomplete</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4">
+                      {s.company_interested_in_sponsoring ? (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium inline-flex items-center gap-1">
+                          <Building2 className="w-3 h-3" />
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
                       )}
                     </td>
                     <td className="px-4 py-4">
@@ -370,8 +406,8 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
                 ))}
                 {paginatedSpeakers.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-black">
-                      {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
+                    <td colSpan={9} className="px-4 py-8 text-center text-black">
+                      {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || sponsorFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
                     </td>
                   </tr>
                 )}
