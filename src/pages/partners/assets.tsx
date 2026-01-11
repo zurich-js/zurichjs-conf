@@ -42,11 +42,11 @@ const HeaderSocialLinks = () => (
 const conferenceBlurbs = {
   short: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 11, 2026 at Technopark Zurich. Join 300+ developers, engineers, and tech leaders for multiple days of learning, networking, and community building.`,
   medium: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 9-12, 2026 at Technopark Zurich. The event kicks off with a warm-up meetup on September 9th, followed by a workshop day on September 10th, the main conference day on September 11th, and VIP/speaker activities on September 12th. With around 15 speakers from around the world, ZurichJS Conf covers the latest in JavaScript, TypeScript, React, Node.js, and the broader web ecosystem. Join us to learn from industry experts, connect with the Swiss tech community, and be part of the growing ZurichJS movement.`,
-  full: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, organized by the ZurichJS community—a thriving meetup group that has been bringing together JavaScript enthusiasts in Zurich since 2012. Taking place September 9-12, 2026 at the iconic Technopark Zurich, this multi-day event brings together 300+ developers, engineers, and tech leaders from across Switzerland and Europe.
-
-The event begins with a warm-up meetup on September 9th, followed by hands-on workshops on September 10th, and culminates with the main conference day on September 11th featuring around 15 speakers from leading companies and the open-source community. September 12th offers exclusive VIP and speaker activities. Topics include JavaScript, TypeScript, React, Vue, Node.js, serverless architectures, AI/ML in web development, and emerging web technologies.
-
-Beyond the talks, ZurichJS Conference is about community. With dedicated networking sessions, sponsor booths, and an afterparty, it's the perfect opportunity to connect with fellow developers, discover new tools and frameworks, and be part of the Swiss JavaScript ecosystem.`,
+  full: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, organized by the ZurichJS community — a thriving meetup group that has been bringing together JavaScript enthusiasts in Zurich since 2024. Taking place September 9-12, 2026 at Technopark Zurich, this multi-day event brings together 300+ developers, engineers, and tech leaders from across Switzerland and Europe.
+        
+        The event kicks off with a warm-up meetup on September 9th, followed by hands-on workshops on September 10th, and culminates with the main conference day on September 11th featuring around 15 speakers from leading companies and the open-source community. September 12th offers exclusive VIP and speaker activities. Topics include, among others, JavaScript, TypeScript, React, Vue, Node.js, serverless architectures, AI/ML in web development, and emerging web technologies. The full lineup will be revealed in mid-April.
+        
+        Beyond the talks, ZurichJS Conference is about community. With dedicated networking sessions, sponsor booths, and an afterparty, it's the perfect opportunity to connect with fellow developers, discover new tools and frameworks, and be part of the Swiss JavaScript ecosystem.`,
 };
 
 function CopyButton({ text, label }: { text: string; label: string }) {
