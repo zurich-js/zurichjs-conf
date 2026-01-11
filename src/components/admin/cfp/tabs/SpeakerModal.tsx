@@ -5,10 +5,11 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, User, Trash2, MapPin, Plane, HelpCircle, Check, FileText, ExternalLink, Building2 } from 'lucide-react';
+import { X, User, Trash2, FileText, ExternalLink } from 'lucide-react';
 import type { CfpAdminSpeaker, CfpSpeakerSubmission, CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { StatusBadge } from '../StatusBadge';
+import { SpeakerInfoSection } from '../SubmissionModal/SpeakerInfoSection';
 
 interface SpeakerModalProps {
   speaker: CfpAdminSpeaker;
@@ -217,267 +218,166 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
             </button>
           </div>
 
-          {/* Profile Image Section */}
+          {/* View Mode - Use SpeakerInfoSection */}
+          {!isEditing && (
+            <>
+              <SpeakerInfoSection speaker={speaker} />
+
+              {/* Account Info */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Account Info</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold mb-1">Joined</p>
+                    <p className="text-sm text-black">{new Date(speaker.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold mb-1">Last Updated</p>
+                    <p className="text-sm text-black">{new Date(speaker.updated_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Edit Mode - Show all edit forms */}
           {isEditing && (
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Profile Photo</h4>
-              <div className="flex items-center gap-4">
-                {profileImageUrl ? (
-                  <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User className="w-8 h-8 text-gray-500" />
+            <>
+              {/* Profile Image Section */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Profile Photo</h4>
+                <div className="flex items-center gap-4">
+                  {profileImageUrl ? (
+                    <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User className="w-8 h-8 text-gray-500" />
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-black hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isUploading ? 'Uploading...' : 'Upload New Photo'}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">JPG, PNG, WebP or GIF. Max 5MB.</p>
                   </div>
-                )}
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-black hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
-                  >
-                    {isUploading ? 'Uploading...' : 'Upload New Photo'}
-                  </button>
-                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, WebP or GIF. Max 5MB.</p>
                 </div>
               </div>
-            </div>
+
+              {/* Basic Info */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Basic Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">First Name</label>
+                    <input
+                      type="text"
+                      value={formData.first_name}
+                      onChange={(e) => handleChange('first_name', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Last Name</label>
+                    <input
+                      type="text"
+                      value={formData.last_name}
+                      onChange={(e) => handleChange('last_name', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Job Title</label>
+                    <input
+                      type="text"
+                      value={formData.job_title}
+                      onChange={(e) => handleChange('job_title', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Company</label>
+                    <input
+                      type="text"
+                      value={formData.company}
+                      onChange={(e) => handleChange('company', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Biography</h4>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => handleChange('bio', e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                  placeholder="Speaker biography..."
+                />
+              </div>
+
+              {/* Social Links */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Social Links</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">LinkedIn URL</label>
+                    <input
+                      type="url"
+                      value={formData.linkedin_url}
+                      onChange={(e) => handleChange('linkedin_url', e.target.value)}
+                      placeholder="https://linkedin.com/in/..."
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">GitHub URL</label>
+                    <input
+                      type="url"
+                      value={formData.github_url}
+                      onChange={(e) => handleChange('github_url', e.target.value)}
+                      placeholder="https://github.com/..."
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Twitter/X Handle</label>
+                    <input
+                      type="text"
+                      value={formData.twitter_handle}
+                      onChange={(e) => handleChange('twitter_handle', e.target.value)}
+                      placeholder="@username"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Bluesky Handle</label>
+                    <input
+                      type="text"
+                      value={formData.bluesky_handle}
+                      onChange={(e) => handleChange('bluesky_handle', e.target.value)}
+                      placeholder="@user.bsky.social"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
           )}
-
-          {/* Basic Info */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Basic Information</h4>
-            {isEditing ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">First Name</label>
-                  <input
-                    type="text"
-                    value={formData.first_name}
-                    onChange={(e) => handleChange('first_name', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Last Name</label>
-                  <input
-                    type="text"
-                    value={formData.last_name}
-                    onChange={(e) => handleChange('last_name', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Job Title</label>
-                  <input
-                    type="text"
-                    value={formData.job_title}
-                    onChange={(e) => handleChange('job_title', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Company</label>
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => handleChange('company', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Name</p>
-                  <p className="text-sm text-black">{speaker.first_name} {speaker.last_name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Email</p>
-                  <p className="text-sm text-black">{speaker.email}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Job Title</p>
-                  <p className="text-sm text-black">{speaker.job_title || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Company</p>
-                  <p className="text-sm text-black">{speaker.company || '-'}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sponsorship Interest */}
-          {speaker.company_interested_in_sponsoring && (
-            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-purple-600" />
-                <h4 className="text-sm font-bold text-purple-800">Company Interested in Sponsoring</h4>
-              </div>
-              <p className="text-sm text-purple-700 mt-1">
-                {speaker.company || 'Their company'} has expressed interest in sponsoring the conference.
-              </p>
-            </div>
-          )}
-
-          {/* Bio */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Biography</h4>
-            {isEditing ? (
-              <textarea
-                value={formData.bio}
-                onChange={(e) => handleChange('bio', e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                placeholder="Speaker biography..."
-              />
-            ) : (
-              <p className="text-sm text-black whitespace-pre-wrap">
-                {speaker.bio || 'No biography provided'}
-              </p>
-            )}
-          </div>
-
-          {/* Social Links */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Social Links</h4>
-            {isEditing ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">LinkedIn URL</label>
-                  <input
-                    type="url"
-                    value={formData.linkedin_url}
-                    onChange={(e) => handleChange('linkedin_url', e.target.value)}
-                    placeholder="https://linkedin.com/in/..."
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">GitHub URL</label>
-                  <input
-                    type="url"
-                    value={formData.github_url}
-                    onChange={(e) => handleChange('github_url', e.target.value)}
-                    placeholder="https://github.com/..."
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Twitter/X Handle</label>
-                  <input
-                    type="text"
-                    value={formData.twitter_handle}
-                    onChange={(e) => handleChange('twitter_handle', e.target.value)}
-                    placeholder="@username"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Bluesky Handle</label>
-                  <input
-                    type="text"
-                    value={formData.bluesky_handle}
-                    onChange={(e) => handleChange('bluesky_handle', e.target.value)}
-                    placeholder="@user.bsky.social"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-3">
-                {speaker.linkedin_url && (
-                  <a href={speaker.linkedin_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors">
-                    LinkedIn
-                  </a>
-                )}
-                {speaker.github_url && (
-                  <a href={speaker.github_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
-                    GitHub
-                  </a>
-                )}
-                {speaker.twitter_handle && (
-                  <a href={`https://twitter.com/${speaker.twitter_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium hover:bg-sky-200 transition-colors">
-                    {speaker.twitter_handle.startsWith('@') ? speaker.twitter_handle : `@${speaker.twitter_handle}`}
-                  </a>
-                )}
-                {speaker.bluesky_handle && (
-                  <a href={`https://bsky.app/profile/${speaker.bluesky_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors">
-                    {speaker.bluesky_handle.startsWith('@') ? speaker.bluesky_handle : `@${speaker.bluesky_handle}`}
-                  </a>
-                )}
-                {!speaker.linkedin_url && !speaker.github_url && !speaker.twitter_handle && !speaker.bluesky_handle && (
-                  <p className="text-sm text-gray-500">No social links provided</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Location & Travel */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Location & Travel</h4>
-            <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
-              <div>
-                <p className="text-xs text-gray-500 font-semibold mb-1">Location</p>
-                {speaker.city || speaker.country ? (
-                  <div className="inline-flex items-center gap-1.5 text-sm text-black">
-                    <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                    <span className="break-words">{[speaker.city, speaker.country].filter(Boolean).join(', ')}</span>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">Not provided</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-semibold mb-1">Travel Assistance</p>
-                {speaker.travel_assistance_required === true ? (
-                  <div className="inline-flex items-start sm:items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium">
-                    <HelpCircle className="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0" />
-                    <span>Needs {speaker.assistance_type === 'travel' ? 'Travel Only' : speaker.assistance_type === 'accommodation' ? 'Accommodation Only' : speaker.assistance_type === 'both' ? 'Travel + Accommodation' : 'Assistance'}</span>
-                  </div>
-                ) : speaker.travel_assistance_required === false ? (
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-                    <Check className="w-4 h-4 flex-shrink-0" />
-                    Self-funded
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">Not specified</p>
-                )}
-              </div>
-              {speaker.departure_airport && (
-                <div className="sm:col-span-2">
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Departure Airport</p>
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium">
-                    <Plane className="w-4 h-4 flex-shrink-0" />
-                    {speaker.departure_airport}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Timestamps */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-            <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Account Info</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <p className="text-xs text-gray-500 font-semibold mb-1">Joined</p>
-                <p className="text-sm text-black">{new Date(speaker.created_at).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-semibold mb-1">Last Updated</p>
-                <p className="text-sm text-black">{new Date(speaker.updated_at).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </div>
 
           {/* Submissions Section */}
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
