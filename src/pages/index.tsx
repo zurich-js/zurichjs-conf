@@ -1,6 +1,6 @@
 import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
-import { heroData, scheduleData, timelineData, sponsorsData } from '@/data';
+import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
@@ -101,8 +101,9 @@ export default function Home() {
 
         <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
           <LearnSection
-            title="Learn from Industry Experts"
-            subtitle="Join us for an immersive experience where you'll gain insights from leading JavaScript professionals. Our carefully curated sessions are designed to enhance your skills and keep you ahead in the ever-evolving tech landscape."
+            title={learningData.title}
+            subtitle={learningData.subtitle}
+            items={learningData.items}
           />
         </ShapedSection>
 
