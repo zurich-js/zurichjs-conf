@@ -148,7 +148,7 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
   return (
     <section
       className={`
-        shaped-section
+        shaped-section overflow-hidden
         ${variantStyles[variant]}
         ${spacingClasses}
         ${shapeClass}
