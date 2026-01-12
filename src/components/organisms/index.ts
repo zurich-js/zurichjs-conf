@@ -1,6 +1,7 @@
 export { Hero } from './Hero';
 export { DiagonalSection } from './DiagonalSection';
 export { ScheduleSection } from './ScheduleSection';
+export { LearnSection } from './LearnSection';
 export { TicketsSection } from './TicketsSection';
 export { TicketsSectionWithStripe } from './TicketsSectionWithStripe';
 export { TimelineSection } from './TimelineSection';

@@ -1,4 +1,4 @@
-import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection } from '@/components/organisms';
+import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection, LearnSection } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
@@ -8,7 +8,6 @@ import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
-import {LearnSection} from "@/components/organisms/LearnSection";
 
 /**
  * Page props passed through _app.tsx for hydration and currency detection
