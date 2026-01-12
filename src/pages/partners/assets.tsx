@@ -41,11 +41,11 @@ const HeaderSocialLinks = () => (
 
 const conferenceBlurbs = {
   short: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 11, 2026 at Technopark Zurich. Join 300+ developers, engineers, and tech leaders for multiple days of learning, networking, and community building.`,
-  medium: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 9-12, 2026 at Technopark Zurich. The event kicks off with a warm-up meetup on September 9th, followed by a workshop day on September 10th, the main conference day on September 11th, and VIP/speaker activities on September 12th. With around 15 speakers from around the world, ZurichJS Conf covers the latest in JavaScript, TypeScript, React, Node.js, and the broader web ecosystem. Join us to learn from industry experts, connect with the Swiss tech community, and be part of the growing ZurichJS movement.`,
+  medium: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 9-12, 2026 at Technopark Zurich. The event kicks off with a warm-up meetup on September 9th, followed by a workshop day on September 10th, the main conference day on September 11th, and VIP/speaker activities on September 12th. With 15+ speakers from around the world, ZurichJS Conf covers the latest in JavaScript, TypeScript, React, Vue, Angular, and the wider web ecosystem. Join us to learn from industry experts, connect with the Swiss tech community, and be part of the growing ZurichJS movement.`,
   full: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, organized by the ZurichJS community — a thriving meetup group that has been bringing together JavaScript enthusiasts in Zurich since 2024. Taking place September 9-12, 2026 at Technopark Zurich, this multi-day event brings together 300+ developers, engineers, and tech leaders from across Switzerland and Europe.
-        
-        The event kicks off with a warm-up meetup on September 9th, followed by hands-on workshops on September 10th, and culminates with the main conference day on September 11th featuring around 15 speakers from leading companies and the open-source community. September 12th offers exclusive VIP and speaker activities. Topics include, among others, JavaScript, TypeScript, React, Vue, Node.js, serverless architectures, AI/ML in web development, and emerging web technologies. The full lineup will be revealed in mid-April.
-        
+
+        The event kicks off with a warm-up meetup on September 9th, followed by hands-on workshops on September 10th, and culminates with the main conference day on September 11th featuring 15+ speakers from leading companies and the open-source community. Confirmed speakers include Daniel Roe (Nuxt Core Team Lead at Vercel), Dominik Dorfmeister (Maintainer of TanStack Query at Sentry), Ramona Schwering (GDE for Web Technologies & Developer Advocate at Auth0), Scott Tolinski (Co-Host of Syntax.fm at Sentry), and Tejas Kumar (ConTejas Host & Developer Advocate at IBM). September 12th offers exclusive VIP and speaker activities. Topics span JavaScript, TypeScript, React, Vue, Angular, Node.js, developer tooling, testing, serverless architectures, AI/ML in web development, and the wider web ecosystem.
+
         Beyond the talks, ZurichJS Conference is about community. With dedicated networking sessions, sponsor booths, and an afterparty, it's the perfect opportunity to connect with fellow developers, discover new tools and frameworks, and be part of the Swiss JavaScript ecosystem.`,
 };
 
@@ -265,7 +265,7 @@ export default function PartnerAssetsPage() {
                 { label: 'Main Conference', value: 'September 11, 2026' },
                 { label: 'Location', value: 'Technopark Zurich' },
                 { label: 'Expected Attendees', value: '300+' },
-                { label: 'Speakers', value: '~15' },
+                { label: 'Speakers', value: '15+' },
               ].map((fact) => (
                 <div key={fact.label} className="bg-brand-black/10 rounded-xl p-6">
                   <p className="text-sm font-semibold text-brand-black/70 mb-1">
@@ -286,6 +286,7 @@ export default function PartnerAssetsPage() {
                   'TypeScript',
                   'React',
                   'Vue',
+                  'Angular',
                   'Node.js',
                   'Serverless',
                   'Web Performance',
