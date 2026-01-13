@@ -30,9 +30,6 @@ interface FormData {
   additional_notes: string;
   slides_url: string;
   previous_recording_url: string;
-  travel_assistance_required: boolean;
-  company_can_cover_travel: boolean;
-  special_requirements: string;
   // Workshop-specific
   workshop_duration_hours: number;
   workshop_expected_compensation: string;
@@ -64,7 +61,7 @@ const LEVEL_INFO = {
   advanced: 'For developers with significant experience',
 };
 
-export default function EditSubmission({ submission, suggestedTags }: EditSubmissionProps) {
+export default function EditSubmission({ speaker, submission, suggestedTags }: EditSubmissionProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     submission_type: submission.submission_type,
@@ -76,9 +73,6 @@ export default function EditSubmission({ submission, suggestedTags }: EditSubmis
     additional_notes: submission.additional_notes || '',
     slides_url: submission.slides_url || '',
     previous_recording_url: submission.previous_recording_url || '',
-    travel_assistance_required: submission.travel_assistance_required,
-    company_can_cover_travel: submission.company_can_cover_travel,
-    special_requirements: submission.special_requirements || '',
     workshop_duration_hours: submission.workshop_duration_hours || 4,
     workshop_expected_compensation: submission.workshop_expected_compensation || '',
     workshop_special_requirements: submission.workshop_special_requirements || '',
@@ -151,9 +145,6 @@ export default function EditSubmission({ submission, suggestedTags }: EditSubmis
         additional_notes: formData.additional_notes || undefined,
         slides_url: formData.slides_url || undefined,
         previous_recording_url: formData.previous_recording_url || undefined,
-        travel_assistance_required: formData.travel_assistance_required,
-        company_can_cover_travel: formData.company_can_cover_travel,
-        special_requirements: formData.special_requirements || undefined,
       };
 
       if (isWorkshop) {
@@ -511,54 +502,46 @@ export default function EditSubmission({ submission, suggestedTags }: EditSubmis
           )}
 
           {/* Travel */}
-          <section className="bg-brand-gray-dark rounded-2xl p-6 mb-6 space-y-6">
-            <h2 className="text-lg font-bold text-white">Travel</h2>
-
-            <div className="space-y-4">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.travel_assistance_required}
-                  onChange={(e) => updateField('travel_assistance_required', e.target.checked)}
-                  className="mt-1 w-5 h-5 rounded border-brand-gray-medium bg-brand-gray-darkest text-brand-primary focus:ring-brand-primary"
-                />
-                <div>
-                  <div className="text-white font-medium">I need travel assistance</div>
-                  <div className="text-sm text-brand-gray-light">
-                    We provide flight reimbursement and hotel accommodation for speakers
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.company_can_cover_travel}
-                  onChange={(e) => updateField('company_can_cover_travel', e.target.checked)}
-                  className="mt-1 w-5 h-5 rounded border-brand-gray-medium bg-brand-gray-darkest text-brand-primary focus:ring-brand-primary"
-                />
-                <div>
-                  <div className="text-white font-medium">My company can cover travel expenses</div>
-                  <div className="text-sm text-brand-gray-light">
-                    This helps us allocate our speaker budget fairly
-                  </div>
-                </div>
-              </label>
+          <section className="bg-brand-gray-dark rounded-2xl p-6 mb-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white">Travel</h2>
+              <Link
+                href="/cfp/profile"
+                className="text-sm text-brand-primary hover:text-brand-primary/80 transition-colors"
+              >
+                Edit in Profile →
+              </Link>
             </div>
 
-            <div>
-              <label htmlFor="special_requirements" className="block text-sm font-semibold text-white mb-2">
-                Special Requirements <span className="text-brand-gray-medium">(optional)</span>
-              </label>
-              <textarea
-                id="special_requirements"
-                value={formData.special_requirements}
-                onChange={(e) => updateField('special_requirements', e.target.value)}
-                placeholder="Any accessibility needs, dietary restrictions, or other requirements..."
-                rows={3}
-                className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
-              />
+            <div className="bg-brand-gray-darkest rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-brand-gray-medium text-sm">Travel Assistance</span>
+                <span className="text-white font-medium">
+                  {speaker.travel_assistance_required ? (
+                    speaker.assistance_type === 'both' ? 'Travel & Accommodation needed' :
+                    speaker.assistance_type === 'travel' ? 'Travel needed' :
+                    speaker.assistance_type === 'accommodation' ? 'Accommodation needed' :
+                    'Requested'
+                  ) : 'Not needed'}
+                </span>
+              </div>
+              {speaker.departure_airport && (
+                <div className="flex items-center justify-between">
+                  <span className="text-brand-gray-medium text-sm">Departure Airport</span>
+                  <span className="text-white">{speaker.departure_airport}</span>
+                </div>
+              )}
+              {speaker.special_requirements && (
+                <div>
+                  <span className="text-brand-gray-medium text-sm block mb-1">Special Requirements</span>
+                  <p className="text-white text-sm whitespace-pre-wrap">{speaker.special_requirements}</p>
+                </div>
+              )}
             </div>
+
+            <p className="text-xs text-brand-gray-medium">
+              Travel preferences are managed in your speaker profile and apply to all your submissions.
+            </p>
           </section>
 
           {/* Actions */}

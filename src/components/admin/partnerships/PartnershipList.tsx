@@ -4,7 +4,7 @@
  * Mobile: Card-based layout, Desktop: Table layout
  */
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Building2,
   Users,
@@ -19,8 +19,10 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Pagination } from '@/components/atoms';
 import type { Partnership, PartnershipType, PartnershipStatus } from './types';
+
+const ITEMS_PER_PAGE = 10;
 
 interface PartnershipListProps {
   partnerships: Partnership[];
@@ -60,6 +62,19 @@ export function PartnershipList({
 }: PartnershipListProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Pagination
+  const totalPages = Math.ceil(partnerships.length / ITEMS_PER_PAGE);
+  const paginatedPartnerships = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return partnerships.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [partnerships, currentPage]);
+
+  // Reset to page 1 when partnerships change (e.g., filters applied)
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [partnerships.length]);
 
   const copyTrackingUrl = (partnership: Partnership) => {
     const baseUrl = window.location.origin;
@@ -89,7 +104,7 @@ export function PartnershipList({
   // Mobile Card View
   const MobileCardView = () => (
     <div className="space-y-3 md:hidden">
-      {partnerships.map((partnership) => {
+      {paginatedPartnerships.map((partnership) => {
         const Icon = TYPE_ICONS[partnership.type];
         return (
           <div
@@ -265,7 +280,7 @@ export function PartnershipList({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {partnerships.map((partnership) => {
+          {paginatedPartnerships.map((partnership) => {
             const Icon = TYPE_ICONS[partnership.type];
             return (
               <tr key={partnership.id} className="hover:bg-gray-50">
@@ -405,9 +420,21 @@ export function PartnershipList({
   );
 
   return (
-    <>
+    <div className="space-y-4">
       <MobileCardView />
       <DesktopTableView />
-    </>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          pageSize={ITEMS_PER_PAGE}
+          totalItems={partnerships.length}
+          variant="light"
+        />
+      )}
+    </div>
   );
 }

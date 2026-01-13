@@ -5,7 +5,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAdminSpeakers } from '@/lib/cfp/admin';
+import { getAdminSpeakersWithSubmissions } from '@/lib/cfp/admin';
 import { createSpeaker } from '@/lib/cfp/speakers';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { adminCreateSpeakerSchema } from '@/lib/validations/cfp';
@@ -22,8 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
-      const speakers = await getAdminSpeakers();
-      log.debug('Fetched speakers', { count: speakers.length });
+      // Use optimized function that fetches speakers with submissions in parallel
+      const speakers = await getAdminSpeakersWithSubmissions();
+      log.debug('Fetched speakers with submissions', { count: speakers.length });
       return res.status(200).json({ speakers });
     } catch (error) {
       log.error('Failed to fetch speakers', error, { type: 'system' });

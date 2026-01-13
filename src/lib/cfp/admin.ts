@@ -371,6 +371,54 @@ export async function getAdminSpeakers(): Promise<CfpSpeaker[]> {
 }
 
 /**
+ * Get all speakers with their submissions for admin (single query)
+ * Avoids N+1 query problem by fetching all data in parallel
+ */
+export async function getAdminSpeakersWithSubmissions(): Promise<
+  (CfpSpeaker & { submissions: { id: string; title: string; status: string; submission_type: string }[] })[]
+> {
+  const supabase = createCfpServiceClient();
+
+  // Fetch speakers and all submissions in parallel
+  const [speakersResult, submissionsResult] = await Promise.all([
+    supabase.from('cfp_speakers').select('*').order('created_at', { ascending: false }),
+    supabase
+      .from('cfp_submissions')
+      .select('id, title, status, submission_type, speaker_id')
+      .order('created_at', { ascending: false }),
+  ]);
+
+  if (speakersResult.error) {
+    console.error('[CFP Admin] Error fetching speakers:', speakersResult.error);
+    return [];
+  }
+
+  const speakers = (speakersResult.data || []) as CfpSpeaker[];
+  const submissions = submissionsResult.data || [];
+
+  // Group submissions by speaker_id for O(n) lookup
+  const submissionsBySpeakerId = new Map<string, typeof submissions>();
+  for (const submission of submissions) {
+    const speakerId = submission.speaker_id;
+    if (!submissionsBySpeakerId.has(speakerId)) {
+      submissionsBySpeakerId.set(speakerId, []);
+    }
+    submissionsBySpeakerId.get(speakerId)!.push(submission);
+  }
+
+  // Merge speakers with their submissions
+  return speakers.map((speaker) => ({
+    ...speaker,
+    submissions: (submissionsBySpeakerId.get(speaker.id) || []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      status: s.status,
+      submission_type: s.submission_type,
+    })),
+  }));
+}
+
+/**
  * Get all tags for admin
  */
 export async function getAdminTags(): Promise<CfpTag[]> {

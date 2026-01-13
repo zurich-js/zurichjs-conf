@@ -12,31 +12,17 @@ import { useToast } from '@/contexts/ToastContext';
 import AdminHeader from '@/components/admin/AdminHeader';
 import {
   SpeakerWithSessions,
-  Speaker,
   AddSpeakerModal,
   AddSessionModal,
   EditSpeakerModal,
   SpeakerCard,
 } from '@/components/admin/speakers';
 
-// Fetch speakers with their sessions
+// Fetch speakers with their sessions (now returned in single request)
 async function fetchSpeakers(): Promise<{ speakers: SpeakerWithSessions[] }> {
   const res = await fetch('/api/admin/cfp/speakers');
   if (!res.ok) throw new Error('Failed to fetch speakers');
-  const data = await res.json();
-
-  const speakersWithSessions = await Promise.all(
-    data.speakers.map(async (speaker: Speaker) => {
-      const sessionsRes = await fetch(`/api/admin/cfp/speakers/${speaker.id}`);
-      if (sessionsRes.ok) {
-        const sessionsData = await sessionsRes.json();
-        return { ...speaker, submissions: sessionsData.submissions || [] };
-      }
-      return { ...speaker, submissions: [] };
-    })
-  );
-
-  return { speakers: speakersWithSessions };
+  return res.json();
 }
 
 export default function SpeakersDashboard() {
@@ -50,21 +36,24 @@ export default function SpeakersDashboard() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  // Check auth status
-  const { isLoading: isAuthLoading } = useQuery({
+  // Check auth status using dedicated verify endpoint
+  const { data: isAuthenticatedData, isLoading: isAuthLoading } = useQuery({
     queryKey: ['admin', 'auth'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/cfp/stats');
-      if (res.ok) {
-        setIsAuthenticated(true);
-        return true;
-      }
-      setIsAuthenticated(false);
-      return false;
+      const res = await fetch('/api/admin/verify');
+      return res.ok;
     },
     retry: false,
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Sync with local state for login form
+  React.useEffect(() => {
+    if (isAuthenticatedData !== undefined) {
+      setIsAuthenticated(isAuthenticatedData);
+    }
+  }, [isAuthenticatedData]);
 
   // Fetch speakers
   const { data: speakersData, isLoading: isLoadingSpeakers } = useQuery({

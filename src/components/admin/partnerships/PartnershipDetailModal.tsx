@@ -69,6 +69,52 @@ const VOUCHER_PURPOSE_LABELS: Record<VoucherPurpose, string> = {
   organizer_discount: 'Organizer Discount',
 };
 
+/**
+ * Generate suggested coupon codes based on partnership name
+ */
+function generateCouponSuggestions(partnershipName: string): string[] {
+  // Clean and normalize the name
+  const cleanName = partnershipName
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, '')
+    .trim();
+
+  const words = cleanName.split(/\s+/).filter(Boolean);
+  const suggestions: string[] = [];
+
+  // Full name without spaces (e.g., "REACTZURICH")
+  const fullName = words.join('');
+  if (fullName.length <= 15) {
+    suggestions.push(fullName);
+  }
+
+  // Initials (e.g., "RZ" for "React Zurich")
+  const initials = words.map((w) => w[0]).join('');
+  if (initials.length >= 2) {
+    suggestions.push(`${initials}2026`);
+  }
+
+  // First word + discount placeholders (e.g., "REACT10", "REACT20")
+  const firstWord = words[0] || 'PARTNER';
+  if (firstWord.length <= 10) {
+    suggestions.push(`${firstWord}10`);
+    suggestions.push(`${firstWord}20`);
+  }
+
+  // Full name with discount (e.g., "REACTZURICH20")
+  if (fullName.length <= 12) {
+    suggestions.push(`${fullName}20`);
+  }
+
+  // Initials with ZURICHJS (e.g., "ZURICHJS_RZ")
+  if (initials.length >= 2 && initials.length <= 5) {
+    suggestions.push(`ZURICHJS_${initials}`);
+  }
+
+  // Filter out duplicates and return max 5 suggestions
+  return [...new Set(suggestions)].slice(0, 5);
+}
+
 export function PartnershipDetailModal({
   partnership,
   products,
@@ -343,6 +389,26 @@ export function PartnershipDetailModal({
                           placeholder="ZURICHJS20"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
                         />
+                        {/* Suggested codes */}
+                        <div className="mt-2">
+                          <p className="text-xs text-black/50 mb-1.5">Suggested codes:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {generateCouponSuggestions(partnership.name).map((suggestion) => (
+                              <button
+                                key={suggestion}
+                                type="button"
+                                onClick={() => setCouponData((prev) => ({ ...prev, code: suggestion }))}
+                                className={`px-2 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
+                                  couponData.code === suggestion
+                                    ? 'bg-[#F1E271] border-[#F1E271] text-black font-medium'
+                                    : 'bg-white border-gray-200 text-black/70 hover:border-[#F1E271] hover:bg-[#F1E271]/10'
+                                }`}
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-black mb-1">

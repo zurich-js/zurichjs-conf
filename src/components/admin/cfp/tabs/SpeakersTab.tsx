@@ -5,12 +5,34 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, User, Building2 } from 'lucide-react';
+import { Plus, Building2 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminSpeaker, type CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { Pagination } from '@/components/atoms';
 import { SpeakerModal } from './SpeakerModal';
 import { AddSpeakerModal } from './AddSpeakerModal';
+
+// Avatar component with initials fallback
+function SpeakerAvatar({ speaker, size = 'md' }: { speaker: CfpAdminSpeaker; size?: 'sm' | 'md' }) {
+  const initials = `${speaker.first_name?.[0] || ''}${speaker.last_name?.[0] || ''}`.toUpperCase() || '?';
+  const sizeClasses = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
+
+  if (speaker.profile_image_url) {
+    return (
+      <img
+        src={speaker.profile_image_url}
+        alt={`${speaker.first_name} ${speaker.last_name}`}
+        className={`${sizeClasses} rounded-full object-cover shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses} rounded-full bg-[#F1E271] flex items-center justify-center shrink-0`}>
+      <span className="font-medium text-black">{initials}</span>
+    </div>
+  );
+}
 
 interface SpeakersTabProps {
   speakers: CfpAdminSpeaker[];
@@ -208,17 +230,9 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             {paginatedSpeakers.map((s) => (
               <div key={s.id} className="bg-white rounded-xl p-4 border border-gray-200">
                 <div className="flex items-start gap-3 mb-3">
-                  {s.profile_image_url ? (
-                    <img
-                      src={s.profile_image_url}
-                      alt={`${s.first_name} ${s.last_name}`}
-                      className="w-12 h-12 rounded-full object-cover shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-                      <User className="w-6 h-6 text-gray-500" />
-                    </div>
-                  )}
+                  <div className="w-12 h-12 shrink-0">
+                    <SpeakerAvatar speaker={s} size="md" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-black text-sm">
                       {s.first_name || s.last_name ? `${s.first_name} ${s.last_name}` : 'No name'}
@@ -300,18 +314,18 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
 
           {/* Desktop Table View */}
           <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
                 <tr>
-                  <th className="px-4 py-3">Speaker</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Company</th>
-                  <th className="px-4 py-3">Profile</th>
-                  <th className="px-4 py-3">Sponsor</th>
-                  <th className="px-4 py-3">Visible</th>
-                  <th className="px-4 py-3">Featured</th>
-                  <th className="px-4 py-3">Joined</th>
-                  <th className="px-4 py-3">Actions</th>
+                  <th className="px-4 py-3 w-[200px]">Speaker</th>
+                  <th className="px-4 py-3 w-[180px]">Email</th>
+                  <th className="px-4 py-3 w-[120px]">Company</th>
+                  <th className="px-4 py-3 w-[90px]">Profile</th>
+                  <th className="px-4 py-3 w-[80px]">Sponsor</th>
+                  <th className="px-4 py-3 w-[70px]">Visible</th>
+                  <th className="px-4 py-3 w-[70px]">Featured</th>
+                  <th className="px-4 py-3 w-[90px]">Joined</th>
+                  <th className="px-4 py-3 w-[100px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -319,29 +333,19 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
                   <tr key={s.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        {s.profile_image_url ? (
-                          <img
-                            src={s.profile_image_url}
-                            alt={`${s.first_name} ${s.last_name}`}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="w-5 h-5 text-gray-500" />
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium text-black">
+                        <SpeakerAvatar speaker={s} size="md" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-black truncate">
                             {s.first_name || s.last_name ? `${s.first_name} ${s.last_name}` : 'No name'}
                           </div>
                           {s.job_title && (
-                            <div className="text-xs text-gray-500">{s.job_title}</div>
+                            <div className="text-xs text-gray-500 truncate">{s.job_title}</div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-black">{s.email}</td>
-                    <td className="px-4 py-4 text-sm text-black">{s.company || '-'}</td>
+                    <td className="px-4 py-4 text-sm text-black truncate" title={s.email}>{s.email}</td>
+                    <td className="px-4 py-4 text-sm text-black truncate" title={s.company || undefined}>{s.company || '-'}</td>
                     <td className="px-4 py-4">
                       {s.bio ? (
                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Complete</span>

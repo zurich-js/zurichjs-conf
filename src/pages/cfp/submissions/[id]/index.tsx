@@ -341,20 +341,25 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
                 <div>
                   <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Travel Assistance</h3>
                   <p className="text-white">
-                    {submission.travel_assistance_required ? 'Requested' : 'Not needed'}
+                    {submission.speaker?.travel_assistance_required ? (
+                      submission.speaker.assistance_type === 'both' ? 'Travel & Accommodation needed' :
+                      submission.speaker.assistance_type === 'travel' ? 'Travel needed' :
+                      submission.speaker.assistance_type === 'accommodation' ? 'Accommodation needed' :
+                      'Requested'
+                    ) : 'Not needed'}
                   </p>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Company Covers Travel</h3>
-                  <p className="text-white">
-                    {submission.company_can_cover_travel ? 'Yes' : 'No'}
-                  </p>
-                </div>
-                {submission.special_requirements && (
+                {submission.speaker?.departure_airport && (
+                  <div>
+                    <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Departure Airport</h3>
+                    <p className="text-white">{submission.speaker.departure_airport}</p>
+                  </div>
+                )}
+                {submission.speaker?.special_requirements && (
                   <div className="sm:col-span-2">
                     <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Special Requirements</h3>
                     <p className="text-brand-gray-light whitespace-pre-wrap">
-                      {submission.special_requirements}
+                      {submission.speaker.special_requirements}
                     </p>
                   </div>
                 )}

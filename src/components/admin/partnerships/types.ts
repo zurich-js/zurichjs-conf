@@ -25,4 +25,8 @@ export interface PartnershipStats {
   byStatus: Record<string, number>;
   activeCoupons: number;
   activeVouchers: number;
+  // Cumulative analytics
+  totalCouponRedemptions: number;
+  totalVoucherRedemptions: number;
+  totalDiscountGiven: number; // In cents
 }

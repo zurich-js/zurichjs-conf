@@ -488,6 +488,30 @@ export default function CfpAdminDashboard() {
   );
 }
 
+// Avatar component with initials fallback
+function SpeakerAvatar({ speaker, size = 'md' }: { speaker?: { first_name?: string; last_name?: string; avatar_url?: string }; size?: 'sm' | 'md' }) {
+  const initials = speaker
+    ? `${speaker.first_name?.[0] || ''}${speaker.last_name?.[0] || ''}`.toUpperCase() || '?'
+    : '?';
+  const sizeClasses = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
+
+  if (speaker?.avatar_url) {
+    return (
+      <img
+        src={speaker.avatar_url}
+        alt={`${speaker.first_name || ''} ${speaker.last_name || ''}`}
+        className={`${sizeClasses} rounded-full object-cover flex-shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses} rounded-full bg-gradient-to-br from-[#F1E271] to-[#e8d95e] flex items-center justify-center font-semibold text-black flex-shrink-0`}>
+      {initials}
+    </div>
+  );
+}
+
 // Inline Submissions Tab Content (keeping table logic inline for simplicity)
 function SubmissionsTabContent({
   submissions,
@@ -641,9 +665,9 @@ function SubmissionsTabContent({
       ) : (
         <>
           {/* Mobile Card View */}
-          <div className="lg:hidden space-y-4">
+          <div className="lg:hidden space-y-3">
             {paginatedSubmissions.length > 0 && (
-              <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg">
                 <input
                   type="checkbox"
                   checked={selectedIds.size === paginatedSubmissions.length && paginatedSubmissions.length > 0}
@@ -656,52 +680,72 @@ function SubmissionsTabContent({
             {paginatedSubmissions.map((s) => (
               <div
                 key={s.id}
-                className={`rounded-xl p-4 border border-gray-200 transition-all ${
-                  selectedIds.has(s.id) ? 'bg-yellow-50' : 'bg-white'
+                className={`rounded-xl p-4 border border-gray-200 transition-all shadow-sm ${
+                  selectedIds.has(s.id) ? 'bg-yellow-50 border-yellow-300' : 'bg-white'
                 }`}
               >
+                {/* Header with checkbox and status */}
                 <div className="flex items-start gap-3 mb-3">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(s.id)}
                     onChange={() => toggleSelection(s.id)}
-                    className="w-4 h-4 mt-1 rounded border-gray-300 text-[#F1E271] cursor-pointer"
+                    className="w-4 h-4 mt-0.5 rounded border-gray-300 text-[#F1E271] cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-black text-sm line-clamp-2">{s.title}</h3>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-semibold text-black text-sm line-clamp-2 flex-1">{s.title}</h3>
                       <StatusBadge status={s.status} />
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {s.speaker?.first_name} {s.speaker?.last_name}
-                    </p>
+                    {/* Speaker info with avatar */}
+                    <div className="flex items-center gap-2">
+                      <SpeakerAvatar speaker={s.speaker} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-black truncate">
+                          {s.speaker?.first_name} {s.speaker?.last_name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{s.speaker?.email}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Abstract */}
                 <p className="text-xs text-gray-500 line-clamp-2 mb-3 ml-7">{s.abstract}</p>
-                <div className="flex items-center justify-between ml-7">
-                  <div className="flex items-center gap-3 text-xs text-gray-600">
-                    <span className="px-2 py-0.5 bg-gray-200 rounded capitalize">{s.submission_type}</span>
+
+                {/* Footer with meta and action */}
+                <div className="flex items-center justify-between ml-7 pt-2 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-xs text-gray-600 flex-wrap">
+                    <span className="px-2 py-1 bg-gray-100 rounded-full capitalize font-medium">{s.submission_type}</span>
+                    <span className="text-gray-400">•</span>
                     <span>{s.stats?.review_count || 0} reviews</span>
-                    {s.stats?.avg_overall && <span>Avg: {s.stats.avg_overall.toFixed(1)}</span>}
+                    {s.stats?.avg_overall && (
+                      <>
+                        <span className="text-gray-400">•</span>
+                        <span>Avg: {s.stats.avg_overall.toFixed(1)}</span>
+                      </>
+                    )}
                   </div>
                   <button
                     onClick={() => onSelectSubmission(s)}
-                    className="px-3 py-1.5 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg cursor-pointer"
+                    className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg cursor-pointer transition-colors flex-shrink-0"
                   >
                     Manage
                   </button>
                 </div>
               </div>
             ))}
-            {paginatedSubmissions.length === 0 && <div className="text-center py-8 text-gray-500">No submissions found</div>}
+            {paginatedSubmissions.length === 0 && (
+              <div className="text-center py-12 text-gray-500">No submissions found</div>
+            )}
           </div>
 
           {/* Desktop Table View */}
           <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
                 <tr>
-                  <th className="px-4 py-3 w-10">
+                  <th className="px-3 py-3 w-12">
                     <input
                       type="checkbox"
                       checked={selectedIds.size === paginatedSubmissions.length && paginatedSubmissions.length > 0}
@@ -709,19 +753,19 @@ function SubmissionsTabContent({
                       className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
                     />
                   </th>
-                  <th className="px-4 py-3">Title</th>
-                  <th className="px-4 py-3">Speaker</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Reviews</th>
-                  <th className="px-4 py-3">Score</th>
-                  <th className="px-4 py-3">Actions</th>
+                  <th className="px-3 py-3 w-[30%]">Title</th>
+                  <th className="px-3 py-3 w-[22%]">Speaker</th>
+                  <th className="px-3 py-3 w-[10%]">Type</th>
+                  <th className="px-3 py-3 w-[12%]">Status</th>
+                  <th className="px-3 py-3 w-[8%] text-center">Reviews</th>
+                  <th className="px-3 py-3 w-[8%] text-center">Score</th>
+                  <th className="px-3 py-3 w-[10%]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedSubmissions.map((s) => (
                   <tr key={s.id} className={`hover:bg-gray-50 ${selectedIds.has(s.id) ? 'bg-yellow-50' : ''}`}>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-4">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(s.id)}
@@ -729,32 +773,39 @@ function SubmissionsTabContent({
                         className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
                       />
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="font-medium text-black">{s.title}</div>
-                      <div className="text-sm text-black truncate max-w-xs">{s.abstract}</div>
+                    <td className="px-3 py-4">
+                      <div className="font-medium text-black truncate" title={s.title}>{s.title}</div>
+                      <div className="text-sm text-gray-500 truncate" title={s.abstract}>{s.abstract}</div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm text-black">
-                        {s.speaker?.first_name} {s.speaker?.last_name}
+                    <td className="px-3 py-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <SpeakerAvatar speaker={s.speaker} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-black truncate" title={`${s.speaker?.first_name || ''} ${s.speaker?.last_name || ''}`}>
+                            {s.speaker?.first_name} {s.speaker?.last_name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate" title={s.speaker?.email}>
+                            {s.speaker?.email}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-black">{s.speaker?.email}</div>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="px-2 py-1 bg-gray-100 rounded text-xs text-black capitalize font-medium">
+                    <td className="px-3 py-4">
+                      <span className="inline-flex px-2.5 py-1 bg-gray-100 rounded-full text-xs text-black capitalize font-medium whitespace-nowrap">
                         {s.submission_type}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-4">
                       <StatusBadge status={s.status} />
                     </td>
-                    <td className="px-4 py-4 text-sm text-black font-medium">{s.stats?.review_count || 0}</td>
-                    <td className="px-4 py-4 text-sm text-black font-medium">
+                    <td className="px-3 py-4 text-sm text-black font-medium text-center">{s.stats?.review_count || 0}</td>
+                    <td className="px-3 py-4 text-sm text-black font-medium text-center">
                       {s.stats?.avg_overall ? s.stats.avg_overall.toFixed(1) : '-'}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-4">
                       <button
                         onClick={() => onSelectSubmission(s)}
-                        className="px-3 py-1.5 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-sm rounded-lg cursor-pointer"
+                        className="inline-flex items-center justify-center px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-sm rounded-lg cursor-pointer transition-colors whitespace-nowrap"
                       >
                         Manage
                       </button>
@@ -763,7 +814,7 @@ function SubmissionsTabContent({
                 ))}
                 {paginatedSubmissions.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-black">
+                    <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
                       No submissions found
                     </td>
                   </tr>

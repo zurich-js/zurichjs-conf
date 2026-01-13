@@ -256,39 +256,45 @@ export async function getPartnershipStats(): Promise<{
   byStatus: Record<PartnershipStatus, number>;
   activeCoupons: number;
   activeVouchers: number;
+  totalCouponRedemptions: number;
+  totalVoucherRedemptions: number;
+  totalDiscountGiven: number;
 }> {
   const supabase = createServiceRoleClient();
 
-  // Get partnerships count by type and status
-  const { data: partnerships, error: partnershipsError } = await supabase
-    .from('partnerships')
-    .select('type, status');
+  // Fetch all data in parallel for better performance
+  const [
+    partnershipsResult,
+    activeCouponsResult,
+    activeVouchersResult,
+    couponRedemptionsResult,
+    voucherRedemptionsResult,
+  ] = await Promise.all([
+    // Get partnerships count by type and status
+    supabase.from('partnerships').select('type, status'),
+    // Get active coupons count
+    supabase.from('partnership_coupons').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    // Get unredeemed vouchers count
+    supabase.from('partnership_vouchers').select('*', { count: 'exact', head: true }).eq('is_redeemed', false),
+    // Get all coupon redemption data
+    supabase.from('partnership_coupons').select('current_redemptions, discount_percent, discount_amount'),
+    // Get redeemed vouchers count and total value
+    supabase.from('partnership_vouchers').select('amount').eq('is_redeemed', true),
+  ]);
 
-  if (partnershipsError) {
-    log.error('Failed to get partnership stats', partnershipsError);
-    throw new Error(`Failed to get partnership stats: ${partnershipsError.message}`);
+  if (partnershipsResult.error) {
+    log.error('Failed to get partnership stats', partnershipsResult.error);
+    throw new Error(`Failed to get partnership stats: ${partnershipsResult.error.message}`);
   }
 
-  // Get active coupons count
-  const { count: activeCoupons, error: couponsError } = await supabase
-    .from('partnership_coupons')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_active', true);
-
-  if (couponsError) {
-    log.error('Failed to get coupon stats', couponsError);
-    throw new Error(`Failed to get coupon stats: ${couponsError.message}`);
+  if (activeCouponsResult.error) {
+    log.error('Failed to get coupon stats', activeCouponsResult.error);
+    throw new Error(`Failed to get coupon stats: ${activeCouponsResult.error.message}`);
   }
 
-  // Get unredeemed vouchers count
-  const { count: activeVouchers, error: vouchersError } = await supabase
-    .from('partnership_vouchers')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_redeemed', false);
-
-  if (vouchersError) {
-    log.error('Failed to get voucher stats', vouchersError);
-    throw new Error(`Failed to get voucher stats: ${vouchersError.message}`);
+  if (activeVouchersResult.error) {
+    log.error('Failed to get voucher stats', activeVouchersResult.error);
+    throw new Error(`Failed to get voucher stats: ${activeVouchersResult.error.message}`);
   }
 
   // Calculate counts
@@ -306,16 +312,36 @@ export async function getPartnershipStats(): Promise<{
     expired: 0,
   };
 
-  for (const p of partnerships || []) {
+  for (const p of partnershipsResult.data || []) {
     byType[p.type as PartnershipType]++;
     byStatus[p.status as PartnershipStatus]++;
   }
 
+  // Calculate total coupon redemptions
+  let totalCouponRedemptions = 0;
+  let totalDiscountGiven = 0;
+  for (const c of couponRedemptionsResult.data || []) {
+    totalCouponRedemptions += c.current_redemptions || 0;
+    // Estimate discount given (simplified - actual would need order data)
+    // For fixed amount coupons, multiply by redemptions
+    if (c.discount_amount) {
+      totalDiscountGiven += (c.discount_amount || 0) * (c.current_redemptions || 0);
+    }
+  }
+
+  // Calculate total voucher redemptions and their value
+  const redeemedVouchers = voucherRedemptionsResult.data || [];
+  const totalVoucherRedemptions = redeemedVouchers.length;
+  const voucherValueRedeemed = redeemedVouchers.reduce((sum, v) => sum + (v.amount || 0), 0);
+
   return {
-    total: partnerships?.length || 0,
+    total: partnershipsResult.data?.length || 0,
     byType,
     byStatus,
-    activeCoupons: activeCoupons || 0,
-    activeVouchers: activeVouchers || 0,
+    activeCoupons: activeCouponsResult.count || 0,
+    activeVouchers: activeVouchersResult.count || 0,
+    totalCouponRedemptions,
+    totalVoucherRedemptions,
+    totalDiscountGiven: totalDiscountGiven + voucherValueRedeemed,
   };
 }
