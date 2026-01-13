@@ -202,6 +202,39 @@ export async function removeInvoicePDF(invoiceId: string): Promise<SponsorshipIn
 }
 
 /**
+ * Update invoice details (due date, notes, issue date)
+ *
+ * @param invoiceId - UUID of the invoice
+ * @param data - Fields to update
+ * @returns Updated invoice
+ */
+export async function updateInvoice(
+  invoiceId: string,
+  data: { dueDate?: string; invoiceNotes?: string; issueDate?: string }
+): Promise<SponsorshipInvoice> {
+  const supabase = createServiceRoleClient();
+
+  const updateData: Record<string, unknown> = {};
+  if (data.dueDate !== undefined) updateData.due_date = data.dueDate;
+  if (data.invoiceNotes !== undefined) updateData.invoice_notes = data.invoiceNotes;
+  if (data.issueDate !== undefined) updateData.issue_date = data.issueDate;
+
+  const { data: invoice, error } = await supabase
+    .from('sponsorship_invoices')
+    .update(updateData)
+    .eq('id', invoiceId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating invoice:', error);
+    throw new Error(`Failed to update invoice: ${error.message}`);
+  }
+
+  return invoice as SponsorshipInvoice;
+}
+
+/**
  * Recalculate and update invoice totals
  * Call this after modifying line items
  *

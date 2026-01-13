@@ -44,6 +44,8 @@ export function SponsorDetailModal({
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState('');
+  const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+  const [editDueDate, setEditDueDate] = useState('');
 
   // Edit mode for sponsor details
   const [isEditing, setIsEditing] = useState(false);
@@ -138,6 +140,16 @@ export function SponsorDetailModal({
     });
   };
 
+  const handleUpdateDueDate = async () => {
+    if (!editDueDate) return;
+    await apiCall(`/api/admin/sponsorships/deals/${deal.id}/invoice`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dueDate: editDueDate }),
+    });
+    setIsEditingDueDate(false);
+  };
+
   const handleToggleLogoPublic = async () => {
     await apiCall(`/api/admin/sponsorships/${sponsor.id}`, {
       method: 'PUT',
@@ -157,10 +169,12 @@ export function SponsorDetailModal({
         contactName: editForm.contactName,
         contactEmail: editForm.contactEmail,
         contactPhone: editForm.contactPhone || null,
-        billingAddressStreet: editForm.billingAddressStreet,
-        billingAddressCity: editForm.billingAddressCity,
-        billingAddressPostalCode: editForm.billingAddressPostalCode,
-        billingAddressCountry: editForm.billingAddressCountry,
+        billingAddress: {
+          street: editForm.billingAddressStreet,
+          city: editForm.billingAddressCity,
+          postalCode: editForm.billingAddressPostalCode,
+          country: editForm.billingAddressCountry,
+        },
         internalNotes: editForm.internalNotes || null,
       }),
     });
@@ -756,9 +770,45 @@ export function SponsorDetailModal({
                         <span className="text-gray-500">Issue Date:</span>{' '}
                         <span>{invoice.issue_date}</span>
                       </div>
-                      <div>
+                      <div className="flex items-center gap-2">
                         <span className="text-gray-500">Due Date:</span>{' '}
-                        <span>{invoice.due_date}</span>
+                        {isEditingDueDate ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="date"
+                              value={editDueDate}
+                              onChange={(e) => setEditDueDate(e.target.value)}
+                              className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                            />
+                            <button
+                              onClick={handleUpdateDueDate}
+                              disabled={isUpdating || !editDueDate}
+                              className="p-1 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => setIsEditingDueDate(false)}
+                              className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span>{invoice.due_date}</span>
+                            <button
+                              onClick={() => {
+                                setEditDueDate(invoice.due_date);
+                                setIsEditingDueDate(true);
+                              }}
+                              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                              title="Edit due date"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

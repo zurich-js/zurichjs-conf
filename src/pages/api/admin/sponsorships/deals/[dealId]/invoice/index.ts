@@ -2,11 +2,13 @@
  * Deal Invoice API
  * GET /api/admin/sponsorships/deals/[dealId]/invoice - Get invoice for deal
  * POST /api/admin/sponsorships/deals/[dealId]/invoice - Create invoice for deal
+ * PUT /api/admin/sponsorships/deals/[dealId]/invoice - Update invoice (due date, notes)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { getDeal, getInvoiceForDeal, createInvoice, getTier } from '@/lib/sponsorship';
+import { updateInvoice } from '@/lib/sponsorship/invoices';
 import { getLineItemsForDeal } from '@/lib/sponsorship/line-items';
 import { computeSponsorshipInvoiceTotals } from '@/lib/sponsorship/calculations';
 import type { CreateInvoiceRequest, SponsorshipCurrency } from '@/lib/types/sponsorship';
@@ -37,6 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return handleGet(dealId, res);
     case 'POST':
       return handleCreate(dealId, req, res);
+    case 'PUT':
+      return handleUpdate(dealId, req, res);
     default:
       return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -132,6 +136,43 @@ async function handleCreate(
 
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to create invoice',
+    });
+  }
+}
+
+/**
+ * PUT - Update invoice (due date, notes)
+ */
+async function handleUpdate(
+  dealId: string,
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  try {
+    const { dueDate, invoiceNotes } = req.body as { dueDate?: string; invoiceNotes?: string };
+
+    // Get existing invoice
+    const invoice = await getInvoiceForDeal(dealId);
+    if (!invoice) {
+      return res.status(404).json({ error: 'No invoice exists for this deal' });
+    }
+
+    // Validate date format if provided
+    if (dueDate) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(dueDate)) {
+        return res.status(400).json({ error: 'Invalid date format (expected YYYY-MM-DD)' });
+      }
+    }
+
+    const updatedInvoice = await updateInvoice(invoice.id, { dueDate, invoiceNotes });
+    log.info('Invoice updated', { dealId, invoiceId: invoice.id });
+
+    return res.status(200).json(updatedInvoice);
+  } catch (error) {
+    log.error('Error updating invoice', { error, dealId });
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to update invoice',
     });
   }
 }

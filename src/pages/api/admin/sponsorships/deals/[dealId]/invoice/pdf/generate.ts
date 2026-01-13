@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { getDealWithRelations, updateInvoicePDF } from '@/lib/sponsorship';
+import { updateInvoice } from '@/lib/sponsorship/invoices';
 import { generateSponsorshipInvoicePDF } from '@/lib/pdf';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { SponsorshipInvoicePDFProps } from '@/lib/types/sponsorship';
@@ -43,10 +44,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { sponsor, tier, line_items, invoice } = deal;
 
+    // Update issue_date to current date when regenerating
+    const newIssueDate = new Date().toISOString().split('T')[0];
+    await updateInvoice(invoice.id, { issueDate: newIssueDate });
+
     // Prepare PDF props
     const pdfProps: SponsorshipInvoicePDFProps = {
       invoiceNumber: invoice.invoice_number,
-      issueDate: invoice.issue_date,
+      issueDate: newIssueDate,
       dueDate: invoice.due_date,
       companyName: sponsor.company_name,
       vatId: sponsor.vat_id || undefined,
