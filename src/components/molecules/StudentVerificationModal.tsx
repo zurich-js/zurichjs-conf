@@ -198,7 +198,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
 
             {/* Header */}
             <div className="mb-6">
-              <DialogTitle className="text-xl font-bold text-brand0white mb-2">
+              <DialogTitle className="text-xl font-bold text-brand-white mb-2">
                 Verify Your Status
               </DialogTitle>
               <p className="text-brand-gray-light">
