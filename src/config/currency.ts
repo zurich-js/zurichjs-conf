@@ -21,11 +21,13 @@ export const EUROZONE_COUNTRIES = [
   'FR', // France
   'DE', // Germany
   'GR', // Greece
+  'HR', // Croatia
   'IE', // Ireland
   'IT', // Italy
   'LV', // Latvia
   'LT', // Lithuania
   'LU', // Luxembourg
+  'ME', // Montenegro
   'MK', // North Macedonia
   'MT', // Malta
   'NL', // Netherlands
@@ -33,6 +35,7 @@ export const EUROZONE_COUNTRIES = [
   'SK', // Slovakia
   'SI', // Slovenia
   'ES', // Spain
+  'XK', // Kosovo
 ] as const;
 
 export type EurozoneCountry = (typeof EUROZONE_COUNTRIES)[number];
