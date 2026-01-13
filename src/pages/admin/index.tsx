@@ -122,7 +122,8 @@ export default function AdminDashboard() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/admin/tickets');
+      // Use dedicated verify endpoint for auth check (consistent with other admin pages)
+      const response = await fetch('/api/admin/verify');
       if (response.ok) {
         setIsAuthenticated(true);
       }
