@@ -8,10 +8,11 @@
 export type SupportedCurrency = 'CHF' | 'EUR';
 
 /**
- * ISO 3166-1 alpha-2 country codes for Eurozone countries
- * These countries use EUR as their official currency
+ * ISO 3166-1 alpha-2 country codes for countries that should use EUR pricing
+ * Includes Eurozone countries and select Balkan countries
  */
 export const EUROZONE_COUNTRIES = [
+  'AL', // Albania
   'AT', // Austria
   'BE', // Belgium
   'CY', // Cyprus
@@ -25,6 +26,7 @@ export const EUROZONE_COUNTRIES = [
   'LV', // Latvia
   'LT', // Lithuania
   'LU', // Luxembourg
+  'MK', // North Macedonia
   'MT', // Malta
   'NL', // Netherlands
   'PT', // Portugal
