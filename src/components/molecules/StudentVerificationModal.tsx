@@ -193,7 +193,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
               aria-label="Close modal"
               autoFocus
             >
-              <XIcon size={20} className="fill-brand-white" />
+              <XIcon size={20} className="text-brand-white" />
             </button>
 
             {/* Header */}
