@@ -17,7 +17,7 @@ const createVouchersSchema = z.object({
   code: z.string().min(3).max(30).optional(),
   purpose: z.enum(['community_discount', 'raffle', 'giveaway', 'organizer_discount']),
   amount: z.number().min(100, 'Amount must be at least 1 (in cents)'),
-  currency: z.enum(['EUR', 'CHF']),
+  currency: z.enum(['EUR', 'CHF', 'GBP']),
   recipient_name: z.string().optional(),
   recipient_email: z.string().email().optional(),
   quantity: z.number().min(1).max(100).default(1),

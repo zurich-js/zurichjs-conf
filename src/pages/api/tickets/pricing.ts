@@ -18,6 +18,7 @@ import {
 } from '@/config/pricing-stages';
 import { parseCurrencyParam, type SupportedCurrency } from '@/config/currency';
 import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
+import { serverAnalytics } from '@/lib/analytics/server';
 
 const log = logger.scope('Ticket Pricing API');
 
@@ -124,54 +125,88 @@ export default async function handler(
     const currentStageConfig = getCurrentStage(counts);
     const currentStage = currentStageConfig.stage;
 
-    // Fetch all prices in parallel
-    const pricePromises = TICKET_CATEGORIES.map(async (category) => {
-      const lookupKey = buildLookupKey(category, currentStage, currency);
-      const price = await fetchPrice(stripe, lookupKey);
+    // Helper to fetch plans for a given currency
+    const fetchPlansForCurrency = async (targetCurrency: SupportedCurrency): Promise<TicketPlanResponse[]> => {
+      const pricePromises = TICKET_CATEGORIES.map(async (category) => {
+        const lookupKey = buildLookupKey(category, currentStage, targetCurrency);
+        const price = await fetchPrice(stripe, lookupKey);
 
-      if (!price?.unit_amount || !price?.currency) {
-        return null;
-      }
+        if (!price?.unit_amount || !price?.currency) {
+          return null;
+        }
 
-      // Get comparison price (late_bird price for non-student categories)
-      let comparePrice: number | undefined;
-      if (category !== 'standard_student_unemployed' && currentStage !== 'late_bird') {
-        const lateBirdKey = buildLookupKey(category, 'late_bird', currency);
-        const lateBirdPrice = await fetchPrice(stripe, lateBirdKey);
-        comparePrice = lateBirdPrice?.unit_amount ?? undefined;
-      }
+        // Get comparison price (late_bird price for non-student categories)
+        let comparePrice: number | undefined;
+        if (category !== 'standard_student_unemployed' && currentStage !== 'late_bird') {
+          const lateBirdKey = buildLookupKey(category, 'late_bird', targetCurrency);
+          const lateBirdPrice = await fetchPrice(stripe, lateBirdKey);
+          comparePrice = lateBirdPrice?.unit_amount ?? undefined;
+        }
 
-      // Calculate stock info
-      const stock = counts
-        ? getStockInfo(category, currentStage, counts)
-        : { remaining: null, total: null, soldOut: false };
+        // Calculate stock info
+        const stock = counts
+          ? getStockInfo(category, currentStage, counts)
+          : { remaining: null, total: null, soldOut: false };
 
-      // For VIP, always show global stock limit
-      const finalStock: StockInfo = category === 'vip'
-        ? {
-            remaining: counts
-              ? Math.max(0, GLOBAL_STOCK_LIMITS.vip - (counts.byCategory.vip || 0))
-              : GLOBAL_STOCK_LIMITS.vip,
-            total: GLOBAL_STOCK_LIMITS.vip,
-            soldOut: counts ? (counts.byCategory.vip || 0) >= GLOBAL_STOCK_LIMITS.vip : false,
-          }
-        : stock;
+        // For VIP, always show global stock limit
+        const finalStock: StockInfo = category === 'vip'
+          ? {
+              remaining: counts
+                ? Math.max(0, GLOBAL_STOCK_LIMITS.vip - (counts.byCategory.vip || 0))
+                : GLOBAL_STOCK_LIMITS.vip,
+              total: GLOBAL_STOCK_LIMITS.vip,
+              soldOut: counts ? (counts.byCategory.vip || 0) >= GLOBAL_STOCK_LIMITS.vip : false,
+            }
+          : stock;
 
-      return {
-        id: category,
-        title: CATEGORY_TITLES[category],
-        price: price.unit_amount,
-        comparePrice,
-        currency: price.currency.toUpperCase(),
-        priceId: price.id,
-        lookupKey,
-        stage: category === 'standard_student_unemployed' ? 'standard' : currentStage,
-        stock: finalStock,
-      } satisfies TicketPlanResponse;
-    });
+        return {
+          id: category,
+          title: CATEGORY_TITLES[category],
+          price: price.unit_amount,
+          comparePrice,
+          currency: price.currency.toUpperCase(),
+          priceId: price.id,
+          lookupKey,
+          stage: category === 'standard_student_unemployed' ? 'standard' : currentStage,
+          stock: finalStock,
+        } satisfies TicketPlanResponse;
+      });
 
-    const results = await Promise.all(pricePromises);
-    const plans = results.filter((p): p is NonNullable<typeof p> => p !== null);
+      const results = await Promise.all(pricePromises);
+      return results.filter((p): p is NonNullable<typeof p> => p !== null);
+    };
+
+    // Fetch plans for requested currency
+    let plans = await fetchPlansForCurrency(currency);
+
+    // If no plans found and currency is not CHF, fall back to CHF
+    if (plans.length === 0 && currency !== 'CHF') {
+      const attemptedLookupKeys = TICKET_CATEGORIES.map((category) =>
+        buildLookupKey(category, currentStage, currency)
+      );
+
+      log.warn('No pricing plans found for currency, falling back to CHF', {
+        requestedCurrency: currency,
+        currentStage,
+        attemptedLookupKeys,
+      });
+
+      await serverAnalytics.error('pricing-api', `No pricing plans found for ${currency}, falling back to CHF`, {
+        type: 'system',
+        severity: 'medium',
+        code: 'CURRENCY_FALLBACK',
+        stack: JSON.stringify({
+          requestedCurrency: currency,
+          fallbackCurrency: 'CHF',
+          currentStage,
+          attemptedLookupKeys,
+          message: `Stripe prices with lookup keys [${attemptedLookupKeys.join(', ')}] not found. Falling back to CHF. Create these prices in Stripe Dashboard to enable ${currency} pricing.`,
+        }),
+      });
+
+      // Fetch CHF plans as fallback
+      plans = await fetchPlansForCurrency('CHF');
+    }
 
     res.status(200).json({
       plans,

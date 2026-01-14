@@ -17,7 +17,7 @@ const createCouponSchema = z.object({
   type: z.enum(['percentage', 'fixed_amount']),
   discount_percent: z.number().min(1).max(100).optional(),
   discount_amount: z.number().min(1).optional(),
-  currency: z.enum(['EUR', 'CHF']).optional(),
+  currency: z.enum(['EUR', 'CHF', 'GBP']).optional(),
   restricted_product_ids: z.array(z.string()).default([]),
   max_redemptions: z.number().min(1).optional(),
   expires_at: z.string().datetime().optional(),
