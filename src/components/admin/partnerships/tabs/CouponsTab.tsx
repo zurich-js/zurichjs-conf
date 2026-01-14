@@ -234,6 +234,7 @@ export function CouponsTab({
                   >
                     <option value="CHF">CHF</option>
                     <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
                   </select>
                 </div>
               </>

@@ -1960,6 +1960,7 @@ function IssueTicketTab() {
                   >
                     <option value="CHF">CHF</option>
                     <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
                     <option value="USD">USD</option>
                   </select>
                 </div>

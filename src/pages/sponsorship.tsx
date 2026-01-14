@@ -16,7 +16,7 @@ import { SponsorshipInquiryModal } from '@/components/molecules';
 import { SEO } from '@/components/SEO';
 import { sponsorshipPageData } from '@/data/sponsorship';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
-import { getCurrencyFromCountry } from '@/config/currency';
+import { getCurrencyFromCountry, type SupportedCurrency } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 
 const HeaderSocialLinks = () => (
@@ -49,7 +49,7 @@ const HeaderSocialLinks = () => (
 );
 
 interface SponsorshipPageProps {
-  detectedCurrency: 'CHF' | 'EUR';
+  detectedCurrency: SupportedCurrency;
 }
 
 export default function SponsorshipPage({ detectedCurrency }: SponsorshipPageProps) {

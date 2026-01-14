@@ -3,11 +3,15 @@ import { motion } from 'framer-motion';
 import { Heading, Kicker, Button } from '@/components/atoms';
 import { TierCard } from '@/components/molecules';
 import type { SponsorshipTiersData, TierBenefit } from '@/data/sponsorship';
+import type { SupportedCurrency } from '@/config/currency';
+
+/** Sponsorship pricing is only available in CHF and EUR */
+type SponsorshipCurrency = 'CHF' | 'EUR';
 
 export interface SponsorshipTiersSectionProps {
   data: SponsorshipTiersData;
-  /** Initial currency (from context or server) */
-  initialCurrency?: 'CHF' | 'EUR';
+  /** Initial currency (from context or server). GBP falls back to CHF. */
+  initialCurrency?: SupportedCurrency;
   /** Callback when "Become a sponsor" is clicked */
   onBecomeSponsor?: () => void;
 }
@@ -22,7 +26,7 @@ function formatPrice(price: number): string {
 /**
  * Format benefits with correct currency for add-on credits
  */
-function formatBenefits(benefits: TierBenefit[], currency: 'CHF' | 'EUR'): { label: string }[] {
+function formatBenefits(benefits: TierBenefit[], currency: SponsorshipCurrency): { label: string }[] {
   return benefits.map((benefit) => {
     if (benefit.addOnCredit) {
       const amount = formatPrice(benefit.addOnCredit[currency]);
@@ -33,6 +37,14 @@ function formatBenefits(benefits: TierBenefit[], currency: 'CHF' | 'EUR'): { lab
 }
 
 /**
+ * Convert SupportedCurrency to SponsorshipCurrency (GBP falls back to CHF)
+ */
+function toSponsorshipCurrency(currency?: SupportedCurrency): SponsorshipCurrency {
+  if (currency === 'EUR') return 'EUR';
+  return 'CHF'; // CHF is default, GBP also falls back to CHF
+}
+
+/**
  * SponsorshipTiersSection - Sponsorship tiers/pricing section
  *
  * Displays sponsorship tiers in a responsive grid with currency toggle.
@@ -40,12 +52,12 @@ function formatBenefits(benefits: TierBenefit[], currency: 'CHF' | 'EUR'): { lab
  */
 export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = ({
   data,
-  initialCurrency = 'CHF',
+  initialCurrency,
   onBecomeSponsor,
 }) => {
-  const [currency, setCurrency] = useState<'CHF' | 'EUR'>(initialCurrency);
+  const [currency, setCurrency] = useState<SponsorshipCurrency>(toSponsorshipCurrency(initialCurrency));
 
-  const handleCurrencyChange = (newCurrency: 'CHF' | 'EUR') => {
+  const handleCurrencyChange = (newCurrency: SponsorshipCurrency) => {
     setCurrency(newCurrency);
   };
 

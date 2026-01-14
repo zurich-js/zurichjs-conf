@@ -25,8 +25,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  * Handles patterns like "standard_blind_bird_eur" -> "standard_blind_bird"
  */
 function stripCurrencySuffix(lookupKey: string): string {
-  // Remove _eur or _chf suffix if present
-  if (lookupKey.endsWith('_eur') || lookupKey.endsWith('_chf')) {
+  // Remove _eur, _gbp, or _chf suffix if present
+  if (lookupKey.endsWith('_eur') || lookupKey.endsWith('_gbp') || lookupKey.endsWith('_chf')) {
     return lookupKey.slice(0, -4);
   }
   return lookupKey;
@@ -108,7 +108,7 @@ function toLegacyType(category: TicketCategory, stage: TicketStage): TicketType 
  * Check if a price is a valid conference ticket product
  * Validates based on lookup key pattern: {category}_{stage} or {category}_{stage}_{currency}
  * Handles multi-part stage names like "blind_bird" correctly
- * Handles currency suffix like "_eur" or "_chf"
+ * Handles currency suffix like "_eur", "_gbp", or "_chf"
  */
 function isTicketProduct(price: Stripe.Price | undefined): boolean {
   if (!price?.lookup_key) return false;

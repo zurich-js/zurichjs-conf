@@ -64,21 +64,23 @@ const getStripe = (): Stripe => {
 /**
  * Build Stripe lookup key for a category/stage/currency combination
  * EUR prices use '_eur' suffix (e.g., 'standard_early_bird_eur')
+ * GBP prices use '_gbp' suffix (e.g., 'standard_early_bird_gbp')
  */
 const buildLookupKey = (
   category: TicketCategory,
   stage: PriceStage,
   currency: SupportedCurrency
 ): string => {
+  // Determine currency suffix
+  const currencySuffix = currency === 'EUR' ? '_eur' : currency === 'GBP' ? '_gbp' : '';
+
   // Student/Unemployed has fixed pricing (not stage-dependent)
   if (category === 'standard_student_unemployed') {
-    return currency === 'EUR'
-      ? 'standard_student_unemployed_eur'
-      : 'standard_student_unemployed';
+    return `standard_student_unemployed${currencySuffix}`;
   }
 
   const base = `${category}_${stage}`;
-  return currency === 'EUR' ? `${base}_eur` : base;
+  return `${base}${currencySuffix}`;
 };
 
 /**

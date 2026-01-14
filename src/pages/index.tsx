@@ -5,7 +5,7 @@ import { dehydrate, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
-import { getCurrencyFromCountry } from '@/config/currency';
+import { getCurrencyFromCountry, type SupportedCurrency } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
 
@@ -16,7 +16,7 @@ import Link from 'next/link';
  */
 interface HomePageProps {
   dehydratedState: DehydratedState;
-  detectedCurrency: 'CHF' | 'EUR';
+  detectedCurrency: SupportedCurrency;
 }
 
 // FAQ data for schema (plain text versions)

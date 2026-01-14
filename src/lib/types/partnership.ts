@@ -26,7 +26,7 @@ export type VoucherPurpose = 'community_discount' | 'raffle' | 'giveaway' | 'org
 /**
  * Currency for fixed amount discounts
  */
-export type VoucherCurrency = 'EUR' | 'CHF';
+export type VoucherCurrency = 'EUR' | 'CHF' | 'GBP';
 
 /**
  * Main partnership record

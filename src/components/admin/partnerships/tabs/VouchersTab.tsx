@@ -159,6 +159,7 @@ export function VouchersTab({
               >
                 <option value="CHF">CHF</option>
                 <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
               </select>
             </div>
           </div>
