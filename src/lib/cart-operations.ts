@@ -42,6 +42,23 @@ export function getTotalPrice(items: CartItem[]): number {
 }
 
 /**
+ * Calculate total price of items that are eligible for a discount
+ * @param items - Cart items
+ * @param applicablePriceIds - Price IDs the coupon applies to (undefined = all items)
+ */
+export function getDiscountableSubtotal(items: CartItem[], applicablePriceIds?: string[]): number {
+  // If no restrictions, all items are discountable
+  if (!applicablePriceIds || applicablePriceIds.length === 0) {
+    return getTotalPrice(items);
+  }
+
+  // Only sum items whose priceId is in the applicable list
+  return items
+    .filter((item) => applicablePriceIds.includes(item.priceId))
+    .reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+/**
  * Calculate discount amount based on type and value
  */
 export function calculateDiscountAmount(
@@ -60,11 +77,14 @@ export function calculateDiscountAmount(
 /**
  * Calculate complete order summary from cart
  * All values are derived, nothing stored
+ * Discount is only applied to eligible items based on applicablePriceIds
  */
 export function getOrderSummary(cart: Cart): OrderSummary {
   const subtotal = getTotalPrice(cart.items);
-  const discount = calculateDiscountAmount(subtotal, cart.discountType, cart.discountValue);
-  
+  // Calculate discount based only on items the coupon applies to
+  const discountableAmount = getDiscountableSubtotal(cart.items, cart.applicablePriceIds);
+  const discount = calculateDiscountAmount(discountableAmount, cart.discountType, cart.discountValue);
+
   return {
     subtotal,
     discount,
@@ -130,22 +150,26 @@ export function updateQuantity(cart: Cart, itemId: string, quantity: number): Ca
 
 /**
  * Apply voucher to cart
+ * @param applicablePriceIds - Price IDs the coupon applies to (undefined = all items)
  */
 export function applyVoucher(
   cart: Cart,
   couponCode: string,
   discountType: 'percentage' | 'fixed',
-  discountValue: number
+  discountValue: number,
+  applicablePriceIds?: string[]
 ): Cart {
-  const totalPrice = getTotalPrice(cart.items);
-  const discountAmount = calculateDiscountAmount(totalPrice, discountType, discountValue);
-  
+  // Calculate discount based only on applicable items
+  const discountableAmount = getDiscountableSubtotal(cart.items, applicablePriceIds);
+  const discountAmount = calculateDiscountAmount(discountableAmount, discountType, discountValue);
+
   return {
     ...cart,
     couponCode,
     discountAmount,
     discountType,
     discountValue,
+    applicablePriceIds,
   };
 }
 
@@ -159,6 +183,7 @@ export function removeVoucher(cart: Cart): Cart {
     discountAmount: undefined,
     discountType: undefined,
     discountValue: undefined,
+    applicablePriceIds: undefined,
   };
 }
 
@@ -172,8 +197,10 @@ export function removeVoucher(cart: Cart): Cart {
 function rebuildCart(cart: Cart, newItems: CartItem[], currency?: string): Cart {
   const totalItems = getTotalItems(newItems);
   const totalPrice = getTotalPrice(newItems);
-  const discountAmount = calculateDiscountAmount(totalPrice, cart.discountType, cart.discountValue);
-  
+  // Recalculate discount based on applicable items only
+  const discountableAmount = getDiscountableSubtotal(newItems, cart.applicablePriceIds);
+  const discountAmount = calculateDiscountAmount(discountableAmount, cart.discountType, cart.discountValue);
+
   return {
     ...cart,
     items: newItems,

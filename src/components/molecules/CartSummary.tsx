@@ -34,6 +34,10 @@ export interface CartSummaryProps {
    */
   discountValue?: number;
   /**
+   * Whether the discount applies to only some items (not all)
+   */
+  isPartialDiscount?: boolean;
+  /**
    * Callback to remove voucher
    */
   onRemoveVoucher?: () => void;
@@ -54,6 +58,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   voucherCode,
   discountType,
   discountValue,
+  isPartialDiscount = false,
   onRemoveVoucher,
   className = '',
 }) => {
@@ -95,15 +100,22 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
           </div>
         )}
         {voucherCode && (
-          <button
-            className="inline-flex items-center cursor-pointer gap-1.5 px-3 py-1.5 border-2 border-brand-green/50 bg-brand-green/20 text-brand-green text-sm font-mono rounded-lg group/btn"
-            aria-label="Remove voucher"
-            onClick={onRemoveVoucher}
-          >
-            <CirclePercentIcon size={14} className="stroke-current" />
-            {voucherCode}
-            <XIcon size={16} className="inline-block ml-auto stroke-brand-gray-medium group-hover/btn:stroke-brand-red group-focus/btn:stroke-brand-red" />
-          </button>
+          <>
+            <button
+              className="inline-flex items-center cursor-pointer gap-1.5 px-3 py-1.5 border-2 border-brand-green/50 bg-brand-green/20 text-brand-green text-sm font-mono rounded-lg group/btn"
+              aria-label="Remove voucher"
+              onClick={onRemoveVoucher}
+            >
+              <CirclePercentIcon size={14} className="stroke-current" />
+              {voucherCode}
+              <XIcon size={16} className="inline-block ml-auto stroke-brand-gray-medium group-hover/btn:stroke-brand-red group-focus/btn:stroke-brand-red" />
+            </button>
+            {isPartialDiscount && (
+              <p className="text-xs text-brand-gray-medium">
+                Discount applies to eligible tickets only
+              </p>
+            )}
+          </>
         )}
 
         {/* Tax */}

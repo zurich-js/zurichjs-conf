@@ -75,6 +75,11 @@ export default function CartPage() {
   const orderSummary = calculateOrderSummary(cart);
   const isEmpty = cart.items.length === 0;
 
+  // Check if discount applies to only some items (partial discount)
+  const isPartialDiscount = cart.applicablePriceIds !== undefined &&
+    cart.applicablePriceIds.length > 0 &&
+    cart.applicablePriceIds.length < cart.items.length;
+
   // Workshop upsell logic
   // Prevent layout shift by determining this once pricing data and vouchers are loaded
   // Workshop vouchers are only available for CHF currency (not EUR)
@@ -565,6 +570,7 @@ export default function CartPage() {
                       voucherCode={cart.couponCode}
                       discountType={cart.discountType}
                       discountValue={cart.discountValue}
+                      isPartialDiscount={isPartialDiscount}
                       onRemoveVoucher={removeVoucher}
                     />
 
@@ -758,6 +764,7 @@ export default function CartPage() {
                             voucherCode={cart.couponCode}
                             discountType={cart.discountType}
                             discountValue={cart.discountValue}
+                            isPartialDiscount={isPartialDiscount}
                             onRemoveVoucher={removeVoucher}
                           />
                         </div>

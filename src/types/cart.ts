@@ -83,6 +83,11 @@ export interface Cart {
    * Original discount value (percentage number or fixed amount)
    */
   discountValue?: number;
+  /**
+   * Price IDs the coupon applies to (for per-item discount calculation)
+   * If undefined, coupon applies to all items
+   */
+  applicablePriceIds?: string[];
 }
 
 /**

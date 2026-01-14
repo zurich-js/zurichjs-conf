@@ -33,7 +33,7 @@ type CartAction =
   | { type: 'ADD_ITEM'; item: Omit<CartItem, 'quantity'>; quantity: number }
   | { type: 'REMOVE_ITEM'; itemId: string }
   | { type: 'UPDATE_QUANTITY'; itemId: string; quantity: number }
-  | { type: 'APPLY_VOUCHER'; code: string; discountType: 'percentage' | 'fixed'; discountValue: number }
+  | { type: 'APPLY_VOUCHER'; code: string; discountType: 'percentage' | 'fixed'; discountValue: number; applicablePriceIds?: string[] }
   | { type: 'REMOVE_VOUCHER' }
   | { type: 'CLEAR_CART' }
   | { type: 'REPLACE_CART'; cart: Cart };
@@ -51,7 +51,7 @@ function cartReducer(state: Cart, action: CartAction): Cart {
     case 'UPDATE_QUANTITY':
       return updateQuantity(state, action.itemId, action.quantity);
     case 'APPLY_VOUCHER':
-      return applyVoucherToCart(state, action.code, action.discountType, action.discountValue);
+      return applyVoucherToCart(state, action.code, action.discountType, action.discountValue, action.applicablePriceIds);
     case 'REMOVE_VOUCHER':
       return removeVoucherFromCart(state);
     case 'CLEAR_CART':
@@ -153,7 +153,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
       });
 
       if (!result.valid) {
-        trackVoucherEvent(code, false, result.error);
+        trackVoucherEvent({
+          code,
+          success: false,
+          error: result.error,
+          cartPriceIds: priceIds,
+        });
         return { success: false, error: result.error || 'Invalid promo code' };
       }
 
@@ -161,13 +166,32 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
       const discountType = result.type === 'fixed' ? 'fixed' as const : 'percentage' as const;
       const discountValue = result.type === 'fixed' ? result.amountOff! : result.percentOff!;
 
-      dispatch({ type: 'APPLY_VOUCHER', code: code.trim(), discountType, discountValue });
-      trackVoucherEvent(code, true);
-      
+      dispatch({
+        type: 'APPLY_VOUCHER',
+        code: code.trim(),
+        discountType,
+        discountValue,
+        applicablePriceIds: result.applicablePriceIds,
+      });
+
+      trackVoucherEvent({
+        code,
+        success: true,
+        discountType,
+        discountValue,
+        applicablePriceIds: result.applicablePriceIds,
+        cartPriceIds: priceIds,
+      });
+
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to apply promo code';
-      trackVoucherEvent(code, false, errorMessage);
+      trackVoucherEvent({
+        code,
+        success: false,
+        error: errorMessage,
+        cartPriceIds: priceIds,
+      });
       return { success: false, error: errorMessage };
     }
   }, [validateVoucher]);
@@ -255,13 +279,41 @@ export const useCart = (): CartContextValue => {
 // Analytics Helper
 // ============================================================================
 
-function trackVoucherEvent(code: string, success: boolean, error?: string) {
+interface VoucherTrackingData {
+  code: string;
+  success: boolean;
+  error?: string;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  applicablePriceIds?: string[];
+  cartPriceIds?: string[];
+}
+
+function trackVoucherEvent(data: VoucherTrackingData) {
+  const isPartialDiscount = data.applicablePriceIds &&
+    data.cartPriceIds &&
+    data.applicablePriceIds.length < data.cartPriceIds.length;
+
+  console.log('[Cart] Voucher applied:', {
+    code: data.code,
+    success: data.success,
+    discountType: data.discountType,
+    discountValue: data.discountValue,
+    applicablePriceIds: data.applicablePriceIds,
+    cartPriceIds: data.cartPriceIds,
+    isPartialDiscount,
+    error: data.error,
+  });
+
   analytics.track('voucher_applied', {
-    voucher_code: code.trim(),
+    voucher_code: data.code.trim(),
     discount_amount: 0,
-    discount_type: 'fixed',
-    discount_value: 0,
-    success,
-    ...(error && { error_message: error }),
+    discount_type: data.discountType || 'fixed',
+    discount_value: data.discountValue || 0,
+    success: data.success,
+    is_partial_discount: isPartialDiscount,
+    applicable_items_count: data.applicablePriceIds?.length,
+    cart_items_count: data.cartPriceIds?.length,
+    ...(data.error && { error_message: data.error }),
   } as EventProperties<'voucher_applied'>);
 }
