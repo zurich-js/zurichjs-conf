@@ -1,6 +1,5 @@
 import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection, LearnSection } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
-import { Countdown } from '@/components/molecules';
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
@@ -9,9 +8,6 @@ import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
-
-// Get CFP close date from centralized timeline data
-const cfpCloseDate = timelineData.entries.find(entry => entry.id === 'cfp-ends')?.dateISO || '2026-04-01';
 
 /**
  * Page props passed through _app.tsx for hydration and currency detection
@@ -100,14 +96,8 @@ export default function Home() {
               <Link href="/cfp" className="text-md text-brand-blue hover:text-brand-dark duration-300 ease-in-out">
                   Apply&nbsp;to&nbsp;speak
               </Link>
+              until April 1st!
             </p>
-            <div className="bg-brand-black rounded-3xl px-6 py-2.5 mt-4">
-              <Countdown
-                targetDate={cfpCloseDate}
-                kicker="CFP closes in"
-                kickerClassName="!normal-case text-center text-brand-white w-fit mx-auto !mt-0 mb-2 !font-semibold"
-              />
-            </div>
           </div>
         </div>
 
