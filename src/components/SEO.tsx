@@ -13,6 +13,32 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com'
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
 
+// Available OG images (0.png through 7.png)
+const OG_IMAGE_COUNT = 8;
+
+/**
+ * Selects a random OG image based on the page path
+ * Uses a deterministic hash so each page gets a consistent image
+ * (important for SEO and social media caching)
+ */
+const getRandomOgImage = (path?: string): string => {
+  // Use a simple hash function to deterministically select an image
+  // If no path provided, use a default
+  const seed = path || '/';
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Select image index (0-7) based on hash
+  const imageIndex = Math.abs(hash) % OG_IMAGE_COUNT;
+  return `/images/og/${imageIndex}.png`;
+};
+
 // Default keywords for the site - optimized for "javascript conferences 2026" searches
 const DEFAULT_KEYWORDS = [
   // Primary target keywords for 2026 searches
@@ -180,8 +206,9 @@ export const eventSchema = {
   eventStatus: 'https://schema.org/EventScheduled',
   eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
   // Images in multiple aspect ratios per Google recommendation (16:9, 4:3, 1:1)
+  // Use a random OG image for variety
   image: [
-    `${BASE_URL}/images/og-default.png`,
+    `${BASE_URL}/images/og/0.png`,
     `${BASE_URL}/images/logo/zurichjs-square.png`,
   ],
   offers: [
@@ -276,7 +303,7 @@ export const SEO: React.FC<SEOProps> = ({
   title,
   description,
   canonical,
-  ogImage = '/images/og-default.png',
+  ogImage,
   ogType = 'website',
   twitterCard = 'summary_large_image',
   jsonLd,
@@ -291,8 +318,11 @@ export const SEO: React.FC<SEOProps> = ({
   // Build canonical URL
   const canonicalUrl = canonical ? `${BASE_URL}${canonical}` : undefined;
 
+  // Select OG image: use provided image, or randomly select based on page path
+  const selectedOgImage = ogImage || getRandomOgImage(canonical);
+
   // Build OG image URL (handle both relative and absolute URLs)
-  const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${BASE_URL}${ogImage}`;
+  const ogImageUrl = selectedOgImage.startsWith('http') ? selectedOgImage : `${BASE_URL}${selectedOgImage}`;
 
   // Merge default keywords with custom keywords
   const allKeywords = keywords 
