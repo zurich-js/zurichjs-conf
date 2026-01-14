@@ -36,7 +36,7 @@ const getRandomOgImage = (path?: string): string => {
   
   // Select image index (0-7) based on hash
   const imageIndex = Math.abs(hash) % OG_IMAGE_COUNT;
-  return `/images/og/${imageIndex}.png`;
+  return `/images/og/${imageIndex}.jpg`;
 };
 
 // Default keywords for the site - optimized for "javascript conferences 2026" searches
