@@ -48,6 +48,10 @@ export interface ShapedSectionProps {
    */
   children: React.ReactNode;
   id?: string;
+  /**
+   * Reduce the top padding for tighter spacing with previous section
+   */
+  compactTop?: boolean;
 }
 
 /**
@@ -75,7 +79,8 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
   className = '',
   disableContainer = false,
   children,
-  id
+  id,
+  compactTop = false,
 }) => {
   // Map variants to Tailwind theme colors (defined in @theme in globals.css)
   const variantStyles = {
@@ -120,6 +125,18 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     '4xl:-my-76 4xl:py-112',
   ].join(' ')
 
+  // Compact top variant - reduced top padding for tighter spacing
+  const spaceStraightCompactTop = [
+    '-my-16 pt-32 pb-32',
+    'sm:-my-20 sm:pt-36 sm:pb-40',
+    'md:-my-28 md:pt-48 md:pb-56',
+    'lg:-my-40 lg:pt-56 lg:pb-64',
+    'xl:-my-40 2xl:pt-56 2xl:pb-64',
+    '2xl:-my-48 2xl:pt-64 2xl:pb-72',
+    '3xl:-my-64 3xl:pt-80 3xl:pb-96',
+    '4xl:-my-76 4xl:pt-96 4xl:pb-112',
+  ].join(' ')
+
   const spaceWithBoth = [
     'py-16',
     'sm:py-20',
@@ -133,7 +150,7 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
 
   const spacingClasses = dropTop && !dropBottom ? spaceWithoutBottom :
     dropBottom && !dropTop ? spaceWithoutTop :
-    !dropTop && !dropBottom ? spaceStraight :
+    !dropTop && !dropBottom ? (compactTop ? spaceStraightCompactTop : spaceStraight) :
     spaceWithBoth;
 
   // Build the shape-specific clip-path class

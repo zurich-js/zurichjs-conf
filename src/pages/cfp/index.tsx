@@ -11,9 +11,12 @@ import { SEO } from '@/components/SEO';
 import { Heading, Kicker, IconButton, Logo } from '@/components/atoms';
 import { ShapedSection, DynamicSiteFooter, SectionContainer } from '@/components/organisms';
 import { SectionSplitView } from '@/components/organisms/SectionSplitView';
-import { BackgroundMedia } from '@/components/molecules';
+import { BackgroundMedia, Countdown } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
 import { timelineData } from '@/data';
+
+// Get CFP close date from centralized timeline data
+const cfpCloseDate = timelineData.entries.find(entry => entry.id === 'cfp-ends')?.dateISO || '2026-04-01';
 
 const SUBMISSION_TYPES = [
   {
@@ -156,20 +159,24 @@ function CfpLanding() {
                   </IconButton>
                 </motion.div>
 
-                <motion.div
-                  className="flex items-center gap-4"
-                  initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
-                  animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <Link
-                    href="/cfp/login"
-                    className="text-brand-gray-light hover:text-white transition-colors text-sm"
-                  >
-                    Already have an account? Sign in
-                  </Link>
-                </motion.div>
+                <div className="lg:shrink-0 lg:pb-2 xl:scale-110 2xl:scale-125 xl:mr-4 2xl:mr-8">
+                  <Countdown targetDate={cfpCloseDate} kicker="CFP closes in" />
+                </div>
               </div>
+
+              <motion.div
+                className="flex items-center gap-4 mt-4"
+                initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+                animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Link
+                  href="/cfp/login"
+                  className="text-brand-gray-light hover:text-white transition-colors text-sm"
+                >
+                  Already have an account? Sign in
+                </Link>
+              </motion.div>
             </div>
           </SectionContainer>
         </ShapedSection>

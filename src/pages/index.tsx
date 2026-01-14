@@ -1,5 +1,6 @@
 import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection, LearnSection } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
+import { Countdown } from '@/components/molecules';
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
@@ -8,6 +9,9 @@ import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
+
+// Get CFP close date from centralized timeline data
+const cfpCloseDate = timelineData.entries.find(entry => entry.id === 'cfp-ends')?.dateISO || '2026-04-01';
 
 /**
  * Page props passed through _app.tsx for hydration and currency detection
@@ -90,15 +94,24 @@ export default function Home() {
         {/* Speakers positioned at the diagonal intersection */}
         <div className="relative z-30 -mt-12 sm:-mt-16 md:-mt-24 lg:-mt-32">
           <SpeakersSection />
-          <p className="text-brand-gray-medium text-md text-center px-4 pb-8 relative bottom-0">
-            Wanna share your knowledge in Zurich?{' '}
-            <Link href="/cfp" className="text-md text-brand-blue hover:text-brand-dark duration-300 ease-in-out">
-                Apply&nbsp;to&nbsp;speak
-            </Link>
-          </p>
+          <div className="flex flex-col items-center gap-3 px-4">
+            <p className="text-brand-gray-medium text-md text-center mt-2">
+              Wanna share your knowledge in Zurich?{' '}
+              <Link href="/cfp" className="text-md text-brand-blue hover:text-brand-dark duration-300 ease-in-out">
+                  Apply&nbsp;to&nbsp;speak
+              </Link>
+            </p>
+            <div className="bg-brand-black rounded-3xl px-6 py-2.5 mt-4">
+              <Countdown
+                targetDate={cfpCloseDate}
+                kicker="CFP closes in"
+                kickerClassName="!normal-case text-center text-brand-white w-fit mx-auto !mt-0 mb-2 !font-semibold"
+              />
+            </div>
+          </div>
         </div>
 
-        <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
+        <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20" compactTop>
           <LearnSection
             title={learningData.title}
             subtitle={learningData.subtitle}
