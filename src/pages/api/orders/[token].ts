@@ -8,6 +8,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyOrderToken } from '@/lib/auth/orderToken';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Ticket } from '@/lib/types/database';
+import type { TicketUpgrade } from '@/lib/types/ticket-upgrade';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Order Details API');
@@ -18,6 +19,17 @@ export interface OrderDetailsResponse {
     transferredFrom: string;
     transferredFromEmail: string;
     transferredAt: string;
+  };
+  pendingUpgrade?: {
+    id: string;
+    status: TicketUpgrade['status'];
+    upgradeMode: TicketUpgrade['upgrade_mode'];
+    amount: number | null;
+    currency: string | null;
+    stripePaymentLinkUrl: string | null;
+    bankTransferReference: string | null;
+    bankTransferDueDate: string | null;
+    createdAt: string;
   };
 }
 
@@ -70,6 +82,30 @@ export default async function handler(
         transferredFrom: ticket.transferred_from_name,
         transferredFromEmail: ticket.transferred_from_email,
         transferredAt: ticket.transferred_at,
+      };
+    }
+
+    // Check for pending VIP upgrade
+    const { data: pendingUpgrade } = await supabase
+      .from('ticket_upgrades')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .in('status', ['pending_payment', 'pending_bank_transfer'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (pendingUpgrade) {
+      response.pendingUpgrade = {
+        id: pendingUpgrade.id,
+        status: pendingUpgrade.status as 'pending_payment' | 'pending_bank_transfer',
+        upgradeMode: pendingUpgrade.upgrade_mode as 'complimentary' | 'bank_transfer' | 'stripe',
+        amount: pendingUpgrade.amount,
+        currency: pendingUpgrade.currency,
+        stripePaymentLinkUrl: pendingUpgrade.stripe_payment_link_url,
+        bankTransferReference: pendingUpgrade.bank_transfer_reference,
+        bankTransferDueDate: pendingUpgrade.bank_transfer_due_date,
+        createdAt: pendingUpgrade.created_at,
       };
     }
 

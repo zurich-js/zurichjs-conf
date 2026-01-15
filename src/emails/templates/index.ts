@@ -17,3 +17,6 @@ export type { SponsorshipConfirmationEmailProps } from './SponsorshipConfirmatio
 
 export { PartnershipPackageEmail } from './PartnershipPackageEmail';
 export type { PartnershipPackageEmailProps } from './PartnershipPackageEmail';
+
+export { VipUpgradeEmail } from './VipUpgradeEmail';
+export type { VipUpgradeEmailProps } from './VipUpgradeEmail';

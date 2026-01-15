@@ -16,10 +16,15 @@ import { SponsorshipInquiryEmail } from '@/emails/templates/SponsorshipInquiryEm
 import type { SponsorshipInquiryEmailProps } from '@/emails/templates/SponsorshipInquiryEmail';
 import { SponsorshipConfirmationEmail } from '@/emails/templates/SponsorshipConfirmationEmail';
 import type { SponsorshipConfirmationEmailProps } from '@/emails/templates/SponsorshipConfirmationEmail';
+import { VipUpgradeEmail } from '@/emails/templates/VipUpgradeEmail';
+import type { VipUpgradeEmailProps } from '@/emails/templates/VipUpgradeEmail';
 import { getFirstName } from '@/emails/utils/render';
 import { getZurichJSVenueMapUrl } from '@/lib/venue';
 import { getBaseUrl } from '@/lib/url';
 import { serverAnalytics } from '@/lib/analytics/server';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Email');
 
 /**
  * Delay utility for rate limiting
@@ -135,14 +140,14 @@ export async function sendTicketConfirmationEmail(
 
     // Use stored QR code URL from object storage
     if (!data.qrCodeUrl) {
-      console.error('[Email] ❌ QR code URL is missing for ticket:', ticketIdToUse);
+      log.error('QR code URL is missing for ticket', new Error('QR code URL required'), { ticketId: ticketIdToUse });
       return {
         success: false,
         error: 'QR code URL is required but was not provided',
       };
     }
 
-    console.log('[Email] Using QR code from object storage:', data.qrCodeUrl);
+    log.debug('Using QR code from object storage', { qrCodeUrl: data.qrCodeUrl });
     const qrCodeSrc = data.qrCodeUrl;
 
     // Map legacy data to new template format
@@ -175,7 +180,7 @@ export async function sendTicketConfirmationEmail(
       notes: data.notes,
     };
 
-    console.log('[Email] Email props:', emailProps);
+    log.debug('Email props prepared', { ticketId: emailProps.ticketId, to: data.to });
 
     // Render the email template to HTML
     const emailHtml = await render(
@@ -189,7 +194,7 @@ export async function sendTicketConfirmationEmail(
         filename: `${data.conferenceName.replace(/\s+/g, '_')}_Ticket_${ticketIdToUse}.pdf`,
         content: data.pdfAttachment,
       });
-      console.log('[Email] PDF attachment added to email');
+      log.debug('PDF attachment added to email');
     }
 
     // Send the email
@@ -203,16 +208,14 @@ export async function sendTicketConfirmationEmail(
     });
 
     if (result.error) {
-      console.error('[Email] ❌ Error sending email:', result.error);
+      log.error('Error sending email', new Error(result.error.message), { to: data.to });
       return { success: false, error: result.error.message };
     }
 
-    console.log('[Email] ✅ Ticket confirmation email sent successfully:', result.data?.id);
-    console.log('[Email] To:', data.to);
-    console.log('[Email] Ticket ID:', ticketIdToUse);
+    log.info('Ticket confirmation email sent successfully', { emailId: result.data?.id, to: data.to, ticketId: ticketIdToUse });
     return { success: true };
   } catch (error) {
-    console.error('Error sending ticket confirmation email:', error);
+    log.error('Error sending ticket confirmation email', error, { to: data.to });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
@@ -224,17 +227,17 @@ export async function sendTicketConfirmationEmail(
 export async function sendVoucherConfirmationEmail(
   data: VoucherConfirmationData
 ): Promise<{ success: boolean; error?: string }> {
-  console.log('[Email] ====== Sending voucher confirmation email ======');
-  console.log('[Email] To:', data.to);
-  console.log('[Email] First name:', data.firstName);
-  console.log('[Email] Amount paid:', data.amountPaid, data.currency);
-  console.log('[Email] Voucher value:', data.voucherValue, data.currency);
-  console.log('[Email] Bonus percent:', data.bonusPercent);
+  log.info('Sending voucher confirmation email', {
+    to: data.to,
+    firstName: data.firstName,
+    amountPaid: data.amountPaid,
+    voucherValue: data.voucherValue,
+    currency: data.currency,
+    bonusPercent: data.bonusPercent,
+  });
 
   try {
-    console.log('[Email] Initializing Resend client...');
     const resend = getResendClient();
-    console.log('[Email] ✅ Resend client initialized');
 
     // Map data to email template props
     const emailProps: VoucherPurchaseEmailProps = {
@@ -248,20 +251,16 @@ export async function sendVoucherConfirmationEmail(
       workshopsUrl: `${getBaseUrl()}/workshops`,
     };
 
-    console.log('[Email] Voucher email props:', emailProps);
-    console.log('[Email] Rendering email template...');
+    log.debug('Voucher email props prepared', { voucherValue: emailProps.voucherValue });
 
     // Render the email template to HTML
     const emailHtml = await render(
       React.createElement(VoucherPurchaseEmail, emailProps)
     );
-    console.log('[Email] ✅ Email template rendered successfully');
+    log.debug('Email template rendered successfully');
 
     // Send the email
-    console.log('[Email] Sending email via Resend...');
-    console.log('[Email] From:', EMAIL_CONFIG.from);
-    console.log('[Email] To:', data.to);
-    console.log('[Email] Subject:', `Your Workshop Voucher - ${data.voucherValue} ${data.currency}`);
+    log.debug('Sending email via Resend', { to: data.to });
 
     const result = await resend.emails.send({
       from: EMAIL_CONFIG.from,
@@ -272,20 +271,19 @@ export async function sendVoucherConfirmationEmail(
     });
 
     if (result.error) {
-      console.error('[Email] ❌ Error sending voucher email:', result.error);
+      log.error('Error sending voucher email', new Error(result.error.message), { to: data.to });
       return { success: false, error: result.error.message };
     }
 
-    console.log('[Email] ✅ Voucher confirmation email sent successfully!');
-    console.log('[Email] Email ID:', result.data?.id);
-    console.log('[Email] To:', data.to);
-    console.log('[Email] Amount:', `${data.voucherValue} ${data.currency}`);
-    console.log('[Email] ====== Voucher email send complete ======');
+    log.info('Voucher confirmation email sent successfully', {
+      emailId: result.data?.id,
+      to: data.to,
+      voucherValue: data.voucherValue,
+      currency: data.currency,
+    });
     return { success: true };
   } catch (error) {
-    console.error('[Email] ❌ Exception sending voucher confirmation email:', error);
-    console.error('[Email] Error details:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('[Email] Stack trace:', error instanceof Error ? error.stack : 'No stack');
+    log.error('Exception sending voucher confirmation email', error, { to: data.to });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
@@ -297,10 +295,11 @@ export async function sendVoucherConfirmationEmail(
 export async function sendReviewerInvitationEmail(
   data: ReviewerInvitationData
 ): Promise<{ success: boolean; error?: string }> {
-  console.log('[Email] ====== Sending reviewer invitation email ======');
-  console.log('[Email] To:', data.to);
-  console.log('[Email] Reviewer name:', data.reviewerName || '(not provided)');
-  console.log('[Email] Access level:', data.accessLevel);
+  log.info('Sending reviewer invitation email', {
+    to: data.to,
+    reviewerName: data.reviewerName || '(not provided)',
+    accessLevel: data.accessLevel,
+  });
 
   try {
     const resend = getResendClient();
@@ -317,16 +316,15 @@ export async function sendReviewerInvitationEmail(
       supportEmail: EMAIL_CONFIG.supportEmail,
     };
 
-    console.log('[Email] Rendering reviewer invitation template...');
+    log.debug('Rendering reviewer invitation template');
 
     // Render the email template to HTML
     const emailHtml = await render(
       React.createElement(ReviewerInvitationEmail, emailProps)
     );
-    console.log('[Email] ✅ Email template rendered successfully');
+    log.debug('Email template rendered successfully');
 
     // Send the email
-    console.log('[Email] Sending email via Resend...');
     const result = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: data.to,
@@ -336,17 +334,14 @@ export async function sendReviewerInvitationEmail(
     });
 
     if (result.error) {
-      console.error('[Email] ❌ Error sending reviewer invitation email:', result.error);
+      log.error('Error sending reviewer invitation email', new Error(result.error.message), { to: data.to });
       return { success: false, error: result.error.message };
     }
 
-    console.log('[Email] ✅ Reviewer invitation email sent successfully!');
-    console.log('[Email] Email ID:', result.data?.id);
-    console.log('[Email] To:', data.to);
-    console.log('[Email] ====== Reviewer invitation email complete ======');
+    log.info('Reviewer invitation email sent successfully', { emailId: result.data?.id, to: data.to });
     return { success: true };
   } catch (error) {
-    console.error('[Email] ❌ Exception sending reviewer invitation email:', error);
+    log.error('Exception sending reviewer invitation email', error, { to: data.to });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
@@ -460,11 +455,11 @@ export async function sendVerificationRequestEmail(
     });
 
     if (result.error) {
-      console.error('Error sending verification email:', result.error);
+      log.error('Error sending verification email', new Error(result.error.message), { to: data.to });
       return { success: false, error: result.error.message };
     }
 
-    console.log('Verification email sent successfully:', result.data?.id);
+    log.info('Verification email sent successfully', { emailId: result.data?.id, to: data.to });
 
     // Send detailed admin notification to hello@zurichjs.com with all verification data
     try {
@@ -624,19 +619,19 @@ export async function sendVerificationRequestEmail(
       });
 
       if (adminResult.error) {
-        console.error('Error sending admin verification email:', adminResult.error);
+        log.error('Error sending admin verification email', new Error(adminResult.error.message));
         // Don't fail the request if admin email fails
       } else {
-        console.log('Admin verification email sent:', adminResult.data?.id);
+        log.info('Admin verification email sent', { emailId: adminResult.data?.id });
       }
     } catch (adminError) {
-      console.error('Exception sending admin verification email:', adminError);
+      log.error('Exception sending admin verification email', adminError);
       // Don't fail the request if admin email fails
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error sending verification request email:', error);
+    log.error('Error sending verification request email', error, { to: data.to });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
@@ -652,12 +647,12 @@ export async function sendVerificationRequestEmail(
 export async function sendTicketConfirmationEmailsQueued(
   emails: TicketConfirmationData[]
 ): Promise<Array<{ success: boolean; error?: string; email: string }>> {
-  console.log(`[Email Queue] Starting to send ${emails.length} emails with rate limiting...`);
+  log.info('Starting to send emails with rate limiting', { count: emails.length });
   const results: Array<{ success: boolean; error?: string; email: string }> = [];
 
   for (let i = 0; i < emails.length; i++) {
     const emailData = emails[i];
-    console.log(`[Email Queue] Sending email ${i + 1}/${emails.length} to:`, emailData.to);
+    log.debug(`Sending email ${i + 1}/${emails.length}`, { to: emailData.to });
 
     const result = await sendTicketConfirmationEmail(emailData);
     results.push({
@@ -668,14 +663,13 @@ export async function sendTicketConfirmationEmailsQueued(
     // Add delay between emails (except after the last one)
     if (i < emails.length - 1) {
       const delayMs = 600; // 600ms delay = 1.67 emails/second (under 2/sec limit)
-      console.log(`[Email Queue] Waiting ${delayMs}ms before next email...`);
       await delay(delayMs);
     }
   }
 
   const successCount = results.filter(r => r.success).length;
   const failCount = results.filter(r => !r.success).length;
-  console.log(`[Email Queue] Completed: ${successCount} sent successfully, ${failCount} failed`);
+  log.info('Email queue completed', { successCount, failCount });
 
   return results;
 }
@@ -741,10 +735,12 @@ export async function addNewsletterContact(
 export async function sendSponsorshipInquiryEmails(
   data: SponsorshipInquiryData
 ): Promise<{ success: boolean; error?: string }> {
-  console.log('[Email] ====== Sending sponsorship inquiry emails ======');
-  console.log('[Email] From:', data.name, 'at', data.company);
-  console.log('[Email] Email:', data.email);
-  console.log('[Email] Inquiry ID:', data.inquiryId);
+  log.info('Sending sponsorship inquiry emails', {
+    name: data.name,
+    company: data.company,
+    email: data.email,
+    inquiryId: data.inquiryId,
+  });
 
   try {
     const resend = getResendClient();
@@ -764,12 +760,12 @@ export async function sendSponsorshipInquiryEmails(
       submittedAt,
     };
 
-    console.log('[Email] Rendering admin notification email...');
+    log.debug('Rendering admin notification email');
     const adminEmailHtml = await render(
       React.createElement(SponsorshipInquiryEmail, adminEmailProps)
     );
 
-    console.log('[Email] Sending admin notification to hello@zurichjs.com...');
+    log.debug('Sending admin notification to hello@zurichjs.com');
     const adminResult = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: 'hello@zurichjs.com',
@@ -779,10 +775,10 @@ export async function sendSponsorshipInquiryEmails(
     });
 
     if (adminResult.error) {
-      console.error('[Email] ❌ Error sending admin notification:', adminResult.error);
+      log.error('Error sending admin notification', new Error(adminResult.error.message));
       return { success: false, error: adminResult.error.message };
     }
-    console.log('[Email] ✅ Admin notification sent:', adminResult.data?.id);
+    log.info('Admin notification sent', { emailId: adminResult.data?.id });
 
     // 2. Send confirmation to the person who submitted
     const confirmationEmailProps: SponsorshipConfirmationEmailProps = {
@@ -792,12 +788,12 @@ export async function sendSponsorshipInquiryEmails(
       supportEmail: EMAIL_CONFIG.supportEmail,
     };
 
-    console.log('[Email] Rendering confirmation email...');
+    log.debug('Rendering confirmation email');
     const confirmationEmailHtml = await render(
       React.createElement(SponsorshipConfirmationEmail, confirmationEmailProps)
     );
 
-    console.log('[Email] Sending confirmation to:', data.email);
+    log.debug('Sending confirmation email', { to: data.email });
     const confirmationResult = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: data.email,
@@ -807,16 +803,102 @@ export async function sendSponsorshipInquiryEmails(
     });
 
     if (confirmationResult.error) {
-      console.error('[Email] ❌ Error sending confirmation:', confirmationResult.error);
+      log.error('Error sending confirmation', new Error(confirmationResult.error.message), { to: data.email });
       // Don't fail if confirmation fails, admin was notified
     } else {
-      console.log('[Email] ✅ Confirmation email sent:', confirmationResult.data?.id);
+      log.info('Confirmation email sent', { emailId: confirmationResult.data?.id, to: data.email });
     }
 
-    console.log('[Email] ====== Sponsorship inquiry emails complete ======');
+    log.info('Sponsorship inquiry emails complete', { inquiryId: data.inquiryId });
     return { success: true };
   } catch (error) {
-    console.error('[Email] ❌ Exception sending sponsorship inquiry emails:', error);
+    log.error('Exception sending sponsorship inquiry emails', error, { inquiryId: data.inquiryId });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Data structure for VIP upgrade email
+ */
+export interface VipUpgradeEmailData {
+  to: string;
+  firstName: string;
+  ticketId: string;
+  upgradeMode: 'complimentary' | 'bank_transfer' | 'stripe';
+  upgradeStatus: 'pending_payment' | 'pending_bank_transfer' | 'completed' | 'cancelled';
+  amount: number | null;
+  currency: string | null;
+  stripePaymentUrl?: string | null;
+  bankTransferReference?: string | null;
+  bankTransferDueDate?: string | null;
+  manageTicketUrl: string;
+}
+
+/**
+ * Send VIP upgrade email to attendee
+ */
+export async function sendVipUpgradeEmail(
+  data: VipUpgradeEmailData
+): Promise<{ success: boolean; error?: string }> {
+  log.info('Sending VIP upgrade email', {
+    to: data.to,
+    firstName: data.firstName,
+    upgradeMode: data.upgradeMode,
+    upgradeStatus: data.upgradeStatus,
+  });
+
+  try {
+    const resend = getResendClient();
+
+    // Map data to email template props
+    const emailProps: VipUpgradeEmailProps = {
+      firstName: data.firstName,
+      ticketId: data.ticketId,
+      upgradeMode: data.upgradeMode,
+      upgradeStatus: data.upgradeStatus,
+      amount: data.amount,
+      currency: data.currency,
+      stripePaymentUrl: data.stripePaymentUrl,
+      bankTransferReference: data.bankTransferReference,
+      bankTransferDueDate: data.bankTransferDueDate,
+      manageTicketUrl: data.manageTicketUrl,
+      supportEmail: EMAIL_CONFIG.supportEmail,
+    };
+
+    log.debug('Rendering VIP upgrade email template');
+
+    // Render the email template to HTML
+    const emailHtml = await render(
+      React.createElement(VipUpgradeEmail, emailProps)
+    );
+    log.debug('Email template rendered successfully');
+
+    // Determine subject based on status
+    const subject = data.upgradeStatus === 'completed'
+      ? "You're upgraded to VIP, ZurichJS Conf"
+      : 'Complete your VIP upgrade - ZurichJS Conf';
+
+    // Send the email
+    log.debug('Sending email via Resend', { to: data.to, subject });
+
+    const result = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: data.to,
+      replyTo: EMAIL_CONFIG.replyTo,
+      subject,
+      html: emailHtml,
+    });
+
+    if (result.error) {
+      log.error('Error sending VIP upgrade email', new Error(result.error.message), { to: data.to });
+      return { success: false, error: result.error.message };
+    }
+
+    log.info('VIP upgrade email sent successfully', { emailId: result.data?.id, to: data.to });
+    return { success: true };
+  } catch (error) {
+    log.error('Exception sending VIP upgrade email', error, { to: data.to });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }
