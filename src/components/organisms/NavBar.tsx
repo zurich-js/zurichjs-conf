@@ -9,16 +9,16 @@ export interface NavBarProps {
 }
 
 const navLinks = [
-  { label: 'About us', href: '/about' },
-  { label: 'Call for Proposals', href: '/cfp' },
+  { label: 'About', href: '/about' },
+  { label: 'Call for Papers', href: '/cfp' },
   { label: 'Become a Sponsor', href: '/sponsorship' },
 ];
 
 const socialLinks = [
-  { kind: 'instagram' as const, href: 'https://instagram.com/zurichjs', showOnMobile: true },
-  { kind: 'x' as const, href: 'https://x.com/ZurichJS', showOnMobile: false },
-  { kind: 'bluesky' as const, href: 'https://bsky.app/profile/zurichjs.com', showOnMobile: false },
-  { kind: 'linkedin' as const, href: 'https://linkedin.com/company/zurichjs', showOnMobile: false },
+  { kind: 'instagram' as const, href: 'https://instagram.com/zurichjs', showOnDesktop: false },
+  { kind: 'x' as const, href: 'https://x.com/ZurichJS', showOnDesktop: false },
+  { kind: 'bluesky' as const, href: 'https://bsky.app/profile/zurichjs.com', showOnDesktop: true },
+  { kind: 'linkedin' as const, href: 'https://linkedin.com/company/zurichjs', showOnDesktop: true },
 ];
 
 export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThreshold = 100 }) => {
@@ -73,13 +73,15 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
           </div>
           <div className="hidden lg:flex items-center gap-3">
             <div className="flex items-center gap-0">
-              {socialLinks.map((social) => (
-                <SocialIcon
-                  key={social.kind}
-                  kind={social.kind}
-                  href={social.href}
-                />
-              ))}
+              {socialLinks
+                .filter((social) => social.showOnDesktop)
+                .map((social) => (
+                  <SocialIcon
+                    key={social.kind}
+                    kind={social.kind}
+                    href={social.href}
+                  />
+                ))}
             </div>
             <div className="w-px h-6 bg-gray-600" />
             <Button
@@ -87,7 +89,7 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
               size="sm"
               onClick={handleGetTickets}
             >
-              Get Tickets
+              Tickets
             </Button>
           </div>
 
@@ -102,42 +104,53 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
       </div>
 
       {mobileMenuOpen && (
-        <div className="container mx-auto px-4 xs:px-6 sm:px-8 md:px-10 lg:px-12 mt-2">
-          <div className="lg:hidden bg-black rounded-3xl p-6">
-            <div className="flex flex-col gap-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-white text-lg font-medium hover:text-brand-yellow-main transition-colors duration-200"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="flex items-center gap-2 pt-4 border-t border-gray-800">
-                {socialLinks
-                  .filter((social) => social.showOnMobile)
-                  .map((social) => (
-                    <SocialIcon
-                      key={social.kind}
-                      kind={social.kind}
-                      href={social.href}
-                    />
-                  ))}
-              </div>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  handleGetTickets();
-                  setMobileMenuOpen(false);
-                }}
-                className="mt-2"
+        <div
+          className="lg:hidden fixed z-[100] flex flex-col"
+          style={{ backgroundColor: '#000000', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh' }}
+        >
+          <div className="flex items-center justify-between px-6 py-4">
+            <Link href="/" className="cursor-pointer shrink-0" onClick={() => setMobileMenuOpen(false)}>
+              <Logo width={120} height={32} />
+            </Link>
+            <button
+              className="text-white p-2 hover:text-brand-yellow-main transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div className="flex flex-col flex-1 justify-center items-start gap-6 px-6">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-white text-2xl font-medium hover:text-brand-yellow-main transition-colors duration-200"
+                onClick={() => setMobileMenuOpen(false)}
               >
-                Get Tickets
-              </Button>
-            </div>
+                {link.label}
+              </Link>
+            ))}
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                handleGetTickets();
+                setMobileMenuOpen(false);
+              }}
+              className="mt-4"
+            >
+              Get Tickets
+            </Button>
+          </div>
+          <div className="flex items-center justify-start gap-4 px-6 py-6" style={{ backgroundColor: '#000000' }}>
+            {socialLinks.map((social) => (
+              <SocialIcon
+                key={social.kind}
+                kind={social.kind}
+                href={social.href}
+              />
+            ))}
           </div>
         </div>
       )}
