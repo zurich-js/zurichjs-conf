@@ -11,7 +11,7 @@ export interface NavBarProps {
 const navLinks = [
   { label: 'About us', href: '/about' },
   { label: 'Call for Proposals', href: '/cfp' },
-  { label: 'Become a Sponsor', href: '/sponsors' },
+  { label: 'Become a Sponsor', href: '/sponsorship' },
 ];
 
 const socialLinks = [
