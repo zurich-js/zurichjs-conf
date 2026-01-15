@@ -1,4 +1,4 @@
-import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection, LearnSection } from '@/components/organisms';
+import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection, LearnSection, NavBar } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
@@ -72,6 +72,8 @@ export default function Home() {
         jsonLd={jsonLdSchemas}
       />
       <main className="min-h-screen">
+        <NavBar onGetTicketsClick={handleCtaClick} />
+
         {/* Hero with speakers overlapping the diagonal */}
         <div className="relative">
           <Hero
