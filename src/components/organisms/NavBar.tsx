@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
-import { Logo, Button, SocialIcon } from '@/components/atoms';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { Menu, X } from "lucide-react";
+import { Logo, Button, SocialIcon } from "@/components/atoms";
 
 export interface NavBarProps {
   onGetTicketsClick?: () => void;
@@ -9,19 +9,34 @@ export interface NavBarProps {
 }
 
 const navLinks = [
-  { label: 'About', href: '/about' },
-  { label: 'Call for Papers', href: '/cfp' },
-  { label: 'Become a Sponsor', href: '/sponsorship' },
+  { label: "About", href: "/about" },
+  { label: "Call for Papers", href: "/cfp" },
+  { label: "Become a Sponsor", href: "/sponsorship" },
 ];
 
 const socialLinks = [
-  { kind: 'instagram' as const, href: 'https://instagram.com/zurichjs', showOnDesktop: false },
-  { kind: 'x' as const, href: 'https://x.com/ZurichJS', showOnDesktop: false },
-  { kind: 'bluesky' as const, href: 'https://bsky.app/profile/zurichjs.com', showOnDesktop: true },
-  { kind: 'linkedin' as const, href: 'https://linkedin.com/company/zurichjs', showOnDesktop: true },
+  {
+    kind: "instagram" as const,
+    href: "https://instagram.com/zurichjs",
+    showOnDesktop: false,
+  },
+  { kind: "x" as const, href: "https://x.com/ZurichJS", showOnDesktop: false },
+  {
+    kind: "bluesky" as const,
+    href: "https://bsky.app/profile/zurichjs.com",
+    showOnDesktop: true,
+  },
+  {
+    kind: "linkedin" as const,
+    href: "https://linkedin.com/company/zurichjs",
+    showOnDesktop: true,
+  },
 ];
 
-export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThreshold = 100 }) => {
+export const NavBar: React.FC<NavBarProps> = ({
+  onGetTicketsClick,
+  scrollThreshold = 100,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -30,20 +45,19 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
       setIsVisible(window.scrollY > scrollThreshold);
     };
 
-    // Check initial scroll position
     handleScroll();
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [scrollThreshold]);
 
   const handleGetTickets = () => {
     if (onGetTicketsClick) {
       onGetTicketsClick();
     } else {
-      const ticketsSection = document.getElementById('tickets');
+      const ticketsSection = document.getElementById("tickets");
       if (ticketsSection) {
-        ticketsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ticketsSection.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
   };
@@ -51,7 +65,9 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
   return (
     <nav
       className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+        isVisible || mobileMenuOpen
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 -translate-y-4 pointer-events-none"
       }`}
     >
       <div className="container mx-auto px-4 xs:px-6 sm:px-8 md:px-10 lg:px-12">
@@ -88,6 +104,7 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
               variant="primary"
               size="sm"
               onClick={handleGetTickets}
+              className="h-8 px-4 text-sm font-semibold hover:bg-brand-dark"
             >
               Tickets
             </Button>
@@ -96,7 +113,7 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
           <button
             className="lg:hidden text-white p-2 hover:text-brand-yellow-main transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -105,11 +122,19 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
 
       {mobileMenuOpen && (
         <div
-          className="lg:hidden fixed z-[100] flex flex-col"
-          style={{ backgroundColor: '#000000', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh' }}
+          className="lg:hidden fixed inset-0 z-[100] flex flex-col bg-black"
+          style={{
+            minHeight: "100dvh",
+            marginTop: "-16px",
+            paddingTop: "16px",
+          }}
         >
           <div className="flex items-center justify-between px-6 py-4">
-            <Link href="/" className="cursor-pointer shrink-0" onClick={() => setMobileMenuOpen(false)}>
+            <Link
+              href="/"
+              className="cursor-pointer shrink-0"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               <Logo width={120} height={32} />
             </Link>
             <button
@@ -138,12 +163,15 @@ export const NavBar: React.FC<NavBarProps> = ({ onGetTicketsClick, scrollThresho
                 handleGetTickets();
                 setMobileMenuOpen(false);
               }}
-              className="mt-4"
+              className="mt-4 font-semibold hover:bg-brand-dark"
             >
-              Get Tickets
+              Tickets
             </Button>
           </div>
-          <div className="flex items-center justify-start gap-4 px-6 py-6" style={{ backgroundColor: '#000000' }}>
+          <div
+            className="flex items-center justify-start gap-4 px-6 py-6"
+            style={{ backgroundColor: "#000000" }}
+          >
             {socialLinks.map((social) => (
               <SocialIcon
                 key={social.kind}
