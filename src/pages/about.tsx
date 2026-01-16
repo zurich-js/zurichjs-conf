@@ -1,11 +1,11 @@
 import React from "react";
-import Link from "next/link";
 import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/atoms/Logo";
 import { SocialIcon } from "@/components/atoms/SocialIcon";
 import { Button } from "@/components/atoms/Button";
 import { SectionContainer } from "@/components/organisms/SectionContainer";
+import { NavBar } from "@/components/organisms/NavBar";
 import { AboutHeroSection } from "@/components/organisms/AboutHeroSection";
 import { AboutMissionSection } from "@/components/organisms/AboutMissionSection";
 import { AboutStatsSection } from "@/components/organisms/AboutStatsSection";
@@ -54,20 +54,7 @@ export default function AboutUs() {
         keywords="zurichjs team, javascript community zurich, swiss javascript group, technopark zurich conference"
         jsonLd={[organizationSchema, breadcrumbSchema]}
       />
-      <header className="bg-black sticky top-0 z-40">
-        <SectionContainer>
-          <div className="flex items-center justify-between h-20">
-            <Link href="/" className="cursor-pointer">
-              <Logo width={140} height={38} />
-            </Link>
-            <Link href="/#tickets">
-              <Button variant="primary" size="sm">
-                Get your ticket
-              </Button>
-            </Link>
-          </div>
-        </SectionContainer>
-      </header>
+      <NavBar />
       <main className="min-h-screen bg-white">
         <div className="max-w-screen-lg mx-auto px-4">
           <div className="py-16 md:py-24">
