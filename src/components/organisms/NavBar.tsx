@@ -163,7 +163,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                 handleGetTickets();
                 setMobileMenuOpen(false);
               }}
-              className="mt-4 font-semibold hover:bg-brand-dark"
+              className="mt-4"
             >
               Tickets
             </Button>
