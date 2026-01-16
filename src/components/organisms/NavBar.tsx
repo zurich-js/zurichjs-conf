@@ -17,13 +17,13 @@ const navLinks = [
 const socialLinks = [
   {
     kind: "instagram" as const,
-    href: "https://instagram.com/zurichjs",
+    href: "https://instagram.com/zurich.js",
     showOnDesktop: false,
   },
-  { kind: "x" as const, href: "https://x.com/ZurichJS", showOnDesktop: false },
+  { kind: "x" as const, href: "https://x.com/zurichjs", showOnDesktop: false },
   {
     kind: "bluesky" as const,
-    href: "https://bsky.app/profile/zurichjs.com",
+    href: "https://bsky.app/profile/zurichjs.bsky.social",
     showOnDesktop: true,
   },
   {
