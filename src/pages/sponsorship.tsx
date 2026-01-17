@@ -40,7 +40,7 @@ export default function SponsorshipPage({ detectedCurrency }: SponsorshipPagePro
 
       <main className="min-h-screen">
         {/* Hero + Mission Section - Light background (combined to reduce spacing) */}
-        <ShapedSection shape="widen" variant="light" dropTop id="hero">
+        <ShapedSection shape="widen" variant="light" dropTop id="hero" className="mt-8!">
           <SponsorshipHeroSection data={sponsorshipPageData.hero} />
           <SponsorshipMissionSection data={sponsorshipPageData.mission} />
         </ShapedSection>

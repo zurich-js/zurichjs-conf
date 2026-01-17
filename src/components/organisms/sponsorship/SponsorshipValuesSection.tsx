@@ -37,8 +37,8 @@ const ValueCard: React.FC<ValueCardProps> = ({ value, delay = 0 }) => {
       </div>
 
       {/* Icon */}
-      <div className="w-10 h-10 rounded-lg bg-brand-yellow-main flex items-center justify-center mb-3">
-        <Icon className="text-brand-black" size={20} strokeWidth={2} />
+      <div className="w-10 h-10flex items-center justify-center mb-3">
+        <Icon className="text-brand-white" size={20} strokeWidth={2} />
       </div>
 
       {/* Content */}

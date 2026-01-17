@@ -135,7 +135,7 @@ export default function PartnerAssetsPage() {
               <p className="text-sm font-semibold text-brand-yellow-dark uppercase tracking-wider mb-4">
                 Partner Resources
               </p>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brand-black mb-6">
+              <h1 className="text-2xl lg:text-3xl font-bold text-brand-black mb-6">
                 Brand Assets
               </h1>
               <p className="text-lg md:text-xl text-brand-gray-dark leading-relaxed">

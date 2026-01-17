@@ -107,7 +107,7 @@ export default function AboutUs() {
                 <p className="text-brand-gray-light text-xs sm:text-sm font-semibold uppercase tracking-wider">
                   Get in touch
                 </p>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
+                <h2 className="text-2xl lg:text-3xl font-bold">
                   Questions or feedback?
                 </h2>
               </motion.div>

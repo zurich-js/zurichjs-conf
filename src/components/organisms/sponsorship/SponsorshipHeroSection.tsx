@@ -28,7 +28,7 @@ export const SponsorshipHeroSection: React.FC<SponsorshipHeroSectionProps> = ({
         <Heading
           level="h1"
           variant="light"
-          className="text-5xl font-bold"
+          className="text-2xl lg:text-3xl font-bold"
         >
           {data.title}
         </Heading>

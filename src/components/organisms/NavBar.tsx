@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { Menu, X } from "lucide-react";
+import { Dialog } from "@headlessui/react";
 import { Logo, Button, SocialIcon } from "@/components/atoms";
 
 export interface NavBarProps {
@@ -37,12 +39,14 @@ export const NavBar: React.FC<NavBarProps> = ({
   onGetTicketsClick,
   scrollThreshold = 100,
 }) => {
+  const router = useRouter();
+  const isHomePage = router.pathname === "/";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsVisible(window.scrollY > scrollThreshold);
+      setIsScrolled(window.scrollY > scrollThreshold);
     };
 
     handleScroll();
@@ -62,17 +66,25 @@ export const NavBar: React.FC<NavBarProps> = ({
     }
   };
 
+  // if root: no background, always visible, but logo scrollable
+  // else: black background, always visible
+  const logoOpacity = isHomePage && !isScrolled ? "opacity-0" : "opacity-100";
+
   return (
     <nav
-      className={`fixed top-4 left-0 right-0 z-50 transition-all duration-300 ${
-        isVisible || mobileMenuOpen
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 -translate-y-4 pointer-events-none"
-      }`}
+      className={
+        `fixed top-0 py-0 sm:py-4 left-0 right-0 z-50 transition-all duration-300 ${
+            isHomePage ? 'lg:bg-transparent' : ''
+        }`
+      }
     >
-      <div className="container mx-auto px-4 xs:px-6 sm:px-8 md:px-10 lg:px-12">
-        <div className="bg-black rounded-full px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="cursor-pointer shrink-0">
+      <div className="px-0 sm:mx-auto sm:px-8 md:px-10 lg:px-12">
+        <div className={
+            `px-4 sm:pl-6 py-3 flex items-center justify-between ${
+                isHomePage && !isScrolled ? "bg-transparent" : "bg-black sm:rounded-full"
+            }`
+        }>
+          <Link href="/" className={`cursor-pointer shrink-0 flex items-center transition-opacity duration-300 ${logoOpacity}`}>
             <Logo width={120} height={32} />
           </Link>
 
@@ -110,47 +122,46 @@ export const NavBar: React.FC<NavBarProps> = ({
             </Button>
           </div>
 
-          <button
-            className="lg:hidden text-white p-2 hover:text-brand-yellow-main transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="lg:hidden flex items-center gap-3">
+            <button
+              className="text-white p-2 hover:text-brand-yellow-main transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
 
-      {mobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-[100] flex flex-col bg-black"
-          style={{
-            minHeight: "100dvh",
-            marginTop: "-16px",
-            paddingTop: "16px",
-          }}
-        >
-          <div className="flex items-center justify-between px-6 py-4">
-            <Link
-              href="/"
-              className="cursor-pointer shrink-0"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Logo width={120} height={32} />
-            </Link>
+      <Dialog
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        className="relative z-[100] lg:hidden"
+      >
+        <div className="fixed inset-0 flex flex-col bg-black h-screen">
+          <div className="flex items-center justify-between p-4 pl-6">
+              <Link
+                href="/"
+                className="cursor-pointer shrink-0"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Logo width={120} height={32} />
+              </Link>
             <button
-              className="text-white p-2 hover:text-brand-yellow-main transition-colors"
+              className="text-white marg p-2 hover:text-brand-yellow-main transition-colors"
               onClick={() => setMobileMenuOpen(false)}
               aria-label="Close menu"
             >
               <X size={24} />
             </button>
           </div>
-          <div className="flex flex-col flex-1 justify-center items-start gap-6 px-6">
+          <div className="flex flex-col flex-1 justify-center items-start gap-6 p-4 pl-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-white text-2xl font-medium hover:text-brand-yellow-main transition-colors duration-200"
+                className="text-white text-xl xs:text-2xl font-medium hover:text-brand-yellow-main transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
@@ -169,8 +180,7 @@ export const NavBar: React.FC<NavBarProps> = ({
             </Button>
           </div>
           <div
-            className="flex items-center justify-start gap-4 px-6 py-6"
-            style={{ backgroundColor: "#000000" }}
+            className="flex items-center justify-start gap-4 p-4 pl-6"
           >
             {socialLinks.map((social) => (
               <SocialIcon
@@ -181,7 +191,7 @@ export const NavBar: React.FC<NavBarProps> = ({
             ))}
           </div>
         </div>
-      )}
+      </Dialog>
     </nav>
   );
 };

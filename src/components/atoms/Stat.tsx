@@ -27,7 +27,7 @@ export const Stat: React.FC<StatProps> = ({
   
   const content = (
     <div className={`flex flex-col items-center ${className}`}>
-      <div className="text-4xl md:text-5xl font-bold text-brand-white tabular-nums">
+      <div className="text-2xl lg:text-3xl font-bold text-brand-white tabular-nums">
         {displayValue}
       </div>
       <div className="text-sm md:text-base text-brand-white/70 uppercase tracking-wide mt-1">
