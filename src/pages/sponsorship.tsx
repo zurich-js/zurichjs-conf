@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { Instagram, Linkedin } from 'lucide-react';
 import {
   ShapedSection,
   DynamicSiteFooter,
-  PageHeader,
   SponsorshipHeroSection,
   SponsorshipMissionSection,
   SponsorshipAudienceSection,
@@ -18,35 +15,6 @@ import { sponsorshipPageData } from '@/data/sponsorship';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry, type SupportedCurrency } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
-
-const HeaderSocialLinks = () => (
-  <div className="flex items-center gap-4">
-    <Link
-      href="mailto:hello@zurichjs.com"
-      className="px-5 py-2 bg-brand-yellow-main text-brand-black text-sm font-medium rounded-full hover:bg-brand-yellow-dark transition-colors"
-    >
-      Contact us
-    </Link>
-    <Link
-      href="https://linkedin.com/company/zurichjs"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-brand-white hover:text-brand-white/80 transition-colors"
-      aria-label="LinkedIn"
-    >
-      <Linkedin className="w-6 h-6" />
-    </Link>
-    <Link
-      href="https://instagram.com/zurichjs"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-brand-white hover:text-brand-white/80 transition-colors"
-      aria-label="Instagram"
-    >
-      <Instagram className="w-6 h-6" />
-    </Link>
-  </div>
-);
 
 interface SponsorshipPageProps {
   detectedCurrency: SupportedCurrency;
@@ -70,11 +38,9 @@ export default function SponsorshipPage({ detectedCurrency }: SponsorshipPagePro
         keywords="zurichjs sponsorship, javascript conference sponsor, tech conference sponsorship switzerland, developer conference sponsorship, zurich tech sponsor"
       />
 
-      <PageHeader rightContent={<HeaderSocialLinks />} />
-
       <main className="min-h-screen">
         {/* Hero + Mission Section - Light background (combined to reduce spacing) */}
-        <ShapedSection shape="widen" variant="light" dropTop id="hero">
+        <ShapedSection shape="widen" variant="light" dropTop id="hero" className="mt-8!">
           <SponsorshipHeroSection data={sponsorshipPageData.hero} />
           <SponsorshipMissionSection data={sponsorshipPageData.mission} />
         </ShapedSection>

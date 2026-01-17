@@ -16,6 +16,7 @@ import { useRouter } from "next/router";
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import type { Cart } from '@/types/cart';
+import { NavBar } from '@/components/organisms';
 
 const figtree = Figtree({
   subsets: ["latin"],
@@ -97,6 +98,9 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     };
   }, [router.events]);
 
+  // Hide NavBar on admin pages
+  const showNavBar = !router.pathname.startsWith('/admin');
+
   return (
     <PostHogProvider client={posthog}>
       <QueryClientProvider client={queryClient}>
@@ -107,6 +111,7 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
                 <MotionProvider>
                   <ToastProvider>
                     <div className={figtree.variable}>
+                      {showNavBar && <NavBar />}
                       <Component {...pageProps} />
                     </div>
                   </ToastProvider>

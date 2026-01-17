@@ -30,7 +30,7 @@ const sizeStyles: Record<ButtonSize, string> = {
   xs: 'px-4 py-1 text-xs min-w-[111px] h-[29px]',
   sm: 'px-3 py-1.5 text-xs',
   md: 'px-4 py-2.5 text-md',
-  lg: 'px-4 py-2.5 text-lg',
+  lg: 'px-4 py-2.5 text-lg leading-none',
 };
 
 const baseStyles = 'inline-flex items-center leading-relaxed h-fit justify-center gap-2 rounded-full transition-all duration-300 ease-in-out outline-none focus:ring-4 focus:ring-brand-blue cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
