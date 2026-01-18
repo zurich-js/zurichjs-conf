@@ -80,7 +80,7 @@ export const NavBar: React.FC<NavBarProps> = ({
     >
       <div className="px-0 sm:mx-auto sm:px-8 md:px-10 lg:px-12">
         <div className={
-            `px-4 sm:pl-6 py-3 flex items-center justify-between ${
+            `px-4 sm:pl-6 py-3 flex items-center justify-between transition-all duration-300 ${
                 isHomePage && !isScrolled ? "bg-transparent" : "bg-black sm:rounded-full"
             }`
         }>

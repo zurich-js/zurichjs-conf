@@ -64,12 +64,12 @@ export const Hero: React.FC<HeroProps> = ({
         />
       <SectionContainer>
         {/* Logo */}
-        <div className="relative z-10 my-8">
+        <div className="relative z-10 mt-8 mb-20 sm:mb-32">
           <Logo width={180} height={48} />
         </div>
 
         {/* Main Content Area */}
-        <div className="relative z-10 flex flex-col">
+        <div className="relative z-10 flex flex-col pb-16 sm:pb-0">
           <div className="space-y-3">
             {/* Kicker */}
             <Kicker animate={shouldAnimate} delay={0.1} className="text-base md:text-md text-brand-white font-semibold">

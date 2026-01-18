@@ -90,7 +90,7 @@ export default function Home() {
         </div>
 
         {/* Speakers positioned at the diagonal intersection */}
-        <div className="relative z-30 -mt-12 sm:-mt-16 md:-mt-24 lg:-mt-32">
+        <div className="relative z-30 -translate-y-2/5">
           <SpeakersSection />
           <div className="flex flex-col items-center gap-3 px-4">
             <p className="text-brand-gray-medium text-md text-center mt-2">
