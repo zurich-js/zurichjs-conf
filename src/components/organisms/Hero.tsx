@@ -64,7 +64,7 @@ export const Hero: React.FC<HeroProps> = ({
         />
       <SectionContainer>
         {/* Logo */}
-        <div className="relative z-10 my-8">
+        <div className="relative z-10 my-8 mb-20 sm:mb-32">
           <Logo width={180} height={48} />
         </div>
 
