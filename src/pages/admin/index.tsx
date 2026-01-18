@@ -9,6 +9,7 @@ import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import { B2BOrdersTab } from '@/components/admin/B2BOrdersTab';
 import AdminHeader from '@/components/admin/AdminHeader';
+import { UpgradeToVipModal } from '@/components/admin/tickets';
 
 // Dynamically import recharts to avoid SSR issues
 const LineChart = dynamic(() => import('recharts').then((mod) => mod.LineChart), { ssr: false });
@@ -353,6 +354,7 @@ function TicketDetailsModal({
   onRefund,
   onCancel,
   onDelete,
+  onUpgrade,
 }: {
   ticket: Ticket;
   onClose: () => void;
@@ -361,6 +363,7 @@ function TicketDetailsModal({
   onRefund: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  onUpgrade: () => void;
 }) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -638,6 +641,17 @@ function TicketDetailsModal({
               </svg>
               Reassign
             </button>
+            {ticket.status === 'confirmed' && ticket.ticket_category !== 'vip' && (
+              <button
+                onClick={onUpgrade}
+                className="flex items-center justify-center px-3 py-2.5 border border-amber-300 rounded-lg text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer"
+              >
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                Upgrade VIP
+              </button>
+            )}
             {ticket.status === 'confirmed' && (
               <>
                 <button
@@ -703,6 +717,7 @@ function TicketsTab() {
   const [showRefundConfirm, setShowRefundConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Search, sort, and pagination state
@@ -1298,6 +1313,10 @@ function TicketsTab() {
             setShowDetailsModal(false);
             setShowDeleteConfirm(true);
           }}
+          onUpgrade={() => {
+            setShowDetailsModal(false);
+            setShowUpgradeModal(true);
+          }}
         />
       )}
 
@@ -1414,6 +1433,30 @@ function TicketsTab() {
           onCancel={() => {
             setShowDeleteConfirm(false);
             setSelectedTicket(null);
+          }}
+        />
+      )}
+
+      {/* Upgrade to VIP Modal */}
+      {showUpgradeModal && selectedTicket && (
+        <UpgradeToVipModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false);
+            setSelectedTicket(null);
+          }}
+          ticket={{
+            id: selectedTicket.id,
+            firstName: selectedTicket.first_name,
+            lastName: selectedTicket.last_name,
+            email: selectedTicket.email,
+            company: selectedTicket.company,
+            ticketCategory: selectedTicket.ticket_category,
+            ticketStage: selectedTicket.ticket_stage,
+          }}
+          onSuccess={() => {
+            fetchTickets();
+            showToast('success', 'Ticket upgraded to VIP successfully!');
           }}
         />
       )}

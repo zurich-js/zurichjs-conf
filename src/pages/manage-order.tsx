@@ -7,6 +7,8 @@ import { PageHeader } from '@/components/organisms';
 import Link from 'next/link';
 import type { OrderDetailsResponse } from '@/pages/api/orders/[token]';
 import Image from 'next/image';
+import { VIP_PERKS, BANK_TRANSFER_DETAILS } from '@/lib/types/ticket-upgrade';
+import { Sparkles, CreditCard, Building2 } from 'lucide-react';
 
 /**
  * Manage Ticket Page
@@ -289,7 +291,15 @@ const ManageOrderPage: React.FC = () => {
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
                     <span className="text-gray-400">Ticket Type</span>
-                    <span className="text-brand-white capitalize">{orderDetails.ticket.ticket_category} - {orderDetails.ticket.ticket_stage.replace('_', ' ')}</span>
+                    <span className="text-brand-white capitalize flex items-center gap-2">
+                      {orderDetails.ticket.ticket_category === 'vip' && (
+                        <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          <Sparkles className="w-3 h-3" />
+                          VIP
+                        </span>
+                      )}
+                      {orderDetails.ticket.ticket_category} - {orderDetails.ticket.ticket_stage.replace('_', ' ')}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
@@ -312,6 +322,143 @@ const ManageOrderPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* VIP Perks Section - Only for VIP tickets */}
+              {orderDetails.ticket.ticket_category === 'vip' && (
+                <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-500/50 rounded-2xl p-8 mb-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Sparkles className="w-6 h-6 text-amber-400" />
+                    <h2 className="text-xl font-bold text-amber-400">Your VIP Benefits</h2>
+                  </div>
+                  <ul className="space-y-3">
+                    {VIP_PERKS.map((perk, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="text-amber-400 mt-0.5">✨</span>
+                        <span className="text-gray-200">{perk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Pending VIP Upgrade Section */}
+              {orderDetails.pendingUpgrade && (
+                <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/50 rounded-2xl p-8 mb-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    {orderDetails.pendingUpgrade.upgradeMode === 'stripe' ? (
+                      <CreditCard className="w-6 h-6 text-blue-400" />
+                    ) : (
+                      <Building2 className="w-6 h-6 text-blue-400" />
+                    )}
+                    <h2 className="text-xl font-bold text-blue-400">VIP Upgrade Pending</h2>
+                  </div>
+                  <p className="text-gray-200 mb-6">
+                    Complete your payment to unlock VIP benefits and enhance your conference experience.
+                  </p>
+
+                  {/* VIP Perks Preview */}
+                  <div className="bg-black/30 rounded-lg p-4 mb-6">
+                    <h3 className="text-amber-400 font-semibold mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      VIP Benefits You&apos;ll Receive
+                    </h3>
+                    <ul className="space-y-2">
+                      {VIP_PERKS.map((perk, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
+                          <span className="text-amber-400 mt-0.5">✨</span>
+                          <span>{perk}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Payment Details */}
+                  {orderDetails.pendingUpgrade.amount && orderDetails.pendingUpgrade.currency && (
+                    <div className="bg-black/30 rounded-lg p-4 mb-6">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Upgrade Amount</span>
+                        <span className="text-brand-white font-bold text-lg">
+                          {orderDetails.pendingUpgrade.currency} {(orderDetails.pendingUpgrade.amount / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stripe Payment Button */}
+                  {orderDetails.pendingUpgrade.upgradeMode === 'stripe' && orderDetails.pendingUpgrade.stripePaymentLinkUrl && (
+                    <a
+                      href={orderDetails.pendingUpgrade.stripePaymentLinkUrl}
+                      className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-4 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors w-full"
+                    >
+                      <CreditCard className="w-5 h-5" />
+                      Complete Payment Now
+                    </a>
+                  )}
+
+                  {/* Bank Transfer Instructions */}
+                  {orderDetails.pendingUpgrade.upgradeMode === 'bank_transfer' && (
+                    <div className="space-y-4">
+                      <div className="bg-black/30 rounded-lg p-4">
+                        <h4 className="text-brand-white font-semibold mb-3">Bank Transfer Details</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Bank</span>
+                            <span className="text-brand-white">{BANK_TRANSFER_DETAILS.bank}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Account Holder</span>
+                            <span className="text-brand-white">{BANK_TRANSFER_DETAILS.accountHolder}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Address</span>
+                            <span className="text-brand-white">{BANK_TRANSFER_DETAILS.address}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">IBAN</span>
+                            <span className="text-brand-white font-mono text-xs">{BANK_TRANSFER_DETAILS.iban}</span>
+                          </div>
+                          {orderDetails.pendingUpgrade.bankTransferReference && (
+                            <div className="flex justify-between pt-2 border-t border-gray-700">
+                              <span className="text-gray-400">Reference</span>
+                              <span className="text-amber-400 font-mono font-bold">{orderDetails.pendingUpgrade.bankTransferReference}</span>
+                            </div>
+                          )}
+                          {orderDetails.pendingUpgrade.bankTransferDueDate && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Due Date</span>
+                              <span className="text-brand-white">{new Date(orderDetails.pendingUpgrade.bankTransferDueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-yellow-400 text-sm">
+                        ⚠️ Please include the reference number in your transfer. Your ticket will be upgraded once payment is confirmed.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Upgrade CTA for Standard Ticket Holders */}
+              {orderDetails.ticket.ticket_category !== 'vip' && !orderDetails.pendingUpgrade && (
+                <div className="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-6 mb-8">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">✨</span>
+                    <div>
+                      <h3 className="text-blue-300 font-semibold mb-2">Want to upgrade to VIP?</h3>
+                      <p className="text-gray-300 text-sm mb-3">
+                        Get 20% off all workshops, an exclusive speaker tour invitation, and limited edition goodies. Email us to upgrade your ticket.
+                      </p>
+                      <a
+                        href="mailto:hello@zurichjs.com?subject=VIP%20Upgrade%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20upgrade%20my%20ticket%20to%20VIP.%0A%0ATicket%20ID%3A%20{orderDetails.ticket.id}%0AName%3A%20{orderDetails.ticket.first_name}%20{orderDetails.ticket.last_name}%0AEmail%3A%20{orderDetails.ticket.email}%0A%0AThank%20you!"
+                        className="inline-flex items-center gap-2 text-brand-primary hover:underline font-semibold"
+                      >
+                        Contact us at hello@zurichjs.com →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Event Information */}
               <div className="bg-black rounded-2xl p-8 mb-8">
