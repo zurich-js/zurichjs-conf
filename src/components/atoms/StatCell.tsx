@@ -54,7 +54,7 @@ export const StatCell: React.FC<StatCellProps> = ({
     >
       {/* Numeric value */}
       <div
-        className="text-4xl md:text-5xl font-bold tabular-nums tracking-tight text-brand-white"
+        className="text-2xl lg:text-3xl font-bold tabular-nums tracking-tight text-brand-white"
         style={{
           fontVariantNumeric: 'tabular-nums',
           minWidth: useGrouping ? '2.5ch' : '2ch',

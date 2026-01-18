@@ -1,5 +1,4 @@
 import React from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/atoms/Logo";
 import { SocialIcon } from "@/components/atoms/SocialIcon";
@@ -60,20 +59,6 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
         canonical={`/info/${page.slug}`}
         jsonLd={[organizationSchema, breadcrumbSchema]}
       />
-      <header className="bg-black sticky top-0 z-40">
-        <SectionContainer>
-          <div className="flex items-center justify-between h-20">
-            <Link href="/" className="cursor-pointer">
-              <Logo width={140} height={38} />
-            </Link>
-            <Link href="/#tickets">
-              <Button variant="primary" size="xs">
-                Order Ticket
-              </Button>
-            </Link>
-          </div>
-        </SectionContainer>
-      </header>
       <main className="min-h-screen bg-white">
         <div className="max-w-screen-lg mx-auto px-4">
           <div className="py-16 md:py-24">

@@ -1,43 +1,12 @@
 import React from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { Instagram, Linkedin, Download, Copy, Check } from 'lucide-react';
+import { Download, Copy, Check } from 'lucide-react';
 import {
   ShapedSection,
   DynamicSiteFooter,
-  PageHeader,
 } from '@/components/organisms';
 import { Button } from '@/components/atoms';
 import { SEO } from '@/components/SEO';
-
-const HeaderSocialLinks = () => (
-  <div className="flex items-center gap-4">
-    <Link
-      href="mailto:hello@zurichjs.com"
-      className="px-5 py-2 bg-brand-yellow-main text-brand-black text-sm font-medium rounded-full hover:bg-brand-yellow-dark transition-colors"
-    >
-      Contact us
-    </Link>
-    <Link
-      href="https://linkedin.com/company/zurichjs"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-brand-white hover:text-brand-white/80 transition-colors"
-      aria-label="LinkedIn"
-    >
-      <Linkedin className="w-6 h-6" />
-    </Link>
-    <Link
-      href="https://instagram.com/zurichjs"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-brand-white hover:text-brand-white/80 transition-colors"
-      aria-label="Instagram"
-    >
-      <Instagram className="w-6 h-6" />
-    </Link>
-  </div>
-);
 
 const conferenceBlurbs = {
   short: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 11, 2026 at Technopark Zurich. Join 300+ developers, engineers, and tech leaders for multiple days of learning, networking, and community building.`,
@@ -158,8 +127,6 @@ export default function PartnerAssetsPage() {
         keywords="zurichjs partner assets, zurichjs logo, zurichjs partnership, javascript conference assets, zurichjs brand"
       />
 
-      <PageHeader rightContent={<HeaderSocialLinks />} />
-
       <main className="min-h-screen">
         {/* Hero Section */}
         <ShapedSection shape="widen" variant="light" dropTop id="hero">
@@ -168,7 +135,7 @@ export default function PartnerAssetsPage() {
               <p className="text-sm font-semibold text-brand-yellow-dark uppercase tracking-wider mb-4">
                 Partner Resources
               </p>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brand-black mb-6">
+              <h1 className="text-2xl lg:text-3xl font-bold text-brand-black mb-6">
                 Brand Assets
               </h1>
               <p className="text-lg md:text-xl text-brand-gray-dark leading-relaxed">

@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { SEO } from '@/components/SEO';
-import { Heading, Kicker, IconButton, Logo } from '@/components/atoms';
+import { Heading, Kicker, IconButton } from '@/components/atoms';
 import { ShapedSection, DynamicSiteFooter, SectionContainer } from '@/components/organisms';
 import { SectionSplitView } from '@/components/organisms/SectionSplitView';
 import { BackgroundMedia, Countdown } from '@/components/molecules';
@@ -106,13 +106,7 @@ function CfpLanding() {
             fadeOut={true}
           />
           <SectionContainer>
-            <div className="relative z-10 my-20">
-              <Link href="/">
-                <Logo width={180} height={48} />
-              </Link>
-            </div>
-
-            <div className="relative z-10 flex flex-col">
+            <div className="relative z-10 flex flex-col mt-40">
               <div className="space-y-3">
                 <Kicker animate={shouldAnimate} delay={0.1} className="text-base md:text-md text-brand-white font-semibold">
                   Call for Papers
@@ -229,7 +223,7 @@ function CfpLanding() {
         </ShapedSection>
 
         {/* What We Provide */}
-        <ShapedSection shape="widen" variant="yellow" id="benefits">
+        <ShapedSection shape="widen" variant="light" id="benefits">
           <SectionSplitView
             kicker="Benefits"
             title="What We Provide"
@@ -239,7 +233,7 @@ function CfpLanding() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-8">
               {SPEAKER_BENEFITS.map((benefit) => (
                 <div key={benefit.title} className="text-center">
-                  <div className="w-12 h-12 bg-black/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-12 h-12  rounded-xl flex items-center justify-center mx-auto mb-4">
                     <CheckIcon />
                   </div>
                   <h3 className="font-semibold text-black mb-1">{benefit.title}</h3>
@@ -278,20 +272,20 @@ function CfpLanding() {
         </ShapedSection>
 
         {/* CTA Section */}
-        <ShapedSection shape="widen" variant="light" id="cta">
+        <ShapedSection shape="widen" variant="yellow" id="cta">
           <div className="text-center max-w-2xl mx-auto">
             <Kicker variant="light" className="mb-4">Ready?</Kicker>
             <Heading level="h2" variant="light" className="text-xl md:text-2xl mb-4">
               Share Your Expertise
             </Heading>
-            <p className="text-brand-gray-medium mb-8">
+            <p className=" mb-8">
               Whether you&apos;re a first-time speaker or a conference veteran, we&apos;d love to hear from you.
               Our review process is blind, so your proposal is judged purely on content.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/cfp/login"
-                className="inline-flex items-center justify-center gap-2 bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-brand-gray-darkest transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-brand-orange text-white px-6 py-3 rounded-full font-semibold hover:bg-brand-gray-darkest transition-colors"
               >
                 Start Your Submission
                 <ArrowRight size={16} />
@@ -312,8 +306,8 @@ function CfpLanding() {
 function TopicCard({ title, description }: { title: string; description: string }) {
   return (
     <div className="flex gap-4 items-start">
-      <div className="w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-        <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0">
+        <svg className="w-5 h-5 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       </div>
