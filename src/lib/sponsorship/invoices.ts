@@ -7,6 +7,7 @@ import { createServiceRoleClient } from '@/lib/supabase';
 import type {
   SponsorshipInvoice,
   CreateInvoiceRequest,
+  UpdateInvoiceConversionRequest,
   SponsorshipInvoicePDFSource,
   SponsorshipCurrency,
 } from '@/lib/types/sponsorship';
@@ -14,6 +15,10 @@ import { computeSponsorshipInvoiceTotals } from './calculations';
 import { getLineItemsForDeal } from './line-items';
 import { getDeal } from './deals';
 import { getTier } from './tiers';
+
+// Validation constants
+const MIN_CONVERSION_RATE = 0.1;
+const MAX_CONVERSION_RATE = 10;
 
 /**
  * Create an invoice for a deal
@@ -60,6 +65,43 @@ export async function createInvoice(
     deal.currency as SponsorshipCurrency
   );
 
+  // Build insert data
+  let payableCurrency: string | null = null;
+  let conversionRateChfToEur: number | null = null;
+  let convertedAmountEur: number | null = null;
+  let conversionJustification: string | null = null;
+  let conversionRateSource: string | null = null;
+  let conversionUpdatedAt: string | null = null;
+
+  // Handle multi-currency conversion (CHF -> EUR)
+  if (data.payInEur && deal.currency === 'CHF') {
+    // Validate conversion fields
+    if (!data.conversionRateChfToEur) {
+      throw new Error('Conversion rate is required when paying in EUR');
+    }
+    if (data.conversionRateChfToEur <= MIN_CONVERSION_RATE || data.conversionRateChfToEur >= MAX_CONVERSION_RATE) {
+      throw new Error(`Conversion rate must be between ${MIN_CONVERSION_RATE} and ${MAX_CONVERSION_RATE}`);
+    }
+    if (!data.conversionJustification?.trim()) {
+      throw new Error('Conversion justification is required when paying in EUR');
+    }
+
+    // Calculate converted amount if not provided
+    const calculatedAmount = data.convertedAmountEur ??
+      Math.round(totals.total * data.conversionRateChfToEur);
+
+    if (calculatedAmount <= 0) {
+      throw new Error('Converted amount must be positive');
+    }
+
+    payableCurrency = 'EUR';
+    conversionRateChfToEur = data.conversionRateChfToEur;
+    convertedAmountEur = calculatedAmount;
+    conversionJustification = data.conversionJustification.trim();
+    conversionRateSource = data.conversionRateSource || 'manual';
+    conversionUpdatedAt = new Date().toISOString();
+  }
+
   const { data: invoice, error } = await supabase
     .from('sponsorship_invoices')
     .insert({
@@ -73,6 +115,16 @@ export async function createInvoice(
       total_amount: totals.total,
       currency: deal.currency,
       invoice_notes: data.invoiceNotes || null,
+      // Always store base amount in CHF
+      base_currency: 'CHF',
+      base_amount_chf: deal.currency === 'CHF' ? totals.total : null,
+      // Conversion fields (null if not paying in EUR)
+      payable_currency: payableCurrency,
+      conversion_rate_chf_to_eur: conversionRateChfToEur,
+      converted_amount_eur: convertedAmountEur,
+      conversion_justification: conversionJustification,
+      conversion_rate_source: conversionRateSource,
+      conversion_updated_at: conversionUpdatedAt,
     })
     .select()
     .single();
@@ -235,6 +287,98 @@ export async function updateInvoice(
 }
 
 /**
+ * Update invoice currency conversion settings
+ *
+ * @param invoiceId - UUID of the invoice
+ * @param data - Conversion settings
+ * @param updatedBy - Admin making the change (for audit)
+ * @returns Updated invoice
+ */
+export async function updateInvoiceConversion(
+  invoiceId: string,
+  data: UpdateInvoiceConversionRequest,
+  updatedBy?: string
+): Promise<SponsorshipInvoice> {
+  const supabase = createServiceRoleClient();
+
+  // Get current invoice to check deal currency
+  const invoice = await getInvoice(invoiceId);
+  if (!invoice) {
+    throw new Error('Invoice not found');
+  }
+
+  // Get deal to verify it's CHF-based
+  const deal = await getDeal(invoice.deal_id);
+  if (!deal) {
+    throw new Error('Deal not found');
+  }
+
+  // Only CHF deals can have EUR conversion
+  if (deal.currency !== 'CHF' && data.payInEur) {
+    throw new Error('Currency conversion is only available for CHF-based deals');
+  }
+
+  let updateData: Record<string, unknown>;
+
+  if (data.payInEur) {
+    // Validate conversion fields
+    if (!data.conversionRateChfToEur) {
+      throw new Error('Conversion rate is required when paying in EUR');
+    }
+    if (data.conversionRateChfToEur <= MIN_CONVERSION_RATE || data.conversionRateChfToEur >= MAX_CONVERSION_RATE) {
+      throw new Error(`Conversion rate must be between ${MIN_CONVERSION_RATE} and ${MAX_CONVERSION_RATE}`);
+    }
+    if (!data.conversionJustification?.trim()) {
+      throw new Error('Conversion justification is required when paying in EUR');
+    }
+
+    // Calculate converted amount if not provided
+    const baseAmount = invoice.base_amount_chf ?? invoice.total_amount;
+    const convertedAmount = data.convertedAmountEur ??
+      Math.round(baseAmount * data.conversionRateChfToEur);
+
+    if (convertedAmount <= 0) {
+      throw new Error('Converted amount must be positive');
+    }
+
+    updateData = {
+      payable_currency: 'EUR',
+      conversion_rate_chf_to_eur: data.conversionRateChfToEur,
+      converted_amount_eur: convertedAmount,
+      conversion_justification: data.conversionJustification.trim(),
+      conversion_rate_source: data.conversionRateSource || 'manual',
+      conversion_updated_by: updatedBy || null,
+      conversion_updated_at: new Date().toISOString(),
+    };
+  } else {
+    // Disable EUR conversion - clear all conversion fields
+    updateData = {
+      payable_currency: null,
+      conversion_rate_chf_to_eur: null,
+      converted_amount_eur: null,
+      conversion_justification: null,
+      conversion_rate_source: null,
+      conversion_updated_by: updatedBy || null,
+      conversion_updated_at: new Date().toISOString(),
+    };
+  }
+
+  const { data: updatedInvoice, error } = await supabase
+    .from('sponsorship_invoices')
+    .update(updateData)
+    .eq('id', invoiceId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating invoice conversion:', error);
+    throw new Error(`Failed to update invoice conversion: ${error.message}`);
+  }
+
+  return updatedInvoice as SponsorshipInvoice;
+}
+
+/**
  * Recalculate and update invoice totals
  * Call this after modifying line items
  *
@@ -271,14 +415,28 @@ export async function recalculateInvoiceTotals(
     deal.currency as SponsorshipCurrency
   );
 
+  const updateData: Record<string, unknown> = {
+    subtotal: totals.subtotal,
+    credit_applied: totals.creditApplied,
+    adjustments_total: totals.adjustmentsTotal,
+    total_amount: totals.total,
+  };
+
+  // Update base_amount_chf if this is a CHF deal
+  if (deal.currency === 'CHF') {
+    updateData.base_amount_chf = totals.total;
+  }
+
+  // If there's an active EUR conversion, recalculate the converted amount
+  if (invoice.payable_currency === 'EUR' && invoice.conversion_rate_chf_to_eur) {
+    const baseAmount = deal.currency === 'CHF' ? totals.total : (invoice.base_amount_chf ?? totals.total);
+    updateData.converted_amount_eur = Math.round(baseAmount * invoice.conversion_rate_chf_to_eur);
+    updateData.conversion_updated_at = new Date().toISOString();
+  }
+
   const { data: updatedInvoice, error } = await supabase
     .from('sponsorship_invoices')
-    .update({
-      subtotal: totals.subtotal,
-      credit_applied: totals.creditApplied,
-      adjustments_total: totals.adjustmentsTotal,
-      total_amount: totals.total,
-    })
+    .update(updateData)
     .eq('id', invoiceId)
     .select()
     .single();

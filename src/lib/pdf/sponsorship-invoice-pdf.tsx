@@ -256,6 +256,55 @@ const styles = StyleSheet.create({
     color: '#92400E',
     lineHeight: 1.5,
   },
+  conversionSection: {
+    marginTop: 15,
+    padding: 12,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 4,
+    borderLeft: '3px solid #3B82F6',
+  },
+  conversionTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#1E40AF',
+    marginBottom: 8,
+  },
+  conversionRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  conversionLabel: {
+    fontSize: 9,
+    color: '#1E40AF',
+    width: '40%',
+  },
+  conversionValue: {
+    fontSize: 9,
+    color: '#000000',
+    width: '60%',
+  },
+  conversionNote: {
+    fontSize: 8,
+    color: '#6B7280',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+  amountDueHighlight: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#3B82F6',
+    borderRadius: 4,
+  },
+  amountDueLabel: {
+    fontSize: 10,
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  amountDueValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -315,6 +364,7 @@ export const SponsorshipInvoicePDF: React.FC<SponsorshipInvoicePDFProps> = ({
   adjustmentsTotal,
   total,
   currency,
+  conversion,
   invoiceNotes,
 }) => {
   // Separate line items by type for grouping
@@ -442,10 +492,36 @@ export const SponsorshipInvoicePDF: React.FC<SponsorshipInvoicePDFProps> = ({
           )}
 
           <View style={styles.grandTotalRow}>
-            <Text style={styles.grandTotalLabel}>Total Due</Text>
+            <Text style={styles.grandTotalLabel}>{conversion ? 'Base Total (CHF)' : 'Total Due'}</Text>
             <Text style={styles.grandTotalValue}>{formatAmount(total, currency)}</Text>
           </View>
         </View>
+
+        {/* Currency Conversion Section - Only shown when paying in EUR */}
+        {conversion && (
+          <View style={styles.conversionSection}>
+            <Text style={styles.conversionTitle}>Currency Conversion (CHF to EUR)</Text>
+            <View style={styles.conversionRow}>
+              <Text style={styles.conversionLabel}>Base Amount:</Text>
+              <Text style={styles.conversionValue}>{formatAmount(conversion.baseAmountChf, 'CHF')}</Text>
+            </View>
+            <View style={styles.conversionRow}>
+              <Text style={styles.conversionLabel}>Conversion Rate:</Text>
+              <Text style={styles.conversionValue}>1 CHF = {conversion.conversionRateChfToEur.toFixed(4)} EUR</Text>
+            </View>
+            <View style={styles.conversionRow}>
+              <Text style={styles.conversionLabel}>Justification:</Text>
+              <Text style={styles.conversionValue}>{conversion.justification}</Text>
+            </View>
+            <View style={styles.amountDueHighlight}>
+              <Text style={styles.amountDueLabel}>Amount Payable in EUR</Text>
+              <Text style={styles.amountDueValue}>{formatAmount(conversion.convertedAmountEur, 'EUR')}</Text>
+            </View>
+            <Text style={styles.conversionNote}>
+              Please pay the EUR amount shown above. The CHF amount is for reference only.
+            </Text>
+          </View>
+        )}
 
         {/* Payment Due Date - Subtle */}
         <View style={styles.dueDateSubtle}>

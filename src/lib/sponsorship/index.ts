@@ -54,6 +54,7 @@ export {
   getInvoiceForDeal,
   updateInvoicePDF,
   removeInvoicePDF,
+  updateInvoiceConversion,
 } from './invoices';
 
 // Calculation utilities

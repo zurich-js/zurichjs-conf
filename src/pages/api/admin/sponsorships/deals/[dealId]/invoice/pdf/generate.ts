@@ -78,6 +78,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       total: invoice.total_amount,
       currency: invoice.currency as 'CHF' | 'EUR',
       invoiceNotes: invoice.invoice_notes || undefined,
+      // Include conversion data if paying in EUR
+      conversion: invoice.payable_currency === 'EUR' && invoice.conversion_rate_chf_to_eur && invoice.converted_amount_eur
+        ? {
+            baseAmountChf: invoice.base_amount_chf ?? invoice.total_amount,
+            payableCurrency: 'EUR',
+            conversionRateChfToEur: invoice.conversion_rate_chf_to_eur,
+            convertedAmountEur: invoice.converted_amount_eur,
+            justification: invoice.conversion_justification ?? '',
+          }
+        : undefined,
     };
 
     // Generate PDF

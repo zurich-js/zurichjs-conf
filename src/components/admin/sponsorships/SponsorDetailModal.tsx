@@ -20,6 +20,8 @@ import {
   Edit2,
   Check,
   Globe,
+  ArrowRightLeft,
+  Info,
 } from 'lucide-react';
 import Image from 'next/image';
 import { StatusBadge } from './StatusBadge';
@@ -46,6 +48,14 @@ export function SponsorDetailModal({
   const [dueDate, setDueDate] = useState('');
   const [isEditingDueDate, setIsEditingDueDate] = useState(false);
   const [editDueDate, setEditDueDate] = useState('');
+
+  // Currency conversion state
+  const [payInEur, setPayInEur] = useState(false);
+  const [conversionRate, setConversionRate] = useState('0.95');
+  const [convertedAmount, setConvertedAmount] = useState('');
+  const [conversionJustification, setConversionJustification] = useState('');
+  const [conversionRateSource, setConversionRateSource] = useState<'ecb' | 'bank' | 'manual' | 'other'>('manual');
+  const [isEditingConversion, setIsEditingConversion] = useState(false);
 
   // Edit mode for sponsor details
   const [isEditing, setIsEditing] = useState(false);
@@ -83,6 +93,20 @@ export function SponsorDetailModal({
       });
     }
   }, [isEditing, sponsor]);
+
+  // Initialize conversion state from existing invoice data
+  useEffect(() => {
+    if (invoice) {
+      const hasConversion = invoice.payable_currency === 'EUR' && invoice.conversion_rate_chf_to_eur != null;
+      setPayInEur(hasConversion);
+      if (hasConversion && invoice.conversion_rate_chf_to_eur) {
+        setConversionRate(invoice.conversion_rate_chf_to_eur.toString());
+        setConvertedAmount(invoice.converted_amount_eur ? (invoice.converted_amount_eur / 100).toFixed(2) : '');
+        setConversionJustification(invoice.conversion_justification || '');
+        setConversionRateSource(invoice.conversion_rate_source || 'manual');
+      }
+    }
+  }, [invoice]);
 
   // Format currency for display with comma delimiters
   const formatAmount = (cents: number, currency: string) => {
@@ -122,15 +146,6 @@ export function SponsorDetailModal({
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus, paidBy }),
-    });
-  };
-
-  const handleCreateInvoice = async () => {
-    if (!dueDate) return;
-    await apiCall(`/api/admin/sponsorships/deals/${deal.id}/invoice`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dueDate }),
     });
   };
 
@@ -183,6 +198,100 @@ export function SponsorDetailModal({
 
   const updateEditForm = (field: keyof typeof editForm, value: string) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Calculate converted amount from rate
+  const calculateConvertedAmount = (rate: string, baseAmount: number) => {
+    const rateNum = parseFloat(rate);
+    if (isNaN(rateNum) || rateNum <= 0) return '';
+    return ((baseAmount / 100) * rateNum).toFixed(2);
+  };
+
+  // Calculate rate from converted amount
+  const calculateRateFromAmount = (amount: string, baseAmount: number) => {
+    const amountNum = parseFloat(amount);
+    const baseInUnits = baseAmount / 100;
+    if (isNaN(amountNum) || amountNum <= 0 || baseInUnits <= 0) return '';
+    return (amountNum / baseInUnits).toFixed(4);
+  };
+
+  // Handle conversion rate change - auto-calculate converted amount
+  const handleConversionRateChange = (newRate: string) => {
+    setConversionRate(newRate);
+    const baseAmount = invoice?.base_amount_chf ?? invoice?.total_amount ?? total;
+    setConvertedAmount(calculateConvertedAmount(newRate, baseAmount));
+  };
+
+  // Handle converted amount change - auto-calculate rate
+  const handleConvertedAmountChange = (newAmount: string) => {
+    setConvertedAmount(newAmount);
+    const baseAmount = invoice?.base_amount_chf ?? invoice?.total_amount ?? total;
+    const newRate = calculateRateFromAmount(newAmount, baseAmount);
+    if (newRate) {
+      setConversionRate(newRate);
+    }
+  };
+
+  // Handle conversion update
+  const handleUpdateConversion = async () => {
+    if (!invoice) return;
+
+    const conversionData = payInEur
+      ? {
+          payInEur: true,
+          conversionRateChfToEur: parseFloat(conversionRate),
+          convertedAmountEur: Math.round(parseFloat(convertedAmount) * 100),
+          conversionJustification,
+          conversionRateSource,
+        }
+      : { payInEur: false };
+
+    try {
+      await apiCall(`/api/admin/sponsorships/deals/${deal.id}/invoice`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversion: conversionData }),
+      });
+      setIsEditingConversion(false);
+    } catch {
+      // Error is handled by apiCall
+    }
+  };
+
+  // Handle creating invoice with conversion
+  const handleCreateInvoiceWithConversion = async () => {
+    if (!dueDate) return;
+
+    const requestData: Record<string, unknown> = { dueDate };
+
+    if (payInEur && deal.currency === 'CHF') {
+      requestData.payInEur = true;
+      requestData.conversionRateChfToEur = parseFloat(conversionRate);
+      if (convertedAmount) {
+        requestData.convertedAmountEur = Math.round(parseFloat(convertedAmount) * 100);
+      }
+      requestData.conversionJustification = conversionJustification;
+      requestData.conversionRateSource = conversionRateSource;
+    }
+
+    await apiCall(`/api/admin/sponsorships/deals/${deal.id}/invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData),
+    });
+  };
+
+  // Check if conversion form is valid
+  const isConversionValid = () => {
+    if (!payInEur) return true;
+    const rate = parseFloat(conversionRate);
+    const amount = parseFloat(convertedAmount);
+    return (
+      rate > 0.1 &&
+      rate < 10 &&
+      amount > 0 &&
+      conversionJustification.trim().length > 0
+    );
   };
 
   // Calculate totals from line items
@@ -726,8 +835,8 @@ export function SponsorDetailModal({
 
                       <div className="space-y-4">
                         <h3 className="text-sm font-medium text-gray-700">Create Invoice</h3>
-                        <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
-                          <div className="flex-1">
+                        <div className="space-y-4">
+                          <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Due Date
                             </label>
@@ -736,12 +845,119 @@ export function SponsorDetailModal({
                               value={dueDate}
                               onChange={(e) => setDueDate(e.target.value)}
                               min={new Date().toISOString().split('T')[0]}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
+                              className="w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F1E271] focus:border-transparent"
                             />
                           </div>
+
+                          {/* Currency Conversion Toggle - Only for CHF deals */}
+                          {deal.currency === 'CHF' && (
+                            <div className="border border-blue-200 rounded-lg bg-blue-50 p-4 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <ArrowRightLeft className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium text-blue-900">Allow sponsor to pay in EUR</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPayInEur(!payInEur);
+                                    if (!payInEur) {
+                                      // Initialize converted amount when enabling
+                                      setConvertedAmount(calculateConvertedAmount(conversionRate, total));
+                                    }
+                                  }}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    payInEur ? 'bg-blue-600' : 'bg-gray-200'
+                                  }`}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                      payInEur ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                  />
+                                </button>
+                              </div>
+
+                              {payInEur && (
+                                <div className="space-y-3 pt-2 border-t border-blue-200">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        CHF → EUR Rate
+                                      </label>
+                                      <input
+                                        type="number"
+                                        step="0.0001"
+                                        min="0.1"
+                                        max="10"
+                                        value={conversionRate}
+                                        onChange={(e) => handleConversionRateChange(e.target.value)}
+                                        placeholder="0.95"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      />
+                                      <p className="text-xs text-gray-500 mt-1">1 CHF = {conversionRate} EUR</p>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Converted Amount (EUR)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={convertedAmount}
+                                        onChange={(e) => handleConvertedAmountChange(e.target.value)}
+                                        placeholder="Auto-calculated"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      />
+                                      <p className="text-xs text-gray-500 mt-1">Edit to adjust rate</p>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Rate Source
+                                    </label>
+                                    <select
+                                      value={conversionRateSource}
+                                      onChange={(e) => setConversionRateSource(e.target.value as 'ecb' | 'bank' | 'manual' | 'other')}
+                                      className="w-full sm:w-48 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                      <option value="ecb">ECB (European Central Bank)</option>
+                                      <option value="bank">Bank Rate</option>
+                                      <option value="manual">Manual / Agreed</option>
+                                      <option value="other">Other</option>
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Conversion Justification <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                      value={conversionJustification}
+                                      onChange={(e) => setConversionJustification(e.target.value)}
+                                      placeholder="e.g., ECB rate from 2026-01-20, Agreed rate with sponsor"
+                                      rows={2}
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                    />
+                                  </div>
+
+                                  <div className="flex items-start gap-2 bg-blue-100 rounded p-2">
+                                    <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                                    <div className="text-xs text-blue-800">
+                                      <p className="font-medium">Preview</p>
+                                      <p>Base: {formatAmount(total, 'CHF')} → Payable: {convertedAmount ? `EUR ${convertedAmount}` : '...'}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           <button
-                            onClick={handleCreateInvoice}
-                            disabled={!dueDate || isUpdating}
+                            onClick={handleCreateInvoiceWithConversion}
+                            disabled={!dueDate || isUpdating || (payInEur && !isConversionValid())}
                             className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-black bg-[#F1E271] hover:bg-[#e6d766] rounded-lg transition-colors disabled:opacity-50"
                           >
                             Create Invoice
@@ -761,8 +977,22 @@ export function SponsorDetailModal({
                         <p className="text-base sm:text-lg font-bold font-mono">{invoice.invoice_number}</p>
                       </div>
                       <div className="sm:text-right">
-                        <p className="text-sm text-gray-500">Total Amount</p>
-                        <p className="text-base sm:text-lg font-bold">{formatAmount(invoice.total_amount, invoice.currency)}</p>
+                        {invoice.payable_currency === 'EUR' && invoice.converted_amount_eur ? (
+                          <>
+                            <p className="text-sm text-gray-500">Amount Payable</p>
+                            <p className="text-base sm:text-lg font-bold text-blue-600">
+                              {formatAmount(invoice.converted_amount_eur, 'EUR')}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Base: {formatAmount(invoice.total_amount, invoice.currency)}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-gray-500">Total Amount</p>
+                            <p className="text-base sm:text-lg font-bold">{formatAmount(invoice.total_amount, invoice.currency)}</p>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
@@ -812,6 +1042,182 @@ export function SponsorDetailModal({
                       </div>
                     </div>
                   </div>
+
+                  {/* Currency Conversion Section - Only for CHF deals with existing invoice */}
+                  {deal.currency === 'CHF' && (
+                    <div className="border border-blue-200 rounded-lg bg-blue-50 p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ArrowRightLeft className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">EUR Payment Option</span>
+                        </div>
+                        {!isEditingConversion ? (
+                          <button
+                            onClick={() => setIsEditingConversion(true)}
+                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            Edit
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                // Reset to original values
+                                const hasConversion = invoice.payable_currency === 'EUR' && invoice.conversion_rate_chf_to_eur != null;
+                                setPayInEur(hasConversion);
+                                if (hasConversion && invoice.conversion_rate_chf_to_eur) {
+                                  setConversionRate(invoice.conversion_rate_chf_to_eur.toString());
+                                  setConvertedAmount(invoice.converted_amount_eur ? (invoice.converted_amount_eur / 100).toFixed(2) : '');
+                                  setConversionJustification(invoice.conversion_justification || '');
+                                  setConversionRateSource(invoice.conversion_rate_source || 'manual');
+                                }
+                                setIsEditingConversion(false);
+                              }}
+                              className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1 rounded"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleUpdateConversion}
+                              disabled={isUpdating || (payInEur && !isConversionValid())}
+                              className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded flex items-center gap-1 disabled:opacity-50"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                              Save
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {isEditingConversion ? (
+                        <div className="space-y-3 pt-2 border-t border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-blue-900">Allow sponsor to pay in EUR</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPayInEur(!payInEur);
+                                if (!payInEur) {
+                                  const baseAmount = invoice.base_amount_chf ?? invoice.total_amount;
+                                  setConvertedAmount(calculateConvertedAmount(conversionRate, baseAmount));
+                                }
+                              }}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                payInEur ? 'bg-blue-600' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  payInEur ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                          </div>
+
+                          {payInEur && (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    CHF → EUR Rate
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.0001"
+                                    min="0.1"
+                                    max="10"
+                                    value={conversionRate}
+                                    onChange={(e) => {
+                                      setConversionRate(e.target.value);
+                                      const baseAmount = invoice.base_amount_chf ?? invoice.total_amount;
+                                      setConvertedAmount(calculateConvertedAmount(e.target.value, baseAmount));
+                                    }}
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">1 CHF = {conversionRate} EUR</p>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Converted Amount (EUR)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={convertedAmount}
+                                    onChange={(e) => handleConvertedAmountChange(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">Edit to adjust rate</p>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Rate Source
+                                </label>
+                                <select
+                                  value={conversionRateSource}
+                                  onChange={(e) => setConversionRateSource(e.target.value as 'ecb' | 'bank' | 'manual' | 'other')}
+                                  className="w-full sm:w-48 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                  <option value="ecb">ECB (European Central Bank)</option>
+                                  <option value="bank">Bank Rate</option>
+                                  <option value="manual">Manual / Agreed</option>
+                                  <option value="other">Other</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Conversion Justification <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                  value={conversionJustification}
+                                  onChange={(e) => setConversionJustification(e.target.value)}
+                                  placeholder="e.g., ECB rate from 2026-01-20"
+                                  rows={2}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : invoice.payable_currency === 'EUR' && invoice.conversion_rate_chf_to_eur ? (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Base Amount (CHF):</span>
+                            <span className="font-medium">{formatAmount(invoice.base_amount_chf ?? invoice.total_amount, 'CHF')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Conversion Rate:</span>
+                            <span className="font-medium">1 CHF = {invoice.conversion_rate_chf_to_eur} EUR</span>
+                          </div>
+                          <div className="flex justify-between text-blue-700">
+                            <span>Payable Amount (EUR):</span>
+                            <span className="font-bold">{formatAmount(invoice.converted_amount_eur!, 'EUR')}</span>
+                          </div>
+                          {invoice.conversion_justification && (
+                            <div className="pt-2 border-t border-blue-200">
+                              <span className="text-gray-600">Justification: </span>
+                              <span className="text-gray-800">{invoice.conversion_justification}</span>
+                            </div>
+                          )}
+                          {invoice.conversion_rate_source && (
+                            <div className="text-xs text-gray-500">
+                              Source: {invoice.conversion_rate_source.toUpperCase()}
+                              {invoice.conversion_updated_at && ` • Updated: ${new Date(invoice.conversion_updated_at).toLocaleDateString()}`}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-blue-700">
+                          EUR payment not enabled. Click Edit to allow the sponsor to pay in EUR.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* PDF Actions */}
                   <div className="space-y-4">

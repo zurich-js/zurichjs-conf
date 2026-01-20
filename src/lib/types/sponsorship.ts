@@ -51,6 +51,11 @@ export type SponsorshipInvoicePDFSource = 'generated' | 'uploaded';
  */
 export type SponsorshipCurrency = 'CHF' | 'EUR';
 
+/**
+ * Conversion rate source - Where the exchange rate came from
+ */
+export type SponsorshipConversionRateSource = 'ecb' | 'bank' | 'manual' | 'other';
+
 // ============================================================================
 // DATABASE ROW TYPES
 // ============================================================================
@@ -213,6 +218,17 @@ export interface SponsorshipInvoice {
   total_amount: number; // final total (in cents)
   currency: SponsorshipCurrency;
 
+  // Multi-currency support (CHF base -> EUR payable)
+  base_currency: 'CHF';
+  base_amount_chf: number | null; // Base total in CHF cents
+  payable_currency: SponsorshipCurrency | null; // Currency sponsor pays in (EUR when conversion enabled)
+  conversion_rate_chf_to_eur: number | null; // e.g., 0.95 means 1 CHF = 0.95 EUR
+  converted_amount_eur: number | null; // Amount payable in EUR cents
+  conversion_justification: string | null; // Reason for the rate
+  conversion_rate_source: SponsorshipConversionRateSource | null;
+  conversion_updated_by: string | null;
+  conversion_updated_at: string | null;
+
   // PDF
   invoice_pdf_url: string | null;
   invoice_pdf_source: SponsorshipInvoicePDFSource | null;
@@ -343,6 +359,23 @@ export interface UpdatePerkRequest {
 export interface CreateInvoiceRequest {
   dueDate: string; // ISO date string (YYYY-MM-DD)
   invoiceNotes?: string;
+  // Multi-currency conversion (optional)
+  payInEur?: boolean;
+  conversionRateChfToEur?: number; // e.g., 0.95
+  convertedAmountEur?: number; // in cents (auto-calculated but can be overridden)
+  conversionJustification?: string;
+  conversionRateSource?: SponsorshipConversionRateSource;
+}
+
+/**
+ * Request to update invoice conversion
+ */
+export interface UpdateInvoiceConversionRequest {
+  payInEur: boolean;
+  conversionRateChfToEur?: number;
+  convertedAmountEur?: number; // in cents
+  conversionJustification?: string;
+  conversionRateSource?: SponsorshipConversionRateSource;
 }
 
 // ============================================================================
@@ -465,6 +498,15 @@ export interface SponsorshipInvoicePDFProps {
   adjustmentsTotal: number;
   total: number;
   currency: SponsorshipCurrency;
+
+  // Multi-currency conversion (optional)
+  conversion?: {
+    baseAmountChf: number; // Base amount in CHF cents
+    payableCurrency: 'EUR';
+    conversionRateChfToEur: number; // e.g., 0.95
+    convertedAmountEur: number; // Amount in EUR cents
+    justification: string;
+  };
 
   // Notes
   invoiceNotes?: string;
