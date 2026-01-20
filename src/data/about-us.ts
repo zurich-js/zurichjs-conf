@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import {Heart, Lightbulb, Handshake, Target, LucideIcon} from 'lucide-react';
 
 export interface AboutHeroData {
   title: string;
@@ -48,7 +48,7 @@ export interface AboutVenueData {
 }
 
 export interface AboutValueData {
-  icon: ReactNode;
+  icon: LucideIcon;
   title: string;
   description: string;
 }
@@ -165,25 +165,25 @@ export const aboutPageData: AboutPageData = {
     title: "What we stand for",
     values: [
       {
-        icon: null,
+        icon: Heart,
         title: "Community First",
         description:
           "We believe in building a strong, inclusive community where everyone feels welcome and valued. Our conference is a place for learning, sharing, and growing together.",
       },
       {
-        icon: null,
+        icon: Lightbulb,
         title: "Innovation & Learning",
         description:
           "We promote cutting-edge technologies and encourage continuous learning. Every session is designed to inspire and expand your knowledge of JavaScript.",
       },
       {
-        icon: null,
+        icon: Handshake,
         title: "Collaboration",
         description:
           "We create opportunities for meaningful connections and partnerships. Through networking events and workshops, we foster collaboration that extends beyond the conference.",
       },
       {
-        icon: null,
+        icon: Target,
         title: "Excellence",
         description:
           "We strive for excellence in every aspect of the conference, from speaker selection to venue quality, ensuring an outstanding experience for all attendees.",
