@@ -103,7 +103,7 @@ export default function Home() {
           </div>
         </div>
 
-        <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20" compactTop>
+        <ShapedSection shape="tighten" variant="light" className="relative z-20" compactTop>
           <LearnSection
             title={learningData.title}
             subtitle={learningData.subtitle}

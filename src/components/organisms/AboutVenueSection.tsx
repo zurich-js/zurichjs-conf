@@ -13,7 +13,7 @@ export const AboutVenueSection: React.FC<AboutVenueSectionProps> = ({
 }) => {
   return (
     <ParallelogramSection backgroundColor="var(--color-brand-gray-darkest)" className="my-16">
-      <div className="rich-text-renderer">
+      <div className="rich-text-renderer" id={"venue"}>
         <Kicker variant="dark" className="mb-4">
           {data.kicker}
         </Kicker>
