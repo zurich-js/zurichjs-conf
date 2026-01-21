@@ -6,8 +6,8 @@ import { Dialog } from "@headlessui/react";
 import { Logo, Button, SocialIcon } from "@/components/atoms";
 
 export interface NavBarProps {
-  onGetTicketsClick?: () => void;
   scrollThreshold?: number;
+  onGetTicketsClick?: () => void;
 }
 
 const navLinks = [
@@ -36,7 +36,6 @@ const socialLinks = [
 ];
 
 export const NavBar: React.FC<NavBarProps> = ({
-  onGetTicketsClick,
   scrollThreshold = 100,
 }) => {
   const router = useRouter();
@@ -56,14 +55,7 @@ export const NavBar: React.FC<NavBarProps> = ({
   }, [scrollThreshold]);
 
   const handleGetTickets = () => {
-    if (onGetTicketsClick) {
-      onGetTicketsClick();
-    } else {
-      const ticketsSection = document.getElementById("tickets");
-      if (ticketsSection) {
-        ticketsSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
+    router.push('/#tickets');
   };
 
   // if root: no background, always visible, but logo scrollable
@@ -137,7 +129,7 @@ export const NavBar: React.FC<NavBarProps> = ({
       <Dialog
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        className="relative z-[100] lg:hidden"
+        className="relative z-100 lg:hidden"
       >
         <div className="fixed inset-0 flex flex-col bg-black h-screen">
           <div className="flex items-center justify-between p-4 pl-6">

@@ -5,76 +5,37 @@
 
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
-import { useToast } from '@/contexts/ToastContext';
 import AdminHeader from '@/components/admin/AdminHeader';
 import {
   Partnership,
-  PartnershipStats,
   PartnershipType,
   PartnershipStatus,
-  StripeProductInfo,
   PartnershipList,
   StatsCards,
   AddPartnershipModal,
   PartnershipDetailModal,
   SendEmailModal,
-  CreatePartnershipRequest,
-  PartnershipCoupon,
-  PartnershipVoucher,
-  CouponType,
-  VoucherCurrency,
-  VoucherPurpose,
+  PartnershipWithDetails,
+  fetchPartnerships,
+  fetchPartnershipStats,
+  fetchPartnershipDetails,
+  fetchProducts,
+  partnershipQueryKeys,
+  useCreatePartnership,
+  useDeletePartnership,
+  useCreateCoupon,
+  useDeleteCoupon,
+  useCreateVouchers,
+  useDeleteVoucher,
+  useSendPartnershipEmail,
 } from '@/components/admin/partnerships';
-
-// API functions
-async function fetchPartnerships(params: {
-  type?: PartnershipType;
-  status?: PartnershipStatus;
-  search?: string;
-}): Promise<{
-  partnerships: Partnership[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}> {
-  const queryParams = new URLSearchParams();
-  if (params.type) queryParams.set('type', params.type);
-  if (params.status) queryParams.set('status', params.status);
-  if (params.search) queryParams.set('search', params.search);
-
-  const res = await fetch(`/api/admin/partnerships?${queryParams.toString()}`);
-  if (!res.ok) throw new Error('Failed to fetch partnerships');
-  return res.json();
-}
-
-async function fetchStats(): Promise<PartnershipStats> {
-  const res = await fetch('/api/admin/partnerships/stats');
-  if (!res.ok) throw new Error('Failed to fetch stats');
-  return res.json();
-}
-
-async function fetchPartnershipDetails(id: string): Promise<
-  Partnership & { coupons: PartnershipCoupon[]; vouchers: PartnershipVoucher[] }
-> {
-  const res = await fetch(`/api/admin/partnerships/${id}`);
-  if (!res.ok) throw new Error('Failed to fetch partnership');
-  return res.json();
-}
-
-async function fetchProducts(): Promise<{ products: StripeProductInfo[] }> {
-  const res = await fetch('/api/admin/partnerships/products');
-  if (!res.ok) throw new Error('Failed to fetch products');
-  return res.json();
-}
 
 export default function PartnershipsDashboard() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const queryClient = useQueryClient();
-  const toast = useToast();
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,13 +45,11 @@ export default function PartnershipsDashboard() {
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedPartnership, setSelectedPartnership] = useState<Partnership | null>(null);
-  const [detailedPartnership, setDetailedPartnership] = useState<
-    (Partnership & { coupons: PartnershipCoupon[]; vouchers: PartnershipVoucher[] }) | null
-  >(null);
+  const [detailedPartnership, setDetailedPartnership] = useState<PartnershipWithDetails | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailPartnership, setEmailPartnership] = useState<Partnership | null>(null);
 
-  // Check auth status using dedicated verify endpoint
+  // Auth check
   const { data: isAuthenticated, isLoading: isAuthLoading } = useQuery({
     queryKey: ['admin', 'auth'],
     queryFn: async () => {
@@ -98,234 +57,49 @@ export default function PartnershipsDashboard() {
       return res.ok;
     },
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Fetch partnerships
+  // Queries
   const { data: partnershipsData, isLoading: isLoadingPartnerships } = useQuery({
-    queryKey: ['partnerships', 'list', { type: typeFilter, status: statusFilter, search: searchQuery }],
-    queryFn: () =>
-      fetchPartnerships({
-        type: typeFilter || undefined,
-        status: statusFilter || undefined,
-        search: searchQuery || undefined,
-      }),
+    queryKey: partnershipQueryKeys.list({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
+    queryFn: () => fetchPartnerships({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
     enabled: isAuthenticated === true,
   });
 
-  // Fetch stats
   const { data: stats, isLoading: isLoadingStats } = useQuery({
-    queryKey: ['partnerships', 'stats'],
-    queryFn: fetchStats,
+    queryKey: partnershipQueryKeys.stats(),
+    queryFn: fetchPartnershipStats,
     enabled: isAuthenticated === true,
   });
 
-  // Fetch products for coupon restrictions
   const { data: productsData } = useQuery({
-    queryKey: ['partnerships', 'products'],
+    queryKey: partnershipQueryKeys.products(),
     queryFn: fetchProducts,
     enabled: isAuthenticated === true,
   });
 
-  // Fetch detailed partnership when selected
   const { data: detailedData } = useQuery({
-    queryKey: ['partnerships', 'detail', selectedPartnership?.id],
+    queryKey: partnershipQueryKeys.detail(selectedPartnership?.id || ''),
     queryFn: () => fetchPartnershipDetails(selectedPartnership!.id),
     enabled: !!selectedPartnership,
   });
 
-  // Update detailed partnership when data changes
   useEffect(() => {
-    if (detailedData) {
-      setDetailedPartnership(detailedData);
-    }
+    if (detailedData) setDetailedPartnership(detailedData);
   }, [detailedData]);
 
-  // Create partnership mutation
-  const createMutation = useMutation({
-    mutationFn: async (data: CreatePartnershipRequest) => {
-      const res = await fetch('/api/admin/partnerships', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to create partnership');
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['partnerships'] });
-      setShowAddModal(false);
-      toast.success('Partnership Created', 'The partnership has been created successfully');
-    },
-    onError: (error: Error) => {
-      toast.error('Error', error.message);
-    },
-  });
-
-  // Delete partnership mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/partnerships/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete partnership');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['partnerships'] });
-      toast.success('Partnership Deleted', 'The partnership has been deleted');
-    },
-    onError: () => {
-      toast.error('Error', 'Failed to delete partnership');
-    },
-  });
-
-  // Create coupon mutation
-  const createCouponMutation = useMutation({
-    mutationFn: async ({
-      partnershipId,
-      data,
-    }: {
-      partnershipId: string;
-      data: {
-        code: string;
-        type: CouponType;
-        discount_percent?: number;
-        discount_amount?: number;
-        currency?: VoucherCurrency;
-        restricted_product_ids: string[];
-        max_redemptions?: number;
-        expires_at?: string;
-      };
-    }) => {
-      const res = await fetch(`/api/admin/partnerships/${partnershipId}/coupons`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to create coupon');
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['partnerships'] });
-      toast.success('Coupon Created', 'The coupon has been created in Stripe');
-    },
-    onError: (error: Error) => {
-      toast.error('Error', error.message);
-    },
-  });
-
-  // Delete coupon mutation
-  const deleteCouponMutation = useMutation({
-    mutationFn: async ({ partnershipId, couponId }: { partnershipId: string; couponId: string }) => {
-      const res = await fetch(`/api/admin/partnerships/${partnershipId}/coupons`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ couponId }),
-      });
-      if (!res.ok) throw new Error('Failed to delete coupon');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['partnerships'] });
-      toast.success('Coupon Deleted', 'The coupon has been deleted');
-    },
-    onError: () => {
-      toast.error('Error', 'Failed to delete coupon');
-    },
-  });
-
-  // Create vouchers mutation
-  const createVouchersMutation = useMutation({
-    mutationFn: async ({
-      partnershipId,
-      data,
-    }: {
-      partnershipId: string;
-      data: {
-        purpose: VoucherPurpose;
-        amount: number;
-        currency: VoucherCurrency;
-        quantity: number;
-        recipient_name?: string;
-        recipient_email?: string;
-      };
-    }) => {
-      const res = await fetch(`/api/admin/partnerships/${partnershipId}/vouchers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to create vouchers');
-      }
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['partnerships'] });
-      const count = data.vouchers?.length || 1;
-      toast.success('Vouchers Created', `${count} voucher${count > 1 ? 's' : ''} created in Stripe`);
-    },
-    onError: (error: Error) => {
-      toast.error('Error', error.message);
-    },
-  });
-
-  // Delete voucher mutation
-  const deleteVoucherMutation = useMutation({
-    mutationFn: async ({ partnershipId, voucherId }: { partnershipId: string; voucherId: string }) => {
-      const res = await fetch(`/api/admin/partnerships/${partnershipId}/vouchers`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voucherId }),
-      });
-      if (!res.ok) throw new Error('Failed to delete voucher');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['partnerships'] });
-      toast.success('Voucher Deleted', 'The voucher has been deleted');
-    },
-    onError: () => {
-      toast.error('Error', 'Failed to delete voucher');
-    },
-  });
-
-  // Send email mutation
-  const sendEmailMutation = useMutation({
-    mutationFn: async ({
-      partnershipId,
-      options,
-    }: {
-      partnershipId: string;
-      options: {
-        include_coupons: boolean;
-        include_vouchers: boolean;
-        include_logo: boolean;
-        custom_message?: string;
-      };
-    }) => {
-      const res = await fetch(`/api/admin/partnerships/${partnershipId}/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to send email');
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      setShowEmailModal(false);
-      setEmailPartnership(null);
-    },
-    onError: (error: Error) => {
-      toast.error('Error', error.message);
-    },
+  // Mutations
+  const createMutation = useCreatePartnership();
+  const deleteMutation = useDeletePartnership();
+  const createCouponMutation = useCreateCoupon();
+  const deleteCouponMutation = useDeleteCoupon();
+  const createVouchersMutation = useCreateVouchers();
+  const deleteVoucherMutation = useDeleteVoucher();
+  const sendEmailMutation = useSendPartnershipEmail(() => {
+    setShowEmailModal(false);
+    setEmailPartnership(null);
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -339,9 +113,8 @@ export default function PartnershipsDashboard() {
       });
       if (response.ok) {
         setPassword('');
-        // Invalidate auth query to re-check and all other queries
         queryClient.invalidateQueries({ queryKey: ['admin', 'auth'] });
-        queryClient.invalidateQueries({ queryKey: ['partnerships'] });
+        queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.all });
       } else {
         setLoginError('Invalid password');
       }
@@ -353,7 +126,6 @@ export default function PartnershipsDashboard() {
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/logout', { method: 'POST' });
-      // Clear all queries and reload
       queryClient.clear();
       window.location.reload();
     } catch (error) {
@@ -361,7 +133,6 @@ export default function PartnershipsDashboard() {
     }
   };
 
-  // Loading state
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center text-black">
@@ -373,13 +144,10 @@ export default function PartnershipsDashboard() {
     );
   }
 
-  // Login form
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8 text-black">
-        <Head>
-          <title>Admin Login | ZurichJS Conference</title>
-        </Head>
+        <Head><title>Admin Login | ZurichJS Conference</title></Head>
         <div className="max-w-sm w-full bg-white rounded-lg shadow-md p-5 sm:p-6">
           <div className="text-center mb-5 sm:mb-6">
             <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#F1E271] flex items-center justify-center mx-auto mb-3">
@@ -396,10 +164,7 @@ export default function PartnershipsDashboard() {
               className="w-full px-4 py-2.5 sm:py-2 border rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
             />
             {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
-            <button
-              type="submit"
-              className="w-full bg-[#F1E271] text-black font-medium py-2.5 sm:py-2 rounded-lg hover:bg-[#E5D665]"
-            >
+            <button type="submit" className="w-full bg-[#F1E271] text-black font-medium py-2.5 sm:py-2 rounded-lg hover:bg-[#E5D665]">
               Login
             </button>
           </form>
@@ -410,26 +175,17 @@ export default function PartnershipsDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 text-black">
-      <Head>
-        <title>Partnerships | ZurichJS Admin</title>
-      </Head>
+      <Head><title>Partnerships | ZurichJS Admin</title></Head>
 
-      <AdminHeader
-        title="Partnerships"
-        subtitle="Manage partners, coupons, and tracking"
-        onLogout={handleLogout}
-      />
+      <AdminHeader title="Partnerships" subtitle="Manage partners, coupons, and tracking" onLogout={handleLogout} />
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        {/* Stats */}
         <StatsCards
           stats={stats || { total: 0, byType: {}, byStatus: {}, activeCoupons: 0, activeVouchers: 0, totalCouponRedemptions: 0, totalVoucherRedemptions: 0, totalDiscountGiven: 0 }}
           isLoading={isLoadingStats}
         />
 
-        {/* Actions and Filters */}
         <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:gap-4 sm:justify-between sm:items-center">
-          {/* Add Button - shown at top on mobile */}
           <div className="sm:order-2">
             <button
               onClick={() => setShowAddModal(true)}
@@ -440,9 +196,7 @@ export default function PartnershipsDashboard() {
             </button>
           </div>
 
-          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:order-1">
-            {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -454,9 +208,7 @@ export default function PartnershipsDashboard() {
               />
             </div>
 
-            {/* Filter dropdowns - side by side on mobile */}
             <div className="flex gap-2">
-              {/* Type Filter */}
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value as PartnershipType | '')}
@@ -469,7 +221,6 @@ export default function PartnershipsDashboard() {
                 <option value="sponsor">Sponsor</option>
               </select>
 
-              {/* Status Filter */}
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as PartnershipStatus | '')}
@@ -485,7 +236,6 @@ export default function PartnershipsDashboard() {
           </div>
         </div>
 
-        {/* Partnerships List */}
         {isLoadingPartnerships ? (
           <div className="text-center py-12">
             <div className="w-8 h-8 border-4 border-[#F1E271] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -508,15 +258,13 @@ export default function PartnershipsDashboard() {
         )}
       </main>
 
-      {/* Add Partnership Modal */}
       <AddPartnershipModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSubmit={(data) => createMutation.mutateAsync(data)}
+        onSubmit={(data) => createMutation.mutateAsync(data).then(() => setShowAddModal(false))}
         isSubmitting={createMutation.isPending}
       />
 
-      {/* Partnership Detail Modal */}
       {selectedPartnership && detailedPartnership && (
         <PartnershipDetailModal
           partnership={detailedPartnership}
@@ -526,30 +274,10 @@ export default function PartnershipsDashboard() {
             setSelectedPartnership(null);
             setDetailedPartnership(null);
           }}
-          onCreateCoupon={(data) =>
-            createCouponMutation.mutateAsync({
-              partnershipId: selectedPartnership.id,
-              data,
-            })
-          }
-          onDeleteCoupon={(couponId) =>
-            deleteCouponMutation.mutateAsync({
-              partnershipId: selectedPartnership.id,
-              couponId,
-            })
-          }
-          onCreateVouchers={(data) =>
-            createVouchersMutation.mutateAsync({
-              partnershipId: selectedPartnership.id,
-              data,
-            })
-          }
-          onDeleteVoucher={(voucherId) =>
-            deleteVoucherMutation.mutateAsync({
-              partnershipId: selectedPartnership.id,
-              voucherId,
-            })
-          }
+          onCreateCoupon={(data) => createCouponMutation.mutateAsync({ partnershipId: selectedPartnership.id, data })}
+          onDeleteCoupon={(couponId) => deleteCouponMutation.mutateAsync({ partnershipId: selectedPartnership.id, couponId })}
+          onCreateVouchers={(data) => createVouchersMutation.mutateAsync({ partnershipId: selectedPartnership.id, data })}
+          onDeleteVoucher={(voucherId) => deleteVoucherMutation.mutateAsync({ partnershipId: selectedPartnership.id, voucherId })}
           onSendEmail={() => {
             setEmailPartnership(selectedPartnership);
             setShowEmailModal(true);
@@ -557,7 +285,6 @@ export default function PartnershipsDashboard() {
         />
       )}
 
-      {/* Send Email Modal */}
       {emailPartnership && (
         <SendEmailModal
           partnership={emailPartnership}
@@ -566,12 +293,7 @@ export default function PartnershipsDashboard() {
             setShowEmailModal(false);
             setEmailPartnership(null);
           }}
-          onSend={(options) =>
-            sendEmailMutation.mutateAsync({
-              partnershipId: emailPartnership.id,
-              options,
-            })
-          }
+          onSend={(options) => sendEmailMutation.mutateAsync({ partnershipId: emailPartnership.id, options })}
         />
       )}
     </div>

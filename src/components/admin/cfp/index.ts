@@ -12,3 +12,11 @@ export { ReviewerModal } from './ReviewerModal';
 
 // Tab components
 export { ReviewersTab, SpeakersTab } from './tabs';
+export { SubmissionsTab } from './SubmissionsTab';
+export { TagsTab } from './TagsTab';
+export { SpeakerAvatar } from './SpeakerAvatar';
+
+// Layout components
+export { StatsCards } from './StatsCards';
+export { TabNavigation } from './TabNavigation';
+export { CfpLoginForm } from './CfpLoginForm';
