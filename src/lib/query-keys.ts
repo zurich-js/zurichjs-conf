@@ -141,6 +141,26 @@ export const sponsorshipKeys = {
    */
   sponsors: () => [...sponsorshipKeys.all, 'sponsors'] as const,
   sponsor: (id: string) => [...sponsorshipKeys.sponsors(), id] as const,
+
+  /**
+   * Public sponsors (for homepage)
+   */
+  public: () => [...sponsorshipKeys.all, 'public'] as const,
+} as const;
+
+/**
+ * Partnership query keys
+ */
+export const partnershipKeys = {
+  /**
+   * Base key for all partnership queries
+   */
+  all: ['partnerships'] as const,
+
+  /**
+   * Community partners (for homepage)
+   */
+  community: () => [...partnershipKeys.all, 'community'] as const,
 } as const;
 
 /**
@@ -153,5 +173,6 @@ export const queryKeys = {
   teamRequest: teamRequestKeys,
   cfp: cfpKeys,
   sponsorships: sponsorshipKeys,
+  partnerships: partnershipKeys,
 } as const;
 

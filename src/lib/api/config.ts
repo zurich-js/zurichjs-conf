@@ -67,6 +67,11 @@ export const endpoints = {
   newsletter: {
     subscribe: () => '/api/newsletter/subscribe' as const,
   },
+  // Public endpoints
+  public: {
+    sponsors: () => '/api/sponsors/public' as const,
+    communityPartners: () => '/api/partners/community' as const,
+  },
   // CFP (Call for Papers) endpoints
   cfp: {
     // Speaker endpoints

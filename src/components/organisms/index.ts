@@ -35,7 +35,7 @@ export type { PageHeaderProps } from './PageHeader';
 export type { NavBarProps } from './NavBar';
 export type { CheckoutFormProps } from './CheckoutForm';
 export type { ShapedSectionProps } from './ShapedSection';
-export type { SponsorsSectionProps, Sponsor } from './SponsorsSection';
+export type { SponsorsSectionProps } from './SponsorsSection';
 export type { PhotoSlide, PhotoLayout } from '@/components/molecules';
 export type {
   SponsorshipHeroSectionProps,

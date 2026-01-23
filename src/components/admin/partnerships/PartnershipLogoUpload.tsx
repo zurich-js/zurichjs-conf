@@ -1,19 +1,23 @@
 /**
- * Logo Upload Component
- * Allows uploading, previewing, and removing sponsor logos
+ * Partnership Logo Upload Component
+ * Allows uploading, previewing, and removing partnership logos
  */
 
 import React, { useState, useRef } from 'react';
 import { Upload, Trash2, Building2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
-interface LogoUploadProps {
-  sponsorId: string;
-  currentLogoUrl: string | null;
+interface PartnershipLogoUploadProps {
+  partnershipId: string;
+  currentLogoUrl: string | null | undefined;
   onUpdate: () => void;
 }
 
-export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadProps) {
+export function PartnershipLogoUpload({
+  partnershipId,
+  currentLogoUrl,
+  onUpdate,
+}: PartnershipLogoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +47,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`/api/admin/sponsorships/${sponsorId}/logo`, {
+      const response = await fetch(`/api/admin/partnerships/${partnershipId}/logo`, {
         method: 'POST',
         body: formData,
       });
@@ -72,7 +76,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/sponsorships/${sponsorId}/logo`, {
+      const response = await fetch(`/api/admin/partnerships/${partnershipId}/logo`, {
         method: 'DELETE',
       });
 
@@ -90,8 +94,8 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-medium text-gray-700">Company Logo</h3>
+    <div className="space-y-3">
+      <h4 className="text-sm font-medium text-black">Company Logo</h4>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
@@ -101,24 +105,24 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
 
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
         {/* Logo Preview */}
-        <div className="relative h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+        <div className="relative h-20 w-20 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
           {currentLogoUrl ? (
             <Image
               src={currentLogoUrl}
-              alt="Sponsor logo"
+              alt="Partnership logo"
               fill
               className="object-contain p-2"
-              unoptimized={currentLogoUrl.includes('.svg')}
+              unoptimized={currentLogoUrl.endsWith('.svg')}
             />
           ) : (
-            <div className="h-20 w-20 sm:h-24 sm:w-24 flex items-center justify-center">
-              <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+            <div className="h-20 w-20 flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-gray-400" />
             </div>
           )}
         </div>
 
         {/* Upload Controls */}
-        <div className="flex-1 w-full sm:w-auto space-y-3">
+        <div className="flex-1 w-full sm:w-auto space-y-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -127,11 +131,11 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
             className="hidden"
           />
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading || isDeleting}
-              className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isUploading ? (
                 <>
@@ -141,7 +145,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
               ) : (
                 <>
                   <Upload className="h-4 w-4" />
-                  {currentLogoUrl ? 'Replace' : 'Upload Logo'}
+                  {currentLogoUrl ? 'Replace' : 'Upload'}
                 </>
               )}
             </button>
@@ -150,7 +154,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
               <button
                 onClick={handleDelete}
                 disabled={isUploading || isDeleting}
-                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isDeleting ? (
                   <>
@@ -168,7 +172,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
           </div>
 
           <p className="text-xs text-gray-500">
-            Accepted formats: JPEG, PNG, WebP, SVG. Max size: 5MB.
+            JPEG, PNG, WebP, or SVG. Max 5MB.
           </p>
         </div>
       </div>

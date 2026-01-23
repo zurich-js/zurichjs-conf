@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import {
   Building2,
   Users,
@@ -114,8 +115,19 @@ export function PartnershipList({
             {/* Header with name and menu */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <Icon className="h-5 w-5 text-black" />
+                <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {partnership.company_logo_url ? (
+                    <Image
+                      src={partnership.company_logo_url}
+                      alt={`${partnership.name} logo`}
+                      width={40}
+                      height={40}
+                      className="h-full w-full object-contain p-1"
+                      unoptimized={partnership.company_logo_url.endsWith('.svg')}
+                    />
+                  ) : (
+                    <Icon className="h-5 w-5 text-black" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-black truncate">
@@ -141,10 +153,10 @@ export function PartnershipList({
                 {openMenuId === partnership.id && (
                   <>
                     <div
-                      className="fixed inset-0 z-10"
+                      className="fixed inset-0 z-40"
                       onClick={() => setOpenMenuId(null)}
                     />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                       <button
                         onClick={() => {
                           onView(partnership);
@@ -255,7 +267,7 @@ export function PartnershipList({
 
   // Desktop Table View
   const DesktopTableView = () => (
-    <div className="hidden md:block bg-white rounded-lg border border-gray-200 text-black overflow-x-auto">
+    <div className="hidden md:block bg-white rounded-lg border border-gray-200 text-black overflow-visible">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
@@ -283,11 +295,22 @@ export function PartnershipList({
           {paginatedPartnerships.map((partnership) => {
             const Icon = TYPE_ICONS[partnership.type];
             return (
-              <tr key={partnership.id} className="hover:bg-gray-50">
+              <tr key={partnership.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onView(partnership)}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-black" />
+                    <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {partnership.company_logo_url ? (
+                        <Image
+                          src={partnership.company_logo_url}
+                          alt={`${partnership.name} logo`}
+                          width={40}
+                          height={40}
+                          className="h-full w-full object-contain p-1"
+                          unoptimized={partnership.company_logo_url.endsWith('.svg')}
+                        />
+                      ) : (
+                        <Icon className="h-5 w-5 text-black" />
+                      )}
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-black">
@@ -317,7 +340,7 @@ export function PartnershipList({
                   <div className="text-sm text-black">{partnership.contact_name}</div>
                   <div className="text-sm text-black">{partnership.contact_email}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => copyTrackingUrl(partnership)}
                     className="inline-flex items-center text-sm text-black hover:text-black cursor-pointer"
@@ -335,7 +358,7 @@ export function PartnershipList({
                     )}
                   </button>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                   <div className="relative">
                     <button
                       onClick={() =>
@@ -349,10 +372,10 @@ export function PartnershipList({
                     {openMenuId === partnership.id && (
                       <>
                         <div
-                          className="fixed inset-0 z-10"
+                          className="fixed inset-0 z-40"
                           onClick={() => setOpenMenuId(null)}
                         />
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                           <button
                             onClick={() => {
                               onView(partnership);

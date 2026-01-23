@@ -5,13 +5,16 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { X, Copy, Check, Mail, LinkIcon, ExternalLink } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { X, Copy, Check, Mail, LinkIcon, ExternalLink, Edit2, Save, Loader2 } from 'lucide-react';
 import { CouponsTab, VouchersTab, AnalyticsTab } from './tabs';
+import { PartnershipLogoUpload } from './PartnershipLogoUpload';
+import { partnershipQueryKeys } from './api';
 import type {
   Partnership,
   PartnershipCoupon,
   PartnershipVoucher,
+  PartnershipStatus,
   StripeProductInfo,
   CouponType,
   VoucherPurpose,
@@ -48,6 +51,7 @@ interface PartnershipDetailModalProps {
   }) => Promise<void>;
   onDeleteVoucher: (voucherId: string) => Promise<void>;
   onSendEmail: () => void;
+  onRefresh?: () => void;
 }
 
 type TabType = 'overview' | 'coupons' | 'vouchers' | 'tracking' | 'analytics';
@@ -62,9 +66,18 @@ export function PartnershipDetailModal({
   onCreateVouchers,
   onDeleteVoucher,
   onSendEmail,
+  onRefresh,
 }: PartnershipDetailModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Refresh data after updates
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.detail(partnership.id) });
+    queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.lists() });
+    onRefresh?.();
+  };
 
   // Fetch analytics using TanStack Query - only fetch when tab is active
   const { data: analytics, isLoading: isLoadingAnalytics } = useQuery<PartnershipAnalyticsResponse>({
@@ -156,7 +169,7 @@ export function PartnershipDetailModal({
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <OverviewTab partnership={partnership} />
+            <OverviewTab partnership={partnership} onUpdate={handleRefresh} />
           )}
 
           {/* Coupons Tab */}
@@ -203,9 +216,96 @@ export function PartnershipDetailModal({
 // Inline Sub-components (smaller, kept here)
 // ============================================
 
-function OverviewTab({ partnership }: { partnership: Partnership }) {
+function OverviewTab({
+  partnership,
+  onUpdate,
+}: {
+  partnership: Partnership;
+  onUpdate: () => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    status: partnership.status,
+    company_website: partnership.company_website || '',
+  });
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/admin/partnerships/${partnership.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: editData.status,
+          company_website: editData.company_website || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update partnership');
+      }
+
+      onUpdate();
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Logo Upload Section */}
+      <PartnershipLogoUpload
+        partnershipId={partnership.id}
+        currentLogoUrl={partnership.company_logo_url}
+        onUpdate={onUpdate}
+      />
+
+      <hr className="border-gray-200" />
+
+      <div className="flex justify-between items-center">
+        <h4 className="text-sm font-medium text-black">Details</h4>
+        {!isEditing ? (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+          >
+            <Edit2 className="h-3 w-3" />
+            Edit
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setIsEditing(false);
+                setEditData({
+                  status: partnership.status,
+                  company_website: partnership.company_website || '',
+                });
+              }}
+              className="text-sm text-gray-600 hover:text-gray-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Save className="h-3 w-3" />
+              )}
+              Save
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <h4 className="text-sm font-medium text-black mb-2">Contact Information</h4>
@@ -235,7 +335,20 @@ function OverviewTab({ partnership }: { partnership: Partnership }) {
             </div>
             <div>
               <dt className="text-xs text-black/60">Status</dt>
-              <dd className="text-sm capitalize">{partnership.status}</dd>
+              {isEditing ? (
+                <select
+                  value={editData.status}
+                  onChange={(e) => setEditData({ ...editData, status: e.target.value as PartnershipStatus })}
+                  className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+                >
+                  <option value="active">Active</option>
+                  <option value="pending">Pending</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="expired">Expired</option>
+                </select>
+              ) : (
+                <dd className="text-sm capitalize">{partnership.status}</dd>
+              )}
             </div>
             {partnership.company_name && (
               <div>
@@ -243,22 +356,35 @@ function OverviewTab({ partnership }: { partnership: Partnership }) {
                 <dd className="text-sm">{partnership.company_name}</dd>
               </div>
             )}
-            {partnership.company_website && (
-              <div>
-                <dt className="text-xs text-black/60">Website</dt>
+            <div>
+              <dt className="text-xs text-black/60">Website</dt>
+              {isEditing ? (
+                <input
+                  type="url"
+                  value={editData.company_website}
+                  onChange={(e) => setEditData({ ...editData, company_website: e.target.value })}
+                  placeholder="https://example.com"
+                  className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#F1E271] focus:border-[#F1E271]"
+                />
+              ) : partnership.company_website ? (
                 <dd className="text-sm">
                   <a
                     href={partnership.company_website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                    className="text-blue-600 hover:underline inline-flex items-center gap-1 max-w-full"
+                    title={partnership.company_website}
                   >
-                    {partnership.company_website.replace(/^https?:\/\//, '')}
-                    <ExternalLink className="h-3 w-3" />
+                    <span className="truncate max-w-[180px]">
+                      {partnership.company_website.replace(/^https?:\/\//, '')}
+                    </span>
+                    <ExternalLink className="h-3 w-3 flex-shrink-0" />
                   </a>
                 </dd>
-              </div>
-            )}
+              ) : (
+                <dd className="text-sm text-gray-400">Not set</dd>
+              )}
+            </div>
           </dl>
         </div>
       </div>
@@ -268,6 +394,39 @@ function OverviewTab({ partnership }: { partnership: Partnership }) {
           <p className="text-sm text-black/80 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
             {partnership.notes}
           </p>
+        </div>
+      )}
+
+      {/* Visibility Info */}
+      {(partnership.type === 'community' || partnership.type === 'company') && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+          <h4 className="text-sm font-medium text-gray-700">Homepage Display Requirements</h4>
+          <ul className="space-y-2">
+            <li className="flex items-center gap-2 text-sm">
+              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.company_logo_url ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+                {partnership.company_logo_url ? '✓' : '○'}
+              </span>
+              <span className={partnership.company_logo_url ? 'text-gray-700' : 'text-gray-500'}>Logo uploaded</span>
+            </li>
+            <li className="flex items-center gap-2 text-sm">
+              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+                {partnership.status === 'active' ? '✓' : '○'}
+              </span>
+              <span className={partnership.status === 'active' ? 'text-gray-700' : 'text-gray-500'}>
+                Status is &quot;Active&quot; {partnership.status !== 'active' && <span className="text-gray-400">(currently: {partnership.status})</span>}
+              </span>
+            </li>
+          </ul>
+
+          {partnership.status === 'active' && partnership.company_logo_url ? (
+            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">
+              ✓ This partner will appear in the community partners marquee on the homepage
+            </p>
+          ) : (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+              Complete all requirements above for this partner to appear on the homepage
+            </p>
+          )}
         </div>
       )}
     </div>

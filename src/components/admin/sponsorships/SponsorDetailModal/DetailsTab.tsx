@@ -161,7 +161,7 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
       {/* Logo Visibility */}
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-gray-700">Public Visibility</h3>
-        <div className="bg-gray-50 rounded-lg p-4">
+        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
               <p className="text-sm font-medium">Show logo on website</p>
@@ -177,7 +177,44 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${sponsor.is_logo_public ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </label>
-          {!sponsor.logo_url && <p className="text-xs text-amber-600 mt-2">Upload a logo first to enable public display</p>}
+
+          {/* Homepage Display Requirements */}
+          <div className="border-t border-gray-200 pt-4">
+            <p className="text-xs font-medium text-gray-600 mb-2">Homepage display requirements:</p>
+            <ul className="space-y-1.5">
+              <li className="flex items-center gap-2 text-xs">
+                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.logo_url ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+                  {sponsor.logo_url ? '✓' : '○'}
+                </span>
+                <span className={sponsor.logo_url ? 'text-gray-700' : 'text-gray-500'}>Logo uploaded</span>
+              </li>
+              <li className="flex items-center gap-2 text-xs">
+                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.is_logo_public ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+                  {sponsor.is_logo_public ? '✓' : '○'}
+                </span>
+                <span className={sponsor.is_logo_public ? 'text-gray-700' : 'text-gray-500'}>Public visibility enabled</span>
+              </li>
+              <li className="flex items-center gap-2 text-xs">
+                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${deal.status === 'paid' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+                  {deal.status === 'paid' ? '✓' : '○'}
+                </span>
+                <span className={deal.status === 'paid' ? 'text-gray-700' : 'text-gray-500'}>
+                  Deal status is &quot;Paid&quot; {deal.status !== 'paid' && <span className="text-gray-400">(currently: {deal.status.replace(/_/g, ' ')})</span>}
+                </span>
+              </li>
+            </ul>
+
+            {/* Summary message */}
+            {sponsor.logo_url && sponsor.is_logo_public && deal.status === 'paid' ? (
+              <p className="mt-3 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1.5">
+                ✓ This sponsor will appear on the homepage
+              </p>
+            ) : (
+              <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                Complete all requirements above for this sponsor to appear on the homepage
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

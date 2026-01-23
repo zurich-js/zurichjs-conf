@@ -4,6 +4,7 @@ import { heroData, scheduleData, timelineData, sponsorsData, learningData } from
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
+import { publicSponsorsQueryOptions, communityPartnersQueryOptions } from '@/lib/queries/sponsors';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry, type SupportedCurrency } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
@@ -160,8 +161,12 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async (cont
   const countryCode = detectCountryFromRequest(context.req);
   const detectedCurrency = getCurrencyFromCountry(countryCode);
 
-  // Prefetch ticket pricing for the detected currency
-  await queryClient.prefetchQuery(createTicketPricingQueryOptions(detectedCurrency));
+  // Prefetch ticket pricing, sponsors, and community partners in parallel
+  await Promise.all([
+    queryClient.prefetchQuery(createTicketPricingQueryOptions(detectedCurrency)),
+    queryClient.prefetchQuery(publicSponsorsQueryOptions),
+    queryClient.prefetchQuery(communityPartnersQueryOptions),
+  ]);
 
   return {
     props: {

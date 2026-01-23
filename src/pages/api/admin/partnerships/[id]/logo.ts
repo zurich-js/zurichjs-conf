@@ -1,18 +1,18 @@
 /**
- * Sponsor Logo API
- * POST /api/admin/sponsorships/[id]/logo - Upload sponsor logo
- * DELETE /api/admin/sponsorships/[id]/logo - Remove sponsor logo
+ * Partnership Logo API
+ * POST /api/admin/partnerships/[id]/logo - Upload partnership logo
+ * DELETE /api/admin/partnerships/[id]/logo - Remove partnership logo
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import fs from 'fs/promises';
 import { verifyAdminToken } from '@/lib/admin/auth';
-import { getSponsor, updateSponsorLogo, toggleLogoPublic } from '@/lib/sponsorship';
+import { getPartnership, updatePartnership } from '@/lib/partnerships';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
-const log = logger.scope('Sponsor Logo API');
+const log = logger.scope('Partnership Logo API');
 
 // Disable Next.js default body parser for file uploads
 export const config = {
@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { id } = req.query;
   if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Missing sponsor ID' });
+    return res.status(400).json({ error: 'Missing partnership ID' });
   }
 
   switch (req.method) {
@@ -47,18 +47,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 /**
- * POST - Upload sponsor logo
+ * POST - Upload partnership logo
  */
 async function handleUpload(
-  sponsorId: string,
+  partnershipId: string,
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
-    // Check sponsor exists
-    const sponsor = await getSponsor(sponsorId);
-    if (!sponsor) {
-      return res.status(404).json({ error: 'Sponsor not found' });
+    // Check partnership exists
+    const partnership = await getPartnership(partnershipId);
+    if (!partnership) {
+      return res.status(404).json({ error: 'Partnership not found' });
     }
 
     // Parse form with formidable
@@ -95,15 +95,15 @@ async function handleUpload(
     const supabase = createServiceRoleClient();
     const timestamp = Date.now();
     const filename = `logo_${timestamp}.${ext}`;
-    const filePath = `logos/${sponsorId}/${filename}`;
+    const filePath = `partnership-logos/${partnershipId}/${filename}`;
 
-    // Delete old logo files for this sponsor
+    // Delete old logo files for this partnership
     const { data: existingFiles } = await supabase.storage
       .from('sponsorship-assets')
-      .list(`logos/${sponsorId}`);
+      .list(`partnership-logos/${partnershipId}`);
 
     if (existingFiles && existingFiles.length > 0) {
-      const filesToDelete = existingFiles.map((f) => `logos/${sponsorId}/${f.name}`);
+      const filesToDelete = existingFiles.map((f) => `partnership-logos/${partnershipId}/${f.name}`);
       await supabase.storage.from('sponsorship-assets').remove(filesToDelete);
     }
 
@@ -129,18 +129,18 @@ async function handleUpload(
       .from('sponsorship-assets')
       .getPublicUrl(filePath);
 
-    // Update sponsor with new logo URL (with cache-busting)
+    // Update partnership with new logo URL (with cache-busting)
     const logoUrl = `${publicUrl}?v=${timestamp}`;
-    await updateSponsorLogo(sponsorId, logoUrl);
+    await updatePartnership(partnershipId, { company_logo_url: logoUrl });
 
     // Clean up temp file
     await fs.unlink(uploadedFile.filepath).catch(() => {});
 
-    log.info('Sponsor logo uploaded', { sponsorId, logoUrl });
+    log.info('Partnership logo uploaded', { partnershipId, logoUrl });
 
     return res.status(200).json({ success: true, logoUrl });
   } catch (error) {
-    log.error('Error uploading sponsor logo', { error, sponsorId });
+    log.error('Error uploading partnership logo', { error, partnershipId });
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to upload logo',
     });
@@ -148,36 +148,35 @@ async function handleUpload(
 }
 
 /**
- * DELETE - Remove sponsor logo
+ * DELETE - Remove partnership logo
  */
-async function handleDelete(sponsorId: string, res: NextApiResponse) {
+async function handleDelete(partnershipId: string, res: NextApiResponse) {
   try {
-    // Check sponsor exists
-    const sponsor = await getSponsor(sponsorId);
-    if (!sponsor) {
-      return res.status(404).json({ error: 'Sponsor not found' });
+    // Check partnership exists
+    const partnership = await getPartnership(partnershipId);
+    if (!partnership) {
+      return res.status(404).json({ error: 'Partnership not found' });
     }
 
     // Delete from storage
     const supabase = createServiceRoleClient();
     const { data: existingFiles } = await supabase.storage
       .from('sponsorship-assets')
-      .list(`logos/${sponsorId}`);
+      .list(`partnership-logos/${partnershipId}`);
 
     if (existingFiles && existingFiles.length > 0) {
-      const filesToDelete = existingFiles.map((f) => `logos/${sponsorId}/${f.name}`);
+      const filesToDelete = existingFiles.map((f) => `partnership-logos/${partnershipId}/${f.name}`);
       await supabase.storage.from('sponsorship-assets').remove(filesToDelete);
     }
 
-    // Update sponsor to remove logo URL and set is_logo_public to false
-    await updateSponsorLogo(sponsorId, null);
-    await toggleLogoPublic(sponsorId, false);
+    // Update partnership to remove logo URL
+    await updatePartnership(partnershipId, { company_logo_url: undefined });
 
-    log.info('Sponsor logo removed', { sponsorId });
+    log.info('Partnership logo removed', { partnershipId });
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    log.error('Error removing sponsor logo', { error, sponsorId });
+    log.error('Error removing partnership logo', { error, partnershipId });
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to remove logo',
     });
