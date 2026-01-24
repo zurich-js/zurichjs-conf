@@ -3,21 +3,19 @@ import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, g
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
 import { dehydrate, type DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
+import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { publicSponsorsQueryOptions, communityPartnersQueryOptions } from '@/lib/queries/sponsors';
-import { detectCountryFromRequest } from '@/lib/geo/detect-country';
-import { getCurrencyFromCountry, type SupportedCurrency } from '@/config/currency';
-import type { GetServerSideProps } from 'next';
+import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
+import type { GetStaticProps } from 'next';
 import Link from 'next/link';
 
 /**
- * Page props passed through _app.tsx for hydration and currency detection
+ * Page props passed through _app.tsx for hydration
  * - dehydratedState: Used by HydrationBoundary in _app.tsx
- * - detectedCurrency: Used by CurrencyProvider in _app.tsx
+ * Currency detection is handled client-side by CurrencyContext
  */
 interface HomePageProps {
   dehydratedState: DehydratedState;
-  detectedCurrency: SupportedCurrency;
 }
 
 // FAQ data for schema (plain text versions)
@@ -151,27 +149,27 @@ export default function Home() {
 }
 
 /**
- * Server-side data fetching with TanStack Query prefetching
- * Detects user currency from geo-location and prefetches appropriate pricing
+ * Static data fetching with TanStack Query prefetching
+ * Prefetches ticket pricing, sponsors, partners, and speakers at build time
+ * Currency detection is handled client-side by CurrencyContext
  */
-export const getServerSideProps: GetServerSideProps<HomePageProps> = async (context) => {
+export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
   const queryClient = getQueryClient();
 
-  // Detect country from request headers (Vercel, Cloudflare, etc.)
-  const countryCode = detectCountryFromRequest(context.req);
-  const detectedCurrency = getCurrencyFromCountry(countryCode);
-
-  // Prefetch ticket pricing, sponsors, and community partners in parallel
+  // Prefetch all homepage data in parallel at build time
+  // Ticket pricing uses default currency (CHF) - client will refetch with detected currency
   await Promise.all([
-    queryClient.prefetchQuery(createTicketPricingQueryOptions(detectedCurrency)),
+    queryClient.prefetchQuery(ticketPricingQueryOptions),
     queryClient.prefetchQuery(publicSponsorsQueryOptions),
     queryClient.prefetchQuery(communityPartnersQueryOptions),
+    queryClient.prefetchQuery(publicSpeakersQueryOptions),
   ]);
 
   return {
     props: {
       dehydratedState: dehydrate(queryClient),
-      detectedCurrency,
     },
+    // Revalidate every 30 minutes to keep content fresh
+    revalidate: 1800,
   };
 };

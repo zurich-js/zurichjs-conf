@@ -164,6 +164,21 @@ export const partnershipKeys = {
 } as const;
 
 /**
+ * Speakers query keys (public)
+ */
+export const speakersKeys = {
+  /**
+   * Base key for all speaker queries
+   */
+  all: ['speakers'] as const,
+
+  /**
+   * Public speakers list (for homepage)
+   */
+  public: () => [...speakersKeys.all, 'public'] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
@@ -174,5 +189,6 @@ export const queryKeys = {
   cfp: cfpKeys,
   sponsorships: sponsorshipKeys,
   partnerships: partnershipKeys,
+  speakers: speakersKeys,
 } as const;
 
