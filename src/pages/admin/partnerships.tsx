@@ -181,7 +181,7 @@ export default function PartnershipsDashboard() {
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <StatsCards
-          stats={stats || { total: 0, byType: {}, byStatus: {}, activeCoupons: 0, activeVouchers: 0, totalCouponRedemptions: 0, totalVoucherRedemptions: 0, totalDiscountGiven: 0 }}
+          stats={stats || { total: 0, byType: {}, byStatus: {}, activeCoupons: 0, activeVouchers: 0, totalCouponRedemptions: 0, totalVoucherRedemptions: 0, totalDiscountGiven: 0, totalTicketsSold: 0, totalRevenue: 0, topPartnerships: [] }}
           isLoading={isLoadingStats}
         />
 

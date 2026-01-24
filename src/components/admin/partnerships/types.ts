@@ -19,6 +19,13 @@ export type {
   PartnershipAnalyticsResponse,
 } from '@/lib/types/partnership';
 
+export interface TopPartnership {
+  partnershipId: string;
+  name: string;
+  ticketsSold: number;
+  revenue: number;
+}
+
 export interface PartnershipStats {
   total: number;
   byType: Record<string, number>;
@@ -29,4 +36,8 @@ export interface PartnershipStats {
   totalCouponRedemptions: number;
   totalVoucherRedemptions: number;
   totalDiscountGiven: number; // In cents
+  // Ticket-based analytics
+  totalTicketsSold: number;
+  totalRevenue: number; // In cents
+  topPartnerships: TopPartnership[];
 }

@@ -248,9 +248,19 @@ export function generateTrackingUrl(
 }
 
 /**
- * Get partnership statistics
+ * Top performing partnership
  */
-export async function getPartnershipStats(): Promise<{
+export interface TopPartnership {
+  partnershipId: string;
+  name: string;
+  ticketsSold: number;
+  revenue: number;
+}
+
+/**
+ * Partnership statistics
+ */
+export interface PartnershipStatsResponse {
   total: number;
   byType: Record<PartnershipType, number>;
   byStatus: Record<PartnershipStatus, number>;
@@ -259,89 +269,148 @@ export async function getPartnershipStats(): Promise<{
   totalCouponRedemptions: number;
   totalVoucherRedemptions: number;
   totalDiscountGiven: number;
-}> {
+  totalTicketsSold: number;
+  totalRevenue: number;
+  topPartnerships: TopPartnership[];
+}
+
+/**
+ * Get partnership statistics
+ * Counts coupon uses by cross-referencing ticket coupon_code with partnership_coupons
+ */
+export async function getPartnershipStats(): Promise<PartnershipStatsResponse> {
   const supabase = createServiceRoleClient();
 
-  // Fetch all data in parallel for better performance
   const [
     partnershipsResult,
-    activeCouponsResult,
-    activeVouchersResult,
-    couponRedemptionsResult,
-    voucherRedemptionsResult,
+    couponsResult,
+    vouchersResult,
+    partnershipTicketsResult,
+    couponTicketsResult,
   ] = await Promise.all([
-    // Get partnerships count by type and status
-    supabase.from('partnerships').select('type, status'),
-    // Get active coupons count
-    supabase.from('partnership_coupons').select('*', { count: 'exact', head: true }).eq('is_active', true),
-    // Get unredeemed vouchers count
-    supabase.from('partnership_vouchers').select('*', { count: 'exact', head: true }).eq('is_redeemed', false),
-    // Get all coupon redemption data
-    supabase.from('partnership_coupons').select('current_redemptions, discount_percent, discount_amount'),
-    // Get redeemed vouchers count and total value
-    supabase.from('partnership_vouchers').select('amount').eq('is_redeemed', true),
+    supabase.from('partnerships').select('id, name, type, status'),
+    supabase.from('partnership_coupons').select('code, is_active'),
+    supabase.from('partnership_vouchers').select('amount, is_redeemed'),
+    // Tickets linked via partnership_id (for revenue/top performers)
+    supabase
+      .from('tickets')
+      .select('partnership_id, amount_paid, discount_amount')
+      .not('partnership_id', 'is', null)
+      .eq('status', 'confirmed'),
+    // Tickets with any coupon code (to cross-reference)
+    supabase
+      .from('tickets')
+      .select('coupon_code, discount_amount')
+      .not('coupon_code', 'is', null)
+      .eq('status', 'confirmed'),
   ]);
 
   if (partnershipsResult.error) {
-    log.error('Failed to get partnership stats', partnershipsResult.error);
-    throw new Error(`Failed to get partnership stats: ${partnershipsResult.error.message}`);
+    log.error('Failed to get partnerships', partnershipsResult.error);
+    throw new Error(`Failed to get partnerships: ${partnershipsResult.error.message}`);
   }
 
-  if (activeCouponsResult.error) {
-    log.error('Failed to get coupon stats', activeCouponsResult.error);
-    throw new Error(`Failed to get coupon stats: ${activeCouponsResult.error.message}`);
-  }
+  const partnerships = partnershipsResult.data || [];
+  const coupons = couponsResult.data || [];
+  const vouchers = vouchersResult.data || [];
+  const partnershipTickets = partnershipTicketsResult.data || [];
+  const couponTickets = couponTicketsResult.data || [];
 
-  if (activeVouchersResult.error) {
-    log.error('Failed to get voucher stats', activeVouchersResult.error);
-    throw new Error(`Failed to get voucher stats: ${activeVouchersResult.error.message}`);
-  }
+  // Build set of valid partnership coupon codes (uppercase for matching)
+  const partnerCouponCodes = new Set(
+    coupons.map((c) => c.code?.toUpperCase()).filter(Boolean)
+  );
 
-  // Calculate counts
+  // Count partnerships by type/status
   const byType: Record<PartnershipType, number> = {
     community: 0,
     individual: 0,
     company: 0,
     sponsor: 0,
   };
-
   const byStatus: Record<PartnershipStatus, number> = {
     active: 0,
     inactive: 0,
     pending: 0,
     expired: 0,
   };
+  const nameMap: Record<string, string> = {};
 
-  for (const p of partnershipsResult.data || []) {
+  for (const p of partnerships) {
     byType[p.type as PartnershipType]++;
     byStatus[p.status as PartnershipStatus]++;
+    nameMap[p.id] = p.name;
   }
 
-  // Calculate total coupon redemptions
+  // Coupon stats: count tickets with coupon_code matching a partnership coupon
+  const activeCoupons = coupons.filter((c) => c.is_active).length;
   let totalCouponRedemptions = 0;
-  let totalDiscountGiven = 0;
-  for (const c of couponRedemptionsResult.data || []) {
-    totalCouponRedemptions += c.current_redemptions || 0;
-    // Estimate discount given (simplified - actual would need order data)
-    // For fixed amount coupons, multiply by redemptions
-    if (c.discount_amount) {
-      totalDiscountGiven += (c.discount_amount || 0) * (c.current_redemptions || 0);
+  let couponDiscountTotal = 0;
+
+  for (const ticket of couponTickets) {
+    const code = ticket.coupon_code?.toUpperCase();
+    if (code && partnerCouponCodes.has(code)) {
+      totalCouponRedemptions++;
+      couponDiscountTotal += ticket.discount_amount || 0;
     }
   }
 
-  // Calculate total voucher redemptions and their value
-  const redeemedVouchers = voucherRedemptionsResult.data || [];
+  // Voucher stats
+  const redeemedVouchers = vouchers.filter((v) => v.is_redeemed);
+  const activeVouchers = vouchers.filter((v) => !v.is_redeemed).length;
   const totalVoucherRedemptions = redeemedVouchers.length;
-  const voucherValueRedeemed = redeemedVouchers.reduce((sum, v) => sum + (v.amount || 0), 0);
+  const voucherValueRedeemed = redeemedVouchers.reduce(
+    (sum, v) => sum + (v.amount || 0),
+    0
+  );
+
+  // Ticket stats from partnership-linked tickets
+  const totalTicketsSold = partnershipTickets.length;
+  const totalRevenue = partnershipTickets.reduce(
+    (sum, t) => sum + (t.amount_paid || 0),
+    0
+  );
+  const partnershipDiscountTotal = partnershipTickets.reduce(
+    (sum, t) => sum + (t.discount_amount || 0),
+    0
+  );
+
+  // Top performers
+  const statsMap: Record<string, { tickets: number; revenue: number }> = {};
+  for (const t of partnershipTickets) {
+    if (!t.partnership_id) continue;
+    if (!statsMap[t.partnership_id]) {
+      statsMap[t.partnership_id] = { tickets: 0, revenue: 0 };
+    }
+    statsMap[t.partnership_id].tickets++;
+    statsMap[t.partnership_id].revenue += t.amount_paid || 0;
+  }
+
+  const topPartnerships: TopPartnership[] = Object.entries(statsMap)
+    .sort(([, a], [, b]) => b.tickets - a.tickets)
+    .slice(0, 5)
+    .map(([id, s]) => ({
+      partnershipId: id,
+      name: nameMap[id] || 'Unknown',
+      ticketsSold: s.tickets,
+      revenue: s.revenue,
+    }));
+
+  // Use max of partnership ticket discounts or coupon discounts (avoid double-counting)
+  const totalDiscountGiven =
+    Math.max(partnershipDiscountTotal, couponDiscountTotal) + voucherValueRedeemed;
 
   return {
-    total: partnershipsResult.data?.length || 0,
+    total: partnerships.length,
     byType,
     byStatus,
-    activeCoupons: activeCouponsResult.count || 0,
-    activeVouchers: activeVouchersResult.count || 0,
+    activeCoupons,
+    activeVouchers,
     totalCouponRedemptions,
     totalVoucherRedemptions,
-    totalDiscountGiven: totalDiscountGiven + voucherValueRedeemed,
+    totalDiscountGiven,
+    totalTicketsSold,
+    totalRevenue,
+    topPartnerships,
   };
 }
