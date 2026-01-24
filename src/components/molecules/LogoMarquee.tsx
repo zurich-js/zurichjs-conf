@@ -51,7 +51,7 @@ export const LogoMarquee: React.FC<LogoMarqueeProps> = ({
     const content = (
       <div
         className={`
-          flex-shrink-0 w-[140px] h-[50px] mx-6 flex items-center justify-center
+          flex-shrink-0 w-[140px] h-[80px] mx-6 flex items-center justify-center
           transition-all duration-300
           ${grayscale ? 'grayscale hover:grayscale-0 opacity-60 hover:opacity-100' : ''}
         `}

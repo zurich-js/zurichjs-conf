@@ -82,7 +82,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
           <Kicker animate delay={0.1}>
             {kicker}
           </Kicker>
-          <p className="text-lg mt-4">
+          <p className="text-lg mt-4 text-white">
             {title}
           </p>
         </div>
@@ -135,7 +135,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
 
             {/* Small sponsors - 2x2 grid at all breakpoints */}
             <div className="w-full sm:w-auto lg:shrink-0">
-              <div className="grid grid-cols-2 gap-2 w-fit mx-auto sm:mx-0">
+              <div className="grid grid-cols-2 gap-4 w-fit mx-auto sm:mx-0">
                 {smallSlots.map((sponsor, index) => (
                   <SponsorCard
                     key={sponsor?.id ?? `placeholder-small-${index}`}
