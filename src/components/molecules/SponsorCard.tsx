@@ -30,11 +30,11 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   const isPlaceholder = !sponsor || placeholder;
 
   // Responsive sizes for different breakpoints
-  // Mobile: full width, Tablet: adjusted, Desktop: fixed
+  // Large: 320px, Medium: ~152px each, Small: 110px square
   const sizeClasses = {
-    large: 'w-full h-[180px] sm:h-[200px] md:w-full md:h-[220px] lg:w-[320px] lg:h-[240px]',
-    medium: 'w-full h-[90px] sm:h-[100px] md:h-[110px]',
-    small: 'w-full h-[90px] sm:w-[100px] sm:h-[100px] md:w-[110px] md:h-[110px]',
+    large: 'w-full h-[180px] sm:h-[200px] md:h-[220px] lg:w-[320px] lg:h-[240px]',
+    medium: 'w-full aspect-square sm:aspect-auto sm:h-[100px] md:h-[110px]',
+    small: 'w-[110px] h-[110px] shrink-0',
   }[size];
 
   const baseClasses = `
@@ -58,7 +58,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
     return (
       <Link
         href="/sponsorship"
-        className={`${baseClasses} bg-[#242528] flex items-center justify-center hover:bg-[#2A2A2D] hover:scale-[1.02]`}
+        className={`${baseClasses} bg-[#242528] flex items-center justify-center hover:bg-surface-card-hover hover:scale-[1.02]`}
         aria-label="Learn about sponsorship opportunities"
       >
         <div
@@ -94,7 +94,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         href={sponsor.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${baseClasses} bg-[#242528] hover:bg-[#2A2A2D] hover:scale-[1.02]`}
+        className={`${baseClasses} bg-[#242528] hover:bg-surface-card-hover hover:scale-[1.02]`}
         aria-label={`Visit ${sponsor.name} website`}
       >
         {content}
