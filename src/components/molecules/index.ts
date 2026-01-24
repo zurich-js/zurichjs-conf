@@ -33,6 +33,9 @@ export {
   EngagementCard,
   TagCloud,
 } from './AudienceStats';
+export { LogoMarquee } from './LogoMarquee';
+export { SponsorCard } from './SponsorCard';
+export { SponsorCtaCard } from './SponsorCtaCard';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -72,3 +75,6 @@ export type {
   EngagementCardProps,
   TagCloudProps,
 } from './AudienceStats';
+export type { LogoMarqueeProps, LogoMarqueeItem } from './LogoMarquee';
+export type { SponsorCardProps } from './SponsorCard';
+export type { SponsorCtaCardProps } from './SponsorCtaCard';

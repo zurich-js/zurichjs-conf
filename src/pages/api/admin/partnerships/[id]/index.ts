@@ -1,7 +1,7 @@
 /**
  * Partnership API
  * GET /api/admin/partnerships/[id] - Get a partnership
- * PUT /api/admin/partnerships/[id] - Update a partnership
+ * PUT/PATCH /api/admin/partnerships/[id] - Update a partnership
  * DELETE /api/admin/partnerships/[id] - Delete a partnership
  */
 
@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return handleGet(id, res);
   }
 
-  if (req.method === 'PUT') {
+  if (req.method === 'PUT' || req.method === 'PATCH') {
     return handleUpdate(id, req, res);
   }
 

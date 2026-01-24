@@ -15,6 +15,10 @@ export {
   getPartnershipStats,
 } from './partnerships';
 
+// Public partnership data
+export { getPublicCommunityPartners } from './public';
+export type { PublicCommunityPartner } from './public';
+
 // Coupon operations
 export {
   listCoupons,

@@ -2,49 +2,77 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Kicker } from '@/components/atoms/Kicker';
-import { PhotoSwiper, type PhotoSlide } from '@/components/molecules';
+import {
+  PhotoSwiper,
+  type PhotoSlide,
+  LogoMarquee,
+  SponsorCard,
+  SponsorCtaCard,
+} from '@/components/molecules';
 import { SectionContainer } from '@/components/organisms/SectionContainer';
 import { useMotion } from '@/contexts/MotionContext';
-
-export interface Sponsor {
-  id: string;
-  name: string;
-  logo: string;
-  url: string;
-  tier: 'platinum' | 'gold' | 'silver' | 'community';
-  width: number;
-  height: number;
-}
+import { usePublicSponsors, useCommunityPartners } from '@/hooks/usePublicSponsors';
+import type { PublicSponsor } from '@/lib/types/sponsorship';
 
 export interface SponsorsSectionProps {
   kicker?: string;
   title: string;
-  sponsors?: Sponsor[];
   photos?: PhotoSlide[];
+}
+
+/**
+ * Sort sponsors by tier priority
+ * Order: diamond > platinum > gold > silver > bronze > supporter
+ */
+const TIER_PRIORITY: Record<string, number> = {
+  diamond: 1,
+  platinum: 2,
+  gold: 3,
+  silver: 4,
+  bronze: 5,
+  supporter: 6,
+};
+
+function sortSponsorsByTier(sponsors: PublicSponsor[]): PublicSponsor[] {
+  return [...sponsors].sort((a, b) => {
+    const priorityA = TIER_PRIORITY[a.tier] ?? 99;
+    const priorityB = TIER_PRIORITY[b.tier] ?? 99;
+    return priorityA - priorityB;
+  });
 }
 
 /**
  * SponsorsSection - Organism component for displaying sponsors and photo gallery
  *
  * Features:
- * - Static sponsor logo grid with manual size control
- * - Horizontal scrolling photo gallery with manual masonry layouts
- * - Uses SectionContainer for consistent padding
- * - Photo gallery extends beyond right edge
- * - Accessibility compliant with ARIA labels
- *
- * @example
- * ```tsx
- * <SponsorsSection {...sponsorsData} />
- * ```
+ * - Dynamic sponsor grid with CTA card
+ * - Community partners marquee
+ * - Photo gallery with swiper
+ * - SSR-ready with TanStack Query
  */
 export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
   kicker = 'SPONSORS & PARTNERS',
   title,
-  sponsors = [],
   photos = [],
 }) => {
   const { shouldAnimate } = useMotion();
+  const { data: sponsorsData } = usePublicSponsors();
+  const { data: partnersData } = useCommunityPartners();
+
+  const sponsors = sponsorsData?.sponsors ?? [];
+  const partners = partnersData?.partners ?? [];
+
+  // Sort sponsors by tier and allocate to slots
+  const sortedSponsors = sortSponsorsByTier(sponsors);
+  const largeSponsor = sortedSponsors[0] ?? null;
+  const mediumSponsors = sortedSponsors.slice(1, 5); // Next 4 sponsors
+  const smallSponsors = sortedSponsors.slice(5, 9); // Next 4 sponsors
+
+  // Fill slots with placeholders where needed
+  const mediumSlots = Array.from({ length: 4 }, (_, i) => mediumSponsors[i] ?? null);
+  const smallSlots = Array.from({ length: 4 }, (_, i) => smallSponsors[i] ?? null);
+
+  const hasPartners = partners.length > 0;
 
   return (
     <div className="">
@@ -54,102 +82,123 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
           <Kicker animate delay={0.1}>
             {kicker}
           </Kicker>
-          <p className="text-lg mt-4">
+          <p className="text-lg mt-4 text-white">
             {title}
           </p>
-          <motion.p
-            className="flex items-center gap-2 justify-center text-brand-gray-light text-lg"
-            initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
-            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-            transition={{
-              duration: 0.6,
-              delay: 0.5 + sponsors.length * 0.05,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            and the
-            <Image
-              src="/images/logo/zurichjs-full.svg"
-              alt="ZurichJS Logo"
-              height={32}
-              width={110}
-            />
-            community
-          </motion.p>
         </div>
       </SectionContainer>
 
-      {/* Sponsor Logos - Static Grid */}
-      {sponsors.length > 0 && (
-        <SectionContainer>
-          <div className="grid grid-cols-12 gap-4 md:gap-6" role="list" aria-label="Our sponsors">
-            {sponsors.map((sponsor, index) => {
-              const delay = shouldAnimate ? 0.4 + index * 0.05 : 0;
-              // Map width to Tailwind col-span classes
-              const colSpanClasses: Record<number, string> = {
-                1: 'col-span-1',
-                2: 'col-span-2',
-                3: 'col-span-3',
-                4: 'col-span-4',
-                5: 'col-span-5',
-                6: 'col-span-6',
-                7: 'col-span-7',
-                8: 'col-span-8',
-                9: 'col-span-9',
-                10: 'col-span-10',
-                11: 'col-span-11',
-                12: 'col-span-12',
-              };
-              const colSpan = colSpanClasses[sponsor.width] || 'col-span-3';
+      {/* Sponsor Grid */}
+      <SectionContainer>
+        <motion.div
+          className="mt-8"
+          initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+          animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/*
+            Layout breakpoints:
+            - Mobile (<640px): Single column with 2x2 sub-grids
+            - Tablet (640-1024px): 2-column main grid
+            - Desktop lg (1024-1279px): Flex row, may wrap
+            - Desktop xl (1280px+): Single line, no wrap
+            
+            Gap strategy: Consistent 16px (gap-4) at all breakpoints for visual harmony
+          */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap xl:flex-nowrap lg:justify-center lg:items-start">
+            {/* Row 1: CTA + Large sponsor (side by side on tablet+) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full lg:contents">
+              {/* CTA Card */}
+              <div className="w-full lg:w-auto lg:shrink-0">
+                <SponsorCtaCard />
+              </div>
 
-              return (
-                <motion.div
-                  key={sponsor.id}
-                  className={colSpan}
-                  role="listitem"
-                  initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
-                  animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-                  transition={{
-                    duration: 0.5,
-                    delay,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
-                  <a
-                    href={sponsor.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block bg-[#242528] rounded-2xl p-6 transition-all duration-300 hover:bg-[#2A2A2D] hover:scale-105 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none"
-                    style={{ height: `${sponsor.height}px` }}
-                    aria-label={`Visit ${sponsor.name} website`}
-                  >
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={sponsor.logo}
-                        alt={`${sponsor.name} logo`}
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      />
-                    </div>
-                  </a>
-                </motion.div>
-              );
-            })}
+              {/* Large sponsor card */}
+              <div className="w-full lg:w-auto lg:shrink-0">
+                <SponsorCard sponsor={largeSponsor} size="large" placeholder={!largeSponsor} />
+              </div>
+            </div>
+
+            {/* Row 2: Medium sponsors 2×2 grid */}
+            <div className="w-full lg:w-auto lg:shrink-0">
+              <div className="grid grid-cols-2 gap-4 max-w-[320px] mx-auto sm:max-w-none sm:mx-0 lg:w-[320px]">
+                {mediumSlots.map((sponsor, index) => (
+                  <SponsorCard
+                    key={sponsor?.id ?? `placeholder-medium-${index}`}
+                    sponsor={sponsor}
+                    size="medium"
+                    placeholder={!sponsor}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Small sponsors - 2x2 grid at all breakpoints */}
+            <div className="w-full sm:w-auto lg:shrink-0">
+              <div className="grid grid-cols-2 gap-4 w-fit mx-auto sm:mx-0">
+                {smallSlots.map((sponsor, index) => (
+                  <SponsorCard
+                    key={sponsor?.id ?? `placeholder-small-${index}`}
+                    sponsor={sponsor}
+                    size="small"
+                    placeholder={!sponsor}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
-        </SectionContainer>
+        </motion.div>
+      </SectionContainer>
+
+      {/* Community Partners Marquee */}
+      {hasPartners && (
+        <motion.div
+          className="mt-12"
+          initial={shouldAnimate ? { opacity: 0 } : false}
+          animate={shouldAnimate ? { opacity: 1 } : {}}
+          transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <LogoMarquee
+            logos={partners}
+            speed={40}
+            pauseOnHover
+            grayscale
+            ariaLabel="Community partners"
+          />
+        </motion.div>
       )}
+
+      {/* ZurichJS Community Text */}
+      <SectionContainer>
+        <motion.p
+          className="flex items-center gap-2 justify-center text-brand-gray-light text-lg mt-8"
+          initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+          animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
+          transition={{
+            duration: 0.6,
+            delay: hasPartners ? 0.5 : 0.3,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+        >
+          and the
+          <Image
+            src="/images/logo/zurichjs-full.svg"
+            alt="ZurichJS Logo"
+            height={32}
+            width={110}
+          />
+          community
+        </motion.p>
+      </SectionContainer>
 
       {/* Photo Gallery - Extends beyond right edge */}
       {photos.length > 0 && (
         <div className="relative mt-16 mb-8">
-          {/* Use SectionContainer but cancel right padding to allow extension */}
           <div className="pl-4 sm:pl-12">
             <PhotoSwiper photos={photos} />
           </div>
         </div>
       )}
-
 
       {/* CTA */}
       <SectionContainer>

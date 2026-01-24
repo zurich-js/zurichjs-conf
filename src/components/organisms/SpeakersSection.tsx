@@ -4,7 +4,9 @@
  * Always horizontally scrollable on all screen sizes
  */
 
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 import type { PublicSpeaker } from '@/lib/types/cfp';
 
 export interface SpeakersSectionProps {
@@ -26,11 +28,12 @@ function SpeakerCard({ name, title, avatarUrl }: SpeakerCardProps) {
         {/* Image container */}
         <div className="aspect-[3/4] relative">
           {avatarUrl && (
-            <img
+            <Image
               src={avatarUrl}
               alt={name ? `${name} avatar` : 'Speaker avatar'}
-              className="w-full h-full object-cover object-top"
-              loading="lazy"
+              fill
+              className="object-cover object-top"
+              sizes="(max-width: 640px) 240px, (max-width: 768px) 220px, (max-width: 1024px) 240px, (max-width: 1280px) 230px, 260px"
               draggable={false}
             />
           )}
@@ -54,7 +57,7 @@ function SpeakerCard({ name, title, avatarUrl }: SpeakerCardProps) {
 
 export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
   const { data, isLoading } = useQuery({
-    queryKey: ['speakers', 'public'],
+    queryKey: queryKeys.speakers.public(),
     queryFn: async () => {
       const res = await fetch('/api/speakers');
       if (!res.ok) throw new Error('Failed to fetch speakers');
