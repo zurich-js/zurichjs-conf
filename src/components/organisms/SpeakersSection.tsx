@@ -60,7 +60,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
       if (!res.ok) throw new Error('Failed to fetch speakers');
       return res.json() as Promise<{ speakers: PublicSpeaker[] }>;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
   });
 
   const speakers = data?.speakers || [];
