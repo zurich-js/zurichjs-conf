@@ -98,8 +98,8 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     };
   }, [router.events]);
 
-  // Hide NavBar on admin pages
-  const showNavBar = !router.pathname.startsWith('/admin');
+  // Hide NavBar on admin and login pages
+  const showNavBar = !router.pathname.startsWith('/admin') && !router.pathname.includes('/login');
 
   return (
     <PostHogProvider client={posthog}>
