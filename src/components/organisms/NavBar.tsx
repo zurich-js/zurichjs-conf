@@ -43,6 +43,9 @@ export const NavBar: React.FC<NavBarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Hide NavBar on admin and CFP sub-routes (but not /cfp itself)
+  const shouldHideNavBar = router.pathname.startsWith('/admin') || router.pathname.startsWith('/cfp/');
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > scrollThreshold);
@@ -57,6 +60,10 @@ export const NavBar: React.FC<NavBarProps> = ({
   const handleGetTickets = () => {
     router.push('/#tickets');
   };
+
+  if (shouldHideNavBar) {
+    return null;
+  }
 
   // if root: no background, always visible, but logo scrollable
   // else: black background, always visible
