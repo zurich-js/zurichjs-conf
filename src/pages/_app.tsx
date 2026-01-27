@@ -5,7 +5,7 @@ import { Figtree } from "next/font/google";
 import { MotionProvider } from "@/contexts/MotionContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import { DEFAULT_CURRENCY, type SupportedCurrency } from "@/config/currency";
+import type { SupportedCurrency } from "@/config/currency";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { QueryClientProvider, HydrationBoundary, type DehydratedState } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -38,8 +38,8 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
   const [queryClient] = useState(() => getQueryClient());
   const router = useRouter();
 
-  // Extract currency from pageProps, default to CHF
-  const currency = pageProps.detectedCurrency ?? DEFAULT_CURRENCY;
+  // Pass detected currency to provider (undefined for static pages triggers client-side geo detection)
+  const detectedCurrency = pageProps.detectedCurrency;
 
   // Initialize PostHog
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
       <QueryClientProvider client={queryClient}>
         <HydrationBoundary state={pageProps.dehydratedState}>
           <NuqsAdapter>
-            <CurrencyProvider currency={currency}>
+            <CurrencyProvider currency={detectedCurrency}>
               <CartProvider initialCart={pageProps.initialCart}>
                 <MotionProvider>
                   <ToastProvider>
