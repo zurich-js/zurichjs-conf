@@ -41,9 +41,10 @@ export function SubmissionsTab({
 }: SubmissionsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('newest');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filter submissions
+  // Filter and sort submissions
   const filteredSubmissions = useMemo(() => {
     let result = [...submissions];
 
@@ -63,8 +64,30 @@ export function SubmissionsTab({
       result = result.filter((s) => s.submission_type === typeFilter);
     }
 
+    // Sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'most_reviews':
+          return (b.stats?.review_count || 0) - (a.stats?.review_count || 0);
+        case 'least_reviews':
+          return (a.stats?.review_count || 0) - (b.stats?.review_count || 0);
+        case 'highest_score':
+          return (b.stats?.avg_overall || 0) - (a.stats?.avg_overall || 0);
+        case 'lowest_score':
+          return (a.stats?.avg_overall || 0) - (b.stats?.avg_overall || 0);
+        case 'title':
+          return a.title.localeCompare(b.title);
+        default:
+          return 0;
+      }
+    });
+
     return result;
-  }, [submissions, searchQuery, typeFilter]);
+  }, [submissions, searchQuery, typeFilter, sortBy]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE);
@@ -76,7 +99,7 @@ export function SubmissionsTab({
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, typeFilter, statusFilter]);
+  }, [searchQuery, typeFilter, statusFilter, sortBy]);
 
   return (
     <div>
@@ -117,6 +140,20 @@ export function SubmissionsTab({
             <option value="talk">Talk</option>
             <option value="workshop">Workshop</option>
             <option value="lightning">Lightning Talk</option>
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="most_reviews">Most Reviews</option>
+            <option value="least_reviews">Least Reviews</option>
+            <option value="highest_score">Highest Score</option>
+            <option value="lowest_score">Lowest Score</option>
+            <option value="title">Title A-Z</option>
           </select>
         </div>
 
@@ -259,7 +296,7 @@ function MobileSubmissionsList({
               {s.stats?.avg_overall && (
                 <>
                   <span className="text-gray-400">•</span>
-                  <span>Avg: {s.stats.avg_overall.toFixed(1)}</span>
+                  <span>Avg: {s.stats.avg_overall.toFixed(2)}</span>
                 </>
               )}
             </div>
@@ -353,7 +390,7 @@ function DesktopSubmissionsTable({
               </td>
               <td className="px-3 py-4 text-sm text-black font-medium text-center">{s.stats?.review_count || 0}</td>
               <td className="px-3 py-4 text-sm text-black font-medium text-center">
-                {s.stats?.avg_overall ? s.stats.avg_overall.toFixed(1) : '-'}
+                {s.stats?.avg_overall ? s.stats.avg_overall.toFixed(2) : '-'}
               </td>
               <td className="px-3 py-4">
                 <button
