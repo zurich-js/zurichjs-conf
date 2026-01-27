@@ -15,6 +15,8 @@ interface SubmissionDetailsProps {
     additional_notes?: string | null;
     workshop_duration_hours?: number | null;
     workshop_max_participants?: number | null;
+    previous_recording_url?: string | null;
+    slides_url?: string | null;
     speaker?: {
       travel_assistance_required?: boolean | null;
       assistance_type?: 'travel' | 'accommodation' | 'both' | null;
@@ -23,6 +25,7 @@ interface SubmissionDetailsProps {
     } | null;
   };
   isAnonymous: boolean;
+  isSuperAdmin?: boolean;
 }
 
 // Helper to get duration label
@@ -36,7 +39,7 @@ function getDurationLabel(type: string, workshopHours?: number | null): string {
   return '30 min - Standard talk';
 }
 
-export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetailsProps) {
+export function SubmissionDetails({ submission, isAnonymous, isSuperAdmin = false }: SubmissionDetailsProps) {
   return (
     <div className="space-y-6 w-full">
       {/* Anonymous Notice */}
@@ -126,35 +129,70 @@ export function SubmissionDetails({ submission, isAnonymous }: SubmissionDetails
         </section>
       )}
 
-      {/* Travel Info */}
-      <section className="bg-brand-gray-dark rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Travel</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Travel Assistance</h3>
-            <p className="text-white">
-              {submission.speaker?.travel_assistance_required ? (
-                submission.speaker.assistance_type === 'both' ? 'Travel & Accommodation needed' :
-                submission.speaker.assistance_type === 'travel' ? 'Travel needed' :
-                submission.speaker.assistance_type === 'accommodation' ? 'Accommodation needed' :
-                'Requested'
-              ) : 'Not needed'}
-            </p>
-          </div>
-          {submission.speaker?.departure_airport && (
+      {/* Travel Info - hidden for anonymous reviews */}
+      {!isAnonymous && (
+        <section className="bg-brand-gray-dark rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Travel</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Departure Airport</h3>
-              <p className="text-white">{submission.speaker.departure_airport}</p>
+              <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Travel Assistance</h3>
+              <p className="text-white">
+                {submission.speaker?.travel_assistance_required ? (
+                  submission.speaker.assistance_type === 'both' ? 'Travel & Accommodation needed' :
+                  submission.speaker.assistance_type === 'travel' ? 'Travel needed' :
+                  submission.speaker.assistance_type === 'accommodation' ? 'Accommodation needed' :
+                  'Requested'
+                ) : 'Not needed'}
+              </p>
             </div>
-          )}
-          {submission.speaker?.special_requirements && (
-            <div className="sm:col-span-2">
-              <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Special Requirements</h3>
-              <p className="text-white whitespace-pre-wrap">{submission.speaker.special_requirements}</p>
+            {submission.speaker?.departure_airport && (
+              <div>
+                <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Departure Airport</h3>
+                <p className="text-white">{submission.speaker.departure_airport}</p>
+              </div>
+            )}
+            {submission.speaker?.special_requirements && (
+              <div className="sm:col-span-2">
+                <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Special Requirements</h3>
+                <p className="text-white whitespace-pre-wrap">{submission.speaker.special_requirements}</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Video/Slides Links - super admin only */}
+      {isSuperAdmin && submission.previous_recording_url && (
+        <section className="bg-brand-gray-dark rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Speaker Resources</h2>
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Previous Recording</h3>
+              <a
+                href={submission.previous_recording_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-primary hover:text-brand-primary/80 underline break-all"
+              >
+                {submission.previous_recording_url}
+              </a>
             </div>
-          )}
-        </div>
-      </section>
+            {submission.slides_url && (
+              <div>
+                <h3 className="text-sm font-medium text-brand-gray-medium mb-1">Slides</h3>
+                <a
+                  href={submission.slides_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-primary hover:text-brand-primary/80 underline break-all"
+                >
+                  {submission.slides_url}
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

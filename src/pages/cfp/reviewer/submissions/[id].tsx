@@ -244,6 +244,7 @@ export default function ReviewerSubmission() {
               <SubmissionDetails
                 submission={submission}
                 isAnonymous={!canSeeSpeakerIdentity}
+                isSuperAdmin={isSuperAdmin}
               />
 
               {/* Committee Reviews (super_admin only) */}
