@@ -7,6 +7,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, createRef } f
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Lock, AlertTriangle } from 'lucide-react';
+import { useQueryState, parseAsString, parseAsInteger, parseAsStringLiteral } from 'nuqs';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
@@ -27,19 +28,43 @@ export default function ReviewerDashboard() {
   const [showGuide, setShowGuide] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filter state
-  const [reviewFilter, setReviewFilter] = useState<ReviewFilterType>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [levelFilter, setLevelFilter] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
+  // URL-driven filter state using nuqs
+  const [reviewFilter, setReviewFilter] = useQueryState(
+    'filter',
+    parseAsStringLiteral(['all', 'pending', 'reviewed'] as const).withDefault('all')
+  );
+  const [searchQuery, setSearchQuery] = useQueryState(
+    'q',
+    parseAsString.withDefault('')
+  );
+  const [statusFilter, setStatusFilter] = useQueryState(
+    'status',
+    parseAsString.withDefault('')
+  );
+  const [typeFilter, setTypeFilter] = useQueryState(
+    'type',
+    parseAsString.withDefault('')
+  );
+  const [levelFilter, setLevelFilter] = useQueryState(
+    'level',
+    parseAsString.withDefault('')
+  );
+  const [sortBy, setSortBy] = useQueryState(
+    'sort',
+    parseAsString.withDefault('newest')
+  );
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  // URL-driven pagination state
+  const [currentPage, setCurrentPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1)
+  );
+  const [pageSize, setPageSize] = useQueryState(
+    'size',
+    parseAsInteger.withDefault(10)
+  );
 
-  // Keyboard navigation state
+  // Keyboard navigation state (not URL-driven)
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
   // Seed for random sort (consistent during session)
@@ -62,7 +87,7 @@ export default function ReviewerDashboard() {
   }, [router]);
 
   // Fetch dashboard data
-  const { reviewer, submissions, stats, isLoading, error } = useCfpReviewerDashboard();
+  const { reviewer, submissions, isLoading, error } = useCfpReviewerDashboard();
 
   const reviewedCount = submissions.filter((s) => s.my_review).length;
   const pendingCount = submissions.filter((s) => !s.my_review).length;
@@ -152,10 +177,41 @@ export default function ReviewerDashboard() {
     return filteredSubmissions.slice(start, start + pageSize);
   }, [filteredSubmissions, currentPage, pageSize]);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
+  // Wrapper functions to reset page when filters change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value || null);
     setCurrentPage(1);
-  }, [reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter, pageSize]);
+  }, [setSearchQuery, setCurrentPage]);
+
+  const handleReviewFilterChange = useCallback((value: ReviewFilterType) => {
+    setReviewFilter(value);
+    setCurrentPage(1);
+  }, [setReviewFilter, setCurrentPage]);
+
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value || null);
+    setCurrentPage(1);
+  }, [setStatusFilter, setCurrentPage]);
+
+  const handleTypeFilterChange = useCallback((value: string) => {
+    setTypeFilter(value || null);
+    setCurrentPage(1);
+  }, [setTypeFilter, setCurrentPage]);
+
+  const handleLevelFilterChange = useCallback((value: string) => {
+    setLevelFilter(value || null);
+    setCurrentPage(1);
+  }, [setLevelFilter, setCurrentPage]);
+
+  const handleSortChange = useCallback((value: string) => {
+    setSortBy(value || null);
+    setCurrentPage(1);
+  }, [setSortBy, setCurrentPage]);
+
+  const handlePageSizeChange = useCallback((value: number) => {
+    setPageSize(value);
+    setCurrentPage(1);
+  }, [setPageSize, setCurrentPage]);
 
   // Reset focused index when page/filters change
   useEffect(() => {
@@ -214,12 +270,15 @@ export default function ReviewerDashboard() {
 
   const hasActiveFilters = searchQuery || statusFilter || typeFilter || levelFilter;
 
-  const clearAllFilters = () => {
-    setSearchQuery('');
-    setStatusFilter('');
-    setTypeFilter('');
-    setLevelFilter('');
-    setReviewFilter('all');
+  const clearAllFilters = async () => {
+    await Promise.all([
+      setSearchQuery(null),
+      setStatusFilter(null),
+      setTypeFilter(null),
+      setLevelFilter(null),
+      setReviewFilter('all'),
+      setCurrentPage(1),
+    ]);
   };
 
   const handleLogout = async () => {
@@ -318,7 +377,7 @@ export default function ReviewerDashboard() {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-8">
-          <StatsCards total={stats.total} reviewed={reviewedCount} pending={pendingCount} />
+          <StatsCards total={submissions.length} reviewed={reviewedCount} pending={pendingCount} />
 
           <FilterBar
             searchQuery={searchQuery}
@@ -330,12 +389,12 @@ export default function ReviewerDashboard() {
             showFilters={showFilters}
             hasActiveFilters={!!hasActiveFilters}
             isAnonymous={isAnonymous}
-            onSearchChange={setSearchQuery}
-            onReviewFilterChange={setReviewFilter}
-            onStatusFilterChange={setStatusFilter}
-            onTypeFilterChange={setTypeFilter}
-            onLevelFilterChange={setLevelFilter}
-            onSortChange={setSortBy}
+            onSearchChange={handleSearchChange}
+            onReviewFilterChange={handleReviewFilterChange}
+            onStatusFilterChange={handleStatusFilterChange}
+            onTypeFilterChange={handleTypeFilterChange}
+            onLevelFilterChange={handleLevelFilterChange}
+            onSortChange={handleSortChange}
             onToggleFilters={() => setShowFilters(!showFilters)}
             onClearFilters={clearAllFilters}
           />
@@ -392,8 +451,8 @@ export default function ReviewerDashboard() {
               totalPages={totalPages}
               pageSize={pageSize}
               totalItems={filteredSubmissions.length}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
+              onPageChange={(page) => setCurrentPage(page)}
+              onPageSizeChange={handlePageSizeChange}
               showPageSizeSelector={true}
               pageSizeOptions={[10, 25, 50, 100]}
               variant="dark"
