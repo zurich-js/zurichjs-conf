@@ -9,6 +9,18 @@ export interface TicketMetadata {
   complimentaryReason?: string;
   stripePaymentId?: string;
   bankTransferReference?: string;
+  // Session metadata from Stripe checkout (captured at purchase time)
+  session_metadata?: {
+    country?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    company?: string;
+    jobTitle?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 

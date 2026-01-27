@@ -28,6 +28,7 @@ export function TicketsTab() {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterNonSwiss, setFilterNonSwiss] = useState(false);
 
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
@@ -36,6 +37,14 @@ export function TicketsTab() {
 
   const filteredAndSortedTickets = useMemo(() => {
     let result = [...tickets];
+    // Filter non-Swiss countries
+    if (filterNonSwiss) {
+      const swissVariants = ['switzerland', 'ch', 'schweiz', 'suisse', 'svizzera'];
+      result = result.filter((t) => {
+        const country = t.metadata?.session_metadata?.country?.toLowerCase()?.trim();
+        return country && !swissVariants.includes(country);
+      });
+    }
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((t) =>
@@ -60,7 +69,7 @@ export function TicketsTab() {
       return 0;
     });
     return result;
-  }, [tickets, searchQuery, sortField, sortDirection]);
+  }, [tickets, searchQuery, sortField, sortDirection, filterNonSwiss]);
 
   const totalPages = Math.ceil(filteredAndSortedTickets.length / ITEMS_PER_PAGE);
   const paginatedTickets = useMemo(() => {
@@ -135,7 +144,7 @@ export function TicketsTab() {
     <>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
       <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} />
         <DesktopTable tickets={paginatedTickets} sortField={sortField} sortDirection={sortDirection} onSort={handleSort} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <MobileCards tickets={paginatedTickets} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredAndSortedTickets.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
@@ -148,6 +157,7 @@ export function TicketsTab() {
           onResend={() => { setShowDetailsModal(false); setShowResendConfirm(true); }}
           onReassign={() => { setShowDetailsModal(false); setShowReassignModal(true); }}
           onRefund={() => { setShowDetailsModal(false); setShowRefundConfirm(true); }}
+          onTicketUpdate={() => { fetchTickets(); setShowDetailsModal(false); setSelectedTicket(null); }}
           onCancel={() => { setShowDetailsModal(false); setShowCancelConfirm(true); }}
           onDelete={() => { setShowDetailsModal(false); setShowDeleteConfirm(true); }}
           onUpgrade={() => { setShowDetailsModal(false); setShowUpgradeModal(true); }}
@@ -213,30 +223,45 @@ function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDismiss: ()
   );
 }
 
-function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void }) {
+function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, filterNonSwiss, setFilterNonSwiss }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void; filterNonSwiss: boolean; setFilterNonSwiss: (v: boolean) => void }) {
   return (
     <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-black">Ticket Management</h2>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">{filteredCount} of {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}{searchQuery && ' (filtered)'}</p>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">{filteredCount} of {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}{(searchQuery || filterNonSwiss) && ' (filtered)'}</p>
         </div>
         <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
           <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-green-100 text-green-800 font-medium">{tickets.filter(t => t.status === 'confirmed').length} confirmed</span>
           <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium">{tickets.filter(t => t.status === 'pending').length} pending</span>
         </div>
       </div>
-      <div className="mt-4 relative">
-        <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input type="text" placeholder="Search by name, email, ID, status..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent" />
-        {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        )}
+      <div className="mt-4 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" placeholder="Search by name, email, ID, status..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F1E271] focus:border-transparent" />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => setFilterNonSwiss(!filterNonSwiss)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+            filterNonSwiss
+              ? 'bg-blue-100 text-blue-800 border border-blue-300'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Non-Swiss Only
+        </button>
       </div>
     </div>
   );

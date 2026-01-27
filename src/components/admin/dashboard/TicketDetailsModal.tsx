@@ -2,6 +2,7 @@
  * TicketDetailsModal - Detailed modal showing comprehensive ticket information
  */
 
+import { useState, useMemo } from 'react';
 import type { Ticket } from './types';
 
 export interface TicketDetailsModalProps {
@@ -13,7 +14,27 @@ export interface TicketDetailsModalProps {
   onCancel: () => void;
   onDelete: () => void;
   onUpgrade: () => void;
+  onTicketUpdate?: () => void;
 }
+
+// Common countries for the dropdown
+const COUNTRIES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+  'Bahrain', 'Bangladesh', 'Belarus', 'Belgium', 'Bolivia', 'Bosnia and Herzegovina', 'Brazil', 'Bulgaria',
+  'Cambodia', 'Canada', 'Chile', 'China', 'Colombia', 'Costa Rica', 'Croatia', 'Cyprus', 'Czech Republic',
+  'Denmark', 'Dominican Republic', 'Ecuador', 'Egypt', 'Estonia', 'Ethiopia', 'Finland', 'France',
+  'Georgia', 'Germany', 'Ghana', 'Greece', 'Guatemala', 'Hong Kong', 'Hungary',
+  'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy',
+  'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kosovo', 'Kuwait', 'Latvia', 'Lebanon', 'Liechtenstein', 'Lithuania', 'Luxembourg',
+  'Macedonia', 'Malaysia', 'Malta', 'Mexico', 'Moldova', 'Monaco', 'Montenegro', 'Morocco',
+  'Nepal', 'Netherlands', 'New Zealand', 'Nigeria', 'Norway',
+  'Oman', 'Pakistan', 'Panama', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal',
+  'Qatar', 'Romania', 'Russia', 'Rwanda',
+  'Saudi Arabia', 'Serbia', 'Singapore', 'Slovakia', 'Slovenia', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sweden', 'Switzerland',
+  'Taiwan', 'Thailand', 'Tunisia', 'Turkey',
+  'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
+  'Venezuela', 'Vietnam', 'Zimbabwe',
+];
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'N/A';
@@ -47,8 +68,42 @@ export function TicketDetailsModal({
   onCancel,
   onDelete,
   onUpgrade,
+  onTicketUpdate,
 }: TicketDetailsModalProps) {
   const isComplimentary = ticket.metadata?.paymentType === 'complimentary' || ticket.amount_paid === 0;
+
+  // Country editing state
+  const [isEditingCountry, setIsEditingCountry] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(ticket.metadata?.session_metadata?.country || '');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSavingCountry, setIsSavingCountry] = useState(false);
+
+  const filteredCountries = useMemo(() => {
+    if (!countrySearch.trim()) return COUNTRIES;
+    const search = countrySearch.toLowerCase();
+    return COUNTRIES.filter(c => c.toLowerCase().includes(search));
+  }, [countrySearch]);
+
+  const handleSaveCountry = async () => {
+    if (!selectedCountry.trim()) return;
+    setIsSavingCountry(true);
+    try {
+      const res = await fetch(`/api/admin/tickets/${ticket.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: selectedCountry }),
+      });
+      if (res.ok) {
+        setIsEditingCountry(false);
+        onTicketUpdate?.();
+      }
+    } catch (error) {
+      console.error('Failed to update country:', error);
+    } finally {
+      setIsSavingCountry(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -128,6 +183,77 @@ export function TicketDetailsModal({
               </InfoField>
               {ticket.company && <InfoField label="Company">{ticket.company}</InfoField>}
               {ticket.job_title && <InfoField label="Job Title">{ticket.job_title}</InfoField>}
+              <div className="sm:col-span-2">
+                <p className="text-xs text-gray-500 mb-0.5">Country</p>
+                <p className="text-xs text-gray-400 mb-1">Billing country from checkout</p>
+                {isEditingCountry ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={countrySearch}
+                        onChange={(e) => { setCountrySearch(e.target.value); setShowDropdown(true); }}
+                        onFocus={() => setShowDropdown(true)}
+                        placeholder="Type to search countries..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                      />
+                      {showDropdown && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {filteredCountries.map((country) => (
+                            <button
+                              key={country}
+                              onClick={() => { setSelectedCountry(country); setCountrySearch(country); setShowDropdown(false); }}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer ${
+                                selectedCountry === country ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                              }`}
+                            >
+                              {country}
+                            </button>
+                          ))}
+                          {filteredCountries.length === 0 && (
+                            <div className="px-3 py-2 text-sm text-gray-500">No countries found</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {selectedCountry && !showDropdown && (
+                      <p className="text-sm text-blue-700 font-medium">Selected: {selectedCountry}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveCountry}
+                        disabled={isSavingCountry || !selectedCountry.trim()}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isSavingCountry ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => { setIsEditingCountry(false); setCountrySearch(''); setSelectedCountry(ticket.metadata?.session_metadata?.country || ''); setShowDropdown(false); }}
+                        className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-black font-medium">{ticket.metadata?.session_metadata?.country || 'Not set'}</span>
+                    {ticket.metadata?.session_metadata?.city && (
+                      <span className="text-sm text-gray-500">({ticket.metadata.session_metadata.city})</span>
+                    )}
+                    <button
+                      onClick={() => { setIsEditingCountry(true); setCountrySearch(''); setShowDropdown(true); }}
+                      className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      title="Edit country"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
             </InfoGrid>
           </InfoSection>
 
