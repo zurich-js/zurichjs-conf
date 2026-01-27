@@ -21,6 +21,7 @@ import {
   type PartnershipDiscountInfo,
 } from './helpers';
 import { sendTicketConfirmationEmails } from './ticket-emails';
+import { notifyTicketPurchased } from '@/lib/platform-notifications';
 
 /**
  * Attendee info structure
@@ -336,6 +337,18 @@ export async function processTickets(
 
   await trackTicketPurchasesAndNewsletterSignups(ticketResults, ticketInfo, session);
   await sendTicketConfirmationEmails(ticketResults, ticketDisplayName, session, log);
+
+  // Send Slack notification for ticket purchase
+  const primaryAttendee = attendees[0];
+  notifyTicketPurchased({
+    orderId: session.id,
+    ticketType: ticketDisplayName,
+    quantity: ticketResults.filter(r => r.success).length,
+    currency: session.currency?.toUpperCase() || 'CHF',
+    amount: session.amount_total || 0,
+    buyerName: `${primaryAttendee.firstName} ${primaryAttendee.lastName}`,
+    buyerEmail: primaryAttendee.email,
+  });
 
   log.info('Tickets processed', { count: ticketLineItems.length });
 }

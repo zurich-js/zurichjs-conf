@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sendVerificationRequestEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
+import { notifyStatusVerification } from '@/lib/platform-notifications';
 
 const log = logger.scope('Student Verification API');
 
@@ -192,6 +193,14 @@ export default async function handler(
 
     // Send notification emails
     await sendNotifications(verificationId, body);
+
+    // Send Slack notification for status verification
+    notifyStatusVerification({
+      submissionId: verificationId,
+      name: body.name,
+      email: body.email,
+      statusType: body.verificationType,
+    });
 
     // Return success response
     res.status(200).json({

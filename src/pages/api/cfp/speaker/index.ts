@@ -6,10 +6,12 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
+import { isSpeakerProfileComplete } from '@/lib/cfp/auth-constants';
 import { updateSpeaker } from '@/lib/cfp/speakers';
 import { speakerProfileSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
 import { serverAnalytics } from '@/lib/analytics/server';
+import { notifyCfpSpeakerProfileCompleted } from '@/lib/platform-notifications';
 
 const log = logger.scope('CFP Speaker API');
 
@@ -53,6 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { email: _email, ...updates } = result.data;
 
+      // Check if profile was complete before update
+      const wasComplete = isSpeakerProfileComplete(speaker);
+
       // Update speaker profile
       const { speaker: updatedSpeaker, error } = await updateSpeaker(speaker.id, updates);
 
@@ -70,6 +75,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         company: updatedSpeaker.company || undefined,
         job_title: updatedSpeaker.job_title || undefined,
       });
+
+      // Send Slack notification when profile becomes complete for the first time
+      const isNowComplete = isSpeakerProfileComplete(updatedSpeaker);
+      if (!wasComplete && isNowComplete) {
+        notifyCfpSpeakerProfileCompleted({
+          speakerId: updatedSpeaker.id,
+          speakerName: `${updatedSpeaker.first_name} ${updatedSpeaker.last_name}`,
+          speakerEmail: updatedSpeaker.email,
+        });
+      }
 
       log.info('Speaker profile updated', { speakerId: speaker.id });
 

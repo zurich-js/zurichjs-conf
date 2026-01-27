@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { getOrCreateSpeaker, createSupabaseApiClient } from '@/lib/cfp/auth';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
+import { notifyCfpSpeakerProfileCreated } from '@/lib/platform-notifications';
 
 const log = logger.scope('CFP Auth Callback API');
 
@@ -71,11 +72,22 @@ export default async function handler(
       last_name: speaker.last_name || undefined,
     });
 
+    const isNewSpeaker = !speaker.first_name;
+
     await serverAnalytics.track('cfp_speaker_authenticated', speaker.id, {
       speaker_id: speaker.id,
-      is_new_speaker: !speaker.first_name,
+      is_new_speaker: isNewSpeaker,
       is_profile_complete: !!(speaker.first_name && speaker.last_name && speaker.bio),
     });
+
+    // Send Slack notification for new speaker profiles
+    if (isNewSpeaker) {
+      notifyCfpSpeakerProfileCreated({
+        speakerId: speaker.id,
+        speakerName: speaker.email,
+        speakerEmail: speaker.email,
+      });
+    }
 
     log.info('Speaker authenticated via implicit flow', { speakerId: speaker.id, email: speaker.email });
 

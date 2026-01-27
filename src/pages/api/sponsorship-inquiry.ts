@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sendSponsorshipInquiryEmails } from '@/lib/email';
 import { logger } from '@/lib/logger';
+import { notifySponsorInterest } from '@/lib/platform-notifications';
 
 const log = logger.scope('Sponsorship Inquiry API');
 
@@ -123,6 +124,14 @@ export default async function handler(
       });
       // Still return success to the user, we have the inquiry logged
     }
+
+    // Send Slack notification for sponsor interest
+    notifySponsorInterest({
+      submissionId: inquiryId,
+      companyName: body.company,
+      contactName: body.name,
+      email: body.email,
+    });
 
     // Return success response
     res.status(200).json({

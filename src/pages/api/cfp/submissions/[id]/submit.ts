@@ -8,6 +8,7 @@ import { createSupabaseApiClient, getSpeakerByUserId, isSpeakerProfileComplete }
 import { submitForReview, getSubmissionById } from '@/lib/cfp/submissions';
 import { logger } from '@/lib/logger';
 import { serverAnalytics } from '@/lib/analytics/server';
+import { notifyCfpTalkSubmitted } from '@/lib/platform-notifications';
 
 const log = logger.scope('CFP Submit API');
 
@@ -68,6 +69,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       submission_title: submission.title,
       submission_type: submission.submission_type,
       speaker_id: speaker.id,
+    });
+
+    // Send Slack notification for new talk submission
+    notifyCfpTalkSubmitted({
+      speakerId: speaker.id,
+      speakerName: `${speaker.first_name} ${speaker.last_name}`,
+      speakerEmail: speaker.email,
+      talkId: id,
+      talkTitle: submission.title,
+      track: submission.submission_type,
     });
 
     log.info('Submission submitted for review', {

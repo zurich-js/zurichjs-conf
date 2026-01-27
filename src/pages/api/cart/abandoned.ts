@@ -14,6 +14,7 @@ import { serverAnalytics } from '@/lib/analytics/server';
 import type { CartItem as BaseCartItem } from '@/types/cart';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { notifyCartAbandonment } from '@/lib/platform-notifications';
 
 const log = logger.scope('Cart Abandonment');
 
@@ -194,6 +195,15 @@ export default async function handler(
 
     // Flush analytics to ensure event is sent before response
     await serverAnalytics.flush();
+
+    // Send Slack notification for cart abandonment
+    notifyCartAbandonment({
+      cartId: result.data?.id,
+      buyerEmail: email,
+      itemsSummary: cartItems.map(item => `${item.quantity}x ${item.title}`).join(', '),
+      currency,
+      amount: Math.round(cartTotal * 100), // convert to cents
+    });
 
     log.info('Email scheduled successfully', {
       emailId: result.data?.id,
