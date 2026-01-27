@@ -12,6 +12,7 @@ import {
   TYPE_OPTIONS,
   LEVEL_OPTIONS,
   SORT_OPTIONS,
+  REVIEW_BASED_SORT_VALUES,
   ReviewFilterType,
 } from './types';
 
@@ -48,19 +49,39 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ total, reviewed, pending }: StatsCardsProps) {
+  const percentage = total > 0 ? Math.round((reviewed / total) * 100) : 0;
+
   return (
-    <div className="grid sm:grid-cols-3 gap-4 mb-8">
-      <div className="bg-brand-gray-dark rounded-xl p-6">
-        <div className="text-3xl font-bold text-white mb-1">{total}</div>
-        <div className="text-brand-gray-light text-sm">Total Submissions</div>
+    <div className="space-y-4 mb-8">
+      <div className="grid sm:grid-cols-3 gap-4">
+        <div className="bg-brand-gray-dark rounded-xl p-6">
+          <div className="text-3xl font-bold text-white mb-1">{total}</div>
+          <div className="text-brand-gray-light text-sm">Total Submissions</div>
+        </div>
+        <div className="bg-brand-gray-dark rounded-xl p-6">
+          <div className="text-3xl font-bold text-green-400 mb-1">{reviewed}</div>
+          <div className="text-brand-gray-light text-sm">Reviewed by You</div>
+        </div>
+        <div className="bg-brand-gray-dark rounded-xl p-6">
+          <div className="text-3xl font-bold text-brand-primary mb-1">{pending}</div>
+          <div className="text-brand-gray-light text-sm">Pending Review</div>
+        </div>
       </div>
-      <div className="bg-brand-gray-dark rounded-xl p-6">
-        <div className="text-3xl font-bold text-green-400 mb-1">{reviewed}</div>
-        <div className="text-brand-gray-light text-sm">Reviewed by You</div>
-      </div>
-      <div className="bg-brand-gray-dark rounded-xl p-6">
-        <div className="text-3xl font-bold text-brand-primary mb-1">{pending}</div>
-        <div className="text-brand-gray-light text-sm">Pending Review</div>
+
+      {/* Progress Bar */}
+      <div className="bg-brand-gray-dark rounded-xl p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-brand-gray-light">Your Progress</span>
+          <span className="text-sm font-medium text-white">
+            {reviewed} of {total} reviewed ({percentage}%)
+          </span>
+        </div>
+        <div className="h-3 bg-brand-gray-darkest rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -76,6 +97,7 @@ interface FilterBarProps {
   sortBy: string;
   showFilters: boolean;
   hasActiveFilters: boolean;
+  isAnonymous?: boolean;
   onSearchChange: (query: string) => void;
   onReviewFilterChange: (filter: ReviewFilterType) => void;
   onStatusFilterChange: (status: string) => void;
@@ -95,6 +117,7 @@ export function FilterBar({
   sortBy,
   showFilters,
   hasActiveFilters,
+  isAnonymous = false,
   onSearchChange,
   onReviewFilterChange,
   onStatusFilterChange,
@@ -104,6 +127,10 @@ export function FilterBar({
   onToggleFilters,
   onClearFilters,
 }: FilterBarProps) {
+  // Filter out review-based sort options for anonymous reviewers
+  const availableSortOptions = isAnonymous
+    ? SORT_OPTIONS.filter(opt => !REVIEW_BASED_SORT_VALUES.includes(opt.value))
+    : SORT_OPTIONS;
   return (
     <div className="bg-brand-gray-dark rounded-xl p-4 mb-6">
       <div className="flex flex-col lg:flex-row gap-4">
@@ -193,7 +220,7 @@ export function FilterBar({
               label="Sort By"
               value={sortBy}
               onChange={onSortChange}
-              options={SORT_OPTIONS}
+              options={availableSortOptions}
               variant="dark"
               size="sm"
             />
@@ -229,11 +256,23 @@ interface SubmissionCardSubmission {
   stats: { review_count: number; avg_overall?: number | null };
 }
 
-export function SubmissionCard({ submission }: { submission: SubmissionCardSubmission }) {
+interface SubmissionCardProps {
+  submission: SubmissionCardSubmission;
+  isAnonymous?: boolean;
+  isFocused?: boolean;
+  cardRef?: React.RefObject<HTMLAnchorElement | null>;
+}
+
+export function SubmissionCard({ submission, isAnonymous = false, isFocused = false, cardRef }: SubmissionCardProps) {
   return (
     <Link
+      ref={cardRef}
       href={`/cfp/reviewer/submissions/${submission.id}`}
-      className="block bg-brand-gray-dark rounded-xl p-6 hover:bg-brand-gray-dark/70 border border-transparent hover:border-brand-gray-medium transition-colors"
+      className={`block bg-brand-gray-dark rounded-xl p-6 hover:bg-brand-gray-dark/70 border-2 transition-all ${
+        isFocused
+          ? 'border-brand-primary ring-2 ring-brand-primary/30'
+          : 'border-transparent hover:border-brand-gray-medium'
+      }`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -288,14 +327,17 @@ export function SubmissionCard({ submission }: { submission: SubmissionCardSubmi
             </span>
           )}
 
-          <div className="text-sm text-brand-gray-medium mt-2">
-            {submission.stats.review_count} review{submission.stats.review_count !== 1 ? 's' : ''}
-            {submission.stats.avg_overall && (
-              <span className="ml-2">
-                Avg: {submission.stats.avg_overall.toFixed(1)}/4
-              </span>
-            )}
-          </div>
+          {/* Committee stats - hidden for anonymous reviewers */}
+          {!isAnonymous && (
+            <div className="text-sm text-brand-gray-medium mt-2">
+              {submission.stats.review_count} review{submission.stats.review_count !== 1 ? 's' : ''}
+              {submission.stats.avg_overall && (
+                <span className="ml-2">
+                  Avg: {submission.stats.avg_overall.toFixed(1)}/4
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Link>

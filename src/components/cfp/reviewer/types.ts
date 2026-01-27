@@ -188,11 +188,15 @@ export const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
   { value: 'title', label: 'Title A-Z' },
+  { value: 'random', label: 'Random' },
   { value: 'most_reviews', label: 'Most Reviews' },
   { value: 'least_reviews', label: 'Least Reviews' },
   { value: 'highest_avg', label: 'Highest Avg Score' },
   { value: 'lowest_avg', label: 'Lowest Avg Score' },
 ];
+
+// Sort options that reveal review data (should be hidden from anonymous reviewers)
+export const REVIEW_BASED_SORT_VALUES = ['most_reviews', 'least_reviews', 'highest_avg', 'lowest_avg'];
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 

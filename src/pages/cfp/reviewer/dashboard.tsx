@@ -3,7 +3,7 @@
  * List of submissions to review with filtering, sorting, and pagination
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, createRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Lock, AlertTriangle } from 'lucide-react';
@@ -39,6 +39,12 @@ export default function ReviewerDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  // Keyboard navigation state
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+
+  // Seed for random sort (consistent during session)
+  const [randomSeed] = useState(() => Math.random());
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -60,6 +66,24 @@ export default function ReviewerDashboard() {
 
   const reviewedCount = submissions.filter((s) => s.my_review).length;
   const pendingCount = submissions.filter((s) => !s.my_review).length;
+
+  // Determine if reviewer is anonymous (cannot see speaker identity or review stats)
+  const isAnonymous = reviewer ? reviewer.role !== 'super_admin' && !reviewer.can_see_speaker_identity : true;
+
+  // Seeded shuffle function for consistent random ordering during session
+  const seededShuffle = useCallback(<T,>(array: T[], seed: number): T[] => {
+    const result = [...array];
+    let currentSeed = seed;
+    const random = () => {
+      currentSeed = (currentSeed * 9301 + 49297) % 233280;
+      return currentSeed / 233280;
+    };
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }, []);
 
   // Filter and sort submissions
   const filteredSubmissions = useMemo(() => {
@@ -92,6 +116,11 @@ export default function ReviewerDashboard() {
       result = result.filter((s) => s.talk_level === levelFilter);
     }
 
+    // Handle random sort separately (uses shuffle instead of sort)
+    if (sortBy === 'random') {
+      return seededShuffle(result, randomSeed);
+    }
+
     result.sort((a, b) => {
       switch (sortBy) {
         case 'oldest':
@@ -114,7 +143,7 @@ export default function ReviewerDashboard() {
     });
 
     return result;
-  }, [submissions, reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter, sortBy]);
+  }, [submissions, reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter, sortBy, seededShuffle, randomSeed]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSubmissions.length / pageSize);
@@ -127,6 +156,61 @@ export default function ReviewerDashboard() {
   useEffect(() => {
     setCurrentPage(1);
   }, [reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter, pageSize]);
+
+  // Reset focused index when page/filters change
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [currentPage, reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter]);
+
+  // Create refs for each card
+  const cardRefs = useRef<React.RefObject<HTMLAnchorElement | null>[]>([]);
+  if (cardRefs.current.length !== paginatedSubmissions.length) {
+    cardRefs.current = paginatedSubmissions.map(() => createRef<HTMLAnchorElement>());
+  }
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere with input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      const maxIndex = paginatedSubmissions.length - 1;
+
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex((prev) => {
+            const next = prev < maxIndex ? prev + 1 : prev;
+            // Scroll into view
+            cardRefs.current[next]?.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return next;
+          });
+          break;
+        case 'k':
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex((prev) => {
+            const next = prev > 0 ? prev - 1 : 0;
+            // Scroll into view
+            cardRefs.current[next]?.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return next;
+          });
+          break;
+        case 'Enter':
+          if (focusedIndex >= 0 && focusedIndex <= maxIndex) {
+            e.preventDefault();
+            router.push(`/cfp/reviewer/submissions/${paginatedSubmissions[focusedIndex].id}`);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [paginatedSubmissions, focusedIndex, router]);
 
   const hasActiveFilters = searchQuery || statusFilter || typeFilter || levelFilter;
 
@@ -245,6 +329,7 @@ export default function ReviewerDashboard() {
             sortBy={sortBy}
             showFilters={showFilters}
             hasActiveFilters={!!hasActiveFilters}
+            isAnonymous={isAnonymous}
             onSearchChange={setSearchQuery}
             onReviewFilterChange={setReviewFilter}
             onStatusFilterChange={setStatusFilter}
@@ -266,6 +351,18 @@ export default function ReviewerDashboard() {
                 {hasActiveFilters && ` (filtered from ${submissions.length})`}
               </span>
             </div>
+            {/* Keyboard shortcuts hint */}
+            <div className="hidden sm:flex items-center gap-3 text-xs text-brand-gray-medium">
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-brand-gray-dark rounded text-brand-gray-light">J</kbd>
+                <kbd className="px-1.5 py-0.5 bg-brand-gray-dark rounded text-brand-gray-light">K</kbd>
+                <span>navigate</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-brand-gray-dark rounded text-brand-gray-light">Enter</kbd>
+                <span>open</span>
+              </span>
+            </div>
           </div>
 
           {/* Submissions List */}
@@ -277,8 +374,14 @@ export default function ReviewerDashboard() {
             />
           ) : (
             <div className="space-y-4">
-              {paginatedSubmissions.map((submission) => (
-                <SubmissionCard key={submission.id} submission={submission} />
+              {paginatedSubmissions.map((submission, index) => (
+                <SubmissionCard
+                  key={submission.id}
+                  submission={submission}
+                  isAnonymous={isAnonymous}
+                  isFocused={focusedIndex === index}
+                  cardRef={cardRefs.current[index]}
+                />
               ))}
             </div>
           )}
