@@ -103,6 +103,12 @@ export type {
   VipUpgradePaymentConfirmedEvent,
 } from './vip-events';
 
+// Platform notification events
+export type {
+  PlatformNotificationSentEvent,
+  PlatformNotificationFailedEvent,
+} from './platform-notification-events';
+
 // Import all event types for the union
 import type { PageViewedEvent, UserIdentifiedEvent } from './base';
 import type {
@@ -168,6 +174,10 @@ import type {
   VipUpgradeCompletedEvent,
   VipUpgradePaymentConfirmedEvent,
 } from './vip-events';
+import type {
+  PlatformNotificationSentEvent,
+  PlatformNotificationFailedEvent,
+} from './platform-notification-events';
 
 /**
  * Union of all possible analytics events.
@@ -229,7 +239,9 @@ export type AnalyticsEvent =
   | CfpReviewSubmittedEvent
   | VipUpgradeInitiatedEvent
   | VipUpgradeCompletedEvent
-  | VipUpgradePaymentConfirmedEvent;
+  | VipUpgradePaymentConfirmedEvent
+  | PlatformNotificationSentEvent
+  | PlatformNotificationFailedEvent;
 
 /**
  * Extract event name from AnalyticsEvent
