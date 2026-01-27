@@ -268,7 +268,7 @@ export function SubmissionModal({
               <div>
                 <p className="text-xs text-black font-semibold mb-1">Average Score</p>
                 <p className="text-2xl font-bold text-black">
-                  {submission.stats?.avg_overall ? submission.stats.avg_overall.toFixed(1) : '-'}
+                  {submission.stats?.avg_overall ? submission.stats.avg_overall.toFixed(2) : '-'}
                 </p>
               </div>
               <div>

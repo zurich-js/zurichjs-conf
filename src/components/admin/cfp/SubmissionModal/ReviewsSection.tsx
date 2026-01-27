@@ -59,7 +59,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
               <div className="sm:hidden">
                 <div className="bg-gray-100 rounded-lg p-3 mb-2 text-center">
                   <p className="text-xs text-gray-500">Overall</p>
-                  <p className="text-2xl font-bold text-black">{aggregateScores.overall?.toFixed(1) || '-'}</p>
+                  <p className="text-2xl font-bold text-black">{aggregateScores.overall?.toFixed(2) || '-'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <ScoreDisplay value={aggregateScores.relevance} label="Relevance" />
@@ -72,23 +72,23 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
               <div className="hidden sm:grid grid-cols-5 gap-2 text-center">
                 <div>
                   <p className="text-xs text-gray-500">Overall</p>
-                  <p className="text-lg font-bold text-black">{aggregateScores.overall?.toFixed(1) || '-'}</p>
+                  <p className="text-lg font-bold text-black">{aggregateScores.overall?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Relevance</p>
-                  <p className="text-lg font-bold text-black">{aggregateScores.relevance?.toFixed(1) || '-'}</p>
+                  <p className="text-lg font-bold text-black">{aggregateScores.relevance?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Depth</p>
-                  <p className="text-lg font-bold text-black">{aggregateScores.technical_depth?.toFixed(1) || '-'}</p>
+                  <p className="text-lg font-bold text-black">{aggregateScores.technical_depth?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Clarity</p>
-                  <p className="text-lg font-bold text-black">{aggregateScores.clarity?.toFixed(1) || '-'}</p>
+                  <p className="text-lg font-bold text-black">{aggregateScores.clarity?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Originality</p>
-                  <p className="text-lg font-bold text-black">{aggregateScores.diversity?.toFixed(1) || '-'}</p>
+                  <p className="text-lg font-bold text-black">{aggregateScores.diversity?.toFixed(2) || '-'}</p>
                 </div>
               </div>
             </div>
