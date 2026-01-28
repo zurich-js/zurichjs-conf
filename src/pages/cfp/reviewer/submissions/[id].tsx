@@ -26,7 +26,7 @@ import {
 
 export default function ReviewerSubmission() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, returnTo } = router.query;
 
   const [authChecked, setAuthChecked] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
@@ -60,6 +60,11 @@ export default function ReviewerSubmission() {
 
     checkAuth();
   }, [router]);
+
+  // Build dashboard URL with preserved filters
+  const dashboardUrl = returnTo
+    ? `/cfp/reviewer/dashboard?${decodeURIComponent(returnTo as string)}`
+    : '/cfp/reviewer/dashboard';
 
   // Fetch submission data
   const { submission, reviewer, isLoading, error } = useCfpReviewerSubmission((id as string) ?? '');
@@ -121,7 +126,8 @@ export default function ReviewerSubmission() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/cfp/reviewer/dashboard');
+        // Return to dashboard with preserved filters
+        router.push(dashboardUrl);
       }, 1500);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
@@ -159,7 +165,7 @@ export default function ReviewerSubmission() {
         <div className="text-center">
           <p className="text-red-400 mb-4">{error || 'Submission not found'}</p>
           <Link
-            href="/cfp/reviewer/dashboard"
+            href={dashboardUrl}
             className="px-4 py-2 bg-brand-primary text-black rounded-lg font-medium"
           >
             Back to Dashboard
@@ -186,13 +192,13 @@ export default function ReviewerSubmission() {
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/cfp/reviewer/dashboard" className="flex items-center gap-3">
+            <Link href={dashboardUrl} className="flex items-center gap-3">
               <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
               <span className="text-white font-semibold">Zurich JS Conf 2026</span>
             </Link>
             <div className="flex items-center gap-4">
               <Link
-                href="/cfp/reviewer/dashboard"
+                href={dashboardUrl}
                 className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -206,7 +212,7 @@ export default function ReviewerSubmission() {
           {/* Breadcrumb Navigation */}
           <nav className="flex items-center gap-2 text-sm mb-6">
             <Link
-              href="/cfp/reviewer/dashboard"
+              href={dashboardUrl}
               className="text-white font-semibold hover:text-brand-primary transition-colors"
             >
               Dashboard

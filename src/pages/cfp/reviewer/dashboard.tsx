@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, createRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useSearchParams } from 'next/navigation';
 import { Lock, AlertTriangle } from 'lucide-react';
 import { useQueryState, parseAsString, parseAsInteger, parseAsStringLiteral } from 'nuqs';
 import { SEO } from '@/components/SEO';
@@ -24,6 +25,7 @@ import {
 
 export default function ReviewerDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [authChecked, setAuthChecked] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -218,6 +220,11 @@ export default function ReviewerDashboard() {
     setFocusedIndex(-1);
   }, [currentPage, reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter]);
 
+  // Get current search params string to pass to submission links for return navigation
+  const dashboardParams = useMemo(() => {
+    return searchParams?.toString() || '';
+  }, [searchParams]);
+
   // Create refs for each card
   const cardRefs = useRef<React.RefObject<HTMLAnchorElement | null>[]>([]);
   if (cardRefs.current.length !== paginatedSubmissions.length) {
@@ -258,7 +265,8 @@ export default function ReviewerDashboard() {
         case 'Enter':
           if (focusedIndex >= 0 && focusedIndex <= maxIndex) {
             e.preventDefault();
-            router.push(`/cfp/reviewer/submissions/${paginatedSubmissions[focusedIndex].id}`);
+            const returnTo = dashboardParams ? `?returnTo=${encodeURIComponent(dashboardParams)}` : '';
+            router.push(`/cfp/reviewer/submissions/${paginatedSubmissions[focusedIndex].id}${returnTo}`);
           }
           break;
       }
@@ -266,7 +274,7 @@ export default function ReviewerDashboard() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [paginatedSubmissions, focusedIndex, router]);
+  }, [paginatedSubmissions, focusedIndex, router, dashboardParams]);
 
   const hasActiveFilters = searchQuery || statusFilter || typeFilter || levelFilter;
 
@@ -440,6 +448,7 @@ export default function ReviewerDashboard() {
                   isAnonymous={isAnonymous}
                   isFocused={focusedIndex === index}
                   cardRef={cardRefs.current[index]}
+                  dashboardParams={dashboardParams}
                 />
               ))}
             </div>

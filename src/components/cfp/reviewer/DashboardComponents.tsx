@@ -261,13 +261,19 @@ interface SubmissionCardProps {
   isAnonymous?: boolean;
   isFocused?: boolean;
   cardRef?: React.RefObject<HTMLAnchorElement | null>;
+  /** Current dashboard search params to preserve when returning */
+  dashboardParams?: string;
 }
 
-export function SubmissionCard({ submission, isAnonymous = false, isFocused = false, cardRef }: SubmissionCardProps) {
+export function SubmissionCard({ submission, isAnonymous = false, isFocused = false, cardRef, dashboardParams }: SubmissionCardProps) {
+  const href = dashboardParams
+    ? `/cfp/reviewer/submissions/${submission.id}?returnTo=${encodeURIComponent(dashboardParams)}`
+    : `/cfp/reviewer/submissions/${submission.id}`;
+
   return (
     <Link
       ref={cardRef}
-      href={`/cfp/reviewer/submissions/${submission.id}`}
+      href={href}
       className={`block bg-brand-gray-dark rounded-xl p-6 hover:bg-brand-gray-dark/70 border-2 transition-all ${
         isFocused
           ? 'border-brand-primary ring-2 ring-brand-primary/30'
