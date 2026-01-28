@@ -45,7 +45,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Yes. Community Day (September 9) is dedicated to <strong>local JavaScript user groups and informal meetups</strong>, and the Zurich Engineering Day (September 10) includes workshops and social and networking activities to meet other attendees before the main conference day.",
+        "Yes. Community Day (September 9) is dedicated to <strong>local JavaScript user groups and informal meetups</strong>, and the Zurich Engineering Day (September 10) includes workshops as well as social and networking activities to meet other attendees before the main conference day.",
     },
     { type: "heading", level: "h3", content: "Who should attend?" },
     {
