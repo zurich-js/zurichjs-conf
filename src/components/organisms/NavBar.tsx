@@ -72,7 +72,7 @@ export const NavBar: React.FC<NavBarProps> = ({
   return (
     <nav
       className={
-        `fixed top-0 py-0 sm:py-4 left-0 right-0 z-50 transition-all duration-300 ${
+        `fixed top-0 py-0 sm:py-4 left-0 right-0 z-50 transition-all duration-300 print:hidden ${
             isHomePage ? 'lg:bg-transparent' : ''
         }`
       }

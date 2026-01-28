@@ -501,14 +501,6 @@ body {
     display: none !important;
   }
 
-  /* Hide fixed/sticky navigation elements */
-  header[class*="fixed"],
-  header[class*="sticky"],
-  nav[class*="fixed"],
-  nav[class*="sticky"] {
-    display: none !important;
-  }
-
   /* Info page print styles - content only */
   .info-page-sidebar,
   .info-page-footer,
