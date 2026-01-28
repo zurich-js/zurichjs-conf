@@ -7,10 +7,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
 import { createReview, updateReview, getReviewBySubmissionAndReviewer } from '@/lib/cfp/reviews';
-import { getSubmissionById } from '@/lib/cfp/submissions';
 import { reviewSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
-import { notifyCfpReviewSubmitted } from '@/lib/platform-notifications';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST' && req.method !== 'PUT') {
@@ -68,17 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (error) {
         return res.status(400).json({ error });
       }
-
-      // Send Slack notification for new review
-      const submission = await getSubmissionById(id);
-      notifyCfpReviewSubmitted({
-        reviewId: review!.id,
-        reviewerId: reviewer.id,
-        reviewerName: reviewer.name || 'Anonymous',
-        talkId: id,
-        talkTitle: submission?.title || 'Unknown',
-        score: review!.score_overall ?? undefined,
-      });
 
       return res.status(201).json({ review });
     } else {
