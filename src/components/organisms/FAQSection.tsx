@@ -14,6 +14,7 @@ export const FAQSection = () => {
       title="F.A.Q."
       variant="dark"
       subtitle="Find answers to common questions about tickets, the event, and more."
+      link={{ label: "Read more here", href: "/faq" }}
     >
       <motion.div
         className="pt-8"
