@@ -21,6 +21,7 @@ export const footerData: SiteFooterProps = {
       { label: 'Venue', href: '/about#venue' },
       { label: 'Workshops', href: '/#schedule', locked: true },
       { label: 'Sponsor us', href: '/sponsorship' },
+      { label: 'F.A.Q.', href: '/faq' },
     ],
   },
   legal: {
