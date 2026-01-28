@@ -202,7 +202,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        'In the meantime, two hotels are located directly opposite the venue: <strong><a href="https://all.accor.com/booking/en/novotel/hotel/2731?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">Novotel Zurich City West</a></strong> and <strong><a href="https://all.accor.com/booking/en/ibis/hotel/3184?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">ibis Budget Zurich City West</a></strong>.',
+        'In the meantime, if you want to go ahead and book your stay there are two hotels located directly opposite the venue: <strong><a href="https://all.accor.com/booking/en/novotel/hotel/2731?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">Novotel Zurich City West</a></strong> and <strong><a href="https://all.accor.com/booking/en/ibis/hotel/3184?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">ibis Budget Zurich City West</a></strong>.',
     },
     {
       type: "heading",
