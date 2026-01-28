@@ -1,5 +1,7 @@
 import React from "react";
+import { Download } from "lucide-react";
 import { InfoContentLayout } from "@/components/InfoContentLayout";
+import { Button } from "@/components/atoms/Button";
 import type { InfoPage } from "@/data/info-pages";
 
 const convinceYourBossPage: InfoPage = {
@@ -178,7 +180,21 @@ const convinceYourBossPage: InfoPage = {
 };
 
 const ConvinceYourBossPage: React.FC = () => {
-  return <InfoContentLayout page={convinceYourBossPage} />;
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <InfoContentLayout
+      page={convinceYourBossPage}
+      actions={
+        <Button variant="primary" size="sm" onClick={handlePrint}>
+          <Download className="w-4 h-4" />
+          Download as PDF
+        </Button>
+      }
+    />
+  );
 };
 
 export default ConvinceYourBossPage;

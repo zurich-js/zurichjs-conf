@@ -15,9 +15,11 @@ import type { InfoPage } from "@/data/info-pages";
 
 export interface InfoContentLayoutProps {
   page: InfoPage;
+  actions?: React.ReactNode;
 }
 export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
   page,
+  actions,
 }) => {
   // Extract navigation items from page content
   const navigationItems = extractNavigationItems(page.sections);
@@ -60,11 +62,11 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
         jsonLd={[organizationSchema, breadcrumbSchema]}
       />
       <main className="min-h-screen bg-white">
-        <div className="max-w-screen-lg mx-auto px-4">
+        <div className="max-w-screen-lg mx-auto px-4 info-page-content">
           <div className="py-16 md:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
               <div>
-                <div className="mb-12">
+                <div className="mb-12 info-page-header">
                   <Kicker variant="light" className="mb-4">
                     {page.kicker}
                   </Kicker>
@@ -83,15 +85,16 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
                   </p>
                 </div>
                 <RichTextRenderer sections={page.sections} />
+                {actions && <div className="mt-12 info-page-actions">{actions}</div>}
               </div>
-              <aside className="lg:block hidden">
+              <aside className="lg:block hidden info-page-sidebar">
                 <PageNavigation items={navigationItems} />
               </aside>
             </div>
           </div>
         </div>
       </main>
-      <footer className="bg-black text-white py-16 md:py-24">
+      <footer className="bg-black text-white py-16 md:py-24 info-page-footer">
         <SectionContainer>
           <motion.div
             variants={container}

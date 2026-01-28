@@ -496,8 +496,44 @@ body {
     color: black;
   }
 
-  .no-print {
+  .no-print,
+  .print-hidden {
     display: none !important;
+  }
+
+  /* Hide fixed/sticky navigation elements */
+  header[class*="fixed"],
+  header[class*="sticky"],
+  nav[class*="fixed"],
+  nav[class*="sticky"] {
+    display: none !important;
+  }
+
+  /* Info page print styles - content only */
+  .info-page-sidebar,
+  .info-page-footer,
+  .info-page-actions {
+    display: none !important;
+  }
+
+  /* Hide meta info but keep title */
+  .info-page-header p {
+    display: none !important;
+  }
+
+  .info-page-content {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .info-page-content > div {
+    padding-top: 0 !important;
+  }
+
+  main {
+    padding-top: 0 !important;
+    min-height: auto !important;
   }
 }
 /*---break---
