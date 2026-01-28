@@ -20,6 +20,7 @@ export const LearnSection: React.FC<LearnSectionProps> = ({
             kicker="100x your learning"
             title={title}
             subtitle={subtitle}
+            link={{ label: "Need to convince your boss?", href: "/convince-your-boss" }}
             variant="light"
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 lg:pt-10">
