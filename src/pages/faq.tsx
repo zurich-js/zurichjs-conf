@@ -40,7 +40,7 @@ const faqPage: InfoPage = {
       type: "heading",
       level: "h3",
       content:
-        "Are there networking events, community day activities, or social meet-ups?",
+        "Are there networking events, community day activities, or social meetups?",
     },
     {
       type: "paragraph",
