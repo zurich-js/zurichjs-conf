@@ -29,7 +29,7 @@ const faqPage: InfoPage = {
     {
       type: "heading",
       level: "h3",
-      content: "What can I expect at Zurich JS?",
+      content: "What can I expect at Zurich JS Conf?",
     },
     {
       type: "paragraph",
