@@ -12,7 +12,7 @@ const faqPage: InfoPage = {
   sections: [
     // General
     { type: "heading", level: "h2", content: "General" },
-    { type: "heading", level: "h3", content: "When and where is Zurich JS?" },
+    { type: "heading", level: "h3", content: "When and where is Zurich JS Conf happening?" },
     {
       type: "paragraph",
       content:
