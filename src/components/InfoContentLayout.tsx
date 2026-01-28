@@ -63,7 +63,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
       />
       <main className="min-h-screen bg-white">
         <div className="max-w-screen-lg mx-auto px-4 info-page-content">
-          <div className="py-16 md:py-24">
+          <div className="pt-28 pb-16 md:pt-36 md:pb-24">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
               <div>
                 <div className="mb-12 info-page-header">
