@@ -62,12 +62,12 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
         jsonLd={[organizationSchema, breadcrumbSchema]}
       />
       <main className="min-h-screen bg-white">
-        <div className="max-w-screen-lg mx-auto px-4 info-page-content">
+        <div className="max-w-screen-lg mx-auto px-4">
           <div className="pt-28 pb-16 md:pt-36 md:pb-24">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
               <div>
-                <div className="mb-12 info-page-header">
-                  <Kicker variant="light" className="mb-4">
+                <div className="mb-12">
+                  <Kicker variant="light" className="mb-4 print:hidden">
                     {page.kicker}
                   </Kicker>
                   <Heading
@@ -77,24 +77,24 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
                   >
                     {page.title}
                   </Heading>
-                  <p className="text-lg text-gray-700 leading-relaxed">
+                  <p className="text-lg text-gray-700 leading-relaxed print:hidden">
                     {page.description}
                   </p>
-                  <p className="text-sm text-gray-500 mt-4">
+                  <p className="text-sm text-gray-500 mt-4 print:hidden">
                     Last updated: {page.lastUpdated}
                   </p>
                 </div>
                 <RichTextRenderer sections={page.sections} />
-                {actions && <div className="mt-12 info-page-actions">{actions}</div>}
+                {actions && <div className="mt-12 print:hidden">{actions}</div>}
               </div>
-              <aside className="lg:block hidden info-page-sidebar">
+              <aside className="lg:block hidden print:hidden">
                 <PageNavigation items={navigationItems} />
               </aside>
             </div>
           </div>
         </div>
       </main>
-      <footer className="bg-black text-white py-16 md:py-24 info-page-footer">
+      <footer className="bg-black text-white py-16 md:py-24 print:hidden">
         <SectionContainer>
           <motion.div
             variants={container}
