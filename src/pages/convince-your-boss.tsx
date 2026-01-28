@@ -7,7 +7,7 @@ const convinceYourBossPage: InfoPage = {
   title: "Convince Your Boss",
   description:
     "ZurichJS Conf is a JavaScript conference for people who build and run real web applications: frontend, backend, and everything in between.",
-  kicker: "Get Approval",
+  kicker: "With a little help from my community",
   lastUpdated: "January 28, 2026",
   sections: [
     {
@@ -15,8 +15,6 @@ const convinceYourBossPage: InfoPage = {
       content:
         "It focuses on the practical side of JavaScript: performance, architecture, maintainability, and the day-to-day decisions that shape products long after they ship.",
     },
-
-    // Why ZurichJS Conf Is Relevant for Full-Stack Teams
     {
       type: "heading",
       level: "h2",
@@ -48,7 +46,8 @@ const convinceYourBossPage: InfoPage = {
     },
     {
       type: "paragraph",
-      content: "ZurichJS Conf treats JavaScript as a full-stack language. Talks cover:",
+      content:
+        "ZurichJS Conf treats JavaScript as a full-stack language. Talks cover:",
     },
     {
       type: "list",
@@ -173,11 +172,7 @@ const convinceYourBossPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        "ZurichJS Conf helps teams build systems that last across frontend and backend.",
-    },
-    {
-      type: "paragraph",
-      content: "That's good engineering. And good business.",
+        "ZurichJS Conf helps teams build systems that last across frontend and backend. That's good engineering. And good business.",
     },
   ],
 };
