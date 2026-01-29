@@ -9,8 +9,8 @@ const convinceYourBossPage: InfoPage = {
   title: "Convince Your Boss",
   description:
     "ZurichJS Conf is a JavaScript conference for people who build and run real web applications: frontend, backend, and everything in between.",
-  kicker: "With a little help from my community",
-  lastUpdated: "January 28, 2026",
+  kicker: "I want to learn at ZurichJS Conf",
+  lastUpdated: "January 29, 2026",
   sections: [
     {
       type: "paragraph",
