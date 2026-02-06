@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import readingTime from 'reading-time';
 import type { BlogFrontmatter, BlogPost, BlogPostMeta } from './types';
 
 const BLOG_DIR = path.join(process.cwd(), 'src/content/blog');
@@ -20,13 +19,11 @@ export function getAllPosts(): BlogPostMeta[] {
   const posts = slugs.map((slug) => {
     const filePath = path.join(BLOG_DIR, `${slug}.mdx`);
     const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const { data, content } = matter(fileContent);
-    const stats = readingTime(content);
+    const { data } = matter(fileContent);
 
     return {
       frontmatter: data as BlogFrontmatter,
       slug,
-      readingTime: stats.text,
     };
   });
 
@@ -41,13 +38,11 @@ export function getPostBySlug(slug: string): BlogPost {
   const filePath = path.join(BLOG_DIR, `${slug}.mdx`);
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const { data, content } = matter(fileContent);
-  const stats = readingTime(content);
 
   return {
     frontmatter: data as BlogFrontmatter,
     slug,
     content,
-    readingTime: stats.text,
   };
 }
 
