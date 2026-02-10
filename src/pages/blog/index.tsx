@@ -1,19 +1,19 @@
-import { GetStaticProps } from 'next';
-import { useRouter } from 'next/router';
-import { motion } from 'framer-motion';
-import { Logo } from '@/components/atoms/Logo';
-import { SocialIcon } from '@/components/atoms/SocialIcon';
-import { Button } from '@/components/atoms/Button';
-import { Kicker, Heading } from '@/components/atoms';
-import { SectionContainer } from '@/components/organisms/SectionContainer';
+import { GetStaticProps } from "next";
+import { useRouter } from "next/router";
+import { motion } from "framer-motion";
+import { Logo } from "@/components/atoms/Logo";
+import { SocialIcon } from "@/components/atoms/SocialIcon";
+import { Button } from "@/components/atoms/Button";
+import { Kicker, Heading } from "@/components/atoms";
+import { SectionContainer } from "@/components/organisms/SectionContainer";
 import {
   SEO,
   organizationSchema,
   generateBreadcrumbSchema,
-} from '@/components/SEO';
-import { BlogPostCard, BlogTagFilter } from '@/components/blog';
-import { getAllPosts, getAllTags } from '@/lib/blog';
-import type { BlogPostMeta } from '@/lib/blog';
+} from "@/components/SEO";
+import { BlogPostCard, BlogTagFilter } from "@/components/blog";
+import { getAllPosts, getAllTags } from "@/lib/blog";
+import type { BlogPostMeta } from "@/lib/blog";
 
 interface BlogPageProps {
   posts: BlogPostMeta[];
@@ -54,15 +54,16 @@ const item = {
 
 export default function BlogPage({ posts, tags }: BlogPageProps) {
   const router = useRouter();
-  const activeTag = typeof router.query.tag === 'string' ? router.query.tag : undefined;
+  const activeTag =
+    typeof router.query.tag === "string" ? router.query.tag : undefined;
 
   const filteredPosts = activeTag
     ? posts.filter((post) => post.frontmatter.tags.includes(activeTag))
     : posts;
 
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: '/' },
-    { name: 'Blog', url: '/blog' },
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog" },
   ]);
 
   return (
@@ -78,17 +79,27 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
         <div className="max-w-screen-lg mx-auto px-4">
           <div className="pt-28 pb-16 md:pt-36 md:pb-24">
             <div className="mb-12">
-              <Kicker variant="light" className="mb-4">Blog</Kicker>
+              <Kicker variant="light" className="mb-4">
+                Blog
+              </Kicker>
               <Heading
                 level="h1"
                 variant="light"
                 className="mb-6 text-2xl font-bold"
               >
-                News & Updates
+                The Community Build
               </Heading>
-              <p className="text-lg text-gray-700 leading-relaxed">
-                The latest from ZurichJS Conf — speaker announcements, community
-                stories, and everything you need to know about the conference.
+              <p className="text-sm text-brand-gray-medium leading-relaxed">
+                This Blog is an is an experiment and a space for thinking out
+                loud together. Not every post is a breakthrough or a new
+                invention. Instead, this blog captures the ideas, experiments,
+                and reflections that help developers learn from each other. We
+                highlight perspectives from speakers, contributors, and
+                attendees, aiming to surface knowledge that strengthens the
+                community and connects engineers across teams, companies, and
+                borders. Whether you’re attending the conference or following
+                from afar, this is where we continue the technical and human
+                side of building the web together.
               </p>
             </div>
 
@@ -105,7 +116,7 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
             ) : (
               <div className="py-16">
                 <p className="text-gray-500">
-                  No posts found{activeTag ? ` tagged "${activeTag}"` : ''}.
+                  No posts found{activeTag ? ` tagged "${activeTag}"` : ""}.
                 </p>
               </div>
             )}
@@ -178,7 +189,11 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button variant="black" size="xs" className="w-full md:w-auto">
+                  <Button
+                    variant="black"
+                    size="xs"
+                    className="w-full md:w-auto"
+                  >
                     Contact Us
                   </Button>
                 </a>
@@ -189,7 +204,11 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
               className="pt-8 md:pt-12 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6"
             >
               <div className="flex flex-col items-center md:items-start gap-2">
-                <Logo width={140} height={38} className="sm:w-[160px] sm:h-[43px]" />
+                <Logo
+                  width={140}
+                  height={38}
+                  className="sm:w-[160px] sm:h-[43px]"
+                />
                 <p className="text-xs sm:text-sm text-brand-gray-light">
                   ZurichJS Conference 2026
                 </p>
