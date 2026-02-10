@@ -15,6 +15,7 @@ export { SectionContainer } from './SectionContainer';
 export { FAQSection } from './FAQSection';
 export { SponsorsSection } from './SponsorsSection';
 export { SpeakersSection } from './SpeakersSection';
+export { DiscountContainer } from './discount';
 export {
   SponsorshipHeroSection,
   SponsorshipMissionSection,

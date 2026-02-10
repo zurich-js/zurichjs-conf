@@ -109,6 +109,16 @@ export type {
   PlatformNotificationFailedEvent,
 } from './platform-notification-events';
 
+// Discount events
+export type {
+  DiscountPopupShownEvent,
+  DiscountPopupDismissedEvent,
+  DiscountCodeCopiedEvent,
+  DiscountWidgetClickedEvent,
+  DiscountExpiredEvent,
+  DiscountEligibilityCheckedEvent,
+} from './discount-events';
+
 // Import all event types for the union
 import type { PageViewedEvent, UserIdentifiedEvent } from './base';
 import type {
@@ -178,6 +188,14 @@ import type {
   PlatformNotificationSentEvent,
   PlatformNotificationFailedEvent,
 } from './platform-notification-events';
+import type {
+  DiscountPopupShownEvent,
+  DiscountPopupDismissedEvent,
+  DiscountCodeCopiedEvent,
+  DiscountWidgetClickedEvent,
+  DiscountExpiredEvent,
+  DiscountEligibilityCheckedEvent,
+} from './discount-events';
 
 /**
  * Union of all possible analytics events.
@@ -241,7 +259,13 @@ export type AnalyticsEvent =
   | VipUpgradeCompletedEvent
   | VipUpgradePaymentConfirmedEvent
   | PlatformNotificationSentEvent
-  | PlatformNotificationFailedEvent;
+  | PlatformNotificationFailedEvent
+  | DiscountPopupShownEvent
+  | DiscountPopupDismissedEvent
+  | DiscountCodeCopiedEvent
+  | DiscountWidgetClickedEvent
+  | DiscountExpiredEvent
+  | DiscountEligibilityCheckedEvent;
 
 /**
  * Extract event name from AnalyticsEvent
