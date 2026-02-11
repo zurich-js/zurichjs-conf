@@ -420,6 +420,7 @@ async function linkTagsToSubmission(
 
 /**
  * Get submission count for a speaker
+ * Excludes withdrawn submissions from the count
  */
 export async function getSubmissionCount(speakerId: string): Promise<number> {
   const supabase = createCfpServiceClient();
@@ -427,7 +428,8 @@ export async function getSubmissionCount(speakerId: string): Promise<number> {
   const { count, error } = await supabase
     .from('cfp_submissions')
     .select('*', { count: 'exact', head: true })
-    .eq('speaker_id', speakerId);
+    .eq('speaker_id', speakerId)
+    .neq('status', 'withdrawn');
 
   if (error) {
     console.error('[CFP Submissions] Error counting submissions:', error.message);
