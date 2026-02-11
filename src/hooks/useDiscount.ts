@@ -73,6 +73,9 @@ function calculateTimeRemaining(targetDate: string | null): TimeRemaining {
   };
 }
 
+// Delay before showing the discount modal on first visit (in milliseconds)
+const INITIAL_POPUP_DELAY_MS = 30_000; // 30 seconds
+
 export function useDiscount(initialDiscount?: DiscountData | null) {
   // Check if we need to restore from dismissed state (no initial discount + has dismissed cookie)
   const shouldCheckStatus = !initialDiscount && typeof window !== 'undefined' && hasDismissedCookie();
@@ -83,19 +86,34 @@ export function useDiscount(initialDiscount?: DiscountData | null) {
     enabled: shouldCheckStatus,
   });
 
+  // Start in 'idle' state even with initialDiscount - we'll show after delay
   const [{ state, data }, dispatch] = useReducer(discountReducer, {
-    state: initialDiscount ? 'modal_open' : 'idle',
+    state: 'idle',
     data: initialDiscount ?? null,
   });
 
   const wasCopiedRef = useRef(false);
   const hasTrackedRef = useRef(false);
   const hasRestoredRef = useRef(false);
+  const hasShownInitialRef = useRef(false);
 
   // Countdown state - recalculates when data.expiresAt changes
   const [countdown, setCountdown] = useState<TimeRemaining>(() =>
     calculateTimeRemaining(initialDiscount?.expiresAt ?? null)
   );
+
+  // Show modal after delay for initial discount (first-time visitors)
+  useEffect(() => {
+    if (hasShownInitialRef.current) return;
+    if (!initialDiscount) return;
+
+    hasShownInitialRef.current = true;
+    const timer = setTimeout(() => {
+      dispatch({ type: 'SHOW_MODAL', data: initialDiscount });
+    }, INITIAL_POPUP_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [initialDiscount]);
 
   // Restore minimized state when status query returns active discount
   useEffect(() => {
@@ -113,18 +131,18 @@ export function useDiscount(initialDiscount?: DiscountData | null) {
     }
   }, [statusData]);
 
-  // Track analytics for initial discount (once)
+  // Track analytics when modal is actually shown (after delay)
   useEffect(() => {
     if (hasTrackedRef.current) return;
-    if (initialDiscount) {
+    if (state === 'modal_open' && data) {
       hasTrackedRef.current = true;
       analytics.track('discount_popup_shown', {
-        discount_code: initialDiscount.code,
-        percent_off: initialDiscount.percentOff,
-        expires_at: initialDiscount.expiresAt,
+        discount_code: data.code,
+        percent_off: data.percentOff,
+        expires_at: data.expiresAt,
       });
     }
-  }, [initialDiscount]);
+  }, [state, data]);
 
   // Update countdown every second when we have data
   useEffect(() => {
