@@ -10,14 +10,18 @@ import { getStripeClient } from '@/lib/stripe/client';
 import { getServerConfig } from '@/lib/discount/config';
 import { logger } from '@/lib/logger';
 import type { GenerateDiscountResponse } from '@/lib/discount/types';
+import { randomBytes } from 'crypto';
 
 const log = logger.scope('DiscountGenerate');
 
 function generateUniqueCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const length = 8;
+  const bytes = randomBytes(length);
   let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < length; i++) {
+    const idx = bytes[i] % chars.length;
+    code += chars.charAt(idx);
   }
   return code;
 }
@@ -94,11 +98,13 @@ export default async function handler(
 
     const expiresAtISO = expiresAt.toISOString();
     const maxAgeSeconds = config.durationMinutes * 60;
+    const isSecure = process.env.NODE_ENV === 'production';
+    const commonCookieAttributes = `Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${isSecure ? '; Secure' : ''}`;
 
     // Set httpOnly cookies
     res.setHeader('Set-Cookie', [
-      `discount_code=${code}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}`,
-      `discount_expires_at=${expiresAtISO}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}`,
+      `discount_code=${code}; ${commonCookieAttributes}`,
+      `discount_expires_at=${expiresAtISO}; ${commonCookieAttributes}`,
     ]);
 
     return res.status(200).json({

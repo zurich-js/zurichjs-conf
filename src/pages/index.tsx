@@ -174,7 +174,15 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async (ctx)
 
   // Set cookies from discount generation
   if (cookies.length > 0) {
-    ctx.res.setHeader('Set-Cookie', cookies);
+    const existingSetCookie = ctx.res.getHeader('Set-Cookie');
+    const existingCookies =
+      typeof existingSetCookie === 'string'
+        ? [existingSetCookie]
+        : Array.isArray(existingSetCookie)
+        ? existingSetCookie
+        : [];
+
+    ctx.res.setHeader('Set-Cookie', [...existingCookies, ...cookies]);
   }
 
   return {
