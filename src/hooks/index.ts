@@ -19,3 +19,5 @@ export { useCartAbandonment } from './useCartAbandonment';
 
 export { useCartAbandonmentEmail } from './useCartAbandonmentEmail';
 
+export { useDiscount } from './useDiscount';
+

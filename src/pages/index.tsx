@@ -6,16 +6,20 @@ import { getQueryClient } from '@/lib/query-client';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { publicSponsorsQueryOptions, communityPartnersQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
-import type { GetStaticProps } from 'next';
+import { getServerSideDiscount } from '@/lib/discount/server';
+import type { DiscountData } from '@/lib/discount';
+import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
 
 /**
  * Page props passed through _app.tsx for hydration
  * - dehydratedState: Used by HydrationBoundary in _app.tsx
+ * - initialDiscount: Server-generated discount data
  * Currency detection is handled client-side by CurrencyContext
  */
 interface HomePageProps {
   dehydratedState: DehydratedState;
+  initialDiscount: DiscountData | null;
 }
 
 // FAQ data for schema (plain text versions)
@@ -149,14 +153,14 @@ export default function Home() {
 }
 
 /**
- * Static data fetching with TanStack Query prefetching
- * Prefetches ticket pricing, sponsors, partners, and speakers at build time
+ * Server-side data fetching with TanStack Query prefetching
+ * Prefetches ticket pricing, sponsors, partners, speakers and handles discount generation
  * Currency detection is handled client-side by CurrencyContext
  */
-export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
+export const getServerSideProps: GetServerSideProps<HomePageProps> = async (ctx) => {
   const queryClient = getQueryClient();
 
-  // Prefetch all homepage data in parallel at build time
+  // Prefetch all homepage data in parallel
   // Ticket pricing uses default currency (CHF) - client will refetch with detected currency
   await Promise.all([
     queryClient.prefetchQuery(ticketPricingQueryOptions),
@@ -165,11 +169,26 @@ export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
     queryClient.prefetchQuery(publicSpeakersQueryOptions),
   ]);
 
+  // Generate discount server-side
+  const { discountData, cookies } = await getServerSideDiscount(ctx);
+
+  // Set cookies from discount generation
+  if (cookies.length > 0) {
+    const existingSetCookie = ctx.res.getHeader('Set-Cookie');
+    const existingCookies =
+      typeof existingSetCookie === 'string'
+        ? [existingSetCookie]
+        : Array.isArray(existingSetCookie)
+        ? existingSetCookie
+        : [];
+
+    ctx.res.setHeader('Set-Cookie', [...existingCookies, ...cookies]);
+  }
+
   return {
     props: {
       dehydratedState: dehydrate(queryClient),
+      initialDiscount: discountData,
     },
-    // Revalidate every 30 minutes to keep content fresh
-    revalidate: 1800,
   };
 };

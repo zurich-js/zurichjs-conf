@@ -179,6 +179,21 @@ export const speakersKeys = {
 } as const;
 
 /**
+ * Discount query keys
+ */
+export const discountKeys = {
+  /**
+   * Base key for all discount queries
+   */
+  all: ['discount'] as const,
+
+  /**
+   * Key for discount status
+   */
+  status: () => [...discountKeys.all, 'status'] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
@@ -190,5 +205,6 @@ export const queryKeys = {
   sponsorships: sponsorshipKeys,
   partnerships: partnershipKeys,
   speakers: speakersKeys,
+  discount: discountKeys,
 } as const;
 
