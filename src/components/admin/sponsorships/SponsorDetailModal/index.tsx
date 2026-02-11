@@ -61,7 +61,7 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
                 {sponsor.logo_url ? (
-                  <Image src={sponsor.logo_url} alt={sponsor.company_name} fill className="object-contain p-1" />
+                  <Image src={sponsor.logo_url} alt={sponsor.company_name} fill className="object-contain p-1" unoptimized={sponsor.logo_url.endsWith('.svg') || sponsor.logo_url.endsWith('.gif')} />
                 ) : (
                   <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center"><Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" /></div>
                 )}

@@ -28,6 +28,7 @@ export const Logo: React.FC<LogoProps> = ({
         height={height}
         className="h-auto"
         priority
+        unoptimized
       />
     </div>
   );

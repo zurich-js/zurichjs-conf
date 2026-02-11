@@ -4,19 +4,27 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
-  // Configure image domains for Supabase storage and Unsplash
+  // Configure image optimization for Supabase storage
+  // Optimized to reduce Vercel Image Optimization usage
   images: {
+    // Only allow Supabase storage images (removed unused Unsplash)
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
     ],
+    // Cache optimized images for 31 days to reduce transformations
+    minimumCacheTTL: 2678400,
+    // Use only WebP format (avif adds extra transformations)
+    formats: ['image/webp'],
+    // Reduce device sizes to match actual usage (removed 3840px ultra-wide)
+    deviceSizes: [640, 750, 828, 1080, 1280, 1536, 2048],
+    // Reduce image sizes to match actual component usage
+    imageSizes: [32, 48, 64, 96, 128, 256, 384],
+    // Limit quality options to reduce transformation variants
+    qualities: [75, 90],
   },
 
   // Explicitly expose PostHog environment variables to the client

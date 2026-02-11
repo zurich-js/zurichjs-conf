@@ -186,6 +186,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
             alt="ZurichJS Logo"
             height={32}
             width={110}
+            unoptimized
           />
           community
         </motion.p>

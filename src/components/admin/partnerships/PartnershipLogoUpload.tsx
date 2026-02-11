@@ -112,7 +112,7 @@ export function PartnershipLogoUpload({
               alt="Partnership logo"
               fill
               className="object-contain p-2"
-              unoptimized={currentLogoUrl.endsWith('.svg')}
+              unoptimized={currentLogoUrl.endsWith('.svg') || currentLogoUrl.endsWith('.gif')}
             />
           ) : (
             <div className="h-20 w-20 flex items-center justify-center">

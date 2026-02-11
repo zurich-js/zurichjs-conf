@@ -83,7 +83,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         fill
         className="object-contain p-4"
         sizes={size === 'large' ? '(max-width: 768px) 50vw, 33vw' : '(max-width: 768px) 25vw, 15vw'}
-        unoptimized={sponsor.logo.endsWith('.svg')}
+        unoptimized={sponsor.logo.endsWith('.svg') || sponsor.logo.endsWith('.gif')}
       />
     </div>
   );

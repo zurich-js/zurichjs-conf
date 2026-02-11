@@ -108,7 +108,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
               alt="Sponsor logo"
               fill
               className="object-contain p-2"
-              unoptimized={currentLogoUrl.includes('.svg')}
+              unoptimized={currentLogoUrl.endsWith('.svg') || currentLogoUrl.endsWith('.gif')}
             />
           ) : (
             <div className="h-20 w-20 sm:h-24 sm:w-24 flex items-center justify-center">

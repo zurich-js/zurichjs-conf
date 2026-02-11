@@ -73,6 +73,7 @@ function LogoCard({
           width={isWide ? 500 : 200}
           height={isWide ? 160 : 200}
           className={`w-auto h-auto object-contain ${isWide ? 'w-full max-h-[120px] md:max-h-[160px] lg:max-h-[180px]' : 'max-w-[160px] max-h-[160px]'}`}
+          unoptimized={imageSrc.endsWith('.svg') || imageSrc.endsWith('.gif')}
         />
       </div>
       <div className="p-6 bg-white">

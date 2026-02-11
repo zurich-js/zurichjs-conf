@@ -123,7 +123,7 @@ export function PartnershipList({
                       width={40}
                       height={40}
                       className="h-full w-full object-contain p-1"
-                      unoptimized={partnership.company_logo_url.endsWith('.svg')}
+                      unoptimized={partnership.company_logo_url.endsWith('.svg') || partnership.company_logo_url.endsWith('.gif')}
                     />
                   ) : (
                     <Icon className="h-5 w-5 text-black" />
@@ -306,7 +306,7 @@ export function PartnershipList({
                           width={40}
                           height={40}
                           className="h-full w-full object-contain p-1"
-                          unoptimized={partnership.company_logo_url.endsWith('.svg')}
+                          unoptimized={partnership.company_logo_url.endsWith('.svg') || partnership.company_logo_url.endsWith('.gif')}
                         />
                       ) : (
                         <Icon className="h-5 w-5 text-black" />
