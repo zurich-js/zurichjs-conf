@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export interface TimeRemaining {
   days: number;
@@ -15,9 +15,9 @@ export interface TimeRemaining {
  * @returns TimeRemaining object with days, hours, minutes, seconds, and total milliseconds
  */
 export function useCountdown(targetDate: string | Date): TimeRemaining {
-  const targetTime = useRef<number>(
-    typeof targetDate === 'string' ? new Date(targetDate).getTime() : targetDate.getTime()
-  ).current;
+  const targetTime = typeof targetDate === 'string'
+    ? new Date(targetDate).getTime()
+    : targetDate.getTime();
 
   const calculateTimeRemaining = useCallback((): TimeRemaining => {
     const now = Date.now();

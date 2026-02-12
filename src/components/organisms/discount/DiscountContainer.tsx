@@ -9,14 +9,9 @@ import { AnimatePresence } from 'framer-motion';
 import { useDiscount } from '@/hooks/useDiscount';
 import { DiscountModal } from './DiscountModal';
 import { DiscountWidget } from './DiscountWidget';
-import type { DiscountData } from '@/lib/discount';
 
-interface DiscountContainerProps {
-  initialDiscount?: DiscountData | null;
-}
-
-export function DiscountContainer({ initialDiscount }: DiscountContainerProps) {
-  const { state, discountData, countdown, dismiss, reopen, copyCode } = useDiscount(initialDiscount);
+export function DiscountContainer() {
+  const { state, discountData, countdown, dismiss, reopen, copyCode } = useDiscount();
 
   return (
     <AnimatePresence mode="wait">

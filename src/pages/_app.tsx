@@ -16,7 +16,6 @@ import { useRouter } from "next/router";
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import type { Cart } from '@/types/cart';
-import type { DiscountData } from '@/lib/discount';
 import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
 
@@ -38,7 +37,6 @@ interface ExtendedPageProps {
   dehydratedState?: DehydratedState;
   initialCart?: Cart;
   detectedCurrency?: SupportedCurrency;
-  initialDiscount?: DiscountData | null;
 }
 
 export default function App({ Component, pageProps }: AppProps<ExtendedPageProps>) {
@@ -124,7 +122,7 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
                     <div className={figtree.variable}>
                       {showNavBar && <NavBar />}
                       <Component {...pageProps} />
-                      {showDiscount && <DiscountContainer initialDiscount={pageProps.initialDiscount} />}
+                      {showDiscount && <DiscountContainer />}
                     </div>
                   </ToastProvider>
                 </MotionProvider>

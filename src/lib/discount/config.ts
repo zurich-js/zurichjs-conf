@@ -11,9 +11,10 @@ export const COOKIE_NAMES = {
   // discount_code, discount_expires_at
 } as const;
 
-export function getClientConfig(): Pick<DiscountConfig, 'forceShow'> {
+export function getClientConfig(): Pick<DiscountConfig, 'forceShow' | 'showProbability'> {
   return {
     forceShow: process.env.NEXT_PUBLIC_DISCOUNT_FORCE_SHOW === 'true',
+    showProbability: parseFloat(process.env.NEXT_PUBLIC_DISCOUNT_SHOW_PROBABILITY || '0.25'),
   };
 }
 

@@ -1,149 +1,151 @@
 /**
  * useDiscount Hook
  *
- * State machine orchestrator for the discount popup system.
- * Manages UI state, countdown, and analytics. Uses TanStack Query for status restoration.
+ * Manages the discount popup lifecycle entirely client-side.
+ * Uses TanStack Query for API calls and usehooks-ts for utilities.
  */
 
-import { useReducer, useEffect, useCallback, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useCopyToClipboard, useTimeout } from 'usehooks-ts';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useCopyToClipboard, useTimeout, useIsClient } from 'usehooks-ts';
 import { analytics } from '@/lib/analytics/client';
 import { discountStatusQueryOptions } from '@/lib/queries/discount';
-import type {
-  DiscountState,
-  DiscountData,
-  DiscountAction,
-} from '@/lib/discount/types';
+import { getClientConfig } from '@/lib/discount/config';
+import type { DiscountState, DiscountData } from '@/lib/discount/types';
 import {
+  hasCooldownCookie,
   hasDismissedCookie,
+  setCooldownCookie,
   setDismissedCookie,
   clearDiscountCookies,
 } from '@/lib/discount';
 import { useCountdown, type TimeRemaining } from './useCountdown';
 
-interface DiscountReducerState {
-  state: DiscountState;
-  data: DiscountData | null;
+// Constants
+const POPUP_DELAY_MS = 15_000; // 15 seconds
+const COOLDOWN_HOURS = 24;
+const EMPTY_COUNTDOWN: TimeRemaining = {
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+  total: 0,
+  isComplete: false,
+};
+
+// API call
+async function generateDiscount(): Promise<DiscountData> {
+  const res = await fetch('/api/discount/generate', { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to generate discount');
+  return res.json();
 }
 
-function discountReducer(
-  current: DiscountReducerState,
-  action: DiscountAction
-): DiscountReducerState {
-  switch (action.type) {
-    case 'START_LOADING':
-      return { state: 'loading', data: null };
-    case 'SHOW_MODAL':
-      return { state: 'modal_open', data: action.data };
-    case 'RESTORE_MINIMIZED':
-      return { state: 'minimized', data: action.data };
-    case 'DISMISS':
-      return { ...current, state: 'minimized' };
-    case 'REOPEN':
-      return { ...current, state: 'modal_open' };
-    case 'EXPIRE':
-      return { state: 'expired', data: current.data };
-    case 'ERROR':
-      return { state: 'idle', data: null };
-    default:
-      return current;
-  }
-}
+export function useDiscount() {
+  const isClient = useIsClient();
+  const config = getClientConfig();
 
-// Delay before showing the discount modal on first visit
-const INITIAL_POPUP_DELAY_MS = 30_000; // 30 seconds
+  // Core state
+  const [state, setState] = useState<DiscountState>('idle');
+  const [data, setData] = useState<DiscountData | null>(null);
 
-// Default expiry date far in the future (used when no data yet)
-const DEFAULT_EXPIRY = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  // One-time flags
+  const flags = useRef({ shown: false, copied: false, eligibilityChecked: false });
+  const isEligible = useRef(false);
 
-export function useDiscount(initialDiscount?: DiscountData | null) {
-  // Check if we need to restore from dismissed state
-  const shouldCheckStatus = !initialDiscount && typeof window !== 'undefined' && hasDismissedCookie();
-
-  // Fetch status when restoring minimized state
-  const { data: statusData } = useQuery({
-    ...discountStatusQueryOptions,
-    enabled: shouldCheckStatus,
-  });
-
-  // State machine
-  const [{ state, data }, dispatch] = useReducer(discountReducer, {
-    state: 'idle',
-    data: initialDiscount ?? null,
-  });
-
-  // Track one-time events
-  const trackedRef = useRef({ shown: false, restored: false, copied: false });
-
-  // Clipboard hook from usehooks-ts
+  // Clipboard
   const [, copyToClipboard] = useCopyToClipboard();
 
-  // Countdown using existing hook - use data's expiry or a far-future default
-  const countdown = useCountdown(data?.expiresAt ?? DEFAULT_EXPIRY);
+  // Check for existing discount
+  const { data: statusData, isLoading } = useQuery({
+    ...discountStatusQueryOptions,
+    enabled: isClient,
+  });
 
-  // Show modal after delay for first-time visitors
-  useTimeout(
-    () => {
-      if (initialDiscount) {
-        dispatch({ type: 'SHOW_MODAL', data: initialDiscount });
-      }
+  // Generate discount mutation
+  const { mutate, isPending } = useMutation({
+    mutationFn: generateDiscount,
+    onSuccess: (discount) => {
+      setData(discount);
+      setState('modal_open');
     },
-    initialDiscount && state === 'idle' ? INITIAL_POPUP_DELAY_MS : null
-  );
+    onError: () => setState('idle'),
+  });
 
-  // Restore minimized state from status query
-  useEffect(() => {
-    if (trackedRef.current.restored) return;
-    if (statusData?.active && statusData.code && statusData.expiresAt && statusData.percentOff) {
-      trackedRef.current.restored = true;
-      dispatch({
-        type: 'RESTORE_MINIMIZED',
-        data: {
-          code: statusData.code,
-          expiresAt: statusData.expiresAt,
-          percentOff: statusData.percentOff,
-        },
-      });
-    }
-  }, [statusData]);
+  // Countdown - use a far future date as fallback to avoid hydration issues
+  const fallbackExpiry = useRef(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
+  const countdown = useCountdown(data?.expiresAt ?? fallbackExpiry.current);
 
-  // Track analytics when modal is shown
+  // Determine eligibility once on mount
   useEffect(() => {
-    if (trackedRef.current.shown) return;
-    if (state === 'modal_open' && data) {
-      trackedRef.current.shown = true;
-      analytics.track('discount_popup_shown', {
-        discount_code: data.code,
-        percent_off: data.percentOff,
-        expires_at: data.expiresAt,
-      });
+    if (!isClient || flags.current.eligibilityChecked) return;
+    flags.current.eligibilityChecked = true;
+
+    if (config.forceShow) {
+      isEligible.current = true;
+      return;
     }
+
+    if (hasCooldownCookie()) {
+      isEligible.current = false;
+      return;
+    }
+
+    isEligible.current = Math.random() < config.showProbability;
+
+    if (!isEligible.current) {
+      setCooldownCookie(COOLDOWN_HOURS);
+    }
+  }, [isClient, config.forceShow, config.showProbability]);
+
+  // Restore minimized state from existing discount
+  useEffect(() => {
+    if (!statusData?.active || !statusData.code || data) return;
+
+    setData({
+      code: statusData.code,
+      expiresAt: statusData.expiresAt!,
+      percentOff: statusData.percentOff!,
+    });
+    setState('minimized');
+  }, [statusData, data]);
+
+  // Show popup after delay if eligible
+  const shouldTrigger = isClient && !isLoading && state === 'idle' && !statusData?.active && !hasDismissedCookie();
+
+  useTimeout(() => {
+    if (!isEligible.current || data || isPending) return;
+    mutate();
+  }, shouldTrigger ? POPUP_DELAY_MS : null);
+
+  // Track analytics when modal opens
+  useEffect(() => {
+    if (state !== 'modal_open' || !data || flags.current.shown) return;
+    flags.current.shown = true;
+    analytics.track('discount_popup_shown', {
+      discount_code: data.code,
+      percent_off: data.percentOff,
+      expires_at: data.expiresAt,
+    });
   }, [state, data]);
 
   // Handle expiry
   useEffect(() => {
-    if (!data) return;
-    if (countdown.isComplete && (state === 'modal_open' || state === 'minimized')) {
-      dispatch({ type: 'EXPIRE' });
-      analytics.track('discount_expired', {
-        discount_code: data.code,
-        was_copied: trackedRef.current.copied,
-      });
-    }
+    if (!data || !countdown.isComplete) return;
+    if (state !== 'modal_open' && state !== 'minimized') return;
+
+    setState('expired');
+    clearDiscountCookies();
+    analytics.track('discount_expired', {
+      discount_code: data.code,
+      was_copied: flags.current.copied,
+    });
   }, [countdown.isComplete, state, data]);
 
-  // Clean up cookies on expire
-  useEffect(() => {
-    if (state === 'expired') {
-      clearDiscountCookies();
-    }
-  }, [state]);
-
+  // Actions
   const dismiss = useCallback(() => {
     if (!data) return;
     setDismissedCookie();
-    dispatch({ type: 'DISMISS' });
+    setState('minimized');
     analytics.track('discount_popup_dismissed', {
       discount_code: data.code,
       time_remaining_seconds: Math.floor(countdown.total / 1000),
@@ -152,7 +154,7 @@ export function useDiscount(initialDiscount?: DiscountData | null) {
 
   const reopen = useCallback(() => {
     if (!data) return;
-    dispatch({ type: 'REOPEN' });
+    setState('modal_open');
     analytics.track('discount_widget_clicked', {
       discount_code: data.code,
       time_remaining_seconds: Math.floor(countdown.total / 1000),
@@ -163,7 +165,7 @@ export function useDiscount(initialDiscount?: DiscountData | null) {
     if (!data) return;
     const success = await copyToClipboard(data.code);
     if (success) {
-      trackedRef.current.copied = true;
+      flags.current.copied = true;
       analytics.track('discount_code_copied', {
         discount_code: data.code,
         time_remaining_seconds: Math.floor(countdown.total / 1000),
@@ -171,19 +173,13 @@ export function useDiscount(initialDiscount?: DiscountData | null) {
     }
   }, [data, countdown.total, copyToClipboard]);
 
-  // Compute the correct countdown to return
-  // Only show real countdown when we have actual data with expiry
-  const effectiveCountdown: TimeRemaining = data?.expiresAt
-    ? countdown
-    : { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0, isComplete: false };
-
   return {
     state,
     discountData: data,
-    countdown: effectiveCountdown,
+    countdown: data?.expiresAt ? countdown : EMPTY_COUNTDOWN,
     dismiss,
     reopen,
     copyCode,
-    wasCopied: trackedRef.current.copied,
+    wasCopied: flags.current.copied,
   };
 }

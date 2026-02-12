@@ -30,12 +30,3 @@ export interface DiscountStatusResponse {
   expiresAt?: string;
   percentOff?: number;
 }
-
-export type DiscountAction =
-  | { type: 'START_LOADING' }
-  | { type: 'SHOW_MODAL'; data: DiscountData }
-  | { type: 'RESTORE_MINIMIZED'; data: DiscountData }
-  | { type: 'DISMISS' }
-  | { type: 'REOPEN' }
-  | { type: 'EXPIRE' }
-  | { type: 'ERROR' };

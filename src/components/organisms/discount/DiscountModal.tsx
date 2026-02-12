@@ -45,13 +45,13 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
         <DialogBackdrop className="fixed inset-0 bg-black/50" />
       </motion.div>
 
-      <div className="fixed inset-0 flex items-center justify-center p-4">
+      <div className="fixed inset-0 flex items-center justify-center overflow-y-auto p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="mx-auto w-full max-w-xl"
+          className="mx-auto w-full max-w-2xl"
         >
           <DialogPanel className="relative overflow-hidden rounded-3xl border-2 border-white/40 bg-black px-6 py-8 text-center shadow-2xl sm:px-12 sm:py-12">
             {/* Glossy shine effect */}
@@ -77,7 +77,7 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
             </h2>
 
             {/* Subtext with time */}
-            <p className="mb-6 text-xs text-white/70 sm:whitespace-nowrap sm:text-base">
+            <p className="mb-6 text-sm text-white/70 sm:whitespace-nowrap sm:text-base">
               Buy a ticket <span className="font-mono font-semibold text-white">in the next {countdownText}</span> and use the code at checkout:
             </p>
 

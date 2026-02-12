@@ -168,7 +168,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
 
       dispatch({
         type: 'APPLY_VOUCHER',
-        code: code.trim(),
+        code: result.couponId!,
         discountType,
         discountValue,
         applicablePriceIds: result.applicablePriceIds,
