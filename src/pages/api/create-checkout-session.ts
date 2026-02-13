@@ -9,6 +9,7 @@ import type { Cart, CheckoutFormData } from '@/types/cart';
 import { getStripeRedirectUrls } from '@/lib/url';
 import { encodeCartState } from '@/lib/cart-url-state';
 import { logger } from '@/lib/logger';
+import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
 
 const log = logger.scope('Create Checkout Session');
 
@@ -119,6 +120,15 @@ export default async function handler(
     }
 
     const stripe = getStripeClient();
+
+    // Validate all prices correspond to the current pricing stage
+    const priceIds = cart.items.map((item) => item.priceId);
+    const validation = await validateCheckoutPrices(stripe, priceIds);
+    if (!validation.valid) {
+      log.warn('Checkout blocked: price stage mismatch', { priceIds, currentStage: validation.currentStage });
+      res.status(400).json({ error: validation.error });
+      return;
+    }
 
     // Convert cart items to Stripe line items
     // Note: Prices in cart are in base currency units (e.g., CHF)

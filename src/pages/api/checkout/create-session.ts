@@ -7,6 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { getStripeRedirectUrls } from '@/lib/url';
 import { logger } from '@/lib/logger';
+import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
 
 const log = logger.scope('Checkout Create Session');
 
@@ -60,6 +61,14 @@ export default async function handler(
     }
 
     const stripe = getStripeClient();
+
+    // Validate price corresponds to the current pricing stage
+    const validation = await validateCheckoutPrices(stripe, [priceId]);
+    if (!validation.valid) {
+      log.warn('Checkout blocked: price stage mismatch', { priceId, currentStage: validation.currentStage });
+      res.status(400).json({ error: validation.error });
+      return;
+    }
 
     // Get Stripe redirect URLs using centralized utility
     const { successUrl, cancelUrl } = getStripeRedirectUrls(req);
