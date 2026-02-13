@@ -1,8 +1,9 @@
 /**
  * Discount Modal
  *
- * Full-screen dark modal showing the discount code, countdown timer,
- * and copy-to-clipboard functionality. Uses HeadlessUI Dialog.
+ * Slide-in modal showing the discount code, countdown timer,
+ * and copy-to-clipboard functionality. Slides in from the right
+ * and positions at bottom-1/3 of the screen. Uses HeadlessUI Dialog.
  */
 
 import { useState, useCallback } from 'react';
@@ -45,13 +46,13 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
         <DialogBackdrop className="fixed inset-0 bg-black/50" />
       </motion.div>
 
-      <div className="fixed inset-0 flex items-center justify-center overflow-y-auto p-4">
+      <div className="fixed inset-0 overflow-y-auto p-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="mx-auto w-full max-w-2xl"
+          initial={{ opacity: 0, x: '100%' }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: '100%' }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          className="absolute bottom-1/3 right-4 w-full max-w-md sm:max-w-lg"
         >
           <DialogPanel className="relative overflow-hidden rounded-3xl border-2 border-white/40 bg-black px-6 py-8 text-center shadow-2xl sm:px-12 sm:py-12">
             {/* Glossy shine effect */}
