@@ -1,9 +1,11 @@
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { LinkGroup, NavLink } from '@/components/molecules/LinkGroup';
 import { NewsletterForm } from '@/components/molecules/NewsletterForm';
 import { SocialIcon, SocialIconType } from '@/components/atoms/SocialIcon';
-import {SectionSplitView} from "@/components/organisms/SectionSplitView";
+import { SectionSplitView } from "@/components/organisms/SectionSplitView";
+import { Bug } from 'lucide-react';
 
 export interface SiteFooterProps {
   about: {
@@ -113,6 +115,15 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                 onSubscribe={newsletter.onSubscribe}
                 privacyHref={newsletter.privacyHref}
               />
+
+              {/* Report an Issue Button */}
+              <Link
+                href="/report-issue"
+                className="inline-flex self-start items-center gap-1.5 px-3 py-1.5 bg-brand-orange text-text-primary text-xs font-semibold rounded-full hover:bg-brand-orange-dark transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-brand-blue mt-3"
+              >
+                <Bug className="w-3 h-3" />
+                Report an Issue
+              </Link>
 
               {socials.length > 0 && (
                 <div className="mt-auto flex gap-2 pt-4 lg:pt-0 lg:self-end">

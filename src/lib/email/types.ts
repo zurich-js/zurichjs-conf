@@ -76,6 +76,35 @@ export interface SponsorshipInquiryData {
 }
 
 /**
+ * Data structure for issue report email
+ */
+export interface IssueReportData {
+  reportId: string;
+  name: string;
+  email: string;
+  issueType:
+    | 'typo'
+    | 'broken_link'
+    | 'incorrect_info'
+    | 'ui_bug'
+    | 'mobile_issue'
+    | 'accessibility'
+    | 'missing_content'
+    | 'confusing_ux'
+    | 'performance'
+    | 'other';
+  pageUrl?: string;
+  description: string;
+  suggestedFix?: string;
+  screenshotUrl?: string;
+  rewardPreference: 'ticket_discount' | 'workshop_voucher' | 'no_reward';
+  userAgent?: string;
+  submittedAt: string;
+  posthogSessionId?: string;
+  posthogDistinctId?: string;
+}
+
+/**
  * Data structure for VIP upgrade email
  */
 export interface VipUpgradeEmailData {
