@@ -72,7 +72,7 @@ export const AddToCalendar: React.FC<AddToCalendarProps> = ({
         trigger="click"
         listStyle="modal"
         styleLight="--btn-background: transparent; --btn-text: #F1E271; --btn-text-hover: #F1E271; --list-background: #242528; --list-text: #ffffff; --list-text-hover: #F1E271; --font: inherit; text-decoration: none; --btn-padding-x: 0; --btn-padding-y: 0; --btn-underline: transparent; --modal-background: #242528; --modal-text: #ffffff;"
-        styleDark="--btn-background: transparent; --btn-text: #F1E271; --btn-text-hover: #F1E271; --list-background: #242528; --list-text: #ffffff; --list-text-hover: #F1E271; --font: inherit; text-decoration: none; --btn-padding-x: 0; --btn-padding-y: 0; --btn-underline: transparent; --modal-background: #242528; --modal-text: #ffffff;"
+        styleDark="--btn-background: transparent; --btn-text: #FFFF; --btn-text-hover: #F1E271; --list-background: #242528; --list-text: #ffffff; --list-text-hover: #F1E271; --font: inherit; text-decoration: none; --btn-padding-x: 0; --btn-padding-y: 0; --btn-underline: transparent; --modal-background: #242528; --modal-text: #ffffff;"
       />
       <style jsx global>{`
         .atcb-button {
