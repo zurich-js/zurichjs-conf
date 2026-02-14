@@ -119,6 +119,15 @@ export type {
   DiscountEligibilityCheckedEvent,
 } from './discount-events';
 
+// Easter egg events
+export type {
+  EasterEggShownEvent,
+  EasterEggRewardCalledEvent,
+  EasterEggAlreadyClaimedEvent,
+  EasterEggClaimedEvent,
+  EasterEggClaimFailedEvent,
+} from './easter-egg-events';
+
 // Import all event types for the union
 import type { PageViewedEvent, UserIdentifiedEvent } from './base';
 import type {
@@ -196,6 +205,13 @@ import type {
   DiscountExpiredEvent,
   DiscountEligibilityCheckedEvent,
 } from './discount-events';
+import type {
+  EasterEggShownEvent,
+  EasterEggRewardCalledEvent,
+  EasterEggAlreadyClaimedEvent,
+  EasterEggClaimedEvent,
+  EasterEggClaimFailedEvent,
+} from './easter-egg-events';
 
 /**
  * Union of all possible analytics events.
@@ -265,7 +281,12 @@ export type AnalyticsEvent =
   | DiscountCodeCopiedEvent
   | DiscountWidgetClickedEvent
   | DiscountExpiredEvent
-  | DiscountEligibilityCheckedEvent;
+  | DiscountEligibilityCheckedEvent
+  | EasterEggShownEvent
+  | EasterEggRewardCalledEvent
+  | EasterEggAlreadyClaimedEvent
+  | EasterEggClaimedEvent
+  | EasterEggClaimFailedEvent;
 
 /**
  * Extract event name from AnalyticsEvent

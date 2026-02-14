@@ -5,6 +5,7 @@
  * Only runs in the browser, never on the server.
  */
 
+import { analytics } from '@/lib/analytics/client';
 import type { ClaimResponse, ErrorResponse } from './types';
 
 // Session storage key to track if already claimed
@@ -88,8 +89,12 @@ async function claimReward(): Promise<ClaimResponse> {
  * The main reward function - simple single call
  */
 async function reward(): Promise<string> {
+  // Track that reward was called
+  analytics.track('easter_egg_reward_called', {});
+
   // Check if already claimed
   if (hasClaimedInSession()) {
+    analytics.track('easter_egg_already_claimed', {});
     console.log(
       '%cEasy there, hacker! %cYou already grabbed your reward this session.\n' +
       'Check your promo code at checkout.',
@@ -105,6 +110,13 @@ async function reward(): Promise<string> {
 
     // Mark as claimed
     markClaimedInSession();
+
+    // Track success
+    analytics.track('easter_egg_claimed', {
+      discount_code: result.code,
+      percent_off: result.percentOff,
+      expires_at: result.expiresAt,
+    });
 
     // Show success message
     const minutes = Math.round((new Date(result.expiresAt).getTime() - Date.now()) / 60000);
@@ -128,6 +140,7 @@ async function reward(): Promise<string> {
     return `Your discount code is: ${result.code}`;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Something went wrong';
+    analytics.track('easter_egg_claim_failed', { error: message });
     console.log('%cOops! ' + message, 'color: #ef4444;');
     return `Error: ${message}`;
   }
@@ -155,6 +168,9 @@ export function initEasterEgg(): void {
 
   // Print the greeting
   console.log(GREETING_MESSAGE, ...GREETING_STYLES);
+
+  // Track that easter egg was shown
+  analytics.track('easter_egg_shown', {});
 
   // Register the global
   window.conf = {
