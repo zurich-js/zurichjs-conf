@@ -8,7 +8,10 @@ import type {
   CfpAdminSubmission,
   CfpAdminSpeaker,
   CfpAdminReviewer,
+  CfpAdminReviewerWithActivity,
+  CfpReviewerActivity,
   CfpAdminTag,
+  CfpInsights,
 } from '@/lib/types/cfp-admin';
 
 export async function fetchStats(): Promise<CfpStats> {
@@ -62,4 +65,27 @@ export async function deleteTag(id: string): Promise<void> {
     const data = await res.json();
     throw new Error(data.error || 'Failed to delete tag');
   }
+}
+
+export async function fetchReviewersWithActivity(): Promise<{ reviewers: CfpAdminReviewerWithActivity[] }> {
+  const res = await fetch('/api/admin/cfp/reviewers?withActivity=true');
+  if (!res.ok) throw new Error('Failed to fetch reviewers with activity');
+  return res.json();
+}
+
+export async function fetchReviewerActivity(
+  reviewerId: string,
+  dateRange?: '7d' | '30d' | 'all'
+): Promise<{ activities: CfpReviewerActivity[]; total: number }> {
+  const params = new URLSearchParams();
+  if (dateRange) params.set('dateRange', dateRange);
+  const res = await fetch(`/api/admin/cfp/reviewers/${reviewerId}/activity?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch reviewer activity');
+  return res.json();
+}
+
+export async function fetchInsights(): Promise<{ insights: CfpInsights }> {
+  const res = await fetch('/api/admin/cfp/insights');
+  if (!res.ok) throw new Error('Failed to fetch insights');
+  return res.json();
 }

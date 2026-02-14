@@ -65,6 +65,8 @@ export interface CfpStats {
   submissions_by_level: Record<CfpTalkLevel, number>;
   total_speakers: number;
   total_reviews: number;
+  total_reviewers: number;
+  active_reviewers_7d: number;
   avg_reviews_per_submission: number;
   travel_assistance_requested: number;
   accepted_speakers_count: number;

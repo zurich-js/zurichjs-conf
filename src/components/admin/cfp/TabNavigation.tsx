@@ -10,7 +10,7 @@ interface TabNavigationProps {
   setActiveTab: (tab: CfpTab) => void;
 }
 
-const TABS: CfpTab[] = ['submissions', 'speakers', 'reviewers', 'tags'];
+const TABS: CfpTab[] = ['submissions', 'speakers', 'reviewers', 'tags', 'insights'];
 
 export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
   return (
@@ -26,6 +26,7 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
           <option value="speakers">Speakers</option>
           <option value="reviewers">Reviewers</option>
           <option value="tags">Tags</option>
+          <option value="insights">Insights</option>
         </select>
       </div>
 

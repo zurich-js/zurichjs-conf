@@ -17,6 +17,19 @@ import type {
   CfpStats,
   CfpSubmissionStats,
 } from '../types/cfp';
+import type {
+  CfpAdminReviewerWithActivity,
+  CfpReviewerActivity,
+  CfpInsights,
+  CfpAdminSubmissionStats,
+} from '../types/cfp-admin';
+import {
+  computeSubmissionScoring,
+  getScoreBucket,
+  getCoverageBucket,
+  type ShortlistStatus,
+  type ReviewInput,
+} from './scoring';
 
 /**
  * Create untyped Supabase client for CFP tables
@@ -133,24 +146,52 @@ export async function getAdminSubmissions(
     tagMap = Object.fromEntries((tags || []).map((t: CfpTag) => [t.id, t]));
   }
 
-  // Get review stats for all submissions
+  // Get review stats for all submissions (include created_at for last_reviewed_at)
   const { data: reviews } = await supabase
     .from('cfp_reviews')
-    .select('submission_id, score_overall')
+    .select('submission_id, score_overall, created_at')
     .in('submission_id', submissionIds);
 
-  const statsMap: Record<string, CfpSubmissionStats> = {};
+  // Get total active reviewers for coverage calculation
+  const { count: totalReviewers } = await supabase
+    .from('cfp_reviewers')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+
+  const totalReviewerCount = totalReviewers || 0;
+
+  // Group reviews by submission for efficient processing
+  const reviewsBySubmission = new Map<string, ReviewInput[]>();
+  for (const review of reviews || []) {
+    const submissionId = review.submission_id as string;
+    if (!reviewsBySubmission.has(submissionId)) {
+      reviewsBySubmission.set(submissionId, []);
+    }
+    reviewsBySubmission.get(submissionId)!.push({
+      score_overall: review.score_overall as number | null,
+      created_at: review.created_at as string,
+    });
+  }
+
+  // Build stats using the scoring utility
+  const statsMap: Record<string, CfpSubmissionStats & CfpAdminSubmissionStats> = {};
   for (const id of submissionIds) {
-    const submissionReviews = (reviews || []).filter((r: { submission_id: string }) => r.submission_id === id);
-    const scores = submissionReviews.map((r: { score_overall: number }) => r.score_overall).filter(Boolean);
+    const submissionReviews = reviewsBySubmission.get(id) || [];
+    const scoring = computeSubmissionScoring(submissionReviews, totalReviewerCount);
+
     statsMap[id] = {
       submission_id: id,
-      review_count: submissionReviews.length,
-      avg_overall: scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : null,
+      review_count: scoring.reviewCount,
+      avg_overall: scoring.avgScore,
       avg_relevance: null,
       avg_technical_depth: null,
       avg_clarity: null,
       avg_diversity: null,
+      total_reviewers: totalReviewerCount,
+      coverage_ratio: scoring.coverageRatio,
+      coverage_percent: scoring.coveragePercent,
+      last_reviewed_at: scoring.lastReviewedAt,
+      shortlist_status: scoring.status,
     };
   }
 
@@ -287,10 +328,28 @@ export async function getCfpStats(): Promise<CfpStats> {
     .from('cfp_speakers')
     .select('id');
 
-  // Get all reviews
+  // Get all reviews with timestamps for activity tracking
   const { data: reviews } = await supabase
     .from('cfp_reviews')
-    .select('id, submission_id');
+    .select('id, submission_id, reviewer_id, created_at');
+
+  // Get count of active reviewers
+  const { count: totalReviewers } = await supabase
+    .from('cfp_reviewers')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_active', true);
+
+  // Calculate active reviewers in last 7 days
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+  const recentReviewerIds = new Set(
+    (reviews || [])
+      .filter((r: { created_at: string }) => r.created_at >= sevenDaysAgoISO)
+      .map((r: { reviewer_id: string }) => r.reviewer_id)
+  );
+  const activeReviewers7d = recentReviewerIds.size;
 
   const submissionList = (submissions || []) as Array<{
     id: string;
@@ -323,6 +382,8 @@ export async function getCfpStats(): Promise<CfpStats> {
     submissions_by_level: byLevel as Record<string, number>,
     total_speakers: (speakers || []).length,
     total_reviews: (reviews || []).length,
+    total_reviewers: totalReviewers || 0,
+    active_reviewers_7d: activeReviewers7d,
     avg_reviews_per_submission: submissionList.length > 0
       ? (reviews || []).length / submissionList.length
       : 0,
@@ -436,4 +497,237 @@ export async function getAdminTags(): Promise<CfpTag[]> {
   }
 
   return (data || []) as CfpTag[];
+}
+
+/**
+ * Get all reviewers with activity metrics
+ * Single efficient query with aggregations
+ */
+export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerWithActivity[]> {
+  const supabase = createCfpServiceClient();
+
+  // Get reviewers and reviews in parallel
+  const [reviewersResult, reviewsResult] = await Promise.all([
+    supabase
+      .from('cfp_reviewers')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('cfp_reviews')
+      .select('reviewer_id, score_overall, created_at'),
+  ]);
+
+  if (reviewersResult.error) {
+    console.error('[CFP Admin] Error fetching reviewers:', reviewersResult.error);
+    return [];
+  }
+
+  const reviewers = reviewersResult.data || [];
+  const reviews = reviewsResult.data || [];
+
+  // Calculate 7 days ago threshold
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+  // Group reviews by reviewer_id for efficient aggregation
+  const reviewsByReviewer = new Map<string, typeof reviews>();
+  for (const review of reviews) {
+    const reviewerId = review.reviewer_id;
+    if (!reviewsByReviewer.has(reviewerId)) {
+      reviewsByReviewer.set(reviewerId, []);
+    }
+    reviewsByReviewer.get(reviewerId)!.push(review);
+  }
+
+  // Build enhanced reviewer data
+  const result: CfpAdminReviewerWithActivity[] = reviewers.map((reviewer) => {
+    const reviewerReviews = reviewsByReviewer.get(reviewer.id as string) || [];
+    const totalReviews = reviewerReviews.length;
+    const reviewsLast7Days = reviewerReviews.filter(
+      (r) => r.created_at >= sevenDaysAgoISO
+    ).length;
+
+    // Find last activity (most recent review)
+    let lastActivityAt: string | null = null;
+    for (const r of reviewerReviews) {
+      if (!lastActivityAt || r.created_at > lastActivityAt) {
+        lastActivityAt = r.created_at as string;
+      }
+    }
+
+    // Calculate average score given
+    const scores = reviewerReviews
+      .map((r) => r.score_overall)
+      .filter((s): s is number => s !== null);
+    const avgScoreGiven = scores.length > 0
+      ? scores.reduce((a, b) => a + b, 0) / scores.length
+      : null;
+
+    return {
+      id: reviewer.id as string,
+      email: reviewer.email as string,
+      name: reviewer.name as string | null,
+      role: reviewer.role as string,
+      is_active: reviewer.is_active as boolean,
+      can_see_speaker_identity: reviewer.can_see_speaker_identity as boolean,
+      accepted_at: reviewer.accepted_at as string | null,
+      created_at: reviewer.created_at as string,
+      total_reviews: totalReviews,
+      reviews_last_7_days: reviewsLast7Days,
+      last_activity_at: lastActivityAt,
+      avg_score_given: avgScoreGiven,
+    };
+  });
+
+  return result;
+}
+
+/**
+ * Get reviewer activity (reviews with submission titles)
+ */
+export async function getReviewerActivity(
+  reviewerId: string,
+  dateRange?: '7d' | '30d' | 'all'
+): Promise<{ activities: CfpReviewerActivity[]; total: number }> {
+  const supabase = createCfpServiceClient();
+
+  // Build date filter
+  let dateFilter: string | null = null;
+  if (dateRange === '7d') {
+    const date = new Date();
+    date.setDate(date.getDate() - 7);
+    dateFilter = date.toISOString();
+  } else if (dateRange === '30d') {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    dateFilter = date.toISOString();
+  }
+
+  // Get reviews for this reviewer
+  let reviewsQuery = supabase
+    .from('cfp_reviews')
+    .select('id, submission_id, score_overall, private_notes, created_at', { count: 'exact' })
+    .eq('reviewer_id', reviewerId)
+    .order('created_at', { ascending: false });
+
+  if (dateFilter) {
+    reviewsQuery = reviewsQuery.gte('created_at', dateFilter);
+  }
+
+  const { data: reviews, count, error } = await reviewsQuery;
+
+  if (error || !reviews) {
+    console.error('[CFP Admin] Error fetching reviewer activity:', error);
+    return { activities: [], total: 0 };
+  }
+
+  // Batch fetch submission titles
+  const submissionIds = [...new Set(reviews.map((r) => r.submission_id))];
+  const { data: submissions } = await supabase
+    .from('cfp_submissions')
+    .select('id, title')
+    .in('id', submissionIds);
+
+  const submissionMap = new Map(
+    (submissions || []).map((s) => [s.id, s.title])
+  );
+
+  // Build activity list
+  const activities: CfpReviewerActivity[] = reviews.map((review) => ({
+    id: review.id,
+    submission_id: review.submission_id,
+    submission_title: submissionMap.get(review.submission_id) || 'Unknown',
+    score_overall: review.score_overall,
+    private_notes: review.private_notes,
+    created_at: review.created_at,
+  }));
+
+  return { activities, total: count || 0 };
+}
+
+/**
+ * Get CFP insights (aggregated statistics)
+ */
+export async function getCfpInsights(): Promise<CfpInsights> {
+  const supabase = createCfpServiceClient();
+
+  // Get all submissions with their reviews in parallel
+  const [submissionsResult, reviewsResult, reviewersCountResult] = await Promise.all([
+    supabase
+      .from('cfp_submissions')
+      .select('id'),
+    supabase
+      .from('cfp_reviews')
+      .select('submission_id, score_overall, created_at'),
+    supabase
+      .from('cfp_reviewers')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true),
+  ]);
+
+  const submissions = submissionsResult.data || [];
+  const reviews = reviewsResult.data || [];
+  const totalReviewers = reviewersCountResult.count || 0;
+
+  // Group reviews by submission
+  const reviewsBySubmission = new Map<string, ReviewInput[]>();
+  for (const review of reviews) {
+    const submissionId = review.submission_id as string;
+    if (!reviewsBySubmission.has(submissionId)) {
+      reviewsBySubmission.set(submissionId, []);
+    }
+    reviewsBySubmission.get(submissionId)!.push({
+      score_overall: review.score_overall as number | null,
+      created_at: review.created_at as string,
+    });
+  }
+
+  // Initialize counters
+  const byStatus: Record<ShortlistStatus, number> = {
+    likely_shortlisted: 0,
+    needs_more_reviews: 0,
+    likely_reject: 0,
+    borderline: 0,
+  };
+
+  const byScoreBucket: Record<string, number> = {
+    '0-1.99': 0,
+    '2-2.99': 0,
+    '3-3.49': 0,
+    '3.5-4': 0,
+  };
+
+  const byCoverageBucket: Record<string, number> = {
+    '0-24': 0,
+    '25-49': 0,
+    '50-74': 0,
+    '75-100': 0,
+  };
+
+  // Process each submission using the scoring utility
+  for (const submission of submissions) {
+    const submissionReviews = reviewsBySubmission.get(submission.id as string) || [];
+    const scoring = computeSubmissionScoring(submissionReviews, totalReviewers);
+
+    // Count by status
+    byStatus[scoring.status]++;
+
+    // Count by score bucket (only if there's a score)
+    const scoreBucket = getScoreBucket(scoring.avgScore);
+    if (scoreBucket) {
+      byScoreBucket[scoreBucket]++;
+    }
+
+    // Count by coverage bucket
+    const coverageBucket = getCoverageBucket(scoring.coveragePercent);
+    byCoverageBucket[coverageBucket]++;
+  }
+
+  return {
+    byStatus,
+    byScoreBucket,
+    byCoverageBucket,
+  };
 }

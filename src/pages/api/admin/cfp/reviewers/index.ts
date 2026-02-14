@@ -1,10 +1,11 @@
 /**
  * CFP Admin Reviewers API
  * GET /api/admin/cfp/reviewers - List all reviewers
+ * GET /api/admin/cfp/reviewers?withActivity=true - List reviewers with activity metrics
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAdminReviewers } from '@/lib/cfp/admin';
+import { getAdminReviewers, getAdminReviewersWithActivity } from '@/lib/cfp/admin';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
@@ -15,13 +16,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify admin authentication (same as main admin)
   const token = req.cookies.admin_token;
   if (!verifyAdminToken(token)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
+    const withActivity = req.query.withActivity === 'true';
+
+    if (withActivity) {
+      const reviewers = await getAdminReviewersWithActivity();
+      return res.status(200).json({ reviewers });
+    }
+
     const reviewers = await getAdminReviewers();
     return res.status(200).json({ reviewers });
   } catch (error) {

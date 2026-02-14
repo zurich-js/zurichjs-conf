@@ -1,11 +1,13 @@
 /**
  * CFP Admin Reviewer API
+ * GET /api/admin/cfp/reviewers/[id] - Get reviewer with activity stats
  * PUT /api/admin/cfp/reviewers/[id] - Update reviewer (role, access level)
  * DELETE /api/admin/cfp/reviewers/[id] - Revoke reviewer access (deactivate)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateReviewer, deactivateReviewer } from '@/lib/cfp/reviewers';
+import { getAdminReviewersWithActivity } from '@/lib/cfp/admin';
 import { verifyAdminToken } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
@@ -22,6 +24,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!id || typeof id !== 'string') {
     return res.status(400).json({ error: 'Reviewer ID is required' });
+  }
+
+  // GET - Fetch single reviewer with activity data
+  if (req.method === 'GET') {
+    try {
+      const reviewers = await getAdminReviewersWithActivity();
+      const reviewer = reviewers.find(r => r.id === id);
+
+      if (!reviewer) {
+        return res.status(404).json({ error: 'Reviewer not found' });
+      }
+
+      return res.status(200).json({ reviewer });
+    } catch (error) {
+      log.error('Error fetching reviewer', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   }
 
   // PUT - Update reviewer

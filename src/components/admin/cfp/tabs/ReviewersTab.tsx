@@ -4,20 +4,28 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
-import { cfpQueryKeys, type CfpAdminReviewer } from '@/lib/types/cfp-admin';
+import { cfpQueryKeys, type CfpAdminReviewer, type CfpAdminReviewerWithActivity } from '@/lib/types/cfp-admin';
 import { Pagination } from '@/components/atoms';
 import { InviteReviewerForm } from '../InviteReviewerForm';
 import { ReviewerModal } from '../ReviewerModal';
+import { formatScore } from '@/lib/cfp/scoring';
+
+type ReviewerData = CfpAdminReviewer | CfpAdminReviewerWithActivity;
+
+function hasActivityData(r: ReviewerData): r is CfpAdminReviewerWithActivity {
+  return 'total_reviews' in r;
+}
 
 interface ReviewersTabProps {
-  reviewers: CfpAdminReviewer[];
+  reviewers: ReviewerData[];
   isLoading: boolean;
 }
 
 export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
-  const [selectedReviewer, setSelectedReviewer] = useState<CfpAdminReviewer | null>(null);
+  const [selectedReviewer, setSelectedReviewer] = useState<ReviewerData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -25,6 +33,10 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const ITEMS_PER_PAGE = 10;
   const queryClient = useQueryClient();
   const toast = useToast();
+  const router = useRouter();
+
+  // Check if we have activity data
+  const showActivityColumns = reviewers.length > 0 && hasActivityData(reviewers[0]);
 
   // Resend invitation mutation
   const resendMutation = useMutation({
@@ -207,7 +219,37 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                     Invited {new Date(r.created_at).toLocaleDateString()}
                   </span>
                 </div>
+                {showActivityColumns && hasActivityData(r) && (
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+                    <div className="bg-white rounded px-2 py-1">
+                      <span className="text-gray-500">Reviews:</span>{' '}
+                      <span className="font-medium text-black">{r.total_reviews}</span>
+                    </div>
+                    <div className="bg-white rounded px-2 py-1">
+                      <span className="text-gray-500">Last 7d:</span>{' '}
+                      <span className="font-medium text-black">{r.reviews_last_7_days}</span>
+                    </div>
+                    <div className="bg-white rounded px-2 py-1">
+                      <span className="text-gray-500">Last Active:</span>{' '}
+                      <span className="font-medium text-black">
+                        {r.last_activity_at ? new Date(r.last_activity_at).toLocaleDateString() : '-'}
+                      </span>
+                    </div>
+                    <div className="bg-white rounded px-2 py-1">
+                      <span className="text-gray-500">Avg Score:</span>{' '}
+                      <span className="font-medium text-black">{formatScore(r.avg_score_given)}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
+                  {showActivityColumns && (
+                    <button
+                      onClick={() => router.push(`/admin/cfp/reviewers/${r.id}`)}
+                      className="px-3 py-1.5 text-xs font-medium text-[#F1E271] bg-black hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Activity
+                    </button>
+                  )}
                   {!r.accepted_at && (
                     <button
                       onClick={() => resendMutation.mutate(r.id)}
@@ -238,36 +280,61 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             <table className="w-full">
               <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
                 <tr>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Access Level</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Invited</th>
-                  <th className="px-4 py-3">Actions</th>
+                  <th className="px-3 py-3">Name</th>
+                  <th className="px-3 py-3">Email</th>
+                  <th className="px-3 py-3">Access Level</th>
+                  <th className="px-3 py-3">Status</th>
+                  {showActivityColumns && (
+                    <>
+                      <th className="px-3 py-3 text-center">Reviews</th>
+                      <th className="px-3 py-3 text-center">7 Days</th>
+                      <th className="px-3 py-3">Last Active</th>
+                      <th className="px-3 py-3 text-center">Avg Score</th>
+                    </>
+                  )}
+                  <th className="px-3 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedReviewers.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 font-medium text-black">{r.name || '-'}</td>
-                    <td className="px-4 py-4 text-sm text-black">{r.email}</td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3 font-medium text-black">{r.name || '-'}</td>
+                    <td className="px-3 py-3 text-sm text-black">{r.email}</td>
+                    <td className="px-3 py-3">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeStyle(r.role)}`}>
                         {r.role === 'super_admin' ? 'Super Admin' : r.role === 'reviewer' ? 'Reviewer' : 'Read Only'}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       {r.accepted_at ? (
                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Active</span>
                       ) : (
                         <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Pending</span>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-sm text-black">
-                      {new Date(r.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-4">
+                    {showActivityColumns && hasActivityData(r) && (
+                      <>
+                        <td className="px-3 py-3 text-sm text-black text-center font-medium">{r.total_reviews}</td>
+                        <td className="px-3 py-3 text-sm text-black text-center">{r.reviews_last_7_days}</td>
+                        <td className="px-3 py-3 text-sm text-black">
+                          {r.last_activity_at ? new Date(r.last_activity_at).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-black text-center">
+                          {formatScore(r.avg_score_given)}
+                        </td>
+                      </>
+                    )}
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
+                        {showActivityColumns && (
+                          <button
+                            onClick={() => router.push(`/admin/cfp/reviewers/${r.id}`)}
+                            className="px-2 py-1 text-xs font-medium text-[#F1E271] bg-black hover:bg-gray-800 rounded transition-colors cursor-pointer"
+                            title="View Activity"
+                          >
+                            Activity
+                          </button>
+                        )}
                         {!r.accepted_at && (
                           <button
                             onClick={() => resendMutation.mutate(r.id)}
@@ -291,7 +358,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 ))}
                 {paginatedReviewers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-black">
+                    <td colSpan={showActivityColumns ? 10 : 6} className="px-4 py-8 text-center text-black">
                       {searchQuery || roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
                     </td>
                   </tr>

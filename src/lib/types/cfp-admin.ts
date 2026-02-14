@@ -3,14 +3,12 @@
  * Shared types for CFP admin dashboard components
  */
 
-export type CfpTab = 'submissions' | 'speakers' | 'reviewers' | 'tags';
+import type { ShortlistStatus } from '@/lib/cfp/scoring';
 
-export interface CfpStats {
-  total_submissions: number;
-  submissions_by_status: Record<string, number>;
-  total_speakers: number;
-  total_reviews: number;
-}
+// Re-export CfpStats from the canonical location
+export type { CfpStats } from './cfp/admin';
+
+export type CfpTab = 'submissions' | 'speakers' | 'reviewers' | 'tags' | 'insights';
 
 export interface CfpAdminSpeaker {
   id: string;
@@ -78,10 +76,17 @@ export interface CfpAdminSubmission {
     special_requirements?: string | null;
   };
   tags: Array<{ id: string; name: string }>;
-  stats: {
-    review_count: number;
-    avg_overall: number | null;
-  };
+  stats: CfpAdminSubmissionStats;
+}
+
+export interface CfpAdminSubmissionStats {
+  review_count: number;
+  avg_overall: number | null;
+  total_reviewers: number;
+  coverage_ratio: number;
+  coverage_percent: number;
+  last_reviewed_at: string | null;
+  shortlist_status: ShortlistStatus;
 }
 
 export interface CfpSpeakerSubmission {
@@ -99,6 +104,22 @@ export interface CfpAdminReviewer {
   is_active: boolean;
   can_see_speaker_identity: boolean;
   accepted_at: string | null;
+  created_at: string;
+}
+
+export interface CfpAdminReviewerWithActivity extends CfpAdminReviewer {
+  total_reviews: number;
+  reviews_last_7_days: number;
+  last_activity_at: string | null;
+  avg_score_given: number | null;
+}
+
+export interface CfpReviewerActivity {
+  id: string;
+  submission_id: string;
+  submission_title: string;
+  score_overall: number | null;
+  private_notes: string | null;
   created_at: string;
 }
 
@@ -131,6 +152,12 @@ export interface CfpReviewWithReviewer {
 
 export type ReviewerRole = 'super_admin' | 'anonymous' | 'readonly';
 
+export interface CfpInsights {
+  byStatus: Record<ShortlistStatus, number>;
+  byScoreBucket: Record<string, number>;
+  byCoverageBucket: Record<string, number>;
+}
+
 // Query keys for React Query
 export const cfpQueryKeys = {
   stats: ['cfp', 'stats'] as const,
@@ -138,7 +165,9 @@ export const cfpQueryKeys = {
   submissionDetail: (id: string) => ['cfp', 'submission', id] as const,
   speakers: ['cfp', 'speakers'] as const,
   reviewers: ['cfp', 'reviewers'] as const,
+  reviewerActivity: (id: string, dateRange?: string) => ['cfp', 'reviewer', id, 'activity', dateRange] as const,
   tags: ['cfp', 'tags'] as const,
+  insights: ['cfp', 'insights'] as const,
 };
 
 // Status action descriptions for admin actions

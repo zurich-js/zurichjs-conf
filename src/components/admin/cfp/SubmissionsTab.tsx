@@ -7,8 +7,16 @@ import { useState, useMemo, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Pagination } from '@/components/atoms';
 import { StatusBadge } from './StatusBadge';
+import { ShortlistBadge } from './ShortlistBadge';
 import { SpeakerAvatar } from './SpeakerAvatar';
+import {
+  getScoreColor,
+  getScoreBgColor,
+  CoverageBar,
+  ActiveFiltersBar,
+} from './SubmissionsTabHelpers';
 import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
+import { formatScore } from '@/lib/cfp/scoring';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -41,6 +49,8 @@ export function SubmissionsTab({
 }: SubmissionsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [minReviews, setMinReviews] = useState<string>('0');
+  const [shortlistOnly, setShortlistOnly] = useState(false);
   const [sortBy, setSortBy] = useState<string>('newest');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -64,6 +74,17 @@ export function SubmissionsTab({
       result = result.filter((s) => s.submission_type === typeFilter);
     }
 
+    // Min reviews filter
+    const minReviewCount = minReviews === '5+' ? 5 : parseInt(minReviews, 10);
+    if (minReviewCount > 0) {
+      result = result.filter((s) => (s.stats?.review_count || 0) >= minReviewCount);
+    }
+
+    // Shortlist only filter
+    if (shortlistOnly) {
+      result = result.filter((s) => s.stats?.shortlist_status === 'likely_shortlisted');
+    }
+
     // Sort
     result.sort((a, b) => {
       switch (sortBy) {
@@ -79,6 +100,14 @@ export function SubmissionsTab({
           return (b.stats?.avg_overall || 0) - (a.stats?.avg_overall || 0);
         case 'lowest_score':
           return (a.stats?.avg_overall || 0) - (b.stats?.avg_overall || 0);
+        case 'highest_coverage':
+          return (b.stats?.coverage_percent || 0) - (a.stats?.coverage_percent || 0);
+        case 'lowest_coverage':
+          return (a.stats?.coverage_percent || 0) - (b.stats?.coverage_percent || 0);
+        case 'last_reviewed':
+          const aTime = a.stats?.last_reviewed_at ? new Date(a.stats.last_reviewed_at).getTime() : 0;
+          const bTime = b.stats?.last_reviewed_at ? new Date(b.stats.last_reviewed_at).getTime() : 0;
+          return bTime - aTime;
         case 'title':
           return a.title.localeCompare(b.title);
         default:
@@ -87,7 +116,7 @@ export function SubmissionsTab({
     });
 
     return result;
-  }, [submissions, searchQuery, typeFilter, sortBy]);
+  }, [submissions, searchQuery, typeFilter, minReviews, shortlistOnly, sortBy]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE);
@@ -99,7 +128,7 @@ export function SubmissionsTab({
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, typeFilter, statusFilter, sortBy]);
+  }, [searchQuery, typeFilter, minReviews, shortlistOnly, statusFilter, sortBy]);
 
   return (
     <div>
@@ -153,8 +182,37 @@ export function SubmissionsTab({
             <option value="least_reviews">Least Reviews</option>
             <option value="highest_score">Highest Score</option>
             <option value="lowest_score">Lowest Score</option>
+            <option value="highest_coverage">Highest Coverage</option>
+            <option value="lowest_coverage">Lowest Coverage</option>
+            <option value="last_reviewed">Last Reviewed</option>
             <option value="title">Title A-Z</option>
           </select>
+        </div>
+
+        {/* Additional Filters Row */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <select
+            value={minReviews}
+            onChange={(e) => setMinReviews(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          >
+            <option value="0">Min Reviews: Any</option>
+            <option value="1">Min 1 Review</option>
+            <option value="2">Min 2 Reviews</option>
+            <option value="3">Min 3 Reviews</option>
+            <option value="4">Min 4 Reviews</option>
+            <option value="5+">Min 5+ Reviews</option>
+          </select>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={shortlistOnly}
+              onChange={(e) => setShortlistOnly(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-[#F1E271] focus:ring-[#F1E271]"
+            />
+            <span className="text-sm font-medium text-black">Likely Shortlisted Only</span>
+          </label>
         </div>
 
         {/* Bulk Actions */}
@@ -188,6 +246,29 @@ export function SubmissionsTab({
             </button>
           </div>
         )}
+
+        {/* Active Filters and Summary Bar */}
+        <ActiveFiltersBar
+          submissions={submissions}
+          filteredSubmissions={filteredSubmissions}
+          searchQuery={searchQuery}
+          statusFilter={statusFilter}
+          typeFilter={typeFilter}
+          minReviews={minReviews}
+          shortlistOnly={shortlistOnly}
+          onClearSearch={() => setSearchQuery('')}
+          onClearStatus={() => setStatusFilter('all')}
+          onClearType={() => setTypeFilter('all')}
+          onClearMinReviews={() => setMinReviews('0')}
+          onClearShortlist={() => setShortlistOnly(false)}
+          onClearAll={() => {
+            setSearchQuery('');
+            setStatusFilter('all');
+            setTypeFilter('all');
+            setMinReviews('0');
+            setShortlistOnly(false);
+          }}
+        />
       </div>
 
       {isLoading ? (
@@ -288,24 +369,37 @@ function MobileSubmissionsList({
 
           <p className="text-xs text-gray-500 line-clamp-2 mb-3 ml-7">{s.abstract}</p>
 
-          <div className="flex items-center justify-between ml-7 pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-xs text-gray-600 flex-wrap">
-              <span className="px-2 py-1 bg-gray-100 rounded-full capitalize font-medium">{s.submission_type}</span>
+          <div className="flex flex-col gap-3 ml-7 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-xs flex-wrap">
+              <span className="px-2 py-1 bg-gray-100 rounded-full capitalize font-medium text-black">{s.submission_type}</span>
               <span className="text-gray-400">•</span>
-              <span>{s.stats?.review_count || 0} reviews</span>
-              {s.stats?.avg_overall && (
-                <>
-                  <span className="text-gray-400">•</span>
-                  <span>Avg: {s.stats.avg_overall.toFixed(2)}</span>
-                </>
-              )}
+              <span className="text-gray-600">{s.stats?.review_count || 0} reviews</span>
+              <span className="text-gray-400">•</span>
+              <span className={`px-2 py-0.5 rounded ${getScoreBgColor(s.stats?.avg_overall ?? null)} ${getScoreColor(s.stats?.avg_overall ?? null)} font-semibold`}>
+                {formatScore(s.stats?.avg_overall ?? null)}
+              </span>
             </div>
-            <button
-              onClick={() => onSelectSubmission(s)}
-              className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg cursor-pointer transition-colors flex-shrink-0"
-            >
-              Manage
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Coverage:</span>
+              <div className="flex-1 max-w-[120px]">
+                <CoverageBar
+                  percent={s.stats?.coverage_percent || 0}
+                  reviewCount={s.stats?.review_count || 0}
+                  totalReviewers={s.stats?.total_reviewers || 0}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              {s.stats?.shortlist_status && (
+                <ShortlistBadge status={s.stats.shortlist_status} />
+              )}
+              <button
+                onClick={() => onSelectSubmission(s)}
+                className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg cursor-pointer transition-colors flex-shrink-0 ml-auto"
+              >
+                Manage
+              </button>
+            </div>
           </div>
         </div>
       ))}
@@ -332,10 +426,10 @@ function DesktopSubmissionsTable({
 }) {
   return (
     <div className="hidden lg:block overflow-x-auto">
-      <table className="w-full table-fixed">
+      <table className="w-full">
         <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
           <tr>
-            <th className="px-3 py-3 w-12">
+            <th className="px-2 py-3 w-10">
               <input
                 type="checkbox"
                 checked={selectedIds.size === submissions.length && submissions.length > 0}
@@ -343,19 +437,21 @@ function DesktopSubmissionsTable({
                 className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
               />
             </th>
-            <th className="px-3 py-3 w-[30%]">Title</th>
-            <th className="px-3 py-3 w-[22%]">Speaker</th>
-            <th className="px-3 py-3 w-[10%]">Type</th>
-            <th className="px-3 py-3 w-[12%]">Status</th>
-            <th className="px-3 py-3 w-[8%] text-center">Reviews</th>
-            <th className="px-3 py-3 w-[8%] text-center">Score</th>
-            <th className="px-3 py-3 w-[10%]">Actions</th>
+            <th className="px-2 py-3">Title</th>
+            <th className="px-2 py-3">Speaker</th>
+            <th className="px-2 py-3 w-20">Type</th>
+            <th className="px-2 py-3 w-24">Status</th>
+            <th className="px-2 py-3 w-20 text-center">Reviews</th>
+            <th className="px-2 py-3 w-16 text-center">Score</th>
+            <th className="px-2 py-3 w-20 text-center">Coverage</th>
+            <th className="px-2 py-3 w-32">Shortlist</th>
+            <th className="px-2 py-3 w-20">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {submissions.map((s) => (
             <tr key={s.id} className={`hover:bg-gray-50 ${selectedIds.has(s.id) ? 'bg-yellow-50' : ''}`}>
-              <td className="px-3 py-4">
+              <td className="px-2 py-3">
                 <input
                   type="checkbox"
                   checked={selectedIds.has(s.id)}
@@ -363,13 +459,13 @@ function DesktopSubmissionsTable({
                   className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
                 />
               </td>
-              <td className="px-3 py-4">
-                <div className="font-medium text-black truncate" title={s.title}>{s.title}</div>
-                <div className="text-sm text-gray-500 truncate" title={s.abstract}>{s.abstract}</div>
+              <td className="px-2 py-3">
+                <div className="font-medium text-black truncate max-w-xs" title={s.title}>{s.title}</div>
+                <div className="text-xs text-gray-500 truncate max-w-xs" title={s.abstract}>{s.abstract}</div>
               </td>
-              <td className="px-3 py-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <SpeakerAvatar speaker={s.speaker} />
+              <td className="px-2 py-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <SpeakerAvatar speaker={s.speaker} size="sm" />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-black truncate" title={`${s.speaker?.first_name || ''} ${s.speaker?.last_name || ''}`}>
                       {s.speaker?.first_name} {s.speaker?.last_name}
@@ -380,22 +476,38 @@ function DesktopSubmissionsTable({
                   </div>
                 </div>
               </td>
-              <td className="px-3 py-4">
-                <span className="inline-flex px-2.5 py-1 bg-gray-100 rounded-full text-xs text-black capitalize font-medium whitespace-nowrap">
+              <td className="px-2 py-3">
+                <span className="inline-flex px-2 py-0.5 bg-gray-100 rounded-full text-xs text-black capitalize font-medium whitespace-nowrap">
                   {s.submission_type}
                 </span>
               </td>
-              <td className="px-3 py-4">
+              <td className="px-2 py-3">
                 <StatusBadge status={s.status} />
               </td>
-              <td className="px-3 py-4 text-sm text-black font-medium text-center">{s.stats?.review_count || 0}</td>
-              <td className="px-3 py-4 text-sm text-black font-medium text-center">
-                {s.stats?.avg_overall ? s.stats.avg_overall.toFixed(2) : '-'}
+              <td className="px-2 py-3 text-sm text-black font-medium text-center">{s.stats?.review_count || 0}</td>
+              <td className="px-2 py-3">
+                <div className="flex justify-center">
+                  <span className={`inline-flex items-center justify-center w-10 h-7 rounded-md text-sm font-semibold ${getScoreBgColor(s.stats?.avg_overall ?? null)} ${getScoreColor(s.stats?.avg_overall ?? null)}`}>
+                    {formatScore(s.stats?.avg_overall ?? null)}
+                  </span>
+                </div>
               </td>
-              <td className="px-3 py-4">
+              <td className="px-2 py-3">
+                <CoverageBar
+                  percent={s.stats?.coverage_percent || 0}
+                  reviewCount={s.stats?.review_count || 0}
+                  totalReviewers={s.stats?.total_reviewers || 0}
+                />
+              </td>
+              <td className="px-2 py-3">
+                {s.stats?.shortlist_status && (
+                  <ShortlistBadge status={s.stats.shortlist_status} />
+                )}
+              </td>
+              <td className="px-2 py-3">
                 <button
                   onClick={() => onSelectSubmission(s)}
-                  className="inline-flex items-center justify-center px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-sm rounded-lg cursor-pointer transition-colors whitespace-nowrap"
+                  className="inline-flex items-center justify-center px-3 py-1.5 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg cursor-pointer transition-colors whitespace-nowrap"
                 >
                   Manage
                 </button>
@@ -404,7 +516,7 @@ function DesktopSubmissionsTable({
           ))}
           {submissions.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+              <td colSpan={10} className="px-4 py-12 text-center text-gray-500">
                 No submissions found
               </td>
             </tr>
