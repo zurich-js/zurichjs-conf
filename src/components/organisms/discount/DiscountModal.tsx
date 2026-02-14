@@ -52,11 +52,13 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: '100%' }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="absolute bottom-1/3 right-4 w-full max-w-md sm:max-w-lg"
+          className="absolute inset-x-4 top-1/2 -translate-y-1/2 w-auto max-w-md mx-auto sm:inset-x-auto sm:top-auto sm:bottom-1/3 sm:right-4 sm:translate-y-0 sm:mx-0 sm:max-w-lg"
         >
           <DialogPanel className="relative overflow-hidden rounded-3xl border-2 border-white/40 bg-black px-6 py-8 text-center shadow-2xl sm:px-12 sm:py-12">
             {/* Glossy shine effect */}
-            <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+              <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+            </div>
             {/* Close button */}
             <button
               onClick={onDismiss}
@@ -78,7 +80,7 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
             </h2>
 
             {/* Subtext with time */}
-            <p className="mb-6 text-sm text-white/70 sm:whitespace-nowrap sm:text-base">
+            <p className="mb-6 text-sm text-white/70 sm:text-base">
               Buy a ticket <span className="font-mono font-semibold text-white">in the next {countdownText}</span> and use the code at checkout:
             </p>
 
