@@ -53,6 +53,16 @@ export const footerData: SiteFooterProps = {
       label: 'Follow ZurichJS on LinkedIn',
     },
     {
+      kind: 'bluesky',
+      href: 'https://bsky.app/profile/zurichjs.bsky.social',
+      label: 'Follow ZurichJS on Bluesky',
+    },
+    {
+      kind: 'x',
+      href: 'https://www.x.com/zurichjs',
+      label: 'Follow ZurichJS on X',
+    },
+    {
       kind: 'instagram',
       href: 'https://www.instagram.com/zurich.js',
       label: 'Follow ZurichJS on Instagram',
