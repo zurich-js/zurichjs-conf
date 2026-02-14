@@ -12,26 +12,15 @@ import { SEO } from '@/components/SEO';
 import { ISSUE_TYPES, type IssueType } from '@/lib/validations/issue-report';
 import { CheckCircle, AlertCircle, Bug, ChevronDown } from 'lucide-react';
 
-type RewardPreference = 'ticket_discount' | 'workshop_voucher' | 'no_reward' | '';
-
 interface FormData {
   name: string;
   email: string;
   issueType: IssueType;
   pageUrl: string;
   description: string;
-  suggestedFix: string;
   screenshotUrl: string;
-  rewardPreference: RewardPreference;
   website: string; // Honeypot field
 }
-
-const REWARD_OPTIONS = [
-  { value: '', label: 'Select a reward preference...' },
-  { value: 'ticket_discount', label: 'Conference ticket discount' },
-  { value: 'workshop_voucher', label: 'Workshop voucher' },
-  { value: 'no_reward', label: 'No reward needed - just happy to help!' },
-] as const;
 
 interface FormErrors {
   name?: string;
@@ -40,7 +29,6 @@ interface FormErrors {
   pageUrl?: string;
   description?: string;
   screenshotUrl?: string;
-  rewardPreference?: string;
 }
 
 const initialFormData: FormData = {
@@ -49,9 +37,7 @@ const initialFormData: FormData = {
   issueType: 'typo',
   pageUrl: '',
   description: '',
-  suggestedFix: '',
   screenshotUrl: '',
-  rewardPreference: '',
   website: '',
 };
 
@@ -149,11 +135,6 @@ export default function ReportIssuePage() {
       }
     }
 
-    // Reward preference validation (required)
-    if (!formData.rewardPreference) {
-      newErrors.rewardPreference = 'Please select a reward preference';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -196,9 +177,7 @@ export default function ReportIssuePage() {
           issueType: formData.issueType,
           pageUrl: formData.pageUrl,
           description: formData.description,
-          suggestedFix: formData.suggestedFix || undefined,
           screenshotUrl: formData.screenshotUrl || undefined,
-          rewardPreference: formData.rewardPreference,
           website: formData.website, // Honeypot
           posthogSessionId,
           posthogDistinctId,
@@ -440,25 +419,6 @@ export default function ReportIssuePage() {
                   )}
                 </div>
 
-                {/* Suggested Fix (optional) */}
-                <div>
-                  <label
-                    htmlFor="suggestedFix"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
-                    Suggested Fix{' '}
-                    <span className="text-gray-400 font-normal">(optional)</span>
-                  </label>
-                  <textarea
-                    id="suggestedFix"
-                    value={formData.suggestedFix}
-                    onChange={(e) => handleInputChange('suggestedFix', e.target.value)}
-                    placeholder="If you know how to fix it, let us know..."
-                    rows={2}
-                    className={`${inputBaseStyles} resize-none`}
-                  />
-                </div>
-
                 {/* Screenshot URL (optional) */}
                 <div>
                   <label
@@ -492,52 +452,6 @@ export default function ReportIssuePage() {
                     <p id="screenshotUrl-hint" className="text-gray-500 text-sm mt-1">
                       Upload to Dropbox, Google Drive, or any image sharing service and
                       paste the link here.
-                    </p>
-                  )}
-                </div>
-
-                {/* Reward Preference */}
-                <div>
-                  <label
-                    htmlFor="rewardPreference"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
-                    If we fix this issue, what reward would you prefer?{' '}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="rewardPreference"
-                      value={formData.rewardPreference}
-                      onChange={(e) =>
-                        handleInputChange('rewardPreference', e.target.value)
-                      }
-                      className={`${inputBaseStyles} appearance-none pr-10 cursor-pointer ${errors.rewardPreference ? inputErrorStyles : ''}`}
-                      aria-required="true"
-                      aria-invalid={!!errors.rewardPreference}
-                      aria-describedby={
-                        errors.rewardPreference ? 'rewardPreference-error' : undefined
-                      }
-                    >
-                      {REWARD_OPTIONS.map((option) => (
-                        <option
-                          key={option.value}
-                          value={option.value}
-                          disabled={option.value === ''}
-                        >
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  </div>
-                  {errors.rewardPreference && (
-                    <p
-                      id="rewardPreference-error"
-                      className="text-red-500 text-sm mt-1"
-                      role="alert"
-                    >
-                      {errors.rewardPreference}
                     </p>
                   )}
                 </div>

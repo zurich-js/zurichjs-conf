@@ -61,20 +61,11 @@ export const issueReportSchema = z.object({
     .max(2000, 'Description must be 2000 characters or less'),
 
   // Optional additional info
-  suggestedFix: z
-    .string()
-    .max(1000, 'Suggested fix must be 1000 characters or less')
-    .optional(),
   screenshotUrl: z
     .string()
     .url('Please enter a valid URL')
     .optional()
     .or(z.literal('')),
-
-  // Reward preference (required)
-  rewardPreference: z.enum(['ticket_discount', 'workshop_voucher', 'no_reward'], {
-    message: 'Please select a reward preference',
-  }),
 
   // Honeypot field - should be empty for legitimate submissions
   website: z.string().max(0, 'Invalid submission').optional(),
@@ -83,14 +74,6 @@ export const issueReportSchema = z.object({
   posthogSessionId: z.string().optional(),
   posthogDistinctId: z.string().optional(),
 });
-
-export type RewardPreference = 'ticket_discount' | 'workshop_voucher' | 'no_reward';
-
-export const REWARD_PREFERENCE_LABELS: Record<RewardPreference, string> = {
-  ticket_discount: 'Conference ticket discount',
-  workshop_voucher: 'Workshop voucher',
-  no_reward: 'No reward needed',
-};
 
 /**
  * Type inferred from the schema

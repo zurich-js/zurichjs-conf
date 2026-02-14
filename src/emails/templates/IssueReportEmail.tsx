@@ -7,7 +7,7 @@ import { Hr, Link, Section, Text } from '@react-email/components';
 import * as React from 'react';
 import { EmailLayout } from '../components';
 import { colors, spacing, typography, radii } from '../design/tokens';
-import { getIssueTypeLabel, REWARD_PREFERENCE_LABELS, type IssueType, type RewardPreference } from '@/lib/validations/issue-report';
+import { getIssueTypeLabel, type IssueType } from '@/lib/validations/issue-report';
 
 export interface IssueReportEmailProps {
   reportId: string;
@@ -16,9 +16,7 @@ export interface IssueReportEmailProps {
   issueType: IssueType;
   pageUrl?: string;
   description: string;
-  suggestedFix?: string;
   screenshotUrl?: string;
-  rewardPreference: RewardPreference;
   userAgent?: string;
   submittedAt: string;
   posthogSessionId?: string;
@@ -32,9 +30,7 @@ export const IssueReportEmail: React.FC<IssueReportEmailProps> = ({
   issueType,
   pageUrl,
   description,
-  suggestedFix,
   screenshotUrl,
-  rewardPreference,
   userAgent,
   submittedAt,
   posthogSessionId,
@@ -96,15 +92,6 @@ export const IssueReportEmail: React.FC<IssueReportEmailProps> = ({
           </Link>
         </div>
 
-        <div style={detailRowStyle}>
-          <Text style={labelStyle}>Reward Preference</Text>
-          <Text style={valueStyle}>
-            {rewardPreference
-              ? REWARD_PREFERENCE_LABELS[rewardPreference]
-              : 'Not specified'}
-          </Text>
-        </div>
-
         <Hr style={dividerStyle} />
 
         {/* Description */}
@@ -112,17 +99,6 @@ export const IssueReportEmail: React.FC<IssueReportEmailProps> = ({
         <div style={messageBoxStyle}>
           <Text style={messageTextStyle}>{description}</Text>
         </div>
-
-        {/* Suggested Fix (if provided) */}
-        {suggestedFix && (
-          <>
-            <Hr style={dividerStyle} />
-            <Text style={sectionTitleStyle}>Suggested Fix</Text>
-            <div style={suggestionBoxStyle}>
-              <Text style={messageTextStyle}>{suggestedFix}</Text>
-            </div>
-          </>
-        )}
 
         {/* Screenshot (if provided) */}
         {screenshotUrl && (
@@ -185,20 +161,8 @@ export const IssueReportEmail: React.FC<IssueReportEmailProps> = ({
       {/* Action Section */}
       <Section style={actionSectionStyle}>
         <Text style={actionTextStyle}>
-          {rewardPreference === 'no_reward' ? (
-            <>
-              The reporter doesn&apos;t want a reward, but consider thanking them
-              at <Link href={`mailto:${email}`} style={linkStyle}>{email}</Link> anyway!
-            </>
-          ) : (
-            <>
-              If this is a valid report, send{' '}
-              {rewardPreference === 'workshop_voucher'
-                ? 'a workshop voucher'
-                : 'a ticket discount code'}{' '}
-              to <Link href={`mailto:${email}`} style={linkStyle}>{email}</Link> as a thank you.
-            </>
-          )}
+          If this is a valid report, consider sending a thank you reward to{' '}
+          <Link href={`mailto:${email}`} style={linkStyle}>{email}</Link>.
         </Text>
       </Section>
 
@@ -323,13 +287,6 @@ const dividerStyle: React.CSSProperties = {
 const messageBoxStyle: React.CSSProperties = {
   backgroundColor: '#F9FAFB',
   border: `1px solid ${colors.border.default}`,
-  borderRadius: `${radii.button}px`,
-  padding: spacing.base,
-};
-
-const suggestionBoxStyle: React.CSSProperties = {
-  backgroundColor: '#ECFDF5',
-  border: `1px solid ${colors.brand.green}`,
   borderRadius: `${radii.button}px`,
   padding: spacing.base,
 };

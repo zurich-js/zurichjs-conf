@@ -95,9 +95,7 @@ export interface IssueReportData {
     | 'other';
   pageUrl?: string;
   description: string;
-  suggestedFix?: string;
   screenshotUrl?: string;
-  rewardPreference: 'ticket_discount' | 'workshop_voucher' | 'no_reward';
   userAgent?: string;
   submittedAt: string;
   posthogSessionId?: string;
