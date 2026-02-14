@@ -3,23 +3,23 @@ import type { MDXComponents } from 'mdx/types';
 
 export const mdxComponents: MDXComponents = {
   h1: (props) => (
-    <h1 className="font-bold text-brand-black mt-8 mb-3" {...props} />
+    <h1 className="font-bold mt-8 mb-3" {...props} />
   ),
   h2: (props) => (
-    <h2 className="font-bold text-brand-black mt-6 mb-3" {...props} />
+    <h2 className="font-bold mt-6 mb-3" {...props} />
   ),
   h3: (props) => (
-    <h3 className="font-semibold text-brand-black mt-4 mb-2" {...props} />
+    <h3 className="font-semibold mt-4 mb-2" {...props} />
   ),
   p: (props) => (
-    <p className="text-gray-700 leading-relaxed mb-4" {...props} />
+    <p className="leading-relaxed mb-4" {...props} />
   ),
   a: ({ href, children, ...props }) => {
     const isExternal = href?.startsWith('http');
     return (
       <a
         href={href}
-        className="text-brand-orange hover:underline font-medium"
+        className="text-brand-blue hover:underline font-medium"
         {...(isExternal
           ? { target: '_blank', rel: 'noopener noreferrer' }
           : {})}
@@ -31,13 +31,13 @@ export const mdxComponents: MDXComponents = {
   },
   ul: (props) => (
     <ul
-      className="list-disc list-inside space-y-2 text-gray-700 ml-4 mb-4"
+      className="list-disc list-inside space-y-2  ml-4 mb-4"
       {...props}
     />
   ),
   ol: (props) => (
     <ol
-      className="list-decimal list-inside space-y-2 text-gray-700 ml-4 mb-4"
+      className="list-decimal list-inside space-y-2  ml-4 mb-4"
       {...props}
     />
   ),
@@ -77,6 +77,6 @@ export const mdxComponents: MDXComponents = {
   },
   hr: () => <hr className="border-gray-200 my-8" />,
   strong: (props) => (
-    <strong className="font-semibold text-brand-black" {...props} />
+    <strong className="font-semibold" {...props} />
   ),
 };
