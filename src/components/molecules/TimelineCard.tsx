@@ -1,9 +1,10 @@
-import React, { forwardRef } from 'react';
+import React, {forwardRef, useEffect, useState} from 'react';
 import { motion } from 'framer-motion';
 import { Tag, TagTone } from '@/components/atoms/Tag';
 import { AddToCalendar } from '@/components/atoms/AddToCalendar';
 import { useMotion } from '@/contexts/MotionContext';
 import {TimelineDot, TimelineIconType} from "@/components/molecules/TimelineDot";
+import {clsx} from "clsx";
 
 export interface TimelineTag {
   label: string;
@@ -26,6 +27,13 @@ export interface TimelineCardProps {
   tabIndex?: number;
   icon?: TimelineIconType;
 }
+
+export function isIsoInPast(iso: string, referenceTime = Date.now()): boolean {
+    const ts = Date.parse(iso);
+    if (Number.isNaN(ts)) return false; // invalid ISO -> treat as not past
+    return ts < referenceTime;
+}
+
 
 /**
  * TimelineCard component displaying a timeline event
@@ -53,8 +61,19 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
   ) => {
     const { shouldAnimate } = useMotion();
 
+      const [now, setNow] = useState<number | null>(null);
+
+      // Call Date.now() in an effect (avoids impure call during render)
+      useEffect(() => {
+          setNow(Date.now());
+      }, []);
+
+      const inPast = now !== null ? isIsoInPast(dateISO, now) : false;
+
     const CardContent = () => (
-      <div className="flex flex-col gap-3 w-full">
+      <div className={clsx('flex flex-col gap-3 w-full', {
+            'opacity-50': inPast,
+      })}>
         <div className="flex items-start gap-3 sm:gap-4">
           {/* Date Column - Only show if showDate is true */}
           {showDate && (
@@ -88,7 +107,7 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
               )}
             </h3>
 
-            {body && (
+            {!inPast && body && (
               <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
                 {body}
               </p>
@@ -97,7 +116,7 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
         </div>
 
         {/* Calendar Button Row */}
-        <div className="flex items-start gap-3 sm:gap-4">
+          {!inPast && <div className="flex items-start gap-3 sm:gap-4">
           <div className="shrink-0">
             <div
               className="relative z-20 pl-0"
@@ -113,7 +132,7 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
               />
             </div>
           </div>
-        </div>
+        </div>}
       </div>
     );
 
@@ -124,9 +143,9 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
           relative flex items-start gap-3 sm:gap-4
         bg-brand-gray-dark rounded-xl px-4 sm:px-5 py-3 sm:py-4
           transition-all duration-300
-          ${href ? 'cursor-pointer group hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] focus-within:ring-2 focus-within:ring-[#F1E271] focus-within:ring-offset-2 focus-within:ring-offset-[#19191B]' : ''}
+          ${href && !inPast ? 'cursor-pointer group hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] focus-within:ring-2 focus-within:ring-[#F1E271] focus-within:ring-offset-2 focus-within:ring-offset-[#19191B]' : 'cursor-default'}
         `}
-        role={href ? 'link' : 'group'}
+        role={href && !inPast  ? 'link' : 'group'}
         aria-current={isCurrent ? 'true' : undefined}
         tabIndex={tabIndex}
         onClick={onClick}
