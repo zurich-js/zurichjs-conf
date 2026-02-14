@@ -18,6 +18,7 @@ import { PostHogProvider } from 'posthog-js/react';
 import type { Cart } from '@/types/cart';
 import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
+import { initEasterEgg } from '@/lib/easter-egg/client';
 
 const DiscountContainer = dynamic(
   () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
@@ -103,6 +104,11 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
       router.events.off('routeChangeComplete', handleRouteChange);
     };
   }, [router.events]);
+
+  // Initialize console easter egg
+  useEffect(() => {
+    initEasterEgg();
+  }, []);
 
   // Hide NavBar on admin pages
   const showNavBar = !router.pathname.startsWith('/admin');

@@ -1,7 +1,6 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Tag, TagTone } from '@/components/atoms/Tag';
-import { AddToCalendar } from '@/components/atoms/AddToCalendar';
 import { useMotion } from '@/contexts/MotionContext';
 import {TimelineDot, TimelineIconType} from "@/components/molecules/TimelineDot";
 
@@ -96,24 +95,6 @@ export const TimelineCard = forwardRef<HTMLDivElement, TimelineCardProps>(
           </div>
         </div>
 
-        {/* Calendar Button Row */}
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className="shrink-0">
-            <div
-              className="relative z-20 pl-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <AddToCalendar
-                name={title}
-                description={body || ''}
-                startDate={dateISO}
-                location="Zurich, Switzerland"
-                size="small"
-                buttonStyle="text"
-              />
-            </div>
-          </div>
-        </div>
       </div>
     );
 
