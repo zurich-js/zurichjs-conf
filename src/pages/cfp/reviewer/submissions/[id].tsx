@@ -3,7 +3,7 @@
  * View submission and submit/edit review
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useReducer, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -25,26 +25,67 @@ import {
   SubmissionDetails,
 } from '@/components/cfp/reviewer';
 
+const initialScores: ReviewScores = {
+  score_overall: 0,
+  score_relevance: 0,
+  score_technical_depth: 0,
+  score_clarity: 0,
+  score_diversity: 0,
+};
+
+interface FormState {
+  scores: ReviewScores;
+  privateNotes: string;
+  feedback: string;
+  error: string | null;
+  success: boolean;
+  initialized: boolean;
+}
+
+const initialFormState: FormState = {
+  scores: initialScores,
+  privateNotes: '',
+  feedback: '',
+  error: null,
+  success: false,
+  initialized: false,
+};
+
+type FormAction =
+  | { type: 'RESET' }
+  | { type: 'SET_SCORE'; field: keyof ReviewScores; value: number }
+  | { type: 'SET_PRIVATE_NOTES'; value: string }
+  | { type: 'SET_FEEDBACK'; value: string }
+  | { type: 'SET_ERROR'; error: string | null }
+  | { type: 'SUBMIT_SUCCESS' }
+  | { type: 'INIT_FROM_REVIEW'; review: NonNullable<typeof initialFormState & { scores: ReviewScores }> };
+
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case 'RESET':
+      return initialFormState;
+    case 'SET_SCORE':
+      return { ...state, scores: { ...state.scores, [action.field]: action.value } };
+    case 'SET_PRIVATE_NOTES':
+      return { ...state, privateNotes: action.value };
+    case 'SET_FEEDBACK':
+      return { ...state, feedback: action.value };
+    case 'SET_ERROR':
+      return { ...state, error: action.error };
+    case 'SUBMIT_SUCCESS':
+      return { ...state, success: true, error: null };
+    case 'INIT_FROM_REVIEW':
+      return { ...state, ...action.review, initialized: true };
+  }
+}
+
 export default function ReviewerSubmission() {
   const router = useRouter();
   const { id, returnTo } = router.query;
 
   const [authChecked, setAuthChecked] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  // Form state
-  const [scores, setScores] = useState<ReviewScores>({
-    score_overall: 0,
-    score_relevance: 0,
-    score_technical_depth: 0,
-    score_clarity: 0,
-    score_diversity: 0,
-  });
-  const [privateNotes, setPrivateNotes] = useState('');
-  const [feedback, setFeedback] = useState('');
-  const [formInitialized, setFormInitialized] = useState(false);
+  const [form, dispatch] = useReducer(formReducer, initialFormState);
 
   // Check authentication on mount
   useEffect(() => {
@@ -78,87 +119,83 @@ export default function ReviewerSubmission() {
 
   // Reset form state when navigating to a different submission
   useEffect(() => {
-    setSuccess(false);
-    setFormError(null);
-    setFormInitialized(false);
-    setScores({
-      score_overall: 0,
-      score_relevance: 0,
-      score_technical_depth: 0,
-      score_clarity: 0,
-      score_diversity: 0,
-    });
-    setPrivateNotes('');
-    setFeedback('');
+    dispatch({ type: 'RESET' });
   }, [id]);
 
   // Initialize form with existing review data
   useEffect(() => {
-    if (submission?.my_review && !formInitialized) {
-      setScores({
-        score_overall: submission.my_review.score_overall || 0,
-        score_relevance: submission.my_review.score_relevance || 0,
-        score_technical_depth: submission.my_review.score_technical_depth || 0,
-        score_clarity: submission.my_review.score_clarity || 0,
-        score_diversity: submission.my_review.score_diversity || 0,
+    if (submission?.my_review && !form.initialized) {
+      dispatch({
+        type: 'INIT_FROM_REVIEW',
+        review: {
+          scores: {
+            score_overall: submission.my_review.score_overall || 0,
+            score_relevance: submission.my_review.score_relevance || 0,
+            score_technical_depth: submission.my_review.score_technical_depth || 0,
+            score_clarity: submission.my_review.score_clarity || 0,
+            score_diversity: submission.my_review.score_diversity || 0,
+          },
+          privateNotes: submission.my_review.private_notes || '',
+          feedback: submission.my_review.feedback_to_speaker || '',
+          error: null,
+          success: false,
+          initialized: true,
+        },
       });
-      setPrivateNotes(submission.my_review.private_notes || '');
-      setFeedback(submission.my_review.feedback_to_speaker || '');
-      setFormInitialized(true);
     }
-  }, [submission, formInitialized]);
+  }, [submission, form.initialized]);
 
   const hasExistingReview = !!submission?.my_review;
 
   const handleScoreChange = (field: keyof ReviewScores, value: number) => {
-    setScores((prev) => ({ ...prev, [field]: value }));
+    dispatch({ type: 'SET_SCORE', field, value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate all dimensions are rated (scores must be 1-4)
-    const missingScores = Object.entries(scores)
+    const missingScores = Object.entries(form.scores)
       .filter(([, value]) => value < 1 || value > 4)
       .map(([key]) => key.replace('score_', '').replace(/_/g, ' '));
 
     if (missingScores.length > 0) {
-      setFormError(`Please rate all dimensions. Missing: ${missingScores.join(', ')}`);
+      dispatch({ type: 'SET_ERROR', error: `Please rate all dimensions. Missing: ${missingScores.join(', ')}` });
       return;
     }
 
-    setFormError(null);
+    dispatch({ type: 'SET_ERROR', error: null });
 
     try {
       await submitReviewMutation.mutateAsync({
         submissionId: submission!.id,
         isUpdate: hasExistingReview,
         data: {
-          score_overall: scores.score_overall,
-          score_relevance: scores.score_relevance,
-          score_technical_depth: scores.score_technical_depth,
-          score_clarity: scores.score_clarity,
-          score_diversity: scores.score_diversity,
-          private_notes: privateNotes || undefined,
-          feedback_to_speaker: feedback || undefined,
+          score_overall: form.scores.score_overall,
+          score_relevance: form.scores.score_relevance,
+          score_technical_depth: form.scores.score_technical_depth,
+          score_clarity: form.scores.score_clarity,
+          score_diversity: form.scores.score_diversity,
+          private_notes: form.privateNotes || undefined,
+          feedback_to_speaker: form.feedback || undefined,
         },
       });
 
-      setSuccess(true);
+      dispatch({ type: 'SUBMIT_SUCCESS' });
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'An error occurred');
+      dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : 'An error occurred' });
     }
   };
 
   // Keyboard shortcuts
   const handleKeyboardSubmit = useCallback(() => {
-    if (submission && !submitReviewMutation.isPending && !success) {
+    if (submission && !submitReviewMutation.isPending && !form.success) {
       handleSubmit({ preventDefault: () => {} } as React.FormEvent);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [submission, submitReviewMutation.isPending, success, scores, privateNotes, feedback]);
+  }, [submission, submitReviewMutation.isPending, form]);
 
-  useSubmitShortcut(handleKeyboardSubmit, !!submission && !success);
+  useSubmitShortcut(handleKeyboardSubmit, !!submission && !form.success);
   useEscapeKey(() => {
     if (showGuide) setShowGuide(false);
   }, showGuide);
@@ -282,7 +319,7 @@ export default function ReviewerSubmission() {
             <div className="order-2 lg:col-span-1 min-w-0">
               {reviewer.role === 'readonly' && <ReadOnlyNotice />}
 
-              {success ? (
+              {form.success ? (
                 <SuccessMessage
                   nextSubmissionId={nextSubmissionId}
                   dashboardUrl={dashboardUrl}
@@ -290,16 +327,16 @@ export default function ReviewerSubmission() {
                 />
               ) : reviewer.role !== 'readonly' ? (
                 <ReviewForm
-                  scores={scores}
-                  privateNotes={privateNotes}
-                  feedback={feedback}
+                  scores={form.scores}
+                  privateNotes={form.privateNotes}
+                  feedback={form.feedback}
                   hasExistingReview={hasExistingReview}
                   isSubmitting={submitReviewMutation.isPending}
-                  formError={formError}
+                  formError={form.error}
                   stats={submission.stats}
                   onScoreChange={handleScoreChange}
-                  onPrivateNotesChange={setPrivateNotes}
-                  onFeedbackChange={setFeedback}
+                  onPrivateNotesChange={(v) => dispatch({ type: 'SET_PRIVATE_NOTES', value: v })}
+                  onFeedbackChange={(v) => dispatch({ type: 'SET_FEEDBACK', value: v })}
                   onSubmit={handleSubmit}
                   onShowGuidelines={() => setShowGuide(true)}
                 />
