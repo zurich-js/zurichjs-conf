@@ -161,15 +161,6 @@ export interface Reviewer {
 }
 
 // Dashboard filter options
-export const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'submitted', label: 'Submitted' },
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'waitlisted', label: 'Waitlisted' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'rejected', label: 'Rejected' },
-];
-
 export const TYPE_OPTIONS = [
   { value: '', label: 'All Types' },
   { value: 'lightning', label: 'Lightning' },
@@ -185,27 +176,26 @@ export const LEVEL_OPTIONS = [
 ];
 
 export const SORT_OPTIONS = [
+  { value: 'least_reviews', label: 'Least Reviews' },
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
   { value: 'title', label: 'Title A-Z' },
-  { value: 'random', label: 'Random' },
   { value: 'most_reviews', label: 'Most Reviews' },
-  { value: 'least_reviews', label: 'Least Reviews' },
   { value: 'highest_avg', label: 'Highest Avg Score' },
   { value: 'lowest_avg', label: 'Lowest Avg Score' },
 ];
 
 // Sort options that reveal review data (should be hidden from anonymous reviewers)
-export const REVIEW_BASED_SORT_VALUES = ['most_reviews', 'least_reviews', 'highest_avg', 'lowest_avg'];
+// Note: 'least_reviews' is allowed for anonymous reviewers so they can prioritize under-reviewed talks
+export const REVIEW_BASED_SORT_VALUES = ['most_reviews', 'highest_avg', 'lowest_avg'];
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-export type ReviewFilterType = 'all' | 'reviewed' | 'pending';
+export type ReviewFilterType = 'all' | 'reviewed' | 'pending' | 'bookmarked';
 
 export interface DashboardFilters {
   reviewFilter: ReviewFilterType;
   searchQuery: string;
-  statusFilter: string;
   typeFilter: string;
   levelFilter: string;
   sortBy: string;

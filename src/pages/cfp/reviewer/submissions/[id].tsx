@@ -11,6 +11,7 @@ import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
 import { useCfpReviewerSubmission, useSubmitReview } from '@/hooks/useCfp';
+import { useNextUnreviewed } from '@/hooks/cfp';
 import { ReviewGuide } from '@/components/cfp/ReviewGuide';
 import { useEscapeKey, useSubmitShortcut } from '@/hooks/useKeyboardShortcuts';
 import {
@@ -72,6 +73,9 @@ export default function ReviewerSubmission() {
   // Submit review mutation
   const submitReviewMutation = useSubmitReview();
 
+  // Next unreviewed submission from cache
+  const nextSubmissionId = useNextUnreviewed(id as string);
+
   // Initialize form with existing review data
   useEffect(() => {
     if (submission?.my_review && !formInitialized) {
@@ -125,10 +129,6 @@ export default function ReviewerSubmission() {
       });
 
       setSuccess(true);
-      setTimeout(() => {
-        // Return to dashboard with preserved filters
-        router.push(dashboardUrl);
-      }, 1500);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
     }
@@ -267,7 +267,11 @@ export default function ReviewerSubmission() {
               {reviewer.role === 'readonly' && <ReadOnlyNotice />}
 
               {success ? (
-                <SuccessMessage />
+                <SuccessMessage
+                  nextSubmissionId={nextSubmissionId}
+                  dashboardUrl={dashboardUrl}
+                  returnTo={returnTo as string}
+                />
               ) : reviewer.role !== 'readonly' ? (
                 <ReviewForm
                   scores={scores}

@@ -3,7 +3,8 @@
  * Form for submitting or updating a review with all required criteria
  */
 
-import { Check, Eye, AlertCircle, SlidersHorizontal, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
+import { Check, Eye, AlertCircle, SlidersHorizontal, HelpCircle, SkipForward, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { SCORE_LABELS, SCORE_DESCRIPTIONS, ReviewScores, SubmissionStats } from './types';
 
@@ -172,9 +173,21 @@ export function ReviewForm({
 
 interface SuccessMessageProps {
   message?: string;
+  nextSubmissionId?: string | null;
+  dashboardUrl?: string;
+  returnTo?: string;
 }
 
-export function SuccessMessage({ message = 'Review Submitted!' }: SuccessMessageProps) {
+export function SuccessMessage({
+  message = 'Review Submitted!',
+  nextSubmissionId,
+  dashboardUrl = '/cfp/reviewer/dashboard',
+  returnTo,
+}: SuccessMessageProps) {
+  const nextHref = nextSubmissionId
+    ? `/cfp/reviewer/submissions/${nextSubmissionId}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`
+    : null;
+
   return (
     <div className="sticky top-8">
       <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center">
@@ -182,7 +195,24 @@ export function SuccessMessage({ message = 'Review Submitted!' }: SuccessMessage
           <Check className="w-8 h-8 text-green-400" />
         </div>
         <h2 className="text-lg font-bold text-white mb-2">{message}</h2>
-        <p className="text-brand-gray-light">Redirecting to dashboard...</p>
+        <div className="mt-4 space-y-3">
+          {nextHref && (
+            <Link
+              href={nextHref}
+              className="w-full px-4 py-2.5 bg-brand-primary text-black font-semibold rounded-xl hover:bg-brand-primary-dark transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <SkipForward className="w-4 h-4" />
+              Review Next
+            </Link>
+          )}
+          <Link
+            href={dashboardUrl}
+            className="w-full px-4 py-2.5 text-brand-gray-light hover:text-white transition-colors inline-flex items-center justify-center gap-2 text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
     </div>
   );

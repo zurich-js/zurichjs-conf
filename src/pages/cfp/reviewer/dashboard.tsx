@@ -3,7 +3,7 @@
  * List of submissions to review with filtering, sorting, and pagination
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, createRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSearchParams } from 'next/navigation';
@@ -13,6 +13,7 @@ import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { supabase } from '@/lib/supabase/client';
 import { useCfpReviewerDashboard } from '@/hooks/useCfp';
+import { useBookmarks } from '@/hooks/cfp';
 import { ReviewGuide, ReviewGuideButton } from '@/components/cfp/ReviewGuide';
 import {
   ReviewFilterType,
@@ -33,14 +34,10 @@ export default function ReviewerDashboard() {
   // URL-driven filter state using nuqs
   const [reviewFilter, setReviewFilter] = useQueryState(
     'filter',
-    parseAsStringLiteral(['all', 'pending', 'reviewed'] as const).withDefault('all')
+    parseAsStringLiteral(['all', 'pending', 'reviewed', 'bookmarked'] as const).withDefault('all')
   );
   const [searchQuery, setSearchQuery] = useQueryState(
     'q',
-    parseAsString.withDefault('')
-  );
-  const [statusFilter, setStatusFilter] = useQueryState(
-    'status',
     parseAsString.withDefault('')
   );
   const [typeFilter, setTypeFilter] = useQueryState(
@@ -53,7 +50,7 @@ export default function ReviewerDashboard() {
   );
   const [sortBy, setSortBy] = useQueryState(
     'sort',
-    parseAsString.withDefault('newest')
+    parseAsString.withDefault('least_reviews')
   );
 
   // URL-driven pagination state
@@ -65,12 +62,6 @@ export default function ReviewerDashboard() {
     'size',
     parseAsInteger.withDefault(10)
   );
-
-  // Keyboard navigation state (not URL-driven)
-  const [focusedIndex, setFocusedIndex] = useState(-1);
-
-  // Seed for random sort (consistent during session)
-  const [randomSeed] = useState(() => Math.random());
 
   // Check authentication on mount
   useEffect(() => {
@@ -94,23 +85,11 @@ export default function ReviewerDashboard() {
   const reviewedCount = submissions.filter((s) => s.my_review).length;
   const pendingCount = submissions.filter((s) => !s.my_review).length;
 
+  // Bookmarks
+  const { isBookmarked, toggleBookmark } = useBookmarks(reviewer?.email);
+
   // Determine if reviewer is anonymous (cannot see speaker identity or review stats)
   const isAnonymous = reviewer ? reviewer.role !== 'super_admin' && !reviewer.can_see_speaker_identity : true;
-
-  // Seeded shuffle function for consistent random ordering during session
-  const seededShuffle = useCallback(<T,>(array: T[], seed: number): T[] => {
-    const result = [...array];
-    let currentSeed = seed;
-    const random = () => {
-      currentSeed = (currentSeed * 9301 + 49297) % 233280;
-      return currentSeed / 233280;
-    };
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-  }, []);
 
   // Filter and sort submissions
   const filteredSubmissions = useMemo(() => {
@@ -120,6 +99,8 @@ export default function ReviewerDashboard() {
       result = result.filter((s) => s.my_review);
     } else if (reviewFilter === 'pending') {
       result = result.filter((s) => !s.my_review);
+    } else if (reviewFilter === 'bookmarked') {
+      result = result.filter((s) => isBookmarked(s.id));
     }
 
     if (searchQuery.trim()) {
@@ -131,21 +112,12 @@ export default function ReviewerDashboard() {
       );
     }
 
-    if (statusFilter) {
-      result = result.filter((s) => s.status === statusFilter);
-    }
-
     if (typeFilter) {
       result = result.filter((s) => s.submission_type === typeFilter);
     }
 
     if (levelFilter) {
       result = result.filter((s) => s.talk_level === levelFilter);
-    }
-
-    // Handle random sort separately (uses shuffle instead of sort)
-    if (sortBy === 'random') {
-      return seededShuffle(result, randomSeed);
     }
 
     result.sort((a, b) => {
@@ -170,7 +142,7 @@ export default function ReviewerDashboard() {
     });
 
     return result;
-  }, [submissions, reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter, sortBy, seededShuffle, randomSeed]);
+  }, [submissions, reviewFilter, searchQuery, typeFilter, levelFilter, sortBy, isBookmarked]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSubmissions.length / pageSize);
@@ -189,11 +161,6 @@ export default function ReviewerDashboard() {
     setReviewFilter(value);
     setCurrentPage(1);
   }, [setReviewFilter, setCurrentPage]);
-
-  const handleStatusFilterChange = useCallback((value: string) => {
-    setStatusFilter(value || null);
-    setCurrentPage(1);
-  }, [setStatusFilter, setCurrentPage]);
 
   const handleTypeFilterChange = useCallback((value: string) => {
     setTypeFilter(value || null);
@@ -215,73 +182,16 @@ export default function ReviewerDashboard() {
     setCurrentPage(1);
   }, [setPageSize, setCurrentPage]);
 
-  // Reset focused index when page/filters change
-  useEffect(() => {
-    setFocusedIndex(-1);
-  }, [currentPage, reviewFilter, searchQuery, statusFilter, typeFilter, levelFilter]);
-
   // Get current search params string to pass to submission links for return navigation
   const dashboardParams = useMemo(() => {
     return searchParams?.toString() || '';
   }, [searchParams]);
 
-  // Create refs for each card
-  const cardRefs = useRef<React.RefObject<HTMLAnchorElement | null>[]>([]);
-  if (cardRefs.current.length !== paginatedSubmissions.length) {
-    cardRefs.current = paginatedSubmissions.map(() => createRef<HTMLAnchorElement>());
-  }
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't interfere with input fields
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      const maxIndex = paginatedSubmissions.length - 1;
-
-      switch (e.key) {
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault();
-          setFocusedIndex((prev) => {
-            const next = prev < maxIndex ? prev + 1 : prev;
-            // Scroll into view
-            cardRefs.current[next]?.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            return next;
-          });
-          break;
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault();
-          setFocusedIndex((prev) => {
-            const next = prev > 0 ? prev - 1 : 0;
-            // Scroll into view
-            cardRefs.current[next]?.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            return next;
-          });
-          break;
-        case 'Enter':
-          if (focusedIndex >= 0 && focusedIndex <= maxIndex) {
-            e.preventDefault();
-            const returnTo = dashboardParams ? `?returnTo=${encodeURIComponent(dashboardParams)}` : '';
-            router.push(`/cfp/reviewer/submissions/${paginatedSubmissions[focusedIndex].id}${returnTo}`);
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [paginatedSubmissions, focusedIndex, router, dashboardParams]);
-
-  const hasActiveFilters = searchQuery || statusFilter || typeFilter || levelFilter;
+  const hasActiveFilters = searchQuery || typeFilter || levelFilter;
 
   const clearAllFilters = async () => {
     await Promise.all([
       setSearchQuery(null),
-      setStatusFilter(null),
       setTypeFilter(null),
       setLevelFilter(null),
       setReviewFilter('all'),
@@ -390,7 +300,6 @@ export default function ReviewerDashboard() {
           <FilterBar
             searchQuery={searchQuery}
             reviewFilter={reviewFilter}
-            statusFilter={statusFilter}
             typeFilter={typeFilter}
             levelFilter={levelFilter}
             sortBy={sortBy}
@@ -399,7 +308,6 @@ export default function ReviewerDashboard() {
             isAnonymous={isAnonymous}
             onSearchChange={handleSearchChange}
             onReviewFilterChange={handleReviewFilterChange}
-            onStatusFilterChange={handleStatusFilterChange}
             onTypeFilterChange={handleTypeFilterChange}
             onLevelFilterChange={handleLevelFilterChange}
             onSortChange={handleSortChange}
@@ -418,18 +326,6 @@ export default function ReviewerDashboard() {
                 {hasActiveFilters && ` (filtered from ${submissions.length})`}
               </span>
             </div>
-            {/* Keyboard shortcuts hint */}
-            <div className="hidden sm:flex items-center gap-3 text-xs text-brand-gray-medium">
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-brand-gray-dark rounded text-brand-gray-light">J</kbd>
-                <kbd className="px-1.5 py-0.5 bg-brand-gray-dark rounded text-brand-gray-light">K</kbd>
-                <span>navigate</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-brand-gray-dark rounded text-brand-gray-light">Enter</kbd>
-                <span>open</span>
-              </span>
-            </div>
           </div>
 
           {/* Submissions List */}
@@ -441,14 +337,14 @@ export default function ReviewerDashboard() {
             />
           ) : (
             <div className="space-y-4">
-              {paginatedSubmissions.map((submission, index) => (
+              {paginatedSubmissions.map((submission) => (
                 <SubmissionCard
                   key={submission.id}
                   submission={submission}
                   isAnonymous={isAnonymous}
-                  isFocused={focusedIndex === index}
-                  cardRef={cardRefs.current[index]}
                   dashboardParams={dashboardParams}
+                  isBookmarked={isBookmarked(submission.id)}
+                  onToggleBookmark={toggleBookmark}
                 />
               ))}
             </div>

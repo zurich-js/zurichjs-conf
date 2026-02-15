@@ -4,11 +4,10 @@
  */
 
 import Link from 'next/link';
-import { Search, X, Filter, Check } from 'lucide-react';
+import { Search, X, Filter, Check, Bookmark } from 'lucide-react';
 import { Heading, Select } from '@/components/atoms';
 import {
   TYPE_LABELS,
-  STATUS_OPTIONS,
   TYPE_OPTIONS,
   LEVEL_OPTIONS,
   SORT_OPTIONS,
@@ -91,7 +90,6 @@ export function StatsCards({ total, reviewed, pending }: StatsCardsProps) {
 interface FilterBarProps {
   searchQuery: string;
   reviewFilter: ReviewFilterType;
-  statusFilter: string;
   typeFilter: string;
   levelFilter: string;
   sortBy: string;
@@ -100,7 +98,6 @@ interface FilterBarProps {
   isAnonymous?: boolean;
   onSearchChange: (query: string) => void;
   onReviewFilterChange: (filter: ReviewFilterType) => void;
-  onStatusFilterChange: (status: string) => void;
   onTypeFilterChange: (type: string) => void;
   onLevelFilterChange: (level: string) => void;
   onSortChange: (sort: string) => void;
@@ -111,7 +108,6 @@ interface FilterBarProps {
 export function FilterBar({
   searchQuery,
   reviewFilter,
-  statusFilter,
   typeFilter,
   levelFilter,
   sortBy,
@@ -120,7 +116,6 @@ export function FilterBar({
   isAnonymous = false,
   onSearchChange,
   onReviewFilterChange,
-  onStatusFilterChange,
   onTypeFilterChange,
   onLevelFilterChange,
   onSortChange,
@@ -158,17 +153,18 @@ export function FilterBar({
 
         {/* Quick Review Filter */}
         <div className="flex gap-2">
-          {(['all', 'pending', 'reviewed'] as const).map((f) => (
+          {(['all', 'pending', 'reviewed', 'bookmarked'] as const).map((f) => (
             <button
               key={f}
               onClick={() => onReviewFilterChange(f)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
                 reviewFilter === f
                   ? 'bg-brand-primary text-black'
                   : 'bg-brand-gray-darkest text-brand-gray-light hover:text-white'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'pending' ? 'Pending' : 'Reviewed'}
+              {f === 'bookmarked' && <Bookmark className="w-3.5 h-3.5" />}
+              {f === 'all' ? 'All' : f === 'pending' ? 'Pending' : f === 'reviewed' ? 'Reviewed' : 'Bookmarked'}
             </button>
           ))}
         </div>
@@ -191,15 +187,7 @@ export function FilterBar({
       {/* Advanced Filters */}
       {showFilters && (
         <div className="mt-4 pt-4 border-t border-brand-gray-medium">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Select
-              label="Status"
-              value={statusFilter}
-              onChange={onStatusFilterChange}
-              options={STATUS_OPTIONS}
-              variant="dark"
-              size="sm"
-            />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Select
               label="Type"
               value={typeFilter}
@@ -259,30 +247,58 @@ interface SubmissionCardSubmission {
 interface SubmissionCardProps {
   submission: SubmissionCardSubmission;
   isAnonymous?: boolean;
-  isFocused?: boolean;
-  cardRef?: React.RefObject<HTMLAnchorElement | null>;
   /** Current dashboard search params to preserve when returning */
   dashboardParams?: string;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (id: string) => void;
 }
 
-export function SubmissionCard({ submission, isAnonymous = false, isFocused = false, cardRef, dashboardParams }: SubmissionCardProps) {
+export function SubmissionCard({ submission, isAnonymous = false, dashboardParams, isBookmarked = false, onToggleBookmark }: SubmissionCardProps) {
   const href = dashboardParams
     ? `/cfp/reviewer/submissions/${submission.id}?returnTo=${encodeURIComponent(dashboardParams)}`
     : `/cfp/reviewer/submissions/${submission.id}`;
 
+  // Urgency border color based on review count
+  const urgencyBorder =
+    submission.stats.review_count === 0
+      ? 'border-l-4 border-l-red-500/50'
+      : submission.stats.review_count === 1
+        ? 'border-l-4 border-l-yellow-500/50'
+        : 'border-l-4 border-l-green-500/50';
+
+  // Urgency dot color
+  const urgencyDot =
+    submission.stats.review_count === 0
+      ? 'bg-red-500'
+      : submission.stats.review_count === 1
+        ? 'bg-yellow-500'
+        : 'bg-green-500';
+
   return (
     <Link
-      ref={cardRef}
       href={href}
-      className={`block bg-brand-gray-dark rounded-xl p-6 hover:bg-brand-gray-dark/70 border-2 transition-all ${
-        isFocused
-          ? 'border-brand-primary ring-2 ring-brand-primary/30'
-          : 'border-transparent hover:border-brand-gray-medium'
-      }`}
+      className={`block bg-brand-gray-dark rounded-xl p-6 hover:bg-brand-gray-dark/70 border-2 border-transparent hover:border-brand-gray-medium transition-all ${urgencyBorder}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
+            {onToggleBookmark && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleBookmark(submission.id);
+                }}
+                className={`p-1 rounded transition-colors cursor-pointer ${
+                  isBookmarked
+                    ? 'text-brand-primary'
+                    : 'text-brand-gray-medium hover:text-brand-gray-light'
+                }`}
+                title={isBookmarked ? 'Remove bookmark' : 'Bookmark for later'}
+              >
+                <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+              </button>
+            )}
             <StatusBadge status={submission.status} />
             <span className="text-brand-gray-medium text-sm">
               {TYPE_LABELS[submission.submission_type]}
@@ -333,17 +349,16 @@ export function SubmissionCard({ submission, isAnonymous = false, isFocused = fa
             </span>
           )}
 
-          {/* Committee stats - hidden for anonymous reviewers */}
-          {!isAnonymous && (
-            <div className="text-sm text-brand-gray-medium mt-2">
-              {submission.stats.review_count} review{submission.stats.review_count !== 1 ? 's' : ''}
-              {submission.stats.avg_overall && (
-                <span className="ml-2">
-                  Avg: {submission.stats.avg_overall.toFixed(1)}/4
-                </span>
-              )}
-            </div>
-          )}
+          {/* Review count visible to all, avg score hidden for anonymous */}
+          <div className="text-sm text-brand-gray-medium mt-2 inline-flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${urgencyDot}`} />
+            {submission.stats.review_count} review{submission.stats.review_count !== 1 ? 's' : ''}
+            {!isAnonymous && submission.stats.avg_overall && (
+              <span className="ml-2">
+                Avg: {submission.stats.avg_overall.toFixed(1)}/4
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>
