@@ -76,6 +76,22 @@ export default function ReviewerSubmission() {
   // Next unreviewed submission from cache
   const nextSubmissionId = useNextUnreviewed(id as string);
 
+  // Reset form state when navigating to a different submission
+  useEffect(() => {
+    setSuccess(false);
+    setFormError(null);
+    setFormInitialized(false);
+    setScores({
+      score_overall: 0,
+      score_relevance: 0,
+      score_technical_depth: 0,
+      score_clarity: 0,
+      score_diversity: 0,
+    });
+    setPrivateNotes('');
+    setFeedback('');
+  }, [id]);
+
   // Initialize form with existing review data
   useEffect(() => {
     if (submission?.my_review && !formInitialized) {
