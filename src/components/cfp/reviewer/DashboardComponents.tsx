@@ -348,7 +348,7 @@ export function SubmissionCard({ submission, isAnonymous = false, dashboardParam
               <span className="px-3 py-1 bg-brand-primary/20 text-brand-primary rounded-full text-sm font-medium">
                 Needs Review
               </span>
-              <div className="text-sm text-brand-gray-medium mt-1 inline-flex items-center gap-1.5">
+              <div className="text-sm text-brand-gray-medium mt-1 ml-1 inline-flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${urgencyDot}`} />
                 {submission.stats.review_count} review{submission.stats.review_count !== 1 ? 's' : ''}
               </div>
