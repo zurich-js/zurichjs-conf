@@ -1,15 +1,16 @@
 /**
  * CFP Email Functions
- * Handles sending reviewer invitation emails
+ * Handles sending reviewer invitation and feedback request emails
  */
 
 import * as React from 'react';
 import { render } from '@react-email/render';
 import { ReviewerInvitationEmail } from '@/emails/templates/ReviewerInvitationEmail';
 import type { ReviewerInvitationEmailProps } from '@/emails/templates/ReviewerInvitationEmail';
+import { CfpFeedbackRequestEmail } from '@/emails/templates/CfpFeedbackRequestEmail';
 import { getBaseUrl } from '@/lib/url';
 import { getResendClient, EMAIL_CONFIG, log } from './config';
-import type { ReviewerInvitationData } from './types';
+import type { ReviewerInvitationData, CfpFeedbackRequestData } from './types';
 
 /**
  * Send reviewer invitation email
@@ -64,6 +65,54 @@ export async function sendReviewerInvitationEmail(
     return { success: true };
   } catch (error) {
     log.error('Exception sending reviewer invitation email', error, { to: data.to });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Send feedback request email to organizers
+ * Reply-to is set to the speaker's email so organizers can reply directly
+ */
+export async function sendCfpFeedbackRequestEmail(
+  data: CfpFeedbackRequestData
+): Promise<{ success: boolean; error?: string }> {
+  log.info('Sending CFP feedback request email', {
+    speakerName: data.speakerName,
+    speakerEmail: data.speakerEmail,
+    talkTitle: data.talkTitle,
+  });
+
+  try {
+    const resend = getResendClient();
+
+    const emailHtml = await render(
+      React.createElement(CfpFeedbackRequestEmail, {
+        speakerName: data.speakerName,
+        speakerEmail: data.speakerEmail,
+        talkTitle: data.talkTitle,
+        submissionType: data.submissionType,
+        submittedAt: data.submittedAt,
+      })
+    );
+
+    const result = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: EMAIL_CONFIG.supportEmail,
+      replyTo: data.speakerEmail,
+      subject: `Feedback requested: "${data.talkTitle}" by ${data.speakerName}`,
+      html: emailHtml,
+    });
+
+    if (result.error) {
+      log.error('Error sending feedback request email', new Error(result.error.message));
+      return { success: false, error: result.error.message };
+    }
+
+    log.info('Feedback request email sent', { emailId: result.data?.id });
+    return { success: true };
+  } catch (error) {
+    log.error('Exception sending feedback request email', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: errorMessage };
   }

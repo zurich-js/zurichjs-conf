@@ -27,7 +27,6 @@ export type {
   SponsorInterestData,
   CfpReviewSubmittedData,
   CfpEmailScheduledData,
-  CfpFeedbackRequestedData,
 } from './types'
 
 export {
@@ -40,5 +39,4 @@ export {
   notifySponsorInterest,
   notifyCfpReviewSubmitted,
   notifyCfpEmailScheduled,
-  notifyCfpFeedbackRequested,
 } from './send'

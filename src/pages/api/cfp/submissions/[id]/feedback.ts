@@ -1,6 +1,6 @@
 /**
  * Speaker Feedback Request API
- * POST /api/cfp/submissions/[id]/feedback - Notify organizers that a speaker wants feedback
+ * POST /api/cfp/submissions/[id]/feedback - Email organizers that a speaker wants feedback
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { env } from '@/config/env';
 import { logger } from '@/lib/logger';
-import { notifyCfpFeedbackRequested } from '@/lib/platform-notifications';
+import { sendCfpFeedbackRequestEmail } from '@/lib/email';
 
 const log = logger.scope('CFP Feedback API');
 
@@ -17,6 +17,12 @@ function createCfpServiceClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
+
+const TYPE_LABELS: Record<string, string> = {
+  lightning: 'Lightning Talk',
+  standard: 'Standard Talk',
+  workshop: 'Workshop',
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -49,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get submission and verify ownership
     const { data: submission, error: fetchError } = await cfpClient
       .from('cfp_submissions')
-      .select('id, speaker_id, title, status, decision_email_sent_at')
+      .select('id, speaker_id, title, status, submission_type, submitted_at, decision_email_sent_at')
       .eq('id', id)
       .single();
 
@@ -66,13 +72,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Feedback requests are not available for this submission' });
     }
 
-    // Send Slack notification to organizers
-    notifyCfpFeedbackRequested({
-      submissionId: id,
+    // Send email to organizers (reply-to set to speaker's email)
+    const emailResult = await sendCfpFeedbackRequestEmail({
       speakerName: `${speaker.first_name} ${speaker.last_name}`,
       speakerEmail: speaker.email,
       talkTitle: submission.title,
+      submissionType: TYPE_LABELS[submission.submission_type] || submission.submission_type,
+      submittedAt: submission.submitted_at
+        ? new Date(submission.submitted_at).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          })
+        : undefined,
     });
+
+    if (!emailResult.success) {
+      log.error('Failed to send feedback request email', { error: emailResult.error, submissionId: id });
+      return res.status(500).json({ error: 'Failed to send feedback request' });
+    }
 
     log.info('Feedback requested', {
       submissionId: id,

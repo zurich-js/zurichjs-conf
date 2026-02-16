@@ -118,3 +118,15 @@ export interface VipUpgradeEmailData {
   bankTransferDueDate?: string | null;
   manageTicketUrl: string;
 }
+
+/**
+ * Data structure for CFP feedback request email
+ * Sent to organizers when a rejected speaker requests feedback
+ */
+export interface CfpFeedbackRequestData {
+  speakerName: string;
+  speakerEmail: string;
+  talkTitle: string;
+  submissionType: string;
+  submittedAt?: string;
+}
