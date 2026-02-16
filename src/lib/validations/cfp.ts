@@ -43,6 +43,34 @@ const normalizeHandle = (handle: string | undefined): string => {
 };
 
 /**
+ * Normalize a GitHub input (handle or URL) to a full URL.
+ * Accepts: "myhandle", "https://github.com/myhandle", or empty string.
+ */
+const normalizeGithubUrl = (input: string | undefined): string => {
+  if (!input) return '';
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http')) return trimmed;
+  // Strip leading @ or / if present
+  const handle = trimmed.replace(/^[@/]+/, '');
+  return handle ? `https://github.com/${handle}` : '';
+};
+
+/**
+ * Normalize a LinkedIn input (handle or URL) to a full URL.
+ * Accepts: "myhandle", "https://linkedin.com/in/myhandle", or empty string.
+ */
+const normalizeLinkedinUrl = (input: string | undefined): string => {
+  if (!input) return '';
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http')) return trimmed;
+  // Strip leading @ or / if present
+  const handle = trimmed.replace(/^[@/]+/, '');
+  return handle ? `https://linkedin.com/in/${handle}` : '';
+};
+
+/**
  * Speaker profile validation schema
  */
 export const speakerProfileSchema = z.object({
@@ -60,8 +88,8 @@ export const speakerProfileSchema = z.object({
       message: 'Bio must be 250 words or less',
     })
     .optional(),
-  linkedin_url: z.string().url('Invalid URL').optional().or(z.literal('')),
-  github_url: z.string().url('Invalid URL').optional().or(z.literal('')),
+  linkedin_url: z.string().transform(normalizeLinkedinUrl).optional().or(z.literal('')),
+  github_url: z.string().transform(normalizeGithubUrl).optional().or(z.literal('')),
   twitter_handle: z.string().transform(normalizeHandle).optional(),
   bluesky_handle: z.string().transform(normalizeHandle).optional(),
   mastodon_handle: z.string().transform(normalizeHandle).optional(),

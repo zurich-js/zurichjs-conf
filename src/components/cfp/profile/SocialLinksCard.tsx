@@ -5,6 +5,21 @@
 import { Github, Linkedin, ExternalLink } from 'lucide-react';
 import type { ProfileFormProps } from './types';
 
+/**
+ * Extract just the handle from a full URL.
+ * e.g. "https://github.com/myhandle" -> "myhandle"
+ */
+function extractHandle(value: string, prefix: string): string {
+  if (!value) return '';
+  // Try to strip the URL prefix (with or without www.)
+  const wwwPrefix = prefix.replace('://', '://www.');
+  if (value.startsWith(prefix)) return value.slice(prefix.length).replace(/\/+$/, '');
+  if (value.startsWith(wwwPrefix)) return value.slice(wwwPrefix.length).replace(/\/+$/, '');
+  // If it's not a URL at all, return as-is (already a handle)
+  if (!value.startsWith('http')) return value;
+  return value;
+}
+
 export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormProps) {
   return (
     <div className="bg-brand-gray-dark rounded-2xl p-6">
@@ -21,11 +36,12 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           id="github_url"
           label="GitHub"
           icon={<Github className="w-4 h-4 text-brand-gray-light" />}
-          value={formData.github_url || ''}
+          value={extractHandle(formData.github_url || '', 'https://github.com/')}
           onChange={(v) => handleChange('github_url', v)}
-          placeholder="mygithubhandle"
+          placeholder="myhandle"
           error={errors.github_url}
           linkPrefix="https://github.com/"
+          inputPrefix="github.com/"
         />
 
         {/* LinkedIn */}
@@ -33,10 +49,12 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           id="linkedin_url"
           label="LinkedIn"
           icon={<Linkedin className="w-4 h-4 text-brand-gray-light" />}
-          value={formData.linkedin_url || ''}
+          value={extractHandle(formData.linkedin_url || '', 'https://linkedin.com/in/')}
           onChange={(v) => handleChange('linkedin_url', v)}
-          placeholder="johndoe"
+          placeholder="myhandle"
           error={errors.linkedin_url}
+          linkPrefix="https://linkedin.com/in/"
+          inputPrefix="linkedin.com/in/"
         />
 
         {/* X.com / Twitter */}
@@ -46,7 +64,7 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           icon={<XIcon />}
           value={formData.twitter_handle || ''}
           onChange={(v) => handleChange('twitter_handle', v)}
-          placeholder="doe"
+          placeholder="myhandle"
         />
 
         {/* Bluesky */}
@@ -56,7 +74,7 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           icon={<BlueskyIcon />}
           value={formData.bluesky_handle || ''}
           onChange={(v) => handleChange('bluesky_handle', v)}
-          placeholder="johndoe"
+          placeholder="myhandle"
         />
 
         {/* Mastodon */}
@@ -66,7 +84,7 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           icon={<MastodonIcon />}
           value={formData.mastodon_handle || ''}
           onChange={(v) => handleChange('mastodon_handle', v)}
-          placeholder="johndoe"
+          placeholder="myhandle"
         />
       </div>
     </div>
@@ -82,23 +100,44 @@ interface SocialInputProps {
   placeholder: string;
   error?: string;
   linkPrefix?: string;
+  inputPrefix?: string;
 }
 
-function SocialInput({ id, label, icon, value, onChange, placeholder, error, linkPrefix }: SocialInputProps) {
+function SocialInput({ id, label, icon, value, onChange, placeholder, error, linkPrefix, inputPrefix }: SocialInputProps) {
   const showLink = value && linkPrefix;
 
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-white mb-2">{label}</label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">{icon}</div>
-        <input
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className={`w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 ${showLink ? 'pr-10' : 'pr-4'} py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
-        />
+      <div className="relative flex">
+        {inputPrefix ? (
+          <>
+            <div className="flex items-center bg-brand-gray-darkest border border-r-0 border-brand-gray-medium rounded-l-lg px-3 pointer-events-none">
+              <span className="flex items-center gap-2">
+                {icon}
+                <span className="text-brand-gray-medium text-sm whitespace-nowrap">{inputPrefix}</span>
+              </span>
+            </div>
+            <input
+              id={id}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              className={`flex-1 bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-r-lg ${showLink ? 'pr-10' : 'pr-4'} py-3 pl-3 border border-l-0 border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
+            />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">{icon}</div>
+            <input
+              id={id}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              className={`w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 ${showLink ? 'pr-10' : 'pr-4'} py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
+            />
+          </>
+        )}
         {showLink && (
           <a
             href={value.startsWith('http') ? value : `${linkPrefix}${value}`}
