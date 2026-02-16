@@ -52,6 +52,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
     bluesky_handle: speaker.bluesky_handle || '',
     mastodon_handle: speaker.mastodon_handle || '',
     tshirt_size: speaker.tshirt_size || null,
+    travel_option: speaker.travel_option || null,
     travel_assistance_required: speaker.travel_assistance_required || false,
     assistance_type: speaker.assistance_type || null,
     departure_airport: speaker.departure_airport || null,
@@ -60,8 +61,10 @@ export default function CfpProfile({ speaker }: ProfileProps) {
   });
 
   const [travelOption, setTravelOption] = useState<TravelOption | null>(() => {
-    if (speaker.travel_assistance_required === false) return 'self_managed';
+    if (speaker.travel_option) return speaker.travel_option as TravelOption;
+    // Fallback for speakers without travel_option set yet
     if (speaker.travel_assistance_required === true) return 'need_assistance';
+    if (speaker.travel_assistance_required === false) return 'self_managed';
     return null;
   });
 
@@ -78,6 +81,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
 
   const handleTravelOptionChange = (option: TravelOption) => {
     setTravelOption(option);
+    handleChange('travel_option', option);
     if (option === 'employer_covers' || option === 'self_managed') {
       handleChange('travel_assistance_required', false);
       handleChange('assistance_type', null);

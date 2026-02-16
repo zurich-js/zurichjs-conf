@@ -15,6 +15,7 @@ export type {
   CfpReimbursementType,
   CfpTshirtSize,
   CfpAssistanceType,
+  CfpTravelOption,
 } from './base';
 
 // Core entities

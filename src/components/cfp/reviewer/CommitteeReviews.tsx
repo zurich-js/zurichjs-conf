@@ -62,7 +62,7 @@ function ReviewCard({ review }: { review: ReviewData }) {
       </div>
 
       {/* Scores Grid */}
-      <div className="grid grid-cols-5 gap-2 mb-3">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
         <ScoreCell value={review.score_overall} label="Overall" required />
         <ScoreCell value={review.score_relevance} label="Relevance" />
         <ScoreCell value={review.score_technical_depth} label="Technical" />

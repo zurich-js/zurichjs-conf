@@ -6,18 +6,30 @@ import { Github, Linkedin, ExternalLink } from 'lucide-react';
 import type { ProfileFormProps } from './types';
 
 /**
- * Extract just the handle from a full URL.
+ * Extract just the handle from a full URL or stored value.
+ * Strips leading @ and known URL prefixes.
  * e.g. "https://github.com/myhandle" -> "myhandle"
+ * e.g. "@https://x.com/myhandle" -> "myhandle"
  */
-function extractHandle(value: string, prefix: string): string {
+export function extractHandle(value: string, urlPrefixes: string[]): string {
   if (!value) return '';
-  // Try to strip the URL prefix (with or without www.)
-  const wwwPrefix = prefix.replace('://', '://www.');
-  if (value.startsWith(prefix)) return value.slice(prefix.length).replace(/\/+$/, '');
-  if (value.startsWith(wwwPrefix)) return value.slice(wwwPrefix.length).replace(/\/+$/, '');
-  // If it's not a URL at all, return as-is (already a handle)
-  if (!value.startsWith('http')) return value;
-  return value;
+  let v = value.trim();
+  // Strip leading @ symbols (handles may be stored as @handle or @url)
+  while (v.startsWith('@')) v = v.slice(1);
+  // Try each URL prefix (with and without www.)
+  for (const prefix of urlPrefixes) {
+    if (v.startsWith(prefix)) return v.slice(prefix.length).replace(/^@/, '').replace(/\/+$/, '');
+    const wwwPrefix = prefix.replace('://', '://www.');
+    if (v.startsWith(wwwPrefix)) return v.slice(wwwPrefix.length).replace(/^@/, '').replace(/\/+$/, '');
+  }
+  // Fallback: extract path from any remaining URL
+  if (v.startsWith('http')) {
+    try {
+      const path = new URL(v).pathname.replace(/^\/+@?/, '').replace(/\/+$/, '');
+      if (path) return path;
+    } catch { /* fall through */ }
+  }
+  return v;
 }
 
 export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormProps) {
@@ -36,7 +48,7 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           id="github_url"
           label="GitHub"
           icon={<Github className="w-4 h-4 text-brand-gray-light" />}
-          value={extractHandle(formData.github_url || '', 'https://github.com/')}
+          value={extractHandle(formData.github_url || '', ['https://github.com/'])}
           onChange={(v) => handleChange('github_url', v)}
           placeholder="myhandle"
           error={errors.github_url}
@@ -49,7 +61,7 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           id="linkedin_url"
           label="LinkedIn"
           icon={<Linkedin className="w-4 h-4 text-brand-gray-light" />}
-          value={extractHandle(formData.linkedin_url || '', 'https://linkedin.com/in/')}
+          value={extractHandle(formData.linkedin_url || '', ['https://linkedin.com/in/'])}
           onChange={(v) => handleChange('linkedin_url', v)}
           placeholder="myhandle"
           error={errors.linkedin_url}
@@ -62,9 +74,10 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           id="twitter_handle"
           label="X.com"
           icon={<XIcon />}
-          value={formData.twitter_handle || ''}
+          value={extractHandle(formData.twitter_handle || '', ['https://x.com/', 'https://twitter.com/'])}
           onChange={(v) => handleChange('twitter_handle', v)}
           placeholder="myhandle"
+          inputPrefix="@"
         />
 
         {/* Bluesky */}
@@ -72,9 +85,10 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           id="bluesky_handle"
           label="Bluesky"
           icon={<BlueskyIcon />}
-          value={formData.bluesky_handle || ''}
+          value={extractHandle(formData.bluesky_handle || '', ['https://bsky.app/profile/'])}
           onChange={(v) => handleChange('bluesky_handle', v)}
           placeholder="myhandle"
+          inputPrefix="@"
         />
 
         {/* Mastodon */}
@@ -82,9 +96,10 @@ export function SocialLinksCard({ formData, errors, handleChange }: ProfileFormP
           id="mastodon_handle"
           label="Mastodon"
           icon={<MastodonIcon />}
-          value={formData.mastodon_handle || ''}
+          value={extractHandle(formData.mastodon_handle || '', [])}
           onChange={(v) => handleChange('mastodon_handle', v)}
           placeholder="myhandle"
+          inputPrefix="@"
         />
       </div>
     </div>
@@ -109,24 +124,24 @@ function SocialInput({ id, label, icon, value, onChange, placeholder, error, lin
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-white mb-2">{label}</label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none gap-1.5">
+      <div className="flex items-center bg-brand-gray-darkest rounded-lg border border-brand-gray-medium focus-within:ring-2 focus-within:ring-brand-primary focus-within:border-transparent transition-all">
+        <div className="flex items-center gap-1.5 pl-3 shrink-0">
           {icon}
-          {inputPrefix && <span className="text-brand-gray-medium text-xs">{inputPrefix}</span>}
+          {inputPrefix && <span className="text-brand-gray-medium text-xs whitespace-nowrap">{inputPrefix}</span>}
         </div>
         <input
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg ${inputPrefix ? 'pl-[8.5rem]' : 'pl-10'} ${showLink ? 'pr-10' : 'pr-4'} py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
+          className="flex-1 min-w-0 bg-transparent text-white placeholder:text-brand-gray-medium py-3 pl-1.5 pr-4 focus:outline-none text-sm"
         />
         {showLink && (
           <a
             href={value.startsWith('http') ? value : `${linkPrefix}${value}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-brand-gray-light hover:text-white transition-colors"
+            className="pr-3 flex items-center text-brand-gray-light hover:text-white transition-colors shrink-0"
           >
             <ExternalLink className="w-4 h-4" />
           </a>

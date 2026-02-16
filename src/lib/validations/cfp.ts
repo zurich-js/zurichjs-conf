@@ -31,22 +31,36 @@ export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] as const;
  * Assistance types for travel/accommodation
  */
 export const ASSISTANCE_TYPES = ['travel', 'accommodation', 'both'] as const;
+export const TRAVEL_OPTIONS = ['employer_covers', 'self_managed', 'need_assistance'] as const;
 
 /**
  * Normalize social handle to always include @ prefix
  */
-const normalizeHandle = (handle: string | undefined): string => {
+export const normalizeHandle = (handle: string | undefined): string => {
   if (!handle) return '';
-  const trimmed = handle.trim();
+  let trimmed = handle.trim();
   if (!trimmed) return '';
-  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
+  // Strip leading @
+  while (trimmed.startsWith('@')) trimmed = trimmed.slice(1);
+  // Strip known social URL prefixes
+  trimmed = trimmed
+    .replace(/^https?:\/\/(www\.)?(x\.com|twitter\.com)\//, '')
+    .replace(/^https?:\/\/(www\.)?bsky\.app\/profile\//, '');
+  // Handle Mastodon-style URLs: https://instance/@username
+  const mastodonMatch = trimmed.match(/^https?:\/\/([^/]+)\/@?([^/]+)/);
+  if (mastodonMatch) {
+    trimmed = `${mastodonMatch[2]}@${mastodonMatch[1]}`;
+  }
+  trimmed = trimmed.replace(/\/+$/, '').replace(/^@/, '');
+  if (!trimmed) return '';
+  return `@${trimmed}`;
 };
 
 /**
  * Normalize a GitHub input (handle or URL) to a full URL.
  * Accepts: "myhandle", "https://github.com/myhandle", or empty string.
  */
-const normalizeGithubUrl = (input: string | undefined): string => {
+export const normalizeGithubUrl = (input: string | undefined): string => {
   if (!input) return '';
   const trimmed = input.trim();
   if (!trimmed) return '';
@@ -60,7 +74,7 @@ const normalizeGithubUrl = (input: string | undefined): string => {
  * Normalize a LinkedIn input (handle or URL) to a full URL.
  * Accepts: "myhandle", "https://linkedin.com/in/myhandle", or empty string.
  */
-const normalizeLinkedinUrl = (input: string | undefined): string => {
+export const normalizeLinkedinUrl = (input: string | undefined): string => {
   if (!input) return '';
   const trimmed = input.trim();
   if (!trimmed) return '';
@@ -96,6 +110,7 @@ export const speakerProfileSchema = z.object({
   tshirt_size: z.enum(TSHIRT_SIZES).nullable().refine((val) => val !== null, {
     message: 'T-shirt size is required',
   }),
+  travel_option: z.enum(TRAVEL_OPTIONS).optional().nullable(),
   travel_assistance_required: z.boolean().optional().nullable(),
   assistance_type: z.enum(ASSISTANCE_TYPES).optional().nullable(),
   departure_airport: z.string().optional().nullable(),

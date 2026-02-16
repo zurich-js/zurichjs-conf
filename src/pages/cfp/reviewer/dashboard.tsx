@@ -274,14 +274,14 @@ export default function ReviewerDashboard() {
       <div className="min-h-screen bg-brand-gray-darkest">
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-2">
             <Link href="/cfp/reviewer/dashboard" className="flex items-center gap-3">
               <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
               <span className="text-white font-semibold">CFP Review</span>
             </Link>
             <div className="flex items-center gap-4">
               <ReviewGuideButton onClick={() => setShowGuide(true)} />
-              <span className="text-brand-gray-light text-sm">
+              <span className="text-brand-gray-light text-sm truncate max-w-[120px] sm:max-w-none">
                 {reviewer.name || reviewer.email}
               </span>
               <button

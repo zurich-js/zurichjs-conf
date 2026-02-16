@@ -117,10 +117,12 @@ export default function ReviewerSubmission() {
   // Next unreviewed submission from cache
   const nextSubmissionId = useNextUnreviewed(id as string);
 
-  // Reset form state when navigating to a different submission
-  useEffect(() => {
+  // Reset form synchronously when submission changes (avoids stale success state)
+  const [lastResetId, setLastResetId] = useState<string | undefined>();
+  if (id && id !== lastResetId) {
+    setLastResetId(id as string);
     dispatch({ type: 'RESET' });
-  }, [id]);
+  }
 
   // Initialize form with existing review data
   useEffect(() => {
@@ -255,7 +257,7 @@ export default function ReviewerSubmission() {
                 className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Back to Dashboard
+                Back<span className="hidden sm:inline"> to Dashboard</span>
               </Link>
             </div>
           </div>
@@ -271,7 +273,7 @@ export default function ReviewerSubmission() {
               Dashboard
             </Link>
             <ChevronRight className="w-4 h-4 text-brand-gray-medium" />
-            <span className="text-brand-gray-light truncate max-w-[300px]">
+            <span className="text-brand-gray-light truncate max-w-[200px] sm:max-w-[300px]">
               {submission.title}
             </span>
           </nav>

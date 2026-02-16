@@ -5,7 +5,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
+import { createSupabaseServerClient } from '@/lib/cfp/auth';
 import { Input, Button, Heading } from '@/components/atoms';
 import { cfpLoginSchema } from '@/lib/validations/cfp';
 import { trackCfpLoginAttempt, captureValidationError } from '@/lib/analytics/helpers';
@@ -193,3 +195,14 @@ function CfpLogin() {
 }
 
 export default CfpLogin;
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const supabaseServer = createSupabaseServerClient(ctx);
+  const { data: { session } } = await supabaseServer.auth.getSession();
+
+  if (session) {
+    return { redirect: { destination: '/cfp/dashboard', permanent: false } };
+  }
+
+  return { props: {} };
+};

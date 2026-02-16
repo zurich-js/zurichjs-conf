@@ -68,3 +68,8 @@ export type CfpTshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL';
  * Type of travel/accommodation assistance needed
  */
 export type CfpAssistanceType = 'travel' | 'accommodation' | 'both' | null;
+
+/**
+ * Speaker's travel arrangement choice
+ */
+export type CfpTravelOption = 'employer_covers' | 'self_managed' | 'need_assistance';
