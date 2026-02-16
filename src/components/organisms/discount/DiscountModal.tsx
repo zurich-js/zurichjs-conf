@@ -46,13 +46,12 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
         <DialogBackdrop className="fixed inset-0 bg-black/50" />
       </motion.div>
 
-      <div className="fixed inset-0 overflow-y-auto p-4">
         <motion.div
-          initial={{ opacity: 0, x: '100%' }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: '100%' }}
+          initial={{ opacity: 0, x: '20%', y: '100%' }}
+          animate={{ opacity: 1, x: 0, y: '50%' }}
+          exit={{ opacity: 0, x: '20%', y: '100%' }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="absolute inset-x-4 top-1/2 -translate-y-1/2 w-auto max-w-md mx-auto sm:inset-x-auto sm:top-auto sm:bottom-1/3 sm:right-4 sm:translate-y-0 sm:mx-0 sm:max-w-lg"
+          className="fixed inset-x-0 md:right-4 md:left-[unset] top-1/2 -translate-y-1/2 w-auto max-w-md mx-auto "
         >
           <DialogPanel className="relative overflow-hidden rounded-3xl border-2 border-white/40 bg-black px-6 py-8 text-center shadow-2xl sm:px-12 sm:py-12">
             {/* Glossy shine effect */}
@@ -70,8 +69,8 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
 
             {/* Discount percentage */}
             <div className="mb-2 flex items-baseline justify-center text-white">
-              <span className="text-5xl font-bold tracking-tight sm:text-7xl">-{data.percentOff}</span>
-              <span className="text-xl font-bold sm:text-3xl">%</span>
+              <span className="text-5xl sm:text-7xl">-{data.percentOff}</span>
+              <span className="text-xl sm:text-3xl">%</span>
             </div>
 
             {/* Heading */}
@@ -122,7 +121,6 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
             </div>
           </DialogPanel>
         </motion.div>
-      </div>
     </Dialog>
   );
 }
