@@ -11,6 +11,7 @@ export type {
   ReviewerInvitationData,
   SponsorshipInquiryData,
   VipUpgradeEmailData,
+  CfpFeedbackRequestData,
 } from './types';
 
 // Config (for internal use or testing)
@@ -26,7 +27,7 @@ export {
 export { sendVoucherConfirmationEmail } from './voucher-emails';
 
 // CFP emails
-export { sendReviewerInvitationEmail } from './cfp-emails';
+export { sendReviewerInvitationEmail, sendCfpFeedbackRequestEmail } from './cfp-emails';
 
 // Verification emails
 export { sendVerificationRequestEmail } from './verification-emails';

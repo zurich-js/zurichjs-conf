@@ -73,7 +73,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case 'SET_ERROR':
       return { ...state, error: action.error };
     case 'SUBMIT_SUCCESS':
-      return { ...state, success: true, error: null };
+      return { ...state, success: true, error: null, initialized: true };
     case 'INIT_FROM_REVIEW':
       return { ...state, ...action.review, initialized: true };
   }

@@ -14,6 +14,7 @@ import { Button, Heading } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { isSpeakerProfileComplete, getMissingProfileFields } from '@/lib/cfp/auth-constants';
 import type { CfpSpeaker, CfpSubmission } from '@/lib/types/cfp';
+import { getSpeakerVisibleStatus, type SpeakerVisibleStatus } from '@/lib/cfp/submissions';
 import { supabase } from '@/lib/supabase/client';
 import { env } from '@/config/env';
 
@@ -24,30 +25,28 @@ interface DashboardProps {
   missingFields: string[];
 }
 
-const StatusBadge = ({ status }: { status: CfpSubmission['status'] }) => {
-  const styles: Record<string, string> = {
+const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
+  const styles: Record<SpeakerVisibleStatus, string> = {
     draft: 'bg-gray-500/20 text-gray-300',
     submitted: 'bg-blue-500/20 text-blue-300',
     under_review: 'bg-purple-500/20 text-purple-300',
-    waitlisted: 'bg-orange-500/20 text-orange-300',
     accepted: 'bg-green-500/20 text-green-300',
     rejected: 'bg-red-500/20 text-red-300',
     withdrawn: 'bg-gray-500/20 text-gray-400',
   };
 
-  const labels: Record<string, string> = {
+  const labels: Record<SpeakerVisibleStatus, string> = {
     draft: 'Draft',
     submitted: 'Submitted',
     under_review: 'Under Review',
-    waitlisted: 'Waitlisted',
     accepted: 'Accepted',
     rejected: 'Not Selected',
     withdrawn: 'Withdrawn',
   };
 
   return (
-    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${styles[status] || styles.draft}`}>
-      {labels[status] || status}
+    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${styles[status]}`}>
+      {labels[status]}
     </span>
   );
 };
@@ -59,6 +58,8 @@ const SubmissionCard = ({ submission }: { submission: CfpSubmission }) => {
     workshop: 'Workshop',
   };
 
+  const visibleStatus = getSpeakerVisibleStatus(submission);
+
   return (
     <Link href={`/cfp/submissions/${submission.id}`}>
       <div className="bg-brand-gray-dark rounded-xl p-5 hover:bg-brand-gray-dark/80 transition-colors cursor-pointer">
@@ -66,7 +67,7 @@ const SubmissionCard = ({ submission }: { submission: CfpSubmission }) => {
           <h3 className="text-lg font-semibold text-white line-clamp-2">
             {submission.title}
           </h3>
-          <StatusBadge status={submission.status} />
+          <StatusBadge status={visibleStatus} />
         </div>
         <div className="flex items-center gap-3 text-sm text-brand-gray-light">
           <span className="px-2 py-0.5 bg-brand-gray-darkest rounded text-xs">
