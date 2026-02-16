@@ -109,35 +109,18 @@ function SocialInput({ id, label, icon, value, onChange, placeholder, error, lin
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-white mb-2">{label}</label>
-      <div className="relative flex">
-        {inputPrefix ? (
-          <>
-            <div className="flex items-center bg-brand-gray-darkest border border-r-0 border-brand-gray-medium rounded-l-lg px-3 pointer-events-none">
-              <span className="flex items-center gap-2">
-                {icon}
-                <span className="text-brand-gray-medium text-sm whitespace-nowrap">{inputPrefix}</span>
-              </span>
-            </div>
-            <input
-              id={id}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder={placeholder}
-              className={`flex-1 bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-r-lg ${showLink ? 'pr-10' : 'pr-4'} py-3 pl-3 border border-l-0 border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
-            />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">{icon}</div>
-            <input
-              id={id}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder={placeholder}
-              className={`w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 ${showLink ? 'pr-10' : 'pr-4'} py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
-            />
-          </>
-        )}
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none gap-1.5">
+          {icon}
+          {inputPrefix && <span className="text-brand-gray-medium text-xs">{inputPrefix}</span>}
+        </div>
+        <input
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg ${inputPrefix ? 'pl-[8.5rem]' : 'pl-10'} ${showLink ? 'pr-10' : 'pr-4'} py-3 border border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
+        />
         {showLink && (
           <a
             href={value.startsWith('http') ? value : `${linkPrefix}${value}`}
