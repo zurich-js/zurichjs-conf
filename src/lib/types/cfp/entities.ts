@@ -97,6 +97,10 @@ export interface CfpSubmission {
   created_at: string;
   updated_at: string;
 
+  // Decision fields (populated from DB, used for speaker-visible status)
+  decision_status?: 'undecided' | 'accepted' | 'rejected' | null;
+  decision_email_sent_at?: string | null;
+
   // Populated via joins (optional)
   tags?: CfpTag[];
   speaker?: CfpSpeaker;

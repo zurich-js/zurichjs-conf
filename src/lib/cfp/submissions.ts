@@ -14,6 +14,36 @@ import type {
 } from '@/lib/types/cfp';
 
 /**
+ * Speaker-visible status type.
+ * Hides internal statuses (shortlisted, waitlisted) and only shows
+ * accepted/rejected once the decision email has actually been sent.
+ */
+export type SpeakerVisibleStatus = 'draft' | 'submitted' | 'under_review' | 'accepted' | 'rejected' | 'withdrawn';
+
+/**
+ * Map an internal submission status to what the speaker should see.
+ * Speakers should not see shortlisted/waitlisted or know about accept/reject
+ * decisions until the notification email has been sent.
+ */
+export function getSpeakerVisibleStatus(submission: CfpSubmission): SpeakerVisibleStatus {
+  const { status, decision_email_sent_at } = submission;
+
+  // Statuses the speaker controls directly
+  if (status === 'draft' || status === 'submitted' || status === 'withdrawn') {
+    return status;
+  }
+
+  // Only reveal accepted/rejected after the email has been sent
+  if ((status === 'accepted' || status === 'rejected') && decision_email_sent_at) {
+    return status;
+  }
+
+  // Everything else (under_review, shortlisted, waitlisted, or
+  // accepted/rejected before email sent) shows as "Under Review"
+  return 'under_review';
+}
+
+/**
  * Get submission by ID
  */
 export async function getSubmissionById(

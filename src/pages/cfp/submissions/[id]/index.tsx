@@ -7,10 +7,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
+import { Check, X, MessageSquare, Loader2 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
-import { getSubmissionWithDetails } from '@/lib/cfp/submissions';
+import { getSubmissionWithDetails, getSpeakerVisibleStatus, type SpeakerVisibleStatus } from '@/lib/cfp/submissions';
 import type { CfpSpeaker, CfpSubmissionWithDetails } from '@/lib/types/cfp';
 
 interface SubmissionDetailProps {
@@ -18,30 +19,28 @@ interface SubmissionDetailProps {
   submission: CfpSubmissionWithDetails;
 }
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const styles: Record<string, string> = {
+const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
+  const styles: Record<SpeakerVisibleStatus, string> = {
     draft: 'bg-gray-500/20 text-gray-300',
     submitted: 'bg-blue-500/20 text-blue-300',
     under_review: 'bg-purple-500/20 text-purple-300',
-    waitlisted: 'bg-orange-500/20 text-orange-300',
     accepted: 'bg-green-500/20 text-green-300',
     rejected: 'bg-red-500/20 text-red-300',
     withdrawn: 'bg-gray-500/20 text-gray-400',
   };
 
-  const labels: Record<string, string> = {
+  const labels: Record<SpeakerVisibleStatus, string> = {
     draft: 'Draft',
     submitted: 'Submitted',
     under_review: 'Under Review',
-    waitlisted: 'Waitlisted',
     accepted: 'Accepted',
     rejected: 'Not Selected',
     withdrawn: 'Withdrawn',
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${styles[status] || styles.draft}`}>
-      {labels[status] || status}
+    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${styles[status]}`}>
+      {labels[status]}
     </span>
   );
 };
@@ -57,17 +56,25 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isDraft = submission.status === 'draft';
-  const isSubmitted = submission.status === 'submitted';
-  const isUnderReview = submission.status === 'under_review';
+  // Feedback request state
+  const [feedbackItems, setFeedbackItems] = useState<string[] | null>(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+  const visibleStatus = getSpeakerVisibleStatus(submission);
+
+  const isDraft = visibleStatus === 'draft';
   const canEdit = isDraft;
   const canSubmit = isDraft;
-  const canWithdraw = isSubmitted || isUnderReview;
+  const canWithdraw = visibleStatus === 'submitted';
   const canDelete = isDraft;
+  const isAccepted = visibleStatus === 'accepted';
+  const isRejected = visibleStatus === 'rejected';
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -137,6 +144,54 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
     }
   };
 
+  const handleConfirmAttendance = async (response: 'confirm' | 'decline') => {
+    setIsConfirming(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/cfp/attendance/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission_id: submission.id,
+          response,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update attendance');
+      }
+
+      router.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const handleRequestFeedback = async () => {
+    setFeedbackLoading(true);
+    setFeedbackError(null);
+
+    try {
+      const response = await fetch(`/api/cfp/submissions/${submission.id}/feedback`);
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fetch feedback');
+      }
+
+      const data = await response.json();
+      setFeedbackItems(data.feedback || []);
+    } catch (err) {
+      setFeedbackError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
   return (
     <>
       <SEO
@@ -182,7 +237,7 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <StatusBadge status={submission.status} />
+                <StatusBadge status={visibleStatus} />
                 <span className="text-brand-gray-light text-sm">
                   {TYPE_LABELS[submission.submission_type]}
                 </span>
@@ -222,6 +277,101 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
               )}
             </div>
           </div>
+
+          {/* Acceptance Section */}
+          {isAccepted && (
+            <section className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 mb-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-green-400 mb-2">
+                    Your talk has been accepted!
+                  </h2>
+                  <p className="text-brand-gray-light text-sm mb-4">
+                    Congratulations! Please confirm whether you can attend the conference to secure your speaking slot.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleConfirmAttendance('confirm')}
+                      loading={isConfirming}
+                    >
+                      <Check className="w-4 h-4" />
+                      Confirm Attendance
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleConfirmAttendance('decline')}
+                      disabled={isConfirming}
+                    >
+                      <X className="w-4 h-4" />
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Rejection Section */}
+          {isRejected && (
+            <section className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 mb-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <X className="w-6 h-6 text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-red-400 mb-2">
+                    Submission not selected
+                  </h2>
+                  <p className="text-brand-gray-light text-sm mb-4">
+                    Thank you for your submission. Unfortunately, we were unable to include it in this year&apos;s program.
+                    You can request feedback from the review committee below.
+                  </p>
+
+                  {feedbackItems === null ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRequestFeedback}
+                      loading={feedbackLoading}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Request Feedback
+                    </Button>
+                  ) : feedbackItems.length > 0 ? (
+                    <div className="space-y-3 mt-2">
+                      <h3 className="text-sm font-medium text-white">Reviewer Feedback</h3>
+                      {feedbackItems.map((item, i) => (
+                        <div key={i} className="bg-brand-gray-darkest rounded-lg p-4">
+                          <p className="text-brand-gray-light text-sm whitespace-pre-wrap">{item}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-brand-gray-medium text-sm italic">
+                      No detailed feedback was provided for this submission.
+                    </p>
+                  )}
+
+                  {feedbackError && (
+                    <p className="text-red-400 text-sm mt-2">{feedbackError}</p>
+                  )}
+
+                  {feedbackLoading && (
+                    <div className="flex items-center gap-2 text-brand-gray-light text-sm mt-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading feedback...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Submission Content */}
           <div className="space-y-6">
