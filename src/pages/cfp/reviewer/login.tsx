@@ -6,7 +6,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
+import { createSupabaseServerClient } from '@/lib/cfp/auth';
 import { Button, Heading, Input } from '@/components/atoms';
 import { trackCfpLoginAttempt } from '@/lib/analytics/helpers';
 
@@ -168,3 +170,14 @@ function ReviewerLoginPage() {
 }
 
 export default ReviewerLoginPage;
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const supabaseServer = createSupabaseServerClient(ctx);
+  const { data: { session } } = await supabaseServer.auth.getSession();
+
+  if (session) {
+    return { redirect: { destination: '/cfp/reviewer/dashboard', permanent: false } };
+  }
+
+  return { props: {} };
+};

@@ -62,7 +62,7 @@ function ReviewCard({ review }: { review: ReviewData }) {
       </div>
 
       {/* Scores Grid */}
-      <div className="grid grid-cols-5 gap-2 mb-3">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
         <ScoreCell value={review.score_overall} label="Overall" required />
         <ScoreCell value={review.score_relevance} label="Relevance" />
         <ScoreCell value={review.score_technical_depth} label="Technical" />
@@ -107,7 +107,7 @@ function AggregateStats({ stats }: { stats: SubmissionStats }) {
           return (
             <div key={key} className="text-center">
               <div className="text-xl font-bold text-white">
-                {typeof value === 'number' ? value.toFixed(1) : '—'}
+                {typeof value === 'number' ? value.toFixed(2) : '—'}
               </div>
               <div className="text-xs text-brand-gray-medium">{label}</div>
             </div>

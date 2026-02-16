@@ -49,7 +49,7 @@ export function StatusSection({
 
   return (
     <section className="bg-brand-gray-dark rounded-xl p-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold text-brand-gray-medium mb-2">Current Status</h2>
           <div className="flex items-center gap-3">

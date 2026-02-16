@@ -84,7 +84,7 @@ export function ReviewGuide({ isOpen, onClose }: ReviewGuideProps) {
             <div key={criterion.name} className="bg-brand-gray-darkest rounded-lg p-4">
               <div className="font-medium text-white mb-1">{criterion.name}</div>
               <div className="text-sm text-brand-gray-light mb-3">{criterion.question}</div>
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
                   <span className="text-green-400 font-medium">High scores:</span>
                   <p className="text-brand-gray-light mt-0.5">{criterion.high}</p>

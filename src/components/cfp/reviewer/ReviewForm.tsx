@@ -80,7 +80,7 @@ export function ReviewForm({
                   {label}
                   <span className="group relative">
                     <HelpCircle className="w-3.5 h-3.5 text-brand-gray-medium cursor-help" />
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal w-48 max-w-[calc(100vw-2rem)] pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
                       {description}
                     </span>
                   </span>
@@ -120,7 +120,7 @@ export function ReviewForm({
             Speaker feedback
             <span className="group relative">
               <HelpCircle className="w-3.5 h-3.5 text-brand-gray-medium cursor-help" />
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal w-48 max-w-[calc(100vw-2rem)] pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
                 Optional feedback shared with the speaker
               </span>
             </span>
@@ -141,7 +141,7 @@ export function ReviewForm({
             Internal Notes
             <span className="group relative">
               <HelpCircle className="w-3.5 h-3.5 text-brand-gray-medium cursor-help" />
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-brand-gray-darkest text-xs text-brand-gray-light rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal w-48 max-w-[calc(100vw-2rem)] pointer-events-none z-50 shadow-lg border border-brand-gray-medium">
                 Private notes visible only to reviewers
               </span>
             </span>

@@ -9,6 +9,7 @@ import type {
   CfpSubmissionStatus,
   CfpTshirtSize,
   CfpAssistanceType,
+  CfpTravelOption,
 } from './base';
 import type { CfpReview } from './reviews';
 
@@ -33,6 +34,7 @@ export interface CfpSpeaker {
   mastodon_handle: string | null;
   profile_image_url: string | null;
   tshirt_size: CfpTshirtSize | null;
+  travel_option: CfpTravelOption | null; // Which travel arrangement: employer_covers, self_managed, need_assistance
   travel_assistance_required: boolean | null; // Whether speaker needs travel/accommodation covered
   assistance_type: CfpAssistanceType; // What type of assistance: travel, accommodation, or both
   departure_airport: string | null; // Closest airport IATA code for travel planning
