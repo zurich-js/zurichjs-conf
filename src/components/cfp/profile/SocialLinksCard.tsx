@@ -109,10 +109,10 @@ function SocialInput({ id, label, icon, value, onChange, placeholder, error, lin
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-white mb-2">{label}</label>
-      <div className="relative flex">
+      <div className="relative flex min-w-0">
         {inputPrefix ? (
           <>
-            <div className="flex items-center bg-brand-gray-darkest border border-r-0 border-brand-gray-medium rounded-l-lg px-3 pointer-events-none">
+            <div className="flex shrink-0 items-center bg-brand-gray-darkest border border-r-0 border-brand-gray-medium rounded-l-lg px-3 pointer-events-none">
               <span className="flex items-center gap-2">
                 {icon}
                 <span className="text-brand-gray-medium text-sm whitespace-nowrap">{inputPrefix}</span>
@@ -123,7 +123,7 @@ function SocialInput({ id, label, icon, value, onChange, placeholder, error, lin
               value={value}
               onChange={(e) => onChange(e.target.value)}
               placeholder={placeholder}
-              className={`flex-1 bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-r-lg ${showLink ? 'pr-10' : 'pr-4'} py-3 pl-3 border border-l-0 border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
+              className={`min-w-0 flex-1 bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-r-lg ${showLink ? 'pr-10' : 'pr-4'} py-3 pl-3 border border-l-0 border-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all`}
             />
           </>
         ) : (
