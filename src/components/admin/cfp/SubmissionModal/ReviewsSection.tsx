@@ -33,7 +33,7 @@ function ScoreDisplay({ value, label }: { value: number | null; label: string })
   return (
     <div className="bg-gray-50 rounded p-2 text-center">
       <p className="text-[10px] text-gray-500 uppercase">{label}</p>
-      <p className={`text-base font-bold ${colorClass}`}>{value !== null ? value : '-'}</p>
+      <p className={`text-base font-bold ${colorClass}`}>{value !== null ? (Number.isInteger(value) ? value : value.toFixed(2)) : '-'}</p>
     </div>
   );
 }

@@ -107,7 +107,7 @@ function AggregateStats({ stats }: { stats: SubmissionStats }) {
           return (
             <div key={key} className="text-center">
               <div className="text-xl font-bold text-white">
-                {typeof value === 'number' ? value.toFixed(1) : '—'}
+                {typeof value === 'number' ? value.toFixed(2) : '—'}
               </div>
               <div className="text-xs text-brand-gray-medium">{label}</div>
             </div>
