@@ -9,3 +9,4 @@ export { SubmissionEditForm } from './SubmissionEditForm';
 export { SpeakerInfoSection } from './SpeakerInfoSection';
 export { ReviewsSection } from './ReviewsSection';
 export { StatusActionsSection } from './StatusActionsSection';
+export { CommunicationSection } from './CommunicationSection';

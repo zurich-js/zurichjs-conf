@@ -3,16 +3,29 @@
  * Displays full submission details with review scores and status actions
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { X, FileText, Copy, Mail, Pencil, Loader2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, FileText, Copy, Mail, Pencil, Loader2, Gavel } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/contexts/ToastContext';
 import type { CfpAdminSubmission, CfpReviewWithReviewer } from '@/lib/types/cfp-admin';
-import { fetchSubmissionDetail } from '@/lib/cfp/adminApi';
+import { cfpQueryKeys } from '@/lib/types/cfp-admin';
+import {
+  fetchSubmissionDetail,
+  fetchDecisionData,
+  makeDecision,
+  scheduleEmail,
+  cancelScheduledEmail,
+  sendEmailNow,
+} from '@/lib/cfp/adminApi';
 import { StatusBadge } from '../StatusBadge';
 import { ConfirmationModal } from '../ConfirmationModal';
+import { DecisionModal } from '../DecisionModal';
+import { ScheduleEmailModal } from '../ScheduleEmailModal';
 import { SubmissionEditForm } from './SubmissionEditForm';
 import { SpeakerInfoSection } from './SpeakerInfoSection';
 import { ReviewsSection } from './ReviewsSection';
 import { StatusActionsSection } from './StatusActionsSection';
+import { CommunicationSection } from './CommunicationSection';
 
 export interface SubmissionModalProps {
   submission: CfpAdminSubmission;
@@ -35,11 +48,15 @@ export function SubmissionModal({
   onEdit,
   isEditing,
 }: SubmissionModalProps) {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
   const [copied, setCopied] = useState(false);
-  const [reviews, setReviews] = useState<CfpReviewWithReviewer[]>([]);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showDecisionModal, setShowDecisionModal] = useState(false);
+  const [showScheduleEmailModal, setShowScheduleEmailModal] = useState(false);
+  const [scheduleEmailType, setScheduleEmailType] = useState<'acceptance' | 'rejection'>('acceptance');
   const [editForm, setEditForm] = useState({
     title: submission.title,
     abstract: submission.abstract,
@@ -52,19 +69,102 @@ export function SubmissionModal({
     workshop_max_participants: submission.workshop_max_participants,
   });
 
-  useEffect(() => {
-    async function loadReviews() {
-      try {
-        const data = await fetchSubmissionDetail(submission.id);
-        setReviews(data.reviews || []);
-      } catch (error) {
-        console.error('Failed to fetch reviews:', error);
-      } finally {
-        setIsLoadingReviews(false);
-      }
-    }
-    loadReviews();
-  }, [submission.id]);
+  // Fetch reviews via TanStack Query
+  const { data: detailData, isLoading: isLoadingReviews } = useQuery({
+    queryKey: cfpQueryKeys.submissionDetail(submission.id),
+    queryFn: () => fetchSubmissionDetail(submission.id),
+  });
+  const reviews = detailData?.reviews ?? [];
+
+  // Fetch decision data (status + scheduled emails)
+  const { data: decisionData } = useQuery({
+    queryKey: cfpQueryKeys.decisionData(submission.id),
+    queryFn: () => fetchDecisionData(submission.id),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data?.scheduled_emails?.some((e) => e.status === 'pending') ? 30000 : false;
+    },
+  });
+
+  const decisionStatus = decisionData?.status?.decision_status;
+  const scheduledEmails = decisionData?.scheduled_emails ?? [];
+
+  // Decision mutation
+  const decisionMutation = useMutation({
+    mutationFn: ({ decision, notes }: { decision: 'accepted' | 'rejected'; notes?: string }) =>
+      makeDecision(submission.id, decision, notes),
+    onSuccess: (_, { decision }) => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.decisionData(submission.id) });
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.submissions() });
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.stats });
+      toast.success(`Submission ${decision}`);
+      setShowDecisionModal(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Schedule email mutation
+  const scheduleEmailMutation = useMutation({
+    mutationFn: (options: Parameters<typeof scheduleEmail>[1]) =>
+      scheduleEmail(submission.id, options),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.decisionData(submission.id) });
+      toast.success('Email scheduled');
+      setShowScheduleEmailModal(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Cancel email mutation
+  const cancelEmailMutation = useMutation({
+    mutationFn: (emailId: string) => cancelScheduledEmail(submission.id, emailId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.decisionData(submission.id) });
+      toast.success('Scheduled email cancelled');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Send now mutation
+  const sendNowMutation = useMutation({
+    mutationFn: (emailId: string) => sendEmailNow(submission.id, emailId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.decisionData(submission.id) });
+      toast.success('Email sent');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleDecision = async (
+    _submissionId: string,
+    decision: 'accepted' | 'rejected',
+    options: { notes?: string }
+  ) => {
+    await decisionMutation.mutateAsync({ decision, notes: options.notes });
+  };
+
+  const handleScheduleEmail = async (
+    _submissionId: string,
+    options: Parameters<typeof scheduleEmail>[1]
+  ) => {
+    await scheduleEmailMutation.mutateAsync(options);
+  };
+
+  const handleCancelScheduledEmail = async (emailId: string) => {
+    await cancelEmailMutation.mutateAsync(emailId);
+  };
+
+  const handleSendNow = async (emailId: string) => {
+    await sendNowMutation.mutateAsync(emailId);
+  };
 
   const aggregateScores = useMemo(() => {
     if (reviews.length === 0) return null;
@@ -291,6 +391,38 @@ export function SubmissionModal({
             aggregateScores={aggregateScores}
           />
 
+          {/* Decision & Communication */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-black uppercase tracking-wide flex items-center gap-2">
+                <Gavel className="w-4 h-4 text-gray-600" />
+                Decision & Communication
+              </h4>
+              <button
+                onClick={() => setShowDecisionModal(true)}
+                className="px-3 py-1.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+              >
+                Make Decision
+              </button>
+            </div>
+            <CommunicationSection
+              decisionStatus={decisionStatus}
+              scheduledEmails={scheduledEmails}
+              onScheduleAcceptance={() => {
+                setScheduleEmailType('acceptance');
+                setShowScheduleEmailModal(true);
+              }}
+              onScheduleRejection={() => {
+                setScheduleEmailType('rejection');
+                setShowScheduleEmailModal(true);
+              }}
+              onCancelScheduledEmail={handleCancelScheduledEmail}
+              onSendNow={handleSendNow}
+              isCancelling={cancelEmailMutation.isPending}
+              isSendingNow={sendNowMutation.isPending}
+            />
+          </div>
+
           {/* Status Actions */}
           <StatusActionsSection
             currentStatus={submission.status}
@@ -331,6 +463,28 @@ export function SubmissionModal({
         confirmText="Delete Submission"
         confirmStyle="danger"
         isLoading={isDeleting}
+      />
+
+      {/* Decision Modal */}
+      <DecisionModal
+        isOpen={showDecisionModal}
+        onClose={() => setShowDecisionModal(false)}
+        submission={submission}
+        onDecision={handleDecision}
+        isLoading={decisionMutation.isPending}
+      />
+
+      {/* Schedule Email Modal */}
+      <ScheduleEmailModal
+        isOpen={showScheduleEmailModal}
+        onClose={() => setShowScheduleEmailModal(false)}
+        submission={submission}
+        emailType={scheduleEmailType}
+        existingScheduledEmail={scheduledEmails.find(
+          (e) => e.email_type === scheduleEmailType && e.status === 'pending'
+        )}
+        onSchedule={handleScheduleEmail}
+        isLoading={scheduleEmailMutation.isPending}
       />
     </div>
   );

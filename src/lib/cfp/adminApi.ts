@@ -11,6 +11,7 @@ import type {
   CfpAdminTag,
   CfpReviewWithReviewer,
 } from '@/lib/types/cfp-admin';
+import type { CfpDecisionStatus, CfpDecisionEvent, CfpScheduledEmail } from '@/lib/types/cfp/decisions';
 
 export async function fetchStats(): Promise<CfpStats> {
   const res = await fetch('/api/admin/cfp/stats');
@@ -184,4 +185,85 @@ export async function createSpeaker(data: {
     throw new Error(error.error || 'Failed to create speaker');
   }
   return res.json();
+}
+
+export async function fetchDecisionData(id: string): Promise<{
+  status: { decision_status: CfpDecisionStatus; decision_notes: string | null };
+  history: CfpDecisionEvent[];
+  scheduled_emails: CfpScheduledEmail[];
+}> {
+  const res = await fetch(`/api/admin/cfp/submissions/${id}/decision`);
+  if (!res.ok) throw new Error('Failed to fetch decision data');
+  return res.json();
+}
+
+export async function makeDecision(
+  id: string,
+  decision: 'accepted' | 'rejected',
+  notes?: string
+): Promise<{ success: boolean; decision_status: CfpDecisionStatus }> {
+  const res = await fetch(`/api/admin/cfp/submissions/${id}/decision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision, notes }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to make decision');
+  }
+  return res.json();
+}
+
+export async function fetchScheduledEmails(id: string): Promise<{
+  scheduled_emails: CfpScheduledEmail[];
+}> {
+  const res = await fetch(`/api/admin/cfp/submissions/${id}/schedule-email`);
+  if (!res.ok) throw new Error('Failed to fetch scheduled emails');
+  return res.json();
+}
+
+export async function scheduleEmail(
+  id: string,
+  options: {
+    email_type: 'acceptance' | 'rejection';
+    personal_message?: string;
+    coupon_discount_percent?: number;
+    coupon_validity_days?: number;
+    include_feedback?: boolean;
+    feedback_text?: string;
+  }
+): Promise<{ success: boolean; scheduled_email: CfpScheduledEmail; scheduled_for: string }> {
+  const res = await fetch(`/api/admin/cfp/submissions/${id}/schedule-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to schedule email');
+  }
+  return res.json();
+}
+
+export async function cancelScheduledEmail(id: string, emailId: string): Promise<void> {
+  const res = await fetch(
+    `/api/admin/cfp/submissions/${id}/schedule-email?scheduled_email_id=${emailId}`,
+    { method: 'DELETE' }
+  );
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to cancel scheduled email');
+  }
+}
+
+export async function sendEmailNow(id: string, emailId: string): Promise<void> {
+  const res = await fetch(`/api/admin/cfp/submissions/${id}/schedule-email`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scheduled_email_id: emailId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to send email');
+  }
 }

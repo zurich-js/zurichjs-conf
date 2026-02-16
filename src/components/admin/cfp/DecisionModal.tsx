@@ -58,7 +58,7 @@ export function DecisionModal({
     }
   };
 
-  const currentDecision = (submission as unknown as { decision_status?: CfpDecisionStatus }).decision_status;
+  const currentDecision = submission.decision_status;
   const isAlreadyDecided = currentDecision === 'accepted' || currentDecision === 'rejected';
 
   return (

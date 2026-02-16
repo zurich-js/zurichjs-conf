@@ -4,6 +4,7 @@
  */
 
 import type { ShortlistStatus } from '@/lib/cfp/scoring';
+import type { CfpDecisionStatus } from './cfp/decisions';
 
 // Re-export CfpStats from the canonical location
 export type { CfpStats } from './cfp/admin';
@@ -77,6 +78,7 @@ export interface CfpAdminSubmission {
   };
   tags: Array<{ id: string; name: string }>;
   stats: CfpAdminSubmissionStats;
+  decision_status?: CfpDecisionStatus;
 }
 
 export interface CfpAdminSubmissionStats {
@@ -168,6 +170,8 @@ export const cfpQueryKeys = {
   reviewerActivity: (id: string, dateRange?: string) => ['cfp', 'reviewer', id, 'activity', dateRange] as const,
   tags: ['cfp', 'tags'] as const,
   insights: ['cfp', 'insights'] as const,
+  decisionData: (id: string) => ['cfp', 'submission', id, 'decision'] as const,
+  scheduledEmails: (id: string) => ['cfp', 'submission', id, 'scheduled-emails'] as const,
 };
 
 // Status action descriptions for admin actions
