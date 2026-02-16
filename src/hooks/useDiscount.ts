@@ -19,6 +19,11 @@ import {
   setDismissedCookie,
   clearDiscountCookies,
 } from '@/lib/discount';
+import {
+  evaluateUtmLottery,
+  parseUtmParams,
+  type LotteryResult,
+} from '@/lib/discount/utm-lottery';
 import { useCountdown, type TimeRemaining } from './useCountdown';
 
 // Constants
@@ -34,8 +39,13 @@ const EMPTY_COUNTDOWN: TimeRemaining = {
 };
 
 // API call
-async function generateDiscount(): Promise<DiscountData> {
-  const res = await fetch('/api/discount/generate', { method: 'POST' });
+async function generateDiscount(lotteryPercentOff?: number): Promise<DiscountData> {
+  const body = lotteryPercentOff ? JSON.stringify({ percentOff: lotteryPercentOff }) : undefined;
+  const res = await fetch('/api/discount/generate', {
+    method: 'POST',
+    headers: lotteryPercentOff ? { 'Content-Type': 'application/json' } : undefined,
+    body,
+  });
   if (!res.ok) throw new Error('Failed to generate discount');
   return res.json();
 }
@@ -51,6 +61,8 @@ export function useDiscount() {
   // One-time flags
   const flags = useRef({ shown: false, copied: false, eligibilityChecked: false });
   const isEligible = useRef(false);
+  const lotteryResult = useRef<LotteryResult | null>(null);
+  const [isLotteryReady, setIsLotteryReady] = useState(false);
 
   // Clipboard
   const [, copyToClipboard] = useCopyToClipboard();
@@ -79,6 +91,17 @@ export function useDiscount() {
   useEffect(() => {
     if (!isClient || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
+
+    // Check UTM lottery first (overrides normal flow)
+    const utmParams = parseUtmParams(window.location.search);
+    const lottery = evaluateUtmLottery(utmParams);
+
+    if (lottery.eligible) {
+      isEligible.current = true;
+      lotteryResult.current = lottery;
+      setIsLotteryReady(true); // Trigger immediate display
+      return;
+    }
 
     if (config.forceShow) {
       isEligible.current = true;
@@ -109,13 +132,18 @@ export function useDiscount() {
     setState('minimized');
   }, [statusData, data]);
 
-  // Show popup after delay if eligible
+  // Show popup after delay if eligible (lottery shows immediately, normal has 15s delay)
   const shouldTrigger = isClient && !isLoading && state === 'idle' && !statusData?.active && !hasDismissedCookie();
+  const delayMs = isLotteryReady ? 0 : POPUP_DELAY_MS;
 
   useTimeout(() => {
     if (!isEligible.current || data || isPending) return;
-    mutate();
-  }, shouldTrigger ? POPUP_DELAY_MS : null);
+    // Pass lottery percentage if UTM lottery triggered
+    const lotteryPercent = lotteryResult.current?.eligible
+      ? lotteryResult.current.percentOff
+      : undefined;
+    mutate(lotteryPercent);
+  }, shouldTrigger ? delayMs : null);
 
   // Track analytics when modal opens
   useEffect(() => {
@@ -125,6 +153,8 @@ export function useDiscount() {
       discount_code: data.code,
       percent_off: data.percentOff,
       expires_at: data.expiresAt,
+      is_lottery: lotteryResult.current?.eligible ?? false,
+      lottery_source: lotteryResult.current?.source,
     });
   }, [state, data]);
 

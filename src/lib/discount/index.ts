@@ -17,3 +17,9 @@ export {
   setDismissedCookie,
   clearDiscountCookies,
 } from './cookies';
+export {
+  evaluateUtmLottery,
+  parseUtmParams,
+  type UtmParams,
+  type LotteryResult,
+} from './utm-lottery';

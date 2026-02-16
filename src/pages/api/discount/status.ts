@@ -18,6 +18,7 @@ export default function handler(
 
   const code = req.cookies.discount_code;
   const expiresAt = req.cookies.discount_expires_at;
+  const percentOffCookie = req.cookies.discount_percent_off;
 
   if (!code || !expiresAt) {
     return res.status(200).json({ active: false });
@@ -29,16 +30,19 @@ export default function handler(
     res.setHeader('Set-Cookie', [
       'discount_code=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
       'discount_expires_at=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+      'discount_percent_off=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
     ]);
     return res.status(200).json({ active: false });
   }
 
   const config = getServerConfig();
+  // Use stored percentOff if available (for lottery discounts), otherwise fall back to config
+  const percentOff = percentOffCookie ? parseInt(percentOffCookie, 10) : config.percentOff;
 
   return res.status(200).json({
     active: true,
     code,
     expiresAt,
-    percentOff: config.percentOff,
+    percentOff,
   });
 }

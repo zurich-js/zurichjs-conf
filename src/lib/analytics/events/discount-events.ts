@@ -11,6 +11,8 @@ export interface DiscountPopupShownEvent {
     discount_code: string;
     percent_off: number;
     expires_at: string;
+    is_lottery: boolean;
+    lottery_source?: string;
   };
 }
 
