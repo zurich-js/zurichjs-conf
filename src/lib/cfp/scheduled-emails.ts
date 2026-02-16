@@ -314,12 +314,14 @@ export async function scheduleAcceptanceEmail(
       });
     }
 
-    // Update submission with scheduled email info
+    // Update submission with scheduled email info + mark decision email as sent
+    // (since there's no Resend webhook to track delivery, we set it at scheduling time)
     await supabase
       .from('cfp_submissions')
       .update({
         acceptance_email_scheduled_for: scheduledFor.toISOString(),
         acceptance_email_scheduled_id: scheduledEmail?.id || null,
+        decision_email_sent_at: scheduledFor.toISOString(),
       })
       .eq('id', request.submission_id);
 
@@ -494,12 +496,14 @@ export async function scheduleRejectionEmail(
       log.error('Failed to store scheduled email record', { error: insertError.message });
     }
 
-    // Update submission with scheduled email info
+    // Update submission with scheduled email info + mark decision email as sent
+    // (since there's no Resend webhook to track delivery, we set it at scheduling time)
     await supabase
       .from('cfp_submissions')
       .update({
         rejection_email_scheduled_for: scheduledFor.toISOString(),
         rejection_email_scheduled_id: scheduledEmail?.id || null,
+        decision_email_sent_at: scheduledFor.toISOString(),
       })
       .eq('id', request.submission_id);
 
@@ -596,10 +600,10 @@ export async function cancelScheduledEmail(
       return { success: false, error: `Failed to update email status: ${updateError.message}` };
     }
 
-    // Clear scheduled email reference from submission
+    // Clear scheduled email reference and undo decision_email_sent_at
     const clearColumn = scheduledEmail.email_type === 'acceptance'
-      ? { acceptance_email_scheduled_for: null, acceptance_email_scheduled_id: null }
-      : { rejection_email_scheduled_for: null, rejection_email_scheduled_id: null };
+      ? { acceptance_email_scheduled_for: null, acceptance_email_scheduled_id: null, decision_email_sent_at: null }
+      : { rejection_email_scheduled_for: null, rejection_email_scheduled_id: null, decision_email_sent_at: null };
 
     await supabase
       .from('cfp_submissions')
@@ -644,23 +648,40 @@ export async function getScheduledEmailsForSubmission(
 
 /**
  * Mark a scheduled email as sent (called by cron/webhook after email is delivered)
+ * Also updates decision_email_sent_at on the submission so the speaker can see the status change
  */
 export async function markEmailAsSent(
   resendEmailId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createCfpServiceClient();
+  const sentAt = new Date().toISOString();
+
+  // First, get the scheduled email to find the submission_id
+  const { data: scheduledEmail } = await supabase
+    .from('cfp_scheduled_emails')
+    .select('submission_id')
+    .eq('resend_email_id', resendEmailId)
+    .single();
 
   const { error } = await supabase
     .from('cfp_scheduled_emails')
     .update({
       status: 'sent' as CfpScheduledEmailStatus,
-      sent_at: new Date().toISOString(),
+      sent_at: sentAt,
     })
     .eq('resend_email_id', resendEmailId);
 
   if (error) {
     log.error('Failed to mark email as sent', { error: error.message, resendEmailId });
     return { success: false, error: error.message };
+  }
+
+  // Update decision_email_sent_at on the submission so the speaker dashboard reveals the status
+  if (scheduledEmail?.submission_id) {
+    await supabase
+      .from('cfp_submissions')
+      .update({ decision_email_sent_at: sentAt })
+      .eq('id', scheduledEmail.submission_id);
   }
 
   return { success: true };
@@ -818,11 +839,12 @@ export async function sendScheduledEmailNow(
     }
 
     // Update the scheduled email record to sent
+    const sentAt = new Date().toISOString();
     const { error: updateError } = await supabase
       .from('cfp_scheduled_emails')
       .update({
         status: 'sent' as CfpScheduledEmailStatus,
-        sent_at: new Date().toISOString(),
+        sent_at: sentAt,
         resend_email_id: result.data?.id, // Update with new email ID
       })
       .eq('id', scheduledEmailId);
@@ -831,6 +853,12 @@ export async function sendScheduledEmailNow(
       log.error('Failed to update scheduled email status after sending', { error: updateError.message });
       // Email was sent, just logging failed - don't fail the request
     }
+
+    // Update decision_email_sent_at on the submission so the speaker dashboard reveals the status
+    await supabase
+      .from('cfp_submissions')
+      .update({ decision_email_sent_at: sentAt })
+      .eq('id', scheduledEmail.submission_id);
 
     log.info('Scheduled email sent immediately', {
       scheduled_email_id: scheduledEmailId,

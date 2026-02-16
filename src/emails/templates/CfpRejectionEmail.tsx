@@ -132,8 +132,12 @@ export const CfpRejectionEmail: React.FC<CfpRejectionEmailData> = ({
         {has_other_pending_submissions && (
           <div style={infoBoxStyle}>
             <Text style={infoTextStyle}>
-              <strong>Note:</strong> You have other submissions still under review.
-              We&apos;ll be in touch about those separately.
+              <strong>Note:</strong> If you submitted other talks and haven&apos;t received
+              a response yet, it means they are still being evaluated. You can check the
+              status of all your submissions on your{' '}
+              <Link href="https://conf.zurichjs.com/cfp/dashboard" style={infoLinkStyle}>
+                speaker dashboard
+              </Link>.
             </Text>
           </div>
         )}
@@ -348,6 +352,12 @@ const infoTextStyle: React.CSSProperties = {
   lineHeight: '1.6',
   color: '#92400E',
   margin: 0,
+};
+
+const infoLinkStyle: React.CSSProperties = {
+  color: '#92400E',
+  fontWeight: 600,
+  textDecoration: 'underline',
 };
 
 const couponBoxStyle: React.CSSProperties = {
