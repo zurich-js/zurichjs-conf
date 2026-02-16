@@ -16,6 +16,7 @@ import type {
   StatusVerificationData,
   SponsorInterestData,
   CfpReviewSubmittedData,
+  CfpEmailScheduledData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -250,4 +251,32 @@ export function notifyCfpReviewSubmitted(data: CfpReviewSubmittedData): void {
   }
   const blocks = buildBlocks(':memo: *CFP Review Submitted*', fields, data.talkReviewUrl, 'View')
   void safeSend('cfp_review_submitted', text, blocks)
+}
+
+export function notifyCfpEmailScheduled(data: CfpEmailScheduledData): void {
+  const title = truncate(data.talkTitle, 60)
+  const isAcceptance = data.emailType === 'acceptance'
+  const emoji = isAcceptance ? ':white_check_mark:' : ':x:'
+  const emailTypeLabel = isAcceptance ? 'Acceptance' : 'Rejection'
+
+  const sendTime = new Date(data.scheduledFor).toLocaleString('en-CH', {
+    timeZone: 'Europe/Zurich',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+
+  const text = `${emailTypeLabel} email scheduled for "${title}"`
+  const fields = [
+    { label: 'Speaker', value: data.speakerName },
+    { label: 'Email', value: data.speakerEmail },
+    { label: 'Talk', value: title },
+    { label: 'Will send at', value: sendTime },
+  ]
+
+  if (data.hasCoupon && data.couponDiscountPercent) {
+    fields.push({ label: 'Coupon', value: `${data.couponDiscountPercent}% off` })
+  }
+
+  const blocks = buildBlocks(`${emoji} *${emailTypeLabel} Email Scheduled*`, fields)
+  void safeSend('cfp_email_scheduled', text, blocks)
 }

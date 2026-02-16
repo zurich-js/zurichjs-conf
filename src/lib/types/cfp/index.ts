@@ -71,3 +71,6 @@ export type {
 
 // Public types
 export type { PublicSession, PublicSpeaker } from './public';
+
+// Decision types
+export type { CfpDecisionStatus } from './decisions';

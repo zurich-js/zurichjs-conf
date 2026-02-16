@@ -73,3 +73,14 @@ export interface CfpReviewSubmittedData {
   score?: number
   talkReviewUrl?: string
 }
+
+export interface CfpEmailScheduledData {
+  submissionId: string
+  emailType: 'acceptance' | 'rejection'
+  speakerName: string
+  speakerEmail: string
+  talkTitle: string
+  scheduledFor: string
+  hasCoupon?: boolean
+  couponDiscountPercent?: number
+}
