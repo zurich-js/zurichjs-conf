@@ -17,6 +17,7 @@ import type {
   SponsorInterestData,
   CfpReviewSubmittedData,
   CfpEmailScheduledData,
+  CfpFeedbackRequestedData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -279,4 +280,18 @@ export function notifyCfpEmailScheduled(data: CfpEmailScheduledData): void {
 
   const blocks = buildBlocks(`${emoji} *${emailTypeLabel} Email Scheduled*`, fields)
   void safeSend('cfp_email_scheduled', text, blocks)
+}
+
+export function notifyCfpFeedbackRequested(data: CfpFeedbackRequestedData): void {
+  const title = truncate(data.talkTitle, 80)
+  const text = `Feedback requested: "${title}" by ${data.speakerName}`
+  const blocks = buildBlocks(
+    ':speech_balloon: *Speaker Feedback Requested*',
+    [
+      { label: 'Speaker', value: data.speakerName },
+      { label: 'Email', value: data.speakerEmail },
+      { label: 'Talk', value: title },
+    ]
+  )
+  void safeSend('cfp_feedback_requested', text, blocks)
 }

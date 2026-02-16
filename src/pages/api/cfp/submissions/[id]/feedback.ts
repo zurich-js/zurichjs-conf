@@ -1,6 +1,6 @@
 /**
  * Speaker Feedback Request API
- * GET /api/cfp/submissions/[id]/feedback - Get reviewer feedback for a rejected submission
+ * POST /api/cfp/submissions/[id]/feedback - Notify organizers that a speaker wants feedback
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { env } from '@/config/env';
 import { logger } from '@/lib/logger';
+import { notifyCfpFeedbackRequested } from '@/lib/platform-notifications';
 
 const log = logger.scope('CFP Feedback API');
 
@@ -18,7 +19,7 @@ function createCfpServiceClient() {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
+  if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -48,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get submission and verify ownership
     const { data: submission, error: fetchError } = await cfpClient
       .from('cfp_submissions')
-      .select('id, speaker_id, status, decision_status, decision_email_sent_at')
+      .select('id, speaker_id, title, status, decision_email_sent_at')
       .eq('id', id)
       .single();
 
@@ -60,30 +61,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Only allow feedback for rejected submissions where the email has been sent
+    // Only allow feedback requests for rejected submissions where the email has been sent
     if (submission.status !== 'rejected' || !submission.decision_email_sent_at) {
-      return res.status(400).json({ error: 'Feedback is not available for this submission' });
+      return res.status(400).json({ error: 'Feedback requests are not available for this submission' });
     }
 
-    // Fetch reviewer feedback (only the feedback_to_speaker field, anonymized)
-    const { data: reviews, error: reviewsError } = await cfpClient
-      .from('cfp_reviews')
-      .select('feedback_to_speaker')
-      .eq('submission_id', id)
-      .not('feedback_to_speaker', 'is', null);
+    // Send Slack notification to organizers
+    notifyCfpFeedbackRequested({
+      submissionId: id,
+      speakerName: `${speaker.first_name} ${speaker.last_name}`,
+      speakerEmail: speaker.email,
+      talkTitle: submission.title,
+    });
 
-    if (reviewsError) {
-      log.error('Failed to fetch reviews', { error: reviewsError.message, submissionId: id });
-      return res.status(500).json({ error: 'Failed to fetch feedback' });
-    }
+    log.info('Feedback requested', {
+      submissionId: id,
+      speakerId: speaker.id,
+      title: submission.title,
+    });
 
-    const feedback = (reviews || [])
-      .map((r: { feedback_to_speaker: string | null }) => r.feedback_to_speaker)
-      .filter((f: string | null): f is string => !!f && f.trim().length > 0);
-
-    return res.status(200).json({ feedback });
+    return res.status(200).json({ success: true });
   } catch (error) {
-    log.error('Failed to get feedback', error, { submissionId: id });
+    log.error('Failed to request feedback', error, { submissionId: id });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

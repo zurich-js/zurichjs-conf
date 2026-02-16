@@ -84,3 +84,10 @@ export interface CfpEmailScheduledData {
   hasCoupon?: boolean
   couponDiscountPercent?: number
 }
+
+export interface CfpFeedbackRequestedData {
+  submissionId: string
+  speakerName: string
+  speakerEmail: string
+  talkTitle: string
+}

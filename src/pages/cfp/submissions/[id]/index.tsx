@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import { Check, X, MessageSquare, Loader2 } from 'lucide-react';
+import { Check, X, MessageSquare } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
@@ -62,7 +62,7 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
   const [error, setError] = useState<string | null>(null);
 
   // Feedback request state
-  const [feedbackItems, setFeedbackItems] = useState<string[] | null>(null);
+  const [feedbackRequested, setFeedbackRequested] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
@@ -176,15 +176,16 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
     setFeedbackError(null);
 
     try {
-      const response = await fetch(`/api/cfp/submissions/${submission.id}/feedback`);
+      const response = await fetch(`/api/cfp/submissions/${submission.id}/feedback`, {
+        method: 'POST',
+      });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to fetch feedback');
+        throw new Error(data.error || 'Failed to request feedback');
       }
 
-      const data = await response.json();
-      setFeedbackItems(data.feedback || []);
+      setFeedbackRequested(true);
     } catch (err) {
       setFeedbackError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -333,7 +334,12 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
                     You can request feedback from the review committee below.
                   </p>
 
-                  {feedbackItems === null ? (
+                  {feedbackRequested ? (
+                    <div className="flex items-center gap-2 text-green-400 text-sm">
+                      <Check className="w-4 h-4" />
+                      Feedback request sent. The organizers will get back to you via email.
+                    </div>
+                  ) : (
                     <Button
                       variant="outline"
                       size="sm"
@@ -343,30 +349,10 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
                       <MessageSquare className="w-4 h-4" />
                       Request Feedback
                     </Button>
-                  ) : feedbackItems.length > 0 ? (
-                    <div className="space-y-3 mt-2">
-                      <h3 className="text-sm font-medium text-white">Reviewer Feedback</h3>
-                      {feedbackItems.map((item, i) => (
-                        <div key={i} className="bg-brand-gray-darkest rounded-lg p-4">
-                          <p className="text-brand-gray-light text-sm whitespace-pre-wrap">{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-brand-gray-medium text-sm italic">
-                      No detailed feedback was provided for this submission.
-                    </p>
                   )}
 
                   {feedbackError && (
                     <p className="text-red-400 text-sm mt-2">{feedbackError}</p>
-                  )}
-
-                  {feedbackLoading && (
-                    <div className="flex items-center gap-2 text-brand-gray-light text-sm mt-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading feedback...
-                    </div>
                   )}
                 </div>
               </div>
