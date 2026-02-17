@@ -11,7 +11,6 @@
 
 @theme {
   /* Font Families */
-  --font-sans: var(--font-figtree);
   --font-mono: var(--font-geist-mono);
 
   --text-xxs: 0.75rem; /* 12px */
@@ -177,18 +176,33 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/**
- * Base Styles
- */
-body {
-  transition-behavior: allow-discrete;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-sans), sans-serif;
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+    html {
+        font-size: 16px;
+    }
+
+    @media screen and (min-width: 2560px) {
+        html {
+            font-size: clamp(18px, 1.5vw, 21px);
+        }
+    }
+
+    body {
+        transition-behavior: allow-discrete;
+        color: var(--foreground);
+        background: var(--background);
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    #__next>div {
+        font-family: var(--font-figtree), sans-serif;
+    }
 }
 
 /**
@@ -580,14 +594,6 @@ body {
 }
 /*---break---
  */
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
 
 .glass-container {
     mix-blend-mode: difference;
