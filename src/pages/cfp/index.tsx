@@ -197,7 +197,7 @@ function CfpLanding() {
                 description="Open source contributions, career development, and building inclusive tech communities."
               />
 
-              <div className="mt-4 bg-black/5 rounded-2xl p-6 space-y-3">
+              <div className="mt-4 bg-brand-gray-light rounded-2xl p-6 space-y-3">
                 <h3 className="text-base font-bold text-black">What tends to resonate with our audience</h3>
                 <p className="text-sm text-brand-gray-medium">
                   Zurich has a high concentration of experienced engineers, so we tend to prioritize advanced, senior-level content.
