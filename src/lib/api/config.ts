@@ -30,7 +30,7 @@ export function getBaseUrl(): string {
   }
 
   // Default to localhost for development
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  return 'http://localhost:3000';
 }
 
 /**
