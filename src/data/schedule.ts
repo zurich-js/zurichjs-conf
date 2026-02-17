@@ -111,8 +111,18 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
         },
         {
           time: '12:30 – 13:30',
-          title: 'Lunch & Panel Discussions',
-          description: '2 back-to-back panel discussions (30 minutes each, 4 panelists per panel) running during the lunch break. Grab your food and enjoy the conversations.',
+          title: 'Lunch Break',
+          description: 'Lunch is served throughout and runs over both panel discussions below. Grab your food and enjoy the conversations.',
+        },
+        {
+          time: '12:30 – 13:00',
+          title: 'Panel Discussion #1',
+          description: 'First panel with 4 panelists. Topic TBA.',
+        },
+        {
+          time: '13:00 – 13:30',
+          title: 'Panel Discussion #2',
+          description: 'Second panel with 4 panelists. Topic TBA.',
         },
         {
           time: '13:30 – 14:00',
