@@ -6,7 +6,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Users, Eye, BarChart3 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Heading, Kicker, IconButton } from '@/components/atoms';
 import { ShapedSection, DynamicSiteFooter, SectionContainer } from '@/components/organisms';
@@ -196,6 +196,22 @@ function CfpLanding() {
                 title="Community & Career"
                 description="Open source contributions, career development, and building inclusive tech communities."
               />
+
+              <div className="mt-4 bg-brand-gray-light rounded-2xl p-6 space-y-3">
+                <h3 className="text-base font-bold text-black">What tends to resonate with our audience</h3>
+                <p className="text-sm text-brand-gray-medium">
+                  Zurich has a high concentration of experienced engineers, so we tend to prioritize advanced, senior-level content.
+                  Cutting-edge topics work especially well when they include practical, near-term takeaways — patterns, tradeoffs,
+                  code-level techniques, architectural decisions, or tooling insights that attendees can apply the same day.
+                </p>
+                <p className="text-sm text-brand-gray-medium">
+                  Softer or more narrative-driven talks are welcome too. In a one-day, single-track format with limited slots,
+                  these tend to be more competitive — but a strong proposal can absolutely stand out.
+                </p>
+                <p className="text-sm text-brand-gray-medium italic">
+                  These are observations based on past events, not strict rules. You know your content best.
+                </p>
+              </div>
             </div>
           </SectionSplitView>
         </ShapedSection>
@@ -222,22 +238,113 @@ function CfpLanding() {
           </SectionSplitView>
         </ShapedSection>
 
+        {/* How Our CFP Review Works */}
+        <ShapedSection shape="widen" variant="light" id="review-process">
+          <SectionSplitView
+            kicker="Review Process"
+            title="How Our CFP Review Works"
+            subtitle="We want the process to be transparent, so here's how we evaluate proposals."
+            variant="light"
+          >
+            <div className="space-y-8 pt-8">
+              {/* Anonymous Review */}
+              <div className="flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center flex-shrink-0">
+                  <Eye className="w-5 h-5 text-black" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold text-black">Anonymous first stage</h3>
+                  <p className="text-sm text-brand-gray-medium">
+                    We have 10+ reviewers from different companies, backgrounds, and specialties.
+                    The first stage of review is anonymous — reviewers evaluate your proposal based
+                    primarily on the title and abstract, similar to how attendees scan a conference schedule.
+                  </p>
+                  <p className="text-sm text-brand-gray-medium">
+                    When attendees browse a schedule, they usually see only the title and the first lines
+                    of the abstract. We mirror that experience in early review rounds to reduce bias and
+                    focus on the strength of the session itself.
+                  </p>
+                </div>
+              </div>
+
+              {/* Links and Materials */}
+              <div className="flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5 text-black" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold text-black">Where to place links and materials</h3>
+                  <p className="text-sm text-brand-gray-medium">
+                    You&apos;re welcome to share links to slides, recordings, or additional context that
+                    supports your proposal. To preserve the anonymous review stage, we recommend avoiding
+                    links or identifying material directly in the abstract.
+                  </p>
+                  <p className="text-sm text-brand-gray-medium">
+                    Instead, place supporting links in the <span className="font-semibold text-black">&ldquo;Additional speaker notes&rdquo;</span> section
+                    of the CFP form. Those materials are typically reviewed in later stages when we consider
+                    the full picture.
+                  </p>
+                </div>
+              </div>
+
+              {/* Later Considerations */}
+              <div className="bg-black/5 rounded-2xl p-6 space-y-3">
+                <h3 className="text-base font-bold text-black">What we consider in later stages</h3>
+                <p className="text-sm text-brand-gray-medium">
+                  Once proposals advance past the anonymous stage, we also look at:
+                </p>
+                <ul className="text-sm text-brand-gray-medium space-y-1.5 ml-4">
+                  <li className="flex gap-2"><span className="text-black">·</span> Speaker-topic alignment and relevant experience</li>
+                  <li className="flex gap-2"><span className="text-black">·</span> Code of conduct considerations</li>
+                  <li className="flex gap-2"><span className="text-black">·</span> Program balance across topics and backgrounds</li>
+                  <li className="flex gap-2"><span className="text-black">·</span> Representation and diversity across the lineup</li>
+                  <li className="flex gap-2"><span className="text-black">·</span> Practical constraints such as budget or travel requirements</li>
+                </ul>
+              </div>
+
+              {/* How We Score */}
+              <div className="flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center flex-shrink-0">
+                  <BarChart3 className="w-5 h-5 text-black" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold text-black">How we score proposals</h3>
+                  <p className="text-sm text-brand-gray-medium">
+                    We score proposals on a 1–4 scale (not 1–5). The four-point scale encourages reviewers
+                    to lean in a direction rather than defaulting to a neutral middle score. We evaluate
+                    clarity, technical depth, originality, and relevance.
+                  </p>
+                  <p className="text-sm text-brand-gray-medium">
+                    Reviewers are encouraged to leave notes alongside their scores. We aim to share
+                    feedback with speakers where possible, though we can&apos;t guarantee it for every submission.
+                  </p>
+                  <p className="text-sm text-brand-gray-medium italic">
+                    Across the committee, we aim to spend meaningful time on each proposal — often adding up
+                    to roughly an hour of total reviewer time per session across reviewers. This is an
+                    intention we hold ourselves to, not a promise we can always keep.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SectionSplitView>
+        </ShapedSection>
+
         {/* What We Provide */}
-        <ShapedSection shape="widen" variant="light" id="benefits">
+        <ShapedSection shape="tighten" variant="dark" id="benefits">
           <SectionSplitView
             kicker="Benefits"
             title="What We Provide"
             subtitle="We want to make speaking at ZurichJS Conf as easy as possible for you."
-            variant="light"
+            variant="dark"
           >
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-8">
               {SPEAKER_BENEFITS.map((benefit) => (
                 <div key={benefit.title} className="text-center">
-                  <div className="w-12 h-12  rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <CheckIcon />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <CheckIcon className="text-white" />
                   </div>
-                  <h3 className="font-semibold text-black mb-1">{benefit.title}</h3>
-                  <p className="text-black/70 text-sm">{benefit.description}</p>
+                  <h3 className="font-semibold text-white mb-1">{benefit.title}</h3>
+                  <p className="text-brand-gray-light text-sm">{benefit.description}</p>
                 </div>
               ))}
             </div>
@@ -245,7 +352,7 @@ function CfpLanding() {
         </ShapedSection>
 
         {/* Timeline */}
-        <ShapedSection shape="tighten" variant="dark" id="timeline">
+        <ShapedSection shape="widen" variant="dark" id="timeline">
           <SectionSplitView
             kicker="Timeline"
             title="Important Dates"
@@ -272,7 +379,7 @@ function CfpLanding() {
         </ShapedSection>
 
         {/* CTA Section */}
-        <ShapedSection shape="widen" variant="yellow" id="cta">
+        <ShapedSection shape="tighten" variant="yellow" id="cta">
           <div className="text-center max-w-2xl mx-auto">
             <Kicker variant="light" className="mb-4">Ready?</Kicker>
             <Heading level="h2" variant="light" className="text-xl md:text-2xl mb-4">
@@ -280,7 +387,7 @@ function CfpLanding() {
             </Heading>
             <p className=" mb-8">
               Whether you&apos;re a first-time speaker or a conference veteran, we&apos;d love to hear from you.
-              Our review process is blind, so your proposal is judged purely on content.
+              Our first review stage is anonymous — your proposal is judged on the strength of the content.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -295,7 +402,7 @@ function CfpLanding() {
         </ShapedSection>
 
         {/* Footer */}
-        <ShapedSection shape="tighten" variant="dark" dropBottom>
+        <ShapedSection shape="widen" variant="dark" dropBottom>
           <DynamicSiteFooter />
         </ShapedSection>
       </main>
@@ -319,9 +426,9 @@ function TopicCard({ title, description }: { title: string; description: string 
   );
 }
 
-function CheckIcon() {
+function CheckIcon({ className = 'text-black' }: { className?: string }) {
   return (
-    <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`w-6 h-6 ${className}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
