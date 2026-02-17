@@ -159,16 +159,17 @@ function CfpLanding() {
               </div>
 
               <motion.div
-                className="flex items-center gap-4 mt-4"
+                className="flex flex-wrap items-center gap-4 mt-4"
                 initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
                 animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
               >
                 <Link
-                  href="/cfp/login"
-                  className="text-brand-gray-light hover:text-white transition-colors text-sm"
+                  href="#review-process"
+                  className="inline-flex items-center gap-2 bg-brand-orange text-white px-5 py-2.5 rounded-full font-semibold hover:bg-brand-orange/90 transition-colors text-sm"
                 >
-                  Already have an account? Sign in
+                  How We Review
+                  <ArrowRight size={14} />
                 </Link>
               </motion.div>
             </div>
@@ -197,7 +198,7 @@ function CfpLanding() {
                 description="Open source contributions, career development, and building inclusive tech communities."
               />
 
-              <div className="mt-4 bg-brand-gray-light rounded-2xl p-6 space-y-3">
+              <div className="mt-4 bg-black/5 rounded-2xl p-6 space-y-3">
                 <h3 className="text-base font-bold text-black">What tends to resonate with our audience</h3>
                 <p className="text-sm text-brand-gray-medium">
                   Zurich has a high concentration of experienced engineers, so we tend to prioritize advanced, senior-level content.
@@ -280,7 +281,7 @@ function CfpLanding() {
                     links or identifying material directly in the abstract.
                   </p>
                   <p className="text-sm text-brand-gray-medium">
-                    Instead, place supporting links in the <span className="font-semibold text-black">&ldquo;Additional speaker notes&rdquo;</span> section
+                    Instead, place supporting links in the <span className="font-semibold text-black">&ldquo;Notes for Reviewers&rdquo;</span> section
                     of the CFP form. Those materials are typically reviewed in later stages when we consider
                     the full picture.
                   </p>
