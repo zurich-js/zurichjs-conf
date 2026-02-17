@@ -9,6 +9,7 @@ import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { isSpeakerProfileComplete } from '@/lib/cfp/auth-constants';
 import { updateSpeaker } from '@/lib/cfp/speakers';
 import { speakerProfileSchema } from '@/lib/validations/cfp';
+import { apiUnauthorized, apiValidationError, apiServerError, apiMethodNotAllowed, apiError } from '@/lib/api/responses';
 import { logger } from '@/lib/logger';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { notifyCfpSpeakerProfileCompleted } from '@/lib/platform-notifications';
@@ -26,14 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } = await supabase.auth.getSession();
 
   if (sessionError || !session) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return apiUnauthorized(res);
   }
 
   // Get speaker profile
   const speaker = await getSpeakerByUserId(session.user.id);
 
   if (!speaker) {
-    return res.status(404).json({ error: 'Speaker profile not found' });
+    return apiError(res, 404, 'Speaker profile not found');
   }
 
   if (req.method === 'GET') {
@@ -45,10 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Validate input
       const result = speakerProfileSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({
-          error: 'Validation failed',
-          issues: result.error.issues,
-        });
+        return apiValidationError(res, result.error);
       }
 
       // Don't allow email changes through this endpoint
@@ -94,9 +92,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (error) {
       log.error('Failed to update speaker profile', error, { speakerId: speaker.id });
-      return res.status(500).json({ error: 'Internal server error' });
+      return apiServerError(res);
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  return apiMethodNotAllowed(res);
 }

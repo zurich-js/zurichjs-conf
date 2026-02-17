@@ -6,74 +6,226 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel in-progress runs for the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Test
+  # ──────────────────────────────────────────────
+  # Lint — ESLint checks
+  # ──────────────────────────────────────────────
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm run test:run
+      - name: Run ESLint
+        run: npm run lint
+
+  # ──────────────────────────────────────────────
+  # Type Check — TypeScript strict mode
+  # ──────────────────────────────────────────────
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript check
+        run: npm run typecheck
+
+  # ──────────────────────────────────────────────
+  # Test — Vitest unit & integration tests
+  # ──────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run tests with coverage
         run: npm run test:coverage
 
       - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
-          retention-days: 30
+          retention-days: 14
 
-  lint:
-    name: Lint
+  # ──────────────────────────────────────────────
+  # Build — Next.js production build
+  # ──────────────────────────────────────────────
+  build:
+    name: Build
     runs-on: ubuntu-latest
-
+    # Build depends on lint + typecheck + test passing
+    needs: [lint, typecheck, test]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run linter
-        run: npm run lint
+      - name: Build application
+        run: npm run build
+        env:
+          # Provide dummy env vars for build (no actual API calls)
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+          NEXT_PUBLIC_BASE_URL: https://zurichjs.com
+          NEXT_PUBLIC_POSTHOG_KEY: placeholder
+          NEXT_PUBLIC_POSTHOG_HOST: https://placeholder.posthog.com
+          SENTRY_AUTH_TOKEN: placeholder
+          NEXT_PUBLIC_SENTRY_DSN: https://placeholder@sentry.io/0
 
-  typecheck:
-    name: Type Check
+  # ──────────────────────────────────────────────
+  # Supabase Migrations — Validate migration files
+  # ──────────────────────────────────────────────
+  supabase-migrations:
+    name: Supabase Migrations
     runs-on: ubuntu-latest
-
+    # Only run when migration files or config change
+    if: |
+      github.event_name == 'push' ||
+      contains(github.event.pull_request.labels.*.name, 'migrations') ||
+      true
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          fetch-depth: 0  # Full history for migration ordering check
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Check migration file ordering
+        run: |
+          echo "Checking migration file ordering..."
+          # Get all migration files sorted by name
+          MIGRATIONS=$(ls -1 supabase/migrations/*.sql 2>/dev/null | sort)
 
-      - name: Run type check
-        run: npm run typecheck
+          if [ -z "$MIGRATIONS" ]; then
+            echo "No migration files found"
+            exit 0
+          fi
 
+          # Verify filenames are in chronological order (YYYYMMDDHHMMSS prefix)
+          PREV_TIMESTAMP=""
+          while IFS= read -r file; do
+            BASENAME=$(basename "$file")
+            # Extract timestamp from filename (format: YYYYMMDDHHMMSS_description.sql)
+            TIMESTAMP=$(echo "$BASENAME" | grep -oP '^\d{14}')
+            if [ -z "$TIMESTAMP" ]; then
+              echo "ERROR: Migration file does not follow naming convention: $BASENAME"
+              echo "Expected format: YYYYMMDDHHMMSS_description.sql"
+              exit 1
+            fi
+            if [ -n "$PREV_TIMESTAMP" ] && [ "$TIMESTAMP" -le "$PREV_TIMESTAMP" ]; then
+              echo "ERROR: Migration files are out of order!"
+              echo "  $PREV_FILE ($PREV_TIMESTAMP) should come before $BASENAME ($TIMESTAMP)"
+              exit 1
+            fi
+            PREV_TIMESTAMP="$TIMESTAMP"
+            PREV_FILE="$BASENAME"
+          done <<< "$MIGRATIONS"
+
+          echo "All $(echo "$MIGRATIONS" | wc -l) migration files are correctly ordered."
+
+      - name: Check for destructive operations in new migrations
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Checking for destructive operations in new/changed migrations..."
+
+          # Get migration files changed in this PR
+          CHANGED_MIGRATIONS=$(git diff --name-only origin/main...HEAD -- 'supabase/migrations/*.sql' 2>/dev/null || echo "")
+
+          if [ -z "$CHANGED_MIGRATIONS" ]; then
+            echo "No migration changes in this PR"
+            exit 0
+          fi
+
+          echo "Changed migrations:"
+          echo "$CHANGED_MIGRATIONS"
+          echo ""
+
+          # Check for destructive operations
+          DESTRUCTIVE_FOUND=false
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              # Check for DROP TABLE, DROP COLUMN, TRUNCATE, DELETE without WHERE
+              if grep -iP '(DROP\s+TABLE|DROP\s+COLUMN|TRUNCATE\s+|ALTER\s+TABLE\s+\w+\s+DROP)' "$file" > /dev/null 2>&1; then
+                echo "WARNING: Potentially destructive operation found in $file:"
+                grep -inP '(DROP\s+TABLE|DROP\s+COLUMN|TRUNCATE\s+|ALTER\s+TABLE\s+\w+\s+DROP)' "$file"
+                DESTRUCTIVE_FOUND=true
+              fi
+            fi
+          done <<< "$CHANGED_MIGRATIONS"
+
+          if [ "$DESTRUCTIVE_FOUND" = true ]; then
+            echo ""
+            echo "WARNING: Destructive migration operations detected."
+            echo "Please ensure these changes are intentional and have been reviewed."
+            echo "Add a comment to the PR acknowledging the destructive changes."
+            # Warn but don't fail — reviewer should assess
+          else
+            echo "No destructive operations found in changed migrations."
+          fi
+
+      - name: Validate SQL syntax (basic)
+        run: |
+          echo "Running basic SQL validation..."
+          ERROR_COUNT=0
+
+          for file in supabase/migrations/*.sql; do
+            # Check for common SQL issues
+            # 1. Unmatched parentheses (simple check)
+            OPEN=$(grep -o '(' "$file" | wc -l)
+            CLOSE=$(grep -o ')' "$file" | wc -l)
+            if [ "$OPEN" -ne "$CLOSE" ]; then
+              echo "WARNING: Unmatched parentheses in $(basename $file): $OPEN open, $CLOSE close"
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+            fi
+
+            # 2. Check for empty files
+            if [ ! -s "$file" ]; then
+              echo "ERROR: Empty migration file: $(basename $file)"
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+            fi
+          done
+
+          if [ "$ERROR_COUNT" -gt 0 ]; then
+            echo "Found $ERROR_COUNT potential issues in migration files."
+            exit 1
+          fi
+
+          echo "All migration files pass basic validation."
