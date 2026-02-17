@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import "@/styles/ProfileCard.css";
 import type { AppProps } from "next/app";
-import { Figtree } from "next/font/google";
+import localFont from "next/font/local";
 import { MotionProvider } from "@/contexts/MotionContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
@@ -25,8 +25,17 @@ const DiscountContainer = dynamic(
   { ssr: false }
 );
 
-const figtree = Figtree({
-  subsets: ["latin"],
+const figtree = localFont({
+  src: [
+    {
+      path: "./Figtree-VariableFont_wght.ttf",
+      style: "normal",
+    },
+    {
+      path: "./Figtree-Italic-VariableFont_wght.ttf",
+      style: "italic",
+    },
+  ],
   variable: "--font-figtree",
   display: "swap",
 });

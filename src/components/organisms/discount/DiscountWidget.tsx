@@ -40,38 +40,27 @@ export function DiscountWidget({ countdown, onReopen }: DiscountWidgetProps) {
     <>
       {/* Desktop widget */}
       <motion.button
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 40 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
+        exit={{ opacity: 0, y: 0 }}
+        transition={{ duration: 0.1, ease: 'easeOut' }}
         onClick={onReopen}
-        className="fixed bottom-4 right-4 z-40 hidden cursor-pointer overflow-hidden rounded-2xl border-2 border-white/40 bg-black px-6 py-4 text-left shadow-2xl transition-all hover:border-white/60 sm:block"
+        className="fixed bottom-4 right-4 z-40 cursor-pointer
+        rounded-2xl overflow-hidden border-2 border-white/40 px-3 py-2 md:px-4 md:py-6 text-left
+        shadow-2xl transition-all glass-container hover:border-white/60 md:block"
         aria-label="Reopen discount popup"
       >
+        <div className="glass-cover" aria-hidden="true" />
         {/* Top row */}
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-sm text-white/70">Your discount is available for another</span>
-          <ChevronRight className="h-4 w-4 text-white/40" />
+          <span className="text-sm hidden md:block">Your discount is available for another</span>
+          <span className="text-xs leading-none md:hidden">Your discount</span>
+          <ChevronRight className="h-4 w-4 opacity-40" />
         </div>
 
         {/* Time */}
-        <div className="text-lg font-semibold text-white">
-          {timeStr}
-        </div>
-      </motion.button>
-
-      {/* Mobile widget */}
-      <motion.button
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 40 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-        onClick={onReopen}
-        className="fixed bottom-4 right-4 z-40 flex cursor-pointer items-center gap-2 rounded-full border-2 border-white/40 bg-black px-4 py-2 shadow-2xl transition-all hover:border-white/60 sm:hidden"
-        aria-label="Reopen discount popup"
-      >
-        <span className="font-mono text-base font-semibold text-white">{compactTimeStr}</span>
-        <ChevronRight className="h-4 w-4 text-white/40" />
+        <div className="text-base font-semibold w-[22ch] hidden md:block">{timeStr}</div>
+        <div className="text-sm font-semibold md:hidden">{compactTimeStr}</div>
       </motion.button>
     </>
   );

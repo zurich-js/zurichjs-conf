@@ -1,5 +1,5 @@
 # Check for env vars not in .env.example
-. "$(dirname "$0")/check-env-vars.sh"
+"$(dirname "$0")/check-env-vars.sh"
 
 # Run lint-staged to lint staged files and run related tests
 npx lint-staged

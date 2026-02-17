@@ -58,6 +58,7 @@ if [ "$FOUND_MISSING" -eq 1 ]; then
   echo "  Please add them to .env.example with a placeholder."
   echo "================================================="
   echo ""
+  exit 1
 fi
 
 exit 0
