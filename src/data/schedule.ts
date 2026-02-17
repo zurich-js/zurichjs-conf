@@ -29,9 +29,9 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
     },
     {
       id: 'warmup',
-      label: 'Workshop day',
+      label: 'Zurich Engineering Day',
       date: 'September 10, 2026',
-      description: 'A full day of 6 hands-on workshops running across 2 parallel tracks. Each workshop runs 3–4 hours, covering a range of JavaScript and web development topics. All workshops are centrally hosted in Zurich.',
+      description: 'Accelerate your learning with a full day of workshops for Software Engineers from all domains. 6 hands-on workshops running across 2 parallel tracks, each running 3–4 hours. All workshops are centrally hosted in Zurich.',
       tbaMode: false,
       events: [
         {
@@ -75,19 +75,34 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
           description: 'Welcome to ZurichJS Conf 2026! Introduction to the day and housekeeping.',
         },
         {
-          time: '09:00 – 10:30',
-          title: 'Morning Talks I',
-          description: 'First block of talks featuring a mix of lightning and full-length sessions.',
+          time: '09:00 – 09:30',
+          title: 'Talk #1 (Full-length)',
+          description: 'Speaker and topic TBA.',
         },
         {
-          time: '10:30 – 11:00',
+          time: '09:35 – 10:05',
+          title: 'Talk #2 (Full-length)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '10:10 – 10:40',
           title: 'Coffee Break',
           description: 'Recharge, network, and visit the sponsors area.',
         },
         {
-          time: '11:00 – 12:30',
-          title: 'Morning Talks II',
-          description: 'Second block of talks with lightning and full-length sessions.',
+          time: '10:40 – 11:10',
+          title: 'Talk #3 (Full-length)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '11:15 – 11:45',
+          title: 'Talk #4 (Full-length)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '11:50 – 12:25',
+          title: 'Lightning Talks #5 & #6',
+          description: '2 back-to-back lightning talks (15 min each). Speakers and topics TBA.',
         },
         {
           time: '12:30 – 13:30',
@@ -95,22 +110,42 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
           description: '2 back-to-back panel discussions (30 minutes each, 4 panelists per panel) running during the lunch break. Grab your food and enjoy the conversations.',
         },
         {
-          time: '13:30 – 15:00',
-          title: 'Afternoon Talks I',
-          description: 'Third block of talks featuring lightning and full-length sessions.',
+          time: '13:30 – 14:00',
+          title: 'Talk #7 (Full-length)',
+          description: 'Speaker and topic TBA.',
         },
         {
-          time: '15:00 – 15:30',
+          time: '14:05 – 14:35',
+          title: 'Talk #8 (Full-length)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '14:40 – 15:15',
+          title: 'Lightning Talks #9 & #10',
+          description: '2 back-to-back lightning talks (15 min each). Speakers and topics TBA.',
+        },
+        {
+          time: '15:15 – 15:45',
           title: 'Afternoon Break',
           description: 'Last chance to recharge, network, and visit the sponsors area.',
         },
         {
-          time: '15:30 – 17:30',
-          title: 'Afternoon Talks II',
-          description: 'Final block of talks to close out the conference programme.',
+          time: '15:45 – 16:15',
+          title: 'Talk #11 (Full-length)',
+          description: 'Speaker and topic TBA.',
         },
         {
-          time: '17:30 – 18:00',
+          time: '16:20 – 16:50',
+          title: 'Talk #12 (Full-length)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '16:55 – 17:30',
+          title: 'Lightning Talks #13 & #14',
+          description: '2 back-to-back lightning talks (15 min each). Speakers and topics TBA.',
+        },
+        {
+          time: '17:30 – 17:45',
           title: 'Closing Remarks',
           description: 'Conference wrap-up, thank yous, and closing remarks.',
         },
