@@ -31,12 +31,12 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       id: 'warmup',
       label: 'Zurich Engineering Day',
       date: 'September 10, 2026',
-      description: 'Accelerate your learning with a full day of workshops for Software Engineers from all domains. 6 hands-on workshops running across 2 parallel tracks, each running 3–4 hours. All workshops are centrally hosted in Zurich.',
+      description: 'Accelerate your learning with a full day of hands-on workshops for Software Engineers from all domains. 6 in-depth, 4-hour workshops running across 2 parallel tracks in 3 blocks — morning, afternoon, and evening. All workshops are centrally hosted in Zurich.',
       tbaMode: false,
       events: [
         {
-          time: '09:00 – 12:00',
-          title: 'Morning Workshops',
+          time: '08:00 – 12:00',
+          title: 'Morning Workshops (Track A & B)',
           description: '2 workshops running in parallel. Dive deep into hands-on, instructor-led sessions covering a range of JavaScript and web development topics.',
         },
         {
@@ -46,11 +46,21 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
         },
         {
           time: '13:00 – 17:00',
-          title: 'Afternoon Workshops',
+          title: 'Afternoon Workshops (Track A & B)',
           description: '2 workshops running in parallel. Continue learning with a fresh set of in-depth, hands-on sessions in the afternoon.',
         },
         {
-          time: '19:00 – 22:00',
+          time: '17:00 – 17:30',
+          title: 'Break',
+          description: 'Quick break before the evening workshop block.',
+        },
+        {
+          time: '17:30 – 21:30',
+          title: 'Evening Workshops (Track A & B)',
+          description: '2 workshops running in parallel. The final block of hands-on sessions to round out a full day of learning.',
+        },
+        {
+          time: '22:00 onwards',
           title: 'Speakers Dinner',
           description: 'An exclusive dinner for speakers to connect before the main conference day.',
         },
