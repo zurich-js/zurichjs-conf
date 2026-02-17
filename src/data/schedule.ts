@@ -100,9 +100,14 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
           description: 'Speaker and topic TBA.',
         },
         {
-          time: '11:50 – 12:25',
-          title: 'Lightning Talks #5 & #6',
-          description: '2 back-to-back lightning talks (15 min each). Speakers and topics TBA.',
+          time: '11:50 – 12:05',
+          title: 'Talk #5 (Lightning)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '12:10 – 12:25',
+          title: 'Talk #6 (Lightning)',
+          description: 'Speaker and topic TBA.',
         },
         {
           time: '12:30 – 13:30',
@@ -120,9 +125,14 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
           description: 'Speaker and topic TBA.',
         },
         {
-          time: '14:40 – 15:15',
-          title: 'Lightning Talks #9 & #10',
-          description: '2 back-to-back lightning talks (15 min each). Speakers and topics TBA.',
+          time: '14:40 – 14:55',
+          title: 'Talk #9 (Lightning)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '15:00 – 15:15',
+          title: 'Talk #10 (Lightning)',
+          description: 'Speaker and topic TBA.',
         },
         {
           time: '15:15 – 15:45',
@@ -140,9 +150,14 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
           description: 'Speaker and topic TBA.',
         },
         {
-          time: '16:55 – 17:30',
-          title: 'Lightning Talks #13 & #14',
-          description: '2 back-to-back lightning talks (15 min each). Speakers and topics TBA.',
+          time: '16:55 – 17:10',
+          title: 'Talk #13 (Lightning)',
+          description: 'Speaker and topic TBA.',
+        },
+        {
+          time: '17:15 – 17:30',
+          title: 'Talk #14 (Lightning)',
+          description: 'Speaker and topic TBA.',
         },
         {
           time: '17:30 – 17:45',
