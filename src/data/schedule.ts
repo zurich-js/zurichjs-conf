@@ -170,12 +170,12 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
           description: 'Speaker and topic TBA.',
         },
         {
-          time: '17:30 – 17:45',
+          time: '17:45 – 18:15',
           title: 'Closing Remarks',
           description: 'Conference wrap-up, thank yous, and closing remarks.',
         },
         {
-          time: '18:00 onwards',
+          time: '18:30 onwards',
           title: 'Conference After Party',
           description: 'Celebrate the conference with food, drinks, and great company at the official after-party.',
         },
