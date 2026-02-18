@@ -461,11 +461,11 @@ export default function TripCostPage() {
                           <span className="text-xl sm:text-2xl font-bold">
                             {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(totalDisplayAmount, displayCurrency)}
                           </span>
-                          <span className="block text-xs sm:text-sm text-brand-gray-light mt-0.5">
-                            {displayCurrency === 'EUR'
-                              ? `~CHF ${formatAmount(breakdown.totalCHF, 'CHF').replace('CHF ', '')}`
-                              : secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
-                          </span>
+                          {displayCurrency !== 'EUR' && (
+                            <span className="block text-xs sm:text-sm text-brand-gray-light mt-0.5">
+                              {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
+                            </span>
+                          )}
                         </div>
                       </div>
                       {standardEstTotalCHF && standardEstTotalCHF > breakdown.totalCHF && (
@@ -541,11 +541,11 @@ export default function TripCostPage() {
             <span className="block text-lg font-bold text-white">
               {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(totalDisplayAmount, displayCurrency)}
             </span>
-            <span className="block text-xs text-brand-gray-medium">
-              {displayCurrency === 'EUR'
-                ? `~CHF ${formatAmount(breakdown.totalCHF, 'CHF').replace('CHF ', '')}`
-                : secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
-            </span>
+            {displayCurrency !== 'EUR' && (
+              <span className="block text-xs text-brand-gray-medium">
+                {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
+              </span>
+            )}
           </div>
           <Button
             variant="primary"
