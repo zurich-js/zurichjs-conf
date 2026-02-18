@@ -120,9 +120,9 @@ export function ReviewStep({
           Continue
         </Button>
 
-        <Link href="/#tickets">
+        <Link href="/trip-cost">
           <Button className="w-full" asChild variant="ghost">
-            Add more tickets
+            Estimate your trip cost
           </Button>
         </Link>
       </div>

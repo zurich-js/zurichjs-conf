@@ -124,7 +124,7 @@ export function TravelSection({
               href={buildGoogleFlightsUrl(originIata)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:text-brand-blue/80 hover:underline"
             >
               Google Flights
               <ExternalLink className="w-3.5 h-3.5" />
@@ -133,7 +133,7 @@ export function TravelSection({
               href={buildSkyscannerUrl(originIata)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:text-brand-blue/80 hover:underline"
             >
               Skyscanner
               <ExternalLink className="w-3.5 h-3.5" />
@@ -142,7 +142,7 @@ export function TravelSection({
               href={buildKiwiUrl(originIata)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:text-brand-blue/80 hover:underline"
             >
               Kiwi.com
               <ExternalLink className="w-3.5 h-3.5" />

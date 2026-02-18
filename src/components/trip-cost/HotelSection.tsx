@@ -225,7 +225,7 @@ export function HotelSection({
                           href={buildHotelUrl(item[0].url)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs text-brand-blue hover:text-brand-blue/80 hover:underline"
                         >
                           Book
                           <ExternalLink className="w-3 h-3" />
@@ -261,7 +261,7 @@ export function HotelSection({
                           href={buildHotelUrl(item.url)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs text-brand-blue hover:text-brand-blue/80 hover:underline"
                         >
                           Book
                           <ExternalLink className="w-3 h-3" />
