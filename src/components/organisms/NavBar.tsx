@@ -13,6 +13,7 @@ export interface NavBarProps {
 const navLinks = [
   { label: "About", href: "/about" },
   { label: "Call for Papers", href: "/cfp" },
+  { label: "Trip Cost", href: "/trip-cost" },
   { label: "Become a Sponsor", href: "/sponsorship" },
 ];
 
