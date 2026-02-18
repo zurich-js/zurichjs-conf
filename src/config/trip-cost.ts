@@ -18,6 +18,27 @@ export type DisplayCurrency = 'CHF' | 'EUR';
 /** Ticket type for calculator */
 export type TicketType = 'standard' | 'vip' | 'student' | 'have_ticket';
 
+/** Which days the attendee plans to attend — determines recommended hotel nights */
+export type AttendanceDays = 'main_only' | 'main_workshop' | 'all_days';
+
+export const ATTENDANCE_OPTIONS: {
+  id: AttendanceDays;
+  label: string;
+  nights: number;
+  dates: string;
+  hint?: string;
+}[] = [
+  { id: 'main_only', label: 'Main day only', nights: 2, dates: 'Sep 10–12' },
+  { id: 'main_workshop', label: 'Workshop + Main day', nights: 3, dates: 'Sep 9–12' },
+  {
+    id: 'all_days',
+    label: 'Full experience',
+    nights: 3,
+    dates: 'Sep 9–12',
+    hint: 'We recommend a return flight after 18:00 on Sep 12',
+  },
+];
+
 /** Travel origin region */
 export type TravelRegion = 'europe' | 'international';
 
@@ -99,7 +120,7 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     label: 'Vision Apartments',
     sublabel: 'Zurich · serviced apartments',
     estimatePerNightCHF: 115,
-    url: 'https://www.visionapartments.com/en/destinations/zurich',
+    url: 'https://visionapartments.com/en',
     distanceFromVenue: '~15 min by tram',
   },
   {
@@ -107,7 +128,7 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     label: 'ibis Budget',
     sublabel: 'Near Technopark · budget hotel',
     estimatePerNightCHF: 140,
-    url: 'https://all.accor.com/hotel/8585/index.en.shtml',
+    url: 'https://all.accor.com/hotel/3184/index.en.shtml',
     distanceFromVenue: '~5 min walk',
   },
   {

@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
-import { Share2, Check, ArrowRight, TrendingUp } from 'lucide-react';
+import { Share2, Check, ArrowRight } from 'lucide-react';
 import { SEO, generateBreadcrumbSchema } from '@/components/SEO';
 import { NavBar } from '@/components/organisms/NavBar';
 import { DynamicSiteFooter } from '@/components/organisms/DynamicSiteFooter';
@@ -59,6 +59,7 @@ const DEFAULT_INPUT: TripCostInput = {
   customHotelCHF: DEFAULT_CUSTOM_HOTEL_CHF,
   originAirport: null,
   displayCurrency: 'CHF',
+  attendanceDays: 'main_only',
 };
 
 export default function TripCostPage() {
@@ -172,7 +173,7 @@ export default function TripCostPage() {
     [trackUpdate]
   );
 
-  /** Handle ticket type change — sets price and adjusts recommended nights */
+  /** Handle ticket type change — sets price only; nights are driven by attendance selector */
   const handleTicketType = useCallback(
     (type: TicketType) => {
       const partial: Partial<TripCostInput> = { ticketType: type };
@@ -181,16 +182,8 @@ export default function TripCostPage() {
         partial.ticketCHF = 0;
       } else {
         partial.hasTicket = false;
-        if (type === 'vip') {
-          partial.ticketCHF = vipPriceCHF;
-          partial.nights = 3; // VIP includes activities on Sep 12
-        } else if (type === 'student') {
-          partial.ticketCHF = studentPriceCHF;
-          partial.nights = 2;
-        } else {
-          partial.ticketCHF = standardPriceCHF;
-          partial.nights = 2;
-        }
+        partial.ticketCHF =
+          type === 'vip' ? vipPriceCHF : type === 'student' ? studentPriceCHF : standardPriceCHF;
       }
       update(partial);
     },
@@ -198,6 +191,22 @@ export default function TripCostPage() {
   );
 
   const breakdown = computeTripCost(input, eurRate);
+  const ticketType = input.ticketType ?? 'standard';
+
+  // Price evolution — compute late bird total from Stripe compare prices
+  const getLateBirdTicketCHF = () => {
+    if (ticketType === 'have_ticket') return null;
+    const planId = ticketType === 'student' ? 'standard_student_unemployed' : ticketType;
+    const plan = chfPlans.find((p) => p.id === planId);
+    return plan?.comparePrice ? Math.round(plan.comparePrice / 100) : null;
+  };
+  const lateBirdTicketCHF = getLateBirdTicketCHF();
+  const lateBirdTotalCHF = lateBirdTicketCHF !== null
+    ? breakdown.totalCHF - breakdown.ticketCHF + lateBirdTicketCHF
+    : null;
+  const standardEstTotalCHF = lateBirdTotalCHF !== null
+    ? Math.round(breakdown.totalCHF + (lateBirdTotalCHF - breakdown.totalCHF) * 0.5)
+    : null;
 
   const handleShare = useCallback(async () => {
     const params = encodeToSearchParams(input);
@@ -228,8 +237,6 @@ export default function TripCostPage() {
     { name: 'Home', url: '/' },
     { name: 'Trip Cost Calculator', url: '/trip-cost' },
   ]);
-
-  const ticketType = input.ticketType ?? 'standard';
 
   return (
     <>
@@ -309,7 +316,7 @@ export default function TripCostPage() {
                 customHotelCHF={input.customHotelCHF}
                 currency={displayCurrency}
                 eurRate={eurRate}
-                ticketType={ticketType}
+                attendanceDays={input.attendanceDays ?? 'main_only'}
                 onUpdate={update}
               />
             </div>
@@ -379,16 +386,43 @@ export default function TripCostPage() {
                     {rateDate && !isFallback && ` · ${rateDate}`}
                   </p>
 
-                  {/* Price trends warning */}
-                  <div className="mt-4 bg-amber-900/30 border border-amber-700/40 rounded-lg px-3 py-2.5">
-                    <div className="flex items-start gap-2">
-                      <TrendingUp className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
-                      <p className="text-[11px] text-amber-200 leading-relaxed">
-                        Flights and hotels typically get <strong>20-40% more expensive</strong> closer
-                        to the event. Book early for the best rates on everything.
+                  {/* Price evolution timeline — green/yellow/red */}
+                  {lateBirdTotalCHF && standardEstTotalCHF && (
+                    <div className="mt-4 pt-4 border-t border-brand-gray-dark">
+                      <p className="text-[11px] text-brand-gray-light mb-3">
+                        Estimated total if you wait
+                      </p>
+                      <div className="relative">
+                        <div className="absolute top-[7px] left-[10px] right-[10px] h-[3px] rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" />
+                        <div className="relative flex justify-between">
+                          <div className="text-center z-10">
+                            <div className="w-[15px] h-[15px] rounded-full bg-green-500 border-2 border-black mx-auto" />
+                            <span className="block text-[10px] text-green-400 mt-1">Now</span>
+                            <span className="block text-[10px] font-bold">
+                              {formatAmount(toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)}
+                            </span>
+                          </div>
+                          <div className="text-center z-10">
+                            <div className="w-[15px] h-[15px] rounded-full bg-yellow-500 border-2 border-black mx-auto" />
+                            <span className="block text-[10px] text-yellow-400 mt-1">Standard</span>
+                            <span className="block text-[10px] font-bold">
+                              ~{formatAmount(toDisplayCurrency(standardEstTotalCHF, displayCurrency, eurRate), displayCurrency)}
+                            </span>
+                          </div>
+                          <div className="text-center z-10">
+                            <div className="w-[15px] h-[15px] rounded-full bg-red-500 border-2 border-black mx-auto" />
+                            <span className="block text-[10px] text-red-400 mt-1">Late Bird</span>
+                            <span className="block text-[10px] font-bold">
+                              ~{formatAmount(toDisplayCurrency(lateBirdTotalCHF, displayCurrency, eurRate), displayCurrency)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-brand-gray-medium mt-2.5">
+                        Flights &amp; hotels also rise 20–40% closer to the event
                       </p>
                     </div>
-                  </div>
+                  )}
 
                   {/* Actions */}
                   <div className="mt-6 space-y-3">

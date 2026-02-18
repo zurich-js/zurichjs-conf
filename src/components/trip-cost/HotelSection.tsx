@@ -1,21 +1,22 @@
 /**
  * Trip Cost Calculator — Hotel Section
- * Nights stepper, hotel type selector with grouped MEININGER, custom price input
+ * Attendance selector, nights stepper, hotel type selector with grouped MEININGER
  */
 
 import React from 'react';
-import { Hotel, ExternalLink, Minus, Plus, Info, MapPin, TrendingUp } from 'lucide-react';
+import { Hotel, ExternalLink, Minus, Plus, Info, MapPin, Calendar } from 'lucide-react';
 import { Input } from '@/components/atoms/Input';
 import { CalculatorSection, formatAmount, toDisplayCurrency } from './CalculatorWidgets';
 import {
   HOTEL_OPTIONS,
+  ATTENDANCE_OPTIONS,
   MIN_NIGHTS,
   MAX_NIGHTS,
   buildHotelUrl,
   type HotelType,
   type HotelOption,
   type DisplayCurrency,
-  type TicketType,
+  type AttendanceDays,
 } from '@/config/trip-cost';
 
 interface HotelSectionProps {
@@ -24,8 +25,13 @@ interface HotelSectionProps {
   customHotelCHF: number;
   currency: DisplayCurrency;
   eurRate: number;
-  ticketType?: TicketType;
-  onUpdate: (partial: { nights?: number; hotelType?: HotelType; customHotelCHF?: number }) => void;
+  attendanceDays: AttendanceDays;
+  onUpdate: (partial: {
+    nights?: number;
+    hotelType?: HotelType;
+    customHotelCHF?: number;
+    attendanceDays?: AttendanceDays;
+  }) => void;
 }
 
 /** Group hotel options: MEININGER options are rendered together */
@@ -57,6 +63,7 @@ function HotelOptionButton({
   eurRate,
   onSelect,
   rounded,
+  inGroup,
 }: {
   hotel: HotelOption;
   isSelected: boolean;
@@ -64,6 +71,7 @@ function HotelOptionButton({
   eurRate: number;
   onSelect: () => void;
   rounded?: string;
+  inGroup?: boolean;
 }) {
   const priceDisplay =
     hotel.id !== 'other' && hotel.estimatePerNightCHF > 0
@@ -91,13 +99,14 @@ function HotelOptionButton({
           <span className="text-xs text-gray-500 shrink-0 ml-2">{priceDisplay}/night</span>
         )}
       </div>
-      {hotel.distanceFromVenue && isSelected && (
+      {/* Show distance + book link only for non-grouped hotels */}
+      {!inGroup && hotel.distanceFromVenue && isSelected && (
         <span className="flex items-center gap-1 text-[11px] text-gray-400 mt-1">
           <MapPin className="w-3 h-3" />
           {hotel.distanceFromVenue} from venue
         </span>
       )}
-      {hotel.url && isSelected && (
+      {!inGroup && hotel.url && isSelected && (
         <a
           href={buildHotelUrl(hotel.url)}
           target="_blank"
@@ -105,7 +114,7 @@ function HotelOptionButton({
           className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:underline mt-1"
           onClick={(e) => e.stopPropagation()}
         >
-          Book for Sep 9–12
+          Book
           <ExternalLink className="w-3 h-3" />
         </a>
       )}
@@ -119,15 +128,51 @@ export function HotelSection({
   customHotelCHF,
   currency,
   eurRate,
-  ticketType,
+  attendanceDays,
   onUpdate,
 }: HotelSectionProps) {
   const grouped = groupHotelOptions(HOTEL_OPTIONS);
   const isAnyMeiningerSelected = hotelType === 'hostel' || hotelType === 'meininger';
+  const currentAttendance = ATTENDANCE_OPTIONS.find((a) => a.id === attendanceDays) ?? ATTENDANCE_OPTIONS[0];
+
+  const handleAttendance = (days: AttendanceDays) => {
+    const option = ATTENDANCE_OPTIONS.find((a) => a.id === days);
+    onUpdate({ attendanceDays: days, nights: option?.nights ?? 2 });
+  };
 
   return (
     <CalculatorSection icon={<Hotel className="w-5 h-5" />} title="Hotel">
       <div className="space-y-4">
+        {/* Attendance selector */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-2">
+            <Calendar className="w-3.5 h-3.5 inline mr-1" />
+            Which days are you attending?
+          </label>
+          <div className="space-y-1.5">
+            {ATTENDANCE_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => handleAttendance(opt.id)}
+                className={`cursor-pointer w-full text-left px-3.5 py-2.5 rounded-lg border transition-colors ${
+                  attendanceDays === opt.id
+                    ? 'border-black bg-gray-50'
+                    : 'border-gray-200 bg-white hover:border-gray-400'
+                }`}
+                aria-pressed={attendanceDays === opt.id}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-900">{opt.label}</span>
+                  <span className="text-xs text-gray-500">{opt.dates} · {opt.nights} nights</span>
+                </div>
+                {opt.hint && attendanceDays === opt.id && (
+                  <p className="text-[11px] text-amber-600 mt-1">{opt.hint}</p>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Nights stepper */}
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-2">
@@ -158,9 +203,7 @@ export function HotelSection({
             </span>
           </div>
           <p className="text-xs text-gray-400 mt-1.5">
-            {ticketType === 'vip'
-              ? 'VIP includes activities with speakers on Sep 12 — we recommend min. 3 nights (Tue–Fri)'
-              : 'Conference is Sep 10–11 — we recommend min. 2 nights (Wed–Fri)'}
+            We recommend {currentAttendance.nights} nights for {currentAttendance.label.toLowerCase()} ({currentAttendance.dates})
           </p>
         </div>
 
@@ -187,23 +230,22 @@ export function HotelSection({
                         eurRate={eurRate}
                         onSelect={() => onUpdate({ hotelType: hotel.id })}
                         rounded={`rounded-none ${hIdx === item.length - 1 ? '' : 'border-b-0'}`}
+                        inGroup
                       />
                     ))}
                     {isAnyMeiningerSelected && item[0]?.url && (
-                      <div className="px-4 py-2 bg-gray-50 border-t border-gray-200">
-                        {item[0].distanceFromVenue && (
-                          <span className="flex items-center gap-1 text-[11px] text-gray-400 mb-1">
-                            <MapPin className="w-3 h-3" />
-                            {item[0].distanceFromVenue} from venue
-                          </span>
-                        )}
+                      <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                        <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                          <MapPin className="w-3 h-3" />
+                          {item[0].distanceFromVenue} from venue
+                        </span>
                         <a
                           href={buildHotelUrl(item[0].url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:underline"
                         >
-                          Book for Sep 9–12 at meininger-hotels.com
+                          Book
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
@@ -251,16 +293,10 @@ export function HotelSection({
           </div>
         )}
 
-        <div className="space-y-2">
-          <p className="flex items-start gap-1.5 text-xs text-gray-400">
-            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            Hotel prices are estimates and may vary by dates and availability.
-          </p>
-          <p className="flex items-start gap-1.5 text-xs text-amber-600">
-            <TrendingUp className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            Hotel and flight prices typically rise 20–40% closer to the event — book early for the best rates.
-          </p>
-        </div>
+        <p className="flex items-start gap-1.5 text-xs text-gray-400">
+          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          Hotel prices are estimates and may vary by dates and availability.
+        </p>
       </div>
     </CalculatorSection>
   );

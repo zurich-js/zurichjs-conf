@@ -14,6 +14,7 @@ import {
   type HotelType,
   type DisplayCurrency,
   type TicketType,
+  type AttendanceDays,
 } from '@/config/trip-cost';
 
 export interface TripCostInput {
@@ -37,6 +38,8 @@ export interface TripCostInput {
   originAirport?: string | null;
   /** Display currency preference */
   displayCurrency?: DisplayCurrency;
+  /** Which days the attendee plans to attend */
+  attendanceDays?: AttendanceDays;
 }
 
 export interface TripCostBreakdown {
@@ -115,6 +118,9 @@ export function encodeToSearchParams(input: TripCostInput): URLSearchParams {
   if (input.displayCurrency && input.displayCurrency !== 'CHF') {
     params.set('currency', input.displayCurrency);
   }
+  if (input.attendanceDays && input.attendanceDays !== 'main_only') {
+    params.set('attendance', input.attendanceDays);
+  }
   return params;
 }
 
@@ -175,6 +181,11 @@ export function decodeFromSearchParams(
   const currency = params.get('currency');
   if (currency === 'EUR' || currency === 'CHF') {
     result.displayCurrency = currency;
+  }
+
+  const attendance = params.get('attendance');
+  if (attendance === 'main_only' || attendance === 'main_workshop' || attendance === 'all_days') {
+    result.attendanceDays = attendance;
   }
 
   return result;

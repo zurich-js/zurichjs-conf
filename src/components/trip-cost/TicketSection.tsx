@@ -147,15 +147,6 @@ export function TicketSection({
         />
 
         <TicketButton
-          icon={<GraduationCap className="w-4 h-4 text-blue-600" />}
-          label="Student / Unemployed"
-          price={studentPrice}
-          isSelected={ticketType === 'student'}
-          isLoading={isLoading}
-          onClick={() => onSelect('student')}
-        />
-
-        <TicketButton
           icon={<Crown className="w-4 h-4 text-amber-600" />}
           label="VIP"
           sublabel="main day + activities with speakers on Sep 12"
@@ -164,6 +155,15 @@ export function TicketSection({
           isSelected={ticketType === 'vip'}
           isLoading={isLoading}
           onClick={() => onSelect('vip')}
+        />
+
+        <TicketButton
+          icon={<GraduationCap className="w-4 h-4 text-blue-600" />}
+          label="Student / Unemployed"
+          price={studentPrice}
+          isSelected={ticketType === 'student'}
+          isLoading={isLoading}
+          onClick={() => onSelect('student')}
         />
 
         <button

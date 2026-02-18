@@ -240,6 +240,24 @@ describe('encodeToSearchParams / decodeFromSearchParams', () => {
     expect(decodeFromSearchParams(params).ticketType).toBe('student');
   });
 
+  it('encodes and decodes attendance days', () => {
+    const params = encodeToSearchParams({
+      ...input,
+      attendanceDays: 'all_days',
+    });
+    expect(params.get('attendance')).toBe('all_days');
+    const decoded = decodeFromSearchParams(params);
+    expect(decoded.attendanceDays).toBe('all_days');
+  });
+
+  it('does not encode main_only attendance (default)', () => {
+    const params = encodeToSearchParams({
+      ...input,
+      attendanceDays: 'main_only',
+    });
+    expect(params.get('attendance')).toBeNull();
+  });
+
   it('returns empty partial for empty params', () => {
     const decoded = decodeFromSearchParams(new URLSearchParams());
     expect(Object.keys(decoded)).toHaveLength(0);
