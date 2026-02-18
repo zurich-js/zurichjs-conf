@@ -5,13 +5,14 @@
  */
 
 import {
-  EUR_TO_CHF_RATE,
+  FALLBACK_EUR_RATE,
   TRAVEL_RANGES,
   TRAVEL_STEPS,
   HOTEL_OPTIONS,
   DEFAULT_CUSTOM_HOTEL_CHF,
   type TravelRegion,
   type HotelType,
+  type DisplayCurrency,
 } from '@/config/trip-cost';
 
 export interface TripCostInput {
@@ -29,12 +30,15 @@ export interface TripCostInput {
   hotelType: HotelType;
   /** Custom hotel price per night in CHF (used when hotelType === 'other') */
   customHotelCHF: number;
+  /** Origin airport IATA code (e.g. "LHR - London, United Kingdom") */
+  originAirport?: string | null;
+  /** Display currency preference */
+  displayCurrency?: DisplayCurrency;
 }
 
 export interface TripCostBreakdown {
   ticketCHF: number;
   travelCHF: number;
-  travelEUR: number;
   hotelPerNightCHF: number;
   hotelTotalCHF: number;
   nights: number;
@@ -58,13 +62,16 @@ export function getHotelPerNightCHF(hotelType: HotelType, customCHF: number): nu
   return option?.estimatePerNightCHF ?? 0;
 }
 
-/** Convert CHF amount to EUR */
-export function convertToEUR(chf: number): number {
-  return Math.round(chf * EUR_TO_CHF_RATE);
+/** Convert CHF amount to EUR using the provided rate */
+export function convertToEUR(chf: number, eurRate: number = FALLBACK_EUR_RATE): number {
+  return Math.round(chf * eurRate);
 }
 
 /** Compute the full trip cost breakdown */
-export function computeTripCost(input: TripCostInput): TripCostBreakdown {
+export function computeTripCost(
+  input: TripCostInput,
+  eurRate: number = FALLBACK_EUR_RATE
+): TripCostBreakdown {
   const ticketCHF = input.hasTicket ? 0 : Math.max(0, input.ticketCHF);
   const travelCHF = getTravelCostCHF(input.travelRegion, input.travelStep);
   const hotelPerNightCHF = getHotelPerNightCHF(input.hotelType, input.customHotelCHF);
@@ -74,14 +81,15 @@ export function computeTripCost(input: TripCostInput): TripCostBreakdown {
   return {
     ticketCHF,
     travelCHF,
-    travelEUR: convertToEUR(travelCHF),
     hotelPerNightCHF,
     hotelTotalCHF,
     nights: input.nights,
     totalCHF,
-    totalEUR: convertToEUR(totalCHF),
+    totalEUR: convertToEUR(totalCHF, eurRate),
   };
 }
+
+const VALID_HOTEL_TYPES: HotelType[] = ['vision', 'ibis', 'meininger', 'hostel', 'other'];
 
 /** Encode trip cost inputs into URL search params */
 export function encodeToSearchParams(input: TripCostInput): URLSearchParams {
@@ -94,6 +102,12 @@ export function encodeToSearchParams(input: TripCostInput): URLSearchParams {
   params.set('hotel', input.hotelType);
   if (input.hotelType === 'other') {
     params.set('hotelPrice', String(input.customHotelCHF));
+  }
+  if (input.originAirport) {
+    params.set('airport', input.originAirport);
+  }
+  if (input.displayCurrency && input.displayCurrency !== 'CHF') {
+    params.set('currency', input.displayCurrency);
   }
   return params;
 }
@@ -132,14 +146,24 @@ export function decodeFromSearchParams(
   }
 
   const hotel = params.get('hotel');
-  if (hotel === 'vision' || hotel === 'ibis' || hotel === 'other') {
-    result.hotelType = hotel;
+  if (hotel && VALID_HOTEL_TYPES.includes(hotel as HotelType)) {
+    result.hotelType = hotel as HotelType;
   }
 
   const hotelPrice = params.get('hotelPrice');
   if (hotelPrice !== null) {
     const parsed = parseInt(hotelPrice, 10);
     if (!isNaN(parsed)) result.customHotelCHF = parsed;
+  }
+
+  const airport = params.get('airport');
+  if (airport) {
+    result.originAirport = airport;
+  }
+
+  const currency = params.get('currency');
+  if (currency === 'EUR' || currency === 'CHF') {
+    result.displayCurrency = currency;
   }
 
   return result;

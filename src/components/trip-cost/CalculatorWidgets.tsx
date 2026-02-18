@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { Lightbulb } from 'lucide-react';
+import type { DisplayCurrency } from '@/config/trip-cost';
 
 /** Format a number with no decimals, en-CH locale */
 export function formatNumber(n: number): string {
@@ -11,6 +12,32 @@ export function formatNumber(n: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(n);
+}
+
+/** Format an amount with currency prefix */
+export function formatAmount(amount: number, currency: DisplayCurrency): string {
+  return `${currency} ${formatNumber(amount)}`;
+}
+
+/** Convert CHF to the display currency */
+export function toDisplayCurrency(
+  chf: number,
+  currency: DisplayCurrency,
+  eurRate: number
+): number {
+  return currency === 'EUR' ? Math.round(chf * eurRate) : chf;
+}
+
+/** Get the secondary currency label (e.g. "~EUR 123" when primary is CHF) */
+export function secondaryCurrencyLabel(
+  chf: number,
+  currency: DisplayCurrency,
+  eurRate: number
+): string {
+  if (currency === 'EUR') {
+    return `~CHF ${formatNumber(chf)}`;
+  }
+  return `~EUR ${formatNumber(Math.round(chf * eurRate))}`;
 }
 
 /** Section wrapper for each calculator input group */
@@ -68,16 +95,21 @@ export function SpendLessTips() {
 export function BreakdownRow({
   label,
   chf,
-  eur,
   sublabel,
   dimmed,
+  currency,
+  eurRate,
 }: {
   label: string;
   chf: number;
-  eur?: number;
   sublabel?: string;
   dimmed?: boolean;
+  currency: DisplayCurrency;
+  eurRate: number;
 }) {
+  const primary = toDisplayCurrency(chf, currency, eurRate);
+  const secondary = secondaryCurrencyLabel(chf, currency, eurRate);
+
   return (
     <div className={`flex items-start justify-between ${dimmed ? 'opacity-40' : ''}`}>
       <div>
@@ -87,11 +119,11 @@ export function BreakdownRow({
         )}
       </div>
       <div className="text-right shrink-0 ml-4">
-        <span className="text-sm font-medium">CHF {formatNumber(chf)}</span>
-        {eur !== undefined && (
-          <span className="block text-xs text-brand-gray-medium">
-            ~EUR {formatNumber(eur)}
-          </span>
+        <span className="text-sm font-medium">
+          {formatAmount(primary, currency)}
+        </span>
+        {chf > 0 && (
+          <span className="block text-xs text-brand-gray-medium">{secondary}</span>
         )}
       </div>
     </div>

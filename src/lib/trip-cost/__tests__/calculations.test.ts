@@ -9,11 +9,17 @@ import {
   getTotalBucket,
   type TripCostInput,
 } from '../calculations';
-import { EUR_TO_CHF_RATE } from '@/config/trip-cost';
+import { FALLBACK_EUR_RATE, buildSkyscannerUrl, buildKiwiUrl } from '@/config/trip-cost';
+
+const RATE = FALLBACK_EUR_RATE; // 0.93
 
 describe('convertToEUR', () => {
-  it('converts CHF to EUR using the configured rate', () => {
-    expect(convertToEUR(100)).toBe(Math.round(100 * EUR_TO_CHF_RATE));
+  it('converts CHF to EUR using the fallback rate', () => {
+    expect(convertToEUR(100)).toBe(Math.round(100 * RATE));
+  });
+
+  it('converts CHF to EUR using a custom rate', () => {
+    expect(convertToEUR(100, 0.90)).toBe(90);
   });
 
   it('returns 0 for 0 input', () => {
@@ -21,40 +27,56 @@ describe('convertToEUR', () => {
   });
 
   it('rounds to nearest integer', () => {
-    // EUR_TO_CHF_RATE = 0.93, so 101 * 0.93 = 93.93 → 94
-    expect(convertToEUR(101)).toBe(Math.round(101 * EUR_TO_CHF_RATE));
+    // 0.93 * 101 = 93.93 → 94
+    expect(convertToEUR(101)).toBe(Math.round(101 * RATE));
   });
 });
 
 describe('getTravelCostCHF', () => {
   it('returns low cost for europe at step 0', () => {
-    expect(getTravelCostCHF('europe', 0)).toBe(50);
+    expect(getTravelCostCHF('europe', 0)).toBe(100);
   });
 
   it('returns mid cost for europe at step 1', () => {
-    expect(getTravelCostCHF('europe', 1)).toBe(150);
+    expect(getTravelCostCHF('europe', 1)).toBe(175);
   });
 
   it('returns high cost for europe at step 2', () => {
-    expect(getTravelCostCHF('europe', 2)).toBe(350);
+    expect(getTravelCostCHF('europe', 2)).toBe(300);
+  });
+
+  it('returns low cost for international at step 0', () => {
+    expect(getTravelCostCHF('international', 0)).toBe(350);
   });
 
   it('returns mid cost for international at step 1', () => {
-    expect(getTravelCostCHF('international', 1)).toBe(700);
+    expect(getTravelCostCHF('international', 1)).toBe(500);
+  });
+
+  it('returns high cost for international at step 2', () => {
+    expect(getTravelCostCHF('international', 2)).toBe(700);
   });
 
   it('clamps out-of-range step to max', () => {
-    expect(getTravelCostCHF('europe', 10)).toBe(350);
+    expect(getTravelCostCHF('europe', 10)).toBe(300);
   });
 });
 
 describe('getHotelPerNightCHF', () => {
   it('returns Vision Apartments estimate for "vision"', () => {
-    expect(getHotelPerNightCHF('vision', 0)).toBe(160);
+    expect(getHotelPerNightCHF('vision', 0)).toBe(115);
   });
 
   it('returns ibis Budget estimate for "ibis"', () => {
-    expect(getHotelPerNightCHF('ibis', 0)).toBe(110);
+    expect(getHotelPerNightCHF('ibis', 0)).toBe(140);
+  });
+
+  it('returns MEININGER private room estimate for "meininger"', () => {
+    expect(getHotelPerNightCHF('meininger', 0)).toBe(140);
+  });
+
+  it('returns MEININGER hostel estimate for "hostel"', () => {
+    expect(getHotelPerNightCHF('hostel', 0)).toBe(45);
   });
 
   it('returns custom price for "other"', () => {
@@ -80,19 +102,24 @@ describe('computeTripCost', () => {
 
   it('computes correct total for default inputs', () => {
     const result = computeTripCost(baseInput);
-    // ticket 175 + travel 150 + hotel (110 * 2 = 220) = 545
+    // ticket 175 + travel 175 + hotel (140 * 2 = 280) = 630
     expect(result.ticketCHF).toBe(175);
-    expect(result.travelCHF).toBe(150);
-    expect(result.hotelPerNightCHF).toBe(110);
-    expect(result.hotelTotalCHF).toBe(220);
-    expect(result.totalCHF).toBe(545);
-    expect(result.totalEUR).toBe(Math.round(545 * EUR_TO_CHF_RATE));
+    expect(result.travelCHF).toBe(175);
+    expect(result.hotelPerNightCHF).toBe(140);
+    expect(result.hotelTotalCHF).toBe(280);
+    expect(result.totalCHF).toBe(630);
+    expect(result.totalEUR).toBe(Math.round(630 * RATE));
+  });
+
+  it('uses custom EUR rate when provided', () => {
+    const result = computeTripCost(baseInput, 0.85);
+    expect(result.totalEUR).toBe(Math.round(630 * 0.85));
   });
 
   it('sets ticket to 0 when hasTicket is true', () => {
     const result = computeTripCost({ ...baseInput, hasTicket: true });
     expect(result.ticketCHF).toBe(0);
-    expect(result.totalCHF).toBe(150 + 220); // travel + hotel only
+    expect(result.totalCHF).toBe(175 + 280); // travel + hotel only
   });
 
   it('handles international travel', () => {
@@ -101,7 +128,7 @@ describe('computeTripCost', () => {
       travelRegion: 'international',
       travelStep: 2,
     });
-    expect(result.travelCHF).toBe(1200);
+    expect(result.travelCHF).toBe(700);
   });
 
   it('handles custom hotel', () => {
@@ -112,6 +139,15 @@ describe('computeTripCost', () => {
     });
     expect(result.hotelPerNightCHF).toBe(250);
     expect(result.hotelTotalCHF).toBe(500);
+  });
+
+  it('handles hostel option', () => {
+    const result = computeTripCost({
+      ...baseInput,
+      hotelType: 'hostel',
+    });
+    expect(result.hotelPerNightCHF).toBe(45);
+    expect(result.hotelTotalCHF).toBe(90);
   });
 
   it('handles 0 nights', () => {
@@ -165,6 +201,40 @@ describe('encodeToSearchParams / decodeFromSearchParams', () => {
     expect(decoded.customHotelCHF).toBe(999);
   });
 
+  it('encodes and decodes airport', () => {
+    const params = encodeToSearchParams({
+      ...input,
+      originAirport: 'LHR - London, United Kingdom',
+    });
+    const decoded = decodeFromSearchParams(params);
+    expect(decoded.originAirport).toBe('LHR - London, United Kingdom');
+  });
+
+  it('encodes and decodes display currency', () => {
+    const params = encodeToSearchParams({
+      ...input,
+      displayCurrency: 'EUR',
+    });
+    const decoded = decodeFromSearchParams(params);
+    expect(decoded.displayCurrency).toBe('EUR');
+  });
+
+  it('does not encode CHF currency (default)', () => {
+    const params = encodeToSearchParams({
+      ...input,
+      displayCurrency: 'CHF',
+    });
+    expect(params.get('currency')).toBeNull();
+  });
+
+  it('decodes meininger and hostel hotel types', () => {
+    const meiningerParams = new URLSearchParams({ hotel: 'meininger' });
+    expect(decodeFromSearchParams(meiningerParams).hotelType).toBe('meininger');
+
+    const hostelParams = new URLSearchParams({ hotel: 'hostel' });
+    expect(decodeFromSearchParams(hostelParams).hotelType).toBe('hostel');
+  });
+
   it('returns empty partial for empty params', () => {
     const decoded = decodeFromSearchParams(new URLSearchParams());
     expect(Object.keys(decoded)).toHaveLength(0);
@@ -207,5 +277,25 @@ describe('getTotalBucket', () => {
   it('returns 1200+ for large totals', () => {
     expect(getTotalBucket(1200)).toBe('1200+');
     expect(getTotalBucket(5000)).toBe('1200+');
+  });
+});
+
+describe('buildSkyscannerUrl', () => {
+  it('builds correct Skyscanner deep link', () => {
+    expect(buildSkyscannerUrl('LHR')).toBe(
+      'https://www.skyscanner.net/transport/flights/lhr/zrh/260909/260912/'
+    );
+  });
+
+  it('lowercases the IATA code', () => {
+    expect(buildSkyscannerUrl('CDG')).toContain('/cdg/');
+  });
+});
+
+describe('buildKiwiUrl', () => {
+  it('builds correct Kiwi deep link', () => {
+    expect(buildKiwiUrl('LHR')).toBe(
+      'https://www.kiwi.com/en/search/tiles/lhr/zurich-switzerland/2026-09-09/2026-09-12'
+    );
   });
 });
