@@ -94,6 +94,18 @@ export default function TripCostPage() {
   const studentPriceCHF = findPriceCHF('standard_student_unemployed') || DEFAULT_TICKET_PRICE_CHF;
   const vipPriceCHF = findPriceCHF('vip');
 
+  // EUR prices from Stripe (for display when EUR is selected)
+  const findPriceEUR = (planId: string) => {
+    const plan = eurPlans.find((p) => p.id === planId);
+    return plan ? Math.round(plan.price / 100) : undefined;
+  };
+  const getTicketEUR = () => {
+    if (input.hasTicket) return 0;
+    const planId = input.ticketType === 'student' ? 'standard_student_unemployed' : input.ticketType;
+    return findPriceEUR(planId ?? 'standard');
+  };
+  const ticketEUR = getTicketEUR();
+
   // Apply Stripe price and geo-currency on mount
   const appliedInitial = useRef(false);
   useEffect(() => {
@@ -212,6 +224,13 @@ export default function TripCostPage() {
 
   const breakdown = computeTripCost(input, eurRate);
   const ticketType = input.ticketType ?? 'standard';
+
+  // Compute display total for EUR using fetched ticket price + converted travel/hotel
+  const totalDisplayAmount = displayCurrency === 'EUR'
+    ? (ticketEUR ?? Math.round(breakdown.ticketCHF * eurRate)) +
+      Math.round(breakdown.travelCHF * eurRate) +
+      Math.round(breakdown.hotelTotalCHF * eurRate)
+    : breakdown.totalCHF;
 
   // Price evolution — ticket from Stripe comparePrice, hotel/flight estimated increases
   // For student/unemployed, skip ticket price evolution (only hotel + travel)
@@ -410,6 +429,7 @@ export default function TripCostPage() {
                             : `Ticket (${ticketType})`
                       }
                       chf={breakdown.ticketCHF}
+                      eur={ticketEUR}
                       dimmed={ticketType === 'have_ticket'}
                       currency={displayCurrency}
                       eurRate={eurRate}
@@ -439,13 +459,12 @@ export default function TripCostPage() {
                         </span>
                         <div className="text-right">
                           <span className="text-xl sm:text-2xl font-bold">
-                            {formatAmount(
-                              toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate),
-                              displayCurrency
-                            )}
+                            {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(totalDisplayAmount, displayCurrency)}
                           </span>
                           <span className="block text-xs sm:text-sm text-brand-gray-light mt-0.5">
-                            {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
+                            {displayCurrency === 'EUR'
+                              ? `~CHF ${formatAmount(breakdown.totalCHF, 'CHF').replace('CHF ', '')}`
+                              : secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
                           </span>
                         </div>
                       </div>
@@ -455,7 +474,7 @@ export default function TripCostPage() {
                           className="cursor-pointer flex items-center gap-1 text-[11px] text-brand-green mt-2 hover:underline"
                         >
                           <Info className="w-3 h-3 shrink-0" />
-                          You save {formatAmount(toDisplayCurrency(standardEstTotalCHF - breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)} ({Math.round(((standardEstTotalCHF - breakdown.totalCHF) / standardEstTotalCHF) * 100)}%) by booking now
+                          You save {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(toDisplayCurrency(standardEstTotalCHF - breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)} ({Math.round(((standardEstTotalCHF - breakdown.totalCHF) / standardEstTotalCHF) * 100)}%) by booking now
                         </button>
                       )}
                     </div>
@@ -520,13 +539,12 @@ export default function TripCostPage() {
           <div>
             <span className="block text-[11px] text-brand-gray-light">Estimated total</span>
             <span className="block text-lg font-bold text-white">
-              {formatAmount(
-                toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate),
-                displayCurrency
-              )}
+              {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(totalDisplayAmount, displayCurrency)}
             </span>
             <span className="block text-xs text-brand-gray-medium">
-              {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
+              {displayCurrency === 'EUR'
+                ? `~CHF ${formatAmount(breakdown.totalCHF, 'CHF').replace('CHF ', '')}`
+                : secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
             </span>
           </div>
           <Button

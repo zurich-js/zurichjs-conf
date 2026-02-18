@@ -95,6 +95,7 @@ export function SpendLessTips() {
 export function BreakdownRow({
   label,
   chf,
+  eur,
   sublabel,
   dimmed,
   currency,
@@ -102,12 +103,20 @@ export function BreakdownRow({
 }: {
   label: string;
   chf: number;
+  /** Optional fetched EUR price — used instead of converting CHF when provided */
+  eur?: number;
   sublabel?: string;
   dimmed?: boolean;
   currency: DisplayCurrency;
   eurRate: number;
 }) {
-  const primary = toDisplayCurrency(chf, currency, eurRate);
+  // Use fetched EUR price when available and currency is EUR
+  const hasFetchedEUR = eur !== undefined;
+  const primary = currency === 'EUR' && hasFetchedEUR ? eur : toDisplayCurrency(chf, currency, eurRate);
+  // Prefix with ~ when converting CHF to EUR (not fetched)
+  const isConverted = currency === 'EUR' && !hasFetchedEUR;
+  // Don't show secondary for items with fetched prices (tickets)
+  const showSecondary = chf > 0 && !hasFetchedEUR;
   const secondary = secondaryCurrencyLabel(chf, currency, eurRate);
 
   return (
@@ -120,9 +129,9 @@ export function BreakdownRow({
       </div>
       <div className="text-right shrink-0 ml-4">
         <span className="text-sm font-medium">
-          {formatAmount(primary, currency)}
+          {isConverted ? '~' : ''}{formatAmount(primary, currency)}
         </span>
-        {chf > 0 && (
+        {showSecondary && (
           <span className="block text-xs text-brand-gray-medium">{secondary}</span>
         )}
       </div>
