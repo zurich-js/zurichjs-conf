@@ -1,11 +1,12 @@
 import { useRef } from "react";
 import { useGridPacker, type GridItemConfig, type GridPackerOptions, type PlacedItem } from "@/hooks/useGridPacker";
 import type { ReactNode } from "react";
+import { clsx } from "clsx";
 
 interface PackedGridProps {
   items: GridItemConfig[];
   columns: GridPackerOptions["columns"];
-  gap?: number;
+  gap?: string;
   renderItem: (item: GridItemConfig, placement: PlacedItem) => ReactNode;
   className?: string;
 }
@@ -13,14 +14,14 @@ interface PackedGridProps {
 export function PackedGrid({
   items,
   columns,
-  gap = 0,
+  gap,
   renderItem,
   className,
 }: PackedGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { placements, columns: activeColumns, cellSize } = useGridPacker(
     items,
-    { columns, gap },
+    { columns },
     containerRef
   );
 
@@ -29,11 +30,10 @@ export function PackedGrid({
   return (
     <div
       ref={containerRef}
-      className={className}
+      className={clsx('PackedGrid', gap, className)}
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${activeColumns}, 1fr)`,
-        ...(gap ? { gap: `${gap}px` } : {}),
         ...(cellSize > 0 ? { gridAutoRows: `${cellSize}px` } : {}),
       }}
     >

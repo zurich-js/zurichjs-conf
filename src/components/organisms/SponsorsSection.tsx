@@ -58,16 +58,82 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
     const hasPartners = partners.length > 0;
 
     const packedItems: GridItemConfig[] = [
-        { id: 'large-1', sizes: { base: { cols: 2, rows: 2 }, sm: { cols: 3, rows: 2 } }, priority: 1 },
-        { id: 'large-2', sizes: { base: { cols: 2, rows: 2 }, sm: { cols: 3, rows: 2 } }, priority: 1 },
-        { id: 'medium-1', sizes: { base: { cols: 2, rows: 1 }, sm: { cols: 2, rows: 1 } }, priority: 2 },
-        { id: 'medium-2', sizes: { base: { cols: 2, rows: 1 }, sm: { cols: 2, rows: 1 } }, priority: 2 },
-        { id: 'medium-3', sizes: { base: { cols: 2, rows: 1 }, sm: { cols: 2, rows: 1 } }, priority: 2 },
-        { id: 'medium-4', sizes: { base: { cols: 2, rows: 1 }, sm: { cols: 2, rows: 1 } }, priority: 2 },
-        { id: 'small-1', sizes: { base: { cols: 1, rows: 1 }, sm: { cols: 1, rows: 1 } }, priority: 3 },
-        { id: 'small-2', sizes: { base: { cols: 1, rows: 1 }, sm: { cols: 1, rows: 1 } }, priority: 3 },
-        { id: 'small-3', sizes: { base: { cols: 1, rows: 1 }, sm: { cols: 1, rows: 1 } }, priority: 3 },
-        { id: 'small-4', sizes: { base: { cols: 1, rows: 1 }, sm: { cols: 1, rows: 1 } }, priority: 3 },
+        {
+            id: 'large-1',
+            sizes: {
+                base: { cols: 2, rows: 2 },
+                xs: { cols: 3, rows: 2 },
+            },
+            priority: 1
+        },
+        {
+            id: 'large-2',
+            sizes: {
+                base: { cols: 2, rows: 2 },
+                xs: { cols: 3, rows: 2 }
+            },
+            priority: 1
+        },
+        {
+            id: 'medium-1',
+            sizes: {
+                base: { cols: 2, rows: 1 },
+                sm: { cols: 2, rows: 2 }
+            },
+            priority: 2
+        },
+        {
+            id: 'medium-2',
+            sizes: {
+                base: { cols: 2, rows: 1 },
+                sm: { cols: 2, rows: 2 }
+            },
+            priority: 2
+        },
+        {
+            id: 'default-1',
+            sizes: {
+                base: { cols: 2, rows: 1 },
+                sm: { cols: 2, rows: 1 }
+            },
+            priority: 3
+        },
+        {
+            id: 'default-2',
+            sizes: {
+                base: { cols: 2, rows: 1 },
+                sm: { cols: 2, rows: 1 }
+            },
+            priority: 3
+        },
+        {
+            id: 'small-1',
+            sizes: {
+                base: { cols: 1, rows: 1 },
+            },
+            priority: 4
+        },
+        {
+            id: 'small-2',
+            sizes: {
+                base: { cols: 1, rows: 1 },
+            },
+            priority: 4
+        },
+        {
+            id: 'small-3',
+            sizes: {
+                base: { cols: 1, rows: 1 },
+            },
+            priority: 4
+        },
+        {
+            id: 'small-4',
+            sizes: {
+                base: { cols: 1, rows: 1 },
+            },
+            priority: 4
+        },
     ];
 
     // Map packed item IDs to sponsor data — items without a matching sponsor render as empty slots
@@ -104,8 +170,8 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                 >
                     <PackedGrid
                         items={packedItems}
-                        columns={{ base: 2, sm: 5, md: 6, xl: 12 }}
-                        gap={16}
+                        columns={{ base: 2, xs: 3, sm: 5, md: 6, lg: 12 }}
+                        gap="gap-3 sm:gap-4"
                         renderItem={(item) => {
                             const sponsor = sponsorBySlot.get(item.id);
                             const isFirstItem = item.id === packedItems[0].id;
@@ -115,9 +181,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                                     name={sponsor?.name}
                                     logo={sponsor?.logo}
                                     url={sponsor?.url}
-                                    emptySlot={isFirstItem && allEmpty && (
-                                        <p className="absolute top-full mt-2 text-sm whitespace-nowrap">Reach your dev audience</p>
-                                    )}
+                                    isCta={isFirstItem && allEmpty}
                                 />
                             );
                         }}

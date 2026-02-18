@@ -10,7 +10,6 @@ export interface GridItemConfig {
 
 export interface GridPackerOptions {
   columns: Record<string, number>;
-  gap?: number;
 }
 
 export interface PlacedItem {
@@ -28,21 +27,35 @@ export interface GridPackerResult {
   cellSize: number;
 }
 
-// --- Breakpoint helper ---
+// --- Breakpoint helper (reads --breakpoint-* from Tailwind v4 @theme) ---
 
-const BREAKPOINTS: [string, number][] = [
-  ["2xl", 1536],
-  ["xl", 1280],
-  ["lg", 1024],
-  ["md", 768],
-  ["sm", 640],
-  ["base", 0],
-];
+const BREAKPOINT_NAMES = ["4xl", "3xl", "2xl", "xl", "lg", "md", "sm", "xs"] as const;
+
+let breakpointCache: [string, number][] | null = null;
+
+function getBreakpoints(): [string, number][] {
+  if (breakpointCache) return breakpointCache;
+  if (typeof window === "undefined") {
+    return [...BREAKPOINT_NAMES.map((name): [string, number] => [name, 0]), ["base", 0]];
+  }
+
+  const style = getComputedStyle(document.documentElement);
+  const entries: [string, number][] = [];
+  for (const name of BREAKPOINT_NAMES) {
+    const value = parseFloat(style.getPropertyValue(`--breakpoint-${name}`));
+    if (value > 0) entries.push([name, value]);
+  }
+  // Sort largest-first, append base
+  entries.sort((a, b) => b[1] - a[1]);
+  entries.push(["base", 0]);
+  breakpointCache = entries;
+  return entries;
+}
 
 function getBreakpoint(): string {
   if (typeof window === "undefined") return "base";
   const width = window.innerWidth;
-  for (const [name, min] of BREAKPOINTS) {
+  for (const [name, min] of getBreakpoints()) {
     if (width >= min) return name;
   }
   return "base";
@@ -50,9 +63,9 @@ function getBreakpoint(): string {
 
 function subscribeToBreakpoint(callback: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  const queries = BREAKPOINTS.filter(([, min]) => min > 0).map(([, min]) =>
-    window.matchMedia(`(min-width: ${min}px)`)
-  );
+  const queries = getBreakpoints()
+    .filter(([, min]) => min > 0)
+    .map(([, min]) => window.matchMedia(`(min-width: ${min}px)`));
   for (const mql of queries) mql.addEventListener("change", callback);
   return () => {
     for (const mql of queries) mql.removeEventListener("change", callback);
@@ -67,21 +80,24 @@ export function useBreakpoint(): string {
   return useSyncExternalStore(subscribeToBreakpoint, getBreakpoint, getServerBreakpoint);
 }
 
-// --- Container width measurement ---
+// --- Container measurement (width + computed gap) ---
 
-function useContainerWidth(ref: RefObject<HTMLElement | null>): number {
-  const [width, setWidth] = useState(0);
+function useContainerMeasure(ref: RefObject<HTMLElement | null>): { width: number; gap: number } {
+  const [measure, setMeasure] = useState({ width: 0, gap: 0 });
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    setWidth(el.clientWidth);
-    const ro = new ResizeObserver((entries) => {
-      setWidth(entries[0].contentRect.width);
-    });
+    function read() {
+      const style = getComputedStyle(el!);
+      const gap = parseFloat(style.columnGap) || parseFloat(style.gap) || 0;
+      setMeasure({ width: el!.clientWidth, gap });
+    }
+    read();
+    const ro = new ResizeObserver(read);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  return width;
+  return measure;
 }
 
 // --- Resolve size for active breakpoint ---
@@ -90,9 +106,10 @@ function resolveSize(
   sizes: Record<string, { cols: number; rows: number }>,
   activeBreakpoint: string
 ): { cols: number; rows: number } {
-  const activeIndex = BREAKPOINTS.findIndex(([name]) => name === activeBreakpoint);
-  for (let i = activeIndex; i < BREAKPOINTS.length; i++) {
-    const key = BREAKPOINTS[i][0];
+  const bps = getBreakpoints();
+  const activeIndex = Math.max(0, bps.findIndex(([name]) => name === activeBreakpoint));
+  for (let i = activeIndex; i < bps.length; i++) {
+    const key = bps[i][0];
     if (sizes[key]) return sizes[key];
   }
   const first = Object.values(sizes)[0];
@@ -105,9 +122,10 @@ function resolveColumns(
   columns: Record<string, number>,
   activeBreakpoint: string
 ): number {
-  const activeIndex = BREAKPOINTS.findIndex(([name]) => name === activeBreakpoint);
-  for (let i = activeIndex; i < BREAKPOINTS.length; i++) {
-    const key = BREAKPOINTS[i][0];
+  const bps = getBreakpoints();
+  const activeIndex = Math.max(0, bps.findIndex(([name]) => name === activeBreakpoint));
+  for (let i = activeIndex; i < bps.length; i++) {
+    const key = bps[i][0];
     if (columns[key] !== undefined) return columns[key];
   }
   const first = Object.values(columns)[0];
@@ -224,8 +242,7 @@ export function useGridPacker(
 ): GridPackerResult {
   const breakpoint = useBreakpoint();
   const columns = resolveColumns(options.columns, breakpoint);
-  const containerWidth = useContainerWidth(containerRef);
-  const gap = options.gap ?? 0;
+  const { width: containerWidth, gap } = useContainerMeasure(containerRef);
   const cellSize = containerWidth > 0
     ? (containerWidth - (columns - 1) * gap) / columns
     : 0;

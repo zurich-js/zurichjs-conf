@@ -1,7 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { CirclePlus } from 'lucide-react';
+import {clsx} from "clsx";
 
 export interface SponsorCardProps {
   /** Sponsor name (used for alt text) */
@@ -14,8 +15,7 @@ export interface SponsorCardProps {
   url?: string | null;
   /** CTA href for empty state (default: /sponsorship) */
   ctaHref?: string;
-
-  emptySlot?: React.ReactNode;
+  isCta?: boolean
 }
 
 export const SponsorCard: React.FC<SponsorCardProps> = ({
@@ -24,7 +24,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   colorLogo,
   url,
   ctaHref = '/sponsorship',
-  emptySlot,
+  isCta
 }) => {
   const isEmpty = !logo;
   const hasExplicitColorLogo = !!colorLogo;
@@ -38,18 +38,20 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
     return (
       <Link
         href={ctaHref}
-        className={`${baseClasses} bg-brand-gray-darkest hover:bg-brand-white grid place-items-center group`}
+        className={clsx(
+            baseClasses,
+            isCta ? 'bg-brand-gray-medium text-brand-gray-light  hover:bg-brand-orange hover:text-white' : 'bg-brand-gray-darkest hover:bg-brand-gray-lightest text-brand-white/10',
+            `hover:text-brand-black/30 flex flex-col justify-center items-center group transition-colors duration-200`
+        )}
         aria-label="Learn about sponsorship opportunities"
       >
-        <div
-          className="w-12 relative h-12 rounded-full grid place-items-center transition-colors duration-300 border-2 text-brand-white/10 group-hover:text-brand-black/30 border-brand-white/10 group-hover:border-brand-black/30"
-        >
-          <Plus
-            className="w-7 h-7 transition-colors duration-300 stroke-2"
+          <CirclePlus
+            className="w-7 h-7 stroke-2"
             strokeWidth={2}
           />
-          {emptySlot}
-        </div>
+          {isCta && (
+              <p className="mt-2 text-sm whitespace-nowrap font-bold transition-colors duration-200">Reach your dev audience</p>
+          )}
       </Link>
     );
   }
