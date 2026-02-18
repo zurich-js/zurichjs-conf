@@ -8,7 +8,6 @@ import {
     LogoMarquee,
     PackedGrid,
     SponsorCard,
-    SponsorCtaCard,
 } from '@/components/molecules';
 import { SectionContainer } from '@/components/organisms/SectionContainer';
 import { useMotion } from '@/contexts/MotionContext';
@@ -43,15 +42,6 @@ function sortSponsorsByTier(sponsors: PublicSponsor[]): PublicSponsor[] {
     });
 }
 
-/**
- * SponsorsSection - Organism component for displaying sponsors and photo gallery
- *
- * Features:
- * - Dynamic sponsor grid with CTA card
- * - Community partners marquee
- * - Photo gallery with swiper
- * - SSR-ready with TanStack Query
- */
 export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                                                                     kicker = 'SPONSORS & PARTNERS',
                                                                     title,
@@ -64,16 +54,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
     const sponsors = sponsorsData?.sponsors ?? [];
     const partners = partnersData?.partners ?? [];
 
-    // Sort sponsors by tier and allocate to slots
     const sortedSponsors = sortSponsorsByTier(sponsors);
-    const largeSponsor = sortedSponsors[0] ?? null;
-    const mediumSponsors = sortedSponsors.slice(1, 5); // Next 4 sponsors
-    const smallSponsors = sortedSponsors.slice(5, 9); // Next 4 sponsors
-
-    // Fill slots with placeholders where needed
-    const mediumSlots = Array.from({ length: 4 }, (_, i) => mediumSponsors[i] ?? null);
-    const smallSlots = Array.from({ length: 4 }, (_, i) => smallSponsors[i] ?? null);
-
     const hasPartners = partners.length > 0;
 
     const packedItems: GridItemConfig[] = [
@@ -88,6 +69,16 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
         { id: 'small-3', sizes: { base: { cols: 1, rows: 1 }, sm: { cols: 1, rows: 1 } }, priority: 3 },
         { id: 'small-4', sizes: { base: { cols: 1, rows: 1 }, sm: { cols: 1, rows: 1 } }, priority: 3 },
     ];
+
+    // Map packed item IDs to sponsor data — items without a matching sponsor render as empty slots
+    const sponsorBySlot = new Map<string, PublicSponsor>();
+    let sponsorIdx = 0;
+    for (const item of packedItems) {
+        if (sponsorIdx < sortedSponsors.length) {
+            sponsorBySlot.set(item.id, sortedSponsors[sponsorIdx]);
+            sponsorIdx++;
+        }
+    }
 
     return (
         <div className="">
@@ -115,63 +106,17 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                         items={packedItems}
                         columns={{ base: 2, sm: 5, md: 6, xl: 12 }}
                         gap={16}
-                        renderItem={(item) => (
-                            <div className="bg-brand-gray-dark rounded-lg flex items-center justify-center h-full">
-                                <span className="text-white">{item.id.split('-')[0].toUpperCase()}</span>
-                            </div>
-                        )}
+                        renderItem={(item) => {
+                            const sponsor = sponsorBySlot.get(item.id);
+                            return (
+                                <SponsorCard
+                                    name={sponsor?.name}
+                                    logo={sponsor?.logo}
+                                    url={sponsor?.url}
+                                />
+                            );
+                        }}
                     />
-                    {/*
-            Layout breakpoints:
-            - Mobile (<640px): Single column with 2x2 sub-grids
-            - Tablet (640-1024px): 2-column main grid
-            - Desktop lg (1024-1279px): Flex row, may wrap
-            - Desktop xl (1280px+): Single line, no wrap
-
-            Gap strategy: Consistent 16px (gap-4) at all breakpoints for visual harmony
-          */}
-                    <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap xl:flex-nowrap lg:justify-center lg:items-start">
-                        {/* Row 1: CTA + Large sponsor (side by side on tablet+) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full lg:contents">
-                            {/* CTA Card */}
-                            <div className="w-full lg:w-auto lg:shrink-0">
-                                <SponsorCtaCard />
-                            </div>
-
-                            {/* Large sponsor card */}
-                            <div className="w-full lg:w-auto lg:shrink-0">
-                                <SponsorCard sponsor={largeSponsor} size="large" placeholder={!largeSponsor} />
-                            </div>
-                        </div>
-
-                        {/* Row 2: Medium sponsors 2×2 grid */}
-                        <div className="w-full lg:w-auto lg:shrink-0">
-                            <div className="grid grid-cols-2 gap-4 max-w-[320px] mx-auto sm:max-w-none sm:mx-0 lg:w-[320px]">
-                                {mediumSlots.map((sponsor, index) => (
-                                    <SponsorCard
-                                        key={sponsor?.id ?? `placeholder-medium-${index}`}
-                                        sponsor={sponsor}
-                                        size="medium"
-                                        placeholder={!sponsor}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Small sponsors - 2x2 grid at all breakpoints */}
-                        <div className="w-full sm:w-auto lg:shrink-0">
-                            <div className="grid grid-cols-2 gap-4 w-fit mx-auto sm:mx-0">
-                                {smallSlots.map((sponsor, index) => (
-                                    <SponsorCard
-                                        key={sponsor?.id ?? `placeholder-small-${index}`}
-                                        sponsor={sponsor}
-                                        size="small"
-                                        placeholder={!sponsor}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
                 </motion.div>
             </SectionContainer>
 
