@@ -3,6 +3,7 @@
  * Configuration for standard, VIP, and student/unemployed ticket options
  */
 
+import Link from 'next/link';
 import type { TicketsSectionProps, Plan } from '@/components/organisms';
 import type { Feature } from '@/components/molecules/FeatureList';
 import type { FAQItem } from '@/components/molecules/FAQAccordion';
@@ -166,8 +167,12 @@ export const TICKET_FAQ: FAQItem[] = [
     answer: (
       <>
         We get it – Switzerland can be pricey! But attending ZurichJS Conference on a budget is
-        definitely doable. We&apos;re working on hotel partnerships that will be announced soon.
-        Reach out to us at{' '}
+        definitely doable. Use our{' '}
+        <Link href="/trip-cost" className="underline">
+          Trip Cost Calculator
+        </Link>{' '}
+        to estimate your total trip cost (ticket + travel + hotel). We&apos;re also working on
+        hotel partnerships that will be announced soon. Reach out to us at{' '}
         <a href="mailto:hello@zurichjs.com" className="underline">
           hello@zurichjs.com
         </a>{' '}
