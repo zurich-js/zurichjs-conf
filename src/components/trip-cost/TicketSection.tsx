@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Ticket, Crown, GraduationCap, Check, TrendingUp } from 'lucide-react';
+import { Ticket, Crown, GraduationCap, Check } from 'lucide-react';
 import { CalculatorSection, formatAmount, toDisplayCurrency } from './CalculatorWidgets';
 import type { TicketType, DisplayCurrency } from '@/config/trip-cost';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
@@ -93,14 +93,16 @@ function TicketButton({
       }`}
       aria-pressed={isSelected}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {icon}
-          <span className="text-sm font-medium text-gray-900">{label}</span>
-          {sublabel && <span className="text-xs text-gray-400">{sublabel}</span>}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {icon}
+            <span className="text-sm font-medium text-gray-900">{label}</span>
+          </div>
+          {sublabel && <span className="block text-xs text-gray-400 mt-0.5 pl-6">{sublabel}</span>}
         </div>
         {price !== undefined && (
-          <div className="text-right shrink-0 ml-2">
+          <div className="text-right shrink-0">
             <span className="text-sm font-bold text-gray-900">
               {isLoading ? '...' : price}
             </span>
@@ -149,7 +151,7 @@ export function TicketSection({
         <TicketButton
           icon={<Crown className="w-4 h-4 text-amber-600" />}
           label="VIP"
-          sublabel="main day + activities with speakers on Sep 12"
+          sublabel="main day + activities with speakers on Sep 12th"
           price={vipPrice}
           comparePrice={vipCompare}
           isSelected={ticketType === 'vip'}
@@ -182,17 +184,6 @@ export function TicketSection({
         </button>
       </div>
 
-      {/* Price evolution hint */}
-      {stdCompare && ticketType !== 'have_ticket' && (
-        <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-          <TrendingUp className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-          <p className="text-xs text-amber-800">
-            <strong>Book early to save!</strong> Ticket prices increase through stages.
-            At Late Bird pricing, you&apos;d pay {stdCompare} for Standard
-            {vipCompare ? ` and ${vipCompare} for VIP` : ''}.
-          </p>
-        </div>
-      )}
     </CalculatorSection>
   );
 }

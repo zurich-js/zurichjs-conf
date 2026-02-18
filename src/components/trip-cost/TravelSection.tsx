@@ -76,7 +76,7 @@ export function TravelSection({
           <label className="block text-xs font-medium text-gray-500 mb-2">
             Estimated round-trip cost
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             {TRAVEL_STEPS.map((step, idx) => {
               const range = TRAVEL_RANGES[travelRegion];
               const chf = range[step.key];
@@ -85,17 +85,17 @@ export function TravelSection({
                 <button
                   key={step.key}
                   onClick={() => onUpdate({ travelStep: idx })}
-                  className={`cursor-pointer flex-1 px-3 py-3 rounded-lg text-center transition-colors border ${
+                  className={`cursor-pointer flex-1 px-2 sm:px-3 py-3 rounded-lg text-center transition-colors border ${
                     travelStep === idx
                       ? 'border-black bg-black text-white'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                   aria-pressed={travelStep === idx}
                 >
-                  <span className="block text-xs font-medium opacity-70">
+                  <span className="block text-[11px] sm:text-xs font-medium opacity-70">
                     {step.label}
                   </span>
-                  <span className="block text-sm font-bold mt-0.5">
+                  <span className="block text-xs sm:text-sm font-bold mt-0.5">
                     {formatAmount(display, currency)}
                   </span>
                 </button>

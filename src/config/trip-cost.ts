@@ -21,21 +21,37 @@ export type TicketType = 'standard' | 'vip' | 'student' | 'have_ticket';
 /** Which days the attendee plans to attend — determines recommended hotel nights */
 export type AttendanceDays = 'main_only' | 'main_workshop' | 'all_days';
 
-export const ATTENDANCE_OPTIONS: {
+export interface AttendanceOption {
   id: AttendanceDays;
   label: string;
+  sublabel: string;
   nights: number;
   dates: string;
   hint?: string;
-}[] = [
-  { id: 'main_only', label: 'Main day only', nights: 2, dates: 'Sep 10–12' },
-  { id: 'main_workshop', label: 'Workshop + Main day', nights: 3, dates: 'Sep 9–12' },
+}
+
+export const ATTENDANCE_OPTIONS: AttendanceOption[] = [
+  {
+    id: 'main_only',
+    label: 'Main day only',
+    sublabel: 'Sep 11th — conference talks & networking',
+    nights: 2,
+    dates: 'Sep 10th–12th',
+  },
+  {
+    id: 'main_workshop',
+    label: 'Workshop + Main day',
+    sublabel: 'Sep 10th workshop · Sep 11th conference',
+    nights: 3,
+    dates: 'Sep 9th–12th',
+  },
   {
     id: 'all_days',
-    label: 'Full experience',
+    label: 'Full experience (Workshop + VIP)',
+    sublabel: 'Sep 10th workshop · Sep 11th conference · Sep 12th VIP activities with speakers',
     nights: 3,
-    dates: 'Sep 9–12',
-    hint: 'We recommend a return flight after 18:00 on Sep 12',
+    dates: 'Sep 9th–12th',
+    hint: 'We recommend a return flight after 18:00 on Sep 12th',
   },
 ];
 

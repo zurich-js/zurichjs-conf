@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
-import { Share2, Check, ArrowRight } from 'lucide-react';
+import { Share2, Check, ArrowRight, Info } from 'lucide-react';
 import { SEO, generateBreadcrumbSchema } from '@/components/SEO';
 import { NavBar } from '@/components/organisms/NavBar';
 import { DynamicSiteFooter } from '@/components/organisms/DynamicSiteFooter';
@@ -66,6 +66,8 @@ export default function TripCostPage() {
   const router = useRouter();
   const [input, setInput] = useState<TripCostInput>(DEFAULT_INPUT);
   const [copied, setCopied] = useState(false);
+  const [breakdownVisible, setBreakdownVisible] = useState(false);
+  const breakdownRef = useRef<HTMLDivElement>(null);
   const trackedView = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -136,6 +138,18 @@ export default function TripCostPage() {
     } catch { /* OK */ }
   }, []);
 
+  // Hide sticky mobile bar when the breakdown card is visible
+  useEffect(() => {
+    const el = breakdownRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setBreakdownVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const trackUpdate = useCallback((next: TripCostInput) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -166,11 +180,17 @@ export default function TripCostPage() {
     (partial: Partial<TripCostInput>) => {
       setInput((prev) => {
         const next = { ...prev, ...partial };
+        // Auto-select VIP ticket when "Full experience" attendance is chosen (VIP is a prerequisite)
+        if (partial.attendanceDays === 'all_days' && prev.ticketType !== 'vip') {
+          next.ticketType = 'vip';
+          next.hasTicket = false;
+          next.ticketCHF = vipPriceCHF;
+        }
         trackUpdate(next);
         return next;
       });
     },
-    [trackUpdate]
+    [trackUpdate, vipPriceCHF]
   );
 
   /** Handle ticket type change — sets price only; nights are driven by attendance selector */
@@ -193,19 +213,29 @@ export default function TripCostPage() {
   const breakdown = computeTripCost(input, eurRate);
   const ticketType = input.ticketType ?? 'standard';
 
-  // Price evolution — compute late bird total from Stripe compare prices
+  // Price evolution — ticket from Stripe comparePrice, hotel/flight estimated increases
+  // For student/unemployed, skip ticket price evolution (only hotel + travel)
+  const isStudentOrHaveTicket = ticketType === 'student' || ticketType === 'have_ticket';
   const getLateBirdTicketCHF = () => {
-    if (ticketType === 'have_ticket') return null;
-    const planId = ticketType === 'student' ? 'standard_student_unemployed' : ticketType;
-    const plan = chfPlans.find((p) => p.id === planId);
-    return plan?.comparePrice ? Math.round(plan.comparePrice / 100) : null;
+    if (isStudentOrHaveTicket) return breakdown.ticketCHF;
+    const plan = chfPlans.find((p) => p.id === ticketType);
+    if (plan?.comparePrice) return Math.round(plan.comparePrice / 100);
+    return null;
   };
   const lateBirdTicketCHF = getLateBirdTicketCHF();
-  const lateBirdTotalCHF = lateBirdTicketCHF !== null
-    ? breakdown.totalCHF - breakdown.ticketCHF + lateBirdTicketCHF
+
+  // Estimated increases: hotel +10%/+25%, flights +15%/+30% at standard/late bird
+  // For student: ticket stays the same, only travel+hotel increase
+  const midTicketCHF = lateBirdTicketCHF !== null
+    ? (isStudentOrHaveTicket
+        ? breakdown.ticketCHF
+        : Math.round(breakdown.ticketCHF + (lateBirdTicketCHF - breakdown.ticketCHF) * 0.4))
     : null;
-  const standardEstTotalCHF = lateBirdTotalCHF !== null
-    ? Math.round(breakdown.totalCHF + (lateBirdTotalCHF - breakdown.totalCHF) * 0.5)
+  const standardEstTotalCHF = midTicketCHF !== null
+    ? Math.round(midTicketCHF + breakdown.travelCHF * 1.25 + breakdown.hotelTotalCHF * 1.20)
+    : null;
+  const lateBirdTotalCHF = lateBirdTicketCHF !== null
+    ? Math.round(lateBirdTicketCHF + breakdown.travelCHF * 1.30 + breakdown.hotelTotalCHF * 1.25)
     : null;
 
   const handleShare = useCallback(async () => {
@@ -249,15 +279,15 @@ export default function TripCostPage() {
       />
       <NavBar />
 
-      <main className="min-h-screen bg-white pt-28 pb-32 md:pt-36 md:pb-40">
+      <main className="min-h-screen bg-white pt-24 pb-36 md:pt-36 lg:pb-40 overflow-x-hidden">
         <SectionContainer>
           {/* Page header */}
-          <div className="max-w-3xl mb-12 md:mb-16">
+          <div className="max-w-3xl mb-8 md:mb-16">
             <Kicker variant="light">Trip Cost Calculator</Kicker>
-            <Heading level="h1" className="mt-3 mb-4">
+            <Heading level="h1" className="mt-3 mb-3 md:mb-4">
               How much does ZurichJS Conf cost in total?
             </Heading>
-            <p className="text-lg text-gray-600 leading-relaxed">
+            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
               Estimate ticket + travel + hotel in under 30 seconds.
               All prices are estimates — your actual costs may vary.
             </p>
@@ -284,9 +314,9 @@ export default function TripCostPage() {
           </div>
 
           {/* Two-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-12">
             {/* Left column — Inputs */}
-            <div className="lg:col-span-3 space-y-8">
+            <div className="lg:col-span-3 space-y-6 md:space-y-8">
               {/* A) Ticket type selector */}
               <TicketSection
                 ticketType={ticketType}
@@ -319,17 +349,58 @@ export default function TripCostPage() {
                 attendanceDays={input.attendanceDays ?? 'main_only'}
                 onUpdate={update}
               />
+
+              {/* D) Price evolution — below hotel, outside breakdown card */}
+              {lateBirdTotalCHF && standardEstTotalCHF && (
+                <div id="price-evolution" className="border border-gray-200 rounded-2xl p-5 sm:p-6">
+                  <h2 className="text-base font-semibold text-gray-900 mb-5">
+                    Price evolution
+                  </h2>
+                  <div className="relative mb-6">
+                    <div className="absolute top-[11px] left-[14px] right-[14px] h-1.5 rounded-full bg-gradient-to-r from-brand-green via-brand-yellow-main to-brand-red" />
+                    <div className="relative flex justify-between">
+                      <div className="text-center z-10 max-w-[30%]">
+                        <div className="w-6 h-6 rounded-full bg-brand-green border-2 border-white shadow mx-auto" />
+                        <span className="block text-[11px] sm:text-xs text-brand-green font-semibold mt-2">Now</span>
+                        <span className="block text-sm sm:text-base font-bold text-gray-900">
+                          {formatAmount(toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)}
+                        </span>
+                      </div>
+                      <div className="text-center z-10 max-w-[30%]">
+                        <div className="w-6 h-6 rounded-full bg-brand-yellow-secondary border-2 border-white shadow mx-auto" />
+                        <span className="block text-[11px] sm:text-xs text-brand-yellow-secondary font-semibold mt-2">Standard</span>
+                        <span className="block text-sm sm:text-base font-bold text-gray-900">
+                          ~{formatAmount(toDisplayCurrency(standardEstTotalCHF, displayCurrency, eurRate), displayCurrency)}
+                        </span>
+                      </div>
+                      <div className="text-center z-10 max-w-[30%]">
+                        <div className="w-6 h-6 rounded-full bg-brand-red border-2 border-white shadow mx-auto" />
+                        <span className="block text-[11px] sm:text-xs text-brand-red font-semibold mt-2">Late Bird</span>
+                        <span className="block text-sm sm:text-base font-bold text-gray-900">
+                          ~{formatAmount(toDisplayCurrency(lateBirdTotalCHF, displayCurrency, eurRate), displayCurrency)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 space-y-1 mb-4">
+                    <p className="font-medium text-gray-700">Includes estimated increases:</p>
+                    <p>• Ticket prices increase through pricing stages</p>
+                    <p>• Flights typically rise +25–30% closer to the event</p>
+                    <p>• Hotels typically rise +20–25% closer to the event</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right column — Breakdown summary */}
             <div className="lg:col-span-2">
               <div className="lg:sticky lg:top-28">
-                <div className="bg-black rounded-2xl p-6 text-white">
-                  <h2 className="text-sm font-medium text-brand-gray-light mb-5">
+                <div ref={breakdownRef} className="bg-black rounded-2xl p-5 sm:p-6 text-white">
+                  <h2 className="text-sm font-medium text-brand-gray-light mb-4 sm:mb-5">
                     Estimated breakdown
                   </h2>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <BreakdownRow
                       label={
                         ticketType === 'have_ticket'
@@ -361,23 +432,32 @@ export default function TripCostPage() {
                       eurRate={eurRate}
                     />
 
-                    <div className="border-t border-brand-gray-dark pt-4">
+                    <div className="border-t border-brand-gray-dark pt-3 sm:pt-4">
                       <div className="flex items-baseline justify-between">
                         <span className="text-sm font-medium text-brand-gray-light">
                           Estimated total
                         </span>
                         <div className="text-right">
-                          <span className="text-2xl font-bold">
+                          <span className="text-xl sm:text-2xl font-bold">
                             {formatAmount(
                               toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate),
                               displayCurrency
                             )}
                           </span>
-                          <span className="block text-sm text-brand-gray-light mt-0.5">
+                          <span className="block text-xs sm:text-sm text-brand-gray-light mt-0.5">
                             {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
                           </span>
                         </div>
                       </div>
+                      {standardEstTotalCHF && standardEstTotalCHF > breakdown.totalCHF && (
+                        <button
+                          onClick={() => document.getElementById('price-evolution')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                          className="cursor-pointer flex items-center gap-1 text-[11px] text-brand-green mt-2 hover:underline"
+                        >
+                          <Info className="w-3 h-3 shrink-0" />
+                          You save {formatAmount(toDisplayCurrency(standardEstTotalCHF - breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)} ({Math.round(((standardEstTotalCHF - breakdown.totalCHF) / standardEstTotalCHF) * 100)}%) by booking now
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -386,43 +466,7 @@ export default function TripCostPage() {
                     {rateDate && !isFallback && ` · ${rateDate}`}
                   </p>
 
-                  {/* Price evolution timeline — green/yellow/red */}
-                  {lateBirdTotalCHF && standardEstTotalCHF && (
-                    <div className="mt-4 pt-4 border-t border-brand-gray-dark">
-                      <p className="text-[11px] text-brand-gray-light mb-3">
-                        Estimated total if you wait
-                      </p>
-                      <div className="relative">
-                        <div className="absolute top-[7px] left-[10px] right-[10px] h-[3px] rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" />
-                        <div className="relative flex justify-between">
-                          <div className="text-center z-10">
-                            <div className="w-[15px] h-[15px] rounded-full bg-green-500 border-2 border-black mx-auto" />
-                            <span className="block text-[10px] text-green-400 mt-1">Now</span>
-                            <span className="block text-[10px] font-bold">
-                              {formatAmount(toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)}
-                            </span>
-                          </div>
-                          <div className="text-center z-10">
-                            <div className="w-[15px] h-[15px] rounded-full bg-yellow-500 border-2 border-black mx-auto" />
-                            <span className="block text-[10px] text-yellow-400 mt-1">Standard</span>
-                            <span className="block text-[10px] font-bold">
-                              ~{formatAmount(toDisplayCurrency(standardEstTotalCHF, displayCurrency, eurRate), displayCurrency)}
-                            </span>
-                          </div>
-                          <div className="text-center z-10">
-                            <div className="w-[15px] h-[15px] rounded-full bg-red-500 border-2 border-black mx-auto" />
-                            <span className="block text-[10px] text-red-400 mt-1">Late Bird</span>
-                            <span className="block text-[10px] font-bold">
-                              ~{formatAmount(toDisplayCurrency(lateBirdTotalCHF, displayCurrency, eurRate), displayCurrency)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-brand-gray-medium mt-2.5">
-                        Flights &amp; hotels also rise 20–40% closer to the event
-                      </p>
-                    </div>
-                  )}
+                  {/* (Price evolution is below the hotel section outside this card) */}
 
                   {/* Actions */}
                   <div className="mt-6 space-y-3">
@@ -464,6 +508,38 @@ export default function TripCostPage() {
       <ShapedSection shape="tighten" variant="dark" dropBottom>
         <DynamicSiteFooter />
       </ShapedSection>
+
+      {/* Sticky mobile total bar */}
+      <div
+        className={`fixed bottom-0 inset-x-0 z-40 lg:hidden bg-black border-t border-brand-gray-dark px-4 py-3 transition-transform duration-300 ${
+          breakdownVisible ? 'translate-y-full' : 'translate-y-0'
+        }`}
+        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <span className="block text-[11px] text-brand-gray-light">Estimated total</span>
+            <span className="block text-lg font-bold text-white">
+              {formatAmount(
+                toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate),
+                displayCurrency
+              )}
+            </span>
+            <span className="block text-xs text-brand-gray-medium">
+              {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
+            </span>
+          </div>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleGetTickets}
+            className="shrink-0"
+          >
+            Grab a ticket
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      </div>
     </>
   );
 }

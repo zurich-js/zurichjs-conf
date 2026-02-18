@@ -63,7 +63,6 @@ function HotelOptionButton({
   eurRate,
   onSelect,
   rounded,
-  inGroup,
 }: {
   hotel: HotelOption;
   isSelected: boolean;
@@ -71,7 +70,6 @@ function HotelOptionButton({
   eurRate: number;
   onSelect: () => void;
   rounded?: string;
-  inGroup?: boolean;
 }) {
   const priceDisplay =
     hotel.id !== 'other' && hotel.estimatePerNightCHF > 0
@@ -90,34 +88,16 @@ function HotelOptionButton({
       }`}
       aria-pressed={isSelected}
     >
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
           <span className="text-sm font-medium text-gray-900">{hotel.label}</span>
-          <span className="text-xs text-gray-500 ml-2">{hotel.sublabel}</span>
+          <span className="hidden sm:inline text-xs text-gray-500 ml-2">{hotel.sublabel}</span>
+          <span className="block sm:hidden text-xs text-gray-500">{hotel.sublabel}</span>
         </div>
         {priceDisplay && (
-          <span className="text-xs text-gray-500 shrink-0 ml-2">{priceDisplay}/night</span>
+          <span className="text-xs text-gray-500 shrink-0">{priceDisplay}/night</span>
         )}
       </div>
-      {/* Show distance + book link only for non-grouped hotels */}
-      {!inGroup && hotel.distanceFromVenue && isSelected && (
-        <span className="flex items-center gap-1 text-[11px] text-gray-400 mt-1">
-          <MapPin className="w-3 h-3" />
-          {hotel.distanceFromVenue} from venue
-        </span>
-      )}
-      {!inGroup && hotel.url && isSelected && (
-        <a
-          href={buildHotelUrl(hotel.url)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:underline mt-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          Book
-          <ExternalLink className="w-3 h-3" />
-        </a>
-      )}
     </button>
   );
 }
@@ -161,12 +141,15 @@ export function HotelSection({
                 }`}
                 aria-pressed={attendanceDays === opt.id}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-2">
                   <span className="text-sm font-medium text-gray-900">{opt.label}</span>
-                  <span className="text-xs text-gray-500">{opt.dates} · {opt.nights} nights</span>
+                  <span className="text-xs text-gray-500 shrink-0">{opt.dates} · {opt.nights} nights</span>
                 </div>
+                {attendanceDays === opt.id && (
+                  <p className="text-[11px] text-gray-500 mt-1">{opt.sublabel}</p>
+                )}
                 {opt.hint && attendanceDays === opt.id && (
-                  <p className="text-[11px] text-amber-600 mt-1">{opt.hint}</p>
+                  <p className="text-[11px] text-amber-600 mt-0.5">{opt.hint}</p>
                 )}
               </button>
             ))}
@@ -230,7 +213,6 @@ export function HotelSection({
                         eurRate={eurRate}
                         onSelect={() => onUpdate({ hotelType: hotel.id })}
                         rounded={`rounded-none ${hIdx === item.length - 1 ? '' : 'border-b-0'}`}
-                        inGroup
                       />
                     ))}
                     {isAnyMeiningerSelected && item[0]?.url && (
@@ -255,15 +237,39 @@ export function HotelSection({
               }
 
               // Single option
+              const isSelected = hotelType === item.id;
               return (
-                <HotelOptionButton
-                  key={item.id}
-                  hotel={item}
-                  isSelected={hotelType === item.id}
-                  currency={currency}
-                  eurRate={eurRate}
-                  onSelect={() => onUpdate({ hotelType: item.id })}
-                />
+                <div key={item.id} className={`rounded-lg overflow-hidden ${isSelected && (item.distanceFromVenue || item.url) ? 'border border-black' : ''}`}>
+                  <HotelOptionButton
+                    hotel={item}
+                    isSelected={isSelected}
+                    currency={currency}
+                    eurRate={eurRate}
+                    onSelect={() => onUpdate({ hotelType: item.id })}
+                    rounded={isSelected && (item.distanceFromVenue || item.url) ? 'rounded-none' : undefined}
+                  />
+                  {isSelected && (item.distanceFromVenue || item.url) && (
+                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                      {item.distanceFromVenue && (
+                        <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                          <MapPin className="w-3 h-3" />
+                          {item.distanceFromVenue} from venue
+                        </span>
+                      )}
+                      {item.url && (
+                        <a
+                          href={buildHotelUrl(item.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:underline"
+                        >
+                          Book
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
