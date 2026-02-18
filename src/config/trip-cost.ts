@@ -15,6 +15,9 @@ export const DEFAULT_TICKET_PRICE_CHF = 175;
 /** Display currency options */
 export type DisplayCurrency = 'CHF' | 'EUR';
 
+/** Ticket type for calculator */
+export type TicketType = 'standard' | 'vip' | 'have_ticket';
+
 /** Travel origin region */
 export type TravelRegion = 'europe' | 'international';
 
@@ -31,7 +34,7 @@ export const TRAVEL_RANGES: Record<TravelRegion, TravelRange> = {
     label: 'From Europe',
     lowCHF: 100,
     midCHF: 175,
-    highCHF: 300,
+    highCHF: 250,
   },
   international: {
     label: 'International',
@@ -57,15 +60,26 @@ export interface HotelOption {
   sublabel: string;
   estimatePerNightCHF: number;
   url?: string;
+  /** Group key — options with same group are paired together visually */
+  group?: string;
 }
 
 export const HOTEL_OPTIONS: HotelOption[] = [
   {
     id: 'hostel',
-    label: 'MEININGER Hostel',
-    sublabel: 'Shared room · backpacker',
+    label: 'MEININGER Shared Room',
+    sublabel: 'Backpacker · hostel style',
     estimatePerNightCHF: 45,
     url: 'https://www.meininger-hotels.com/en/hotels/zurich/hotel-zurich-greencity/',
+    group: 'meininger',
+  },
+  {
+    id: 'meininger',
+    label: 'MEININGER Private Room',
+    sublabel: 'Greencity · private room',
+    estimatePerNightCHF: 140,
+    url: 'https://www.meininger-hotels.com/en/hotels/zurich/hotel-zurich-greencity/',
+    group: 'meininger',
   },
   {
     id: 'vision',
@@ -80,13 +94,6 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     sublabel: 'Near Technopark · budget hotel',
     estimatePerNightCHF: 140,
     url: 'https://all.accor.com/hotel/8585/index.en.shtml',
-  },
-  {
-    id: 'meininger',
-    label: 'MEININGER Hotel',
-    sublabel: 'Greencity · private room',
-    estimatePerNightCHF: 140,
-    url: 'https://www.meininger-hotels.com/en/hotels/zurich/hotel-zurich-greencity/',
   },
   {
     id: 'other',
@@ -119,5 +126,11 @@ export function buildSkyscannerUrl(originIata: string): string {
 
 /** Build a Kiwi.com deep link for flights to Zurich */
 export function buildKiwiUrl(originIata: string): string {
-  return `https://www.kiwi.com/en/search/tiles/${originIata.toLowerCase()}/zurich-switzerland/2026-09-09/2026-09-12`;
+  return `https://www.kiwi.com/en/search/results/${originIata.toUpperCase()}/ZRH/2026-09-09/2026-09-12`;
+}
+
+/** Build a Google Flights deep link for flights to Zurich */
+export function buildGoogleFlightsUrl(originIata: string): string {
+  // Google Flights format: /flights/{from}-{to}/{outbound}/{return}
+  return `https://www.google.com/travel/flights?q=Flights%20to%20ZRH%20from%20${originIata.toUpperCase()}%20on%202026-09-09%20through%202026-09-12`;
 }

@@ -9,7 +9,7 @@ import {
   getTotalBucket,
   type TripCostInput,
 } from '../calculations';
-import { FALLBACK_EUR_RATE, buildSkyscannerUrl, buildKiwiUrl } from '@/config/trip-cost';
+import { FALLBACK_EUR_RATE, buildSkyscannerUrl, buildKiwiUrl, buildGoogleFlightsUrl } from '@/config/trip-cost';
 
 const RATE = FALLBACK_EUR_RATE; // 0.93
 
@@ -42,7 +42,7 @@ describe('getTravelCostCHF', () => {
   });
 
   it('returns high cost for europe at step 2', () => {
-    expect(getTravelCostCHF('europe', 2)).toBe(300);
+    expect(getTravelCostCHF('europe', 2)).toBe(250);
   });
 
   it('returns low cost for international at step 0', () => {
@@ -58,7 +58,7 @@ describe('getTravelCostCHF', () => {
   });
 
   it('clamps out-of-range step to max', () => {
-    expect(getTravelCostCHF('europe', 10)).toBe(300);
+    expect(getTravelCostCHF('europe', 10)).toBe(250);
   });
 });
 
@@ -295,7 +295,16 @@ describe('buildSkyscannerUrl', () => {
 describe('buildKiwiUrl', () => {
   it('builds correct Kiwi deep link', () => {
     expect(buildKiwiUrl('LHR')).toBe(
-      'https://www.kiwi.com/en/search/tiles/lhr/zurich-switzerland/2026-09-09/2026-09-12'
+      'https://www.kiwi.com/en/search/results/LHR/ZRH/2026-09-09/2026-09-12'
     );
+  });
+});
+
+describe('buildGoogleFlightsUrl', () => {
+  it('builds correct Google Flights deep link', () => {
+    const url = buildGoogleFlightsUrl('LHR');
+    expect(url).toContain('google.com/travel/flights');
+    expect(url).toContain('LHR');
+    expect(url).toContain('ZRH');
   });
 });

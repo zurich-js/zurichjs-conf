@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Plane, ExternalLink, Info } from 'lucide-react';
+import { Plane, TrainFront, ExternalLink, Info } from 'lucide-react';
 import { AirportInput } from '@/components/atoms/AirportInput';
 import { CalculatorSection, formatAmount, toDisplayCurrency } from './CalculatorWidgets';
 import {
@@ -12,6 +12,7 @@ import {
   TRAVEL_STEPS,
   buildSkyscannerUrl,
   buildKiwiUrl,
+  buildGoogleFlightsUrl,
   type TravelRegion,
   type DisplayCurrency,
 } from '@/config/trip-cost';
@@ -42,7 +43,15 @@ export function TravelSection({
   const originIata = getOriginIata(originAirport);
 
   return (
-    <CalculatorSection icon={<Plane className="w-5 h-5" />} title="Travel">
+    <CalculatorSection
+      icon={
+        <span className="flex items-center gap-1">
+          <Plane className="w-4 h-4" />
+          <TrainFront className="w-4 h-4" />
+        </span>
+      }
+      title="Travel"
+    >
       <div className="space-y-4">
         {/* Region selector */}
         <div className="flex gap-2">
@@ -50,7 +59,7 @@ export function TravelSection({
             <button
               key={region}
               onClick={() => onUpdate({ travelRegion: region })}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 travelRegion === region
                   ? 'bg-black text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -76,7 +85,7 @@ export function TravelSection({
                 <button
                   key={step.key}
                   onClick={() => onUpdate({ travelStep: idx })}
-                  className={`flex-1 px-3 py-3 rounded-lg text-center transition-colors border ${
+                  className={`cursor-pointer flex-1 px-3 py-3 rounded-lg text-center transition-colors border ${
                     travelStep === idx
                       ? 'border-black bg-black text-white'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
@@ -104,6 +113,7 @@ export function TravelSection({
             value={originAirport}
             onChange={(val) => onUpdate({ originAirport: val })}
             placeholder="Search your airport for flight links..."
+            theme="light"
           />
         </div>
 
@@ -111,21 +121,30 @@ export function TravelSection({
         {originIata && (
           <div className="flex flex-wrap gap-3">
             <a
+              href={buildGoogleFlightsUrl(originIata)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 hover:underline"
+            >
+              Google Flights
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+            <a
               href={buildSkyscannerUrl(originIata)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 hover:underline"
             >
-              Check Skyscanner
+              Skyscanner
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
             <a
               href={buildKiwiUrl(originIata)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 hover:underline"
             >
-              Check Kiwi.com
+              Kiwi.com
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>

@@ -13,6 +13,7 @@ import {
   type TravelRegion,
   type HotelType,
   type DisplayCurrency,
+  type TicketType,
 } from '@/config/trip-cost';
 
 export interface TripCostInput {
@@ -20,6 +21,8 @@ export interface TripCostInput {
   ticketCHF: number;
   /** Whether the user already has a ticket */
   hasTicket: boolean;
+  /** Selected ticket type */
+  ticketType?: TicketType;
   /** Travel region */
   travelRegion: TravelRegion;
   /** Travel cost step index (0=low, 1=mid, 2=high) */
@@ -106,6 +109,9 @@ export function encodeToSearchParams(input: TripCostInput): URLSearchParams {
   if (input.originAirport) {
     params.set('airport', input.originAirport);
   }
+  if (input.ticketType && input.ticketType !== 'standard') {
+    params.set('ticketType', input.ticketType);
+  }
   if (input.displayCurrency && input.displayCurrency !== 'CHF') {
     params.set('currency', input.displayCurrency);
   }
@@ -159,6 +165,11 @@ export function decodeFromSearchParams(
   const airport = params.get('airport');
   if (airport) {
     result.originAirport = airport;
+  }
+
+  const ticketType = params.get('ticketType');
+  if (ticketType === 'standard' || ticketType === 'vip' || ticketType === 'have_ticket') {
+    result.ticketType = ticketType;
   }
 
   const currency = params.get('currency');

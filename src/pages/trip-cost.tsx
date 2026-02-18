@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { Ticket, Share2, Check, ArrowRight } from 'lucide-react';
+import { Ticket, Share2, Check, ArrowRight, Crown } from 'lucide-react';
 import { SEO, generateBreadcrumbSchema } from '@/components/SEO';
 import { NavBar } from '@/components/organisms/NavBar';
 import { DynamicSiteFooter } from '@/components/organisms/DynamicSiteFooter';
@@ -16,7 +16,6 @@ import { SectionContainer } from '@/components/organisms/SectionContainer';
 import { Button } from '@/components/atoms/Button';
 import { Heading } from '@/components/atoms/Heading';
 import { Kicker } from '@/components/atoms/Kicker';
-import { Input } from '@/components/atoms/Input';
 import {
   CalculatorSection,
   BreakdownRow,
@@ -33,6 +32,7 @@ import {
   DEFAULT_NIGHTS,
   DEFAULT_CUSTOM_HOTEL_CHF,
   type DisplayCurrency,
+  type TicketType,
 } from '@/config/trip-cost';
 import {
   computeTripCost,
@@ -50,6 +50,7 @@ import { analytics } from '@/lib/analytics/client';
 const DEFAULT_INPUT: TripCostInput = {
   ticketCHF: DEFAULT_TICKET_PRICE_CHF,
   hasTicket: false,
+  ticketType: 'standard',
   travelRegion: 'europe',
   travelStep: 1,
   nights: DEFAULT_NIGHTS,
@@ -66,39 +67,38 @@ export default function TripCostPage() {
   const trackedView = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Live exchange rate from Frankfurter API (ECB data)
   const { eurRate, rateDate, rateSource, isFallback } = useExchangeRate();
-
-  // Current ticket pricing from Stripe
   const { plans, stageDisplayName, isLoading: ticketLoading } = useTicketPricing();
-
-  // Auto-detected currency from geo-IP
   const { currency: detectedCurrency } = useCurrency();
 
-  // Resolve display currency
   const displayCurrency: DisplayCurrency =
     input.displayCurrency ?? (detectedCurrency === 'EUR' ? 'EUR' : 'CHF');
 
-  // Set initial ticket price from Stripe when available
-  const appliedStripePrice = useRef(false);
-  useEffect(() => {
-    if (appliedStripePrice.current || ticketLoading || plans.length === 0) return;
-    appliedStripePrice.current = true;
-    const standard = plans.find((p) => p.lookupKey?.includes('standard'));
-    const cheapest = standard ?? plans[0];
-    if (cheapest?.price && cheapest.currency?.toUpperCase() === 'CHF') {
-      const priceCHF = Math.round(cheapest.price / 100);
-      setInput((prev) => {
-        // Only apply if user hasn't manually changed it or URL didn't specify it
-        if (prev.ticketCHF === DEFAULT_TICKET_PRICE_CHF) {
-          return { ...prev, ticketCHF: priceCHF };
-        }
-        return prev;
-      });
-    }
-  }, [ticketLoading, plans]);
+  // Get CHF prices from plans
+  const standardPriceCHF = useMemo(() => {
+    const plan = plans.find((p) => p.id === 'standard');
+    return plan ? Math.round(plan.price / 100) : DEFAULT_TICKET_PRICE_CHF;
+  }, [plans]);
 
-  // Set initial currency from geo-detection
+  const vipPriceCHF = useMemo(() => {
+    const plan = plans.find((p) => p.id === 'vip');
+    return plan ? Math.round(plan.price / 100) : 0;
+  }, [plans]);
+
+  // Apply Stripe price and geo-currency on mount
+  const appliedInitial = useRef(false);
+  useEffect(() => {
+    if (appliedInitial.current || ticketLoading || plans.length === 0) return;
+    appliedInitial.current = true;
+    setInput((prev) => {
+      const next = { ...prev };
+      if (prev.ticketCHF === DEFAULT_TICKET_PRICE_CHF && prev.ticketType === 'standard') {
+        next.ticketCHF = standardPriceCHF;
+      }
+      return next;
+    });
+  }, [ticketLoading, plans, standardPriceCHF]);
+
   useEffect(() => {
     if (detectedCurrency === 'EUR') {
       setInput((prev) => {
@@ -108,7 +108,6 @@ export default function TripCostPage() {
     }
   }, [detectedCurrency]);
 
-  // Hydrate from query params on mount
   useEffect(() => {
     if (!router.isReady) return;
     const params = new URLSearchParams(window.location.search);
@@ -118,7 +117,6 @@ export default function TripCostPage() {
     }
   }, [router.isReady]);
 
-  // Track page view once
   useEffect(() => {
     if (trackedView.current) return;
     trackedView.current = true;
@@ -128,12 +126,9 @@ export default function TripCostPage() {
         page_name: 'Trip Cost Calculator',
         page_category: 'other',
       } as never);
-    } catch {
-      // Analytics may not be initialized
-    }
+    } catch { /* OK */ }
   }, []);
 
-  // Debounced analytics for input changes
   const trackUpdate = useCallback((next: TripCostInput) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -152,6 +147,7 @@ export default function TripCostPage() {
           region: next.travelRegion,
           nights: next.nights,
           hotel_type: next.hotelType,
+          ticket_type: next.ticketType,
           total_bucket: getTotalBucket(bd.totalCHF),
           currency: next.displayCurrency,
         });
@@ -170,10 +166,26 @@ export default function TripCostPage() {
     [trackUpdate]
   );
 
-  // Compute breakdown
+  /** Handle ticket type change — sets price and adjusts recommended nights */
+  const handleTicketType = useCallback(
+    (type: TicketType) => {
+      const partial: Partial<TripCostInput> = { ticketType: type };
+      if (type === 'have_ticket') {
+        partial.hasTicket = true;
+        partial.ticketCHF = 0;
+      } else {
+        partial.hasTicket = false;
+        partial.ticketCHF = type === 'vip' ? vipPriceCHF : standardPriceCHF;
+        // Auto-adjust nights based on ticket type
+        partial.nights = type === 'vip' ? 3 : 2;
+      }
+      update(partial);
+    },
+    [update, standardPriceCHF, vipPriceCHF]
+  );
+
   const breakdown = useMemo(() => computeTripCost(input, eurRate), [input, eurRate]);
 
-  // Share URL
   const handleShare = useCallback(async () => {
     const params = encodeToSearchParams(input);
     const url = `${window.location.origin}/trip-cost?${params.toString()}`;
@@ -204,7 +216,7 @@ export default function TripCostPage() {
     { name: 'Trip Cost Calculator', url: '/trip-cost' },
   ]);
 
-  const ticketLabel = stageDisplayName ? `${stageDisplayName} ticket` : 'Ticket';
+  const ticketType = input.ticketType ?? 'standard';
 
   return (
     <>
@@ -217,7 +229,7 @@ export default function TripCostPage() {
       />
       <NavBar />
 
-      <main className="min-h-screen bg-white pt-28 pb-16 md:pt-36 md:pb-24">
+      <main className="min-h-screen bg-white pt-28 pb-32 md:pt-36 md:pb-40">
         <SectionContainer>
           {/* Page header + currency toggle */}
           <div className="max-w-3xl mb-12 md:mb-16">
@@ -228,16 +240,16 @@ export default function TripCostPage() {
                   How much does ZurichJS Conf cost in total?
                 </Heading>
               </div>
-              {/* Currency toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0 mt-2">
+              {/* Currency toggle — black/yellow for visibility */}
+              <div className="flex bg-black rounded-lg p-1 shrink-0 mt-2">
                 {(['CHF', 'EUR'] as DisplayCurrency[]).map((c) => (
                   <button
                     key={c}
                     onClick={() => update({ displayCurrency: c })}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    className={`cursor-pointer px-3.5 py-1.5 text-sm font-bold rounded-md transition-colors ${
                       displayCurrency === c
-                        ? 'bg-white text-black shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-brand-yellow-main text-black'
+                        : 'text-gray-400 hover:text-white'
                     }`}
                     aria-pressed={displayCurrency === c}
                   >
@@ -256,54 +268,76 @@ export default function TripCostPage() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
             {/* Left column — Inputs */}
             <div className="lg:col-span-3 space-y-8">
-              {/* A) Ticket */}
+              {/* A) Ticket type selector */}
               <CalculatorSection icon={<Ticket className="w-5 h-5" />} title="Ticket">
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 cursor-pointer">
+                  {/* Ticket type buttons */}
+                  <div className="space-y-2">
                     <button
-                      role="switch"
-                      aria-checked={input.hasTicket}
-                      onClick={() => update({ hasTicket: !input.hasTicket })}
-                      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 ${
-                        input.hasTicket ? 'bg-brand-yellow-main' : 'bg-gray-300'
+                      onClick={() => handleTicketType('standard')}
+                      className={`cursor-pointer w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                        ticketType === 'standard'
+                          ? 'border-black bg-gray-50'
+                          : 'border-gray-200 bg-white hover:border-gray-400'
                       }`}
+                      aria-pressed={ticketType === 'standard'}
                     >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                          input.hasTicket ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Ticket className="w-4 h-4 text-gray-600" />
+                          <span className="text-sm font-medium text-gray-900">Standard</span>
+                          {stageDisplayName && (
+                            <span className="text-xs text-gray-400">{stageDisplayName}</span>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">
+                          {ticketLoading ? '...' : formatAmount(
+                            toDisplayCurrency(standardPriceCHF, displayCurrency, eurRate),
+                            displayCurrency
+                          )}
+                        </span>
+                      </div>
                     </button>
-                    <span className="text-sm text-gray-700">I already have a ticket</span>
-                  </label>
 
-                  {!input.hasTicket && (
-                    <div>
-                      <label
-                        htmlFor="ticket-price"
-                        className="block text-xs font-medium text-gray-500 mb-1.5"
-                      >
-                        Ticket price (CHF)
-                      </label>
-                      <Input
-                        id="ticket-price"
-                        name="ticket-price"
-                        type="number"
-                        min={0}
-                        value={input.ticketCHF}
-                        onChange={(e) =>
-                          update({ ticketCHF: parseInt(e.target.value, 10) || 0 })
-                        }
-                        className="!bg-white !text-black border border-gray-300 max-w-[180px]"
-                        aria-label="Ticket price in CHF"
-                      />
-                      <p className="text-xs text-gray-400 mt-1">
-                        {ticketLoading
-                          ? 'Loading current price...'
-                          : `${ticketLabel} · CHF ${input.ticketCHF}`}
-                      </p>
-                    </div>
-                  )}
+                    <button
+                      onClick={() => handleTicketType('vip')}
+                      className={`cursor-pointer w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                        ticketType === 'vip'
+                          ? 'border-black bg-gray-50'
+                          : 'border-gray-200 bg-white hover:border-gray-400'
+                      }`}
+                      aria-pressed={ticketType === 'vip'}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-amber-600" />
+                          <span className="text-sm font-medium text-gray-900">VIP</span>
+                          <span className="text-xs text-gray-400">includes workshop day</span>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">
+                          {ticketLoading || !vipPriceCHF ? '...' : formatAmount(
+                            toDisplayCurrency(vipPriceCHF, displayCurrency, eurRate),
+                            displayCurrency
+                          )}
+                        </span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleTicketType('have_ticket')}
+                      className={`cursor-pointer w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                        ticketType === 'have_ticket'
+                          ? 'border-black bg-gray-50'
+                          : 'border-gray-200 bg-white hover:border-gray-400'
+                      }`}
+                      aria-pressed={ticketType === 'have_ticket'}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">I already have a ticket</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </CalculatorSection>
 
@@ -324,6 +358,7 @@ export default function TripCostPage() {
                 customHotelCHF={input.customHotelCHF}
                 currency={displayCurrency}
                 eurRate={eurRate}
+                ticketType={ticketType}
                 onUpdate={update}
               />
             </div>
@@ -338,9 +373,9 @@ export default function TripCostPage() {
 
                   <div className="space-y-4">
                     <BreakdownRow
-                      label={input.hasTicket ? 'Ticket (already have)' : 'Ticket'}
+                      label={ticketType === 'have_ticket' ? 'Ticket (already have)' : `Ticket (${ticketType})`}
                       chf={breakdown.ticketCHF}
-                      dimmed={input.hasTicket}
+                      dimmed={ticketType === 'have_ticket'}
                       currency={displayCurrency}
                       eurRate={eurRate}
                     />
@@ -400,7 +435,7 @@ export default function TripCostPage() {
                     </Button>
                     <button
                       onClick={handleShare}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-brand-gray-light hover:text-white border border-brand-gray-dark hover:border-brand-gray-medium transition-colors"
+                      className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-brand-gray-light hover:text-white border border-brand-gray-dark hover:border-brand-gray-medium transition-colors"
                     >
                       {copied ? (
                         <>
