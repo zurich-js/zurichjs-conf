@@ -9,7 +9,7 @@ import {
   getTotalBucket,
   type TripCostInput,
 } from '../calculations';
-import { FALLBACK_EUR_RATE, buildSkyscannerUrl, buildKiwiUrl, buildGoogleFlightsUrl } from '@/config/trip-cost';
+import { FALLBACK_EUR_RATE, buildSkyscannerUrl, buildKiwiUrl, buildGoogleFlightsUrl, buildHotelUrl } from '@/config/trip-cost';
 
 const RATE = FALLBACK_EUR_RATE; // 0.93
 
@@ -235,6 +235,11 @@ describe('encodeToSearchParams / decodeFromSearchParams', () => {
     expect(decodeFromSearchParams(hostelParams).hotelType).toBe('hostel');
   });
 
+  it('decodes student ticket type', () => {
+    const params = new URLSearchParams({ ticketType: 'student' });
+    expect(decodeFromSearchParams(params).ticketType).toBe('student');
+  });
+
   it('returns empty partial for empty params', () => {
     const decoded = decodeFromSearchParams(new URLSearchParams());
     expect(Object.keys(decoded)).toHaveLength(0);
@@ -306,5 +311,20 @@ describe('buildGoogleFlightsUrl', () => {
     expect(url).toContain('google.com/travel/flights');
     expect(url).toContain('LHR');
     expect(url).toContain('ZRH');
+  });
+});
+
+describe('buildHotelUrl', () => {
+  it('appends UTM params with ? for clean URL', () => {
+    const url = buildHotelUrl('https://example.com/hotel');
+    expect(url).toContain('?utm_source=zurichjs');
+    expect(url).toContain('utm_medium=trip-cost-calculator');
+    expect(url).toContain('utm_campaign=conf2026');
+  });
+
+  it('appends UTM params with & when URL already has query params', () => {
+    const url = buildHotelUrl('https://example.com/hotel?foo=bar');
+    expect(url).toContain('&utm_source=zurichjs');
+    expect(url).not.toContain('?utm_source');
   });
 });

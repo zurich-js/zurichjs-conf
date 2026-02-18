@@ -168,7 +168,7 @@ export function decodeFromSearchParams(
   }
 
   const ticketType = params.get('ticketType');
-  if (ticketType === 'standard' || ticketType === 'vip' || ticketType === 'have_ticket') {
+  if (ticketType === 'standard' || ticketType === 'vip' || ticketType === 'student' || ticketType === 'have_ticket') {
     result.ticketType = ticketType;
   }
 

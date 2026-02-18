@@ -16,7 +16,7 @@ export const DEFAULT_TICKET_PRICE_CHF = 175;
 export type DisplayCurrency = 'CHF' | 'EUR';
 
 /** Ticket type for calculator */
-export type TicketType = 'standard' | 'vip' | 'have_ticket';
+export type TicketType = 'standard' | 'vip' | 'student' | 'have_ticket';
 
 /** Travel origin region */
 export type TravelRegion = 'europe' | 'international';
@@ -60,8 +60,19 @@ export interface HotelOption {
   sublabel: string;
   estimatePerNightCHF: number;
   url?: string;
+  /** Approx distance from venue (Technopark) by public transport */
+  distanceFromVenue?: string;
   /** Group key — options with same group are paired together visually */
   group?: string;
+}
+
+/** UTM parameters appended to hotel links */
+export const TRIP_COST_UTM = 'utm_source=zurichjs&utm_medium=trip-cost-calculator&utm_campaign=conf2026';
+
+/** Append UTM params to a hotel URL */
+export function buildHotelUrl(baseUrl: string): string {
+  const sep = baseUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${sep}${TRIP_COST_UTM}`;
 }
 
 export const HOTEL_OPTIONS: HotelOption[] = [
@@ -71,6 +82,7 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     sublabel: 'Backpacker · hostel style',
     estimatePerNightCHF: 45,
     url: 'https://www.meininger-hotels.com/en/hotels/zurich/hotel-zurich-greencity/',
+    distanceFromVenue: '~20 min by tram',
     group: 'meininger',
   },
   {
@@ -79,6 +91,7 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     sublabel: 'Greencity · private room',
     estimatePerNightCHF: 140,
     url: 'https://www.meininger-hotels.com/en/hotels/zurich/hotel-zurich-greencity/',
+    distanceFromVenue: '~20 min by tram',
     group: 'meininger',
   },
   {
@@ -87,6 +100,7 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     sublabel: 'Zurich · serviced apartments',
     estimatePerNightCHF: 115,
     url: 'https://www.visionapartments.com/en/destinations/zurich',
+    distanceFromVenue: '~15 min by tram',
   },
   {
     id: 'ibis',
@@ -94,6 +108,7 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     sublabel: 'Near Technopark · budget hotel',
     estimatePerNightCHF: 140,
     url: 'https://all.accor.com/hotel/8585/index.en.shtml',
+    distanceFromVenue: '~5 min walk',
   },
   {
     id: 'other',
