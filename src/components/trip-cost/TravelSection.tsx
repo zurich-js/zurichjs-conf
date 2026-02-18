@@ -10,8 +10,6 @@ import { CalculatorSection, formatAmount, toDisplayCurrency } from './Calculator
 import {
   TRAVEL_RANGES,
   TRAVEL_STEPS,
-  buildSkyscannerUrl,
-  buildKiwiUrl,
   buildGoogleFlightsUrl,
   type TravelRegion,
   type DisplayCurrency,
@@ -127,24 +125,6 @@ export function TravelSection({
               className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:text-brand-blue/80 hover:underline"
             >
               Google Flights
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-            <a
-              href={buildSkyscannerUrl(originIata)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:text-brand-blue/80 hover:underline"
-            >
-              Skyscanner
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-            <a
-              href={buildKiwiUrl(originIata)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:text-brand-blue/80 hover:underline"
-            >
-              Kiwi.com
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>

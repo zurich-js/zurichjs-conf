@@ -165,22 +165,6 @@ export const MAX_NIGHTS = 7;
 /** Default custom hotel price per night */
 export const DEFAULT_CUSTOM_HOTEL_CHF = 130;
 
-/**
- * Build a Skyscanner deep link for flights to Zurich.
- * Dates: Sept 9–12, 2026 (conference window).
- * Format: YYMMDD
- */
-export function buildSkyscannerUrl(originIata: string): string {
-  const origin = originIata.toLowerCase();
-  // Sept 9 2026 → 260909, Sept 12 2026 → 260912
-  return `https://www.skyscanner.net/transport/flights/${origin}/zrh/260909/260912/`;
-}
-
-/** Build a Kiwi.com deep link for flights to Zurich */
-export function buildKiwiUrl(originIata: string): string {
-  return `https://www.kiwi.com/en/search/results/${originIata.toUpperCase()}/ZRH/2026-09-09/2026-09-12`;
-}
-
 /** Build a Google Flights deep link for flights to Zurich */
 export function buildGoogleFlightsUrl(originIata: string): string {
   // Google Flights format: /flights/{from}-{to}/{outbound}/{return}

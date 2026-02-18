@@ -9,7 +9,7 @@ import {
   getTotalBucket,
   type TripCostInput,
 } from '../calculations';
-import { FALLBACK_EUR_RATE, buildSkyscannerUrl, buildKiwiUrl, buildGoogleFlightsUrl, buildHotelUrl } from '@/config/trip-cost';
+import { FALLBACK_EUR_RATE, buildGoogleFlightsUrl, buildHotelUrl } from '@/config/trip-cost';
 
 const RATE = FALLBACK_EUR_RATE; // 0.93
 
@@ -300,26 +300,6 @@ describe('getTotalBucket', () => {
   it('returns 1200+ for large totals', () => {
     expect(getTotalBucket(1200)).toBe('1200+');
     expect(getTotalBucket(5000)).toBe('1200+');
-  });
-});
-
-describe('buildSkyscannerUrl', () => {
-  it('builds correct Skyscanner deep link', () => {
-    expect(buildSkyscannerUrl('LHR')).toBe(
-      'https://www.skyscanner.net/transport/flights/lhr/zrh/260909/260912/'
-    );
-  });
-
-  it('lowercases the IATA code', () => {
-    expect(buildSkyscannerUrl('CDG')).toContain('/cdg/');
-  });
-});
-
-describe('buildKiwiUrl', () => {
-  it('builds correct Kiwi deep link', () => {
-    expect(buildKiwiUrl('LHR')).toBe(
-      'https://www.kiwi.com/en/search/results/LHR/ZRH/2026-09-09/2026-09-12'
-    );
   });
 });
 
