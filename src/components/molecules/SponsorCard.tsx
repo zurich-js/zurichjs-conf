@@ -14,6 +14,8 @@ export interface SponsorCardProps {
   url?: string | null;
   /** CTA href for empty state (default: /sponsorship) */
   ctaHref?: string;
+
+  emptySlot?: React.ReactNode;
 }
 
 export const SponsorCard: React.FC<SponsorCardProps> = ({
@@ -22,6 +24,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   colorLogo,
   url,
   ctaHref = '/sponsorship',
+  emptySlot,
 }) => {
   const isEmpty = !logo;
   const hasExplicitColorLogo = !!colorLogo;
@@ -39,12 +42,13 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         aria-label="Learn about sponsorship opportunities"
       >
         <div
-          className="w-12 h-12 rounded-full grid place-items-center transition-colors duration-300 border-2 text-brand-white/10 group-hover:text-brand-black/30 border-brand-white/10 group-hover:border-brand-black/30"
+          className="w-12 relative h-12 rounded-full grid place-items-center transition-colors duration-300 border-2 text-brand-white/10 group-hover:text-brand-black/30 border-brand-white/10 group-hover:border-brand-black/30"
         >
           <Plus
             className="w-7 h-7 transition-colors duration-300 stroke-2"
             strokeWidth={2}
           />
+          {emptySlot}
         </div>
       </Link>
     );

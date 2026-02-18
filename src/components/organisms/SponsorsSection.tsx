@@ -108,11 +108,16 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                         gap={16}
                         renderItem={(item) => {
                             const sponsor = sponsorBySlot.get(item.id);
+                            const isFirstItem = item.id === packedItems[0].id;
+                            const allEmpty = sortedSponsors.length === 0;
                             return (
                                 <SponsorCard
                                     name={sponsor?.name}
                                     logo={sponsor?.logo}
                                     url={sponsor?.url}
+                                    emptySlot={isFirstItem && allEmpty && (
+                                        <p className="absolute top-full mt-2 text-sm whitespace-nowrap">Reach your dev audience</p>
+                                    )}
                                 />
                             );
                         }}
