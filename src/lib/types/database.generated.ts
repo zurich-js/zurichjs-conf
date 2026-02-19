@@ -1175,6 +1175,7 @@ export type Database = {
           internal_notes: string | null
           is_logo_public: boolean
           logo_url: string | null
+          logo_url_color: string | null
           metadata: Json | null
           updated_at: string
           vat_id: string | null
@@ -1194,6 +1195,7 @@ export type Database = {
           internal_notes?: string | null
           is_logo_public?: boolean
           logo_url?: string | null
+          logo_url_color?: string | null
           metadata?: Json | null
           updated_at?: string
           vat_id?: string | null
@@ -1213,6 +1215,7 @@ export type Database = {
           internal_notes?: string | null
           is_logo_public?: boolean
           logo_url?: string | null
+          logo_url_color?: string | null
           metadata?: Json | null
           updated_at?: string
           vat_id?: string | null

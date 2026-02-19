@@ -286,6 +286,7 @@ export async function getPublicSponsors(): Promise<PublicSponsor[]> {
       company_name,
       company_website,
       logo_url,
+      logo_url_color,
       sponsorship_deals!inner(tier_id, status)
     `)
     .eq('is_logo_public', true)
@@ -308,10 +309,11 @@ export async function getPublicSponsors(): Promise<PublicSponsor[]> {
       id: sponsor.id,
       name: sponsor.company_name,
       logo: sponsor.logo_url!,
+      logoColor: sponsor.logo_url_color!,
       url: sponsor.company_website,
       tier: tierId,
-      width: displayConfig.width,
-      height: displayConfig.height,
+      sizes: displayConfig.sizes,
+      priority: displayConfig.priority,
     };
   });
 }

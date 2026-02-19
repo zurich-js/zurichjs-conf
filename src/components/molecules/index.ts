@@ -35,7 +35,7 @@ export {
 } from './AudienceStats';
 export { LogoMarquee } from './LogoMarquee';
 export { SponsorCard } from './SponsorCard';
-export { SponsorCtaCard } from './SponsorCtaCard';
+export { PackedGrid } from './PackedGrid';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -77,4 +77,3 @@ export type {
 } from './AudienceStats';
 export type { LogoMarqueeProps, LogoMarqueeItem } from './LogoMarquee';
 export type { SponsorCardProps } from './SponsorCard';
-export type { SponsorCtaCardProps } from './SponsorCtaCard';

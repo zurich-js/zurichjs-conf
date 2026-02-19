@@ -1,101 +1,97 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
-import type { PublicSponsor } from '@/lib/types/sponsorship';
+import { CirclePlus } from 'lucide-react';
+import {clsx} from "clsx";
 
 export interface SponsorCardProps {
-  /** Sponsor data (or null for placeholder) */
-  sponsor: PublicSponsor | null;
-  /** Card size variant */
-  size: 'large' | 'medium' | 'small';
-  /** Show placeholder styling when no sponsor */
-  placeholder?: boolean;
+  /** Sponsor name (used for alt text) */
+  name?: string;
+  /** Grayscale / stripped logo — shown by default */
+  logo?: string;
+  /** Full-color logo — shown on hover. If omitted, `logo` is used with a CSS grayscale filter */
+  logoColor?: string;
+  /** Link to sponsor website */
+  url?: string | null;
+  /** CTA href for empty state (default: /sponsorship) */
+  ctaHref?: string;
+  isCta?: boolean
 }
 
-/**
- * SponsorCard - Card component for displaying sponsor logos
- *
- * Features:
- * - Two size variants: large (featured) and small
- * - Dark background with hover effects
- * - Placeholder state with grey plus icon (links to sponsorship page)
- * - Accessible with proper ARIA labels
- */
 export const SponsorCard: React.FC<SponsorCardProps> = ({
-  sponsor,
-  size,
-  placeholder = false,
+  name,
+  logo,
+  logoColor,
+  url,
+  ctaHref = '/sponsorship',
+  isCta
 }) => {
-  const isPlaceholder = !sponsor || placeholder;
+  const isEmpty = !logo;
+  const hasExplicitColorLogo = !!logoColor;
+  const isSvgOrGif = logo?.endsWith('.svg') || logo?.endsWith('.gif');
 
-  // Responsive sizes for different breakpoints
-  // Large: 320px, Medium: ~152px each, Small: 110px square
-  const sizeClasses = {
-    large: 'w-full h-[180px] sm:h-[200px] md:h-[220px] lg:w-[320px] lg:h-[240px]',
-    medium: 'w-full aspect-square sm:aspect-auto sm:h-[100px] md:h-[110px]',
-    small: 'w-[110px] h-[110px] shrink-0',
-  }[size];
+  const baseClasses =
+    'block w-full h-full rounded-2xl transition-all duration-300 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none';
 
-  const baseClasses = `
-    block rounded-2xl transition-all duration-300
-    focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none
-    ${sizeClasses}
-  `;
-
-  if (isPlaceholder) {
-    const iconSize = {
-      large: 'w-10 h-10',
-      medium: 'w-6 h-6',
-      small: 'w-5 h-5',
-    }[size];
-    const circleSize = {
-      large: 'w-16 h-16',
-      medium: 'w-10 h-10',
-      small: 'w-8 h-8',
-    }[size];
-
+  // --- Empty state: plus icon, white bg on hover ---
+  if (isEmpty) {
     return (
       <Link
-        href="/sponsorship"
-        className={`${baseClasses} bg-[#242528] flex items-center justify-center hover:bg-surface-card-hover hover:scale-[1.02]`}
+        href={ctaHref}
+        className={clsx(
+            baseClasses,
+            isCta ? 'bg-brand-gray-medium text-brand-gray-light  hover:bg-brand-orange hover:text-white' : 'bg-brand-gray-darkest hover:bg-brand-gray-lightest text-brand-white/10',
+            `hover:text-brand-black/30 flex flex-col justify-center items-center group transition-colors duration-200`
+        )}
         aria-label="Learn about sponsorship opportunities"
       >
-        <div
-          className={`${circleSize} rounded-full flex items-center justify-center`}
-          style={{ backgroundColor: 'rgba(124, 126, 137, 0.2)' }}
-        >
-          <Plus
-            className={iconSize}
-            style={{ color: '#7C7E89' }}
+          <CirclePlus
+            className="w-7 h-7 stroke-2"
             strokeWidth={2}
           />
-        </div>
+          {isCta && (
+              <p className="mt-2 text-sm whitespace-nowrap font-bold transition-colors duration-200">Reach your dev audience</p>
+          )}
       </Link>
     );
   }
 
+  // --- Filled state: grayscale → color on hover ---
   const content = (
-    <div className="relative w-full h-full p-4 md:p-6 flex items-center justify-center">
+    <div className="relative w-full h-full flex items-center justify-center group">
+      {/* Default (grayscale) logo */}
       <Image
-        src={sponsor.logo}
-        alt={`${sponsor.name} logo`}
+        src={logo}
+        alt={name ? `${name} logo` : 'Sponsor logo'}
         fill
-        className="object-contain p-4"
-        sizes={size === 'large' ? '(max-width: 768px) 50vw, 33vw' : '(max-width: 768px) 25vw, 15vw'}
-        unoptimized={sponsor.logo.endsWith('.svg') || sponsor.logo.endsWith('.gif')}
+        className={`object-contain p-4 transition-opacity duration-300 ${
+          hasExplicitColorLogo
+            ? 'group-hover:opacity-0'
+            : 'grayscale group-hover:grayscale-0'
+        }`}
+        unoptimized={isSvgOrGif}
       />
+      {/* Color logo (only if explicitly provided) */}
+      {hasExplicitColorLogo && (
+        <Image
+          src={logoColor}
+          alt={name ? `${name} logo` : 'Sponsor logo'}
+          fill
+          className="object-contain p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          unoptimized={logoColor.endsWith('.svg') || logoColor.endsWith('.gif')}
+        />
+      )}
     </div>
   );
 
-  if (sponsor.url) {
+  if (url) {
     return (
       <a
-        href={sponsor.url}
+        href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${baseClasses} bg-[#242528] hover:bg-surface-card-hover hover:scale-[1.02]`}
-        aria-label={`Visit ${sponsor.name} website`}
+        className={`${baseClasses} bg-transparent hover:scale-[1.02] group`}
+        aria-label={name ? `Visit ${name} website` : 'Visit sponsor website'}
       >
         {content}
       </a>
@@ -103,7 +99,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   }
 
   return (
-    <div className={`${baseClasses} bg-[#242528]`}>
+    <div className={`${baseClasses} bg-transparent group`}>
       {content}
     </div>
   );

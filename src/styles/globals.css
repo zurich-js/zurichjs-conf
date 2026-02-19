@@ -24,6 +24,7 @@
   --text-3xl: 3.75rem; /* 60px */
   --text-4xl: 6.25rem; /* 100px */
 
+  --breakpoint-2xs: 350px;
   --breakpoint-xs: 480px;
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
