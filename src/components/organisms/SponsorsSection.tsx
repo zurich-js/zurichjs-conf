@@ -105,17 +105,16 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                         items={packedItems}
                         columns={{ base: 2, xs: 3, sm: 5, md: 6, lg: 12 }}
                         gap="gap-3 sm:gap-4"
-                        renderItem={(item) => {
+                        renderItem={(item, placement) => {
                             const sponsor = sponsorMap.get(item.id);
-                            const isFirstItem = item.id === packedItems[0].id;
-                            const allEmpty = sponsors.length === 0;
+                            const isFirstSlot = placement.row === 1 && placement.col === 1;
                             return (
                                 <SponsorCard
                                     name={sponsor?.name}
                                     logo={sponsor?.logo}
                                     logoColor={sponsor?.logoColor ?? undefined}
                                     url={sponsor?.url}
-                                    isCta={isFirstItem && allEmpty}
+                                    isCta={isFirstSlot && !sponsor}
                                 />
                             );
                         }}
