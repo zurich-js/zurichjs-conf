@@ -13,6 +13,7 @@ import { SectionContainer } from '@/components/organisms/SectionContainer';
 import { useMotion } from '@/contexts/MotionContext';
 import { usePublicSponsors, useCommunityPartners } from '@/hooks/usePublicSponsors';
 import type { PublicSponsor } from '@/lib/types/sponsorship';
+import { TIER_DISPLAY_CONFIG } from '@/lib/types/sponsorship';
 import type { GridItemConfig } from '@/hooks/useGridPacker';
 
 export interface SponsorsSectionProps {
@@ -21,25 +22,46 @@ export interface SponsorsSectionProps {
     photos?: PhotoSlide[];
 }
 
-/**
- * Sort sponsors by tier priority
- * Order: diamond > platinum > gold > silver > bronze > supporter
- */
-const TIER_PRIORITY: Record<string, number> = {
-    diamond: 1,
-    platinum: 2,
-    gold: 3,
-    silver: 4,
-    bronze: 5,
-    supporter: 6,
+// Minimum empty slots per size category to keep the grid looking full
+const MIN_SLOTS: Record<string, number> = {
+    large: 2,
+    medium: 2,
+    default: 2,
+    small: 4,
 };
 
-function sortSponsorsByTier(sponsors: PublicSponsor[]): PublicSponsor[] {
-    return [...sponsors].sort((a, b) => {
-        const priorityA = TIER_PRIORITY[a.tier] ?? 99;
-        const priorityB = TIER_PRIORITY[b.tier] ?? 99;
-        return priorityA - priorityB;
+function buildGridItems(sponsors: PublicSponsor[]): { items: GridItemConfig[]; sponsorMap: Map<string, PublicSponsor> } {
+    const sponsorMap = new Map<string, PublicSponsor>();
+    const categoryCounts: Record<string, number> = { large: 0, medium: 0, default: 0, small: 0 };
+
+    // Create items directly from sponsor data (sizes + priority come from the API)
+    const sponsorItems: GridItemConfig[] = sponsors.map((sponsor) => {
+        const tierConfig = TIER_DISPLAY_CONFIG[sponsor.tier] ?? TIER_DISPLAY_CONFIG.bronze;
+        categoryCounts[tierConfig.sizeCategory] = (categoryCounts[tierConfig.sizeCategory] || 0) + 1;
+        sponsorMap.set(sponsor.id, sponsor);
+        return {
+            id: sponsor.id,
+            sizes: sponsor.sizes,
+            priority: sponsor.priority,
+        };
     });
+
+    // Fill remaining slots with empty placeholders
+    const emptyItems: GridItemConfig[] = [];
+    for (const [category, min] of Object.entries(MIN_SLOTS)) {
+        const existing = categoryCounts[category] || 0;
+        const needed = Math.max(0, min - existing);
+        const templateConfig = Object.values(TIER_DISPLAY_CONFIG).find((c) => c.sizeCategory === category)!;
+        for (let i = 0; i < needed; i++) {
+            emptyItems.push({
+                id: `empty-${category}-${i}`,
+                sizes: templateConfig.sizes,
+                priority: templateConfig.priority,
+            });
+        }
+    }
+
+    return { items: [...sponsorItems, ...emptyItems], sponsorMap };
 }
 
 export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
@@ -53,98 +75,9 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
 
     const sponsors = sponsorsData?.sponsors ?? [];
     const partners = partnersData?.partners ?? [];
-
-    const sortedSponsors = sortSponsorsByTier(sponsors);
     const hasPartners = partners.length > 0;
 
-    const packedItems: GridItemConfig[] = [
-        {
-            id: 'large-1',
-            sizes: {
-                base: { cols: 2, rows: 2 },
-                xs: { cols: 3, rows: 2 },
-            },
-            priority: 1
-        },
-        {
-            id: 'large-2',
-            sizes: {
-                base: { cols: 2, rows: 2 },
-                xs: { cols: 3, rows: 2 }
-            },
-            priority: 1
-        },
-        {
-            id: 'medium-1',
-            sizes: {
-                base: { cols: 2, rows: 1 },
-                sm: { cols: 2, rows: 2 }
-            },
-            priority: 2
-        },
-        {
-            id: 'medium-2',
-            sizes: {
-                base: { cols: 2, rows: 1 },
-                sm: { cols: 2, rows: 2 }
-            },
-            priority: 2
-        },
-        {
-            id: 'default-1',
-            sizes: {
-                base: { cols: 2, rows: 1 },
-                sm: { cols: 2, rows: 1 }
-            },
-            priority: 3
-        },
-        {
-            id: 'default-2',
-            sizes: {
-                base: { cols: 2, rows: 1 },
-                sm: { cols: 2, rows: 1 }
-            },
-            priority: 3
-        },
-        {
-            id: 'small-1',
-            sizes: {
-                base: { cols: 1, rows: 1 },
-            },
-            priority: 4
-        },
-        {
-            id: 'small-2',
-            sizes: {
-                base: { cols: 1, rows: 1 },
-            },
-            priority: 4
-        },
-        {
-            id: 'small-3',
-            sizes: {
-                base: { cols: 1, rows: 1 },
-            },
-            priority: 4
-        },
-        {
-            id: 'small-4',
-            sizes: {
-                base: { cols: 1, rows: 1 },
-            },
-            priority: 4
-        },
-    ];
-
-    // Map packed item IDs to sponsor data — items without a matching sponsor render as empty slots
-    const sponsorBySlot = new Map<string, PublicSponsor>();
-    let sponsorIdx = 0;
-    for (const item of packedItems) {
-        if (sponsorIdx < sortedSponsors.length) {
-            sponsorBySlot.set(item.id, sortedSponsors[sponsorIdx]);
-            sponsorIdx++;
-        }
-    }
+    const { items: packedItems, sponsorMap } = buildGridItems(sponsors);
 
     return (
         <div className="">
@@ -173,13 +106,14 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                         columns={{ base: 2, xs: 3, sm: 5, md: 6, lg: 12 }}
                         gap="gap-3 sm:gap-4"
                         renderItem={(item) => {
-                            const sponsor = sponsorBySlot.get(item.id);
+                            const sponsor = sponsorMap.get(item.id);
                             const isFirstItem = item.id === packedItems[0].id;
-                            const allEmpty = sortedSponsors.length === 0;
+                            const allEmpty = sponsors.length === 0;
                             return (
                                 <SponsorCard
                                     name={sponsor?.name}
                                     logo={sponsor?.logo}
+                                    logoColor={sponsor?.logoColor ?? undefined}
                                     url={sponsor?.url}
                                     isCta={isFirstItem && allEmpty}
                                 />

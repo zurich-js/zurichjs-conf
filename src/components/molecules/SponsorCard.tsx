@@ -10,7 +10,7 @@ export interface SponsorCardProps {
   /** Grayscale / stripped logo — shown by default */
   logo?: string;
   /** Full-color logo — shown on hover. If omitted, `logo` is used with a CSS grayscale filter */
-  colorLogo?: string;
+  logoColor?: string;
   /** Link to sponsor website */
   url?: string | null;
   /** CTA href for empty state (default: /sponsorship) */
@@ -21,13 +21,13 @@ export interface SponsorCardProps {
 export const SponsorCard: React.FC<SponsorCardProps> = ({
   name,
   logo,
-  colorLogo,
+  logoColor,
   url,
   ctaHref = '/sponsorship',
   isCta
 }) => {
   const isEmpty = !logo;
-  const hasExplicitColorLogo = !!colorLogo;
+  const hasExplicitColorLogo = !!logoColor;
   const isSvgOrGif = logo?.endsWith('.svg') || logo?.endsWith('.gif');
 
   const baseClasses =
@@ -74,11 +74,11 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
       {/* Color logo (only if explicitly provided) */}
       {hasExplicitColorLogo && (
         <Image
-          src={colorLogo}
+          src={logoColor}
           alt={name ? `${name} logo` : 'Sponsor logo'}
           fill
           className="object-contain p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          unoptimized={colorLogo.endsWith('.svg') || colorLogo.endsWith('.gif')}
+          unoptimized={logoColor.endsWith('.svg') || logoColor.endsWith('.gif')}
         />
       )}
     </div>
