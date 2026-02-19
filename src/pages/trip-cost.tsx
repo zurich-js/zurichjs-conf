@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import { Share2, Check, ArrowRight, Info } from 'lucide-react';
@@ -53,9 +54,9 @@ const DEFAULT_INPUT: TripCostInput = {
   hasTicket: false,
   ticketType: 'standard',
   travelRegion: 'europe',
-  travelStep: 1,
+  travelStep: 0,
   nights: DEFAULT_NIGHTS,
-  hotelType: 'ibis',
+  hotelType: 'hostel',
   customHotelCHF: DEFAULT_CUSTOM_HOTEL_CHF,
   originAirport: null,
   displayCurrency: 'CHF',
@@ -298,7 +299,7 @@ export default function TripCostPage() {
       />
       <NavBar />
 
-      <main className="min-h-screen bg-white pt-24 pb-36 md:pt-36 lg:pb-40 overflow-x-hidden">
+      <main className="min-h-screen bg-white pt-24 pb-36 md:pt-36 lg:pb-40">
         <SectionContainer>
           {/* Page header */}
           <div className="max-w-3xl mb-8 md:mb-16">
@@ -310,6 +311,22 @@ export default function TripCostPage() {
               Estimate ticket + travel + hotel in under 30 seconds.
               All prices are estimates — your actual costs may vary.
             </p>
+            <div className="text-sm text-gray-500 mt-3 space-y-2">
+              <p>
+                We know that travelling to Switzerland can seem costly at first, but with early booking, attending ZurichJS can be more accessible than you might think.
+              </p>
+              <p>
+                Our goal is to make the conference open to everyone who wants to be part of it, and financial barriers shouldn&apos;t prevent anyone from joining the community.
+              </p>
+              <p>
+                If you need support or have questions while planning your trip, don&apos;t hesitate to{' '}
+                <a href="mailto:hello@zurichjs.com" className="underline hover:text-gray-700 transition-colors">contact us</a>, we&apos;re sure we can work something out together.
+              </p>
+              <p>
+                For more details on travelling and airport options, please visit our{' '}
+                <Link href="/faq" className="underline hover:text-gray-700 transition-colors">FAQ page</Link>.
+              </p>
+            </div>
 
             {/* Currency toggle — centered pill */}
             <div className="flex justify-center mt-6">

@@ -28,7 +28,8 @@ export async function fetchTicketPricing(
   currency: SupportedCurrency = 'CHF'
 ): Promise<TicketPricingResponse> {
   const data = await apiClient.get<TicketPricingResponse>(
-    endpoints.tickets.pricing(currency)
+    endpoints.tickets.pricing(currency),
+    { skipErrorCapture: true }
   );
 
   if (data.error) {
@@ -49,6 +50,11 @@ export const createTicketPricingQueryOptions = (currency: SupportedCurrency = 'C
     queryFn: () => fetchTicketPricing(currency),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on timeout errors (would just timeout again)
+      if (error instanceof DOMException && error.name === 'TimeoutError') return false;
+      return failureCount < 2;
+    },
   });
 
 /**

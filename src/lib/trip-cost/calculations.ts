@@ -95,7 +95,7 @@ export function computeTripCost(
   };
 }
 
-const VALID_HOTEL_TYPES: HotelType[] = ['vision', 'ibis', 'meininger', 'hostel', 'other'];
+const VALID_HOTEL_TYPES: HotelType[] = ['vision', 'ibis', 'meininger', 'hostel', 'novotel', 'other'];
 
 /** Encode trip cost inputs into URL search params */
 export function encodeToSearchParams(input: TripCostInput): URLSearchParams {
