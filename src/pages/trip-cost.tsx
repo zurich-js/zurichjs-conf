@@ -311,11 +311,22 @@ export default function TripCostPage() {
               Estimate ticket + travel + hotel in under 30 seconds.
               All prices are estimates — your actual costs may vary.
             </p>
-            <p className="text-sm text-gray-500 mt-3">
-              Travelling to Switzerland is very accessible — check our{' '}
-              <Link href="/faq" className="underline hover:text-gray-700 transition-colors">FAQ</Link>{' '}
-              for visa, transport and entry tips.
-            </p>
+            <div className="text-sm text-gray-500 mt-3 space-y-2">
+              <p>
+                We know that travelling to Switzerland can seem costly at first, but with early booking, attending ZurichJS can be more accessible than you might think.
+              </p>
+              <p>
+                Our goal is to make the conference open to everyone who wants to be part of it, and financial barriers shouldn&apos;t prevent anyone from joining the community.
+              </p>
+              <p>
+                If you need support or have questions while planning your trip, don&apos;t hesitate to{' '}
+                <Link href="/contact" className="underline hover:text-gray-700 transition-colors">contact us</Link>, we&apos;re sure we can work something out together.
+              </p>
+              <p>
+                For more details on travelling and airport options, please visit our{' '}
+                <Link href="/faq" className="underline hover:text-gray-700 transition-colors">FAQ page</Link>.
+              </p>
+            </div>
 
             {/* Currency toggle — centered pill */}
             <div className="flex justify-center mt-6">
