@@ -1,9 +1,25 @@
 /**
  * Tech Stack Detector
  *
- * Detects visitor's frontend tech stack based on their installed browser
- * DevTools extensions. This tells us what frameworks/tools the VISITOR uses,
- * not what the website is built with.
+ * Detects which browser DevTools extensions (React DevTools, Vue DevTools,
+ * Redux DevTools, etc.) the visitor has installed by checking for global hooks
+ * these extensions inject into every page.
+ *
+ * Detected extensions are sent as low-cardinality traits to PostHog for
+ * audience persona building.
+ *
+ * **Limitations:**
+ * - This only tells us what extensions are installed, not necessarily what
+ *   frameworks the visitor actively uses in their own projects.
+ * - On a React-based site like this one, detecting React DevTools may just
+ *   mean the visitor has the extension installed — not that they are a React
+ *   developer.
+ *
+ * **Privacy note:**
+ * Checking for browser extension globals is a form of browser fingerprinting.
+ * While less invasive than other techniques, it collects information about
+ * installed extensions without explicit consent. Ensure this is covered in
+ * your privacy policy and complies with applicable regulations (e.g. GDPR).
  *
  * @module techStackDetector
  *
@@ -38,6 +54,7 @@ import {
   shouldSkipDetection,
 } from './dedupe';
 import type { TechStackTraits } from './types';
+import { DETECTOR_VERSION } from './types';
 import { sendTechTraitsToPosthog } from './posthog';
 
 // Re-export types for consumers
@@ -71,7 +88,7 @@ function debugLog(debug: boolean, ...args: unknown[]): void {
 }
 
 /**
- * Detects the user's tech stack from browser environment.
+ * Detects which DevTools extensions are installed in the visitor's browser.
  *
  * This function is safe to call multiple times - it will use cached results
  * if detection has already run this session (unless force is true).
@@ -98,8 +115,8 @@ export async function detectTechStack(
     allowNextDetection();
   }
 
-  // Check if already detected
-  if (shouldSkipDetection()) {
+  // Check if already detected (unless force is enabled)
+  if (!ctx?.force && shouldSkipDetection()) {
     debugLog(debug, 'Skipping - already detected this session');
     // Return a minimal unknown result
     return {
@@ -107,7 +124,7 @@ export async function detectTechStack(
       state_management: [],
       data_layer: [],
       confidence: 'none',
-      version: (await import('./types')).DETECTOR_VERSION,
+      version: DETECTOR_VERSION,
     };
   }
 

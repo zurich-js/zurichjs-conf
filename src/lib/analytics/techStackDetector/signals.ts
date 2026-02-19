@@ -1,11 +1,15 @@
 /**
  * Tech Stack Detection Signals Registry
  *
- * IMPORTANT: These signals detect the VISITOR's tech stack based on their
- * installed browser extensions, NOT the website's tech stack.
+ * Each signal checks for a global variable injected by a specific browser
+ * DevTools extension. A match indicates the visitor has that extension
+ * installed — it does not guarantee they actively use the corresponding
+ * framework or tool.
  *
- * Browser DevTools extensions inject globals into every page the user visits,
- * which tells us what frameworks/tools the visitor works with.
+ * Currently detected extensions:
+ * - Frameworks: React, Vue, Angular, Svelte, Solid
+ * - State management: Redux, MobX
+ * - Data layer: Apollo, URQL, TanStack Query
  *
  * @module techStackDetector/signals
  */
@@ -25,10 +29,11 @@ function hasGlobal(ctx: DetectionContext, key: string): boolean {
 }
 
 /**
- * Detection signals based on browser extensions.
+ * Detection signals based on browser DevTools extension globals.
  *
- * These detect what the VISITOR uses, not what the site is built with.
- * Only browser extension hooks are reliable for this purpose.
+ * Each entry checks for a well-known global that a specific extension
+ * injects into every page. A positive match means the extension is
+ * installed, not necessarily that the visitor actively uses the tool.
  */
 export const SIGNALS: Signal[] = [
   // ============================================================================

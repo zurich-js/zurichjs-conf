@@ -1,11 +1,12 @@
 /**
  * Tech Stack Detector Types
  *
- * Low-cardinality types for detecting visitor's frontend tech stack
- * based on their installed browser DevTools extensions.
+ * Low-cardinality types for detecting which browser DevTools extensions
+ * a visitor has installed (React DevTools, Redux DevTools, etc.).
  *
- * NOTE: We only detect what the VISITOR uses (via their extensions),
- * not what the website is built with.
+ * NOTE: This detects installed extensions, which is a rough proxy for the
+ * visitor's tech preferences but not a definitive indicator. A visitor may
+ * have extensions installed for frameworks they no longer actively use.
  *
  * @module techStackDetector/types
  */
