@@ -388,7 +388,7 @@ export default function TripCostPage() {
 
               {/* D) Price evolution — below hotel, outside breakdown card */}
               {lateBirdTotalCHF && standardEstTotalCHF && (
-                <div id="price-evolution" className="border border-gray-200 rounded-2xl p-5 pb-7 sm:p-6 sm:pb-9">
+                <div id="price-evolution" className="border border-gray-200 rounded-2xl p-5 pb-7 sm:p-6 sm:pb-9 mb-24 sm:mb-32">
                   <h2 className="text-base font-semibold text-gray-900 mb-5">
                     Price evolution
                   </h2>
