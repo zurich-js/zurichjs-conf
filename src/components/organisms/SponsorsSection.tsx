@@ -143,7 +143,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
             {/* ZurichJS Community Text */}
             <SectionContainer>
                 <motion.p
-                    className="flex items-center gap-2 justify-center text-brand-gray-light text-lg mt-8"
+                    className="flex items-center flex-wrap gap-2 justify-center text-brand-gray-light text-lg mt-8"
                     initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
                     animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
                     transition={{
@@ -152,7 +152,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                         ease: [0.22, 1, 0.36, 1],
                     }}
                 >
-                    and the
+                    and&nbsp;the
                     <Image
                         src="/images/logo/zurichjs-full.svg"
                         alt="ZurichJS Logo"
