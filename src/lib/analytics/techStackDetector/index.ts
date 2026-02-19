@@ -48,7 +48,7 @@ import {
   resetDetectionState,
   shouldSkipDetection,
 } from './dedupe';
-import type { InitTechStackDetectionOptions, TechStackTraits } from './types';
+import type { TechStackTraits } from './types';
 import { sendTechTraitsToPosthog } from './posthog';
 
 // Re-export types for consumers
@@ -66,21 +66,6 @@ export type {
 
 export { DETECTOR_VERSION, SESSION_STORAGE_KEY } from './types';
 
-/** Feature flag check */
-function isFeatureEnabled(): boolean {
-  // Check environment variable
-  if (typeof process !== 'undefined' && process.env?.FF_TECH_STACK_DETECTION === 'true') {
-    return true;
-  }
-
-  // Check Next.js public env var
-  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_FF_TECH_STACK_DETECTION === 'true') {
-    return true;
-  }
-
-  // Default: disabled
-  return false;
-}
 
 /** Check if we're in production */
 function isProduction(): boolean {
@@ -184,38 +169,24 @@ function scheduleAfterIdle(callback: () => void): void {
  *
  * @example
  * // In _app.tsx useEffect, after PostHog init:
- * initTechStackDetection({ enabled: true });
+ * initTechStackDetection();
  *
  * @example
- * // With all options:
- * initTechStackDetection({
- *   enabled: true,
- *   force: false,
- *   debug: true,
- * });
- *
- * @example
- * // Feature-flagged (default behavior):
- * initTechStackDetection(); // Uses FF_TECH_STACK_DETECTION env var
+ * // Force re-detection (for testing):
+ * initTechStackDetection({ force: true });
  */
 export function initTechStackDetection(
-  opts: InitTechStackDetectionOptions = {}
+  opts: { force?: boolean; debug?: boolean } = {}
 ): void {
   // SSR guard
   if (typeof window === 'undefined') {
     return;
   }
 
-  const enabled = opts.enabled ?? isFeatureEnabled();
   const force = opts.force ?? false;
   const debug = opts.debug ?? !isProduction();
 
-  debugLog(debug, 'Init called', { enabled, force });
-
-  if (!enabled) {
-    debugLog(debug, 'Detection disabled by feature flag');
-    return;
-  }
+  debugLog(debug, 'Init called', { force });
 
   // Check if already scheduled
   if (shouldSkipDetection() && !force) {
@@ -256,6 +227,5 @@ export function initTechStackDetection(
 export const __testing = {
   resetState: resetDetectionState,
   allowNextDetection,
-  isFeatureEnabled,
   isProduction,
 };

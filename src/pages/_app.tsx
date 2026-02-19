@@ -93,7 +93,7 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
           });
 
           // Initialize tech stack detection (runs once per session after idle)
-          initTechStackDetection({ enabled: true });
+          initTechStackDetection();
         },
       });
     }

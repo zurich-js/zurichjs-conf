@@ -243,19 +243,9 @@ export interface ScoreMap {
  * Options for initializing tech stack detection.
  *
  * @example
- * initTechStackDetection({
- *   enabled: true,
- *   force: false,
- *   debug: process.env.NODE_ENV === 'development',
- * });
+ * initTechStackDetection({ force: true, debug: true });
  */
 export interface InitTechStackDetectionOptions {
-  /**
-   * Whether detection is enabled.
-   * Default: Based on FF_TECH_STACK_DETECTION env var or feature flag.
-   */
-  enabled?: boolean;
-
   /**
    * Force detection even if already run this session.
    * Useful for testing.
