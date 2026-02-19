@@ -299,7 +299,7 @@ export default function TripCostPage() {
       />
       <NavBar />
 
-      <main className="min-h-screen bg-white pt-24 pb-36 md:pt-36 lg:pb-40 overflow-x-hidden">
+      <main className="min-h-screen bg-white pt-24 pb-36 md:pt-36 lg:pb-40">
         <SectionContainer>
           {/* Page header */}
           <div className="max-w-3xl mb-8 md:mb-16">
