@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import { Share2, Check, ArrowRight, Info } from 'lucide-react';
@@ -309,6 +310,11 @@ export default function TripCostPage() {
             <p className="text-base md:text-lg text-gray-600 leading-relaxed">
               Estimate ticket + travel + hotel in under 30 seconds.
               All prices are estimates — your actual costs may vary.
+            </p>
+            <p className="text-sm text-gray-500 mt-3">
+              Travelling to Switzerland is very accessible — check our{' '}
+              <Link href="/faq" className="underline hover:text-gray-700 transition-colors">FAQ</Link>{' '}
+              for visa, transport and entry tips.
             </p>
 
             {/* Currency toggle — centered pill */}

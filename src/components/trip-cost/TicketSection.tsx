@@ -178,7 +178,7 @@ export function TicketSection({
           aria-pressed={ticketType === 'have_ticket'}
         >
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-green-600" />
+            <Check className="w-4 h-4 text-brand-green" />
             <span className="text-sm font-medium text-gray-900">I already have a ticket</span>
           </div>
         </button>

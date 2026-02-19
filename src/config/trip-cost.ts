@@ -89,7 +89,7 @@ export const TRAVEL_STEPS = [
 ];
 
 /** Hotel option types */
-export type HotelType = 'vision' | 'ibis' | 'meininger' | 'hostel' | 'other';
+export type HotelType = 'vision' | 'ibis' | 'meininger' | 'hostel' | 'novotel' | 'other';
 
 export interface HotelOption {
   id: HotelType;
@@ -145,6 +145,14 @@ export const HOTEL_OPTIONS: HotelOption[] = [
     sublabel: 'Near Technopark · budget hotel',
     estimatePerNightCHF: 140,
     url: 'https://all.accor.com/hotel/3184/index.en.shtml',
+    distanceFromVenue: '~5 min walk',
+  },
+  {
+    id: 'novotel',
+    label: 'Novotel Zurich West',
+    sublabel: 'Near Technopark · 4-star hotel',
+    estimatePerNightCHF: 250,
+    url: 'https://all.accor.com/hotel/2731/index.en.shtml',
     distanceFromVenue: '~5 min walk',
   },
   {

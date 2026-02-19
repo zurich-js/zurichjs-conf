@@ -79,6 +79,10 @@ describe('getHotelPerNightCHF', () => {
     expect(getHotelPerNightCHF('hostel', 0)).toBe(45);
   });
 
+  it('returns Novotel estimate for "novotel"', () => {
+    expect(getHotelPerNightCHF('novotel', 0)).toBe(250);
+  });
+
   it('returns custom price for "other"', () => {
     expect(getHotelPerNightCHF('other', 200)).toBe(200);
   });
@@ -227,12 +231,15 @@ describe('encodeToSearchParams / decodeFromSearchParams', () => {
     expect(params.get('currency')).toBeNull();
   });
 
-  it('decodes meininger and hostel hotel types', () => {
+  it('decodes meininger, hostel, and novotel hotel types', () => {
     const meiningerParams = new URLSearchParams({ hotel: 'meininger' });
     expect(decodeFromSearchParams(meiningerParams).hotelType).toBe('meininger');
 
     const hostelParams = new URLSearchParams({ hotel: 'hostel' });
     expect(decodeFromSearchParams(hostelParams).hotelType).toBe('hostel');
+
+    const novotelParams = new URLSearchParams({ hotel: 'novotel' });
+    expect(decodeFromSearchParams(novotelParams).hotelType).toBe('novotel');
   });
 
   it('decodes student ticket type', () => {
