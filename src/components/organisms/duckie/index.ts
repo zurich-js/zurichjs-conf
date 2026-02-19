@@ -1,0 +1,1 @@
+export { useDuckie } from './useDuckie';

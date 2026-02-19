@@ -19,6 +19,7 @@ import type { Cart } from '@/types/cart';
 import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
 import { initEasterEgg } from '@/lib/easter-egg/client';
+import { useDuckie } from '@/components/organisms/duckie';
 
 const DiscountContainer = dynamic(
   () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
@@ -47,6 +48,18 @@ interface ExtendedPageProps {
   dehydratedState?: DehydratedState;
   initialCart?: Cart;
   detectedCurrency?: SupportedCurrency;
+}
+
+const isDev = process.env.NODE_ENV === 'development';
+
+function DuckieAnimations() {
+  const duckieAnimation = useDuckie({
+    idleStartMs: isDev ? 3000 : 5000,
+    scrollProbability: 0.02,
+    sideRepeatIntervalMs: isDev ? 15000 : 120000,
+  });
+
+  return <>{duckieAnimation}</>;
 }
 
 export default function App({ Component, pageProps }: AppProps<ExtendedPageProps>) {
@@ -138,6 +151,7 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
                       {showNavBar && <NavBar />}
                       <Component {...pageProps} />
                       {showDiscount && <DiscountContainer />}
+                      <DuckieAnimations />
                     </div>
                   </ToastProvider>
                 </MotionProvider>
