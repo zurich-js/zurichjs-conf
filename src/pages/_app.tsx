@@ -19,6 +19,7 @@ import type { Cart } from '@/types/cart';
 import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
 import { initEasterEgg } from '@/lib/easter-egg/client';
+import { initTechStackDetection } from '@/lib/analytics/techStackDetector';
 
 const DiscountContainer = dynamic(
   () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
@@ -90,6 +91,9 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
             $current_url: window.location.href,
             page_path: window.location.pathname,
           });
+
+          // Initialize tech stack detection (runs once per session after idle)
+          initTechStackDetection({ enabled: true });
         },
       });
     }

@@ -128,6 +128,9 @@ export type {
   EasterEggClaimFailedEvent,
 } from './easter-egg-events';
 
+// Tech stack events
+export type { TechStackDetectedEvent } from './tech-stack-events';
+
 // Import all event types for the union
 import type { PageViewedEvent, UserIdentifiedEvent } from './base';
 import type {
@@ -212,6 +215,7 @@ import type {
   EasterEggClaimedEvent,
   EasterEggClaimFailedEvent,
 } from './easter-egg-events';
+import type { TechStackDetectedEvent } from './tech-stack-events';
 
 /**
  * Union of all possible analytics events.
@@ -286,7 +290,8 @@ export type AnalyticsEvent =
   | EasterEggRewardCalledEvent
   | EasterEggAlreadyClaimedEvent
   | EasterEggClaimedEvent
-  | EasterEggClaimFailedEvent;
+  | EasterEggClaimFailedEvent
+  | TechStackDetectedEvent;
 
 /**
  * Extract event name from AnalyticsEvent
