@@ -1,18 +1,9 @@
 /**
  * Tech Stack Detector
  *
- * Centralized, reusable module for detecting a user's frontend tech stack.
- * Attaches low-cardinality traits to PostHog for persona building and content planning.
- *
- * PRIVACY FIRST:
- * - Only detects coarse technology traits (frameworks, tools)
- * - No content scraping, no cross-domain data, no user-entered data
- * - No fingerprinting beyond publicly visible tech signals
- *
- * PERFORMANCE FIRST:
- * - Cheap synchronous checks only (no network calls)
- * - Runs after page load via requestIdleCallback
- * - Detects once per session (deduplicated)
+ * Detects visitor's frontend tech stack based on their installed browser
+ * DevTools extensions. This tells us what frameworks/tools the VISITOR uses,
+ * not what the website is built with.
  *
  * @module techStackDetector
  *
@@ -21,7 +12,7 @@
  * import { initTechStackDetection } from '@/lib/analytics/techStackDetector';
  *
  * // In useEffect after PostHog init:
- * initTechStackDetection({ enabled: true });
+ * initTechStackDetection();
  *
  * @example
  * // Manual detection (for testing)
@@ -30,13 +21,11 @@
  * const traits = await detectTechStack();
  * console.log(traits);
  * // {
- * //   framework_primary: 'react',
- * //   framework_meta: ['nextjs'],
- * //   state_management: ['redux'],
- * //   data_layer: ['tanstack_query'],
- * //   tooling: ['webpack'],
+ * //   framework_primary: 'react',  // Has React DevTools installed
+ * //   state_management: ['redux'], // Has Redux DevTools installed
+ * //   data_layer: ['apollo'],      // Has Apollo DevTools installed
  * //   confidence: 'high',
- * //   version: '1.0.0'
+ * //   version: '1.1.0'
  * // }
  */
 
@@ -56,7 +45,6 @@ export type {
   TechStackTraits,
   InitTechStackDetectionOptions,
   FrameworkPrimary,
-  TechMeta,
   StateTool,
   DataTool,
   DetectionConfidence,
@@ -116,11 +104,9 @@ export async function detectTechStack(
     // Return a minimal unknown result
     return {
       framework_primary: 'unknown',
-      framework_meta: [],
       state_management: [],
       data_layer: [],
-      tooling: [],
-      confidence: 'low',
+      confidence: 'none',
       version: (await import('./types')).DETECTOR_VERSION,
     };
   }

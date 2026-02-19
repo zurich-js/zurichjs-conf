@@ -1,47 +1,16 @@
 /**
  * Tech Stack Detection Signals Registry
  *
- * Data-driven signal definitions for detecting frontend tech stacks.
- * Each signal defines a check that can indicate a particular technology.
+ * IMPORTANT: These signals detect the VISITOR's tech stack based on their
+ * installed browser extensions, NOT the website's tech stack.
  *
- * SAFETY GUIDELINES:
- * - All checks must be synchronous and cheap
- * - Never access cookies, localStorage (beyond our dedupe), or user data
- * - Never make network calls or load external scripts
- * - Never read page content or form data
- * - Only check public globals, DOM attributes, and script paths
+ * Browser DevTools extensions inject globals into every page the user visits,
+ * which tells us what frameworks/tools the visitor works with.
  *
  * @module techStackDetector/signals
  */
 
 import type { Signal, DetectionContext } from './types';
-
-/**
- * Helper to safely check if a script src contains a substring.
- * Returns false on any error.
- */
-function hasScriptSrc(ctx: DetectionContext, pattern: string | RegExp): boolean {
-  try {
-    if (typeof pattern === 'string') {
-      return ctx.scriptSrcs.some((src) => src.includes(pattern));
-    }
-    return ctx.scriptSrcs.some((src) => pattern.test(src));
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Helper to safely check for a DOM element/attribute.
- * Returns false on any error.
- */
-function hasElement(ctx: DetectionContext, selector: string): boolean {
-  try {
-    return !!ctx.document?.querySelector(selector);
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Helper to safely check for a window global.
@@ -56,359 +25,81 @@ function hasGlobal(ctx: DetectionContext, key: string): boolean {
 }
 
 /**
- * All detection signals.
- * Organized by category for readability.
+ * Detection signals based on browser extensions.
  *
- * Signal weight guide:
- * - 1: Very weak (common in many contexts)
- * - 2: Weak (might be coincidental)
- * - 3: Moderate (good indicator)
- * - 4: Strong (very reliable)
- * - 5: Definitive (unique to the tech)
+ * These detect what the VISITOR uses, not what the site is built with.
+ * Only browser extension hooks are reliable for this purpose.
  */
 export const SIGNALS: Signal[] = [
   // ============================================================================
-  // FRAMEWORK SIGNALS - Primary frontend framework
+  // FRAMEWORK SIGNALS - Based on DevTools extensions
   // ============================================================================
 
-  // React signals
+  // React DevTools extension injects this hook into every page
   {
-    id: 'react-devtools-hook',
+    id: 'react-devtools',
     category: 'framework',
     label: 'react',
-    weight: 4,
-    prodSafe: true, // DevTools hook exists even in prod if user has extension
+    weight: 5,
+    prodSafe: true,
     check: (ctx) => hasGlobal(ctx, '__REACT_DEVTOOLS_GLOBAL_HOOK__'),
   },
-  {
-    id: 'react-root-container',
-    category: 'framework',
-    label: 'react',
-    weight: 3,
-    prodSafe: true,
-    check: (ctx) => hasElement(ctx, '[data-reactroot], #__next, #root'),
-  },
-  {
-    id: 'react-fiber',
-    category: 'framework',
-    label: 'react',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => {
-      try {
-        const root = ctx.document?.getElementById('__next') || ctx.document?.getElementById('root');
-        if (!root) return false;
-        // React Fiber attaches _reactRootContainer to root elements
-        return '_reactRootContainer' in root || Object.keys(root).some(k => k.startsWith('__reactFiber'));
-      } catch {
-        return false;
-      }
-    },
-  },
 
-  // Vue signals
+  // Vue DevTools extension injects this hook into every page
   {
-    id: 'vue-global',
+    id: 'vue-devtools',
     category: 'framework',
     label: 'vue',
     weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '__VUE__'),
-  },
-  {
-    id: 'vue-devtools-hook',
-    category: 'framework',
-    label: 'vue',
-    weight: 4,
     prodSafe: true,
     check: (ctx) => hasGlobal(ctx, '__VUE_DEVTOOLS_GLOBAL_HOOK__'),
   },
-  {
-    id: 'vue-app-attribute',
-    category: 'framework',
-    label: 'vue',
-    weight: 3,
-    prodSafe: true,
-    check: (ctx) => hasElement(ctx, '[data-v-app], [data-v-]'),
-  },
 
-  // Angular signals
+  // Angular Augury/DevTools - less common but exists
   {
-    id: 'angular-ng-version',
+    id: 'angular-devtools',
     category: 'framework',
     label: 'angular',
     weight: 5,
     prodSafe: true,
-    check: (ctx) => hasElement(ctx, '[ng-version]'),
-  },
-  {
-    id: 'angular-zone',
-    category: 'framework',
-    label: 'angular',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, 'Zone'),
-  },
-  {
-    id: 'angular-ng-global',
-    category: 'framework',
-    label: 'angular',
-    weight: 3,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, 'ng'),
+    check: (ctx) => hasGlobal(ctx, '__ANGULAR_DEVTOOLS_GLOBAL_HOOK__'),
   },
 
-  // Svelte signals
+  // Svelte DevTools extension
   {
-    id: 'svelte-hmr',
+    id: 'svelte-devtools',
     category: 'framework',
     label: 'svelte',
-    weight: 4,
-    prodSafe: false, // HMR is dev-only
-    check: (ctx) => hasGlobal(ctx, '__SVELTE_HMR_CALLBACK__'),
-  },
-  {
-    id: 'svelte-component',
-    category: 'framework',
-    label: 'svelte',
-    weight: 3,
+    weight: 5,
     prodSafe: true,
-    check: (ctx) => hasElement(ctx, '[class*="svelte-"]'),
+    check: (ctx) => hasGlobal(ctx, '__SVELTE_DEVTOOLS_GLOBAL_HOOK__'),
   },
 
-  // Solid signals
+  // Solid DevTools extension
   {
-    id: 'solid-dev',
+    id: 'solid-devtools',
     category: 'framework',
     label: 'solid',
-    weight: 4,
-    prodSafe: false,
-    check: (ctx) => hasGlobal(ctx, '_$HY'),
-  },
-  {
-    id: 'solid-script',
-    category: 'framework',
-    label: 'solid',
-    weight: 3,
+    weight: 5,
     prodSafe: true,
-    check: (ctx) => hasScriptSrc(ctx, /solid-js|solidjs/i),
+    check: (ctx) => hasGlobal(ctx, '__SOLID_DEVTOOLS_GLOBAL_HOOK__'),
   },
 
   // ============================================================================
-  // META-FRAMEWORK SIGNALS
+  // STATE MANAGEMENT SIGNALS - Based on DevTools extensions
   // ============================================================================
 
-  // Next.js signals
-  {
-    id: 'nextjs-data',
-    category: 'meta',
-    label: 'nextjs',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '__NEXT_DATA__'),
-  },
-  {
-    id: 'nextjs-script-path',
-    category: 'meta',
-    label: 'nextjs',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasScriptSrc(ctx, '/_next/'),
-  },
-  {
-    id: 'nextjs-element',
-    category: 'meta',
-    label: 'nextjs',
-    weight: 3,
-    prodSafe: true,
-    check: (ctx) => hasElement(ctx, '#__next'),
-  },
-
-  // Nuxt signals
-  {
-    id: 'nuxt-global',
-    category: 'meta',
-    label: 'nuxt',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '__NUXT__'),
-  },
-  {
-    id: 'nuxt-script-path',
-    category: 'meta',
-    label: 'nuxt',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasScriptSrc(ctx, '/_nuxt/'),
-  },
-
-  // SvelteKit signals
-  {
-    id: 'sveltekit-data-attribute',
-    category: 'meta',
-    label: 'sveltekit',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasElement(ctx, '[data-sveltekit-hydrate], [data-sveltekit-preload-data]'),
-  },
-  {
-    id: 'sveltekit-script-path',
-    category: 'meta',
-    label: 'sveltekit',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasScriptSrc(ctx, '/_app/'),
-  },
-
-  // Gatsby signals
-  {
-    id: 'gatsby-root',
-    category: 'meta',
-    label: 'gatsby',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasElement(ctx, '#___gatsby'),
-  },
-  {
-    id: 'gatsby-global',
-    category: 'meta',
-    label: 'gatsby',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '___gatsby'),
-  },
-
-  // Remix signals
-  {
-    id: 'remix-global',
-    category: 'meta',
-    label: 'remix',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '__remixContext'),
-  },
-  {
-    id: 'remix-build',
-    category: 'meta',
-    label: 'remix',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasScriptSrc(ctx, '/build/'),
-  },
-
-  // Astro signals
-  {
-    id: 'astro-island',
-    category: 'meta',
-    label: 'astro',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasElement(ctx, 'astro-island, [data-astro-cid]'),
-  },
-
-  // Storybook signals
-  {
-    id: 'storybook-global',
-    category: 'meta',
-    label: 'storybook',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, 'Storybook'),
-  },
-  {
-    id: 'storybook-root',
-    category: 'meta',
-    label: 'storybook',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasElement(ctx, '#storybook-root'),
-  },
-
-  // ============================================================================
-  // TOOLING SIGNALS - Build tools
-  // ============================================================================
-
-  // Vite signals
-  {
-    id: 'vite-client',
-    category: 'tooling',
-    label: 'vite',
-    weight: 5,
-    prodSafe: false, // Vite client is dev-only
-    check: (ctx) => hasScriptSrc(ctx, '/@vite/client'),
-  },
-  {
-    id: 'vite-hmr',
-    category: 'tooling',
-    label: 'vite',
-    weight: 4,
-    prodSafe: false,
-    check: (ctx) => hasGlobal(ctx, '__vite_plugin_react_preamble_installed__'),
-  },
-
-  // Webpack signals
-  {
-    id: 'webpack-jsonp',
-    category: 'tooling',
-    label: 'webpack',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, 'webpackJsonp') || hasGlobal(ctx, 'webpackChunk'),
-  },
-  {
-    id: 'webpack-hot',
-    category: 'tooling',
-    label: 'webpack',
-    weight: 3,
-    prodSafe: false,
-    check: (ctx) => {
-      try {
-        // @ts-expect-error - checking module.hot which exists in webpack HMR
-        return ctx.window?.module?.hot !== undefined;
-      } catch {
-        return false;
-      }
-    },
-  },
-
-  // ============================================================================
-  // STATE MANAGEMENT SIGNALS
-  // ============================================================================
-
-  // Redux signals
+  // Redux DevTools extension - very popular
   {
     id: 'redux-devtools',
     category: 'state',
     label: 'redux',
     weight: 5,
-    prodSafe: true, // Extension hook exists if user has extension
+    prodSafe: true,
     check: (ctx) => hasGlobal(ctx, '__REDUX_DEVTOOLS_EXTENSION__'),
   },
-  {
-    id: 'redux-store',
-    category: 'state',
-    label: 'redux',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => {
-      try {
-        // Redux stores often exposed on window for debugging
-        const win = ctx.window;
-        if (!win) return false;
-        return Object.keys(win).some(k =>
-          k.toLowerCase().includes('store') &&
-          typeof win[k] === 'object' &&
-          win[k] !== null &&
-          'getState' in (win[k] as object) &&
-          'dispatch' in (win[k] as object)
-        );
-      } catch {
-        return false;
-      }
-    },
-  },
 
-  // MobX signals
+  // MobX DevTools extension
   {
     id: 'mobx-devtools',
     category: 'state',
@@ -418,116 +109,21 @@ export const SIGNALS: Signal[] = [
     check: (ctx) => hasGlobal(ctx, '__MOBX_DEVTOOLS_GLOBAL_HOOK__'),
   },
 
-  // Zustand signals (harder to detect reliably)
-  {
-    id: 'zustand-devtools',
-    category: 'state',
-    label: 'zustand',
-    weight: 3,
-    prodSafe: true,
-    check: (ctx) => {
-      // Zustand often uses Redux DevTools extension
-      try {
-        const extension = ctx.window?.__REDUX_DEVTOOLS_EXTENSION__;
-        if (!extension) return false;
-        // Check if there's a zustand store name in connection
-        return hasScriptSrc(ctx, /zustand/i);
-      } catch {
-        return false;
-      }
-    },
-  },
-
-  // Pinia signals (Vue)
-  {
-    id: 'pinia-devtools',
-    category: 'state',
-    label: 'pinia',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '__PINIA_DEVTOOLS_TOAST__'),
-  },
-
-  // Vuex signals (Vue)
-  {
-    id: 'vuex-store',
-    category: 'state',
-    label: 'vuex',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => {
-      try {
-        const nuxt = ctx.window?.__NUXT__;
-        if (nuxt && typeof nuxt === 'object' && 'state' in (nuxt as object)) {
-          return true;
-        }
-        return hasGlobal(ctx, '__vuex__');
-      } catch {
-        return false;
-      }
-    },
-  },
-
-  // NgRx signals (Angular)
-  {
-    id: 'ngrx-devtools',
-    category: 'state',
-    label: 'ngrx',
-    weight: 4,
-    prodSafe: true,
-    check: (ctx) => {
-      // NgRx also uses Redux DevTools
-      try {
-        if (!hasGlobal(ctx, '__REDUX_DEVTOOLS_EXTENSION__')) return false;
-        // Check for Angular presence as well
-        return hasElement(ctx, '[ng-version]');
-      } catch {
-        return false;
-      }
-    },
-  },
-
   // ============================================================================
-  // DATA LAYER SIGNALS
+  // DATA LAYER SIGNALS - Based on DevTools extensions
   // ============================================================================
 
-  // TanStack Query (React Query) signals
-  {
-    id: 'tanstack-query-devtools',
-    category: 'data',
-    label: 'tanstack_query',
-    weight: 5,
-    prodSafe: true, // DevTools can be present in prod
-    check: (ctx) => hasElement(ctx, '[class*="ReactQueryDevtools"], [class*="TanstackQueryDevtools"]'),
-  },
-  {
-    id: 'tanstack-query-script',
-    category: 'data',
-    label: 'tanstack_query',
-    weight: 3,
-    prodSafe: true,
-    check: (ctx) => hasScriptSrc(ctx, /tanstack.*query|react-query/i),
-  },
-
-  // Apollo Client signals
-  {
-    id: 'apollo-client',
-    category: 'data',
-    label: 'apollo',
-    weight: 5,
-    prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '__APOLLO_CLIENT__'),
-  },
+  // Apollo DevTools extension
   {
     id: 'apollo-devtools',
     category: 'data',
     label: 'apollo',
-    weight: 4,
+    weight: 5,
     prodSafe: true,
     check: (ctx) => hasGlobal(ctx, '__APOLLO_DEVTOOLS_GLOBAL_HOOK__'),
   },
 
-  // URQL signals
+  // URQL DevTools extension
   {
     id: 'urql-devtools',
     category: 'data',
@@ -537,14 +133,15 @@ export const SIGNALS: Signal[] = [
     check: (ctx) => hasGlobal(ctx, '__URQL_DEVTOOLS__'),
   },
 
-  // SWR signals
+  // React Query DevTools - note: this is trickier as it's usually bundled
+  // but the standalone extension also exists
   {
-    id: 'swr-cache',
+    id: 'tanstack-query-devtools',
     category: 'data',
-    label: 'swr',
-    weight: 3,
+    label: 'tanstack_query',
+    weight: 5,
     prodSafe: true,
-    check: (ctx) => hasScriptSrc(ctx, /\/swr\//i),
+    check: (ctx) => hasGlobal(ctx, '__REACT_QUERY_DEVTOOLS__'),
   },
 ];
 
@@ -553,10 +150,6 @@ export const SIGNALS: Signal[] = [
  *
  * @param isProduction - Whether we're in production mode
  * @returns Array of signals safe to run
- *
- * @example
- * const signals = getSafeSignals(true);
- * // Returns only prodSafe signals in production
  */
 export function getSafeSignals(isProduction: boolean): Signal[] {
   if (!isProduction) {

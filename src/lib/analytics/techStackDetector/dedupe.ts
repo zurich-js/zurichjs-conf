@@ -34,10 +34,8 @@ export function generateTraitsHash(traits: TechStackTraits): string {
   // Create a deterministic string from traits (excluding debug_signals and version)
   const payload = {
     f: traits.framework_primary,
-    m: traits.framework_meta.sort(),
     s: traits.state_management.sort(),
     d: traits.data_layer.sort(),
-    t: traits.tooling.sort(),
     c: traits.confidence,
   };
 

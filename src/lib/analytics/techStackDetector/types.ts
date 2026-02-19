@@ -1,9 +1,11 @@
 /**
  * Tech Stack Detector Types
  *
- * Low-cardinality types for detecting user's frontend tech stack.
- * All types are designed for analytics persona building without
- * compromising privacy or performance.
+ * Low-cardinality types for detecting visitor's frontend tech stack
+ * based on their installed browser DevTools extensions.
+ *
+ * NOTE: We only detect what the VISITOR uses (via their extensions),
+ * not what the website is built with.
  *
  * @module techStackDetector/types
  */
@@ -12,11 +14,10 @@
  * Current version of the tech stack detector.
  * Increment when adding new signals or changing detection logic.
  */
-export const DETECTOR_VERSION = '1.0.0';
+export const DETECTOR_VERSION = '1.1.0';
 
 /**
- * Primary frontend framework detected.
- * Limited to major frameworks for low cardinality.
+ * Primary frontend framework detected via DevTools extension.
  *
  * @example
  * const framework: FrameworkPrimary = 'react';
@@ -30,70 +31,36 @@ export type FrameworkPrimary =
   | 'unknown';
 
 /**
- * Meta-framework or build tool detected.
- * These sit on top of or alongside primary frameworks.
- *
- * @example
- * const meta: TechMeta = 'nextjs';
- */
-export type TechMeta =
-  | 'nextjs'
-  | 'nuxt'
-  | 'sveltekit'
-  | 'gatsby'
-  | 'remix'
-  | 'astro'
-  | 'storybook'
-  | 'vite'
-  | 'webpack'
-  | 'unknown';
-
-/**
- * State management library detected.
+ * State management library detected via DevTools extension.
  *
  * @example
  * const state: StateTool = 'redux';
  */
-export type StateTool =
-  | 'redux'
-  | 'mobx'
-  | 'zustand'
-  | 'pinia'
-  | 'vuex'
-  | 'ngrx';
+export type StateTool = 'redux' | 'mobx';
 
 /**
- * Data fetching/caching library detected.
+ * Data fetching/caching library detected via DevTools extension.
  *
  * @example
  * const data: DataTool = 'tanstack_query';
  */
-export type DataTool =
-  | 'tanstack_query'
-  | 'apollo'
-  | 'urql'
-  | 'swr';
+export type DataTool = 'tanstack_query' | 'apollo' | 'urql';
 
 /**
  * Confidence level of detection.
- * - 'low': Single weak signal or ambiguous detection
- * - 'medium': Multiple signals but not definitive
- * - 'high': Strong signals with high certainty
+ * - 'none': No extensions detected (visitor may not be a developer)
+ * - 'low': Single extension detected
+ * - 'high': Multiple extensions detected
  *
  * @example
  * const confidence: DetectionConfidence = 'high';
  */
-export type DetectionConfidence = 'low' | 'medium' | 'high';
+export type DetectionConfidence = 'none' | 'low' | 'high';
 
 /**
  * Signal category for organizing detection checks.
  */
-export type SignalCategory =
-  | 'framework'
-  | 'meta'
-  | 'state'
-  | 'data'
-  | 'tooling';
+export type SignalCategory = 'framework' | 'state' | 'data';
 
 /**
  * Final detected tech stack traits.
@@ -102,31 +69,23 @@ export type SignalCategory =
  * @example
  * const traits: TechStackTraits = {
  *   framework_primary: 'react',
- *   framework_meta: ['nextjs'],
  *   state_management: ['redux'],
- *   data_layer: ['tanstack_query'],
- *   tooling: ['webpack'],
+ *   data_layer: ['apollo'],
  *   confidence: 'high',
- *   version: '1.0.0',
+ *   version: '1.1.0',
  * };
  */
 export interface TechStackTraits {
-  /** Primary frontend framework (single value) */
+  /** Primary frontend framework based on DevTools extension */
   framework_primary: FrameworkPrimary;
 
-  /** Meta-frameworks or tools detected (can be multiple) */
-  framework_meta: TechMeta[];
-
-  /** State management libraries detected */
+  /** State management tools based on DevTools extensions */
   state_management: StateTool[];
 
-  /** Data fetching libraries detected */
+  /** Data fetching tools based on DevTools extensions */
   data_layer: DataTool[];
 
-  /** Build tools and dev tooling detected */
-  tooling: TechMeta[];
-
-  /** Confidence level of the overall detection */
+  /** Confidence level - 'none' means no dev extensions detected */
   confidence: DetectionConfidence;
 
   /** Detector version for tracking evolution */
@@ -148,7 +107,7 @@ export interface TechStackTraits {
  *   id: 'react-devtools',
  *   category: 'framework',
  *   label: 'react',
- *   weight: 3,
+ *   weight: 5,
  *   prodSafe: true,
  *   check: (ctx) => !!ctx.window?.__REACT_DEVTOOLS_GLOBAL_HOOK__,
  * };
@@ -166,17 +125,11 @@ export interface Signal {
   /**
    * Weight of this signal (1-5).
    * Higher weight = stronger indicator.
-   * - 1: Very weak hint
-   * - 2: Weak indicator
-   * - 3: Moderate indicator
-   * - 4: Strong indicator
-   * - 5: Definitive signal
    */
   weight: number;
 
   /**
    * Whether this signal is safe to check in production.
-   * Some signals (like dev tools) may only be present in dev.
    */
   prodSafe: boolean;
 
@@ -203,25 +156,22 @@ export interface DetectionContext {
   /** Window object reference (may be undefined in SSR) */
   window?: Window & {
     __REACT_DEVTOOLS_GLOBAL_HOOK__?: unknown;
-    __NEXT_DATA__?: unknown;
-    __NUXT__?: unknown;
-    __VUE__?: unknown;
     __VUE_DEVTOOLS_GLOBAL_HOOK__?: unknown;
-    __SVELTE_HMR_CALLBACK__?: unknown;
+    __ANGULAR_DEVTOOLS_GLOBAL_HOOK__?: unknown;
+    __SVELTE_DEVTOOLS_GLOBAL_HOOK__?: unknown;
+    __SOLID_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __REDUX_DEVTOOLS_EXTENSION__?: unknown;
     __MOBX_DEVTOOLS_GLOBAL_HOOK__?: unknown;
-    __APOLLO_CLIENT__?: unknown;
+    __APOLLO_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __URQL_DEVTOOLS__?: unknown;
-    Storybook?: unknown;
-    ng?: unknown;
-    Zone?: unknown;
+    __REACT_QUERY_DEVTOOLS__?: unknown;
     [key: string]: unknown;
   };
 
   /** Document reference for DOM checks */
   document?: Document;
 
-  /** Array of script src attributes */
+  /** Array of script src attributes (not used currently) */
   scriptSrcs: string[];
 
   /** Whether we're in production mode */
@@ -233,10 +183,8 @@ export interface DetectionContext {
  */
 export interface ScoreMap {
   framework: Map<string, number>;
-  meta: Map<string, number>;
   state: Map<string, number>;
   data: Map<string, number>;
-  tooling: Map<string, number>;
 }
 
 /**
@@ -277,10 +225,10 @@ export interface SessionStorageData {
 export const SESSION_STORAGE_KEY = 'zjs:techStack:v1';
 
 /**
- * Minimum total score threshold for each confidence level.
+ * Minimum signal count for each confidence level.
  */
 export const CONFIDENCE_THRESHOLDS = {
-  high: 8,
-  medium: 4,
-  low: 0,
+  high: 2,  // 2+ extensions detected
+  low: 1,   // 1 extension detected
+  none: 0,  // no extensions detected
 } as const;

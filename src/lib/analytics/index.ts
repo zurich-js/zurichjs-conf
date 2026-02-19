@@ -30,7 +30,6 @@ export type {
   TechStackTraits,
   InitTechStackDetectionOptions,
   FrameworkPrimary,
-  TechMeta,
   StateTool,
   DataTool,
   DetectionConfidence,
