@@ -320,7 +320,7 @@ export default function TripCostPage() {
               </p>
               <p>
                 If you need support or have questions while planning your trip, don&apos;t hesitate to{' '}
-                <Link href="/contact" className="underline hover:text-gray-700 transition-colors">contact us</Link>, we&apos;re sure we can work something out together.
+                <a href="mailto:hello@zurichjs.com" className="underline hover:text-gray-700 transition-colors">contact us</a>, we&apos;re sure we can work something out together.
               </p>
               <p>
                 For more details on travelling and airport options, please visit our{' '}
