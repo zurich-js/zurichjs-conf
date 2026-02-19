@@ -388,7 +388,7 @@ export default function TripCostPage() {
 
               {/* D) Price evolution — below hotel, outside breakdown card */}
               {lateBirdTotalCHF && standardEstTotalCHF && (
-                <div id="price-evolution" className="border border-gray-200 rounded-2xl p-5 sm:p-6">
+                <div id="price-evolution" className="border border-gray-200 rounded-2xl p-5 pb-7 sm:p-6 sm:pb-9">
                   <h2 className="text-base font-semibold text-gray-900 mb-5">
                     Price evolution
                   </h2>
@@ -418,7 +418,7 @@ export default function TripCostPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 space-y-1 mb-4">
+                  <div className="text-xs text-gray-500 space-y-1">
                     <p className="font-medium text-gray-700">Includes estimated increases:</p>
                     <p>• Ticket prices increase through pricing stages</p>
                     <p>• Flights typically rise +25–30% closer to the event</p>
