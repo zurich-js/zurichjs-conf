@@ -73,9 +73,18 @@ export function useDuckie(config: DuckieConfig): ReactNode {
     shouldAnimate &&
     !dismissed;
 
-  // Check localStorage on mount
+  // Check localStorage on mount + listen for easter egg activation
   useEffect(() => {
     if (isDismissed()) setDismissed(true);
+
+    const handleEasterEgg = () => {
+      dismiss();
+      setDismissed(true);
+      activeRef.current = null;
+      setActiveAnimation(null);
+    };
+    window.addEventListener('easter-egg-activated', handleEasterEgg);
+    return () => window.removeEventListener('easter-egg-activated', handleEasterEgg);
   }, []);
 
   // Preload sprites once
