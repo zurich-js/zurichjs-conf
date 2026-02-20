@@ -35,3 +35,30 @@ export interface EasterEggClaimFailedEvent {
     error: string;
   };
 }
+
+export interface EasterEggChallengeCalledEvent {
+  event: 'easter_egg_challenge_called';
+  properties: BaseEventProperties;
+}
+
+export interface EasterEggChallengeAlreadyClaimedEvent {
+  event: 'easter_egg_challenge_already_claimed';
+  properties: BaseEventProperties;
+}
+
+export interface EasterEggChallengeClaimedEvent {
+  event: 'easter_egg_challenge_claimed';
+  properties: BaseEventProperties & {
+    discount_code: string;
+    percent_off: number;
+    partner_name: string;
+    expires_at: string;
+  };
+}
+
+export interface EasterEggChallengeFailedEvent {
+  event: 'easter_egg_challenge_failed';
+  properties: BaseEventProperties & {
+    error: string;
+  };
+}

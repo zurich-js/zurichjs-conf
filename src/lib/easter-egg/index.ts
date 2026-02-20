@@ -7,3 +7,4 @@
 
 export * from './types';
 export * from './config';
+export { getPartners, validateAnswer } from './challenges';

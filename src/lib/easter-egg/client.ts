@@ -6,7 +6,7 @@
  */
 
 import { analytics } from '@/lib/analytics/client';
-import type { ClaimResponse, ErrorResponse } from './types';
+import type { ChallengeClaimResponse, ClaimResponse, EasterEggPartner, ErrorResponse } from './types';
 
 // Session storage key to track if already claimed
 const CLAIMED_KEY = 'easter_egg_claimed';
@@ -30,7 +30,9 @@ const CLAIMED_KEY = 'easter_egg_claimed';
 //     styles
 // )
 
-const GREETING_MESSAGE = `%c  \n%cOh hello there, fellow DevTools connoisseur.\n%cType %cconf.reward()%c and see what happens...
+const CHALLENGE_CLAIMED_KEY = 'easter_egg_challenge_claimed';
+
+const GREETING_MESSAGE = `%c  \n%cOh hello there, fellow DevTools connoisseur.\n%cType %cconf.reward()%c for a quick win, or %cconf.challenge()%c for something bigger...
 `;
 
 const GREETING_STYLES = [
@@ -38,11 +40,14 @@ const GREETING_STYLES = [
   'color: #4ade80; font-size: 13px; font-weight: bold;', // Greeting
   'color: #888; font-size: 12px;', // Message text
   'color: #f7df1e; font-weight: bold; font-size: 12px; background: #1a1a1a; padding: 2px 6px; border-radius: 3px;', // conf.reward()
-  'color: #888; font-size: 12px;', // Rest of message
+  'color: #888; font-size: 12px;', // "for a quick win, or"
+  'color: #f7df1e; font-weight: bold; font-size: 12px; background: #1a1a1a; padding: 2px 6px; border-radius: 3px;', // conf.challenge()
+  'color: #888; font-size: 12px;', // "for something bigger..."
 ];
 
 interface ConfGlobal {
   reward: () => Promise<string>;
+  challenge: (partnerIndex?: number, answer?: string) => Promise<string>;
   _initialized: boolean;
 }
 
@@ -94,8 +99,9 @@ async function claimReward(): Promise<ClaimResponse> {
  * The main reward function - simple single call
  */
 async function reward(): Promise<string> {
-  // Track that reward was called
+  // Track that reward was called & dismiss duckies
   analytics.track('easter_egg_reward_called', {});
+  window.dispatchEvent(new CustomEvent('easter-egg-activated'));
 
   // Check if already claimed
   if (hasClaimedInSession()) {
@@ -152,6 +158,170 @@ async function reward(): Promise<string> {
 }
 
 /**
+ * Check if challenge already claimed in this session
+ */
+function hasChallengeClaimedInSession(): boolean {
+  try {
+    return sessionStorage.getItem(CHALLENGE_CLAIMED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Mark challenge as claimed in session
+ */
+function markChallengeClaimedInSession(): void {
+  try {
+    sessionStorage.setItem(CHALLENGE_CLAIMED_KEY, 'true');
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+/**
+ * Fetch and display the partner challenge list
+ */
+async function showPartnerList(): Promise<void> {
+  const res = await fetch('/api/easter-egg/challenge');
+  if (!res.ok) throw new Error('Failed to load partner challenges');
+
+  const data = (await res.json()) as { partners: EasterEggPartner[] };
+  const { partners } = data;
+
+  console.log(
+    '\n%c  PARTNER CHALLENGE  \n\n' +
+      '%cPick a partner and complete their challenge for a bigger discount!\n',
+    'background: #f7df1e; color: #000; font-weight: bold; font-size: 14px; padding: 4px 8px;',
+    'color: #4ade80; font-size: 13px;'
+  );
+
+  partners.forEach((partner, i) => {
+    console.log(
+      `%c${i + 1}. ${partner.displayName}\n\n %c  ${partner.url}\n` +
+        `\n   %cHint: "${partner.hint}"\n`,
+      'color: #f7df1e; font-weight: bold; font-size: 12px;',
+      'color: #888; font-size: 11px;',
+      'color: #4ade80; font-style: italic; font-size: 11px;'
+    );
+  });
+
+  console.log(
+    "%cThen run: %cconf.challenge(1, 'your answer here')",
+    'color: #888; font-size: 12px;',
+    'color: #f7df1e; font-weight: bold; font-size: 12px; background: #1a1a1a; padding: 2px 6px; border-radius: 3px;'
+  );
+}
+
+/**
+ * Submit a challenge answer
+ */
+async function submitChallenge(partnerIndex: number, answer: string): Promise<string> {
+  // Fetch partner list to resolve index → id
+  const listRes = await fetch('/api/easter-egg/challenge');
+  if (!listRes.ok) throw new Error('Failed to load partners');
+
+  const listData = (await listRes.json()) as { partners: EasterEggPartner[] };
+  const partner = listData.partners[partnerIndex - 1];
+
+  if (!partner) {
+    console.log('%cInvalid partner number. Run conf.challenge() to see the list.', 'color: #ef4444;');
+    return 'Invalid partner number';
+  }
+
+  console.log('%c*hacking noises* ...', 'color: #888; font-style: italic;');
+
+  const res = await fetch('/api/easter-egg/challenge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partnerId: partner.id, answer }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const errorMsg = (data as ErrorResponse).error || 'Something went wrong';
+    console.log('%c' + errorMsg, 'color: #ef4444; font-weight: bold;');
+    return `Error: ${errorMsg}`;
+  }
+
+  const result = data as ChallengeClaimResponse;
+  markChallengeClaimedInSession();
+
+  analytics.track('easter_egg_challenge_claimed', {
+    discount_code: result.code,
+    percent_off: result.percentOff,
+    partner_name: result.partnerName,
+    expires_at: result.expiresAt,
+  });
+
+  const minutes = Math.round((new Date(result.expiresAt).getTime() - Date.now()) / 60000);
+  console.log(
+    `\n%c  CHALLENGE COMPLETE!  \n\n` +
+      `%c  Thanks to %c${result.partnerName}%c, here's %c${result.percentOff}% off%c your ticket!\n\n` +
+      `%c  Code: %c${result.code}\n\n` +
+      `%c  Hurry! Expires in ${minutes} minutes.\n` +
+      `  Paste it in the promo code field at checkout.\n`,
+    'background: #4ade80; color: #000; font-weight: bold; font-size: 14px; padding: 4px 8px;',
+    'color: #fff; font-size: 13px;',
+    'color: #f7df1e; font-weight: bold; font-size: 13px;',
+    'color: #fff; font-size: 13px;',
+    'color: #4ade80; font-weight: bold; font-size: 13px;',
+    'color: #fff; font-size: 13px;',
+    'color: #888;',
+    'color: #f7df1e; font-weight: bold; font-size: 16px; background: #1a1a1a; padding: 4px 8px; border-radius: 4px;',
+    'color: #888; font-size: 12px;'
+  );
+
+  return `Your discount code is: ${result.code}`;
+}
+
+/**
+ * The challenge function — partner challenge flow
+ */
+async function challenge(partnerIndex?: number, answer?: string): Promise<string> {
+  analytics.track('easter_egg_challenge_called', {});
+  window.dispatchEvent(new CustomEvent('easter-egg-activated'));
+
+  // Already claimed check
+  if (hasChallengeClaimedInSession()) {
+    analytics.track('easter_egg_challenge_already_claimed', {});
+    console.log(
+      '%cEasy there, hacker! %cYou already completed a challenge this session.\n' +
+        'Check your promo code at checkout.',
+      'color: #f7df1e; font-weight: bold;',
+      'color: #888;'
+    );
+    return 'Already claimed this session!';
+  }
+
+  try {
+    // No args: show partner list
+    if (partnerIndex === undefined) {
+      await showPartnerList();
+      return 'Pick a partner and complete their challenge!';
+    }
+
+    // With args: submit answer
+    if (!answer) {
+      console.log(
+        "%cUsage: %cconf.challenge(1, 'your answer here')",
+        'color: #888;',
+        'color: #f7df1e; font-weight: bold; background: #1a1a1a; padding: 2px 6px; border-radius: 3px;'
+      );
+      return "Please provide an answer: conf.challenge(1, 'your answer')";
+    }
+
+    return await submitChallenge(partnerIndex, answer);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Something went wrong';
+    analytics.track('easter_egg_challenge_failed', { error: message });
+    console.log('%cOops! ' + message, 'color: #ef4444;');
+    return `Error: ${message}`;
+  }
+}
+
+/**
  * Initialize the easter egg
  * Call this once on client-side app mount
  */
@@ -180,6 +350,7 @@ export function initEasterEgg(): void {
   // Register the global
   window.conf = {
     reward,
+    challenge,
     _initialized: true,
   };
 }

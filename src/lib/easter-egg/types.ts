@@ -24,3 +24,21 @@ export interface ErrorResponse {
   error: string;
   retryAfter?: number;
 }
+
+/** Public-facing partner info (no expectedAnswer) */
+export interface EasterEggPartner {
+  id: string;
+  displayName: string;
+  url: string;
+  hint: string;
+}
+
+export interface ChallengeClaimResponse extends ClaimResponse {
+  partnerName: string;
+}
+
+export interface ChallengeConfig {
+  challengePercentOff: number;
+  challengeTokenExpiryMinutes: number;
+  dailyClaimCap: number;
+}

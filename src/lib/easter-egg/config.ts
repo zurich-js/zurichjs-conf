@@ -8,7 +8,7 @@
  * - EASTER_EGG_DAILY_CAP: Daily claim limit, 0 = unlimited (default: 0)
  */
 
-import type { EasterEggConfig } from './types';
+import type { ChallengeConfig, EasterEggConfig } from './types';
 
 export function getEasterEggConfig(): EasterEggConfig {
   return {
@@ -16,5 +16,13 @@ export function getEasterEggConfig(): EasterEggConfig {
     percentOff: parseInt(process.env.EASTER_EGG_PERCENT_OFF || '5', 10),
     tokenExpiryMinutes: parseInt(process.env.EASTER_EGG_TOKEN_EXPIRY_MINUTES || '15', 10),
     dailyClaimCap: parseInt(process.env.EASTER_EGG_DAILY_CAP || '0', 10),
+  };
+}
+
+export function getChallengeConfig(): ChallengeConfig {
+  return {
+    challengePercentOff: parseInt(process.env.EASTER_EGG_CHALLENGE_PERCENT_OFF || '10', 10),
+    challengeTokenExpiryMinutes: parseInt(process.env.EASTER_EGG_TOKEN_EXPIRY_MINUTES || '15', 10),
+    dailyClaimCap: parseInt(process.env.EASTER_EGG_CHALLENGE_DAILY_CAP || '5', 10),
   };
 }

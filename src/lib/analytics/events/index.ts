@@ -126,6 +126,10 @@ export type {
   EasterEggAlreadyClaimedEvent,
   EasterEggClaimedEvent,
   EasterEggClaimFailedEvent,
+  EasterEggChallengeCalledEvent,
+  EasterEggChallengeAlreadyClaimedEvent,
+  EasterEggChallengeClaimedEvent,
+  EasterEggChallengeFailedEvent,
 } from './easter-egg-events';
 
 // Import all event types for the union
@@ -211,6 +215,10 @@ import type {
   EasterEggAlreadyClaimedEvent,
   EasterEggClaimedEvent,
   EasterEggClaimFailedEvent,
+  EasterEggChallengeCalledEvent,
+  EasterEggChallengeAlreadyClaimedEvent,
+  EasterEggChallengeClaimedEvent,
+  EasterEggChallengeFailedEvent,
 } from './easter-egg-events';
 
 /**
@@ -286,7 +294,11 @@ export type AnalyticsEvent =
   | EasterEggRewardCalledEvent
   | EasterEggAlreadyClaimedEvent
   | EasterEggClaimedEvent
-  | EasterEggClaimFailedEvent;
+  | EasterEggClaimFailedEvent
+  | EasterEggChallengeCalledEvent
+  | EasterEggChallengeAlreadyClaimedEvent
+  | EasterEggChallengeClaimedEvent
+  | EasterEggChallengeFailedEvent;
 
 /**
  * Extract event name from AnalyticsEvent
