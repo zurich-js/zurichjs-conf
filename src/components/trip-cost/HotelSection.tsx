@@ -18,13 +18,14 @@ import {
   type DisplayCurrency,
   type AttendanceDays,
 } from '@/config/trip-cost';
+import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 
 interface HotelSectionProps {
   nights: number;
   hotelType: HotelType;
   customHotelCHF: number;
   currency: DisplayCurrency;
-  eurRate: number;
+  rates: ExchangeRates;
   attendanceDays: AttendanceDays;
   onUpdate: (partial: {
     nights?: number;
@@ -60,21 +61,23 @@ function HotelOptionButton({
   hotel,
   isSelected,
   currency,
-  eurRate,
+  rates,
   onSelect,
   rounded,
 }: {
   hotel: HotelOption;
   isSelected: boolean;
   currency: DisplayCurrency;
-  eurRate: number;
+  rates: ExchangeRates;
   onSelect: () => void;
   rounded?: string;
 }) {
-  const priceDisplay =
+  const display =
     hotel.id !== 'other' && hotel.estimatePerNightCHF > 0
-      ? formatAmount(toDisplayCurrency(hotel.estimatePerNightCHF, currency, eurRate), currency)
+      ? toDisplayCurrency(hotel.estimatePerNightCHF, currency, rates)
       : null;
+  const priceDisplay = display !== null ? formatAmount(display, currency) : null;
+  const isConverted = currency !== 'CHF';
 
   return (
     <button
@@ -95,7 +98,7 @@ function HotelOptionButton({
           <span className="block sm:hidden text-xs text-gray-500">{hotel.sublabel}</span>
         </div>
         {priceDisplay && (
-          <span className="text-xs text-gray-500 shrink-0">{priceDisplay}/night</span>
+          <span className="text-xs text-gray-500 shrink-0">{isConverted ? '~' : ''}{priceDisplay}/night</span>
         )}
       </div>
     </button>
@@ -107,7 +110,7 @@ export function HotelSection({
   hotelType,
   customHotelCHF,
   currency,
-  eurRate,
+  rates,
   attendanceDays,
   onUpdate,
 }: HotelSectionProps) {
@@ -210,7 +213,7 @@ export function HotelSection({
                         hotel={hotel}
                         isSelected={hotelType === hotel.id}
                         currency={currency}
-                        eurRate={eurRate}
+                        rates={rates}
                         onSelect={() => onUpdate({ hotelType: hotel.id })}
                         rounded={`rounded-none ${hIdx === item.length - 1 ? '' : 'border-b-0'}`}
                       />
@@ -244,7 +247,7 @@ export function HotelSection({
                     hotel={item}
                     isSelected={isSelected}
                     currency={currency}
-                    eurRate={eurRate}
+                    rates={rates}
                     onSelect={() => onUpdate({ hotelType: item.id })}
                     rounded={isSelected && (item.distanceFromVenue || item.url) ? 'rounded-none' : undefined}
                   />

@@ -6,60 +6,68 @@
 import React from 'react';
 import { Ticket, Crown, GraduationCap, Check } from 'lucide-react';
 import { CalculatorSection, formatAmount, toDisplayCurrency } from './CalculatorWidgets';
-import type { TicketType, DisplayCurrency } from '@/config/trip-cost';
+import { CURRENCY_META, type TicketType, type DisplayCurrency } from '@/config/trip-cost';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
+import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 
 interface TicketSectionProps {
   ticketType: TicketType;
   chfPlans: TicketPlan[];
-  eurPlans: TicketPlan[];
+  /** Native Stripe plans for the selected currency (EUR/GBP), empty if not applicable */
+  nativePlans: TicketPlan[];
   displayCurrency: DisplayCurrency;
-  eurRate: number;
+  rates: ExchangeRates;
   stageDisplayName: string | null;
   isLoading: boolean;
   onSelect: (type: TicketType) => void;
 }
 
-/** Get the display price for a plan using actual EUR Stripe prices when available */
+/** Get the display price for a plan using actual native Stripe prices when available */
 function getPlanDisplayPrice(
   planId: string,
   chfPlans: TicketPlan[],
-  eurPlans: TicketPlan[],
+  nativePlans: TicketPlan[],
   displayCurrency: DisplayCurrency,
-  eurRate: number,
+  rates: ExchangeRates,
 ): string | null {
-  // When EUR is selected, prefer actual EUR prices from Stripe
-  if (displayCurrency === 'EUR' && eurPlans.length > 0) {
-    const eurPlan = eurPlans.find((p) => p.id === planId);
-    if (eurPlan) return formatAmount(Math.round(eurPlan.price / 100), 'EUR');
+  // When a non-CHF currency with native pricing is selected, prefer Stripe prices
+  if (displayCurrency !== 'CHF' && CURRENCY_META[displayCurrency].hasNativePricing && nativePlans.length > 0) {
+    const nativePlan = nativePlans.find((p) => p.id === planId);
+    if (nativePlan) return formatAmount(Math.round(nativePlan.price / 100), displayCurrency);
   }
 
   const chfPlan = chfPlans.find((p) => p.id === planId);
   if (!chfPlan) return null;
   const chf = Math.round(chfPlan.price / 100);
-  return formatAmount(toDisplayCurrency(chf, displayCurrency, eurRate), displayCurrency);
+  const display = toDisplayCurrency(chf, displayCurrency, rates);
+  if (display === null) return formatAmount(chf, 'CHF');
+  // Prefix with ~ for converted (non-native) currencies
+  const isConverted = displayCurrency !== 'CHF' && (!CURRENCY_META[displayCurrency].hasNativePricing || nativePlans.length === 0);
+  return `${isConverted ? '~' : ''}${formatAmount(display, displayCurrency)}`;
 }
 
 /** Get compare (late bird) price for a plan */
 function getCompareLabel(
   planId: string,
   chfPlans: TicketPlan[],
-  eurPlans: TicketPlan[],
+  nativePlans: TicketPlan[],
   displayCurrency: DisplayCurrency,
-  eurRate: number,
+  rates: ExchangeRates,
 ): string | null {
-  // Use EUR compare price if available
-  if (displayCurrency === 'EUR' && eurPlans.length > 0) {
-    const eurPlan = eurPlans.find((p) => p.id === planId);
-    if (eurPlan?.comparePrice) {
-      return formatAmount(Math.round(eurPlan.comparePrice / 100), 'EUR');
+  // Use native compare price if available
+  if (displayCurrency !== 'CHF' && CURRENCY_META[displayCurrency].hasNativePricing && nativePlans.length > 0) {
+    const nativePlan = nativePlans.find((p) => p.id === planId);
+    if (nativePlan?.comparePrice) {
+      return formatAmount(Math.round(nativePlan.comparePrice / 100), displayCurrency);
     }
   }
 
   const chfPlan = chfPlans.find((p) => p.id === planId);
   if (!chfPlan?.comparePrice) return null;
   const chf = Math.round(chfPlan.comparePrice / 100);
-  return formatAmount(toDisplayCurrency(chf, displayCurrency, eurRate), displayCurrency);
+  const display = toDisplayCurrency(chf, displayCurrency, rates);
+  if (display === null) return formatAmount(chf, 'CHF');
+  return formatAmount(display, displayCurrency);
 }
 
 interface TicketButtonProps {
@@ -121,18 +129,18 @@ function TicketButton({
 export function TicketSection({
   ticketType,
   chfPlans,
-  eurPlans,
+  nativePlans,
   displayCurrency,
-  eurRate,
+  rates,
   stageDisplayName,
   isLoading,
   onSelect,
 }: TicketSectionProps) {
-  const stdPrice = getPlanDisplayPrice('standard', chfPlans, eurPlans, displayCurrency, eurRate);
-  const stdCompare = getCompareLabel('standard', chfPlans, eurPlans, displayCurrency, eurRate);
-  const studentPrice = getPlanDisplayPrice('standard_student_unemployed', chfPlans, eurPlans, displayCurrency, eurRate);
-  const vipPrice = getPlanDisplayPrice('vip', chfPlans, eurPlans, displayCurrency, eurRate);
-  const vipCompare = getCompareLabel('vip', chfPlans, eurPlans, displayCurrency, eurRate);
+  const stdPrice = getPlanDisplayPrice('standard', chfPlans, nativePlans, displayCurrency, rates);
+  const stdCompare = getCompareLabel('standard', chfPlans, nativePlans, displayCurrency, rates);
+  const studentPrice = getPlanDisplayPrice('standard_student_unemployed', chfPlans, nativePlans, displayCurrency, rates);
+  const vipPrice = getPlanDisplayPrice('vip', chfPlans, nativePlans, displayCurrency, rates);
+  const vipCompare = getCompareLabel('vip', chfPlans, nativePlans, displayCurrency, rates);
 
   return (
     <CalculatorSection icon={<Ticket className="w-5 h-5" />} title="Ticket">

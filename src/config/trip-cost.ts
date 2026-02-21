@@ -2,18 +2,59 @@
  * Trip Cost Calculator Configuration
  *
  * All defaults, ranges, and conversion rates for the trip cost estimator.
- * Prices are stored in CHF. EUR equivalents are computed at runtime using
- * a live ECB exchange rate fetched from the Frankfurter API.
+ * Prices are stored in CHF. Other currency equivalents are computed at
+ * runtime using live ECB exchange rates fetched from the Frankfurter API.
  */
-
-/** Fallback EUR/CHF rate used when the Frankfurter API is unavailable */
-export const FALLBACK_EUR_RATE = 0.93;
 
 /** Default ticket price in CHF (early bird standard, used as fallback) */
 export const DEFAULT_TICKET_PRICE_CHF = 175;
 
 /** Display currency options */
-export type DisplayCurrency = 'CHF' | 'EUR';
+export type DisplayCurrency = 'CHF' | 'EUR' | 'GBP' | 'USD';
+
+/** Metadata for each display currency */
+export interface CurrencyMeta {
+  /** Whether Stripe has native pricing in this currency */
+  hasNativePricing: boolean;
+  /** Display label */
+  label: string;
+  /** Currency symbol or code shown before amounts */
+  symbol: string;
+}
+
+/** Currency metadata record */
+export const CURRENCY_META: Record<DisplayCurrency, CurrencyMeta> = {
+  CHF: { hasNativePricing: true, label: 'Swiss Franc', symbol: 'CHF' },
+  EUR: { hasNativePricing: true, label: 'Euro', symbol: '€' },
+  GBP: { hasNativePricing: true, label: 'British Pound', symbol: '£' },
+  USD: { hasNativePricing: false, label: 'US Dollar', symbol: '$' },
+};
+
+/** Ordered list of display currencies for the dropdown */
+export const DISPLAY_CURRENCIES: DisplayCurrency[] = ['CHF', 'EUR', 'GBP', 'USD'];
+
+/** USD countries — common countries where USD is the natural display currency */
+const USD_COUNTRIES = new Set(['US', 'PR', 'GU', 'VI', 'AS', 'MP']);
+
+/**
+ * Map a detected country code to the best DisplayCurrency for the trip cost calculator.
+ * Falls back to CHF for unknown countries.
+ */
+export function getDisplayCurrencyFromCountry(countryCode: string | null): DisplayCurrency {
+  if (!countryCode) return 'CHF';
+  const upper = countryCode.toUpperCase();
+  // Import-free checks — mirrors the currency config but adds USD
+  if (upper === 'CH' || upper === 'LI') return 'CHF';
+  if (upper === 'GB' || upper === 'IM' || upper === 'JE' || upper === 'GG') return 'GBP';
+  if (USD_COUNTRIES.has(upper)) return 'USD';
+  // Eurozone + nearby
+  const EURO_CODES = new Set([
+    'AL','AT','BE','CY','EE','FI','FR','DE','GR','HR','IE','IT',
+    'LV','LT','LU','ME','MK','MT','NL','PT','SK','SI','ES','XK',
+  ]);
+  if (EURO_CODES.has(upper)) return 'EUR';
+  return 'CHF';
+}
 
 /** Ticket type for calculator */
 export type TicketType = 'standard' | 'vip' | 'student' | 'have_ticket';

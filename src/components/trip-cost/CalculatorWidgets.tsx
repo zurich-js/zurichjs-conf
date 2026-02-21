@@ -5,6 +5,8 @@
 import React from 'react';
 import { Lightbulb } from 'lucide-react';
 import type { DisplayCurrency } from '@/config/trip-cost';
+import { CURRENCY_META } from '@/config/trip-cost';
+import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 
 /** Format a number with no decimals, en-CH locale */
 export function formatNumber(n: number): string {
@@ -14,30 +16,31 @@ export function formatNumber(n: number): string {
   }).format(n);
 }
 
-/** Format an amount with currency prefix */
+/** Format an amount with currency prefix (symbol for non-CHF, code for CHF) */
 export function formatAmount(amount: number, currency: DisplayCurrency): string {
-  return `${currency} ${formatNumber(amount)}`;
+  const meta = CURRENCY_META[currency];
+  return `${meta.symbol} ${formatNumber(amount)}`;
 }
 
-/** Convert CHF to the display currency */
+/** Convert CHF to the display currency using the rates record. Returns null if rate unavailable. */
 export function toDisplayCurrency(
   chf: number,
   currency: DisplayCurrency,
-  eurRate: number
-): number {
-  return currency === 'EUR' ? Math.round(chf * eurRate) : chf;
+  rates: ExchangeRates,
+): number | null {
+  if (currency === 'CHF') return chf;
+  const rate = rates[currency];
+  if (!rate) return null;
+  return Math.round(chf * rate);
 }
 
-/** Get the secondary currency label (e.g. "~EUR 123" when primary is CHF) */
+/** Get the secondary currency label (e.g. "~CHF 123" when primary is non-CHF) */
 export function secondaryCurrencyLabel(
   chf: number,
   currency: DisplayCurrency,
-  eurRate: number
 ): string {
-  if (currency === 'EUR') {
-    return `~CHF ${formatNumber(chf)}`;
-  }
-  return `~EUR ${formatNumber(Math.round(chf * eurRate))}`;
+  if (currency === 'CHF') return '';
+  return `~CHF ${formatNumber(chf)}`;
 }
 
 /** Section wrapper for each calculator input group */
@@ -95,29 +98,29 @@ export function SpendLessTips() {
 export function BreakdownRow({
   label,
   chf,
-  eur,
+  nativePrice,
   sublabel,
   dimmed,
   currency,
-  eurRate,
+  rates,
 }: {
   label: string;
   chf: number;
-  /** Optional fetched EUR price — used instead of converting CHF when provided */
-  eur?: number;
+  /** Optional fetched native price (Stripe) — used instead of converting CHF when provided */
+  nativePrice?: number;
   sublabel?: string;
   dimmed?: boolean;
   currency: DisplayCurrency;
-  eurRate: number;
+  rates: ExchangeRates;
 }) {
-  // Use fetched EUR price when available and currency is EUR
-  const hasFetchedEUR = eur !== undefined;
-  const primary = currency === 'EUR' && hasFetchedEUR ? eur : toDisplayCurrency(chf, currency, eurRate);
-  // Prefix with ~ when converting CHF to EUR (not fetched)
-  const isConverted = currency === 'EUR' && !hasFetchedEUR;
-  // Show secondary CHF price only when displaying EUR without a fetched price
-  const showSecondary = chf > 0 && !hasFetchedEUR && currency === 'EUR';
-  const secondary = secondaryCurrencyLabel(chf, currency, eurRate);
+  const hasNativePrice = nativePrice !== undefined;
+  const converted = toDisplayCurrency(chf, currency, rates);
+  const primary = currency !== 'CHF' && hasNativePrice ? nativePrice : (converted ?? chf);
+  // Prefix with ~ when converting CHF to another currency (not native)
+  const isConverted = currency !== 'CHF' && !hasNativePrice;
+  // Show secondary CHF price when displaying a non-CHF currency without a native price
+  const showSecondary = chf > 0 && !hasNativePrice && currency !== 'CHF';
+  const secondary = secondaryCurrencyLabel(chf, currency);
 
   return (
     <div className={`flex items-start justify-between ${dimmed ? 'opacity-40' : ''}`}>

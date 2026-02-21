@@ -3,32 +3,26 @@ import {
   computeTripCost,
   getTravelCostCHF,
   getHotelPerNightCHF,
-  convertToEUR,
+  convertFromCHF,
   encodeToSearchParams,
   decodeFromSearchParams,
   getTotalBucket,
   type TripCostInput,
 } from '../calculations';
-import { FALLBACK_EUR_RATE, buildGoogleFlightsUrl, buildHotelUrl } from '@/config/trip-cost';
+import { buildGoogleFlightsUrl, buildHotelUrl } from '@/config/trip-cost';
 
-const RATE = FALLBACK_EUR_RATE; // 0.93
-
-describe('convertToEUR', () => {
-  it('converts CHF to EUR using the fallback rate', () => {
-    expect(convertToEUR(100)).toBe(Math.round(100 * RATE));
-  });
-
-  it('converts CHF to EUR using a custom rate', () => {
-    expect(convertToEUR(100, 0.90)).toBe(90);
+describe('convertFromCHF', () => {
+  it('converts CHF using the given rate', () => {
+    expect(convertFromCHF(100, 0.93)).toBe(Math.round(100 * 0.93));
   });
 
   it('returns 0 for 0 input', () => {
-    expect(convertToEUR(0)).toBe(0);
+    expect(convertFromCHF(0, 0.93)).toBe(0);
   });
 
   it('rounds to nearest integer', () => {
     // 0.93 * 101 = 93.93 → 94
-    expect(convertToEUR(101)).toBe(Math.round(101 * RATE));
+    expect(convertFromCHF(101, 0.93)).toBe(Math.round(101 * 0.93));
   });
 });
 
@@ -112,12 +106,6 @@ describe('computeTripCost', () => {
     expect(result.hotelPerNightCHF).toBe(140);
     expect(result.hotelTotalCHF).toBe(280);
     expect(result.totalCHF).toBe(630);
-    expect(result.totalEUR).toBe(Math.round(630 * RATE));
-  });
-
-  it('uses custom EUR rate when provided', () => {
-    const result = computeTripCost(baseInput, 0.85);
-    expect(result.totalEUR).toBe(Math.round(630 * 0.85));
   });
 
   it('sets ticket to 0 when hasTicket is true', () => {
@@ -214,13 +202,31 @@ describe('encodeToSearchParams / decodeFromSearchParams', () => {
     expect(decoded.originAirport).toBe('LHR - London, United Kingdom');
   });
 
-  it('encodes and decodes display currency', () => {
+  it('encodes and decodes display currency (EUR)', () => {
     const params = encodeToSearchParams({
       ...input,
       displayCurrency: 'EUR',
     });
     const decoded = decodeFromSearchParams(params);
     expect(decoded.displayCurrency).toBe('EUR');
+  });
+
+  it('encodes and decodes display currency (GBP)', () => {
+    const params = encodeToSearchParams({
+      ...input,
+      displayCurrency: 'GBP',
+    });
+    const decoded = decodeFromSearchParams(params);
+    expect(decoded.displayCurrency).toBe('GBP');
+  });
+
+  it('encodes and decodes display currency (USD)', () => {
+    const params = encodeToSearchParams({
+      ...input,
+      displayCurrency: 'USD',
+    });
+    const decoded = decodeFromSearchParams(params);
+    expect(decoded.displayCurrency).toBe('USD');
   });
 
   it('does not encode CHF currency (default)', () => {

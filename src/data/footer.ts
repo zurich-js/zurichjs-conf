@@ -9,7 +9,7 @@ export const footerData: SiteFooterProps = {
   about: {
     title: 'ZurichJS',
     copy: 'Our mission is to be the #1 JavaScript resource for developers in the Zurich tech scene, offering everything from meetups and workshops, to creating unparalleled networking opportunities, while making sure everybody feels welcome and included.',
-    orgNote: 'Zurich JS Conf is part of the Swiss JavaScript Group, a non-profit association registered in Switzerland. © 2025 Swiss JavaScript Group (CHE-255.581.547). All rights reserved',
+    orgNote: 'Zurich JS Conf is part of the Swiss JavaScript Group, a non-profit association registered in Switzerland. © 2026 Swiss JavaScript Group (CHE-255.581.547). All rights reserved',
     moreHref: '/about',
   },
   conference: {

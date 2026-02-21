@@ -5,17 +5,18 @@
  */
 
 import {
-  FALLBACK_EUR_RATE,
   TRAVEL_RANGES,
   TRAVEL_STEPS,
   HOTEL_OPTIONS,
   DEFAULT_CUSTOM_HOTEL_CHF,
+  DISPLAY_CURRENCIES,
   type TravelRegion,
   type HotelType,
   type DisplayCurrency,
   type TicketType,
   type AttendanceDays,
 } from '@/config/trip-cost';
+import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 
 export interface TripCostInput {
   /** Ticket price in CHF (0 if already have ticket) */
@@ -49,7 +50,6 @@ export interface TripCostBreakdown {
   hotelTotalCHF: number;
   nights: number;
   totalCHF: number;
-  totalEUR: number;
 }
 
 /** Get the travel cost in CHF for a given region and step */
@@ -68,16 +68,13 @@ export function getHotelPerNightCHF(hotelType: HotelType, customCHF: number): nu
   return option?.estimatePerNightCHF ?? 0;
 }
 
-/** Convert CHF amount to EUR using the provided rate */
-export function convertToEUR(chf: number, eurRate: number = FALLBACK_EUR_RATE): number {
-  return Math.round(chf * eurRate);
+/** Convert a CHF amount using the given rate */
+export function convertFromCHF(chf: number, rate: number): number {
+  return Math.round(chf * rate);
 }
 
 /** Compute the full trip cost breakdown */
-export function computeTripCost(
-  input: TripCostInput,
-  eurRate: number = FALLBACK_EUR_RATE
-): TripCostBreakdown {
+export function computeTripCost(input: TripCostInput): TripCostBreakdown {
   const ticketCHF = input.hasTicket ? 0 : Math.max(0, input.ticketCHF);
   const travelCHF = getTravelCostCHF(input.travelRegion, input.travelStep);
   const hotelPerNightCHF = getHotelPerNightCHF(input.hotelType, input.customHotelCHF);
@@ -91,11 +88,11 @@ export function computeTripCost(
     hotelTotalCHF,
     nights: input.nights,
     totalCHF,
-    totalEUR: convertToEUR(totalCHF, eurRate),
   };
 }
 
 const VALID_HOTEL_TYPES: HotelType[] = ['vision', 'ibis', 'meininger', 'hostel', 'novotel', 'other'];
+const VALID_CURRENCIES = new Set<string>(DISPLAY_CURRENCIES);
 
 /** Encode trip cost inputs into URL search params */
 export function encodeToSearchParams(input: TripCostInput): URLSearchParams {
@@ -179,8 +176,8 @@ export function decodeFromSearchParams(
   }
 
   const currency = params.get('currency');
-  if (currency === 'EUR' || currency === 'CHF') {
-    result.displayCurrency = currency;
+  if (currency && VALID_CURRENCIES.has(currency)) {
+    result.displayCurrency = currency as DisplayCurrency;
   }
 
   const attendance = params.get('attendance');
@@ -198,4 +195,16 @@ export function getTotalBucket(totalCHF: number): string {
   if (totalCHF < 900) return '600-900';
   if (totalCHF < 1200) return '900-1200';
   return '1200+';
+}
+
+/** Convert a total CHF amount to a display currency using the rates record */
+export function toDisplayAmount(
+  chf: number,
+  currency: DisplayCurrency,
+  rates: ExchangeRates,
+): number | null {
+  if (currency === 'CHF') return chf;
+  const rate = rates[currency];
+  if (!rate) return null;
+  return convertFromCHF(chf, rate);
 }

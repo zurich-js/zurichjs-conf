@@ -14,13 +14,14 @@ import {
   type TravelRegion,
   type DisplayCurrency,
 } from '@/config/trip-cost';
+import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 
 interface TravelSectionProps {
   travelRegion: TravelRegion;
   travelStep: number;
   originAirport: string | null;
   currency: DisplayCurrency;
-  eurRate: number;
+  rates: ExchangeRates;
   onUpdate: (partial: { travelRegion?: TravelRegion; travelStep?: number; originAirport?: string | null }) => void;
 }
 
@@ -35,7 +36,7 @@ export function TravelSection({
   travelStep,
   originAirport,
   currency,
-  eurRate,
+  rates,
   onUpdate,
 }: TravelSectionProps) {
   const originIata = getOriginIata(originAirport);
@@ -78,7 +79,8 @@ export function TravelSection({
             {TRAVEL_STEPS.map((step, idx) => {
               const range = TRAVEL_RANGES[travelRegion];
               const chf = range[step.key];
-              const display = toDisplayCurrency(chf, currency, eurRate);
+              const display = toDisplayCurrency(chf, currency, rates) ?? chf;
+              const isConverted = currency !== 'CHF';
               return (
                 <button
                   key={step.key}
@@ -94,7 +96,7 @@ export function TravelSection({
                     {step.label}
                   </span>
                   <span className="block text-xs sm:text-sm font-bold mt-0.5">
-                    {formatAmount(display, currency)}
+                    {isConverted ? '~' : ''}{formatAmount(display, currency)}
                   </span>
                 </button>
               );

@@ -13,6 +13,8 @@ import { DEFAULT_CURRENCY, getCurrencyFromCountry, type SupportedCurrency } from
 interface CurrencyContextValue {
   /** The detected currency for the current user */
   currency: SupportedCurrency;
+  /** ISO 3166-1 alpha-2 country code (e.g. "DE", "GB"), null if unknown */
+  countryCode: string | null;
   /** Whether geo detection is still in progress */
   isDetecting: boolean;
 }
@@ -36,6 +38,8 @@ interface CurrencyProviderProps {
   children: ReactNode;
   /** Initial currency from server-side detection (if available) */
   currency?: SupportedCurrency;
+  /** Initial country code from server-side detection (if available) */
+  countryCode?: string | null;
 }
 
 /**
@@ -48,8 +52,9 @@ interface CurrencyProviderProps {
  *   <Component {...pageProps} />
  * </CurrencyProvider>
  */
-export function CurrencyProvider({ children, currency: initialCurrency }: CurrencyProviderProps) {
+export function CurrencyProvider({ children, currency: initialCurrency, countryCode: initialCountryCode }: CurrencyProviderProps) {
   const [currency, setCurrency] = useState<SupportedCurrency>(initialCurrency ?? DEFAULT_CURRENCY);
+  const [countryCode, setCountryCode] = useState<string | null>(initialCountryCode ?? null);
   const [isDetecting, setIsDetecting] = useState(!initialCurrency);
 
   // Sync currency state with initialCurrency prop from server-side detection
@@ -59,6 +64,12 @@ export function CurrencyProvider({ children, currency: initialCurrency }: Curren
       setCurrency(initialCurrency);
     }
   }, [initialCurrency]);
+
+  useEffect(() => {
+    if (initialCountryCode) {
+      setCountryCode(initialCountryCode);
+    }
+  }, [initialCountryCode]);
 
   useEffect(() => {
     // If we already have a valid currency from server-side, no need to detect
@@ -72,6 +83,7 @@ export function CurrencyProvider({ children, currency: initialCurrency }: Curren
     if (existingCountry) {
       const detectedCurrency = getCurrencyFromCountry(existingCountry);
       setCurrency(detectedCurrency);
+      setCountryCode(existingCountry);
       setIsDetecting(false);
       return;
     }
@@ -85,6 +97,7 @@ export function CurrencyProvider({ children, currency: initialCurrency }: Curren
           if (data.country) {
             const detectedCurrency = getCurrencyFromCountry(data.country);
             setCurrency(detectedCurrency);
+            setCountryCode(data.country);
             console.log(`[Geo] Detected country: ${data.country}, currency: ${detectedCurrency}`);
           }
         }
@@ -99,7 +112,7 @@ export function CurrencyProvider({ children, currency: initialCurrency }: Curren
   }, [initialCurrency]);
 
   return (
-    <CurrencyContext.Provider value={{ currency, isDetecting }}>
+    <CurrencyContext.Provider value={{ currency, countryCode, isDetecting }}>
       {children}
     </CurrencyContext.Provider>
   );
@@ -121,7 +134,7 @@ export function useCurrency(): CurrencyContextValue {
     // Return default currency instead of throwing
     // This allows the hook to be used in components that may render
     // before the provider is mounted (e.g., during static generation)
-    return { currency: DEFAULT_CURRENCY, isDetecting: false };
+    return { currency: DEFAULT_CURRENCY, countryCode: null, isDetecting: false };
   }
 
   return context;
