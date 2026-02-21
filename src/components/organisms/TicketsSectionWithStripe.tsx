@@ -3,7 +3,7 @@
  * Wrapper around TicketsSection that fetches pricing from Stripe
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { TicketsSection } from './TicketsSection';
 import { StudentVerificationModal, VerificationSuccessModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -40,6 +40,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     verifiedEmail,
     verificationId,
   } = useStudentVerification();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Show loading state only when there's no data yet
   // During hydration, isLoading might be true briefly even with prefetched data
@@ -141,7 +142,23 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     return null;
   }
 
-  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, addToCart, navigateToCart);
+  const wrappedAddToCart: typeof addToCart = (item, quantity) => {
+    setIsNavigating(true);
+    addToCart(item, quantity);
+  };
+
+  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart);
+
+  // Disable all CTAs while navigating to prevent duplicate adds
+  if (isNavigating) {
+    ticketData.plans = ticketData.plans.map((plan) => ({
+      ...plan,
+      cta: plan.cta.type === 'button'
+        ? { ...plan.cta, loading: true, disabled: true }
+        : plan.cta,
+    }));
+  }
+
   return (
     <>
       <TicketsSection {...ticketData} className={className} />

@@ -99,7 +99,8 @@ export function getOrderSummary(cart: Cart): OrderSummary {
 // ============================================================================
 
 /**
- * Add item to cart (or increment quantity if exists)
+ * Add item to cart (idempotent — no-op if item already exists)
+ * Quantity changes are only allowed via updateQuantity in the cart page.
  */
 export function addItem(
   cart: Cart,
@@ -107,18 +108,12 @@ export function addItem(
   quantity: number = 1
 ): Cart {
   const existingIndex = cart.items.findIndex((i) => i.id === item.id);
-  
-  let newItems: CartItem[];
+
   if (existingIndex >= 0) {
-    newItems = cart.items.map((i, idx) =>
-      idx === existingIndex
-        ? { ...i, quantity: i.quantity + quantity }
-        : i
-    );
-  } else {
-    newItems = [...cart.items, { ...item, quantity }];
+    return cart;
   }
 
+  const newItems = [...cart.items, { ...item, quantity }];
   return rebuildCart(cart, newItems, item.currency);
 }
 

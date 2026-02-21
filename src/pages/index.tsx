@@ -1,11 +1,13 @@
 import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection, LearnSection, NavBar } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
-import { dehydrate, type DehydratedState } from '@tanstack/react-query';
+import type { DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
-import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
+import { createPrefetch } from '@/lib/prefetch';
 import { publicSponsorsQueryOptions, communityPartnersQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
+import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
+import { serverAnalytics } from '@/lib/analytics/server';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
 
@@ -149,25 +151,41 @@ export default function Home() {
 }
 
 /**
- * Server-side data fetching with TanStack Query prefetching
- * Prefetches ticket pricing, sponsors, partners, speakers and handles discount generation
- * Currency detection is handled client-side by CurrencyContext
+ * Server-side data fetching with prefetch utility
+ *
+ * All queries use optionalQuery — if any fail or exceed the 1 s timeout,
+ * the page still renders and the client recovers via useQuery with the
+ * same query keys (TanStack Query sees no cached data and refetches).
+ *
+ * Failures are reported to PostHog via serverAnalytics.
  */
 export const getServerSideProps: GetServerSideProps<HomePageProps> = async () => {
   const queryClient = getQueryClient();
+  const { optionalQuery, dehydrate } = createPrefetch(queryClient);
 
-  // Prefetch all homepage data in parallel
-  // Ticket pricing uses default currency (CHF) - client will refetch with detected currency
-  await Promise.all([
-    queryClient.prefetchQuery(ticketPricingQueryOptions),
-    queryClient.prefetchQuery(publicSponsorsQueryOptions),
-    queryClient.prefetchQuery(communityPartnersQueryOptions),
-    queryClient.prefetchQuery(publicSpeakersQueryOptions),
+  const results = await Promise.allSettled([
+    optionalQuery(publicSponsorsQueryOptions),
+    optionalQuery(communityPartnersQueryOptions),
+    optionalQuery(publicSpeakersQueryOptions),
+    optionalQuery(ticketPricingQueryOptions),
   ]);
+
+  // Report any rejected promises to PostHog (shouldn't happen since
+  // optionalQuery catches internally, but guard against unexpected throws)
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      serverAnalytics.captureException(result.reason, {
+        type: 'network',
+        severity: 'medium',
+        flow: 'ssr_prefetch',
+        action: 'homepage_data',
+      });
+    }
+  }
 
   return {
     props: {
-      dehydratedState: dehydrate(queryClient),
+      dehydratedState: dehydrate(),
     },
   };
 };
