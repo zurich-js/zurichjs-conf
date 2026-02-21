@@ -244,6 +244,15 @@ export default function TripCostPage() {
   };
   const lateBirdTicketCHF = getLateBirdTicketCHF();
 
+  // Late bird ticket in EUR — prefer Stripe EUR comparePrice over CHF conversion
+  const getLateBirdTicketEUR = (): number | undefined => {
+    if (isStudentOrHaveTicket) return ticketEUR;
+    const plan = eurPlans.find((p) => p.id === ticketType);
+    if (plan?.comparePrice) return Math.round(plan.comparePrice / 100);
+    return undefined;
+  };
+  const lateBirdTicketEUR = getLateBirdTicketEUR();
+
   // Estimated increases: hotel +10%/+25%, flights +15%/+30% at standard/late bird
   // For student: ticket stays the same, only travel+hotel increase
   const midTicketCHF = lateBirdTicketCHF !== null
@@ -251,11 +260,34 @@ export default function TripCostPage() {
         ? breakdown.ticketCHF
         : Math.round(breakdown.ticketCHF + (lateBirdTicketCHF - breakdown.ticketCHF) * 0.4))
     : null;
+  const midTicketEUR = (midTicketCHF !== null && ticketEUR !== undefined && lateBirdTicketEUR !== undefined)
+    ? (isStudentOrHaveTicket
+        ? ticketEUR
+        : Math.round(ticketEUR + (lateBirdTicketEUR - ticketEUR) * 0.4))
+    : undefined;
+
+  // CHF totals
   const standardEstTotalCHF = midTicketCHF !== null
     ? Math.round(midTicketCHF + breakdown.travelCHF * 1.25 + breakdown.hotelTotalCHF * 1.20)
     : null;
   const lateBirdTotalCHF = lateBirdTicketCHF !== null
     ? Math.round(lateBirdTicketCHF + breakdown.travelCHF * 1.30 + breakdown.hotelTotalCHF * 1.25)
+    : null;
+
+  // Display amounts — use Stripe EUR prices when available (same approach as totalDisplayAmount)
+  const standardEstDisplayAmount = standardEstTotalCHF !== null
+    ? (displayCurrency === 'EUR'
+        ? (midTicketEUR ?? Math.round((midTicketCHF ?? 0) * eurRate)) +
+          Math.round(breakdown.travelCHF * 1.25 * eurRate) +
+          Math.round(breakdown.hotelTotalCHF * 1.20 * eurRate)
+        : standardEstTotalCHF)
+    : null;
+  const lateBirdDisplayAmount = lateBirdTotalCHF !== null
+    ? (displayCurrency === 'EUR'
+        ? (lateBirdTicketEUR ?? Math.round((lateBirdTicketCHF ?? 0) * eurRate)) +
+          Math.round(breakdown.travelCHF * 1.30 * eurRate) +
+          Math.round(breakdown.hotelTotalCHF * 1.25 * eurRate)
+        : lateBirdTotalCHF)
     : null;
 
   const handleShare = useCallback(async () => {
@@ -399,21 +431,21 @@ export default function TripCostPage() {
                         <div className="w-6 h-6 rounded-full bg-brand-green border-2 border-white shadow mx-auto" />
                         <span className="block text-[11px] sm:text-xs text-brand-green font-semibold mt-2">Now</span>
                         <span className="block text-sm sm:text-base font-bold text-gray-900">
-                          {formatAmount(toDisplayCurrency(breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)}
+                          {formatAmount(totalDisplayAmount, displayCurrency)}
                         </span>
                       </div>
                       <div className="text-center z-10 max-w-[30%]">
                         <div className="w-6 h-6 rounded-full bg-brand-yellow-secondary border-2 border-white shadow mx-auto" />
                         <span className="block text-[11px] sm:text-xs text-brand-yellow-secondary font-semibold mt-2">Standard</span>
                         <span className="block text-sm sm:text-base font-bold text-gray-900">
-                          ~{formatAmount(toDisplayCurrency(standardEstTotalCHF, displayCurrency, eurRate), displayCurrency)}
+                          ~{formatAmount(standardEstDisplayAmount!, displayCurrency)}
                         </span>
                       </div>
                       <div className="text-center z-10 max-w-[30%]">
                         <div className="w-6 h-6 rounded-full bg-brand-red border-2 border-white shadow mx-auto" />
                         <span className="block text-[11px] sm:text-xs text-brand-red font-semibold mt-2">Late Bird</span>
                         <span className="block text-sm sm:text-base font-bold text-gray-900">
-                          ~{formatAmount(toDisplayCurrency(lateBirdTotalCHF, displayCurrency, eurRate), displayCurrency)}
+                          ~{formatAmount(lateBirdDisplayAmount!, displayCurrency)}
                         </span>
                       </div>
                     </div>
@@ -478,20 +510,20 @@ export default function TripCostPage() {
                           <span className="text-xl sm:text-2xl font-bold">
                             {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(totalDisplayAmount, displayCurrency)}
                           </span>
-                          {displayCurrency !== 'EUR' && (
+                          {displayCurrency === 'EUR' && (
                             <span className="block text-xs sm:text-sm text-brand-gray-light mt-0.5">
                               {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
                             </span>
                           )}
                         </div>
                       </div>
-                      {standardEstTotalCHF && standardEstTotalCHF > breakdown.totalCHF && (
+                      {standardEstDisplayAmount && standardEstDisplayAmount > totalDisplayAmount && (
                         <button
                           onClick={() => document.getElementById('price-evolution')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                           className="cursor-pointer flex items-center gap-1 text-[11px] text-brand-green mt-2 hover:underline"
                         >
                           <Info className="w-3 h-3 shrink-0" />
-                          You save {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(toDisplayCurrency(standardEstTotalCHF - breakdown.totalCHF, displayCurrency, eurRate), displayCurrency)} ({Math.round(((standardEstTotalCHF - breakdown.totalCHF) / standardEstTotalCHF) * 100)}%) by booking now
+                          You save {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(standardEstDisplayAmount - totalDisplayAmount, displayCurrency)} ({Math.round(((standardEstDisplayAmount - totalDisplayAmount) / standardEstDisplayAmount) * 100)}%) by booking now
                         </button>
                       )}
                     </div>
@@ -558,7 +590,7 @@ export default function TripCostPage() {
             <span className="block text-lg font-bold text-white">
               {displayCurrency === 'EUR' ? '~' : ''}{formatAmount(totalDisplayAmount, displayCurrency)}
             </span>
-            {displayCurrency !== 'EUR' && (
+            {displayCurrency === 'EUR' && (
               <span className="block text-xs text-brand-gray-medium">
                 {secondaryCurrencyLabel(breakdown.totalCHF, displayCurrency, eurRate)}
               </span>

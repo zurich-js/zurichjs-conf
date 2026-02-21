@@ -115,8 +115,8 @@ export function BreakdownRow({
   const primary = currency === 'EUR' && hasFetchedEUR ? eur : toDisplayCurrency(chf, currency, eurRate);
   // Prefix with ~ when converting CHF to EUR (not fetched)
   const isConverted = currency === 'EUR' && !hasFetchedEUR;
-  // Don't show secondary for items with fetched prices (tickets) or when EUR is selected
-  const showSecondary = chf > 0 && !hasFetchedEUR && currency !== 'EUR';
+  // Show secondary CHF price only when displaying EUR without a fetched price
+  const showSecondary = chf > 0 && !hasFetchedEUR && currency === 'EUR';
   const secondary = secondaryCurrencyLabel(chf, currency, eurRate);
 
   return (
