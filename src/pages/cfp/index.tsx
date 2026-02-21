@@ -5,6 +5,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { ArrowRight, Users, Eye, BarChart3 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
@@ -83,9 +84,10 @@ const TIMELINE_ITEMS = timelineData.entries
 
 function CfpLanding() {
   const { shouldAnimate } = useMotion();
+  const router = useRouter();
 
   const handleCtaClick = () => {
-    window.location.href = '/cfp/login';
+    router.push('/cfp/login');
   };
 
   return (

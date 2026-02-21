@@ -10,6 +10,7 @@
  */
 
 import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import type { Cart, CartItem } from '@/types/cart';
 import {
   createEmptyCart,
@@ -96,6 +97,7 @@ export interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCart }) => {
   // Get currency from context (detected server-side via geo-location)
   const { currency } = useCurrency();
+  const router = useRouter();
 
   // Initialize cart with proper currency
   // If initialCart is provided, use it; otherwise create empty cart with detected currency
@@ -230,16 +232,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
   // ---- Navigation ----
 
   const navigateToCart = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    
     const currentCart = cartRef.current;
     if (currentCart.items.length > 0) {
       const encoded = encodeCartState(currentCart);
-      window.location.href = `/cart?cart=${encoded}`;
+      router.push(`/cart?cart=${encoded}`);
     } else {
-      window.location.href = '/cart';
+      router.push('/cart');
     }
-  }, []);
+  }, [router]);
 
   // ---- Context Value ----
 

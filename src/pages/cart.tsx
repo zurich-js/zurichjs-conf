@@ -9,7 +9,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { AnimatePresence } from 'framer-motion';
-import { dehydrate } from '@tanstack/react-query';
 import type { GetServerSideProps } from 'next';
 
 import { useCart } from '@/contexts/CartContext';
@@ -31,6 +30,7 @@ import { calculateOrderSummary } from '@/lib/cart';
 import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
+import { createPrefetch } from '@/lib/prefetch';
 import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
@@ -393,6 +393,7 @@ export default function CartPage() {
  */
 export const getServerSideProps: GetServerSideProps = async ({ query, req }) => {
   const queryClient = createQueryClient();
+  const { optionalQuery, dehydrate } = createPrefetch(queryClient);
   const countryCode = detectCountryFromRequest(req);
   const detectedCurrency = getCurrencyFromCountry(countryCode);
 
@@ -403,18 +404,16 @@ export const getServerSideProps: GetServerSideProps = async ({ query, req }) => 
     initialCart = { ...initialCart, currency: detectedCurrency };
   }
 
-  try {
-    await Promise.all([
-      queryClient.prefetchQuery(createTicketPricingQueryOptions(detectedCurrency)),
-      queryClient.prefetchQuery(workshopVouchersQueryOptions),
-    ]);
-  } catch (error) {
-    console.error('Failed to prefetch data:', error);
-  }
+  // Optional prefetches — if they fail or exceed 1s timeout,
+  // the page renders and useTicketPricing / useWorkshopVouchers refetch client-side
+  await Promise.allSettled([
+    optionalQuery(createTicketPricingQueryOptions(detectedCurrency)),
+    optionalQuery(workshopVouchersQueryOptions),
+  ]);
 
   return {
     props: {
-      dehydratedState: dehydrate(queryClient),
+      dehydratedState: dehydrate(),
       initialCart: initialCart ?? createEmptyCart(detectedCurrency),
       detectedCurrency,
     },
