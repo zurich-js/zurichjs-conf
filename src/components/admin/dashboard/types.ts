@@ -56,6 +56,9 @@ export interface FinancialData {
     totalRefunded: number;
     refundedTickets: number;
     totalTickets: number;
+    revenueByCurrency?: Record<string, number>;
+    refundedByCurrency?: Record<string, number>;
+    stripeFeesByCurrency?: Record<string, number>;
   };
   byCategory: Record<string, { revenue: number; count: number }>;
   byStage: Record<string, { revenue: number; count: number }>;

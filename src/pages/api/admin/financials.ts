@@ -91,25 +91,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fetch actual Stripe fees
     const stripeFees = await getStripeFees(confirmedPaymentIntentIds);
 
-    // Calculate financial statistics
+    // Calculate financial statistics, grouped by currency
+    // Track which payment intents we've already counted fees for
+    // (multi-ticket checkouts share a single PI and its fee should only be counted once)
     let totalStripeFees = 0;
-    const totalRevenue = tickets.reduce((sum, ticket) => {
-      if (ticket.status === 'confirmed') {
-        // Add up Stripe fees for this ticket
-        if (ticket.stripe_payment_intent_id && stripeFees.has(ticket.stripe_payment_intent_id)) {
-          totalStripeFees += stripeFees.get(ticket.stripe_payment_intent_id)!;
-        }
-        return sum + ticket.amount_paid;
-      }
-      return sum;
-    }, 0);
+    const countedPIs = new Set<string>();
+    const revenueByCurrency: Record<string, number> = {};
+    const refundedByCurrency: Record<string, number> = {};
+    const stripeFeesByCurrency: Record<string, number> = {};
 
-    const totalRefunded = tickets.reduce((sum, ticket) => {
-      if (ticket.status === 'refunded') {
-        return sum + ticket.amount_paid;
+    for (const ticket of tickets) {
+      const cur = ticket.currency?.toUpperCase() || 'CHF';
+      if (ticket.status === 'confirmed') {
+        revenueByCurrency[cur] = (revenueByCurrency[cur] || 0) + ticket.amount_paid;
+        const piId = ticket.stripe_payment_intent_id;
+        if (piId && stripeFees.has(piId) && !countedPIs.has(piId)) {
+          countedPIs.add(piId);
+          const fee = stripeFees.get(piId)!;
+          totalStripeFees += fee;
+          stripeFeesByCurrency[cur] = (stripeFeesByCurrency[cur] || 0) + fee;
+        }
+      } else if (ticket.status === 'refunded') {
+        refundedByCurrency[cur] = (refundedByCurrency[cur] || 0) + ticket.amount_paid;
       }
-      return sum;
-    }, 0);
+    }
+
+    const totalRevenue = Object.values(revenueByCurrency).reduce((sum, v) => sum + v, 0);
+    const totalRefunded = Object.values(refundedByCurrency).reduce((sum, v) => sum + v, 0);
 
     const ticketsByStatus = tickets.reduce((acc: Record<string, number>, ticket) => {
       acc[ticket.status] = (acc[ticket.status] || 0) + 1;
@@ -243,7 +251,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       pendingRevenue: b2bInvoices?.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + inv.total_amount, 0) || 0,
     };
 
-    // Get sponsorship revenue data
+    // Get sponsorship revenue data with tier names
     const { data: sponsorshipDeals } = await supabase
       .from('sponsorship_deals')
       .select(`
@@ -251,6 +259,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status,
         currency,
         tier_id,
+        sponsorship_tiers ( name ),
         sponsorship_invoices (
           total_amount,
           currency
@@ -290,17 +299,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         sponsorshipSummary.revenueByCurrency[currency].pending += amount;
       }
 
-      // Track by tier
-      const tierId = deal.tier_id;
-      if (!sponsorshipSummary.byTier[tierId]) {
-        sponsorshipSummary.byTier[tierId] = { count: 0, revenueCHF: 0, revenueEUR: 0 };
+      // Track by tier (use tier name if available, fallback to ID)
+      const tierData = deal.sponsorship_tiers as { name: string } | null;
+      const tierName = tierData?.name || deal.tier_id;
+      if (!sponsorshipSummary.byTier[tierName]) {
+        sponsorshipSummary.byTier[tierName] = { count: 0, revenueCHF: 0, revenueEUR: 0 };
       }
-      sponsorshipSummary.byTier[tierId].count += 1;
+      sponsorshipSummary.byTier[tierName].count += 1;
       if (deal.status === 'paid') {
         if (currency === 'CHF') {
-          sponsorshipSummary.byTier[tierId].revenueCHF += amount;
+          sponsorshipSummary.byTier[tierName].revenueCHF += amount;
         } else {
-          sponsorshipSummary.byTier[tierId].revenueEUR += amount;
+          sponsorshipSummary.byTier[tierName].revenueEUR += amount;
         }
       }
     }
@@ -351,6 +361,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalRefunded,
         // Keep legacy field for backward compatibility
         totalRevenue,
+        // Per-currency breakdowns
+        revenueByCurrency,
+        refundedByCurrency,
+        stripeFeesByCurrency,
       },
       byStatus: ticketsByStatus,
       byType: ticketsByType,
