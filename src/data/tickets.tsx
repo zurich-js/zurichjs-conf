@@ -142,8 +142,8 @@ export const TICKET_FAQ: FAQItem[] = [
         Yes! We offer team packages with custom pricing. Reach out to discuss your needs and
         we&apos;ll create a tailored package for your team. Team packages include simplified
         invoicing and bank transfer payment options.{' '}
-        <a href="/contact" className="underline">
-          Contact us for team pricing
+        <a href="mailto:hello@zurichjs.com" className="underline">
+          Contact us at hello@zurichjs.com
         </a>
       </>
     ),
