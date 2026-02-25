@@ -221,8 +221,13 @@ async function trackTicketPurchasesAndNewsletterSignups(
     }
   }
 
-  for (const result of ticketResults) {
+  for (let i = 0; i < ticketResults.length; i++) {
+    const result = ticketResults[i];
     if (result.success && result.attendee.email) {
+      // Rate limit: Resend allows max 2 requests/sec, so wait 600ms between calls
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+      }
       try {
         const contactResult = await addNewsletterContact(result.attendee.email, 'checkout');
         if (!contactResult.success) {
@@ -305,12 +310,20 @@ export async function processTickets(
     });
   }
 
-  if (existingTickets && existingTickets.length > 0) {
-    log.warn('Tickets already exist for this session. Skipping ticket creation.', {
+  if (existingTickets && existingTickets.length >= attendees.length) {
+    log.warn('All tickets already exist for this session. Skipping ticket creation.', {
       existingTicketCount: existingTickets.length,
+      expectedCount: attendees.length,
       existingTickets: existingTickets.map(t => ({ id: t.id, email: t.email })),
     });
     return;
+  }
+
+  if (existingTickets && existingTickets.length > 0) {
+    log.info('Some tickets already exist for this session. Will create remaining tickets.', {
+      existingTicketCount: existingTickets.length,
+      expectedCount: attendees.length,
+    });
   }
 
   log.info('No existing tickets found. Creating tickets in database', { count: attendees.length });

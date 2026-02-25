@@ -63,11 +63,13 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
 
   try {
     // Check if ticket already exists (idempotency)
-    console.log('[createTicket] Checking for existing ticket with session ID:', params.stripeSessionId);
+    // Match on both session ID and email to support multi-ticket checkouts
+    console.log('[createTicket] Checking for existing ticket with session ID:', params.stripeSessionId, 'and email:', params.email);
     const { data: existing, error: checkError } = await supabase
       .from('tickets')
       .select('*')
       .eq('stripe_session_id', params.stripeSessionId)
+      .eq('email', params.email)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {

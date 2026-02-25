@@ -151,12 +151,12 @@ export function UpgradeCta({ ticketId, firstName, lastName, email }: UpgradeCtaP
   const mailtoLink = `mailto:hello@zurichjs.com?subject=VIP%20Upgrade%20Request&body=Hi%2C%0A%0AI%20would%20like%20to%20upgrade%20my%20ticket%20to%20VIP.%0A%0ATicket%20ID%3A%20${ticketId}%0AName%3A%20${firstName}%20${lastName}%0AEmail%3A%20${email}%0A%0AThank%20you!`;
 
   return (
-    <div className="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-6 mb-8">
+    <div className="bg-black rounded-2xl p-6 mb-8">
       <div className="flex items-start gap-3">
         <span className="text-2xl">✨</span>
         <div>
-          <h3 className="text-blue-300 font-semibold mb-2">Want to upgrade to VIP?</h3>
-          <p className="text-gray-300 text-sm mb-3">
+          <h3 className="text-brand-primary font-semibold mb-2">Want to upgrade to VIP?</h3>
+          <p className="text-gray-200 text-sm mb-3">
             Get 20% off all workshops, an exclusive speaker tour invitation, and limited edition goodies. Email us to
             upgrade your ticket.
           </p>
