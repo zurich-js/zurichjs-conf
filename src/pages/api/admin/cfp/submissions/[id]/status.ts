@@ -5,7 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateSubmissionStatus } from '@/lib/cfp/admin';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { updateSubmissionStatusSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
 
@@ -17,8 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // Verify admin authentication (same as main admin)
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

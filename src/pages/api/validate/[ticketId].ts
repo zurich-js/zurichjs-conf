@@ -5,7 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateTicket, checkInTicket } from '@/lib/qrcode';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Ticket Validation API');
@@ -52,8 +52,8 @@ export default async function handler(
   // POST: Check in ticket (mark as checked in)
   if (req.method === 'POST') {
     // Require admin authentication for check-in
-    const adminToken = req.cookies.admin_token;
-    if (!verifyAdminToken(adminToken)) {
+    const { authorized } = verifyAdminAccess(req);
+    if (!authorized) {
       res.status(401).json({
         success: false,
         error: 'Unauthorized - Admin access required',

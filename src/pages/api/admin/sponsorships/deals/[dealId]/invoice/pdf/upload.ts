@@ -6,7 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import fs from 'fs/promises';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { getDealWithRelations, updateInvoicePDF } from '@/lib/sponsorship';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
@@ -24,8 +24,8 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

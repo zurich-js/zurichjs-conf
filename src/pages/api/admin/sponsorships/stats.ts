@@ -4,7 +4,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { getSponsorshipStats } from '@/lib/sponsorship';
 import { logger } from '@/lib/logger';
 
@@ -12,8 +12,8 @@ const log = logger.scope('Sponsorship Stats API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

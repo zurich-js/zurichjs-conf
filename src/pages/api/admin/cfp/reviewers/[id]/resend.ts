@@ -5,7 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getReviewerById } from '@/lib/cfp/reviewers';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { sendReviewerInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 
@@ -17,8 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // Verify admin authentication
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

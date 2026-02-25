@@ -6,7 +6,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminReviewers, getAdminReviewersWithActivity } from '@/lib/cfp/admin';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('CFP Admin Reviewers API');
@@ -16,8 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

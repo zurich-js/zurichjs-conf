@@ -78,6 +78,7 @@ let _serverEnv: {
   };
   admin: {
     password: string;
+    readonlyApiKey: string | null;
   };
 } | null = null;
 
@@ -130,6 +131,7 @@ function getServerEnv() {
           process.env.ADMIN_PASSWORD,
           'ADMIN_PASSWORD'
         ),
+        readonlyApiKey: process.env.ADMIN_READONLY_API_KEY || null,
       },
     };
   }

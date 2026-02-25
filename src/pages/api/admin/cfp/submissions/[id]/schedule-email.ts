@@ -15,7 +15,7 @@ import {
   sendScheduledEmailNow,
 } from '@/lib/cfp/scheduled-emails';
 import { REJECTION_COUPON } from '@/lib/cfp/config';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('CFP Schedule Email API');
@@ -51,8 +51,8 @@ const sendNowSchema = z.object({
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -65,11 +65,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     return handleGet(req, res, id);
   } else if (req.method === 'POST') {
-    return handlePost(req, res, id, token!);
+    return handlePost(req, res, id, 'admin');
   } else if (req.method === 'PUT') {
-    return handlePut(req, res, token!);
+    return handlePut(req, res, 'admin');
   } else if (req.method === 'DELETE') {
-    return handleDelete(req, res, token!);
+    return handleDelete(req, res, 'admin');
   } else {
     return res.status(405).json({ error: 'Method not allowed' });
   }

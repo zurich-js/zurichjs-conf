@@ -5,7 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateFlightStatus } from '@/lib/cfp/admin-travel';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import type { CfpFlightStatus } from '@/lib/types/cfp';
 import { logger } from '@/lib/logger';
 
@@ -13,8 +13,8 @@ const log = logger.scope('Admin Flight Status API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication (same as main admin)
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

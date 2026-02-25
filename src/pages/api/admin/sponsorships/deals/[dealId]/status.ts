@@ -4,7 +4,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyAdminToken } from '@/lib/admin/auth';
+import { verifyAdminAccess } from '@/lib/admin/auth';
 import { getDeal, updateDealStatus } from '@/lib/sponsorship';
 import type { SponsorshipDealStatus } from '@/lib/types/sponsorship';
 import { VALID_DEAL_STATUS_TRANSITIONS } from '@/lib/types/sponsorship';
@@ -14,8 +14,8 @@ const log = logger.scope('Deal Status API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
-  const token = req.cookies.admin_token;
-  if (!verifyAdminToken(token)) {
+  const { authorized } = verifyAdminAccess(req);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
