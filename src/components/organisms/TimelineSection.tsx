@@ -178,10 +178,10 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
                   return (
                     <div
                       key={entry.id}
-                      className={`relative flex items-start gap-4 flex-col sm:flex-row sm:gap-6 ${entryIndex > 0 ? 'mt-6' : ''}`}
+                      className={`relative flex items-start gap-2 flex-col sm:flex-row md:gap-6 ${entryIndex > 0 ? 'md:mt-6 mt-2' : ''}`}
                     >
                       {/* Date Column - Only show for first entry in group */}
-                      <div className="flex-shrink-0 w-28 pt-1">
+                      <div className="flex-shrink-0 w-32 pt-1">
                         {isFirstInGroup && (
                           <time
                             dateTime={entry.toDateISO ? `${entry.dateISO}/${entry.toDateISO}` : entry.dateISO}
