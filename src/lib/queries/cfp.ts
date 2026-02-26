@@ -3,7 +3,7 @@
  * Provides data fetching with 10-minute cache for all CFP operations
  */
 
-import { queryOptions } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import { endpoints } from '@/lib/api';
 import type {
@@ -213,11 +213,12 @@ export async function fetchReimbursements(): Promise<ReimbursementsResponse> {
  * Fetch reviewer dashboard data
  * Uses session-based authentication via cookies
  */
-export async function fetchReviewerDashboard(): Promise<ReviewerDashboardResponse> {
+export async function fetchReviewerDashboard(search?: string): Promise<ReviewerDashboardResponse> {
   const response = await fetch(endpoints.cfp.reviewerDashboard(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
+    body: JSON.stringify({ search }),
   });
 
   if (!response.ok) {
@@ -330,12 +331,15 @@ export const reimbursementsQueryOptions = queryOptions({
  * Query options for reviewer dashboard
  * Uses session-based authentication
  */
-export const reviewerDashboardQueryOptions = queryOptions({
-  queryKey: queryKeys.cfp.reviewer.dashboard(),
-  queryFn: fetchReviewerDashboard,
-  staleTime: CFP_STALE_TIME,
-  gcTime: CFP_GC_TIME,
-});
+export function reviewerDashboardQueryOptions(search?: string) {
+  return queryOptions({
+    queryKey: queryKeys.cfp.reviewer.dashboard(search),
+    queryFn: () => fetchReviewerDashboard(search),
+    placeholderData: keepPreviousData,
+    staleTime: CFP_STALE_TIME,
+    gcTime: CFP_GC_TIME,
+  });
+}
 
 /**
  * Query options for reviewer submission

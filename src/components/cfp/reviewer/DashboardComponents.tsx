@@ -137,7 +137,7 @@ export function FilterBar({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search by title, abstract, or tags..."
+              placeholder='Search submissions (e.g. react -"ai" "event sourcing")...'
               className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
             />
             {searchQuery && (

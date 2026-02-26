@@ -20,6 +20,51 @@ import { formatScore } from '@/lib/cfp/scoring';
 
 const ITEMS_PER_PAGE = 10;
 
+interface SubmissionSearchFilters {
+  include: string[];
+  exclude: string[];
+}
+
+function parseSubmissionSearch(search: string): SubmissionSearchFilters {
+  const filters: SubmissionSearchFilters = { include: [], exclude: [] };
+  const tokens = search.match(/-?"[^"]+"|-?\S+/g) || [];
+
+  for (const rawToken of tokens) {
+    const isExclude = rawToken.startsWith('-');
+    const token = isExclude ? rawToken.slice(1) : rawToken;
+    if (!token) continue;
+
+    const unquoted = token.startsWith('"') && token.endsWith('"')
+      ? token.slice(1, -1)
+      : token;
+    const normalized = unquoted.trim().toLowerCase();
+    if (!normalized) continue;
+
+    if (isExclude) filters.exclude.push(normalized);
+    else filters.include.push(normalized);
+  }
+
+  return filters;
+}
+
+function matchesSubmissionSearch(submission: CfpAdminSubmission, filters: SubmissionSearchFilters): boolean {
+  const speaker = submission.speaker
+    ? `${submission.speaker.first_name || ''} ${submission.speaker.last_name || ''} ${submission.speaker.email || ''}`
+    : '';
+  const tags = (submission.tags || []).map((tag) => tag.name).join(' ');
+  const haystack = `${submission.title} ${submission.abstract} ${speaker} ${tags}`.toLowerCase();
+
+  if (filters.include.some((term) => !haystack.includes(term))) {
+    return false;
+  }
+
+  if (filters.exclude.some((term) => haystack.includes(term))) {
+    return false;
+  }
+
+  return true;
+}
+
 interface SubmissionsTabProps {
   submissions: CfpAdminSubmission[];
   isLoading: boolean;
@@ -59,15 +104,10 @@ export function SubmissionsTab({
     let result = [...submissions];
 
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.title.toLowerCase().includes(query) ||
-          s.abstract.toLowerCase().includes(query) ||
-          s.speaker?.first_name?.toLowerCase().includes(query) ||
-          s.speaker?.last_name?.toLowerCase().includes(query) ||
-          s.speaker?.email?.toLowerCase().includes(query)
-      );
+      const filters = parseSubmissionSearch(searchQuery);
+      if (filters.include.length > 0 || filters.exclude.length > 0) {
+        result = result.filter((submission) => matchesSubmissionSearch(submission, filters));
+      }
     }
 
     if (typeFilter !== 'all') {
@@ -140,7 +180,7 @@ export function SubmissionsTab({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by title, abstract, or speaker..."
+              placeholder='Search submissions (e.g. react -"beginner" "event sourcing")...'
               className="w-full px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
             />
           </div>

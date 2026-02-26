@@ -105,7 +105,8 @@ export const cfpKeys = {
    */
   reviewer: {
     all: () => [...cfpKeys.all, 'reviewer'] as const,
-    dashboard: () => [...cfpKeys.reviewer.all(), 'dashboard'] as const,
+    dashboardBase: () => [...cfpKeys.reviewer.all(), 'dashboard'] as const,
+    dashboard: (search?: string) => [...cfpKeys.reviewer.dashboardBase(), search ?? ''] as const,
     submission: (id: string) => [...cfpKeys.reviewer.all(), 'submission', id] as const,
   },
 } as const;
@@ -207,4 +208,3 @@ export const queryKeys = {
   speakers: speakersKeys,
   discount: discountKeys,
 } as const;
-

@@ -36,8 +36,8 @@ export interface ReviewerDashboardData {
  * Hook to fetch reviewer dashboard
  * Uses session-based authentication
  */
-export function useCfpReviewerDashboard() {
-  const query = useQuery(reviewerDashboardQueryOptions);
+export function useCfpReviewerDashboard(search?: string) {
+  const query = useQuery(reviewerDashboardQueryOptions(search));
 
   return {
     reviewer: query.data?.reviewer ?? null,
@@ -108,7 +108,7 @@ export function useSubmitReview() {
       return response.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cfp.reviewer.dashboard() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cfp.reviewer.dashboardBase() });
       queryClient.invalidateQueries({ queryKey: queryKeys.cfp.reviewer.submission(variables.submissionId) });
     },
     onError: (error, variables) => {

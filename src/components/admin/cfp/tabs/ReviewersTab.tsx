@@ -26,7 +26,6 @@ interface ReviewersTabProps {
 
 export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const [selectedReviewer, setSelectedReviewer] = useState<ReviewerData | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,16 +118,6 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const filteredReviewers = useMemo(() => {
     let result = reviewers.filter(r => r.is_active);
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (r) =>
-          r.name?.toLowerCase().includes(query) ||
-          r.email.toLowerCase().includes(query)
-      );
-    }
-
     // Role filter
     if (roleFilter !== 'all') {
       result = result.filter((r) => r.role === roleFilter);
@@ -142,7 +131,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
     }
 
     return result;
-  }, [reviewers, searchQuery, roleFilter, statusFilter]);
+  }, [reviewers, roleFilter, statusFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredReviewers.length / ITEMS_PER_PAGE);
@@ -154,7 +143,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, roleFilter, statusFilter]);
+  }, [roleFilter, statusFilter]);
 
   return (
     <div>
@@ -162,13 +151,6 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
       <div className="mb-6 flex flex-col gap-4">
         <InviteReviewerForm />
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search reviewers by name or email..."
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-          />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -270,7 +252,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             ))}
             {paginatedReviewers.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                {searchQuery || roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
+                {roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
               </div>
             )}
           </div>
@@ -359,7 +341,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 {paginatedReviewers.length === 0 && (
                   <tr>
                     <td colSpan={showActivityColumns ? 10 : 6} className="px-4 py-8 text-center text-black">
-                      {searchQuery || roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
+                      {roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
                     </td>
                   </tr>
                 )}

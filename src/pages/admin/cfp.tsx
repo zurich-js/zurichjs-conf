@@ -263,7 +263,12 @@ export default function CfpAdminDashboard() {
               {activeTab === 'speakers' && (
                 <SpeakersTab speakers={speakers} isLoading={isLoadingSpeakers} onSelectSubmission={setSelectedSubmission} />
               )}
-              {activeTab === 'reviewers' && <ReviewersTab reviewers={reviewers} isLoading={isLoadingReviewers} />}
+              {activeTab === 'reviewers' && (
+                <ReviewersTab
+                  reviewers={reviewers}
+                  isLoading={isLoadingReviewers}
+                />
+              )}
               {activeTab === 'tags' && (
                 <TagsTab tags={tags} isLoading={isLoadingTags} onDelete={(id) => deleteTagMutation.mutate(id)} isDeleting={deleteTagMutation.isPending} />
               )}
