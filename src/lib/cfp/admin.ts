@@ -408,7 +408,6 @@ export async function getAdminReviewers(): Promise<CfpReviewer[]> {
     console.error('[CFP Admin] Error fetching reviewers:', error);
     return [];
   }
-
   return (data || []) as CfpReviewer[];
 }
 
