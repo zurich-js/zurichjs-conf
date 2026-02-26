@@ -5,6 +5,7 @@ export interface BlogFrontmatter {
   excerpt: string;
   tags: string[];
   coverImage?: string;
+  blueskyPostUri?: string;
 }
 
 export interface BlogPost {
