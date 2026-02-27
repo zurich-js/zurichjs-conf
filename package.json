@@ -8,6 +8,7 @@
 		"build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
 		"start": "next start",
 		"lint": "eslint .",
+		"lint:fix": "eslint --fix",
 		"typecheck": "tsc --noEmit",
 		"clean": "rm -rf .next && rm -rf node_modules/.cache",
 		"prepare": "husky",
