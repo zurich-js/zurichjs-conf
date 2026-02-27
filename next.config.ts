@@ -75,6 +75,22 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: cspHeader.replace(/\n/g, ''),
           },
+          {
+            key: 'x-frame-options',
+            value: 'SAMEORIGIN,
+          },
+         {
+           key: 'X-Content-Type-Options',
+           value: 'nosniff'
+         },
+         {
+           key: 'Strict-Transport-Security',
+           value: 'max-age=63072000; includeSubDomains; preload'
+         }
+         {
+          key: 'Referrer-Policy',
+          value: 'strict-origin-when-cross-origin'
+         }
         ],
       },
     ];
