@@ -2,7 +2,7 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === 'development';
- 
+
 const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''};
@@ -77,7 +77,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'x-frame-options',
-            value: 'SAMEORIGIN,
+            value: 'SAMEORIGIN'
           },
          {
            key: 'X-Content-Type-Options',
@@ -86,7 +86,7 @@ const nextConfig: NextConfig = {
          {
            key: 'Strict-Transport-Security',
            value: 'max-age=63072000; includeSubDomains; preload'
-         }
+         },
          {
           key: 'Referrer-Policy',
           value: 'strict-origin-when-cross-origin'
