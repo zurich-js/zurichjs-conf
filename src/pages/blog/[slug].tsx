@@ -13,7 +13,7 @@ import {
   organizationSchema,
   generateBreadcrumbSchema,
 } from '@/components/SEO';
-import { BlogPostHeader, mdxComponents } from '@/components/blog';
+import { BlogPostHeader, mdxComponents, BlueskyComments } from '@/components/blog';
 import { getAllSlugs, getPostBySlug } from '@/lib/blog';
 import type { BlogFrontmatter } from '@/lib/blog';
 
@@ -127,6 +127,8 @@ export default function BlogPostPage({
             <article>
               <MDXRemote {...mdxSource} components={mdxComponents} />
             </article>
+
+            <BlueskyComments postUri={frontmatter.blueskyPostUri} />
           </div>
         </div>
       </main>
