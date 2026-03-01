@@ -44,7 +44,7 @@ export const mdxComponents: MDXComponents = {
   li: (props) => <li className="leading-relaxed" {...props} />,
   blockquote: (props) => (
     <blockquote
-      className="border-l-4 border-brand-yellow-main pl-4 italic text-gray-600 my-4"
+      className="border-l-4 border-brand-gray-light pl-4 italic text-gray-600 my-4"
       {...props}
     />
   ),
