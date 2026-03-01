@@ -24,6 +24,7 @@ export const footerData: SiteFooterProps = {
       { label: 'F.A.Q.', href: '/faq' },
       { label: 'Trip Cost Calculator', href: '/trip-cost' },
       { label: 'Convince Your Boss', href: '/convince-your-boss' },
+      { label: 'Blog', href: '/blog' },
     ],
   },
   legal: {
