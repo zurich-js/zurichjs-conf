@@ -73,6 +73,7 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
         description="News, announcements, and articles from the ZurichJS Conference team. Stay up to date with speaker announcements, community stories, and conference updates."
         canonical="/blog"
         keywords="zurichjs blog, javascript blog, conference news, speaker announcements"
+        feedUrl={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com'}/blog/feed.xml`}
         jsonLd={[organizationSchema, breadcrumbSchema]}
       />
       <main className="min-h-screen bg-white">

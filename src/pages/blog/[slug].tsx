@@ -113,6 +113,7 @@ export default function BlogPostPage({
         ogType="article"
         publishedTime={frontmatter.date}
         author={author.name}
+        feedUrl={`${BASE_URL}/blog/feed.xml`}
         keywords={frontmatter.tags?.join(', ')}
         jsonLd={[organizationSchema, breadcrumbSchema, blogPostingSchema]}
       />
