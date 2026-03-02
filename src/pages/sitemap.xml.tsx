@@ -5,6 +5,7 @@
 
 import { GetServerSideProps } from 'next';
 import { getAllPageSlugs } from '@/data/info-pages';
+import { getAllPosts } from '@/lib/blog';
 
 interface SitemapUrl {
   loc: string;
@@ -13,8 +14,17 @@ interface SitemapUrl {
   priority: string;
 }
 
+const escapeXml = (str: string): string =>
+  str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
 const generateSitemap = (baseUrl: string): string => {
   const infoSlugs = getAllPageSlugs();
+  const blogPosts = getAllPosts();
   const currentDate = new Date().toISOString().split('T')[0];
 
   // Define all pages with their SEO properties
@@ -46,6 +56,20 @@ const generateSitemap = (baseUrl: string): string => {
       changefreq: 'monthly',
       priority: '0.7',
     },
+    // Blog index
+    {
+      loc: `${baseUrl}/blog`,
+      lastmod: currentDate,
+      changefreq: 'weekly',
+      priority: '0.8',
+    },
+    // Blog posts
+    ...blogPosts.map((post) => ({
+      loc: `${baseUrl}/blog/${post.slug}`,
+      lastmod: post.frontmatter.date,
+      changefreq: 'monthly' as const,
+      priority: '0.7',
+    })),
     // Info pages (terms, privacy, refund, code of conduct)
     ...infoSlugs.map((slug) => ({
       loc: `${baseUrl}/info/${slug}`,
@@ -59,10 +83,10 @@ const generateSitemap = (baseUrl: string): string => {
   const urlElements = pages
     .map(
       (page) => `  <url>
-    <loc>${page.loc}</loc>
-    <lastmod>${page.lastmod}</lastmod>
-    <changefreq>${page.changefreq}</changefreq>
-    <priority>${page.priority}</priority>
+    <loc>${escapeXml(page.loc)}</loc>
+    <lastmod>${escapeXml(page.lastmod)}</lastmod>
+    <changefreq>${escapeXml(page.changefreq)}</changefreq>
+    <priority>${escapeXml(page.priority)}</priority>
   </url>`
     )
     .join('\n');
