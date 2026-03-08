@@ -10,9 +10,9 @@ import { getSubmissionsBySpeakerId, createSubmission, getSubmissionCount } from 
 import { submissionSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
 import { serverAnalytics } from '@/lib/analytics/server';
+import { SUBMISSION_LIMITS } from '@/lib/cfp/config';
 
 const log = logger.scope('CFP Submissions API');
-const MAX_SUBMISSIONS = 5;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Get session
@@ -46,9 +46,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       // Check submission limit
       const count = await getSubmissionCount(speaker.id);
-      if (count >= MAX_SUBMISSIONS) {
+      if (count >= SUBMISSION_LIMITS.MAX_ACTIVE_SUBMISSIONS) {
         return res.status(400).json({
-          error: `Maximum ${MAX_SUBMISSIONS} submissions allowed`,
+          error: `Maximum ${SUBMISSION_LIMITS.MAX_ACTIVE_SUBMISSIONS} submissions allowed`,
         });
       }
 

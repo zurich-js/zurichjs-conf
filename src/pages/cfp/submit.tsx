@@ -14,6 +14,7 @@ import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { isSpeakerProfileComplete } from '@/lib/cfp/auth-constants';
 import type { CfpSpeaker, CfpTag } from '@/lib/types/cfp';
 import { getSubmissionCount } from '@/lib/cfp/submissions';
+import { SUBMISSION_LIMITS } from '@/lib/cfp/config';
 import { getSuggestedTags } from '@/lib/cfp/tags';
 import {
   WizardStep,
@@ -369,7 +370,7 @@ export const getServerSideProps: GetServerSideProps<SubmitPageProps> = async (ct
 
   const currentSubmissionCount = await getSubmissionCount(speaker.id);
 
-  if (currentSubmissionCount >= 5) {
+  if (currentSubmissionCount >= SUBMISSION_LIMITS.MAX_ACTIVE_SUBMISSIONS) {
     return {
       redirect: { destination: '/cfp/dashboard', permanent: false },
     };

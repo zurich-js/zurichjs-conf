@@ -66,3 +66,42 @@ export const DECLINE_REASONS = {
 } as const;
 
 export type DeclineReason = keyof typeof DECLINE_REASONS;
+
+/**
+ * Submission limits configuration
+ */
+export const SUBMISSION_LIMITS = {
+  /** Maximum number of active (non-withdrawn, non-rejected) submissions per speaker */
+  MAX_ACTIVE_SUBMISSIONS: 5,
+  /** Statuses that do not count toward the submission limit */
+  EXCLUDED_STATUSES: ['withdrawn', 'rejected'] as const,
+} as const;
+
+/**
+ * Check if a submission status counts toward the active submission limit.
+ * Returns false for withdrawn and rejected submissions.
+ */
+export function isActiveSubmissionStatus(status: string): boolean {
+  return !(SUBMISSION_LIMITS.EXCLUDED_STATUSES as readonly string[]).includes(status);
+}
+
+/**
+ * Filter an array of submissions to only those with active statuses.
+ */
+export function getActiveSubmissions<T extends { status: string }>(submissions: T[]): T[] {
+  return submissions.filter((s) => isActiveSubmissionStatus(s.status));
+}
+
+/**
+ * Count the number of active submissions (excluding withdrawn/rejected).
+ */
+export function countActiveSubmissions<T extends { status: string }>(submissions: T[]): number {
+  return getActiveSubmissions(submissions).length;
+}
+
+/**
+ * Check whether a speaker can create a new submission based on their current active count.
+ */
+export function canCreateSubmission<T extends { status: string }>(submissions: T[]): boolean {
+  return countActiveSubmissions(submissions) < SUBMISSION_LIMITS.MAX_ACTIVE_SUBMISSIONS;
+}

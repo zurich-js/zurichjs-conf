@@ -15,6 +15,7 @@ import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { isSpeakerProfileComplete, getMissingProfileFields } from '@/lib/cfp/auth-constants';
 import type { CfpSpeaker, CfpSubmission } from '@/lib/types/cfp';
 import { getSpeakerVisibleStatus, type SpeakerVisibleStatus } from '@/lib/cfp/submissions';
+import { SUBMISSION_LIMITS, getActiveSubmissions, canCreateSubmission } from '@/lib/cfp/config';
 import { supabase } from '@/lib/supabase/client';
 import { env } from '@/config/env';
 
@@ -98,6 +99,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
 
   const draftSubmissions = submissions.filter((s) => s.status === 'draft');
   const submittedSubmissions = submissions.filter((s) => s.status !== 'draft');
+  const activeSubmissions = getActiveSubmissions(submissions);
 
   return (
     <>
@@ -185,8 +187,8 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-brand-gray-dark rounded-xl p-4 text-center">
-              <div className="text-3xl font-bold text-white mb-1">{submissions.length}</div>
-              <div className="text-brand-gray-light text-sm">Total Proposals</div>
+              <div className="text-3xl font-bold text-white mb-1">{activeSubmissions.length}</div>
+              <div className="text-brand-gray-light text-sm">Active Proposals</div>
             </div>
             <div className="bg-brand-gray-dark rounded-xl p-4 text-center">
               <div className="text-3xl font-bold text-blue-400 mb-1">{submittedSubmissions.length}</div>
@@ -197,13 +199,13 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
               <div className="text-brand-gray-light text-sm">Drafts</div>
             </div>
             <div className="bg-brand-gray-dark rounded-xl p-4 text-center">
-              <div className="text-3xl font-bold text-brand-primary mb-1">5</div>
+              <div className="text-3xl font-bold text-brand-primary mb-1">{SUBMISSION_LIMITS.MAX_ACTIVE_SUBMISSIONS}</div>
               <div className="text-brand-gray-light text-sm">Max Allowed</div>
             </div>
           </div>
 
           {/* New Submission CTA */}
-          {submissions.length < 5 && isProfileComplete && (
+          {canCreateSubmission(submissions) && isProfileComplete && (
             <div className="bg-gradient-to-r from-brand-primary/10 to-brand-primary/5 rounded-xl p-6 mb-8 border border-brand-primary/20">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
@@ -211,7 +213,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
                     Have another talk idea?
                   </h2>
                   <p className="text-brand-gray-light text-sm">
-                    You can submit up to 5 proposals. Make the most of it!
+                    You can submit up to {SUBMISSION_LIMITS.MAX_ACTIVE_SUBMISSIONS} proposals. Make the most of it!
                   </p>
                 </div>
                 <Link href="/cfp/submit">

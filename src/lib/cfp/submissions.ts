@@ -4,6 +4,7 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { SUBMISSION_LIMITS } from '@/lib/cfp/config';
 import type {
   CfpSubmission,
   CfpSubmissionWithDetails,
@@ -450,16 +451,21 @@ async function linkTagsToSubmission(
 
 /**
  * Get submission count for a speaker
- * Excludes withdrawn submissions from the count
+ * Excludes withdrawn and rejected submissions from the count
  */
 export async function getSubmissionCount(speakerId: string): Promise<number> {
   const supabase = createCfpServiceClient();
 
-  const { count, error } = await supabase
+  let query = supabase
     .from('cfp_submissions')
     .select('*', { count: 'exact', head: true })
-    .eq('speaker_id', speakerId)
-    .neq('status', 'withdrawn');
+    .eq('speaker_id', speakerId);
+
+  for (const status of SUBMISSION_LIMITS.EXCLUDED_STATUSES) {
+    query = query.neq('status', status);
+  }
+
+  const { count, error } = await query;
 
   if (error) {
     console.error('[CFP Submissions] Error counting submissions:', error.message);
