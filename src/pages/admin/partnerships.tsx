@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
@@ -36,7 +36,6 @@ import {
 } from '@/components/admin/partnerships';
 
 export default function PartnershipsDashboard() {
-  const queryClient = useQueryClient();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
 
   // Filter state

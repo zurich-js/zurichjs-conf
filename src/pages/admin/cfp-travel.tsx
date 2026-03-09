@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -38,7 +37,6 @@ const TRAVEL_TABS: AdminTab<TabType>[] = [
 ];
 
 export default function AdminTravelPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
