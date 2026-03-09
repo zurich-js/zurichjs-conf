@@ -13,6 +13,7 @@ import type {
   CfpAdminTag,
   CfpInsights,
 } from '@/lib/types/cfp-admin';
+import type { CfpAnalytics } from '@/lib/types/cfp-analytics';
 
 export async function fetchStats(): Promise<CfpStats> {
   const res = await fetch('/api/admin/cfp/stats');
@@ -87,5 +88,11 @@ export async function fetchReviewerActivity(
 export async function fetchInsights(): Promise<{ insights: CfpInsights }> {
   const res = await fetch('/api/admin/cfp/insights');
   if (!res.ok) throw new Error('Failed to fetch insights');
+  return res.json();
+}
+
+export async function fetchAnalytics(): Promise<{ analytics: CfpAnalytics }> {
+  const res = await fetch('/api/admin/cfp/analytics');
+  if (!res.ok) throw new Error('Failed to fetch analytics');
   return res.json();
 }

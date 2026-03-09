@@ -10,7 +10,14 @@ interface TabNavigationProps {
   setActiveTab: (tab: CfpTab) => void;
 }
 
-const TABS: CfpTab[] = ['submissions', 'speakers', 'reviewers', 'tags', 'insights'];
+const TABS: Array<{ key: CfpTab; label: string }> = [
+  { key: 'submissions', label: 'Submissions' },
+  { key: 'speakers', label: 'Speakers' },
+  { key: 'reviewers', label: 'Reviewers' },
+  { key: 'tags', label: 'Tags' },
+  { key: 'insights', label: 'Insights' },
+  { key: 'analytics', label: 'Analytics' },
+];
 
 export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
   return (
@@ -22,11 +29,9 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
           onChange={(e) => setActiveTab(e.target.value as CfpTab)}
           className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-black"
         >
-          <option value="submissions">Submissions</option>
-          <option value="speakers">Speakers</option>
-          <option value="reviewers">Reviewers</option>
-          <option value="tags">Tags</option>
-          <option value="insights">Insights</option>
+          {TABS.map((tab) => (
+            <option key={tab.key} value={tab.key}>{tab.label}</option>
+          ))}
         </select>
       </div>
 
@@ -35,13 +40,13 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 inline-flex space-x-1">
           {TABS.map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               className={`px-6 py-2.5 rounded-md font-medium text-sm transition-all cursor-pointer ${
-                activeTab === tab ? 'bg-[#F1E271] text-black shadow-sm' : 'text-black hover:bg-gray-50'
+                activeTab === tab.key ? 'bg-[#F1E271] text-black shadow-sm' : 'text-black hover:bg-gray-50'
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab.label}
             </button>
           ))}
         </div>

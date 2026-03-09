@@ -12,7 +12,7 @@ export { AddTagForm } from './AddTagForm';
 export { ReviewerModal } from './ReviewerModal';
 
 // Tab components
-export { ReviewersTab, SpeakersTab, InsightsTab } from './tabs';
+export { ReviewersTab, SpeakersTab, InsightsTab, AnalyticsTab } from './tabs';
 export { SubmissionsTab } from './SubmissionsTab';
 export { TagsTab } from './TagsTab';
 export { SpeakerAvatar } from './SpeakerAvatar';

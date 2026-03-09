@@ -16,6 +16,7 @@ import {
   SubmissionsTab,
   TagsTab,
   InsightsTab,
+  AnalyticsTab,
   StatsCards,
   TabNavigation,
 } from '@/components/admin/cfp';
@@ -31,6 +32,7 @@ import {
   fetchReviewersWithActivity,
   fetchTags,
   fetchInsights,
+  fetchAnalytics,
   updateSubmissionStatus,
   deleteTag,
 } from '@/lib/cfp/api';
@@ -92,6 +94,13 @@ export default function CfpAdminDashboard() {
     queryFn: fetchInsights,
     enabled: isAuthenticated === true && activeTab === 'insights',
     staleTime: 30 * 1000,
+  });
+
+  const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery({
+    queryKey: cfpQueryKeys.analytics,
+    queryFn: fetchAnalytics,
+    enabled: isAuthenticated === true && activeTab === 'analytics',
+    staleTime: 60 * 1000,
   });
 
   const { data: tagsData, isLoading: isLoadingTags } = useQuery({
@@ -273,7 +282,10 @@ export default function CfpAdminDashboard() {
                 <TagsTab tags={tags} isLoading={isLoadingTags} onDelete={(id) => deleteTagMutation.mutate(id)} isDeleting={deleteTagMutation.isPending} />
               )}
               {activeTab === 'insights' && (
-                <InsightsTab insights={insightsData?.insights || null} isLoading={isLoadingInsights} />
+                <InsightsTab insights={insightsData?.insights || null} stats={stats} isLoading={isLoadingInsights} />
+              )}
+              {activeTab === 'analytics' && (
+                <AnalyticsTab analytics={analyticsData?.analytics || null} isLoading={isLoadingAnalytics} />
               )}
             </div>
           </div>

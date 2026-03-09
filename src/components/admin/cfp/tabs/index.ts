@@ -8,3 +8,4 @@ export { SpeakersTab } from './SpeakersTab';
 export { SpeakerModal } from './SpeakerModal';
 export { AddSpeakerModal } from './AddSpeakerModal';
 export { InsightsTab } from './InsightsTab';
+export { AnalyticsTab } from './analytics';

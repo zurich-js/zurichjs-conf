@@ -9,7 +9,7 @@ import type { CfpDecisionStatus } from './cfp/decisions';
 // Re-export CfpStats from the canonical location
 export type { CfpStats } from './cfp/admin';
 
-export type CfpTab = 'submissions' | 'speakers' | 'reviewers' | 'tags' | 'insights';
+export type CfpTab = 'submissions' | 'speakers' | 'reviewers' | 'tags' | 'insights' | 'analytics';
 
 export interface CfpAdminSpeaker {
   id: string;
@@ -170,6 +170,7 @@ export const cfpQueryKeys = {
   reviewerActivity: (id: string, dateRange?: string) => ['cfp', 'reviewer', id, 'activity', dateRange] as const,
   tags: ['cfp', 'tags'] as const,
   insights: ['cfp', 'insights'] as const,
+  analytics: ['cfp', 'analytics'] as const,
   decisionData: (id: string) => ['cfp', 'submission', id, 'decision'] as const,
   scheduledEmails: (id: string) => ['cfp', 'submission', id, 'scheduled-emails'] as const,
 };
