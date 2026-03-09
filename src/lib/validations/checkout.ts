@@ -32,7 +32,7 @@ export const checkoutFormSchema = z.object({
   // Personal Information
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  company: z.string().min(1, 'Company is required'),
+  company: z.string().optional(),
   jobTitle: z.string().min(1, 'Job title is required'),
 
   // Address Information
