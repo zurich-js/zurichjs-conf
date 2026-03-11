@@ -8,7 +8,7 @@ import type {
   AttendeeAnalytics,
   AttendeeSummary,
   AttendeeDemographics,
-  AttendeeTimelineEntry,
+  AttendeeAcquisition,
 } from '@/lib/types/attendee-analytics';
 
 interface TicketRow {
@@ -24,6 +24,8 @@ interface TicketRow {
   currency: string;
   status: string;
   checked_in: boolean | null;
+  coupon_code: string | null;
+  partnership_id: string | null;
   created_at: string;
   metadata: Record<string, unknown> | null;
 }
@@ -33,7 +35,7 @@ export async function getAttendeeAnalytics(): Promise<AttendeeAnalytics> {
 
   const { data, error } = await supabase
     .from('tickets')
-    .select('id, first_name, last_name, email, company, job_title, ticket_category, ticket_stage, amount_paid, currency, status, checked_in, created_at, metadata')
+    .select('id, first_name, last_name, email, company, job_title, ticket_category, ticket_stage, amount_paid, currency, status, checked_in, coupon_code, partnership_id, created_at, metadata')
     .order('created_at', { ascending: true });
 
   if (error) throw error;
@@ -42,12 +44,12 @@ export async function getAttendeeAnalytics(): Promise<AttendeeAnalytics> {
   const confirmed = tickets.filter((t) => t.status === 'confirmed');
 
   const summary = buildSummary(tickets, confirmed);
-  const byCategory = buildGroupBreakdown(confirmed, (t) => t.ticket_category);
-  const byStage = buildGroupBreakdown(confirmed, (t) => t.ticket_stage);
+  const byCategory = buildGroupCount(confirmed, (t) => t.ticket_category);
+  const byStage = buildGroupCount(confirmed, (t) => t.ticket_stage);
   const demographics = buildDemographics(confirmed);
-  const registrationTimeline = buildTimeline(confirmed);
+  const acquisition = buildAcquisition(confirmed);
 
-  return { summary, byCategory, byStage, demographics, registrationTimeline };
+  return { summary, byCategory, byStage, demographics, acquisition };
 }
 
 function buildSummary(allTickets: TicketRow[], confirmed: TicketRow[]): AttendeeSummary {
@@ -59,23 +61,21 @@ function buildSummary(allTickets: TicketRow[], confirmed: TicketRow[]): Attendee
     totalAttendees: allTickets.filter((t) => t.status !== 'cancelled' && t.status !== 'refunded').length,
     confirmedAttendees: confirmed.length,
     checkedIn: confirmed.filter((t) => t.checked_in).length,
-    totalRevenue,
     avgTicketPrice: confirmed.length > 0 ? totalRevenue / confirmed.length : 0,
     companiesRepresented: companies.size,
     countriesRepresented: countries.size,
   };
 }
 
-function buildGroupBreakdown(
+function buildGroupCount(
   tickets: TicketRow[],
   keyFn: (t: TicketRow) => string
-): Record<string, { count: number; revenue: number }> {
-  const result: Record<string, { count: number; revenue: number }> = {};
+): Record<string, { count: number }> {
+  const result: Record<string, { count: number }> = {};
   for (const t of tickets) {
     const key = keyFn(t) || 'unknown';
-    if (!result[key]) result[key] = { count: 0, revenue: 0 };
+    if (!result[key]) result[key] = { count: 0 };
     result[key].count++;
-    result[key].revenue += t.amount_paid;
   }
   return result;
 }
@@ -125,29 +125,69 @@ function buildDemographics(tickets: TicketRow[]): AttendeeDemographics {
   };
 }
 
-function buildTimeline(tickets: TicketRow[]): AttendeeTimelineEntry[] {
-  if (tickets.length === 0) return [];
+function buildAcquisition(tickets: TicketRow[]): AttendeeAcquisition {
+  let individual = 0;
+  let b2b = 0;
+  let complimentary = 0;
+  let withCoupon = 0;
+  let fromPartnerships = 0;
+  const couponCounts = new Map<string, number>();
+  const partnershipCounts = new Map<string, number>();
 
-  const dayCounts = new Map<string, { count: number; revenue: number }>();
   for (const t of tickets) {
-    const day = t.created_at.split('T')[0];
-    const existing = dayCounts.get(day) || { count: 0, revenue: 0 };
-    existing.count++;
-    existing.revenue += t.amount_paid;
-    dayCounts.set(day, existing);
+    const meta = t.metadata as { paymentType?: string } | null;
+    if (meta?.paymentType === 'complimentary') {
+      complimentary++;
+    } else if (t.partnership_id && meta?.paymentType === 'bank_transfer') {
+      b2b++;
+    } else {
+      individual++;
+    }
+
+    if (t.coupon_code) {
+      withCoupon++;
+      const code = t.coupon_code.toUpperCase().trim();
+      couponCounts.set(code, (couponCounts.get(code) || 0) + 1);
+    }
+
+    if (t.partnership_id) {
+      fromPartnerships++;
+      partnershipCounts.set(t.partnership_id, (partnershipCounts.get(t.partnership_id) || 0) + 1);
+    }
   }
 
-  const sorted = [...dayCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  let cumulative = 0;
-  let cumulativeRevenue = 0;
-  return sorted.map(([date, { count, revenue }]) => {
-    cumulative += count;
-    cumulativeRevenue += revenue;
-    return { date, count, cumulative, revenue, cumulativeRevenue };
-  });
+  // Velocity
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  let thisWeek = 0;
+  let thisMonth = 0;
+
+  for (const t of tickets) {
+    const created = new Date(t.created_at);
+    if (created >= startOfWeek) thisWeek++;
+    if (created >= startOfMonth) thisMonth++;
+  }
+
+  // Average per week since first ticket
+  const firstDate = tickets.length > 0 ? new Date(tickets[0].created_at) : now;
+  const weeksSinceFirst = Math.max(1, (now.getTime() - firstDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const avgPerWeek = Math.round((tickets.length / weeksSinceFirst) * 10) / 10;
+
+  return {
+    byChannel: { individual, b2b, complimentary },
+    withCoupon,
+    fromPartnerships,
+    topCoupons: topN(couponCounts, 10).map(([code, count]) => ({ code, count })),
+    topPartnerships: topN(partnershipCounts, 10).map(([partnershipId, count]) => ({ partnershipId, count })),
+    velocity: { thisWeek, thisMonth, avgPerWeek },
+  };
 }
 
-/** Extract company from ticket fields or session metadata */
 function normalizeCompany(t: TicketRow): string | null {
   const company = t.company
     || (t.metadata as { session_metadata?: { company?: string } })?.session_metadata?.company
@@ -155,7 +195,6 @@ function normalizeCompany(t: TicketRow): string | null {
   return company?.trim() || null;
 }
 
-/** Extract job title from ticket fields or session metadata */
 function normalizeJobTitle(t: TicketRow): string | null {
   const jobTitle = t.job_title
     || (t.metadata as { session_metadata?: { jobTitle?: string } })?.session_metadata?.jobTitle
@@ -163,16 +202,44 @@ function normalizeJobTitle(t: TicketRow): string | null {
   return jobTitle?.trim() || null;
 }
 
-/** Extract country from session metadata */
 function extractCountry(t: TicketRow): string | null {
   const country = (t.metadata as { session_metadata?: { country?: string } })?.session_metadata?.country;
   return country?.trim() || null;
 }
 
-/** Extract city from session metadata */
 function extractCity(t: TicketRow): string | null {
   const city = (t.metadata as { session_metadata?: { city?: string } })?.session_metadata?.city;
-  return city?.trim() || null;
+  if (!city?.trim()) return null;
+  return normalizeCityName(city.trim());
+}
+
+/** Normalize city names so variants like Zürich/Zurich are merged */
+const CITY_ALIASES: Record<string, string> = {
+  'zurich': 'Zürich',
+  'zürich': 'Zürich',
+  'zuerich': 'Zürich',
+  'geneva': 'Geneva',
+  'geneve': 'Geneva',
+  'genève': 'Geneva',
+  'bern': 'Bern',
+  'berne': 'Bern',
+  'basel': 'Basel',
+  'basle': 'Basel',
+  'bâle': 'Basel',
+  'lucerne': 'Lucerne',
+  'luzern': 'Lucerne',
+  'munich': 'Munich',
+  'münchen': 'Munich',
+  'muenchen': 'Munich',
+  'cologne': 'Cologne',
+  'köln': 'Cologne',
+  'koeln': 'Cologne',
+  'vienna': 'Vienna',
+  'wien': 'Vienna',
+};
+
+function normalizeCityName(city: string): string {
+  return CITY_ALIASES[city.toLowerCase()] || city;
 }
 
 function topN(map: Map<string, number>, n: number): Array<[string, number]> {

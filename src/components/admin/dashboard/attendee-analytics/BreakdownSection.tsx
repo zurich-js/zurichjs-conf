@@ -7,8 +7,8 @@ import { Ticket, Clock, Info } from 'lucide-react';
 import { Tooltip } from '@/components/atoms';
 
 interface BreakdownSectionProps {
-  byCategory: Record<string, { count: number; revenue: number }>;
-  byStage: Record<string, { count: number; revenue: number }>;
+  byCategory: Record<string, { count: number }>;
+  byStage: Record<string, { count: number }>;
   totalAttendees: number;
 }
 
@@ -25,10 +25,6 @@ const STAGE_CONFIG: Record<string, { label: string; color: string; bgColor: stri
   general_admission: { label: 'General Admission', color: 'text-blue-700', bgColor: 'bg-blue-50' },
   late_bird: { label: 'Late Bird', color: 'text-gray-700', bgColor: 'bg-gray-50' },
 };
-
-function formatCHF(cents: number): string {
-  return `CHF ${(cents / 100).toLocaleString('en-CH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
 
 export function BreakdownSection({ byCategory, byStage, totalAttendees }: BreakdownSectionProps) {
   return (
@@ -49,20 +45,14 @@ export function BreakdownSection({ byCategory, byStage, totalAttendees }: Breakd
               const config = CATEGORY_CONFIG[key] || { label: key, color: 'text-gray-700', bgColor: 'bg-gray-50' };
               const pct = totalAttendees > 0 ? ((data.count / totalAttendees) * 100).toFixed(0) : '0';
               return (
-                <div key={key} className={`rounded-xl border border-gray-200 p-4 ${config.bgColor}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`font-medium ${config.color}`}>{config.label}</span>
-                    <span className="text-2xl font-bold text-black">{data.count}</span>
+                <div key={key} className={`rounded-xl border border-gray-200 p-3 sm:p-4 ${config.bgColor}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`font-medium text-sm sm:text-base ${config.color}`}>{config.label}</span>
+                    <span className="text-xl sm:text-2xl font-bold text-black">{data.count}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
-                    <span>{pct}% of attendees</span>
-                    <span>{formatCHF(data.revenue)} revenue</span>
-                  </div>
+                  <div className="text-xs text-gray-500">{pct}% of attendees</div>
                   <div className="mt-2 h-1.5 bg-white/50 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#F1E271] rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
+                    <div className="h-full bg-[#F1E271] rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -86,20 +76,14 @@ export function BreakdownSection({ byCategory, byStage, totalAttendees }: Breakd
               const config = STAGE_CONFIG[key] || { label: key, color: 'text-gray-700', bgColor: 'bg-gray-50' };
               const pct = totalAttendees > 0 ? ((data.count / totalAttendees) * 100).toFixed(0) : '0';
               return (
-                <div key={key} className={`rounded-xl border border-gray-200 p-4 ${config.bgColor}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`font-medium ${config.color}`}>{config.label}</span>
-                    <span className="text-2xl font-bold text-black">{data.count}</span>
+                <div key={key} className={`rounded-xl border border-gray-200 p-3 sm:p-4 ${config.bgColor}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`font-medium text-sm sm:text-base ${config.color}`}>{config.label}</span>
+                    <span className="text-xl sm:text-2xl font-bold text-black">{data.count}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
-                    <span>{pct}% of attendees</span>
-                    <span>{formatCHF(data.revenue)} revenue</span>
-                  </div>
+                  <div className="text-xs text-gray-500">{pct}% of attendees</div>
                   <div className="mt-2 h-1.5 bg-white/50 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#F1E271] rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
+                    <div className="h-full bg-[#F1E271] rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );

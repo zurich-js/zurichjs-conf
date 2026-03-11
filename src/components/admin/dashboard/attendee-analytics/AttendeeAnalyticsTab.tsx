@@ -8,7 +8,7 @@ import type { AttendeeAnalytics } from '@/lib/types/attendee-analytics';
 import { SummarySection } from './SummarySection';
 import { BreakdownSection } from './BreakdownSection';
 import { DemographicsSection } from './DemographicsSection';
-import { TimelineSection } from './TimelineSection';
+import { AcquisitionSection } from './AcquisitionSection';
 
 async function fetchAttendeeAnalytics(): Promise<{ analytics: AttendeeAnalytics }> {
   const res = await fetch('/api/admin/attendee-analytics');
@@ -60,12 +60,12 @@ export function AttendeeAnalyticsTab() {
         totalAttendees={analytics.summary.confirmedAttendees}
       />
 
-      {analytics.registrationTimeline.length > 0 && (
-        <>
-          <div className="border-t border-gray-100" />
-          <TimelineSection timeline={analytics.registrationTimeline} />
-        </>
-      )}
+      <div className="border-t border-gray-100" />
+
+      <AcquisitionSection
+        acquisition={analytics.acquisition}
+        totalAttendees={analytics.summary.confirmedAttendees}
+      />
     </div>
   );
 }
