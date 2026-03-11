@@ -133,6 +133,10 @@ function getServerEnv() {
         ),
         readonlyApiKey: process.env.ADMIN_READONLY_API_KEY || null,
       },
+
+      anthropic: {
+        apiKey: process.env.ANTHROPIC_API_KEY || null,
+      },
     };
   }
 
