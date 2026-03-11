@@ -1,5 +1,6 @@
 export { Hero } from './Hero';
 export { DiagonalSection } from './DiagonalSection';
+export { SectionSplitView } from './SectionSplitView';
 export { ScheduleSection } from './ScheduleSection';
 export { LearnSection } from './LearnSection';
 export { TicketsSection } from './TicketsSection';
@@ -27,6 +28,7 @@ export {
 
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';
+export type { SectionSplitViewProps } from './SectionSplitView';
 export type { ScheduleSectionProps, Day, Event } from './ScheduleSection';
 export type { TicketsSectionProps, Plan, StockInfo } from './TicketsSection';
 export type { TicketsSectionWithStripeProps } from './TicketsSectionWithStripe';

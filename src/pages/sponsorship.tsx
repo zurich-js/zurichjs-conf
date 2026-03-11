@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
-  ShapedSection,
-  DynamicSiteFooter,
-  SponsorshipHeroSection,
-  SponsorshipMissionSection,
-  SponsorshipAudienceSection,
-  SponsorshipValuesSection,
-  SponsorshipTiersSection,
-  SponsorshipContactSection,
+    ShapedSection,
+    SponsorshipHeroSection,
+    SponsorshipMissionSection,
+    SponsorshipAudienceSection,
+    SponsorshipValuesSection,
+    SponsorshipTiersSection,
+    DynamicSiteFooter,
 } from '@/components/organisms';
 import { SponsorshipInquiryModal } from '@/components/molecules';
 import { SEO } from '@/components/SEO';
@@ -64,15 +63,13 @@ export default function SponsorshipPage({ detectedCurrency }: SponsorshipPagePro
           />
         </ShapedSection>
 
-        {/* Contact Section - Dark background */}
-        <ShapedSection shape="widen" variant="dark" id="contact">
-          <SponsorshipContactSection data={sponsorshipPageData.contact} />
-        </ShapedSection>
-
-        {/* Footer */}
-        <ShapedSection shape="tighten" variant="dark" dropBottom>
-          <DynamicSiteFooter />
-        </ShapedSection>
+          <ShapedSection
+              shape="widen"
+              variant="dark"
+              dropBottom={true}
+          >
+              <DynamicSiteFooter showContactLinks={true} />
+          </ShapedSection>
       </main>
     </>
   );

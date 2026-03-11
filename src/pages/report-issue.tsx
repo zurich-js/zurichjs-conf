@@ -6,11 +6,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import posthog from 'posthog-js';
-import { DynamicSiteFooter, ShapedSection } from '@/components/organisms';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { SEO } from '@/components/SEO';
 import { ISSUE_TYPES, type IssueType } from '@/lib/validations/issue-report';
 import { CheckCircle, AlertCircle, Bug, ChevronDown } from 'lucide-react';
+import {DynamicSiteFooter, ShapedSection} from "@/components/organisms";
 
 interface FormData {
   name: string;
@@ -487,11 +487,13 @@ export default function ReportIssuePage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <ShapedSection shape="tighten" variant="dark" dropBottom>
-        <DynamicSiteFooter />
-      </ShapedSection>
+        <ShapedSection
+            shape="straight"
+            variant="dark"
+            compactTop={true}
+        >
+            <DynamicSiteFooter />
+        </ShapedSection>
     </>
   );
 }

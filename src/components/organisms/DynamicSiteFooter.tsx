@@ -8,6 +8,7 @@
 import React from 'react';
 import { SiteFooter } from '@/components/organisms/SiteFooter';
 import { useFooterData } from '@/hooks/useFooterData';
+import type { SiteFooterProps } from '@/components/organisms/SiteFooter';
 
 /**
  * DynamicSiteFooter component
@@ -22,9 +23,13 @@ import { useFooterData } from '@/hooks/useFooterData';
  * // Use:
  * <DynamicSiteFooter />
  */
-export function DynamicSiteFooter() {
+interface DynamicSiteFooterProps {
+  showContactLinks?: SiteFooterProps['showContactLinks'];
+}
+
+export function DynamicSiteFooter({ showContactLinks = false }: DynamicSiteFooterProps) {
   const footerData = useFooterData();
-  return <SiteFooter {...footerData} />;
+  return <SiteFooter {...footerData} showContactLinks={showContactLinks} />;
 }
 
 export default DynamicSiteFooter;

@@ -3,7 +3,6 @@ import Image from 'next/image';
 import { Download, Copy, Check } from 'lucide-react';
 import {
   ShapedSection,
-  DynamicSiteFooter,
 } from '@/components/organisms';
 import { Button } from '@/components/atoms';
 import { SEO } from '@/components/SEO';
@@ -292,11 +291,6 @@ export default function PartnerAssetsPage() {
               </a>
             </div>
           </div>
-        </ShapedSection>
-
-        {/* Footer */}
-        <ShapedSection shape="tighten" variant="dark" dropBottom>
-          <DynamicSiteFooter />
         </ShapedSection>
       </main>
     </>
