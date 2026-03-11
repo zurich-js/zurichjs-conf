@@ -8,6 +8,7 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
 import { getTicketDisplayName } from '@/lib/stripe/ticket-utils';
+import type { TicketCategory, TicketStage } from '@/lib/types/database';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -77,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       to: email,
       customerName,
       customerEmail: email,
-      ticketType: getTicketDisplayName(ticket.ticket_category, ticket.ticket_stage),
+      ticketType: getTicketDisplayName(ticket.ticket_category as TicketCategory, ticket.ticket_stage as TicketStage),
       orderNumber: ticket.id,
       amountPaid: ticket.amount_paid,
       currency: ticket.currency,
