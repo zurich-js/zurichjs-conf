@@ -27,6 +27,8 @@ export type {
   SponsorInterestData,
   CfpReviewSubmittedData,
   CfpEmailScheduledData,
+  TicketReassignedData,
+  TicketCreationErrorData,
 } from './types'
 
 export {
@@ -39,4 +41,6 @@ export {
   notifySponsorInterest,
   notifyCfpReviewSubmitted,
   notifyCfpEmailScheduled,
+  notifyTicketReassigned,
+  notifyTicketCreationError,
 } from './send'

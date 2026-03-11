@@ -84,3 +84,22 @@ export interface CfpEmailScheduledData {
   hasCoupon?: boolean
   couponDiscountPercent?: number
 }
+
+export interface TicketReassignedData {
+  ticketId: string
+  ticketType: string
+  fromName: string
+  fromEmail: string
+  toName: string
+  toEmail: string
+  reassignedBy: 'admin' | 'owner'
+}
+
+export interface TicketCreationErrorData {
+  sessionId: string
+  buyerEmail: string
+  ticketType: string
+  failedCount: number
+  totalCount: number
+  errorMessage: string
+}

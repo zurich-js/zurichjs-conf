@@ -8,6 +8,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyOrderToken } from '@/lib/auth/orderToken';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
+import { getTicketDisplayName } from '@/lib/stripe/ticket-utils';
+import { notifyTicketReassigned } from '@/lib/platform-notifications';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
 import { logger } from '@/lib/logger';
 
@@ -92,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       to: email,
       customerName,
       customerEmail: email,
-      ticketType: ticket.ticket_type,
+      ticketType: getTicketDisplayName(ticket.ticket_category, ticket.ticket_stage),
       orderNumber: ticket.id,
       amountPaid: ticket.amount_paid,
       currency: ticket.currency,
@@ -108,6 +110,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       log.error('Failed to send email to new owner', { error: emailResult.error });
       // Don't fail the request, ticket was reassigned successfully
     }
+
+    notifyTicketReassigned({
+      ticketId: ticket.id,
+      ticketType: getTicketDisplayName(ticket.ticket_category, ticket.ticket_stage),
+      fromName: transferFromName,
+      fromEmail: currentTicket.email,
+      toName: customerName,
+      toEmail: email,
+      reassignedBy: 'owner',
+    });
 
     return res.status(200).json({
       success: true,

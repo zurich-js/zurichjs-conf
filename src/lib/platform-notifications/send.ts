@@ -17,6 +17,8 @@ import type {
   SponsorInterestData,
   CfpReviewSubmittedData,
   CfpEmailScheduledData,
+  TicketReassignedData,
+  TicketCreationErrorData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -279,4 +281,34 @@ export function notifyCfpEmailScheduled(data: CfpEmailScheduledData): void {
 
   const blocks = buildBlocks(`${emoji} *${emailTypeLabel} Email Scheduled*`, fields)
   void safeSend('cfp_email_scheduled', text, blocks)
+}
+
+export function notifyTicketReassigned(data: TicketReassignedData): void {
+  const text = `Ticket reassigned: ${data.ticketType} from ${data.fromName} to ${data.toName}`
+  const blocks = buildBlocks(
+    ':arrows_counterclockwise: *Ticket Reassigned*',
+    [
+      { label: 'Ticket', value: data.ticketType },
+      { label: 'Ticket ID', value: data.ticketId },
+      { label: 'From', value: `${data.fromName} (${data.fromEmail})` },
+      { label: 'To', value: `${data.toName} (${data.toEmail})` },
+      { label: 'Reassigned by', value: data.reassignedBy === 'admin' ? 'Admin' : 'Ticket owner' },
+    ]
+  )
+  void safeSend('ticket_reassigned', text, blocks)
+}
+
+export function notifyTicketCreationError(data: TicketCreationErrorData): void {
+  const text = `:rotating_light: URGENT: Failed to create ${data.failedCount}/${data.totalCount} ticket(s) for ${data.buyerEmail}`
+  const blocks = buildBlocks(
+    ':rotating_light: *URGENT: Ticket Creation Failed*',
+    [
+      { label: 'Session', value: data.sessionId },
+      { label: 'Buyer', value: data.buyerEmail },
+      { label: 'Ticket Type', value: data.ticketType },
+      { label: 'Failed', value: `${data.failedCount} of ${data.totalCount}` },
+      { label: 'Error', value: truncate(data.errorMessage, 200) },
+    ]
+  )
+  void safeSend('ticket_creation_error', text, blocks)
 }

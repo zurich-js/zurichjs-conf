@@ -59,12 +59,12 @@ export function parseTicketInfo(lookupKey: string): {
 /**
  * Get display name for ticket
  */
-export function getTicketDisplayName(category: TicketCategory, stage: TicketStage): string {
+export function getTicketDisplayName(category: string, stage: string): string {
   if (category === 'vip') return 'VIP Ticket';
   if (category === 'student') return 'Student Ticket';
   if (category === 'unemployed') return 'Unemployed Ticket';
 
-  const stageNames: Record<TicketStage, string> = {
+  const stageNames: Record<string, string> = {
     blind_bird: 'Blind Bird',
     early_bird: 'Early Bird',
     general_admission: 'Standard',

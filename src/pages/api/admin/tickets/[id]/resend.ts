@@ -7,6 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
+import { getTicketDisplayName } from '@/lib/stripe/ticket-utils';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Admin Ticket Resend');
@@ -47,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       to: ticket.email,
       customerName,
       customerEmail: ticket.email,
-      ticketType: ticket.ticket_type,
+      ticketType: getTicketDisplayName(ticket.ticket_category, ticket.ticket_stage),
       orderNumber: ticket.id,
       amountPaid: ticket.amount_paid,
       currency: ticket.currency,

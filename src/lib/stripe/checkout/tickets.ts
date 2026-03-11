@@ -21,7 +21,7 @@ import {
   type PartnershipDiscountInfo,
 } from './helpers';
 import { sendTicketConfirmationEmails } from './ticket-emails';
-import { notifyTicketPurchased } from '@/lib/platform-notifications';
+import { notifyTicketPurchased, notifyTicketCreationError } from '@/lib/platform-notifications';
 
 /**
  * Attendee info structure
@@ -339,6 +339,15 @@ export async function processTickets(
 
   const failedTickets = ticketResults.filter(r => !r.success);
   if (failedTickets.length > 0) {
+    const errorMessage = failedTickets.map(r => r.error).filter(Boolean).join('; ') || 'Unknown error';
+    notifyTicketCreationError({
+      sessionId: session.id,
+      buyerEmail: customerEmail,
+      ticketType: ticketDisplayName,
+      failedCount: failedTickets.length,
+      totalCount: attendees.length,
+      errorMessage,
+    });
     await serverAnalytics.error(stripeCustomerId, `Failed to create ${failedTickets.length} tickets`, {
       type: 'system',
       severity: 'critical',
