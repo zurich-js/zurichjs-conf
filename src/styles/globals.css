@@ -409,12 +409,38 @@
     );
   }
 
+  .shaped-section:not(.shaped-section-drop-top):not(.shaped-section-drop-bottom).shaped-section-down {
+    clip-path: polygon(
+            0 0,
+            100% var(--shaped-section-angle),
+            100% 100%,
+            0 var(--shaped-section-complement)
+    );
+  }
+
+  .shaped-section:not(.shaped-section-drop-top):not(.shaped-section-drop-bottom).shaped-section-up {
+    clip-path: polygon(
+            0 var(--shaped-section-angle),
+            100% 0,
+            100% var(--shaped-section-complement),
+            0 100%
+    );
+  }
+
   /* Drop top variants - flatten the top edge */
   .shaped-section-drop-top.shaped-section-widen {
     clip-path: polygon(0 0, 100% 0, 100% 100%, 0 var(--shaped-section-complement));
   }
 
   .shaped-section-drop-top.shaped-section-tighten {
+    clip-path: polygon(0 0, 100% 0, 100% var(--shaped-section-complement), 0 100%);
+  }
+
+  .shaped-section-drop-top.shaped-section-down {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 var(--shaped-section-complement));
+  }
+
+  .shaped-section-drop-top.shaped-section-up {
     clip-path: polygon(0 0, 100% 0, 100% var(--shaped-section-complement), 0 100%);
   }
 
@@ -425,6 +451,14 @@
 
   .shaped-section-drop-bottom.shaped-section-tighten {
     clip-path: polygon(0 0, 100% var(--shaped-section-angle), 100% 100%, 0 100%);
+  }
+
+  .shaped-section-drop-bottom.shaped-section-down {
+    clip-path: polygon(0 0, 100% var(--shaped-section-angle), 100% 100%, 0 100%);
+  }
+
+  .shaped-section-drop-bottom.shaped-section-up {
+    clip-path: polygon(0 var(--shaped-section-angle), 100% 0, 100% 100%, 0 100%);
   }
 
   /* Rich Text Renderer */

@@ -8,6 +8,7 @@ export { FeatureList } from './FeatureList';
 export { PriceCard } from './PriceCard';
 export { TimelineDot } from './TimelineDot';
 export { TimelineCard } from './TimelineCard';
+export { StatCard } from './StatCard';
 export { LinkGroup } from './LinkGroup';
 export { NewsletterForm } from './NewsletterForm';
 export { FAQAccordion } from './FAQAccordion';

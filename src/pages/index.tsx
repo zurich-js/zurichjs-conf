@@ -1,4 +1,16 @@
-import { Hero, ScheduleSection, ShapedSection, DynamicSiteFooter, TicketsSectionWithStripe, TimelineSection, FAQSection, SponsorsSection, SpeakersSection, LearnSection, NavBar } from '@/components/organisms';
+import {
+    Hero,
+    ScheduleSection,
+    ShapedSection,
+    TicketsSectionWithStripe,
+    TimelineSection,
+    FAQSection,
+    SponsorsSection,
+    SpeakersSection,
+    LearnSection,
+    NavBar,
+    SiteFooter
+} from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
 import type { DehydratedState } from '@tanstack/react-query';
@@ -10,6 +22,7 @@ import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
+import React from "react";
 
 /**
  * Page props passed through _app.tsx for hydration
@@ -142,9 +155,13 @@ export default function Home() {
           <FAQSection />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="dark" dropBottom>
-          <DynamicSiteFooter />
-        </ShapedSection>
+          <ShapedSection
+              shape="straight"
+              variant="dark"
+              compactTop={true}
+          >
+              <SiteFooter />
+          </ShapedSection>
       </main>
     </>
   );

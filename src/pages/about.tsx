@@ -1,44 +1,12 @@
 import React from "react";
 import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
-import { motion } from "framer-motion";
-import { Logo } from "@/components/atoms/Logo";
-import { SocialIcon } from "@/components/atoms/SocialIcon";
-import { Button } from "@/components/atoms/Button";
-import { SectionContainer } from "@/components/organisms/SectionContainer";
-import { NavBar } from "@/components/organisms/NavBar";
-import { AboutHeroSection } from "@/components/organisms/AboutHeroSection";
-import { AboutMissionSection } from "@/components/organisms/AboutMissionSection";
-import { AboutStatsSection } from "@/components/organisms/AboutStatsSection";
-import { AboutTeamSection } from "@/components/organisms/AboutTeamSection";
-import { AboutVenueSection } from "@/components/organisms/AboutVenueSection";
-import { AboutValuesSection } from "@/components/organisms/AboutValuesSection";
-import { AboutCTASection } from "@/components/organisms/AboutCTASection";
 import { aboutPageData } from "@/data/about-us";
+import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
+import {Button, Heading, Kicker} from "@/components/atoms";
+import {TeamMemberCard} from "@/components/molecules/TeamMemberCard";
+import {ValueCard} from "@/components/molecules/ValueCard";
 
 export default function AboutUs() {
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.1,
-      },
-    },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: [0.22, 1, 0.36, 1] as const,
-      },
-    },
-  };
-
   // Breadcrumb schema for about page
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Home', url: '/' },
@@ -54,149 +22,199 @@ export default function AboutUs() {
         keywords="zurichjs team, javascript community zurich, swiss javascript group, technopark zurich conference"
         jsonLd={[organizationSchema, breadcrumbSchema]}
       />
-      <NavBar />
-      <main className="min-h-screen bg-white">
-        <div className="max-w-screen-lg mx-auto px-4">
-          <div className="py-16 md:py-24">
-            <AboutHeroSection data={aboutPageData.hero} />
-            <AboutMissionSection data={aboutPageData.mission} />
+      <main className="min-h-screen">
+        <ShapedSection
+          shape="down"
+          dropTop
+          variant="light"
+        >
+          <Heading level="h1" variant="light" className="text-2xl lg:text-3xl font-bold mt-40 mb-20">
+        {aboutPageData.hero.title}
+      </Heading>
+        <Kicker variant="light" className="mb-4">
+          {aboutPageData.mission.kicker}
+        </Kicker>
+        <Heading level="h2" variant="light" className="mb-8 text-xl font-bold">
+          {aboutPageData.mission.title}
+        </Heading>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          <div className="space-y-4">
+            {aboutPageData.mission.leftColumn.map((text, index) => (
+              <p
+                key={index}
+                className="text-gray-700 leading-relaxed text-base"
+                dangerouslySetInnerHTML={{ __html: text }}
+              />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {aboutPageData.mission.rightColumn.map((text, index) => (
+              <p
+                key={index}
+                className="text-gray-700 leading-relaxed text-base"
+                dangerouslySetInnerHTML={{ __html: text }}
+              />
+            ))}
           </div>
         </div>
+    </ShapedSection>
 
-        <AboutStatsSection data={aboutPageData.stats} />
-
-        <div className="max-w-screen-lg mx-auto px-4">
-          <AboutTeamSection data={aboutPageData.team} />
-        </div>
-
-        <AboutVenueSection data={aboutPageData.venue} />
-
-        <div className="max-w-screen-lg mx-auto px-4 mb-16">
-          <AboutValuesSection data={aboutPageData.values} />
-        </div>
-
-        <AboutCTASection data={aboutPageData.ctaSlides} />
-      </main>
-      <footer
-        className="relative text-white"
-        style={{
-          marginLeft: "calc(-50vw + 50%)",
-          marginRight: "calc(-50vw + 50%)",
-          width: "100vw",
-        }}
+      <ShapedSection
+        shape="down"
+        variant="gray"
       >
-        {/* Parallelogram Background */}
-        <div
-          className="absolute inset-0 bg-black"
-          style={{
-            transform: "skewY(3deg)",
-          }}
-          aria-hidden="true"
-        />
-
-        <div className="relative py-16 md:py-24">
-          <SectionContainer>
-            <motion.div
-              variants={container}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-100px" }}
-              className="space-y-12"
-            >
-              <motion.div variants={item} className="space-y-4">
-                <p className="text-brand-gray-light text-xs sm:text-sm font-semibold uppercase tracking-wider">
-                  Get in touch
-                </p>
-                <h2 className="text-2xl lg:text-3xl font-bold">
-                  Questions or feedback?
-                </h2>
-              </motion.div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-16">
-                <motion.div variants={item} className="space-y-4 md:space-y-6">
-                  <div className="space-y-3 md:space-y-4">
-                    <div>
-                      <p className="text-xs sm:text-sm text-brand-white-light font-semibold mb-1">
-                        General Inquiries
-                      </p>
-                      <a
-                        href="mailto:hello@zurichjs.com"
-                        className="text-brand-gray-light hover:underline text-sm sm:text-base break-all"
-                      >
-                        hello@zurichjs.com
-                      </a>
-                    </div>
-                    <div>
-                      <p className="text-xs sm:text-sm text-brand-white-light font-semibold mb-1">
-                        Ticket Support
-                      </p>
-                      <a
-                        href="mailto:hello@zurichjs.com"
-                        className="text-brand-gray-light hover:underline text-sm sm:text-base break-all"
-                      >
-                        hello@zurichjs.com
-                      </a>
-                    </div>
-                    <div>
-                      <p className="text-xs sm:text-sm text-brand-white-light font-semibold mb-1">
-                        Sponsorship
-                      </p>
-                      <a
-                        href="mailto:hello@zurichjs.com"
-                        className="hover:underline text-brand-gray-light text-sm sm:text-base break-all"
-                      >
-                        hello@zurichjs.com
-                      </a>
-                    </div>
-                  </div>
-                </motion.div>
-                <motion.div variants={item} className="space-y-4 md:space-y-6">
-                  <p className="text-brand-gray-light text-sm sm:text-base leading-relaxed">
-                    We would love to hear from you! Whether you have questions
-                    about the conference, want to become a sponsor, or are
-                    interested in speaking, our team is here to help.
-                  </p>
-                  <a
-                    href="mailto:hello@zurichjs.com?subject=Contact from ZurichJS Conf 2026"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full md:w-auto"
-                    >
-                      Contact Us
-                    </Button>
-                  </a>
-                </motion.div>
-              </div>
-              <motion.div
-                variants={item}
-                className="pt-8 md:pt-12 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6"
-              >
-                <div className="flex flex-col items-center md:items-start gap-2">
-                  <Logo width={140} height={38} className="sm:w-[160px] sm:h-[43px]" />
-                  <p className="text-xs sm:text-sm text-brand-gray-light">
-                    ZurichJS Conference 2026
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <SocialIcon
-                    kind="linkedin"
-                    href="https://www.linkedin.com/company/zurichjs"
-                    label="Follow ZurichJS on LinkedIn"
-                  />
-                  <SocialIcon
-                    kind="instagram"
-                    href="https://www.instagram.com/zurich.js"
-                    label="Follow ZurichJS on Instagram"
-                  />
-                </div>
-              </motion.div>
-            </motion.div>
-          </SectionContainer>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+          {aboutPageData.stats.map((stat, index) => (
+            <div className="text-center" key={index}>
+              <p className="text-5xl md:text-6xl font-bold mb-2">
+                {stat.value}
+              </p>
+              <p className="text-base">{stat.label}</p>
+            </div>
+          ))}
         </div>
-      </footer>
-    </>
+      </ShapedSection>
+
+      <ShapedSection
+        shape="down"
+        variant="light"
+      >
+        <Kicker variant="light" className="mb-4">
+          {aboutPageData.team.kicker}
+        </Kicker>
+        <Heading level="h2" variant="light" className="mb-6 text-xl font-bold">
+          {aboutPageData.team.title}
+        </Heading>
+        <p className="text-base text-gray-700 leading-relaxed mb-12 max-w-3xl">
+          {aboutPageData.team.description}
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {aboutPageData.team.members.map((member, index) => (
+            <TeamMemberCard
+              key={index}
+              imageSrc={member.imageSrc}
+              imageAlt={member.imageAlt}
+              name={member.name}
+              role={member.role}
+            />
+          ))}
+        </div>
+        <div className="mt-16">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
+            {aboutPageData.team.volunteersTitle}
+          </h3>
+          <p className="text-base text-gray-700 leading-relaxed mb-8 max-w-3xl">
+            {aboutPageData.team.volunteersDescription}
+          </p>
+          <div className="flex flex-wrap gap-4">
+            {aboutPageData.team.volunteers.map((name, index) => (
+              <div key={index} className=" bg-brand-gray-lightest rounded-lg p-2 px-4 text-brand-gray-darkest leading-relaxed flex items-center">
+                <p className="font-medium">{name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+    </ShapedSection>
+
+      <ShapedSection
+        shape="down"
+        variant="medium"
+      >
+        <div className="rich-text-renderer" id={"venue"}>
+          <Kicker variant="dark" className="mb-4">
+            {aboutPageData.venue.kicker}
+          </Kicker>
+          <Heading level="h2" variant="dark" className="mb-8 text-xl font-bold">
+            {aboutPageData.venue.title}
+          </Heading>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div className="space-y-4">
+              {aboutPageData.venue.description.map((text, index) => (
+                <p
+                  key={index}
+                  className="text-white leading-relaxed text-base"
+                  dangerouslySetInnerHTML={{ __html: text }}
+                />
+              ))}
+            </div>
+            <div>
+              <div className="mb-6 w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
+                <iframe
+                  src={aboutPageData.venue.mapUrl}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title={`${aboutPageData.venue.title} location`}
+                />
+              </div>
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  asChild
+                  href={aboutPageData.venue.directionsUrl}
+                >
+                  Get Directions
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  asChild
+                  href={aboutPageData.venue.websiteUrl}
+                >
+                  Visit Website
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ShapedSection>
+
+      <ShapedSection
+        shape="down"
+        variant="light"
+      >
+        <Kicker variant="light" className="mb-4">
+          {aboutPageData.values.kicker}
+        </Kicker>
+        <Heading level="h2" variant="light" className="mb-12 text-xl font-bold">
+          {aboutPageData.values.title}
+        </Heading>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {aboutPageData.values.values.map((value, index) => (
+            <ValueCard
+              key={index}
+              icon={value.icon}
+              title={value.title}
+              description={value.description}
+            />
+          ))}
+        </div>
+      </ShapedSection>
+
+      <ShapedSection
+        shape="down"
+        variant="yellow"
+      >
+        <AboutCTASection data={aboutPageData.ctaSlides} />
+
+      </ShapedSection>
+
+      <ShapedSection
+        shape="tighten"
+        variant="dark"
+        compactTop={true}
+        dropBottom={true}
+      >
+        <SiteFooter />
+      </ShapedSection>
+    </main>
+  </>
   );
 }

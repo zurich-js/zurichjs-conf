@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { SEO } from '@/components/SEO';
 import { Logo, Heading, Kicker } from '@/components/atoms';
-import { ShapedSection, DynamicSiteFooter, SectionContainer } from '@/components/organisms';
+import { ShapedSection, SectionContainer } from '@/components/organisms';
 import { BackgroundMedia } from '@/components/molecules';
 
 // Fun JavaScript error messages
@@ -246,9 +246,6 @@ export default function Custom404() {
           </SectionContainer>
         </ShapedSection>
 
-        <ShapedSection shape="widen" variant="dark" dropBottom>
-          <DynamicSiteFooter />
-        </ShapedSection>
       </main>
     </>
   );

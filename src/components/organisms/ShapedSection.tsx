@@ -8,8 +8,9 @@ export interface ShapedSectionProps {
    * - tighten: Contracts at the edges
    * - down: Slopes downward
    * - up: Slopes upward
+   * - straight: No angled edges, plain rectangular section
    */
-  shape: 'widen' | 'tighten' | 'down' | 'up';
+  shape: 'widen' | 'tighten' | 'down' | 'up' | 'straight';
 
   /**
    * Visual variant determining background and text colors
@@ -18,16 +19,16 @@ export interface ShapedSectionProps {
    * - medium: Medium gray background with white text
    * - dark: black background with white text
    */
-  variant: 'light' | 'yellow' | 'medium' | 'dark';
+  variant: 'light' | 'yellow' | 'gray' | 'medium' | 'dark';
 
   /**
-   * Whether to apply angled clip-path to the top edge
+   * Whether to keep the top edge straight
    * Use for the first section in a sequence
    */
   dropTop?: boolean;
 
   /**
-   * Whether to apply angled clip-path to the bottom edge
+   * Whether to keep the bottom edge straight
    * Use for the last section in a sequence
    */
   dropBottom?: boolean;
@@ -84,8 +85,9 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
 }) => {
   // Map variants to Tailwind theme colors (defined in @theme in globals.css)
   const variantStyles = {
-    light: 'bg-brand-white text-black',
-    yellow: 'bg-brand-yellow-main text-black',
+    light: 'bg-brand-white text-brand-black',
+    yellow: 'bg-brand-yellow-main text-brand-black',
+    gray: 'bg-brand-gray-light text-brand-black',
     medium: 'bg-brand-gray-darkest text-brand-white',
     dark: 'bg-brand-black text-brand-white',
   };
@@ -148,18 +150,27 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     '4xl:py-76',
   ].join(' ')
 
-  const spacingClasses = dropTop && !dropBottom ? spaceWithoutBottom :
-    dropBottom && !dropTop ? spaceWithoutTop :
-    !dropTop && !dropBottom ? (compactTop ? spaceStraightCompactTop : spaceStraight) :
-    spaceWithBoth;
+  const keepEdgesStraight = shape === 'straight' || (dropTop && dropBottom);
+
+  const spacingClasses = (function () {
+    if (keepEdgesStraight) return spaceWithBoth;
+    if (dropTop && !dropBottom) return spaceWithoutBottom;
+    if (dropBottom && !dropTop) return spaceWithoutTop;
+    if (!dropTop && !dropBottom) {
+      return compactTop ? spaceStraightCompactTop : spaceStraight;
+    }
+    return spaceWithBoth;
+  })();
 
   // Build the shape-specific clip-path class
-  const shapeClass = `shaped-section-${shape}`;
+  const shapeClass = keepEdgesStraight ? undefined : `shaped-section-${shape}`;
 
   // Build drop modifier classes
   const dropClasses = [
-    dropTop && 'shaped-section-drop-top',
-    dropBottom && 'shaped-section-drop-bottom',
+    !keepEdgesStraight &&
+    dropTop && !dropBottom && 'shaped-section-drop-top',
+    !keepEdgesStraight &&
+    !dropTop && dropBottom && 'shaped-section-drop-bottom',
   ].filter(Boolean).join(' ');
 
   return (
@@ -184,4 +195,3 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     </section>
   );
 };
-

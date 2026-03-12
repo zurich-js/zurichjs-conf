@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Kicker, Heading } from '@/components/atoms';
 import { Button } from '@/components/atoms/Button';
-import { ParallelogramSection } from '@/components/organisms/ParallelogramSection';
 import { AboutCTASlide } from '@/data/about-us';
 
 export interface AboutCTASectionProps {
@@ -27,9 +26,7 @@ export const AboutCTASection: React.FC<AboutCTASectionProps> = ({ data }) => {
   };
 
   return (
-    <ParallelogramSection
-      backgroundColor="var(--color-brand-yellow-main)"
-    >
+    <>
       <div className="relative min-h-[600px] md:min-h-[500px]">
         <AnimatePresence mode="wait">
           <motion.div
@@ -103,6 +100,6 @@ export const AboutCTASection: React.FC<AboutCTASectionProps> = ({ data }) => {
           </div>
         )}
       </div>
-    </ParallelogramSection>
+    </>
   );
 };

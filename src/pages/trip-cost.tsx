@@ -12,8 +12,6 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight } from 'lucide-react';
 import { SEO, generateBreadcrumbSchema } from '@/components/SEO';
 import { NavBar } from '@/components/organisms/NavBar';
-import { DynamicSiteFooter } from '@/components/organisms/DynamicSiteFooter';
-import { ShapedSection } from '@/components/organisms/ShapedSection';
 import { SectionContainer } from '@/components/organisms/SectionContainer';
 import { Button } from '@/components/atoms/Button';
 import { Heading } from '@/components/atoms/Heading';
@@ -46,6 +44,7 @@ import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { analytics } from '@/lib/analytics/client';
 import type { SupportedCurrency } from '@/config/currency';
+import {SiteFooter, ShapedSection} from "@/components/organisms";
 
 const DEFAULT_INPUT: TripCostInput = {
   ticketCHF: DEFAULT_TICKET_PRICE_CHF,
@@ -304,9 +303,13 @@ export default function TripCostPage() {
           </div>
         </SectionContainer>
       </main>
-
-      <ShapedSection shape="tighten" variant="dark" dropBottom><DynamicSiteFooter /></ShapedSection>
-
+      <ShapedSection
+        shape="straight"
+        variant="dark"
+        compactTop={true}
+      >
+        <SiteFooter showContactLinks />
+      </ShapedSection>
       {/* Sticky mobile total bar */}
       <div
         className={`fixed bottom-0 inset-x-0 z-40 lg:hidden bg-black border-t border-brand-gray-dark px-4 py-3 transition-transform duration-300 ${breakdownVisible ? 'translate-y-full' : 'translate-y-0'}`}
