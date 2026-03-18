@@ -28,9 +28,9 @@ export interface Plan {
    */
   title: string;
   /**
-   * Short description/blurb
+   * Short description/blurb (string or React node for rich content)
    */
-  blurb?: string;
+  blurb?: React.ReactNode;
   /**
    * Compare/original price (in base units)
    */

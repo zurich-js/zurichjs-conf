@@ -9,8 +9,9 @@ import type { Feature } from '@/components/molecules/FeatureList';
 import type { FAQItem } from '@/components/molecules/FAQAccordion';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
 import { redirectToCheckout } from '@/lib';
+import { InfoIcon } from 'lucide-react';
 
-import { getCurrentStageEndDate } from '@/config/pricing-stages';
+import { getCurrentStageEndDate, GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
 
 /**
  * Get the current pricing stage end date for countdown display
@@ -199,6 +200,48 @@ export const TICKET_FAQ: FAQItem[] = [
 ];
 
 /**
+ * Build dynamic blurb for student/unemployed tickets showing stock and info icon
+ */
+const buildStudentBlurb = (
+  stock: TicketPlan['stock'],
+  onInfoClick?: () => void,
+): React.ReactNode => {
+  const isSoldOut = stock?.soldOut ?? false;
+  const remaining = stock?.remaining ?? null;
+  const total = GLOBAL_STOCK_LIMITS.student_unemployed;
+
+  const infoButton = onInfoClick ? (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onInfoClick();
+      }}
+      className="inline-flex items-center justify-center w-4 h-4 ml-0.5 align-middle text-brand-gray-light hover:text-brand-white transition-colors cursor-pointer"
+      aria-label="Learn more about student ticket availability"
+    >
+      <InfoIcon size={14} />
+    </button>
+  ) : null;
+
+  if (isSoldOut) {
+    return (
+      <span>
+        Sponsors help us support those that can&apos;t afford a ticket. Momentarily sold out{' '}
+        {infoButton}
+      </span>
+    );
+  }
+
+  return (
+    <span>
+      Sponsors help us support those that can&apos;t afford a ticket.{' '}
+      {remaining !== null ? `${remaining}/${total}` : `${total}`} tickets currently available.{' '}
+      {infoButton}
+    </span>
+  );
+};
+
+/**
  * Map Stripe plan to ticket plan with features and metadata
  */
 export const mapStripePlanToTicketPlan = (
@@ -212,7 +255,8 @@ export const mapStripePlanToTicketPlan = (
     priceId: string;
     variant?: 'standard' | 'vip' | 'member';
   }, quantity: number) => void,
-  navigateToCart?: () => void
+  navigateToCart?: () => void,
+  onStudentInfoClick?: () => void,
 ): Plan => {
   const features = TICKET_FEATURES[stripePlan.id] || TICKET_FEATURES.standard;
   const metadata = TICKET_METADATA[stripePlan.id] || TICKET_METADATA.standard;
@@ -231,10 +275,18 @@ export const mapStripePlanToTicketPlan = (
   // Determine if sold out
   const isSoldOut = stripePlan.stock?.soldOut ?? false;
 
+  // Build blurb - dynamic for student/unemployed, static for others
+  const blurb = isStudentUnemployed
+    ? buildStudentBlurb(stripePlan.stock, onStudentInfoClick)
+    : metadata.blurb;
+
+  // For student tickets that are sold out, replace CTA with "Get notified"
+  const studentSoldOutCta = isStudentUnemployed && isSoldOut;
+
   return {
     id: stripePlan.id,
     title: stripePlan.title,
-    blurb: metadata.blurb,
+    blurb,
     comparePrice,
     price,
     currency: stripePlan.currency,
@@ -244,6 +296,11 @@ export const mapStripePlanToTicketPlan = (
     cta: {
       type: 'button' as const,
       onClick: () => {
+        if (studentSoldOutCta) {
+          // Open the info modal which has the subscribe form
+          onStudentInfoClick?.();
+          return;
+        }
         if (isSoldOut) {
           return; // Button should be disabled anyway
         }
@@ -276,14 +333,16 @@ export const mapStripePlanToTicketPlan = (
           }
         }
       },
-      label: isSoldOut
-        ? 'Sold Out'
-        : isStudentUnemployed
-          ? 'Verify & Get Ticket'
-          : stripePlan.id === 'vip'
-            ? 'Get the full xp'
-            : 'Get your ticket',
-      disabled: isSoldOut,
+      label: studentSoldOutCta
+        ? 'Get notified'
+        : isSoldOut
+          ? 'Sold Out'
+          : isStudentUnemployed
+            ? 'Verify & Get Ticket'
+            : stripePlan.id === 'vip'
+              ? 'Get the full xp'
+              : 'Get your ticket',
+      disabled: isSoldOut && !studentSoldOutCta,
     },
   };
 };
@@ -303,10 +362,11 @@ export const createTicketDataFromStripe = (
     priceId: string;
     variant?: 'standard' | 'vip' | 'member';
   }, quantity: number) => void,
-  navigateToCart?: () => void
+  navigateToCart?: () => void,
+  onStudentInfoClick?: () => void,
 ): Omit<TicketsSectionProps, 'className'> => {
   const plans = stripePlans.map((plan) =>
-    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, navigateToCart)
+    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, navigateToCart, onStudentInfoClick)
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 

@@ -36,9 +36,9 @@ export interface PriceCardProps {
    */
   title: string;
   /**
-   * Short description/blurb
+   * Short description/blurb (string or React node for rich content)
    */
-  blurb?: string;
+  blurb?: React.ReactNode;
   /**
    * Compare/original price
    */
@@ -157,9 +157,9 @@ export const PriceCard: React.FC<PriceCardProps> = ({
         </div>
         <div className="flex flex-col gap-4 sm:gap-8">
           {blurb && (
-            <p className="text-sm text-brand-gray-lightest leading-relaxed">
+            <div className="text-sm text-brand-gray-lightest leading-relaxed">
               {blurb}
-            </p>
+            </div>
           )}
 
           {/* Price */}

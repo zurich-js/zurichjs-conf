@@ -13,7 +13,7 @@ import { getResendClient } from './config';
  */
 export async function addNewsletterContact(
   email: string,
-  source: 'footer' | 'popup' | 'checkout' | 'other' = 'footer'
+  source: 'footer' | 'popup' | 'checkout' | 'student_ticket_waitlist' | 'other' = 'footer'
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const resend = getResendClient();

@@ -9,7 +9,7 @@ import { serverAnalytics } from '@/lib/analytics/server';
 
 interface SubscribeRequest {
   email: string;
-  source?: 'footer' | 'popup' | 'checkout' | 'other';
+  source?: 'footer' | 'popup' | 'checkout' | 'student_ticket_waitlist' | 'other';
 }
 
 interface SubscribeResponse {

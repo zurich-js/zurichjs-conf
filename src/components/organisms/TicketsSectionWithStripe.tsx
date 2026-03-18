@@ -3,9 +3,9 @@
  * Wrapper around TicketsSection that fetches pricing from Stripe
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { TicketsSection } from './TicketsSection';
-import { StudentVerificationModal, VerificationSuccessModal } from '@/components/molecules';
+import { StudentVerificationModal, VerificationSuccessModal, StudentTicketInfoModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useStudentVerification } from '@/hooks/useStudentVerification';
 import { useCart } from '@/contexts/CartContext';
@@ -41,6 +41,15 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     verificationId,
   } = useStudentVerification();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isStudentInfoModalOpen, setIsStudentInfoModalOpen] = useState(false);
+
+  const openStudentInfoModal = useCallback(() => {
+    setIsStudentInfoModalOpen(true);
+  }, []);
+
+  const closeStudentInfoModal = useCallback(() => {
+    setIsStudentInfoModalOpen(false);
+  }, []);
 
   // Show loading state only when there's no data yet
   // During hydration, isLoading might be true briefly even with prefetched data
@@ -147,7 +156,11 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     addToCart(item, quantity);
   };
 
-  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart);
+  // Determine if student tickets are sold out (for the info modal)
+  const studentPlan = plans.find(p => p.id === 'standard_student_unemployed');
+  const isStudentSoldOut = studentPlan?.stock?.soldOut ?? false;
+
+  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart, openStudentInfoModal);
 
   // Disable all CTAs while navigating to prevent duplicate adds
   if (isNavigating) {
@@ -173,6 +186,11 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
         onClose={closeSuccessDialog}
         email={verifiedEmail}
         verificationId={verificationId}
+      />
+      <StudentTicketInfoModal
+        isOpen={isStudentInfoModalOpen}
+        onClose={closeStudentInfoModal}
+        isSoldOut={isStudentSoldOut}
       />
     </>
   );
