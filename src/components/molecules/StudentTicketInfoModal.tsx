@@ -187,7 +187,7 @@ export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
                       loading={isSubmitting}
                       disabled={isSubmitting}
                     >
-                      Subscribe
+                      {isSubmitting ? '' : 'Subscribe'}
                     </Button>
                   </div>
                   {error && (
