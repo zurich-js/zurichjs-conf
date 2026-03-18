@@ -1,18 +1,14 @@
 /**
- * Newsletter Subscription API Endpoint
- * Handles newsletter signups using Resend Contacts API
+ * Student Ticket Waitlist API
+ * Adds email to a dedicated Resend audience and sends a Slack notification
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { addNewsletterContact } from '@/lib/email';
+import { addStudentWaitlistContact } from '@/lib/email';
+import { notifyStudentTicketWaitlist } from '@/lib/platform-notifications/send';
 import { serverAnalytics } from '@/lib/analytics/server';
 
-interface SubscribeRequest {
-  email: string;
-  source?: 'footer' | 'popup' | 'checkout' | 'other';
-}
-
-interface SubscribeResponse {
+interface WaitlistResponse {
   success: boolean;
   error?: string;
   message?: string;
@@ -20,9 +16,8 @@ interface SubscribeResponse {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<SubscribeResponse>
+  res: NextApiResponse<WaitlistResponse>
 ) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({
       success: false,
@@ -31,53 +26,40 @@ export default async function handler(
   }
 
   try {
-    const { email, source = 'footer' }: SubscribeRequest = req.body;
+    const { email } = req.body;
 
-    // Validate email
     if (!email || typeof email !== 'string') {
-      await serverAnalytics.error('anonymous', 'Invalid email provided for newsletter', {
-        type: 'validation',
-        severity: 'low',
-        code: 'NEWSLETTER_INVALID_EMAIL',
-      });
-
       return res.status(400).json({
         success: false,
         error: 'Email is required',
       });
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      await serverAnalytics.error(email, 'Invalid email format for newsletter', {
-        type: 'validation',
-        severity: 'low',
-        code: 'NEWSLETTER_INVALID_EMAIL_FORMAT',
-      });
-
       return res.status(400).json({
         success: false,
         error: 'Please enter a valid email address',
       });
     }
 
-    // Add contact to newsletter
-    const result = await addNewsletterContact(email, source);
+    const result = await addStudentWaitlistContact(email);
 
     if (!result.success) {
       return res.status(500).json({
         success: false,
-        error: result.error || 'Failed to subscribe to newsletter',
+        error: result.error || 'Failed to join waitlist',
       });
     }
 
-    // Flush analytics events before responding
+    // Fire-and-forget Slack notification
+    notifyStudentTicketWaitlist({ email });
+
     await serverAnalytics.flush();
 
     return res.status(200).json({
       success: true,
-      message: 'Successfully subscribed to newsletter',
+      message: 'Successfully joined the student ticket waitlist',
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -85,14 +67,14 @@ export default async function handler(
     await serverAnalytics.error('anonymous', errorMessage, {
       type: 'system',
       severity: 'high',
-      code: 'NEWSLETTER_API_ERROR',
+      code: 'STUDENT_WAITLIST_API_ERROR',
     });
 
     await serverAnalytics.flush();
 
     return res.status(500).json({
       success: false,
-      error: 'An error occurred while subscribing to newsletter',
+      error: 'An error occurred while joining the waitlist',
     });
   }
 }

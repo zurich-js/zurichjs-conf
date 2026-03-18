@@ -51,13 +51,10 @@ export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/newsletter/subscribe', {
+      const response = await fetch('/api/tickets/student-waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          source: 'student_ticket_waitlist',
-        }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
@@ -142,58 +139,60 @@ export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
                 </ul>
               </div>
 
-              {/* Subscribe form */}
+              {/* Subscribe form - only shown when sold out */}
               {isSoldOut && (
-                <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-xl p-4 mb-6">
-                  <p className="text-sm text-brand-gray-light mb-1">
-                    <strong className="text-brand-white">Tickets are momentarily sold out.</strong>
-                  </p>
-                  <p className="text-sm text-brand-gray-light">
-                    Subscribe below to get notified as soon as the next wave goes live.
-                  </p>
-                </div>
-              )}
-
-              {isSubscribed ? (
-                <div className="flex items-center gap-3 bg-green-900/30 border border-green-700/40 rounded-xl p-4 mb-4">
-                  <CheckCircleIcon size={20} className="text-green-400 shrink-0" />
-                  <p className="text-sm text-green-300">
-                    You&#39;re on the list! We&#39;ll email you when more tickets become available.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubscribe} className="mb-4">
-                  <label htmlFor="student-notify-email" className="flex items-center gap-1.5 text-sm font-semibold text-brand-white mb-2">
-                    <BellRingIcon size={14} />
-                    Get notified when tickets are available
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id="student-notify-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (error) setError(null);
-                      }}
-                      placeholder="your@email.com"
-                      disabled={isSubmitting}
-                      className="flex-1 h-10 px-4 text-sm bg-brand-gray-dark border border-brand-gray-medium rounded-full text-brand-white placeholder:text-brand-gray-light focus:outline-none focus:ring-2 focus:ring-brand-primary/50 disabled:opacity-50"
-                    />
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="sm"
-                      loading={isSubmitting}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? '' : 'Subscribe'}
-                    </Button>
+                <>
+                  <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-xl p-4 mb-6">
+                    <p className="text-sm text-brand-gray-light mb-1">
+                      <strong className="text-brand-white">Tickets are momentarily sold out.</strong>
+                    </p>
+                    <p className="text-sm text-brand-gray-light">
+                      Subscribe below to get notified as soon as the next wave goes live.
+                    </p>
                   </div>
-                  {error && (
-                    <p className="text-brand-red text-sm mt-1.5">{error}</p>
+
+                  {isSubscribed ? (
+                    <div className="flex items-center gap-3 bg-green-900/30 border border-green-700/40 rounded-xl p-4 mb-4">
+                      <CheckCircleIcon size={20} className="text-green-400 shrink-0" />
+                      <p className="text-sm text-green-300">
+                        You&#39;re on the list! We&#39;ll email you when more tickets become available.
+                      </p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubscribe} className="mb-4">
+                      <label htmlFor="student-notify-email" className="flex items-center gap-1.5 text-sm font-semibold text-brand-white mb-2">
+                        <BellRingIcon size={14} />
+                        Get notified when tickets are available
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="student-notify-email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (error) setError(null);
+                          }}
+                          placeholder="your@email.com"
+                          disabled={isSubmitting}
+                          className="flex-1 h-10 px-4 text-sm bg-brand-gray-dark border border-brand-gray-medium rounded-full text-brand-white placeholder:text-brand-gray-light focus:outline-none focus:ring-2 focus:ring-brand-primary/50 disabled:opacity-50"
+                        />
+                        <Button
+                          type="submit"
+                          variant="primary"
+                          size="sm"
+                          loading={isSubmitting}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? '' : 'Subscribe'}
+                        </Button>
+                      </div>
+                      {error && (
+                        <p className="text-brand-red text-sm mt-1.5">{error}</p>
+                      )}
+                    </form>
                   )}
-                </form>
+                </>
               )}
 
               {/* Close action */}

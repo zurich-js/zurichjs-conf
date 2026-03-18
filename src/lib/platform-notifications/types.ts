@@ -103,3 +103,7 @@ export interface TicketCreationErrorData {
   totalCount: number
   errorMessage: string
 }
+
+export interface StudentTicketWaitlistData {
+  email: string
+}

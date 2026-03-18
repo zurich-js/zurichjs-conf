@@ -1,35 +1,36 @@
 /**
- * Newsletter Functions
- * Handles adding contacts to the newsletter using Resend's Contacts API
+ * Student Ticket Waitlist
+ * Manages a separate Resend audience for student/unemployed ticket waitlist subscribers
  */
 
 import { serverAnalytics } from '@/lib/analytics/server';
 import { getResendClient } from './config';
 
+const AUDIENCE_ID = process.env.RESEND_STUDENT_WAITLIST_AUDIENCE_ID;
+
 /**
- * Add a contact to the newsletter
- * Uses Resend's Contacts API to add contacts to the mailing list
- * As of November 2025, contacts are global entities and don't require an audienceId
+ * Add a contact to the student ticket waitlist audience in Resend
  */
-export async function addNewsletterContact(
-  email: string,
-  source: 'footer' | 'popup' | 'checkout' | 'other' = 'footer'
+export async function addStudentWaitlistContact(
+  email: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!AUDIENCE_ID) {
+      throw new Error('RESEND_STUDENT_WAITLIST_AUDIENCE_ID is not configured');
+    }
+
     const resend = getResendClient();
 
-    // Create contact
-    // Resend will automatically handle duplicates - if the contact already exists,
-    // it will update the existing contact
     const result = await resend.contacts.create({
       email,
       unsubscribed: false,
+      audienceId: AUDIENCE_ID,
     });
 
     if ('error' in result && result.error) {
       await serverAnalytics.track('newsletter_subscribed', email, {
         email,
-        subscription_source: source,
+        subscription_source: 'other' as const,
         subscription_success: false,
         error_message: result.error.message || 'Failed to add contact',
       });
@@ -40,10 +41,9 @@ export async function addNewsletterContact(
       };
     }
 
-    // Track successful subscription
     await serverAnalytics.track('newsletter_subscribed', email, {
       email,
-      subscription_source: source,
+      subscription_source: 'other' as const,
       subscription_success: true,
     });
 
@@ -54,7 +54,7 @@ export async function addNewsletterContact(
     await serverAnalytics.error(email, errorMessage, {
       type: 'system',
       severity: 'medium',
-      code: 'NEWSLETTER_SUBSCRIPTION_ERROR',
+      code: 'STUDENT_WAITLIST_SUBSCRIPTION_ERROR',
     });
 
     return { success: false, error: errorMessage };

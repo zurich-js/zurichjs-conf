@@ -19,6 +19,7 @@ import type {
   CfpEmailScheduledData,
   TicketReassignedData,
   TicketCreationErrorData,
+  StudentTicketWaitlistData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -296,6 +297,17 @@ export function notifyTicketReassigned(data: TicketReassignedData): void {
     ]
   )
   void safeSend('ticket_reassigned', text, blocks)
+}
+
+export function notifyStudentTicketWaitlist(data: StudentTicketWaitlistData): void {
+  const text = `Student ticket waitlist: ${data.email}`
+  const blocks = buildBlocks(
+    ':bell: *Student Ticket Waitlist Signup*',
+    [
+      { label: 'Email', value: data.email },
+    ]
+  )
+  void safeSend('student_ticket_waitlist_signup', text, blocks)
 }
 
 export function notifyTicketCreationError(data: TicketCreationErrorData): void {

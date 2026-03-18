@@ -40,3 +40,6 @@ export { sendVipUpgradeEmail } from './vip-emails';
 
 // Newsletter
 export { addNewsletterContact } from './newsletter';
+
+// Student ticket waitlist
+export { addStudentWaitlistContact } from './student-waitlist';

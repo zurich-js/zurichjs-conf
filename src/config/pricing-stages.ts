@@ -64,7 +64,7 @@ export interface StageConfig {
  */
 export const GLOBAL_STOCK_LIMITS: GlobalStockLimits = {
   vip: 15,
-  student_unemployed: 30,
+  student_unemployed: 25,
 };
 
 /**
