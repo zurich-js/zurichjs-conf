@@ -35,6 +35,8 @@ export interface StockLimits {
 export interface GlobalStockLimits {
   /** VIP tickets are limited globally across all stages */
   vip: number;
+  /** Student/Unemployed tickets are limited globally across all stages */
+  student_unemployed: number;
 }
 
 /**
@@ -62,6 +64,7 @@ export interface StageConfig {
  */
 export const GLOBAL_STOCK_LIMITS: GlobalStockLimits = {
   vip: 15,
+  student_unemployed: 40,
 };
 
 /**
@@ -230,6 +233,17 @@ export const getStockInfo = (
       remaining: Math.max(0, vipTotal - vipSold),
       total: vipTotal,
       soldOut: vipSold >= vipTotal,
+    };
+  }
+
+  // Check Student/Unemployed global limit
+  if (category === 'standard_student_unemployed') {
+    const studentSold = stockCounts.byCategory.standard_student_unemployed || 0;
+    const studentTotal = GLOBAL_STOCK_LIMITS.student_unemployed;
+    return {
+      remaining: Math.max(0, studentTotal - studentSold),
+      total: studentTotal,
+      soldOut: studentSold >= studentTotal,
     };
   }
 

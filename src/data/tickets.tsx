@@ -49,7 +49,7 @@ export const TICKET_METADATA: Record<
   { blurb: string; variant: 'standard' | 'vip' | 'member' }
 > = {
   standard_student_unemployed: {
-    blurb: 'Building the future, one ticket at a time.',
+    blurb: 'Building the future, one ticket at a time. Limited to 40.',
     variant: 'member',
   },
   standard: {

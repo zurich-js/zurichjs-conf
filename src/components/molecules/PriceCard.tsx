@@ -148,8 +148,8 @@ export const PriceCard: React.FC<PriceCardProps> = ({
             )}
             {title}
           </Heading>
-          {/* VIP remaining stock badge */}
-          {isVip && hasLimitedStock && !stock?.soldOut && stock?.remaining && (
+          {/* Remaining stock badge for limited tickets */}
+          {hasLimitedStock && !stock?.soldOut && stock?.remaining && (
             <span className="bg-gray-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
               {stock.remaining} left
             </span>

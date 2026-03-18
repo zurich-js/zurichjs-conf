@@ -148,16 +148,26 @@ export default async function handler(
           ? getStockInfo(category, currentStage, counts)
           : { remaining: null, total: null, soldOut: false };
 
-        // For VIP, always show global stock limit
-        const finalStock: StockInfo = category === 'vip'
-          ? {
-              remaining: counts
-                ? Math.max(0, GLOBAL_STOCK_LIMITS.vip - (counts.byCategory.vip || 0))
-                : GLOBAL_STOCK_LIMITS.vip,
-              total: GLOBAL_STOCK_LIMITS.vip,
-              soldOut: counts ? (counts.byCategory.vip || 0) >= GLOBAL_STOCK_LIMITS.vip : false,
-            }
-          : stock;
+        // For VIP and Student/Unemployed, always show global stock limit
+        let finalStock: StockInfo = stock;
+        if (category === 'vip') {
+          finalStock = {
+            remaining: counts
+              ? Math.max(0, GLOBAL_STOCK_LIMITS.vip - (counts.byCategory.vip || 0))
+              : GLOBAL_STOCK_LIMITS.vip,
+            total: GLOBAL_STOCK_LIMITS.vip,
+            soldOut: counts ? (counts.byCategory.vip || 0) >= GLOBAL_STOCK_LIMITS.vip : false,
+          };
+        } else if (category === 'standard_student_unemployed') {
+          const sold = counts?.byCategory.standard_student_unemployed || 0;
+          finalStock = {
+            remaining: counts
+              ? Math.max(0, GLOBAL_STOCK_LIMITS.student_unemployed - sold)
+              : GLOBAL_STOCK_LIMITS.student_unemployed,
+            total: GLOBAL_STOCK_LIMITS.student_unemployed,
+            soldOut: counts ? sold >= GLOBAL_STOCK_LIMITS.student_unemployed : false,
+          };
+        }
 
         return {
           id: category,

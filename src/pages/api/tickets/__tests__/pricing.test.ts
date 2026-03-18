@@ -69,6 +69,7 @@ vi.mock('@/config/pricing-stages', () => ({
   GLOBAL_STOCK_LIMITS: {
     vip: 50,
     standard: 500,
+    student_unemployed: 40,
   },
 }));
 
@@ -631,6 +632,30 @@ describe('Ticket Pricing API Handler', () => {
 
       expect(vipPlan?.stock.total).toBe(50); // GLOBAL_STOCK_LIMITS.vip
       expect(vipPlan?.stock.remaining).toBe(40); // 50 - 10 sold
+    });
+
+    it('should use GLOBAL_STOCK_LIMITS for student/unemployed tickets', async () => {
+      mocks.mockGetTicketCounts.mockResolvedValue({
+        counts: {
+          total: 100,
+          byCategory: { standard_student_unemployed: 15 },
+          byStage: {},
+        },
+      });
+
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      const json = res._json as {
+        plans: Array<{ id: string; stock: { remaining: number; total: number; soldOut: boolean } }>;
+      };
+      const studentPlan = json.plans.find((p) => p.id === 'standard_student_unemployed');
+
+      expect(studentPlan?.stock.total).toBe(40); // GLOBAL_STOCK_LIMITS.student_unemployed
+      expect(studentPlan?.stock.remaining).toBe(25); // 40 - 15 sold
+      expect(studentPlan?.stock.soldOut).toBe(false);
     });
   });
 
