@@ -4,9 +4,14 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
 import { addStudentWaitlistContact } from '@/lib/email';
 import { notifyStudentTicketWaitlist } from '@/lib/platform-notifications/send';
 import { serverAnalytics } from '@/lib/analytics/server';
+
+const schema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
 
 interface WaitlistResponse {
   success: boolean;
@@ -26,22 +31,15 @@ export default async function handler(
   }
 
   try {
-    const { email } = req.body;
-
-    if (!email || typeof email !== 'string') {
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
       return res.status(400).json({
         success: false,
-        error: 'Email is required',
+        error: parsed.error.issues[0]?.message || 'Invalid input',
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Please enter a valid email address',
-      });
-    }
+    const { email } = parsed.data;
 
     const result = await addStudentWaitlistContact(email);
 

@@ -50,7 +50,7 @@ export const TICKET_METADATA: Record<
   { blurb: string; variant: 'standard' | 'vip' | 'member' }
 > = {
   standard_student_unemployed: {
-    blurb: 'Building the future, one ticket at a time. Limited to 40.',
+    blurb: `Building the future, one ticket at a time. Limited to ${GLOBAL_STOCK_LIMITS.student_unemployed}.`,
     variant: 'member',
   },
   standard: {
@@ -293,6 +293,7 @@ export const mapStripePlanToTicketPlan = (
     features,
     variant: metadata.variant,
     stock: stripePlan.stock,
+    hideStockBadge: isStudentUnemployed,
     cta: {
       type: 'button' as const,
       onClick: () => {

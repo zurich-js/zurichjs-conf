@@ -71,6 +71,10 @@ export interface PriceCardProps {
    * Stock availability info
    */
   stock?: StockInfo;
+  /**
+   * Hide the "X left" stock badge even when stock info is available
+   */
+  hideStockBadge?: boolean;
 }
 
 /**
@@ -89,9 +93,10 @@ export const PriceCard: React.FC<PriceCardProps> = ({
   variant = 'standard',
   delay = 0,
   stock,
+  hideStockBadge = false,
 }) => {
   const isVip = variant === 'vip';
-  const hasLimitedStock = stock?.total !== null && stock?.remaining !== null;
+  const hasLimitedStock = !hideStockBadge && stock?.total !== null && stock?.remaining !== null;
 
   const handleCTAClick = () => {
     // Track ticket button click
