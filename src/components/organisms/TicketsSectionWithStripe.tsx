@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { TicketsSection } from './TicketsSection';
-import { StudentVerificationModal, VerificationSuccessModal } from '@/components/molecules';
+import { StudentVerificationModal, VerificationSuccessModal, TicketWavesModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useStudentVerification } from '@/hooks/useStudentVerification';
 import { useCart } from '@/contexts/CartContext';
@@ -41,6 +41,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     verificationId,
   } = useStudentVerification();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isTicketWavesModalOpen, setIsTicketWavesModalOpen] = useState(false);
 
   // Show loading state only when there's no data yet
   // During hydration, isLoading might be true briefly even with prefetched data
@@ -147,7 +148,12 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     addToCart(item, quantity);
   };
 
-  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart);
+  const ticketData = createTicketDataFromStripe(plans, currentStage, {
+    openVerificationModal: openModal,
+    addToCart: wrappedAddToCart,
+    navigateToCart,
+    onOpenTicketWavesModal: () => setIsTicketWavesModalOpen(true),
+  });
 
   // Disable all CTAs while navigating to prevent duplicate adds
   if (isNavigating) {
@@ -173,6 +179,10 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
         onClose={closeSuccessDialog}
         email={verifiedEmail}
         verificationId={verificationId}
+      />
+      <TicketWavesModal
+        isOpen={isTicketWavesModalOpen}
+        onClose={() => setIsTicketWavesModalOpen(false)}
       />
     </>
   );

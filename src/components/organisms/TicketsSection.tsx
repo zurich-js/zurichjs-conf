@@ -28,9 +28,9 @@ export interface Plan {
    */
   title: string;
   /**
-   * Short description/blurb
+   * Short description/blurb (supports React nodes for inline icons)
    */
-  blurb?: string;
+  blurb?: React.ReactNode;
   /**
    * Compare/original price (in base units)
    */

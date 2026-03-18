@@ -36,9 +36,9 @@ export interface PriceCardProps {
    */
   title: string;
   /**
-   * Short description/blurb
+   * Short description/blurb (supports React nodes for inline icons)
    */
-  blurb?: string;
+  blurb?: React.ReactNode;
   /**
    * Compare/original price
    */

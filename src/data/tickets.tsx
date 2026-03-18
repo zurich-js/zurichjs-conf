@@ -4,6 +4,7 @@
  */
 
 import Link from 'next/link';
+import { InfoIcon } from 'lucide-react';
 import type { TicketsSectionProps, Plan } from '@/components/organisms';
 import type { Feature } from '@/components/molecules/FeatureList';
 import type { FAQItem } from '@/components/molecules/FAQAccordion';
@@ -49,7 +50,7 @@ export const TICKET_METADATA: Record<
   { blurb: string; variant: 'standard' | 'vip' | 'member' }
 > = {
   standard_student_unemployed: {
-    blurb: 'Building the future, one ticket at a time.',
+    blurb: "Sponsors help us support those that can't afford a ticket.",
     variant: 'member',
   },
   standard: {
@@ -201,9 +202,8 @@ export const TICKET_FAQ: FAQItem[] = [
 /**
  * Map Stripe plan to ticket plan with features and metadata
  */
-export const mapStripePlanToTicketPlan = (
-  stripePlan: TicketPlan,
-  openVerificationModal?: (priceId: string) => void,
+export interface MapStripePlanOptions {
+  openVerificationModal?: (priceId: string) => void;
   addToCart?: (item: {
     id: string;
     title: string;
@@ -211,9 +211,69 @@ export const mapStripePlanToTicketPlan = (
     currency: string;
     priceId: string;
     variant?: 'standard' | 'vip' | 'member';
-  }, quantity: number) => void,
-  navigateToCart?: () => void
+  }, quantity: number) => void;
+  navigateToCart?: () => void;
+  onOpenTicketWavesModal?: () => void;
+}
+
+/**
+ * Build the blurb for the student/unemployed ticket card
+ * Shows stock availability and an info icon that opens the waves modal
+ */
+function buildStudentBlurb(
+  stock: TicketPlan['stock'],
+  onOpenModal?: () => void,
+): React.ReactNode {
+  const isSoldOut = stock?.soldOut ?? false;
+  const remaining = stock?.remaining ?? null;
+  const total = stock?.total ?? null;
+
+  const infoButton = onOpenModal ? (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenModal();
+      }}
+      className="inline-flex items-center align-middle ml-1 text-brand-gray-lightest hover:text-brand-primary transition-colors cursor-pointer"
+      aria-label="Learn how sponsored ticket waves work"
+    >
+      <InfoIcon size={14} />
+    </button>
+  ) : null;
+
+  if (isSoldOut) {
+    return (
+      <span>
+        Sponsors help us support those that can&apos;t afford a ticket. Momentarily sold out
+        {infoButton}
+      </span>
+    );
+  }
+
+  if (remaining !== null && total !== null) {
+    return (
+      <span>
+        Sponsors help us support those that can&apos;t afford a ticket.{' '}
+        {remaining}/{total} tickets currently available
+        {infoButton}
+      </span>
+    );
+  }
+
+  return (
+    <span>
+      Sponsors help us support those that can&apos;t afford a ticket.
+      {infoButton}
+    </span>
+  );
+}
+
+export const mapStripePlanToTicketPlan = (
+  stripePlan: TicketPlan,
+  options: MapStripePlanOptions = {},
 ): Plan => {
+  const { openVerificationModal, addToCart, navigateToCart, onOpenTicketWavesModal } = options;
   const features = TICKET_FEATURES[stripePlan.id] || TICKET_FEATURES.standard;
   const metadata = TICKET_METADATA[stripePlan.id] || TICKET_METADATA.standard;
 
@@ -231,10 +291,24 @@ export const mapStripePlanToTicketPlan = (
   // Determine if sold out
   const isSoldOut = stripePlan.stock?.soldOut ?? false;
 
+  // Build blurb - dynamic for student/unemployed, static for others
+  const blurb = isStudentUnemployed
+    ? buildStudentBlurb(stripePlan.stock, onOpenTicketWavesModal)
+    : metadata.blurb;
+
+  // For sold-out student/unemployed tickets, show "Get notified" instead
+  const ctaLabel = isSoldOut
+    ? (isStudentUnemployed ? 'Get notified' : 'Sold Out')
+    : isStudentUnemployed
+      ? 'Verify & Get Ticket'
+      : stripePlan.id === 'vip'
+        ? 'Get the full xp'
+        : 'Get your ticket';
+
   return {
     id: stripePlan.id,
     title: stripePlan.title,
-    blurb: metadata.blurb,
+    blurb,
     comparePrice,
     price,
     currency: stripePlan.currency,
@@ -244,6 +318,11 @@ export const mapStripePlanToTicketPlan = (
     cta: {
       type: 'button' as const,
       onClick: () => {
+        // Sold out student/unemployed → open waves modal to collect email
+        if (isSoldOut && isStudentUnemployed) {
+          onOpenTicketWavesModal?.();
+          return;
+        }
         if (isSoldOut) {
           return; // Button should be disabled anyway
         }
@@ -252,7 +331,6 @@ export const mapStripePlanToTicketPlan = (
           if (openVerificationModal) {
             openVerificationModal(stripePlan.priceId);
           } else {
-            // Fallback if modal is not available
             alert('Student/Unemployed verification flow will open here. Please contact hello@zurichjs.com with your student ID or unemployment proof.');
           }
         } else {
@@ -276,14 +354,9 @@ export const mapStripePlanToTicketPlan = (
           }
         }
       },
-      label: isSoldOut
-        ? 'Sold Out'
-        : isStudentUnemployed
-          ? 'Verify & Get Ticket'
-          : stripePlan.id === 'vip'
-            ? 'Get the full xp'
-            : 'Get your ticket',
-      disabled: isSoldOut,
+      label: ctaLabel,
+      // "Get notified" should be clickable, not disabled
+      disabled: isSoldOut && !isStudentUnemployed,
     },
   };
 };
@@ -294,19 +367,10 @@ export const mapStripePlanToTicketPlan = (
 export const createTicketDataFromStripe = (
   stripePlans: TicketPlan[],
   currentStage: string,
-  openVerificationModal?: (priceId: string) => void,
-  addToCart?: (item: {
-    id: string;
-    title: string;
-    price: number;
-    currency: string;
-    priceId: string;
-    variant?: 'standard' | 'vip' | 'member';
-  }, quantity: number) => void,
-  navigateToCart?: () => void
+  options: MapStripePlanOptions = {},
 ): Omit<TicketsSectionProps, 'className'> => {
   const plans = stripePlans.map((plan) =>
-    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, navigateToCart)
+    mapStripePlanToTicketPlan(plan, options)
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 
@@ -340,7 +404,7 @@ export const ticketsData: Omit<TicketsSectionProps, 'className'> = {
     {
       id: 'standard_student_unemployed',
       title: 'Student / Unemployed',
-      blurb: TICKET_METADATA.standard_student_unemployed.blurb,
+      blurb: "Sponsors help us support those that can't afford a ticket.",
       comparePrice: 699,
       price: 489,
       currency: 'CHF',
