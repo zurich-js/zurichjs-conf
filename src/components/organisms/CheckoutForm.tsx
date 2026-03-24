@@ -333,7 +333,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             />
             <label htmlFor="agreeToTerms" className="text-sm text-gray-300">
               I agree to the{' '}
-              <Link href="/info/refund-policy" target="_blank" rel="noopener noreferrer" className="text-brand-primary underline hover:text-brand-dark">
+              <Link href="/info/refund-policy" target="_blank" rel="noopener" className="text-brand-primary underline hover:text-brand-dark">
                 Refund Policy
               </Link>{' '}
               and understand that all ticket sales are subject to these terms. <span className="text-red-400">*</span>

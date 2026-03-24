@@ -120,7 +120,7 @@ export function ReviewStep({
           Continue
         </Button>
 
-        <Link href="/trip-cost" target="_blank" rel="noopener noreferrer">
+        <Link href="/trip-cost" target="_blank" rel="noopener">
           <Button className="w-full" asChild variant="ghost">
             Estimate your trip cost
           </Button>
