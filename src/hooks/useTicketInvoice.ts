@@ -13,6 +13,14 @@ async function fetchOrderContext(ticketId: string): Promise<TicketOrderContext> 
   return data.orderContext;
 }
 
+async function deleteInvoice(ticketId: string): Promise<void> {
+  const res = await fetch(`/api/admin/tickets/${ticketId}/invoice`, { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? 'Failed to delete invoice');
+  }
+}
+
 async function generateInvoicePDF(ticketId: string): Promise<{ pdfUrl: string; invoiceNumber: string }> {
   const res = await fetch(`/api/admin/tickets/${ticketId}/invoice/pdf/generate`, {
     method: 'POST',
@@ -32,6 +40,22 @@ export function useTicketOrderContext(ticketId: string | null) {
     enabled: !!ticketId,
     staleTime: 30 * 1000,
     retry: false,
+  });
+}
+
+export function useDeleteTicketInvoice(ticketId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => {
+      if (!ticketId) throw new Error('No ticket ID');
+      return deleteInvoice(ticketId);
+    },
+    onSuccess: () => {
+      if (ticketId) {
+        void queryClient.invalidateQueries({ queryKey: ticketInvoiceKey(ticketId) });
+      }
+    },
   });
 }
 

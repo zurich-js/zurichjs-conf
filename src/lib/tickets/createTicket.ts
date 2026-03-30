@@ -6,6 +6,7 @@
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Ticket, TicketType, TicketCategory, TicketStage, PaymentStatus, Json } from '@/lib/types/database';
 import { generateAndStoreTicketQRCode } from '@/lib/qrcode';
+import { createInvoiceForNewTicket } from './invoices';
 
 export interface CreateTicketParams {
   userId?: string; // Optional - tickets can be created without user authentication
@@ -168,6 +169,14 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
     } else {
       console.error('[createTicket] ⚠️ Failed to generate QR code:', qrResult.error);
       // Non-fatal, ticket was still created, QR can be generated on-demand
+    }
+
+    // Auto-create invoice record so the invoice number is assigned at purchase time
+    try {
+      await createInvoiceForNewTicket(ticket as Ticket);
+    } catch (invoiceError) {
+      console.error('[createTicket] ⚠️ Failed to auto-create invoice:', invoiceError);
+      // Non-fatal — invoice can be created on demand via the admin UI
     }
 
     return {

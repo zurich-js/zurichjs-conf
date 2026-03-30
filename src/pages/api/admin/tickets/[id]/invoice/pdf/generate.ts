@@ -42,7 +42,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 2. Create invoice record (idempotent — returns existing if already exists)
     const invoice = await createTicketInvoice(orderContext);
 
-    // 3. Build PDF props
+    // 3. Refresh stored snapshot with full order data (group purchases may have been
+    //    auto-created with only one ticket before other tickets in the session existed).
+    const supabase = createServiceRoleClient();
+    if (orderContext.allTickets.length > 1 || invoice.ticket_ids.length < orderContext.allTickets.length) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('ticket_invoices')
+        .update({
+          ticket_ids: orderContext.allTickets.map((t) => t.id),
+          line_items: orderContext.lineItems,
+          subtotal_amount: orderContext.subtotalAmount,
+          discount_amount: orderContext.discountAmount,
+          total_amount: orderContext.totalAmount,
+          primary_ticket_id: orderContext.primaryTicket.id,
+        })
+        .eq('id', invoice.id);
+    }
+
+    // 4. Build PDF props — always use fresh orderContext amounts and line items
     const pdfProps: TicketInvoicePDFProps = {
       invoiceNumber: invoice.invoice_number,
       issueDate: new Date().toLocaleDateString('en-CH'),
@@ -58,19 +76,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         postalCode: invoice.billing_postal_code,
         country: invoice.billing_country,
       },
-      lineItems: (invoice.line_items ?? orderContext.lineItems) as TicketInvoiceLineItem[],
-      subtotalAmount: invoice.subtotal_amount,
-      discountAmount: invoice.discount_amount,
-      totalAmount: invoice.total_amount,
+      lineItems: orderContext.lineItems as TicketInvoiceLineItem[],
+      subtotalAmount: orderContext.subtotalAmount,
+      discountAmount: orderContext.discountAmount,
+      totalAmount: orderContext.totalAmount,
       currency: invoice.currency,
       notes: invoice.notes,
     };
 
-    // 4. Generate PDF buffer
+    // 5. Generate PDF buffer
     const pdfBuffer = await generateTicketInvoicePDF(pdfProps);
 
-    // 5. Upload to Supabase storage
-    const supabase = createServiceRoleClient();
+    // 6. Upload to Supabase storage
     const filePath = `invoices/${invoice.invoice_number}_${Date.now()}.pdf`;
 
     const { error: uploadError } = await supabase.storage
@@ -85,14 +102,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to upload PDF to storage' });
     }
 
-    // 6. Get public URL
+    // 7. Get public URL
     const { data: urlData } = supabase.storage.from('ticket-invoices').getPublicUrl(filePath);
     const publicUrl = urlData.publicUrl;
 
-    // 7. Update invoice record with PDF URL
+    // 8. Update invoice record with PDF URL
     await updateTicketInvoicePDF(invoice.id, publicUrl, 'generated');
 
-    // 8. Cleanup old PDF files for this invoice (non-blocking, after DB is updated)
+    // 9. Cleanup old PDF files for this invoice (non-blocking, after DB is updated)
     try {
       const { data: existingFiles } = await supabase.storage
         .from('ticket-invoices')

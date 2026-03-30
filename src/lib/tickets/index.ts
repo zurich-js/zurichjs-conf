@@ -11,6 +11,8 @@ export type { GetTicketsResult } from './getTickets';
 export {
   resolveOrderContext,
   createTicketInvoice,
+  createInvoiceForNewTicket,
+  deleteTicketInvoice,
   getTicketInvoice,
   getInvoiceBySessionId,
   updateTicketInvoicePDF,

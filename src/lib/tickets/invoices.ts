@@ -382,6 +382,120 @@ export async function createTicketInvoice(
   return data as TicketInvoice;
 }
 
+// ─── createInvoiceForNewTicket ───────────────────────────────────────────────
+
+/**
+ * Auto-create an invoice record immediately when a ticket is created.
+ * Called from createTicket after a successful insert — non-fatal if it fails.
+ *
+ * Only runs for the primary ticket in an order (skips explicitly non-primary
+ * tickets in group purchases; the primary ticket's insert will win via idempotency).
+ * Skips non-Stripe sessions (B2B, manual, bank transfer, complimentary).
+ */
+export async function createInvoiceForNewTicket(ticket: Ticket): Promise<void> {
+  const { stripe_session_id: sessionId } = ticket;
+
+  // Skip non-Stripe sessions
+  if (
+    sessionId.startsWith('b2b_invoice_') ||
+    sessionId.startsWith('manual_') ||
+    sessionId.startsWith('bank_transfer_') ||
+    sessionId.startsWith('complimentary_')
+  ) {
+    return;
+  }
+
+  // For group purchases, only the primary ticket creates the invoice.
+  // Non-primary tickets would insert with the same stripe_session_id and hit the
+  // unique constraint — silently ignored via 23505 handling below.
+  const isPrimary = ticket.metadata?.isPrimary;
+  if (isPrimary === false) return;
+
+  const purchaserInfo = extractPurchaserInfo(ticket);
+  const lineItems = buildLineItems([ticket]);
+  const discountAmount = ticket.discount_amount ?? 0;
+  const totalAmount = ticket.amount_paid;
+  const subtotalAmount = totalAmount + discountAmount;
+
+  const supabase = createServiceRoleClient() as AnyClient;
+
+  const { error } = await supabase.from('ticket_invoices').insert({
+    invoice_number: '', // DB trigger generates TI-YYYY-NNNN
+    stripe_session_id: sessionId,
+    ticket_ids: [ticket.id],
+    primary_ticket_id: ticket.id,
+    billing_name: purchaserInfo.name,
+    billing_email: purchaserInfo.email,
+    billing_company: purchaserInfo.company ?? null,
+    billing_address_line1: purchaserInfo.addressLine1 ?? null,
+    billing_address_line2: purchaserInfo.addressLine2 ?? null,
+    billing_city: purchaserInfo.city ?? null,
+    billing_state: purchaserInfo.state ?? null,
+    billing_postal_code: purchaserInfo.postalCode ?? null,
+    billing_country: purchaserInfo.country ?? null,
+    currency: ticket.currency,
+    subtotal_amount: subtotalAmount,
+    discount_amount: discountAmount,
+    total_amount: totalAmount,
+    line_items: lineItems,
+    generated_by: 'webhook',
+  });
+
+  if (error) {
+    if (error.code === '23505') {
+      // Another ticket in the same session already created the invoice — fine.
+      log.info('Invoice already exists for session (idempotent)', { sessionId });
+      return;
+    }
+    // Log but do not throw — ticket creation must not fail due to invoice errors.
+    log.error('Failed to auto-create invoice for ticket', error, { ticketId: ticket.id, sessionId });
+  } else {
+    log.info('Auto-created invoice for ticket', { ticketId: ticket.id, sessionId });
+  }
+}
+
+// ─── deleteTicketInvoice ─────────────────────────────────────────────────────
+
+/**
+ * Delete a ticket invoice: removes the PDF from storage then deletes the DB record.
+ */
+export async function deleteTicketInvoice(invoiceId: string): Promise<void> {
+  const supabase = createServiceRoleClient() as AnyClient;
+
+  // Fetch the invoice to get the PDF URL
+  const invoice = await getTicketInvoice(invoiceId);
+  if (!invoice) {
+    throw new Error(`Invoice not found: ${invoiceId}`);
+  }
+
+  // Delete PDF from storage if present
+  if (invoice.pdf_url) {
+    try {
+      const bucket = 'ticket-invoices';
+      const separator = `/public/${bucket}/`;
+      const idx = invoice.pdf_url.indexOf(separator);
+      if (idx !== -1) {
+        const filePath = invoice.pdf_url.slice(idx + separator.length);
+        const { error: storageError } = await supabase.storage.from(bucket).remove([filePath]);
+        if (storageError) {
+          log.warn('Failed to delete PDF from storage (continuing)', { invoiceId, error: storageError.message });
+        }
+      }
+    } catch (storageErr) {
+      log.warn('Unexpected error deleting PDF from storage (continuing)', { invoiceId, error: storageErr });
+    }
+  }
+
+  // Delete DB record
+  const { error } = await supabase.from('ticket_invoices').delete().eq('id', invoiceId);
+  if (error) {
+    log.error('Failed to delete ticket invoice DB record', error, { invoiceId });
+    throw new Error(`Failed to delete ticket invoice: ${error.message}`);
+  }
+
+  log.info('Deleted ticket invoice', { invoiceId });
+}
+
 // ─── updateTicketInvoicePDF ──────────────────────────────────────────────────
 
 /**

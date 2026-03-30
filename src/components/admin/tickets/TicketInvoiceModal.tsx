@@ -2,8 +2,9 @@
  * TicketInvoiceModal - Admin modal for generating and viewing ticket invoices
  */
 
-import { FileText, X, Loader2, AlertTriangle, Download, CheckCircle } from 'lucide-react';
-import { useTicketOrderContext, useGenerateTicketInvoice } from '@/hooks/useTicketInvoice';
+import { useState } from 'react';
+import { FileText, X, Loader2, AlertTriangle, Download, CheckCircle, Trash2 } from 'lucide-react';
+import { useTicketOrderContext, useGenerateTicketInvoice, useDeleteTicketInvoice } from '@/hooks/useTicketInvoice';
 
 interface TicketInvoiceModalProps {
   ticketId: string;
@@ -28,14 +29,12 @@ function formatDate(dateString: string): string {
 export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProps) {
   const { data: orderContext, isLoading, error } = useTicketOrderContext(ticketId);
   const generateMutation = useGenerateTicketInvoice(ticketId);
+  const deleteMutation = useDeleteTicketInvoice(ticketId);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const existingInvoice = orderContext?.existingInvoice ?? null;
 
-  const generateButtonLabel = existingInvoice?.pdf_url
-    ? 'Regenerate PDF'
-    : existingInvoice
-    ? 'Generate PDF'
-    : 'Generate Invoice';
+  const generateButtonLabel = existingInvoice?.pdf_url ? 'Regenerate PDF' : 'Generate PDF';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
@@ -179,30 +178,75 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
               {/* Existing Invoice */}
               {existingInvoice && (
                 <div className="bg-teal-50 rounded-xl p-4 border border-teal-200">
-                  <h4 className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-3">Existing Invoice</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-teal-600">Invoice Number</span>
-                      <span className="text-sm font-bold text-teal-800">{existingInvoice.invoice_number}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-teal-600">Generated</span>
-                      <span className="text-sm text-teal-700">{formatDate(existingInvoice.generated_at)}</span>
-                    </div>
-                    {existingInvoice.pdf_url && (
-                      <div className="pt-1">
-                        <a
-                          href={existingInvoice.pdf_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors"
-                        >
-                          <Download className="w-4 h-4" />
-                          Download PDF
-                        </a>
-                      </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-bold text-teal-700 uppercase tracking-wide">Invoice</h4>
+                    {!confirmDelete && (
+                      <button
+                        onClick={() => setConfirmDelete(true)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
                     )}
                   </div>
+                  {confirmDelete ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-red-700">
+                        Delete <strong>{existingInvoice.invoice_number}</strong>? This removes the invoice record and PDF from storage. This cannot be undone.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            deleteMutation.mutate(undefined, { onSuccess: onClose });
+                          }}
+                          disabled={deleteMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          {deleteMutation.isPending ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                          {deleteMutation.isPending ? 'Deleting...' : 'Confirm Delete'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(false)}
+                          disabled={deleteMutation.isPending}
+                          className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {deleteMutation.error && (
+                        <p className="text-xs text-red-700">{deleteMutation.error instanceof Error ? deleteMutation.error.message : 'Delete failed'}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-teal-600">Invoice Number</span>
+                        <span className="text-sm font-bold text-teal-800">{existingInvoice.invoice_number}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-teal-600">Created</span>
+                        <span className="text-sm text-teal-700">{formatDate(existingInvoice.generated_at)}</span>
+                      </div>
+                      {existingInvoice.pdf_url && (
+                        <div className="pt-1">
+                          <a
+                            href={existingInvoice.pdf_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download PDF
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
