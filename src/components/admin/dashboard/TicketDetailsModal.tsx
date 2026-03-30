@@ -4,6 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Ticket } from './types';
+import { TicketInvoiceModal } from '@/components/admin/tickets';
 
 export interface TicketDetailsModalProps {
   ticket: Ticket;
@@ -72,6 +73,8 @@ export function TicketDetailsModal({
 }: TicketDetailsModalProps) {
   const isComplimentary = ticket.metadata?.paymentType === 'complimentary' || ticket.amount_paid === 0;
 
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
   // Country editing state
   const [isEditingCountry, setIsEditingCountry] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
@@ -106,6 +109,7 @@ export function TicketDetailsModal({
   };
 
   return (
+    <>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -338,6 +342,7 @@ export function TicketDetailsModal({
               </ActionLink>
             )}
             <ActionButton onClick={onResend} color="indigo" icon="mail">Resend</ActionButton>
+            <ActionButton onClick={() => setShowInvoiceModal(true)} color="teal" icon="invoice">Invoice</ActionButton>
             <ActionButton onClick={onReassign} color="purple" icon="reassign">Reassign</ActionButton>
             {ticket.status === 'confirmed' && ticket.ticket_category !== 'vip' && (
               <ActionButton onClick={onUpgrade} color="amber" icon="upgrade">Upgrade VIP</ActionButton>
@@ -358,6 +363,13 @@ export function TicketDetailsModal({
         </div>
       </div>
     </div>
+    {showInvoiceModal && (
+      <TicketInvoiceModal
+        ticketId={ticket.id}
+        onClose={() => setShowInvoiceModal(false)}
+      />
+    )}
+    </>
   );
 }
 
@@ -393,6 +405,7 @@ const iconPaths: Record<string, string> = {
   refund: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
   cancel: 'M6 18L18 6M6 6l12 12',
   delete: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+  invoice: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
 };
 
 const colorClasses: Record<string, string> = {
@@ -403,6 +416,7 @@ const colorClasses: Record<string, string> = {
   orange: 'border-orange-300 text-orange-700 bg-orange-50 hover:bg-orange-100',
   gray: 'border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200',
   red: 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100',
+  teal: 'border-teal-300 text-teal-700 bg-teal-50 hover:bg-teal-100',
 };
 
 function ActionButton({ onClick, color, icon, children }: { onClick: () => void; color: string; icon: string; children: React.ReactNode }) {

@@ -4,3 +4,4 @@
  */
 
 export { UpgradeToVipModal } from './UpgradeToVipModal';
+export { TicketInvoiceModal } from './TicketInvoiceModal';
