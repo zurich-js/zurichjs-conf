@@ -44,7 +44,7 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
     },
     {
       id: 'cfp-ends',
-      dateISO: '2026-04-01',
+      dateISO: '2026-04-03',
       title: 'Call for Papers ends',
       icon: 'flag',
       body: 'Last chance to submit your talk proposal. Make sure to get your submission in before the deadline!',
