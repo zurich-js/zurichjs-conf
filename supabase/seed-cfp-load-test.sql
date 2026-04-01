@@ -205,7 +205,7 @@ values
   ('83000000-0000-4000-8000-000000000004', '81000000-0000-4000-8000-000000009004')
 on conflict (submission_id, tag_id) do nothing;
 
--- Extra reviews, 2 reviews for most seeded submissions
+-- Extra reviews, 2 reviews for all seeded submissions and a 3rd review for most of them
 with generated_reviews as (
   select
     row_number() over (order by submission_series, reviewer_sort) as row_id,
@@ -233,7 +233,7 @@ with generated_reviews as (
       '80000000-0000-4000-8000-000000000003'::uuid as reviewer_id,
       3 as reviewer_sort
     from generate_series(1, 360) as series
-    where series % 4 = 0
+    where series % 6 != 0
   ) as review_rows
 )
 insert into public.cfp_reviews (
