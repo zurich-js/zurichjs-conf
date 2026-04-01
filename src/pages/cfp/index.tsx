@@ -17,7 +17,7 @@ import { useMotion } from '@/contexts/MotionContext';
 import { timelineData } from '@/data';
 
 // Get CFP close date from centralized timeline data
-const cfpCloseDate = timelineData.entries.find(entry => entry.id === 'cfp-ends')?.dateISO || '2026-04-01';
+const cfpCloseDate = timelineData.entries.find(entry => entry.id === 'cfp-ends')?.dateISO || '2026-04-03';
 
 const SUBMISSION_TYPES = [
   {

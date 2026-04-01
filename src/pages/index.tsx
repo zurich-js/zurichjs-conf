@@ -112,7 +112,7 @@ export default function Home() {
               <Link href="/cfp" className="text-md text-brand-blue hover:text-brand-dark duration-300 ease-in-out">
                   Apply&nbsp;to&nbsp;speak
               </Link>
-                {' '}until April 1st!
+                {' '}until April 3rd!
             </p>
           </div>
         </div>

@@ -67,7 +67,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        'Yes. The call for papers is open until <strong>April 1, 2026</strong>. You\'ll find the submission link on the "Call for Papers" section of the website.',
+        'Yes. The call for papers is open until <strong>April 3, 2026</strong>. You\'ll find the submission link on the "Call for Papers" section of the website.',
     },
 
     // Registration
