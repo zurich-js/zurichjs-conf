@@ -47,6 +47,93 @@ function createCfpServiceClient() {
   );
 }
 
+interface ReviewerActivityRow {
+  reviewer_id: string;
+  score_overall: number | null;
+  created_at: string;
+}
+
+export async function fetchAllPages<T>(
+  fetchPage: (from: number, to: number) => Promise<T[]>,
+  pageSize = 1000
+): Promise<T[]> {
+  const results: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const page = await fetchPage(from, from + pageSize - 1);
+    results.push(...page);
+
+    if (page.length < pageSize) {
+      return results;
+    }
+
+    from += pageSize;
+  }
+}
+
+export function buildReviewerActivitySummary(
+  reviewers: Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+    is_active: boolean;
+    can_see_speaker_identity: boolean;
+    accepted_at: string | null;
+    created_at: string;
+  }>,
+  reviews: ReviewerActivityRow[],
+  sevenDaysAgoISO: string
+): CfpAdminReviewerWithActivity[] {
+  const reviewsByReviewer = new Map<string, ReviewerActivityRow[]>();
+
+  for (const review of reviews) {
+    if (!reviewsByReviewer.has(review.reviewer_id)) {
+      reviewsByReviewer.set(review.reviewer_id, []);
+    }
+    reviewsByReviewer.get(review.reviewer_id)!.push(review);
+  }
+
+  return reviewers.map((reviewer) => {
+    const reviewerReviews = reviewsByReviewer.get(reviewer.id) || [];
+    const totalReviews = reviewerReviews.length;
+    const reviewsLast7Days = reviewerReviews.filter(
+      (review) => review.created_at >= sevenDaysAgoISO
+    ).length;
+
+    let lastActivityAt: string | null = null;
+    for (const review of reviewerReviews) {
+      if (!lastActivityAt || review.created_at > lastActivityAt) {
+        lastActivityAt = review.created_at;
+      }
+    }
+
+    const scores = reviewerReviews
+      .map((review) => review.score_overall)
+      .filter((score): score is number => score !== null);
+
+    const avgScoreGiven = scores.length > 0
+      ? scores.reduce((a, b) => a + b, 0) / scores.length
+      : null;
+
+    return {
+      id: reviewer.id,
+      email: reviewer.email,
+      name: reviewer.name,
+      role: reviewer.role,
+      is_active: reviewer.is_active,
+      can_see_speaker_identity: reviewer.can_see_speaker_identity,
+      accepted_at: reviewer.accepted_at,
+      created_at: reviewer.created_at,
+      total_reviews: totalReviews,
+      reviews_last_7_days: reviewsLast7Days,
+      last_activity_at: lastActivityAt,
+      avg_score_given: avgScoreGiven,
+    };
+  });
+}
+
 /**
  * Get all submissions with filters and stats
  */
@@ -507,16 +594,24 @@ export async function getAdminTags(): Promise<CfpTag[]> {
 export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerWithActivity[]> {
   const supabase = createCfpServiceClient();
 
-  // Get reviewers and reviews in parallel
-  const [reviewersResult, reviewsResult] = await Promise.all([
+  const [reviewersResult, reviews] = await Promise.all([
     supabase
       .from('cfp_reviewers')
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false }),
-    supabase
-      .from('cfp_reviews')
-      .select('reviewer_id, score_overall, created_at'),
+    fetchAllPages<ReviewerActivityRow>(async (from, to) => {
+      const { data, error } = await supabase
+        .from('cfp_reviews')
+        .select('reviewer_id, score_overall, created_at')
+        .range(from, to);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data || []) as ReviewerActivityRow[];
+    }),
   ]);
 
   if (reviewersResult.error) {
@@ -524,65 +619,25 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
     return [];
   }
 
-  const reviewers = reviewersResult.data || [];
-  const reviews = reviewsResult.data || [];
-
   // Calculate 7 days ago threshold
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
-  // Group reviews by reviewer_id for efficient aggregation
-  const reviewsByReviewer = new Map<string, typeof reviews>();
-  for (const review of reviews) {
-    const reviewerId = review.reviewer_id;
-    if (!reviewsByReviewer.has(reviewerId)) {
-      reviewsByReviewer.set(reviewerId, []);
-    }
-    reviewsByReviewer.get(reviewerId)!.push(review);
-  }
-
-  // Build enhanced reviewer data
-  const result: CfpAdminReviewerWithActivity[] = reviewers.map((reviewer) => {
-    const reviewerReviews = reviewsByReviewer.get(reviewer.id as string) || [];
-    const totalReviews = reviewerReviews.length;
-    const reviewsLast7Days = reviewerReviews.filter(
-      (r) => r.created_at >= sevenDaysAgoISO
-    ).length;
-
-    // Find last activity (most recent review)
-    let lastActivityAt: string | null = null;
-    for (const r of reviewerReviews) {
-      if (!lastActivityAt || r.created_at > lastActivityAt) {
-        lastActivityAt = r.created_at as string;
-      }
-    }
-
-    // Calculate average score given
-    const scores = reviewerReviews
-      .map((r) => r.score_overall)
-      .filter((s): s is number => s !== null);
-    const avgScoreGiven = scores.length > 0
-      ? scores.reduce((a, b) => a + b, 0) / scores.length
-      : null;
-
-    return {
-      id: reviewer.id as string,
-      email: reviewer.email as string,
-      name: reviewer.name as string | null,
-      role: reviewer.role as string,
-      is_active: reviewer.is_active as boolean,
-      can_see_speaker_identity: reviewer.can_see_speaker_identity as boolean,
-      accepted_at: reviewer.accepted_at as string | null,
-      created_at: reviewer.created_at as string,
-      total_reviews: totalReviews,
-      reviews_last_7_days: reviewsLast7Days,
-      last_activity_at: lastActivityAt,
-      avg_score_given: avgScoreGiven,
-    };
-  });
-
-  return result;
+  return buildReviewerActivitySummary(
+    (reviewersResult.data || []) as Array<{
+      id: string;
+      email: string;
+      name: string | null;
+      role: string;
+      is_active: boolean;
+      can_see_speaker_identity: boolean;
+      accepted_at: string | null;
+      created_at: string;
+    }>,
+    reviews,
+    sevenDaysAgoISO
+  );
 }
 
 /**
