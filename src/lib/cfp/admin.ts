@@ -18,7 +18,6 @@ import type {
   CfpSubmissionStats,
 } from '../types/cfp';
 import type {
-  CfpAdminTag,
   CfpAdminReviewerWithActivity,
   CfpReviewerActivity,
   CfpInsights,
@@ -482,7 +481,7 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
 /**
  * Get all tags for admin
  */
-export async function getAdminTags(): Promise<CfpAdminTag[]> {
+export async function getAdminTags(): Promise<CfpTag[]> {
   const supabase = createCfpServiceClient();
 
   const tagsResult = await supabase
@@ -531,7 +530,7 @@ export async function getAdminTags(): Promise<CfpAdminTag[]> {
   return ((data || []) as CfpTag[]).map((tag) => ({
     ...tag,
     submission_count: submissionCounts.get(tag.id) || 0,
-  })) as CfpAdminTag[];
+  })) as CfpTag[];
 }
 
 /**

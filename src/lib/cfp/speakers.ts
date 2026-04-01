@@ -437,7 +437,7 @@ export async function createSession(
       const { data: existingTag } = await supabase
         .from('cfp_tags')
         .select('id')
-        .eq('name', tagName)
+        .eq('name', tagName.toLowerCase())
         .single();
 
       let tagId: string;
@@ -446,7 +446,7 @@ export async function createSession(
       } else {
         const { data: newTag } = await supabase
           .from('cfp_tags')
-          .insert({ name: tagName, is_suggested: false })
+          .insert({ name: tagName.toLowerCase(), is_suggested: false })
           .select('id')
           .single();
         if (newTag) {

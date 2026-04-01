@@ -11,6 +11,7 @@ import type {
   CfpAdminTag,
   CfpReviewWithReviewer,
 } from '@/lib/types/cfp-admin';
+import type { CfpTag } from '@/lib/types/cfp';
 import type { CfpDecisionStatus, CfpDecisionEvent, CfpScheduledEmail } from '@/lib/types/cfp/decisions';
 
 export async function fetchStats(): Promise<CfpStats> {
@@ -151,7 +152,7 @@ export async function mergeTags(
   sourceTagIds: string[],
   targetName: string,
   isSuggested: boolean
-): Promise<{ tag: CfpAdminTag; merged_tag_ids: string[]; reassigned_submission_count: number }> {
+): Promise<{ tag: CfpTag; merged_tag_ids: string[]; reassigned_submission_count: number }> {
   const res = await fetch('/api/admin/cfp/tags/merge', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
