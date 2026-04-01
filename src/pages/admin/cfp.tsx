@@ -36,6 +36,7 @@ import {
   fetchAnalytics,
   updateSubmissionStatus,
   deleteTag,
+  mergeTags,
 } from '@/lib/cfp/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
@@ -177,6 +178,24 @@ export default function CfpAdminDashboard() {
     },
   });
 
+  const mergeTagsMutation = useMutation({
+    mutationFn: ({ sourceTagIds, targetName }: { sourceTagIds: string[]; targetName: string }) =>
+      mergeTags(sourceTagIds, targetName),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.tags });
+      queryClient.invalidateQueries({ queryKey: ['cfp', 'submissions'] });
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.insights });
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.analytics });
+      toast.success(
+        'Tags Merged',
+        `${data.merged_tag_ids.length} tag(s) merged into "${data.tag.name}" across ${data.reassigned_submission_count} submission(s)`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error('Merge Failed', error.message);
+    },
+  });
+
   // Handlers
   const submissions = submissionsData?.submissions || [];
 
@@ -244,7 +263,16 @@ export default function CfpAdminDashboard() {
                 />
               )}
               {activeTab === 'tags' && (
-                <TagsTab tags={tags} isLoading={isLoadingTags} onDelete={(id) => deleteTagMutation.mutate(id)} isDeleting={deleteTagMutation.isPending} />
+                <TagsTab
+                  tags={tags}
+                  isLoading={isLoadingTags}
+                  onDelete={(id) => deleteTagMutation.mutate(id)}
+                  isDeleting={deleteTagMutation.isPending}
+                  onMerge={(sourceTagIds, targetName) =>
+                    mergeTagsMutation.mutateAsync({ sourceTagIds, targetName }).then(() => undefined)
+                  }
+                  isMerging={mergeTagsMutation.isPending}
+                />
               )}
               {activeTab === 'insights' && (
                 <InsightsTab insights={insightsData?.insights || null} stats={stats} isLoading={isLoadingInsights} />

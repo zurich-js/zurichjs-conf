@@ -68,6 +68,27 @@ export async function deleteTag(id: string): Promise<void> {
   }
 }
 
+export async function mergeTags(
+  sourceTagIds: string[],
+  targetName: string
+): Promise<{ tag: CfpAdminTag; merged_tag_ids: string[]; reassigned_submission_count: number }> {
+  const res = await fetch('/api/admin/cfp/tags/merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_tag_ids: sourceTagIds,
+      target_name: targetName,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Failed to merge tags');
+  }
+
+  return res.json();
+}
+
 export async function fetchReviewersWithActivity(): Promise<{ reviewers: CfpAdminReviewerWithActivity[] }> {
   const res = await fetch('/api/admin/cfp/reviewers?withActivity=true');
   if (!res.ok) throw new Error('Failed to fetch reviewers with activity');

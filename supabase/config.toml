@@ -15,7 +15,7 @@ major_version = 17
 
 [db.seed]
 enabled = true
-sql_paths = ["./seed-cfp-reviewer-dashboard.sql"]
+sql_paths = ["./seed-cfp-reviewer-dashboard.sql", "./seed-cfp-load-test.sql"]
 
 [studio]
 port = 54323

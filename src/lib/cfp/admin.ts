@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
+import { dedupeTags } from './tag-utils';
 import type {
   CfpSubmission,
   CfpSubmissionWithStats,
@@ -18,6 +19,7 @@ import type {
   CfpSubmissionStats,
 } from '../types/cfp';
 import type {
+  CfpAdminTag,
   CfpAdminReviewerWithActivity,
   CfpReviewerActivity,
   CfpInsights,
@@ -204,7 +206,7 @@ export async function getAdminSubmissions(
     return {
       ...s,
       speaker: speakerMap[s.speaker_id],
-      tags: submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean),
+      tags: dedupeTags(submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean)),
       stats: statsMap[s.id],
     } as CfpSubmissionWithStats;
   });
@@ -253,7 +255,7 @@ export async function getAdminSubmissionDetail(id: string): Promise<{
       .from('cfp_tags')
       .select('*')
       .in('id', tagIds);
-    tags = (data || []) as CfpTag[];
+    tags = dedupeTags((data || []) as CfpTag[]);
   }
 
   // Get all reviews
@@ -481,21 +483,36 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
 /**
  * Get all tags for admin
  */
-export async function getAdminTags(): Promise<CfpTag[]> {
+export async function getAdminTags(): Promise<CfpAdminTag[]> {
   const supabase = createCfpServiceClient();
 
-  const { data, error } = await supabase
-    .from('cfp_tags')
-    .select('*')
-    .order('is_suggested', { ascending: false })
-    .order('name', { ascending: true });
+  const [tagsResult, tagLinksResult] = await Promise.all([
+    supabase
+      .from('cfp_tags')
+      .select('*')
+      .order('is_suggested', { ascending: false })
+      .order('name', { ascending: true }),
+    supabase
+      .from('cfp_submission_tags')
+      .select('tag_id'),
+  ]);
+
+  const { data, error } = tagsResult;
 
   if (error) {
     console.error('[CFP Admin] Error fetching tags:', error);
     return [];
   }
 
-  return (data || []) as CfpTag[];
+  const submissionCounts = new Map<string, number>();
+  for (const link of tagLinksResult.data || []) {
+    submissionCounts.set(link.tag_id, (submissionCounts.get(link.tag_id) || 0) + 1);
+  }
+
+  return ((data || []) as CfpTag[]).map((tag) => ({
+    ...tag,
+    submission_count: submissionCounts.get(tag.id) || 0,
+  })) as CfpAdminTag[];
 }
 
 /**

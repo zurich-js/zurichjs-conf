@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
+import { dedupeTags, normalizeTagName } from '@/lib/cfp/tag-utils';
 import type { CfpTag } from '@/lib/types/cfp';
 
 /**
@@ -40,7 +41,7 @@ export async function getSuggestedTags(): Promise<CfpTag[]> {
     return [];
   }
 
-  return (data || []) as CfpTag[];
+  return dedupeTags((data || []) as CfpTag[]);
 }
 
 /**
@@ -59,7 +60,7 @@ export async function getAllTags(): Promise<CfpTag[]> {
     return [];
   }
 
-  return (data || []) as CfpTag[];
+  return dedupeTags((data || []) as CfpTag[]);
 }
 
 /**
@@ -87,18 +88,19 @@ export async function getTagById(tagId: string): Promise<CfpTag | null> {
  */
 export async function getTagByName(name: string): Promise<CfpTag | null> {
   const supabase = createCfpServiceClient();
+  const normalizedName = normalizeTagName(name);
 
   const { data, error } = await supabase
     .from('cfp_tags')
     .select('*')
-    .eq('name', name)
-    .single();
+    .ilike('name', normalizedName);
 
   if (error || !data) {
     return null;
   }
 
-  return data as CfpTag;
+  const matchedTag = (data as CfpTag[]).find((tag) => normalizeTagName(tag.name) === normalizedName);
+  return matchedTag || null;
 }
 
 /**
@@ -109,16 +111,21 @@ export async function createTag(
   isSuggested: boolean = false
 ): Promise<{ tag: CfpTag | null; error?: string }> {
   const supabase = createCfpServiceClient();
+  const normalizedName = normalizeTagName(name);
+
+  if (!normalizedName) {
+    return { tag: null, error: 'Tag name is required' };
+  }
 
   // Check if tag already exists
-  const existing = await getTagByName(name);
+  const existing = await getTagByName(normalizedName);
   if (existing) {
     return { tag: null, error: 'Tag already exists' };
   }
 
   const { data, error } = await supabase
     .from('cfp_tags')
-    .insert({ name, is_suggested: isSuggested })
+    .insert({ name: normalizedName, is_suggested: isSuggested })
     .select()
     .single();
 
@@ -138,10 +145,11 @@ export async function updateTag(
   updates: { name?: string; is_suggested?: boolean }
 ): Promise<{ tag: CfpTag | null; error?: string }> {
   const supabase = createCfpServiceClient();
+  const normalizedName = updates.name ? normalizeTagName(updates.name) : undefined;
 
   // If updating name, check for duplicates
-  if (updates.name) {
-    const existing = await getTagByName(updates.name);
+  if (normalizedName) {
+    const existing = await getTagByName(normalizedName);
     if (existing && existing.id !== tagId) {
       return { tag: null, error: 'A tag with this name already exists' };
     }
@@ -149,7 +157,10 @@ export async function updateTag(
 
   const { data, error } = await supabase
     .from('cfp_tags')
-    .update(updates)
+    .update({
+      ...updates,
+      ...(normalizedName ? { name: normalizedName } : {}),
+    })
     .eq('id', tagId)
     .select()
     .single();
@@ -184,6 +195,176 @@ export async function deleteTag(
 }
 
 /**
+ * Merge multiple tags into a single canonical tag.
+ * Reassigns submission-tag relationships, then removes the merged source tags.
+ */
+export async function mergeTags(
+  sourceTagIds: string[],
+  targetName: string
+): Promise<{
+  tag: CfpTag | null;
+  mergedTagIds: string[];
+  reassignedSubmissionCount: number;
+  error?: string;
+}> {
+  const supabase = createCfpServiceClient();
+  const uniqueSourceTagIds = [...new Set(sourceTagIds.filter(Boolean))];
+  const normalizedTargetName = normalizeTagName(targetName);
+
+  if (uniqueSourceTagIds.length < 2) {
+    return {
+      tag: null,
+      mergedTagIds: [],
+      reassignedSubmissionCount: 0,
+      error: 'Select at least two tags to merge',
+    };
+  }
+
+  if (!normalizedTargetName) {
+    return {
+      tag: null,
+      mergedTagIds: [],
+      reassignedSubmissionCount: 0,
+      error: 'Target tag name is required',
+    };
+  }
+
+  const { data: sourceTags, error: sourceTagsError } = await supabase
+    .from('cfp_tags')
+    .select('*')
+    .in('id', uniqueSourceTagIds);
+
+  if (sourceTagsError || !sourceTags || sourceTags.length < 2) {
+    return {
+      tag: null,
+      mergedTagIds: [],
+      reassignedSubmissionCount: 0,
+      error: 'Failed to load source tags for merge',
+    };
+  }
+
+  const shouldBeSuggested = sourceTags.some((tag) => tag.is_suggested);
+  let targetTag = await getTagByName(normalizedTargetName);
+
+  if (!targetTag) {
+    const { data: createdTag, error: createError } = await supabase
+      .from('cfp_tags')
+      .insert({ name: normalizedTargetName, is_suggested: shouldBeSuggested })
+      .select('*')
+      .single();
+
+    if (createError || !createdTag) {
+      return {
+        tag: null,
+        mergedTagIds: [],
+        reassignedSubmissionCount: 0,
+        error: createError?.message || 'Failed to create merged tag',
+      };
+    }
+
+    targetTag = createdTag as CfpTag;
+  } else if (shouldBeSuggested && !targetTag.is_suggested) {
+    const { data: updatedTag, error: updateError } = await supabase
+      .from('cfp_tags')
+      .update({ is_suggested: true })
+      .eq('id', targetTag.id)
+      .select('*')
+      .single();
+
+    if (updateError || !updatedTag) {
+      return {
+        tag: null,
+        mergedTagIds: [],
+        reassignedSubmissionCount: 0,
+        error: updateError?.message || 'Failed to update merged tag',
+      };
+    }
+
+    targetTag = updatedTag as CfpTag;
+  }
+
+  const tagIdsToReplace = uniqueSourceTagIds.filter((id) => id !== targetTag!.id);
+
+  if (tagIdsToReplace.length === 0) {
+    return {
+      tag: targetTag,
+      mergedTagIds: [],
+      reassignedSubmissionCount: 0,
+    };
+  }
+
+  const { data: existingLinks, error: linksError } = await supabase
+    .from('cfp_submission_tags')
+    .select('submission_id, tag_id')
+    .in('tag_id', tagIdsToReplace);
+
+  if (linksError) {
+    return {
+      tag: null,
+      mergedTagIds: [],
+      reassignedSubmissionCount: 0,
+      error: 'Failed to load tag relationships for merge',
+    };
+  }
+
+  const uniqueSubmissionIds = [...new Set((existingLinks || []).map((link) => link.submission_id))];
+
+  if (uniqueSubmissionIds.length > 0) {
+    const mergedLinks = uniqueSubmissionIds.map((submissionId) => ({
+      submission_id: submissionId,
+      tag_id: targetTag.id,
+    }));
+
+    const { error: upsertError } = await supabase
+      .from('cfp_submission_tags')
+      .upsert(mergedLinks, { onConflict: 'submission_id,tag_id' });
+
+    if (upsertError) {
+      return {
+        tag: null,
+        mergedTagIds: [],
+        reassignedSubmissionCount: 0,
+        error: 'Failed to reassign submission tags',
+      };
+    }
+  }
+
+  const { error: deleteLinksError } = await supabase
+    .from('cfp_submission_tags')
+    .delete()
+    .in('tag_id', tagIdsToReplace);
+
+  if (deleteLinksError) {
+    return {
+      tag: null,
+      mergedTagIds: [],
+      reassignedSubmissionCount: 0,
+      error: 'Failed to remove old tag relationships',
+    };
+  }
+
+  const { error: deleteTagsError } = await supabase
+    .from('cfp_tags')
+    .delete()
+    .in('id', tagIdsToReplace);
+
+  if (deleteTagsError) {
+    return {
+      tag: null,
+      mergedTagIds: [],
+      reassignedSubmissionCount: 0,
+      error: 'Failed to remove merged tags',
+    };
+  }
+
+  return {
+    tag: targetTag,
+    mergedTagIds: tagIdsToReplace,
+    reassignedSubmissionCount: uniqueSubmissionIds.length,
+  };
+}
+
+/**
  * Get tags for a submission
  */
 export async function getTagsForSubmission(submissionId: string): Promise<CfpTag[]> {
@@ -200,7 +381,7 @@ export async function getTagsForSubmission(submissionId: string): Promise<CfpTag
   }
 
   // Get tags
-  const tagIds = links.map((link: { tag_id: string }) => link.tag_id);
+  const tagIds = [...new Set(links.map((link: { tag_id: string }) => link.tag_id))];
   const { data: tags, error: tagsError } = await supabase
     .from('cfp_tags')
     .select('*')
@@ -211,7 +392,7 @@ export async function getTagsForSubmission(submissionId: string): Promise<CfpTag
     return [];
   }
 
-  return (tags || []) as CfpTag[];
+  return dedupeTags((tags || []) as CfpTag[]);
 }
 
 /**
