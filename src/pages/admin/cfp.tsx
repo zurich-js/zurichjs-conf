@@ -3,7 +3,7 @@
  * Manage submissions, reviewers, and speakers
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
@@ -37,17 +37,78 @@ import {
   updateSubmissionStatus,
   deleteTag,
 } from '@/lib/cfp/api';
+import type { SubmissionQueryParams } from '@/lib/cfp/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+
+const ITEMS_PER_PAGE = 10;
 
 export default function CfpAdminDashboard() {
   const [activeTab, setActiveTab] = useState<CfpTab>('submissions');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedSubmission, setSelectedSubmission] = useState<CfpAdminSubmission | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkActionStatus, setBulkActionStatus] = useState<string>('');
   const queryClient = useQueryClient();
   const toast = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+
+  // Submission filter state (lifted from SubmissionsTab for server-side pagination)
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('newest');
+  const [minReviews, setMinReviews] = useState<string>('0');
+  const [shortlistOnly, setShortlistOnly] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Debounced search: updates debouncedSearch 400ms after typing stops
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setCurrentPage(1);
+    }, 400);
+  }, []);
+
+  // Map client sort options to server sort_by + sort_order
+  const sortParams = useMemo(() => {
+    const map: Record<string, { sort_by: string; sort_order: string }> = {
+      newest: { sort_by: 'created_at', sort_order: 'desc' },
+      oldest: { sort_by: 'created_at', sort_order: 'asc' },
+      most_reviews: { sort_by: 'review_count', sort_order: 'desc' },
+      least_reviews: { sort_by: 'review_count', sort_order: 'asc' },
+      highest_score: { sort_by: 'avg_score', sort_order: 'desc' },
+      lowest_score: { sort_by: 'avg_score', sort_order: 'asc' },
+      highest_coverage: { sort_by: 'coverage', sort_order: 'desc' },
+      lowest_coverage: { sort_by: 'coverage', sort_order: 'asc' },
+      last_reviewed: { sort_by: 'last_reviewed', sort_order: 'desc' },
+      title: { sort_by: 'title', sort_order: 'asc' },
+    };
+    return map[sortBy] || map.newest;
+  }, [sortBy]);
+
+  // Build query params object for React Query key and fetch
+  const submissionQueryParams: SubmissionQueryParams = useMemo(() => ({
+    status: statusFilter,
+    submission_type: typeFilter !== 'all' ? typeFilter : undefined,
+    search: debouncedSearch || undefined,
+    sort_by: sortParams.sort_by,
+    sort_order: sortParams.sort_order,
+    min_review_count: minReviews === '5+' ? 5 : parseInt(minReviews, 10) || undefined,
+    shortlist_only: shortlistOnly || undefined,
+    limit: ITEMS_PER_PAGE,
+    offset: (currentPage - 1) * ITEMS_PER_PAGE,
+  }), [statusFilter, typeFilter, debouncedSearch, sortParams, minReviews, shortlistOnly, currentPage]);
+
+  // Reset page when filters change (not when page changes)
+  const updateFilter = useCallback(<T,>(setter: React.Dispatch<React.SetStateAction<T>>) => {
+    return (value: T) => {
+      setter(value);
+      setCurrentPage(1);
+    };
+  }, []);
 
   // Fetch data
   const { data: stats } = useQuery({
@@ -58,8 +119,8 @@ export default function CfpAdminDashboard() {
   });
 
   const { data: submissionsData, isLoading: isLoadingSubmissions } = useQuery({
-    queryKey: cfpQueryKeys.submissions(statusFilter),
-    queryFn: () => fetchSubmissions(statusFilter),
+    queryKey: cfpQueryKeys.submissions(submissionQueryParams),
+    queryFn: () => fetchSubmissions(submissionQueryParams),
     enabled: isAuthenticated === true && activeTab === 'submissions',
     staleTime: 30 * 1000,
   });
@@ -179,6 +240,8 @@ export default function CfpAdminDashboard() {
 
   // Handlers
   const submissions = submissionsData?.submissions || [];
+  const submissionsTotal = submissionsData?.total || 0;
+  const submissionsTotalUnfiltered = submissionsData?.totalUnfiltered || 0;
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => {
@@ -221,9 +284,24 @@ export default function CfpAdminDashboard() {
               {activeTab === 'submissions' && (
                 <SubmissionsTab
                   submissions={submissions}
+                  total={submissionsTotal}
+                  totalUnfiltered={submissionsTotalUnfiltered}
+                  currentPage={currentPage}
+                  onPageChange={setCurrentPage}
+                  pageSize={ITEMS_PER_PAGE}
                   isLoading={isLoadingSubmissions}
                   statusFilter={statusFilter}
-                  setStatusFilter={setStatusFilter}
+                  setStatusFilter={updateFilter(setStatusFilter)}
+                  typeFilter={typeFilter}
+                  setTypeFilter={updateFilter(setTypeFilter)}
+                  searchQuery={searchQuery}
+                  setSearchQuery={handleSearchChange}
+                  sortBy={sortBy}
+                  setSortBy={updateFilter(setSortBy)}
+                  minReviews={minReviews}
+                  setMinReviews={updateFilter(setMinReviews)}
+                  shortlistOnly={shortlistOnly}
+                  setShortlistOnly={updateFilter(setShortlistOnly)}
                   selectedIds={selectedIds}
                   toggleSelection={toggleSelection}
                   toggleSelectAll={toggleSelectAll}

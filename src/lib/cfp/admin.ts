@@ -21,7 +21,6 @@ import type {
   CfpAdminReviewerWithActivity,
   CfpReviewerActivity,
   CfpInsights,
-  CfpAdminSubmissionStats,
 } from '../types/cfp-admin';
 import {
   computeSubmissionScoring,
@@ -48,11 +47,51 @@ function createCfpServiceClient() {
 }
 
 /**
- * Get all submissions with filters and stats
+ * Fetch all rows from a table by paginating with .range().
+ * PostgREST's max-rows config (default 1000) silently caps .limit(),
+ * so we page through in chunks to guarantee all rows are returned.
+ */
+async function fetchAllRows<T = Record<string, unknown>>(
+  supabase: ReturnType<typeof createCfpServiceClient>,
+  table: string,
+  select: string,
+  pageSize = 1000
+): Promise<{ data: T[]; error: unknown | null }> {
+  const allRows: T[] = [];
+  let offset = 0;
+
+   
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(select)
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      return { data: allRows, error };
+    }
+    if (!data || data.length === 0) break;
+
+    allRows.push(...(data as T[]));
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return { data: allRows, error: null };
+}
+
+/**
+ * Get submissions with server-side filtering, sorting, and pagination.
+ *
+ * DB-level filters: status, submission_type, talk_level
+ * In-memory filters (after stats enrichment): search (title/abstract/speaker/tags),
+ *   min_review_count, shortlist_only
+ * In-memory sorting: all sort options including stats-based (score, coverage, reviews)
+ * Pagination: applied last, returns one page + total filtered count
  */
 export async function getAdminSubmissions(
   filters: CfpSubmissionFilters = {}
-): Promise<{ submissions: CfpSubmissionWithStats[]; total: number }> {
+): Promise<{ submissions: CfpSubmissionWithStats[]; total: number; totalUnfiltered: number }> {
   const supabase = createCfpServiceClient();
   const {
     status,
@@ -61,83 +100,100 @@ export async function getAdminSubmissions(
     search,
     sort_by = 'created_at',
     sort_order = 'desc',
-    limit,
+    limit = 10,
     offset = 0,
+    min_review_count,
+    shortlist_only,
   } = filters;
 
-  // Build query
-  let query = supabase
-    .from('cfp_submissions')
-    .select('*', { count: 'exact' });
+  // Step 1: Fetch all submissions from DB (apply DB-level filters only)
+  // Paginate with .range() to bypass PostgREST max-rows cap (default 1000)
+  const PAGE_SIZE = 1000;
+  const submissions: CfpSubmission[] = [];
+  let pageOffset = 0;
 
-  // Apply filters
-  if (status) {
-    if (Array.isArray(status)) {
-      query = query.in('status', status);
-    } else {
-      query = query.eq('status', status);
+   
+  while (true) {
+    let query = supabase
+      .from('cfp_submissions')
+      .select('*')
+      .range(pageOffset, pageOffset + PAGE_SIZE - 1);
+
+    if (status) {
+      if (Array.isArray(status)) {
+        query = query.in('status', status);
+      } else {
+        query = query.eq('status', status);
+      }
     }
-  }
 
-  if (submission_type) {
-    if (Array.isArray(submission_type)) {
-      query = query.in('submission_type', submission_type);
-    } else {
-      query = query.eq('submission_type', submission_type);
+    if (submission_type) {
+      if (Array.isArray(submission_type)) {
+        query = query.in('submission_type', submission_type);
+      } else {
+        query = query.eq('submission_type', submission_type);
+      }
     }
-  }
 
-  if (talk_level) {
-    if (Array.isArray(talk_level)) {
-      query = query.in('talk_level', talk_level);
-    } else {
-      query = query.eq('talk_level', talk_level);
+    if (talk_level) {
+      if (Array.isArray(talk_level)) {
+        query = query.in('talk_level', talk_level);
+      } else {
+        query = query.eq('talk_level', talk_level);
+      }
     }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('[CFP Admin] Error fetching submissions:', error);
+      return { submissions: [], total: 0, totalUnfiltered: 0 };
+    }
+    if (!data || data.length === 0) break;
+
+    submissions.push(...(data as CfpSubmission[]));
+    if (data.length < PAGE_SIZE) break;
+    pageOffset += PAGE_SIZE;
   }
 
-  if (search) {
-    query = query.or(`title.ilike.%${search}%,abstract.ilike.%${search}%`);
-  }
+  // Step 2: Fetch related data in parallel
+  // Use paginated fetches (fetchAllRows) to bypass PostgREST max-rows cap.
+  // No .in() filters to avoid URL length limits with 1000+ IDs.
+  // We filter in-memory via Sets/Maps.
+  const allSubmissionIds = new Set(submissions.map((s: { id: string }) => s.id));
+  const speakerIdSet = new Set(submissions.map((s: { speaker_id: string }) => s.speaker_id));
 
-  // Apply sorting
-  query = query.order(sort_by, { ascending: sort_order === 'asc' });
+  const [speakersResult, tagJoinsResult, reviewsResult, reviewerCountResult] = await Promise.all([
+    fetchAllRows<CfpSpeaker>(supabase, 'cfp_speakers', '*'),
+    fetchAllRows<{ submission_id: string; tag_id: string }>(supabase, 'cfp_submission_tags', 'submission_id, tag_id'),
+    fetchAllRows<{ submission_id: string; score_overall: number | null; created_at: string }>(
+      supabase, 'cfp_reviews', 'submission_id, score_overall, created_at'
+    ),
+    supabase
+      .from('cfp_reviewers')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true),
+  ]);
 
-  // Apply pagination (if limit is provided)
-  let queryResult;
-  if (limit) {
-    queryResult = await query.range(offset, offset + limit - 1);
-  } else {
-    queryResult = await query;
-  }
+  // Log errors from parallel queries for debugging
+  if (speakersResult.error) console.error('[CFP Admin] Error fetching speakers:', speakersResult.error);
+  if (tagJoinsResult.error) console.error('[CFP Admin] Error fetching tag joins:', tagJoinsResult.error);
+  if (reviewsResult.error) console.error('[CFP Admin] Error fetching reviews:', reviewsResult.error);
+  if (reviewerCountResult.error) console.error('[CFP Admin] Error fetching reviewer count:', reviewerCountResult.error);
 
-  const { data: submissions, count, error } = queryResult;
-
-  if (error || !submissions) {
-    console.error('[CFP Admin] Error fetching submissions:', error);
-    return { submissions: [], total: 0 };
-  }
-
-  // Get speakers
-  const speakerIds = [...new Set(submissions.map((s: { speaker_id: string }) => s.speaker_id))];
-  const { data: speakers } = await supabase
-    .from('cfp_speakers')
-    .select('*')
-    .in('id', speakerIds);
-
+  // Build speaker map (filter to only speakers we need)
   const speakerMap: Record<string, CfpSpeaker> = Object.fromEntries(
-    (speakers || []).map((s: CfpSpeaker) => [s.id, s])
+    (speakersResult.data || [])
+      .filter((s: CfpSpeaker) => speakerIdSet.has(s.id))
+      .map((s: CfpSpeaker) => [s.id, s])
   );
 
-  // Get tags
-  const submissionIds = submissions.map((s: { id: string }) => s.id);
-  const { data: tagJoins } = await supabase
-    .from('cfp_submission_tags')
-    .select('submission_id, tag_id')
-    .in('submission_id', submissionIds);
-
-  const tagIds = [...new Set((tagJoins || []).map((j: { tag_id: string }) => j.tag_id))];
+  // Build tag map (filter tag joins to only our submissions)
+  const tagJoins = (tagJoinsResult.data || []).filter(
+    (j: { submission_id: string }) => allSubmissionIds.has(j.submission_id)
+  );
+  const tagIds = [...new Set(tagJoins.map((j: { tag_id: string }) => j.tag_id))];
   let tagMap: Record<string, CfpTag> = {};
-
   if (tagIds.length > 0) {
     const { data: tags } = await supabase
       .from('cfp_tags')
@@ -146,26 +202,12 @@ export async function getAdminSubmissions(
     tagMap = Object.fromEntries((tags || []).map((t: CfpTag) => [t.id, t]));
   }
 
-  // Get review stats for all submissions (include created_at for last_reviewed_at)
-  // Note: Supabase defaults to 1000 rows max; override with explicit limit
-  const { data: reviews } = await supabase
-    .from('cfp_reviews')
-    .select('submission_id, score_overall, created_at')
-    .in('submission_id', submissionIds)
-    .limit(10000);
-
-  // Get total active reviewers for coverage calculation
-  const { count: totalReviewers } = await supabase
-    .from('cfp_reviewers')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_active', true);
-
-  const totalReviewerCount = totalReviewers || 0;
-
-  // Group reviews by submission for efficient processing
+  // Build reviews-by-submission map (filter to only our submissions)
+  const totalReviewerCount = reviewerCountResult.count || 0;
   const reviewsBySubmission = new Map<string, ReviewInput[]>();
-  for (const review of reviews || []) {
+  for (const review of reviewsResult.data || []) {
     const submissionId = review.submission_id as string;
+    if (!allSubmissionIds.has(submissionId)) continue;
     if (!reviewsBySubmission.has(submissionId)) {
       reviewsBySubmission.set(submissionId, []);
     }
@@ -175,31 +217,12 @@ export async function getAdminSubmissions(
     });
   }
 
-  // Build stats using the scoring utility
-  const statsMap: Record<string, CfpSubmissionStats & CfpAdminSubmissionStats> = {};
-  for (const id of submissionIds) {
-    const submissionReviews = reviewsBySubmission.get(id) || [];
+  // Step 3: Build enriched submissions with stats
+  const enriched: CfpSubmissionWithStats[] = submissions.map((s: CfpSubmission) => {
+    const submissionReviews = reviewsBySubmission.get(s.id) || [];
     const scoring = computeSubmissionScoring(submissionReviews, totalReviewerCount);
 
-    statsMap[id] = {
-      submission_id: id,
-      review_count: scoring.reviewCount,
-      avg_overall: scoring.avgScore,
-      avg_relevance: null,
-      avg_technical_depth: null,
-      avg_clarity: null,
-      avg_diversity: null,
-      total_reviewers: totalReviewerCount,
-      coverage_ratio: scoring.coverageRatio,
-      coverage_percent: scoring.coveragePercent,
-      last_reviewed_at: scoring.lastReviewedAt,
-      shortlist_status: scoring.status,
-    };
-  }
-
-  // Build result
-  const result: CfpSubmissionWithStats[] = submissions.map((s: CfpSubmission) => {
-    const submissionTagIds = (tagJoins || [])
+    const submissionTagIds = tagJoins
       .filter((j: { submission_id: string }) => j.submission_id === s.id)
       .map((j: { tag_id: string }) => j.tag_id);
 
@@ -207,11 +230,125 @@ export async function getAdminSubmissions(
       ...s,
       speaker: speakerMap[s.speaker_id],
       tags: submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean),
-      stats: statsMap[s.id],
+      stats: {
+        submission_id: s.id,
+        review_count: scoring.reviewCount,
+        avg_overall: scoring.avgScore,
+        avg_relevance: null,
+        avg_technical_depth: null,
+        avg_clarity: null,
+        avg_diversity: null,
+        total_reviewers: totalReviewerCount,
+        coverage_ratio: scoring.coverageRatio,
+        coverage_percent: scoring.coveragePercent,
+        last_reviewed_at: scoring.lastReviewedAt,
+        shortlist_status: scoring.status,
+      },
     } as CfpSubmissionWithStats;
   });
 
-  return { submissions: result, total: count || 0 };
+  // totalUnfiltered = count after DB-level filters only (before search/min_reviews/shortlist)
+  const totalUnfiltered = enriched.length;
+
+  // Step 4: Apply in-memory filters (search, min_review_count, shortlist_only)
+  let filtered = enriched;
+
+  if (search && search.trim()) {
+    const searchFilters = parseSearchQuery(search);
+    filtered = filtered.filter((s) => matchesSearch(s, searchFilters));
+  }
+
+  if (min_review_count && min_review_count > 0) {
+    filtered = filtered.filter((s) => (s.stats?.review_count || 0) >= min_review_count);
+  }
+
+  if (shortlist_only) {
+    filtered = filtered.filter((s) => s.stats?.shortlist_status === 'likely_shortlisted');
+  }
+
+  const total = filtered.length;
+
+  // Step 5: Sort (all options supported, including stats-based)
+  const ascending = sort_order === 'asc';
+  filtered.sort((a, b) => {
+    let cmp = 0;
+    switch (sort_by) {
+      case 'created_at':
+        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        break;
+      case 'title':
+        cmp = a.title.localeCompare(b.title);
+        break;
+      case 'review_count':
+        cmp = (a.stats?.review_count || 0) - (b.stats?.review_count || 0);
+        break;
+      case 'avg_score':
+        cmp = (a.stats?.avg_overall || 0) - (b.stats?.avg_overall || 0);
+        break;
+      case 'coverage':
+        cmp = (a.stats?.coverage_percent || 0) - (b.stats?.coverage_percent || 0);
+        break;
+      case 'last_reviewed': {
+        const aTime = a.stats?.last_reviewed_at ? new Date(a.stats.last_reviewed_at).getTime() : 0;
+        const bTime = b.stats?.last_reviewed_at ? new Date(b.stats.last_reviewed_at).getTime() : 0;
+        cmp = aTime - bTime;
+        break;
+      }
+      default:
+        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    }
+    return ascending ? cmp : -cmp;
+  });
+
+  // Step 6: Paginate — return only the requested page
+  const page = filtered.slice(offset, offset + limit);
+
+  return { submissions: page, total, totalUnfiltered };
+}
+
+/**
+ * Parse advanced search query with support for quoted phrases and exclusions.
+ * e.g., 'react -"beginner" "event sourcing"' →
+ *   include: ["react", "event sourcing"], exclude: ["beginner"]
+ */
+function parseSearchQuery(search: string): { include: string[]; exclude: string[] } {
+  const filters = { include: [] as string[], exclude: [] as string[] };
+  const tokens = search.match(/-?"[^"]+"|-?\S+/g) || [];
+
+  for (const rawToken of tokens) {
+    const isExclude = rawToken.startsWith('-');
+    const token = isExclude ? rawToken.slice(1) : rawToken;
+    if (!token) continue;
+
+    const unquoted = token.startsWith('"') && token.endsWith('"')
+      ? token.slice(1, -1)
+      : token;
+    const normalized = unquoted.trim().toLowerCase();
+    if (!normalized) continue;
+
+    if (isExclude) filters.exclude.push(normalized);
+    else filters.include.push(normalized);
+  }
+
+  return filters;
+}
+
+/**
+ * Match a submission against search filters (searches title, abstract, speaker, tags)
+ */
+function matchesSearch(
+  submission: CfpSubmissionWithStats,
+  filters: { include: string[]; exclude: string[] }
+): boolean {
+  const speaker = submission.speaker
+    ? `${submission.speaker.first_name || ''} ${submission.speaker.last_name || ''} ${submission.speaker.email || ''}`
+    : '';
+  const tags = (submission.tags || []).map((tag) => tag.name).join(' ');
+  const haystack = `${submission.title} ${submission.abstract} ${speaker} ${tags}`.toLowerCase();
+
+  if (filters.include.some((term) => !haystack.includes(term))) return false;
+  if (filters.exclude.some((term) => haystack.includes(term))) return false;
+  return true;
 }
 
 /**
@@ -320,53 +457,54 @@ export async function updateSubmissionStatus(
 export async function getCfpStats(): Promise<CfpStats> {
   const supabase = createCfpServiceClient();
 
-  // Get all submissions
-  const { data: submissions } = await supabase
-    .from('cfp_submissions')
-    .select('id, status, submission_type, talk_level, travel_assistance_required');
-
-  // Get all speakers
-  const { data: speakers } = await supabase
-    .from('cfp_speakers')
-    .select('id');
-
-  // Get all reviews with timestamps for activity tracking
-  const { data: reviews, count: totalReviews } = await supabase
-    .from('cfp_reviews')
-    .select('id, submission_id, reviewer_id, created_at', { count: 'exact' });
-
-  // Get count of active reviewers
-  const { count: totalReviewers } = await supabase
-    .from('cfp_reviewers')
-    .select('id', { count: 'exact', head: true })
-    .eq('is_active', true);
-
-  // Calculate active reviewers in last 7 days
+  // Calculate 7 days ago for active reviewers query
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
+  // Run all queries in parallel for maximum efficiency
+  // - Submissions: need rows for by-status/type/level breakdown (use count: 'exact' for true total)
+  // - Reviews: only fetch last 7 days for active_reviewers metric; use count for total
+  // - Speakers & reviewers: count-only queries (head: true = no rows fetched)
+  const [submissionsResult, totalReviewsResult, recentReviewsResult, speakersResult, reviewersResult] = await Promise.all([
+    fetchAllRows<{ id: string; status: CfpSubmissionStatus; submission_type: string; talk_level: string; travel_assistance_required: boolean }>(
+      supabase, 'cfp_submissions', 'id, status, submission_type, talk_level, travel_assistance_required'
+    ),
+    supabase
+      .from('cfp_reviews')
+      .select('*', { count: 'exact', head: true }),
+    supabase
+      .from('cfp_reviews')
+      .select('reviewer_id')
+      .gte('created_at', sevenDaysAgoISO)
+      .range(0, 4999),
+    supabase
+      .from('cfp_speakers')
+      .select('*', { count: 'exact', head: true }),
+    supabase
+      .from('cfp_reviewers')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true),
+  ]);
+
+  const submissions = submissionsResult.data || [];
+  const totalSubmissionsCount = submissions.length;
+  const totalReviews = totalReviewsResult.count || 0;
+  const totalSpeakers = speakersResult.count || 0;
+  const totalReviewers = reviewersResult.count || 0;
+
+  // Active reviewers = unique reviewer_ids from reviews in last 7 days
   const recentReviewerIds = new Set(
-    (reviews || [])
-      .filter((r: { created_at: string }) => r.created_at >= sevenDaysAgoISO)
-      .map((r: { reviewer_id: string }) => r.reviewer_id)
+    (recentReviewsResult.data || []).map((r: { reviewer_id: string }) => r.reviewer_id)
   );
   const activeReviewers7d = recentReviewerIds.size;
-
-  const submissionList = (submissions || []) as Array<{
-    id: string;
-    status: CfpSubmissionStatus;
-    submission_type: string;
-    talk_level: string;
-    travel_assistance_required: boolean;
-  }>;
 
   const byStatus: Record<string, number> = {};
   const byType: Record<string, number> = {};
   const byLevel: Record<string, number> = {};
   let travelRequested = 0;
 
-  for (const s of submissionList) {
+  for (const s of submissions) {
     byStatus[s.status] = (byStatus[s.status] || 0) + 1;
     byType[s.submission_type] = (byType[s.submission_type] || 0) + 1;
     byLevel[s.talk_level] = (byLevel[s.talk_level] || 0) + 1;
@@ -374,20 +512,18 @@ export async function getCfpStats(): Promise<CfpStats> {
   }
 
   const acceptedCount = byStatus['accepted'] || 0;
-  // Track unique reviewed submissions for potential future use
-  void new Set((reviews || []).map((r: { submission_id: string }) => r.submission_id));
 
   return {
-    total_submissions: submissionList.length,
+    total_submissions: totalSubmissionsCount,
     submissions_by_status: byStatus as Record<CfpSubmissionStatus, number>,
     submissions_by_type: byType as Record<string, number>,
     submissions_by_level: byLevel as Record<string, number>,
-    total_speakers: (speakers || []).length,
-    total_reviews: totalReviews || 0,
-    total_reviewers: totalReviewers || 0,
+    total_speakers: totalSpeakers,
+    total_reviews: totalReviews,
+    total_reviewers: totalReviewers,
     active_reviewers_7d: activeReviewers7d,
-    avg_reviews_per_submission: submissionList.length > 0
-      ? (totalReviews || 0) / submissionList.length
+    avg_reviews_per_submission: totalSubmissionsCount > 0
+      ? totalReviews / totalSubmissionsCount
       : 0,
     travel_assistance_requested: travelRequested,
     accepted_speakers_count: acceptedCount,
@@ -400,17 +536,12 @@ export async function getCfpStats(): Promise<CfpStats> {
  */
 export async function getAdminReviewers(): Promise<CfpReviewer[]> {
   const supabase = createCfpServiceClient();
-
-  const { data, error } = await supabase
-    .from('cfp_reviewers')
-    .select('*')
-    .order('created_at', { ascending: false });
-
+  const { data, error } = await fetchAllRows<CfpReviewer>(supabase, 'cfp_reviewers', '*');
   if (error) {
     console.error('[CFP Admin] Error fetching reviewers:', error);
     return [];
   }
-  return (data || []) as CfpReviewer[];
+  return data;
 }
 
 /**
@@ -418,18 +549,12 @@ export async function getAdminReviewers(): Promise<CfpReviewer[]> {
  */
 export async function getAdminSpeakers(): Promise<CfpSpeaker[]> {
   const supabase = createCfpServiceClient();
-
-  const { data, error } = await supabase
-    .from('cfp_speakers')
-    .select('*')
-    .order('created_at', { ascending: false });
-
+  const { data, error } = await fetchAllRows<CfpSpeaker>(supabase, 'cfp_speakers', '*');
   if (error) {
     console.error('[CFP Admin] Error fetching speakers:', error);
     return [];
   }
-
-  return (data || []) as CfpSpeaker[];
+  return data;
 }
 
 /**
@@ -441,13 +566,12 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
 > {
   const supabase = createCfpServiceClient();
 
-  // Fetch speakers and all submissions in parallel
+  // Fetch speakers and all submissions in parallel using paginated fetch
   const [speakersResult, submissionsResult] = await Promise.all([
-    supabase.from('cfp_speakers').select('*').order('created_at', { ascending: false }),
-    supabase
-      .from('cfp_submissions')
-      .select('id, title, status, submission_type, speaker_id')
-      .order('created_at', { ascending: false }),
+    fetchAllRows<CfpSpeaker>(supabase, 'cfp_speakers', '*'),
+    fetchAllRows<{ id: string; title: string; status: string; submission_type: string; speaker_id: string }>(
+      supabase, 'cfp_submissions', 'id, title, status, submission_type, speaker_id'
+    ),
   ]);
 
   if (speakersResult.error) {
@@ -455,8 +579,8 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
     return [];
   }
 
-  const speakers = (speakersResult.data || []) as CfpSpeaker[];
-  const submissions = submissionsResult.data || [];
+  const speakers = speakersResult.data;
+  const submissions = submissionsResult.data;
 
   // Group submissions by speaker_id for O(n) lookup
   const submissionsBySpeakerId = new Map<string, typeof submissions>();
@@ -485,19 +609,12 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
  */
 export async function getAdminTags(): Promise<CfpTag[]> {
   const supabase = createCfpServiceClient();
-
-  const { data, error } = await supabase
-    .from('cfp_tags')
-    .select('*')
-    .order('is_suggested', { ascending: false })
-    .order('name', { ascending: true });
-
+  const { data, error } = await fetchAllRows<CfpTag>(supabase, 'cfp_tags', '*');
   if (error) {
     console.error('[CFP Admin] Error fetching tags:', error);
     return [];
   }
-
-  return (data || []) as CfpTag[];
+  return data;
 }
 
 /**
@@ -507,16 +624,12 @@ export async function getAdminTags(): Promise<CfpTag[]> {
 export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerWithActivity[]> {
   const supabase = createCfpServiceClient();
 
-  // Get reviewers and reviews in parallel
+  // Get reviewers and reviews in parallel using paginated fetch
   const [reviewersResult, reviewsResult] = await Promise.all([
-    supabase
-      .from('cfp_reviewers')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('cfp_reviews')
-      .select('reviewer_id, score_overall, created_at'),
+    fetchAllRows<CfpReviewer>(supabase, 'cfp_reviewers', '*'),
+    fetchAllRows<{ reviewer_id: string; score_overall: number | null; created_at: string }>(
+      supabase, 'cfp_reviews', 'reviewer_id, score_overall, created_at'
+    ),
   ]);
 
   if (reviewersResult.error) {
@@ -524,8 +637,9 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
     return [];
   }
 
-  const reviewers = reviewersResult.data || [];
-  const reviews = reviewsResult.data || [];
+  // Filter to active reviewers in-memory (can't add .eq() to fetchAllRows)
+  const reviewers = reviewersResult.data.filter((r) => r.is_active);
+  const reviews = reviewsResult.data;
 
   // Calculate 7 days ago threshold
   const sevenDaysAgo = new Date();
@@ -544,7 +658,7 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
 
   // Build enhanced reviewer data
   const result: CfpAdminReviewerWithActivity[] = reviewers.map((reviewer) => {
-    const reviewerReviews = reviewsByReviewer.get(reviewer.id as string) || [];
+    const reviewerReviews = reviewsByReviewer.get(reviewer.id) || [];
     const totalReviews = reviewerReviews.length;
     const reviewsLast7Days = reviewerReviews.filter(
       (r) => r.created_at >= sevenDaysAgoISO
@@ -554,7 +668,7 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
     let lastActivityAt: string | null = null;
     for (const r of reviewerReviews) {
       if (!lastActivityAt || r.created_at > lastActivityAt) {
-        lastActivityAt = r.created_at as string;
+        lastActivityAt = r.created_at;
       }
     }
 
@@ -567,14 +681,14 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
       : null;
 
     return {
-      id: reviewer.id as string,
-      email: reviewer.email as string,
-      name: reviewer.name as string | null,
-      role: reviewer.role as string,
-      is_active: reviewer.is_active as boolean,
-      can_see_speaker_identity: reviewer.can_see_speaker_identity as boolean,
-      accepted_at: reviewer.accepted_at as string | null,
-      created_at: reviewer.created_at as string,
+      id: reviewer.id,
+      email: reviewer.email,
+      name: reviewer.name,
+      role: reviewer.role,
+      is_active: reviewer.is_active,
+      can_see_speaker_identity: reviewer.can_see_speaker_identity,
+      accepted_at: reviewer.accepted_at,
+      created_at: reviewer.created_at,
       total_reviews: totalReviews,
       reviews_last_7_days: reviewsLast7Days,
       last_activity_at: lastActivityAt,
@@ -611,7 +725,8 @@ export async function getReviewerActivity(
     .from('cfp_reviews')
     .select('id, submission_id, score_overall, private_notes, created_at', { count: 'exact' })
     .eq('reviewer_id', reviewerId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(0, 4999);
 
   if (dateFilter) {
     reviewsQuery = reviewsQuery.gte('created_at', dateFilter);
@@ -654,24 +769,20 @@ export async function getReviewerActivity(
 export async function getCfpInsights(): Promise<CfpInsights> {
   const supabase = createCfpServiceClient();
 
-  // Get all submissions with their reviews in parallel
+  // Get all submissions with their reviews in parallel using paginated fetch
   const [submissionsResult, reviewsResult, reviewersCountResult] = await Promise.all([
-    supabase
-      .from('cfp_submissions')
-      .select('id')
-      .limit(10000),
-    supabase
-      .from('cfp_reviews')
-      .select('submission_id, score_overall, created_at')
-      .limit(10000),
+    fetchAllRows<{ id: string }>(supabase, 'cfp_submissions', 'id'),
+    fetchAllRows<{ submission_id: string; score_overall: number | null; created_at: string }>(
+      supabase, 'cfp_reviews', 'submission_id, score_overall, created_at'
+    ),
     supabase
       .from('cfp_reviewers')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true),
   ]);
 
-  const submissions = submissionsResult.data || [];
-  const reviews = reviewsResult.data || [];
+  const submissions = submissionsResult.data;
+  const reviews = reviewsResult.data;
   const totalReviewers = reviewersCountResult.count || 0;
 
   // Group reviews by submission

@@ -163,7 +163,7 @@ export interface CfpInsights {
 // Query keys for React Query
 export const cfpQueryKeys = {
   stats: ['cfp', 'stats'] as const,
-  submissions: (status?: string) => ['cfp', 'submissions', status] as const,
+  submissions: (filters?: object) => ['cfp', 'submissions', filters] as const,
   submissionDetail: (id: string) => ['cfp', 'submission', id] as const,
   speakers: ['cfp', 'speakers'] as const,
   reviewers: ['cfp', 'reviewers'] as const,

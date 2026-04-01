@@ -21,10 +21,32 @@ export async function fetchStats(): Promise<CfpStats> {
   return res.json();
 }
 
-export async function fetchSubmissions(status?: string): Promise<{ submissions: CfpAdminSubmission[] }> {
-  const params = new URLSearchParams();
-  if (status && status !== 'all') params.set('status', status);
-  const res = await fetch(`/api/admin/cfp/submissions?${params}`);
+export interface SubmissionQueryParams {
+  status?: string;
+  submission_type?: string;
+  search?: string;
+  sort_by?: string;
+  sort_order?: string;
+  min_review_count?: number;
+  shortlist_only?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export async function fetchSubmissions(
+  params: SubmissionQueryParams = {}
+): Promise<{ submissions: CfpAdminSubmission[]; total: number; totalUnfiltered: number }> {
+  const searchParams = new URLSearchParams();
+  if (params.status && params.status !== 'all') searchParams.set('status', params.status);
+  if (params.submission_type && params.submission_type !== 'all') searchParams.set('submission_type', params.submission_type);
+  if (params.search) searchParams.set('search', params.search);
+  if (params.sort_by) searchParams.set('sort_by', params.sort_by);
+  if (params.sort_order) searchParams.set('sort_order', params.sort_order);
+  if (params.min_review_count && params.min_review_count > 0) searchParams.set('min_review_count', String(params.min_review_count));
+  if (params.shortlist_only) searchParams.set('shortlist_only', 'true');
+  if (params.limit) searchParams.set('limit', String(params.limit));
+  if (params.offset !== undefined) searchParams.set('offset', String(params.offset));
+  const res = await fetch(`/api/admin/cfp/submissions?${searchParams}`);
   if (!res.ok) throw new Error('Failed to fetch submissions');
   return res.json();
 }
