@@ -485,16 +485,11 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
 export async function getAdminTags(): Promise<CfpAdminTag[]> {
   const supabase = createCfpServiceClient();
 
-  const [tagsResult, tagLinksResult] = await Promise.all([
-    supabase
-      .from('cfp_tags')
-      .select('*')
-      .order('is_suggested', { ascending: false })
-      .order('name', { ascending: true }),
-    supabase
-      .from('cfp_submission_tags')
-      .select('tag_id'),
-  ]);
+  const tagsResult = await supabase
+    .from('cfp_tags')
+    .select('*')
+    .order('is_suggested', { ascending: false })
+    .order('name', { ascending: true });
 
   const { data, error } = tagsResult;
 
@@ -504,8 +499,33 @@ export async function getAdminTags(): Promise<CfpAdminTag[]> {
   }
 
   const submissionCounts = new Map<string, number>();
-  for (const link of tagLinksResult.data || []) {
-    submissionCounts.set(link.tag_id, (submissionCounts.get(link.tag_id) || 0) + 1);
+  const pageSize = 1000;
+  let from = 0;
+
+  while (true) {
+    const { data: tagLinks, error: tagLinksError } = await supabase
+      .from('cfp_submission_tags')
+      .select('tag_id')
+      .range(from, from + pageSize - 1);
+
+    if (tagLinksError) {
+      console.error('[CFP Admin] Error fetching tag relationships:', tagLinksError);
+      break;
+    }
+
+    if (!tagLinks || tagLinks.length === 0) {
+      break;
+    }
+
+    for (const link of tagLinks) {
+      submissionCounts.set(link.tag_id, (submissionCounts.get(link.tag_id) || 0) + 1);
+    }
+
+    if (tagLinks.length < pageSize) {
+      break;
+    }
+
+    from += pageSize;
   }
 
   return ((data || []) as CfpTag[]).map((tag) => ({
