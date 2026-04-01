@@ -3,7 +3,6 @@
  * Table/card view for managing CFP submissions with server-side pagination
  */
 
-import { useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Pagination } from '@/components/atoms';
 import { StatusBadge } from './StatusBadge';
@@ -32,7 +31,6 @@ interface SubmissionsTabProps {
   setTypeFilter: (v: string) => void;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
-  onSearchCommit: (v: string) => void;
   sortBy: string;
   setSortBy: (v: string) => void;
   minReviews: string;
@@ -62,7 +60,6 @@ export function SubmissionsTab({
   setTypeFilter,
   searchQuery,
   setSearchQuery,
-  onSearchCommit,
   sortBy,
   setSortBy,
   minReviews,
@@ -77,15 +74,6 @@ export function SubmissionsTab({
   bulkUpdateStatusMutation,
   onSelectSubmission,
 }: SubmissionsTabProps) {
-  // Debounce search: commit after 400ms of inactivity
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => {
-    debounceRef.current = setTimeout(() => {
-      onSearchCommit(searchQuery);
-    }, 400);
-    return () => clearTimeout(debounceRef.current);
-  }, [searchQuery, onSearchCommit]);
-
   const totalPages = Math.ceil(total / pageSize);
 
   return (
@@ -214,14 +202,13 @@ export function SubmissionsTab({
           typeFilter={typeFilter}
           minReviews={minReviews}
           shortlistOnly={shortlistOnly}
-          onClearSearch={() => { setSearchQuery(''); onSearchCommit(''); }}
+          onClearSearch={() => setSearchQuery('')}
           onClearStatus={() => setStatusFilter('all')}
           onClearType={() => setTypeFilter('all')}
           onClearMinReviews={() => setMinReviews('0')}
           onClearShortlist={() => setShortlistOnly(false)}
           onClearAll={() => {
             setSearchQuery('');
-            onSearchCommit('');
             setStatusFilter('all');
             setTypeFilter('all');
             setMinReviews('0');

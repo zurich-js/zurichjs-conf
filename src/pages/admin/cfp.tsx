@@ -3,7 +3,7 @@
  * Manage submissions, reviewers, and speakers
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
@@ -60,6 +60,17 @@ export default function CfpAdminDashboard() {
   const [minReviews, setMinReviews] = useState<string>('0');
   const [shortlistOnly, setShortlistOnly] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Debounced search: updates debouncedSearch 400ms after typing stops
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setCurrentPage(1);
+    }, 400);
+  }, []);
 
   // Map client sort options to server sort_by + sort_order
   const sortParams = useMemo(() => {
@@ -284,8 +295,7 @@ export default function CfpAdminDashboard() {
                   typeFilter={typeFilter}
                   setTypeFilter={updateFilter(setTypeFilter)}
                   searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  onSearchCommit={updateFilter(setDebouncedSearch)}
+                  setSearchQuery={handleSearchChange}
                   sortBy={sortBy}
                   setSortBy={updateFilter(setSortBy)}
                   minReviews={minReviews}
