@@ -331,9 +331,9 @@ export async function getCfpStats(): Promise<CfpStats> {
     .select('id');
 
   // Get all reviews with timestamps for activity tracking
-  const { data: reviews } = await supabase
+  const { data: reviews, count: totalReviews } = await supabase
     .from('cfp_reviews')
-    .select('id, submission_id, reviewer_id, created_at');
+    .select('id, submission_id, reviewer_id, created_at', { count: 'exact' });
 
   // Get count of active reviewers
   const { count: totalReviewers } = await supabase
@@ -383,11 +383,11 @@ export async function getCfpStats(): Promise<CfpStats> {
     submissions_by_type: byType as Record<string, number>,
     submissions_by_level: byLevel as Record<string, number>,
     total_speakers: (speakers || []).length,
-    total_reviews: (reviews || []).length,
+    total_reviews: totalReviews || 0,
     total_reviewers: totalReviewers || 0,
     active_reviewers_7d: activeReviewers7d,
     avg_reviews_per_submission: submissionList.length > 0
-      ? (reviews || []).length / submissionList.length
+      ? (totalReviews || 0) / submissionList.length
       : 0,
     travel_assistance_requested: travelRequested,
     accepted_speakers_count: acceptedCount,
