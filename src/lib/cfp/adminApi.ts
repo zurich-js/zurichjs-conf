@@ -149,7 +149,8 @@ export async function deleteTag(id: string): Promise<void> {
 
 export async function mergeTags(
   sourceTagIds: string[],
-  targetName: string
+  targetName: string,
+  isSuggested: boolean
 ): Promise<{ tag: CfpAdminTag; merged_tag_ids: string[]; reassigned_submission_count: number }> {
   const res = await fetch('/api/admin/cfp/tags/merge', {
     method: 'POST',
@@ -157,6 +158,7 @@ export async function mergeTags(
     body: JSON.stringify({
       source_tag_ids: sourceTagIds,
       target_name: targetName,
+      is_suggested: isSuggested,
     }),
   });
 

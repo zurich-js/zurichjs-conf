@@ -5,7 +5,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
-import { dedupeTagNames, normalizeTagName } from '@/lib/cfp/tag-utils';
 import type {
   CfpSpeaker,
   CfpSubmission,
@@ -433,18 +432,13 @@ export async function createSession(
 
   // Handle tags if provided
   if (data.tags && data.tags.length > 0) {
-    const tagNames = dedupeTagNames(data.tags);
-
     // First, ensure tags exist or create them
-    for (const tagName of tagNames) {
-      const { data: existingTags } = await supabase
+    for (const tagName of data.tags) {
+      const { data: existingTag } = await supabase
         .from('cfp_tags')
-        .select('id, name')
-        .ilike('name', tagName);
-
-      const existingTag = (existingTags || []).find(
-        (tag: { id: string; name: string }) => normalizeTagName(tag.name) === tagName
-      );
+        .select('id')
+        .eq('name', tagName)
+        .single();
 
       let tagId: string;
       if (existingTag) {
@@ -465,7 +459,7 @@ export async function createSession(
       // Link tag to submission
       await supabase
         .from('cfp_submission_tags')
-        .upsert({ submission_id: submission.id, tag_id: tagId });
+        .insert({ submission_id: submission.id, tag_id: tagId });
     }
   }
 

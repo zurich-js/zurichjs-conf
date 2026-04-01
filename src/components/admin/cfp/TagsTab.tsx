@@ -11,9 +11,9 @@ import type { CfpAdminTag } from '@/lib/types/cfp-admin';
 interface TagsTabProps {
   tags: CfpAdminTag[];
   isLoading: boolean;
-  onDelete: (id: string) => void;
+  onDelete: (tag: CfpAdminTag) => void;
   isDeleting: boolean;
-  onMerge: (sourceTagIds: string[], targetName: string) => Promise<void>;
+  onMerge: (sourceTagIds: string[], targetName: string, isSuggested: boolean) => Promise<void>;
   isMerging: boolean;
 }
 
@@ -27,12 +27,28 @@ export function TagsTab({
 }: TagsTabProps) {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [targetName, setTargetName] = useState('');
+  const [isSuggested, setIsSuggested] = useState(false);
   const [error, setError] = useState('');
+  const [sortBy, setSortBy] = useState<'usage' | 'name'>('usage');
 
   const selectedTags = useMemo(
     () => tags.filter((tag) => selectedTagIds.includes(tag.id)),
     [selectedTagIds, tags]
   );
+
+  const sortedTags = useMemo(() => {
+    return [...tags].sort((left, right) => {
+      if (sortBy === 'usage') {
+        if (right.submission_count !== left.submission_count) {
+          return right.submission_count - left.submission_count;
+        }
+
+        return left.name.localeCompare(right.name);
+      }
+
+      return left.name.localeCompare(right.name);
+    });
+  }, [sortBy, tags]);
 
   const toggleSelection = (tagId: string) => {
     setSelectedTagIds((current) =>
@@ -55,9 +71,10 @@ export function TagsTab({
     }
 
     try {
-      await onMerge(selectedTagIds, targetName);
+      await onMerge(selectedTagIds, targetName, isSuggested);
       setSelectedTagIds([]);
       setTargetName('');
+      setIsSuggested(false);
       setError('');
     } catch (mergeError) {
       setError(mergeError instanceof Error ? mergeError.message : 'Failed to merge tags');
@@ -82,9 +99,15 @@ export function TagsTab({
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#F1E271]"
             />
           </div>
-          <div className="text-sm text-gray-700">
-            {selectedTagIds.length} tag{selectedTagIds.length === 1 ? '' : 's'} selected
-          </div>
+          <label className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium text-black">
+            <input
+              type="checkbox"
+              checked={isSuggested}
+              onChange={(event) => setIsSuggested(event.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <span>Suggested Tag</span>
+          </label>
           <button
             type="button"
             onClick={handleMerge}
@@ -98,16 +121,24 @@ export function TagsTab({
         {selectedTags.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {selectedTags.map((tag) => (
-              <button
+              <label
                 key={tag.id}
-                type="button"
-                onClick={() => toggleSelection(tag.id)}
-                className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm text-black"
+                className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-black/10 bg-white px-3 py-2 text-sm text-black"
               >
+                <input
+                  type="checkbox"
+                  checked={true}
+                  onChange={() => toggleSelection(tag.id)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-2 text-xs font-medium text-gray-700">
+                  {tag.submission_count}
+                </span>
                 <span>{tag.name}</span>
-                <span className="text-xs text-gray-500">{tag.submission_count} submissions</span>
-                <X className="h-3 w-3" />
-              </button>
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/5 text-black">
+                  <X className="h-3 w-3" />
+                </span>
+              </label>
             ))}
           </div>
         )}
@@ -118,41 +149,100 @@ export function TagsTab({
         {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-gray-700">
+        <div className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-[#F1E271]" />
+          <span>Suggested tags</span>
+        </div>
+        <div className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-gray-300" />
+          <span>Manually added tags</span>
+        </div>
+        <div className="inline-flex items-center gap-2">
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-200 px-1.5 text-[11px] font-semibold text-gray-700">
+            0
+          </span>
+          <span>Number of submissions currently using that tag</span>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-black">Sort tags:</span>
+        <button
+          type="button"
+          onClick={() => setSortBy('usage')}
+          className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+            sortBy === 'usage'
+              ? 'bg-black text-white'
+              : 'bg-gray-100 text-black hover:bg-gray-200'
+          }`}
+        >
+          Usage (High-Low)
+        </button>
+        <button
+          type="button"
+          onClick={() => setSortBy('name')}
+          className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+            sortBy === 'name'
+              ? 'bg-black text-white'
+              : 'bg-gray-100 text-black hover:bg-gray-200'
+          }`}
+        >
+          Name (A-Z)
+        </button>
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          {tags.map((tag) => (
-            <div key={tag.id} className="inline-flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => toggleSelection(tag.id)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+          {sortedTags.map((tag) => (
+            <label
+              key={tag.id}
+              className={`inline-flex cursor-pointer items-center gap-3 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
+                selectedTagIds.includes(tag.id)
+                  ? 'border-black bg-black text-white'
+                  : tag.is_suggested
+                    ? 'border-transparent bg-[#F1E271] text-black'
+                    : 'border-transparent bg-gray-100 text-black'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={selectedTagIds.includes(tag.id)}
+                onChange={() => toggleSelection(tag.id)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <span
+                className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-medium ${
                   selectedTagIds.includes(tag.id)
-                    ? 'border-black bg-black text-white'
-                    : tag.is_suggested
-                      ? 'border-transparent bg-[#F1E271] text-black'
-                      : 'border-transparent bg-gray-100 text-black'
+                    ? 'bg-white/15 text-white'
+                    : 'bg-black/10 text-black/75'
                 }`}
               >
-                {tag.name}
-                <span className={`text-xs ${selectedTagIds.includes(tag.id) ? 'text-white/80' : 'opacity-75'}`}>
-                  {tag.submission_count} submissions
-                </span>
-                {tag.is_suggested && <span className="text-xs opacity-75">suggested</span>}
-              </button>
+                {tag.submission_count}
+              </span>
+              <span>{tag.name}</span>
               <button
                 type="button"
-                onClick={() => onDelete(tag.id)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onDelete(tag);
+                }}
                 disabled={isDeleting}
-                className="w-7 h-7 rounded-full bg-black/10 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                className={`inline-flex h-6 w-6 items-center justify-center rounded-full transition-colors disabled:opacity-50 ${
+                  selectedTagIds.includes(tag.id)
+                    ? 'bg-white/15 text-white hover:bg-red-500'
+                    : 'bg-black/10 text-black hover:bg-red-500 hover:text-white'
+                }`}
                 title="Delete tag"
               >
-                <X className="w-3 h-3" />
+                <X className="h-3 w-3" />
               </button>
-            </div>
+            </label>
           ))}
           {tags.length === 0 && <p className="text-black">No tags found</p>}
         </div>

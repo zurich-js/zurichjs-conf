@@ -5,7 +5,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
-import { dedupeTags } from './tag-utils';
 import type {
   CfpSubmission,
   CfpSubmissionWithStats,
@@ -206,7 +205,7 @@ export async function getAdminSubmissions(
     return {
       ...s,
       speaker: speakerMap[s.speaker_id],
-      tags: dedupeTags(submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean)),
+      tags: submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean),
       stats: statsMap[s.id],
     } as CfpSubmissionWithStats;
   });
@@ -255,7 +254,7 @@ export async function getAdminSubmissionDetail(id: string): Promise<{
       .from('cfp_tags')
       .select('*')
       .in('id', tagIds);
-    tags = dedupeTags((data || []) as CfpTag[]);
+    tags = (data || []) as CfpTag[];
   }
 
   // Get all reviews

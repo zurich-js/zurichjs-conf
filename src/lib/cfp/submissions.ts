@@ -5,7 +5,6 @@
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { SUBMISSION_LIMITS } from '@/lib/cfp/config';
-import { dedupeTagNames, dedupeTags, normalizeTagName } from '@/lib/cfp/tag-utils';
 import type {
   CfpSubmission,
   CfpSubmissionWithDetails,
@@ -107,12 +106,12 @@ export async function getSubmissionWithDetails(
 
   let tags: CfpTag[] = [];
   if (tagLinks && tagLinks.length > 0) {
-    const tagIds = [...new Set(tagLinks.map((link: { tag_id: string }) => link.tag_id))];
+    const tagIds = tagLinks.map((link: { tag_id: string }) => link.tag_id);
     const { data: tagData } = await supabase
       .from('cfp_tags')
       .select('*')
       .in('id', tagIds);
-    tags = dedupeTags((tagData || []) as CfpTag[]);
+    tags = (tagData || []) as CfpTag[];
   }
 
   return {
@@ -415,20 +414,16 @@ async function linkTagsToSubmission(
   tagNames: string[]
 ): Promise<void> {
   const supabase = createCfpServiceClient();
-  const normalizedTagNames = dedupeTagNames(tagNames);
 
-  for (const tagName of normalizedTagNames) {
+  for (const tagName of tagNames) {
     // Find or create tag
     let tagId: string;
 
-    const { data: existingTags } = await supabase
+    const { data: existingTag } = await supabase
       .from('cfp_tags')
-      .select('id, name')
-      .ilike('name', tagName);
-
-    const existingTag = (existingTags || []).find(
-      (tag: { id: string; name: string }) => normalizeTagName(tag.name) === tagName
-    );
+      .select('id')
+      .eq('name', tagName)
+      .single();
 
     if (existingTag) {
       tagId = existingTag.id;
@@ -450,7 +445,7 @@ async function linkTagsToSubmission(
     // Link tag to submission
     await supabase
       .from('cfp_submission_tags')
-      .upsert({ submission_id: submissionId, tag_id: tagId });
+      .insert({ submission_id: submissionId, tag_id: tagId });
   }
 }
 

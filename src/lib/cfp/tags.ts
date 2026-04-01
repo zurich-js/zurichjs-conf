@@ -5,7 +5,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
-import { dedupeTags, normalizeTagName } from '@/lib/cfp/tag-utils';
 import type { CfpTag } from '@/lib/types/cfp';
 
 /**
@@ -41,7 +40,7 @@ export async function getSuggestedTags(): Promise<CfpTag[]> {
     return [];
   }
 
-  return dedupeTags((data || []) as CfpTag[]);
+  return (data || []) as CfpTag[];
 }
 
 /**
@@ -60,7 +59,7 @@ export async function getAllTags(): Promise<CfpTag[]> {
     return [];
   }
 
-  return dedupeTags((data || []) as CfpTag[]);
+  return (data || []) as CfpTag[];
 }
 
 /**
@@ -88,19 +87,18 @@ export async function getTagById(tagId: string): Promise<CfpTag | null> {
  */
 export async function getTagByName(name: string): Promise<CfpTag | null> {
   const supabase = createCfpServiceClient();
-  const normalizedName = normalizeTagName(name);
 
   const { data, error } = await supabase
     .from('cfp_tags')
     .select('*')
-    .ilike('name', normalizedName);
+    .eq('name', name)
+    .single();
 
   if (error || !data) {
     return null;
   }
 
-  const matchedTag = (data as CfpTag[]).find((tag) => normalizeTagName(tag.name) === normalizedName);
-  return matchedTag || null;
+  return data as CfpTag;
 }
 
 /**
@@ -111,21 +109,20 @@ export async function createTag(
   isSuggested: boolean = false
 ): Promise<{ tag: CfpTag | null; error?: string }> {
   const supabase = createCfpServiceClient();
-  const normalizedName = normalizeTagName(name);
 
-  if (!normalizedName) {
+  if (!name.trim()) {
     return { tag: null, error: 'Tag name is required' };
   }
 
   // Check if tag already exists
-  const existing = await getTagByName(normalizedName);
+  const existing = await getTagByName(name);
   if (existing) {
     return { tag: null, error: 'Tag already exists' };
   }
 
   const { data, error } = await supabase
     .from('cfp_tags')
-    .insert({ name: normalizedName, is_suggested: isSuggested })
+    .insert({ name, is_suggested: isSuggested })
     .select()
     .single();
 
@@ -145,11 +142,10 @@ export async function updateTag(
   updates: { name?: string; is_suggested?: boolean }
 ): Promise<{ tag: CfpTag | null; error?: string }> {
   const supabase = createCfpServiceClient();
-  const normalizedName = updates.name ? normalizeTagName(updates.name) : undefined;
 
   // If updating name, check for duplicates
-  if (normalizedName) {
-    const existing = await getTagByName(normalizedName);
+  if (updates.name) {
+    const existing = await getTagByName(updates.name);
     if (existing && existing.id !== tagId) {
       return { tag: null, error: 'A tag with this name already exists' };
     }
@@ -157,10 +153,7 @@ export async function updateTag(
 
   const { data, error } = await supabase
     .from('cfp_tags')
-    .update({
-      ...updates,
-      ...(normalizedName ? { name: normalizedName } : {}),
-    })
+    .update(updates)
     .eq('id', tagId)
     .select()
     .single();
@@ -200,7 +193,8 @@ export async function deleteTag(
  */
 export async function mergeTags(
   sourceTagIds: string[],
-  targetName: string
+  targetName: string,
+  isSuggested: boolean
 ): Promise<{
   tag: CfpTag | null;
   mergedTagIds: string[];
@@ -209,7 +203,6 @@ export async function mergeTags(
 }> {
   const supabase = createCfpServiceClient();
   const uniqueSourceTagIds = [...new Set(sourceTagIds.filter(Boolean))];
-  const normalizedTargetName = normalizeTagName(targetName);
 
   if (uniqueSourceTagIds.length < 2) {
     return {
@@ -220,7 +213,7 @@ export async function mergeTags(
     };
   }
 
-  if (!normalizedTargetName) {
+  if (!targetName.trim()) {
     return {
       tag: null,
       mergedTagIds: [],
@@ -243,13 +236,12 @@ export async function mergeTags(
     };
   }
 
-  const shouldBeSuggested = sourceTags.some((tag) => tag.is_suggested);
-  let targetTag = await getTagByName(normalizedTargetName);
+  let targetTag = await getTagByName(targetName);
 
   if (!targetTag) {
     const { data: createdTag, error: createError } = await supabase
       .from('cfp_tags')
-      .insert({ name: normalizedTargetName, is_suggested: shouldBeSuggested })
+      .insert({ name: targetName, is_suggested: isSuggested })
       .select('*')
       .single();
 
@@ -263,10 +255,10 @@ export async function mergeTags(
     }
 
     targetTag = createdTag as CfpTag;
-  } else if (shouldBeSuggested && !targetTag.is_suggested) {
+  } else if (targetTag.is_suggested !== isSuggested) {
     const { data: updatedTag, error: updateError } = await supabase
       .from('cfp_tags')
-      .update({ is_suggested: true })
+      .update({ is_suggested: isSuggested })
       .eq('id', targetTag.id)
       .select('*')
       .single();
@@ -392,7 +384,7 @@ export async function getTagsForSubmission(submissionId: string): Promise<CfpTag
     return [];
   }
 
-  return dedupeTags((tags || []) as CfpTag[]);
+  return (tags || []) as CfpTag[];
 }
 
 /**

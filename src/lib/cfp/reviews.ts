@@ -4,7 +4,6 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
-import { dedupeTags } from './tag-utils';
 import type {
   CfpReview,
   CfpSubmission,
@@ -347,7 +346,7 @@ export async function getSubmissionsForReview(
     return {
       ...s,
       speaker: reviewer.can_see_speaker_identity ? speakerMap[s.speaker_id] : undefined,
-      tags: dedupeTags(submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean)),
+      tags: submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean),
       my_review: myReviewMap[s.id] || null,
       stats: statsMap[s.id],
     };
@@ -422,7 +421,7 @@ export async function getSubmissionForReview(
       .from('cfp_tags')
       .select('*')
       .in('id', tagIds);
-    tags = dedupeTags((data || []) as CfpTag[]);
+    tags = (data || []) as CfpTag[];
   }
 
   // Get my review

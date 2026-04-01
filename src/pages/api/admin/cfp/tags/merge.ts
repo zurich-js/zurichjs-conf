@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { source_tag_ids, target_name } = req.body ?? {};
+  const { source_tag_ids, target_name, is_suggested } = req.body ?? {};
 
   if (!Array.isArray(source_tag_ids) || source_tag_ids.some((id) => typeof id !== 'string')) {
     return res.status(400).json({ error: 'source_tag_ids must be an array of tag IDs' });
@@ -25,8 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'target_name is required' });
   }
 
+  if (typeof is_suggested !== 'boolean') {
+    return res.status(400).json({ error: 'is_suggested must be provided' });
+  }
+
   try {
-    const result = await mergeTags(source_tag_ids, target_name);
+    const result = await mergeTags(source_tag_ids, target_name, is_suggested);
 
     if (result.error || !result.tag) {
       return res.status(400).json({ error: result.error || 'Failed to merge tags' });
@@ -35,6 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     log.info('Tags merged', {
       targetTagId: result.tag.id,
       targetName: result.tag.name,
+      isSuggested: result.tag.is_suggested,
       sourceTagIds: source_tag_ids,
       mergedTagIds: result.mergedTagIds,
       reassignedSubmissionCount: result.reassignedSubmissionCount,

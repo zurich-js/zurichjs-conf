@@ -11,6 +11,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import {
+  ConfirmationModal,
   SubmissionModal,
   ReviewersTab,
   SpeakersTab,
@@ -46,6 +47,11 @@ export default function CfpAdminDashboard() {
   const [selectedSubmission, setSelectedSubmission] = useState<CfpAdminSubmission | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkActionStatus, setBulkActionStatus] = useState<string>('');
+  const [tagPendingDelete, setTagPendingDelete] = useState<{
+    id: string;
+    name: string;
+    submission_count: number;
+  } | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
@@ -179,8 +185,15 @@ export default function CfpAdminDashboard() {
   });
 
   const mergeTagsMutation = useMutation({
-    mutationFn: ({ sourceTagIds, targetName }: { sourceTagIds: string[]; targetName: string }) =>
-      mergeTags(sourceTagIds, targetName),
+    mutationFn: ({
+      sourceTagIds,
+      targetName,
+      isSuggested,
+    }: {
+      sourceTagIds: string[];
+      targetName: string;
+      isSuggested: boolean;
+    }) => mergeTags(sourceTagIds, targetName, isSuggested),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: cfpQueryKeys.tags });
       queryClient.invalidateQueries({ queryKey: ['cfp', 'submissions'] });
@@ -219,6 +232,15 @@ export default function CfpAdminDashboard() {
   const speakers = speakersData?.speakers || [];
   const reviewers = reviewersData?.reviewers || [];
   const tags = tagsData?.tags || [];
+
+  const handleDeleteTag = (tag: { id: string; name: string; submission_count: number }) => {
+    if (tag.submission_count > 0) {
+      setTagPendingDelete(tag);
+      return;
+    }
+
+    deleteTagMutation.mutate(tag.id);
+  };
 
   if (isAuthLoading) return <AdminLoadingScreen />;
   if (!isAuthenticated) return <AdminLoginForm title="CFP Admin" />;
@@ -266,10 +288,10 @@ export default function CfpAdminDashboard() {
                 <TagsTab
                   tags={tags}
                   isLoading={isLoadingTags}
-                  onDelete={(id) => deleteTagMutation.mutate(id)}
+                  onDelete={handleDeleteTag}
                   isDeleting={deleteTagMutation.isPending}
-                  onMerge={(sourceTagIds, targetName) =>
-                    mergeTagsMutation.mutateAsync({ sourceTagIds, targetName }).then(() => undefined)
+                  onMerge={(sourceTagIds, targetName, isSuggested) =>
+                    mergeTagsMutation.mutateAsync({ sourceTagIds, targetName, isSuggested }).then(() => undefined)
                   }
                   isMerging={mergeTagsMutation.isPending}
                 />
@@ -294,6 +316,28 @@ export default function CfpAdminDashboard() {
             isDeleting={deleteSubmissionMutation.isPending}
             onEdit={(data) => editSubmissionMutation.mutate({ id: selectedSubmission.id, data })}
             isEditing={editSubmissionMutation.isPending}
+          />
+        )}
+
+        {tagPendingDelete && (
+          <ConfirmationModal
+            isOpen={true}
+            onClose={() => setTagPendingDelete(null)}
+            onConfirm={() => {
+              deleteTagMutation.mutate(tagPendingDelete.id, {
+                onSuccess: () => {
+                  setTagPendingDelete(null);
+                },
+                onError: () => {
+                  setTagPendingDelete(null);
+                },
+              });
+            }}
+            title="Delete Tag?"
+            message={`"${tagPendingDelete.name}" is still linked to ${tagPendingDelete.submission_count} submission${tagPendingDelete.submission_count === 1 ? '' : 's'}. Delete it only if you are sure those references should be removed.`}
+            confirmText="Delete Tag"
+            confirmStyle="warning"
+            isLoading={deleteTagMutation.isPending}
           />
         )}
       </div>
