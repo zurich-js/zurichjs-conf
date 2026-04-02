@@ -5,6 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
+import { computeSubmissionScoring } from '@/lib/cfp/scoring';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { logger } from '@/lib/logger';
 
@@ -131,10 +132,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get review stats for each submission
     const { data: reviewStats, error: statsError } = await supabaseAdmin
       .from('cfp_reviews')
-      .select('submission_id, score_overall');
+      .select('submission_id, score_overall, created_at');
 
     if (statsError) {
       log.error('Error fetching stats', statsError);
+    }
+
+    const { count: totalReviewers, error: reviewerCountError } = await supabaseAdmin
+      .from('cfp_reviewers')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+
+    if (reviewerCountError) {
+      log.error('Error fetching reviewer count', reviewerCountError);
     }
 
     // Create a map of my reviews by submission_id
@@ -143,23 +153,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     // Calculate stats per submission
-    const statsMap = new Map<string, { review_count: number; avg_overall: number | null }>();
+    const totalReviewerCount = totalReviewers || 0;
+    const statsMap = new Map<string, {
+      review_count: number;
+      avg_overall: number | null;
+      total_reviewers: number;
+      coverage_ratio: number;
+      coverage_percent: number;
+    }>();
     if (reviewStats) {
       const grouped = reviewStats.reduce((acc, review) => {
         if (!acc[review.submission_id]) {
           acc[review.submission_id] = [];
         }
-        acc[review.submission_id].push(review.score_overall);
+        acc[review.submission_id].push({
+          score_overall: review.score_overall,
+          created_at: review.created_at,
+        });
         return acc;
-      }, {} as Record<string, number[]>);
+      }, {} as Record<string, Array<{ score_overall: number | null; created_at: string }>>);
 
-      for (const [submissionId, scores] of Object.entries(grouped)) {
-        const validScores = scores.filter(s => s !== null);
+      for (const [submissionId, reviews] of Object.entries(grouped)) {
+        const scoring = computeSubmissionScoring(reviews, totalReviewerCount);
         statsMap.set(submissionId, {
-          review_count: validScores.length,
-          avg_overall: validScores.length > 0
-            ? validScores.reduce((a, b) => a + b, 0) / validScores.length
-            : null,
+          review_count: scoring.reviewCount,
+          avg_overall: scoring.avgScore,
+          total_reviewers: totalReviewerCount,
+          coverage_ratio: scoring.coverageRatio,
+          coverage_percent: scoring.coveragePercent,
         });
       }
     }
@@ -175,7 +196,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ...submission,
         tags,
         my_review: myReviewsMap.get(submission.id) || null,
-        stats: statsMap.get(submission.id) || { review_count: 0, avg_overall: null },
+        stats: statsMap.get(submission.id) || {
+          review_count: 0,
+          avg_overall: null,
+          total_reviewers: totalReviewerCount,
+          coverage_ratio: 0,
+          coverage_percent: 0,
+        },
       };
     });
 

@@ -55,6 +55,10 @@ export default function ReviewerDashboard() {
     'status',
     parseAsString.withDefault('')
   );
+  const [coverageMinFilter, setCoverageMinFilter] = useQueryState(
+    'coverage_min',
+    parseAsInteger.withDefault(0)
+  );
   const [tagFilterParam, setTagFilterParam] = useQueryState(
     'tags',
     parseAsString.withDefault('')
@@ -159,6 +163,10 @@ export default function ReviewerDashboard() {
       });
     }
 
+    if (coverageMinFilter > 0) {
+      result = result.filter((submission) => (submission.stats.coverage_percent || 0) >= coverageMinFilter);
+    }
+
     result.sort((a, b) => {
       switch (sortBy) {
         case 'oldest':
@@ -181,7 +189,7 @@ export default function ReviewerDashboard() {
     });
 
     return result;
-  }, [submissions, reviewFilter, typeFilter, levelFilter, statusFilter, tagFilters, sortBy, isBookmarked]);
+  }, [submissions, reviewFilter, typeFilter, levelFilter, statusFilter, coverageMinFilter, tagFilters, sortBy, isBookmarked]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSubmissions.length / pageSize);
@@ -215,6 +223,12 @@ export default function ReviewerDashboard() {
     setCurrentPage(1);
   }, [setStatusFilter, setCurrentPage]);
 
+  const handleCoverageMinFilterChange = useCallback((value: number | null) => {
+    const nextValue = value && value > 0 ? Math.min(Math.max(value, 0), 100) : null;
+    setCoverageMinFilter(nextValue);
+    setCurrentPage(1);
+  }, [setCoverageMinFilter, setCurrentPage]);
+
   const handleTagFiltersChange = useCallback((value: string[]) => {
     const nextValue = value.length > 0 ? value.join(',') : null;
     setTagFilterParam(nextValue);
@@ -244,6 +258,8 @@ export default function ReviewerDashboard() {
   }, [dashboardParams, filteredSubmissions]);
 
   const hasActiveFilters = searchInput || typeFilter || levelFilter || statusFilter || tagFilters.length > 0;
+  const hasCoverageFilter = coverageMinFilter > 0;
+  const hasAnyActiveFilters = !!(hasActiveFilters || hasCoverageFilter);
 
   const clearAllFilters = async () => {
     setSearchInput('');
@@ -253,6 +269,7 @@ export default function ReviewerDashboard() {
       setTypeFilter(null),
       setLevelFilter(null),
       setStatusFilter(null),
+      setCoverageMinFilter(null),
       setTagFilterParam(null),
       setReviewFilter('all'),
       setCurrentPage(1),
@@ -363,17 +380,19 @@ export default function ReviewerDashboard() {
           typeFilter={typeFilter}
           levelFilter={levelFilter}
           statusFilter={statusFilter}
+          coverageMinFilter={coverageMinFilter}
           tagFilters={tagFilters}
           availableTags={availableTags}
           sortBy={sortBy}
           showFilters={showFilters}
-          hasActiveFilters={!!hasActiveFilters}
+          hasActiveFilters={hasAnyActiveFilters}
           isAnonymous={isAnonymous}
           onSearchChange={handleSearchChange}
           onReviewFilterChange={handleReviewFilterChange}
           onTypeFilterChange={handleTypeFilterChange}
           onLevelFilterChange={handleLevelFilterChange}
           onStatusFilterChange={handleStatusFilterChange}
+          onCoverageMinFilterChange={handleCoverageMinFilterChange}
           onTagFiltersChange={handleTagFiltersChange}
           onSortChange={handleSortChange}
           onToggleFilters={() => setShowFilters(!showFilters)}
@@ -388,7 +407,7 @@ export default function ReviewerDashboard() {
               </Heading>
               <span className="text-brand-gray-light text-sm">
                 {filteredSubmissions.length} result{filteredSubmissions.length !== 1 ? 's' : ''}
-                {hasActiveFilters && ` (filtered from ${stats.total})`}
+                {hasAnyActiveFilters && ` (filtered from ${stats.total})`}
               </span>
             </div>
           </div>
@@ -397,7 +416,7 @@ export default function ReviewerDashboard() {
           {paginatedSubmissions.length === 0 ? (
             <EmptyState
               reviewFilter={reviewFilter}
-              hasActiveFilters={!!hasActiveFilters}
+              hasActiveFilters={hasAnyActiveFilters}
               onClearFilters={clearAllFilters}
             />
           ) : (
