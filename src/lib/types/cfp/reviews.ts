@@ -55,4 +55,7 @@ export interface CfpSubmissionStats {
   avg_technical_depth: number | null;
   avg_clarity: number | null;
   avg_diversity: number | null;
+  total_reviewers?: number;
+  coverage_ratio?: number;
+  coverage_percent?: number;
 }

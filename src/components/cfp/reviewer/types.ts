@@ -122,6 +122,9 @@ export interface SubmissionStats {
   avg_technical_depth?: number | null;
   avg_clarity?: number | null;
   avg_diversity?: number | null;
+  total_reviewers?: number;
+  coverage_ratio?: number;
+  coverage_percent?: number;
 }
 
 export interface Submission {
@@ -208,5 +211,6 @@ export interface DashboardFilters {
   typeFilter: string;
   levelFilter: string;
   statusFilter: string;
+  coverageMinFilter?: number;
   sortBy: string;
 }

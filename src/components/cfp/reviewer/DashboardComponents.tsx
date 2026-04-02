@@ -132,6 +132,7 @@ interface FilterBarProps {
   typeFilter: string;
   levelFilter: string;
   statusFilter: string;
+  coverageMinFilter: number;
   tagFilters: string[];
   availableTags: string[];
   sortBy: string;
@@ -143,6 +144,7 @@ interface FilterBarProps {
   onTypeFilterChange: (type: string) => void;
   onLevelFilterChange: (level: string) => void;
   onStatusFilterChange: (status: string) => void;
+  onCoverageMinFilterChange: (value: number | null) => void;
   onTagFiltersChange: (tags: string[]) => void;
   onSortChange: (sort: string) => void;
   onToggleFilters: () => void;
@@ -234,6 +236,7 @@ export function FilterBar({
   typeFilter,
   levelFilter,
   statusFilter,
+  coverageMinFilter,
   tagFilters,
   availableTags,
   sortBy,
@@ -245,6 +248,7 @@ export function FilterBar({
   onTypeFilterChange,
   onLevelFilterChange,
   onStatusFilterChange,
+  onCoverageMinFilterChange,
   onTagFiltersChange,
   onSortChange,
   onToggleFilters,
@@ -315,7 +319,7 @@ export function FilterBar({
         {/* Advanced Filters */}
       {showFilters && (
         <div className="mt-4 pt-4 border-t border-brand-gray-medium">
-          <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-6 gap-4">
             <Select
               label="Type"
               value={typeFilter}
@@ -340,6 +344,30 @@ export function FilterBar({
               variant="dark"
               size="sm"
             />
+            <div>
+              <label htmlFor="coverage-min-filter" className="block text-xs font-medium mb-1.5 text-brand-gray-light">
+                Coverage At Least
+              </label>
+              <div className="relative">
+                <input
+                  id="coverage-min-filter"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={coverageMinFilter > 0 ? coverageMinFilter : ''}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    onCoverageMinFilterChange(nextValue === '' ? null : Number(nextValue));
+                  }}
+                  placeholder="Any %"
+                  className="w-full bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-gray-medium">
+                  %
+                </span>
+              </div>
+            </div>
             <TagMultiSelect
               label="Tags"
               value={tagFilters}
@@ -383,7 +411,7 @@ interface SubmissionCardSubmission {
   talk_level: string;
   tags?: { id: string; name: string }[];
   my_review?: { score_overall: number | null } | null;
-  stats: { review_count: number; avg_overall?: number | null };
+  stats: { review_count: number; avg_overall?: number | null; coverage_percent?: number };
 }
 
 interface SubmissionCardProps {
@@ -423,9 +451,9 @@ export function SubmissionCard({
   }, [submission.tags, hasActiveTagFilters, activeTagFilters]);
 
   const coverageLabel =
-    submission.stats.review_count <= 1
+    (submission.stats.coverage_percent || 0) < 25
       ? 'Low coverage'
-      : submission.stats.review_count === 2
+      : (submission.stats.coverage_percent || 0) < 60
         ? 'Some coverage'
         : 'Well covered';
 
