@@ -9,11 +9,13 @@ import Image from 'next/image';
 
 interface LogoUploadProps {
   sponsorId: string;
+  title: string;
+  endpoint: 'logo' | 'logo-color';
   currentLogoUrl: string | null;
   onUpdate: () => void;
 }
 
-export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadProps) {
+export function LogoUpload({ sponsorId, title, endpoint, currentLogoUrl, onUpdate }: LogoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`/api/admin/sponsorships/${sponsorId}/logo`, {
+      const response = await fetch(`/api/admin/sponsorships/${sponsorId}/${endpoint}`, {
         method: 'POST',
         body: formData,
       });
@@ -66,13 +68,13 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to remove the logo?')) return;
+    if (!confirm(`Are you sure you want to remove the ${title.toLowerCase()}?`)) return;
 
     setIsDeleting(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/sponsorships/${sponsorId}/logo`, {
+      const response = await fetch(`/api/admin/sponsorships/${sponsorId}/${endpoint}`, {
         method: 'DELETE',
       });
 
@@ -91,7 +93,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-gray-700">Company Logo</h3>
+      <h3 className="text-sm font-medium text-gray-700">{title}</h3>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
@@ -141,7 +143,7 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
               ) : (
                 <>
                   <Upload className="h-4 w-4" />
-                  {currentLogoUrl ? 'Replace' : 'Upload Logo'}
+                  {currentLogoUrl ? 'Replace' : `Upload ${title}`}
                 </>
               )}
             </button>
@@ -170,6 +172,11 @@ export function LogoUpload({ sponsorId, currentLogoUrl, onUpdate }: LogoUploadPr
           <p className="text-xs text-gray-500">
             Accepted formats: JPEG, PNG, WebP, SVG. Max size: 5MB.
           </p>
+          {endpoint === 'logo-color' && (
+            <p className="text-xs text-gray-500">
+              Optional: this logo is used on sponsor card hover.
+            </p>
+          )}
         </div>
       </div>
     </div>

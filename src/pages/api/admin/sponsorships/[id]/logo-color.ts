@@ -1,18 +1,18 @@
 /**
- * Sponsor Logo API
- * POST /api/admin/sponsorships/[id]/logo - Upload sponsor logo
- * DELETE /api/admin/sponsorships/[id]/logo - Remove sponsor logo
+ * Sponsor Color Logo API
+ * POST /api/admin/sponsorships/[id]/logo-color - Upload sponsor hover color logo
+ * DELETE /api/admin/sponsorships/[id]/logo-color - Remove sponsor hover color logo
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import fs from 'fs/promises';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { getSponsor, updateSponsorLogo, toggleLogoPublic } from '@/lib/sponsorship';
+import { getSponsor, updateSponsorColorLogo } from '@/lib/sponsorship';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
-const log = logger.scope('Sponsor Logo API');
+const log = logger.scope('Sponsor Color Logo API');
 
 // Disable Next.js default body parser for file uploads
 export const config = {
@@ -25,7 +25,6 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Verify admin authentication
   const { authorized } = verifyAdminAccess(req);
   if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -46,22 +45,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-/**
- * POST - Upload sponsor logo
- */
 async function handleUpload(
   sponsorId: string,
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
-    // Check sponsor exists
     const sponsor = await getSponsor(sponsorId);
     if (!sponsor) {
       return res.status(404).json({ error: 'Sponsor not found' });
     }
 
-    // Parse form with formidable
     const form = formidable({
       maxFileSize: MAX_FILE_SIZE,
       filter: ({ mimetype }) => {
@@ -76,29 +70,24 @@ async function handleUpload(
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Validate MIME type
     if (!uploadedFile.mimetype || !ALLOWED_MIME_TYPES.includes(uploadedFile.mimetype)) {
       return res.status(400).json({
         error: `Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`,
       });
     }
 
-    // Read file
     const fileBuffer = await fs.readFile(uploadedFile.filepath);
 
-    // Determine file extension
     const ext = uploadedFile.mimetype === 'image/png' ? 'png' :
-                uploadedFile.mimetype === 'image/webp' ? 'webp' :
-                uploadedFile.mimetype === 'image/svg+xml' ? 'svg' : 'jpg';
+      uploadedFile.mimetype === 'image/webp' ? 'webp' :
+        uploadedFile.mimetype === 'image/svg+xml' ? 'svg' : 'jpg';
 
-    // Upload to Supabase storage
     const supabase = createServiceRoleClient();
     const timestamp = Date.now();
-    const filename = `logo_${timestamp}.${ext}`;
-    const logoDirectory = `logos/${sponsorId}/default`;
+    const filename = `logo_color_${timestamp}.${ext}`;
+    const logoDirectory = `logos/${sponsorId}/color`;
     const filePath = `${logoDirectory}/${filename}`;
 
-    // Delete old logo files for this sponsor
     const { data: existingFiles } = await supabase.storage
       .from('sponsorship-assets')
       .list(logoDirectory);
@@ -108,8 +97,6 @@ async function handleUpload(
       await supabase.storage.from('sponsorship-assets').remove(filesToDelete);
     }
 
-    // Upload new file
-    // Note: SVGs are uploaded as application/octet-stream to bypass Supabase MIME restrictions
     const contentType = uploadedFile.mimetype === 'image/svg+xml'
       ? 'application/octet-stream'
       : uploadedFile.mimetype;
@@ -125,43 +112,35 @@ async function handleUpload(
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('sponsorship-assets')
       .getPublicUrl(filePath);
 
-    // Update sponsor with new logo URL (with cache-busting)
     const logoUrl = `${publicUrl}?v=${timestamp}`;
-    await updateSponsorLogo(sponsorId, logoUrl);
+    await updateSponsorColorLogo(sponsorId, logoUrl);
 
-    // Clean up temp file
     await fs.unlink(uploadedFile.filepath).catch(() => {});
 
-    log.info('Sponsor logo uploaded', { sponsorId, logoUrl });
+    log.info('Sponsor color logo uploaded', { sponsorId, logoUrl });
 
     return res.status(200).json({ success: true, logoUrl });
   } catch (error) {
-    log.error('Error uploading sponsor logo', { error, sponsorId });
+    log.error('Error uploading sponsor color logo', { error, sponsorId });
     return res.status(500).json({
-      error: error instanceof Error ? error.message : 'Failed to upload logo',
+      error: error instanceof Error ? error.message : 'Failed to upload color logo',
     });
   }
 }
 
-/**
- * DELETE - Remove sponsor logo
- */
 async function handleDelete(sponsorId: string, res: NextApiResponse) {
   try {
-    // Check sponsor exists
     const sponsor = await getSponsor(sponsorId);
     if (!sponsor) {
       return res.status(404).json({ error: 'Sponsor not found' });
     }
 
-    // Delete from storage
     const supabase = createServiceRoleClient();
-    const logoDirectory = `logos/${sponsorId}/default`;
+    const logoDirectory = `logos/${sponsorId}/color`;
     const { data: existingFiles } = await supabase.storage
       .from('sponsorship-assets')
       .list(logoDirectory);
@@ -171,17 +150,15 @@ async function handleDelete(sponsorId: string, res: NextApiResponse) {
       await supabase.storage.from('sponsorship-assets').remove(filesToDelete);
     }
 
-    // Update sponsor to remove logo URL and set is_logo_public to false
-    await updateSponsorLogo(sponsorId, null);
-    await toggleLogoPublic(sponsorId, false);
+    await updateSponsorColorLogo(sponsorId, null);
 
-    log.info('Sponsor logo removed', { sponsorId });
+    log.info('Sponsor color logo removed', { sponsorId });
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    log.error('Error removing sponsor logo', { error, sponsorId });
+    log.error('Error removing sponsor color logo', { error, sponsorId });
     return res.status(500).json({
-      error: error instanceof Error ? error.message : 'Failed to remove logo',
+      error: error instanceof Error ? error.message : 'Failed to remove color logo',
     });
   }
 }

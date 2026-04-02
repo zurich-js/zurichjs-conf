@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   // Configure image optimization for Supabase storage
   // Optimized to reduce Vercel Image Optimization usage
   images: {
+    // Allow Next image optimizer to fetch local Supabase URLs in development
+    // dangerouslyAllowLocalIP: true,
+
     // Only allow Supabase storage images (removed unused Unsplash)
     remotePatterns: [
       {
@@ -14,6 +17,19 @@ const nextConfig: NextConfig = {
         hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      // For local development, allow fetching from localhost
+      // {
+      //   protocol: 'http',
+      //   hostname: '127.0.0.1',
+      //   port: '54321',
+      //   pathname: '/storage/v1/object/public/**',
+      // },
+      // {
+      //   protocol: 'http',
+      //   hostname: 'localhost',
+      //   port: '54321',
+      //   pathname: '/storage/v1/object/public/**',
+      // },
     ],
     // Cache optimized images for 31 days to reduce transformations
     minimumCacheTTL: 2678400,
