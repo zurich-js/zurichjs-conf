@@ -45,11 +45,7 @@ const PRIMARY_ACTIONS = [
   },
 ];
 
-export function StatusActionsSection({
-  currentStatus,
-  onUpdateStatus,
-  isUpdating,
-}: StatusActionsSectionProps) {
+export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating }: StatusActionsSectionProps) {
   return (
     <>
       {/* Primary Status Actions */}
