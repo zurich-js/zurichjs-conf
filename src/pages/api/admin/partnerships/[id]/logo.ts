@@ -10,6 +10,10 @@ import fs from 'fs/promises';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { getPartnership, updatePartnership } from '@/lib/partnerships';
 import { createServiceRoleClient } from '@/lib/supabase';
+import {
+  LOGO_UPLOAD_ALLOWED_MIME_TYPES,
+  LOGO_UPLOAD_MAX_FILE_SIZE_BYTES,
+} from '@/lib/constants/logo-upload';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Partnership Logo API');
@@ -20,9 +24,6 @@ export const config = {
     bodyParser: false,
   },
 };
-
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -63,9 +64,9 @@ async function handleUpload(
 
     // Parse form with formidable
     const form = formidable({
-      maxFileSize: MAX_FILE_SIZE,
+      maxFileSize: LOGO_UPLOAD_MAX_FILE_SIZE_BYTES,
       filter: ({ mimetype }) => {
-        return !!mimetype && ALLOWED_MIME_TYPES.includes(mimetype);
+        return !!mimetype && LOGO_UPLOAD_ALLOWED_MIME_TYPES.includes(mimetype);
       },
     });
 
@@ -77,9 +78,9 @@ async function handleUpload(
     }
 
     // Validate MIME type
-    if (!uploadedFile.mimetype || !ALLOWED_MIME_TYPES.includes(uploadedFile.mimetype)) {
+    if (!uploadedFile.mimetype || !LOGO_UPLOAD_ALLOWED_MIME_TYPES.includes(uploadedFile.mimetype)) {
       return res.status(400).json({
-        error: `Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`,
+        error: `Invalid file type. Allowed: ${LOGO_UPLOAD_ALLOWED_MIME_TYPES.join(', ')}`,
       });
     }
 

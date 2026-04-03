@@ -6,6 +6,11 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Trash2, Building2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import {
+  LOGO_UPLOAD_ACCEPT,
+  LOGO_UPLOAD_ALLOWED_MIME_TYPES,
+  LOGO_UPLOAD_MAX_FILE_SIZE_BYTES,
+} from '@/lib/constants/logo-upload';
 
 interface LogoUploadProps {
   sponsorId: string;
@@ -26,14 +31,13 @@ export function LogoUpload({ sponsorId, title, endpoint, currentLogoUrl, onUpdat
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-    if (!allowedTypes.includes(file.type)) {
+    if (!LOGO_UPLOAD_ALLOWED_MIME_TYPES.includes(file.type)) {
       setError('Invalid file type. Please use JPEG, PNG, WebP, or SVG.');
       return;
     }
 
     // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > LOGO_UPLOAD_MAX_FILE_SIZE_BYTES) {
       setError('File too large. Maximum size is 5MB.');
       return;
     }
@@ -124,7 +128,7 @@ export function LogoUpload({ sponsorId, title, endpoint, currentLogoUrl, onUpdat
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/svg+xml"
+            accept={LOGO_UPLOAD_ACCEPT}
             onChange={handleFileSelect}
             className="hidden"
           />
