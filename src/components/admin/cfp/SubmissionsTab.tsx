@@ -112,7 +112,7 @@ export function SubmissionsTab({
             className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
           >
             <option value="all">All Types</option>
-            <option value="talk">Talk</option>
+            <option value="standard">Standard Talk</option>
             <option value="workshop">Workshop</option>
             <option value="lightning">Lightning Talk</option>
           </select>
