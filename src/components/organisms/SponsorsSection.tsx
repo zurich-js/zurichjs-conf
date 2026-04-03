@@ -24,15 +24,17 @@ export interface SponsorsSectionProps {
 
 // Minimum empty slots per size category to keep the grid looking full
 const MIN_SLOTS: Record<string, number> = {
-    large: 2,
+    extralarge: 1,
+    large: 0,
     medium: 2,
     default: 2,
     small: 4,
+    tiny: 4,
 };
 
 function buildGridItems(sponsors: PublicSponsor[]): { items: GridItemConfig[]; sponsorMap: Map<string, PublicSponsor> } {
     const sponsorMap = new Map<string, PublicSponsor>();
-    const categoryCounts: Record<string, number> = { large: 0, medium: 0, default: 0, small: 0 };
+    const categoryCounts: Record<string, number> = { extralarge: 0, large: 0, medium: 0, default: 0, small: 0, tiny: 0 };
 
     // Create items directly from sponsor data (sizes + priority come from the API)
     const sponsorItems: GridItemConfig[] = sponsors.map((sponsor) => {
@@ -103,7 +105,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                 >
                     <PackedGrid
                         items={packedItems}
-                        columns={{ base: 2, xs: 3, sm: 5, md: 6, lg: 12 }}
+                        columns={{ base: 4, xs: 6, sm: 10, md: 12, lg: 24 }}
                         gap="gap-3 sm:gap-4"
                         renderItem={(item, placement) => {
                             const sponsor = sponsorMap.get(item.id);
