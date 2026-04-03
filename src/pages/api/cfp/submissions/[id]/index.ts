@@ -14,6 +14,7 @@ import {
 } from '@/lib/cfp/submissions';
 import { updateSubmissionSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
+import { CFP_CLOSED_ERROR_CODE, canSubmitOrEditSubmission } from '@/lib/cfp/closure';
 
 const log = logger.scope('CFP Submission API');
 
@@ -60,6 +61,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'PUT') {
     try {
+      const existingSubmission = await getSubmissionWithDetails(id);
+      if (!existingSubmission) {
+        return res.status(404).json({ error: 'Submission not found' });
+      }
+      if (existingSubmission.speaker_id !== speaker.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      if (!canSubmitOrEditSubmission(existingSubmission)) {
+        return res.status(403).json({
+          code: CFP_CLOSED_ERROR_CODE,
+          error: 'CFP is closed. Draft editing is disabled.',
+        });
+      }
+
       // Validate input
       const result = updateSubmissionSchema.safeParse(req.body);
       if (!result.success) {
@@ -89,6 +104,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'DELETE') {
     try {
+      const existingSubmission = await getSubmissionWithDetails(id);
+      if (!existingSubmission) {
+        return res.status(404).json({ error: 'Submission not found' });
+      }
+      if (existingSubmission.speaker_id !== speaker.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      if (!canSubmitOrEditSubmission(existingSubmission)) {
+        return res.status(403).json({
+          code: CFP_CLOSED_ERROR_CODE,
+          error: 'CFP is closed. Draft deletion is disabled.',
+        });
+      }
+
       const { success, error } = await deleteSubmission(id, speaker.id);
 
       if (!success) {

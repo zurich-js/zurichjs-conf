@@ -213,7 +213,7 @@ export default function CfpAdminDashboard() {
     mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
       const promises = ids.map((id) =>
         fetch(`/api/admin/cfp/submissions/${id}/status`, {
-          method: 'PATCH',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status }),
         })

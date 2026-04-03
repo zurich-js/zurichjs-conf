@@ -3,7 +3,7 @@
  * View and manage a single submission
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
@@ -13,15 +13,18 @@ import { Button, Heading } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getSubmissionWithDetails, getSpeakerVisibleStatus, type SpeakerVisibleStatus } from '@/lib/cfp/submissions';
 import type { CfpSpeaker, CfpSubmissionWithDetails } from '@/lib/types/cfp';
+import { CFP_CLOSED_ERROR_CODE, isSubmissionClosedForSpeaker } from '@/lib/cfp/closure';
+import { useToast } from '@/contexts/ToastContext';
 
 interface SubmissionDetailProps {
   speaker: CfpSpeaker;
   submission: CfpSubmissionWithDetails;
+  isSubmissionClosed: boolean;
 }
 
-const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
+const StatusBadge = ({ status, cfpClosed }: { status: SpeakerVisibleStatus; cfpClosed: boolean }) => {
   const styles: Record<SpeakerVisibleStatus, string> = {
-    draft: 'bg-gray-500/20 text-gray-300',
+    draft: cfpClosed ? 'bg-orange-500/20 text-orange-300' : 'bg-gray-500/20 text-gray-300',
     submitted: 'bg-blue-500/20 text-blue-300',
     under_review: 'bg-purple-500/20 text-purple-300',
     accepted: 'bg-green-500/20 text-green-300',
@@ -30,7 +33,7 @@ const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
   };
 
   const labels: Record<SpeakerVisibleStatus, string> = {
-    draft: 'Draft',
+    draft: cfpClosed ? 'Not Submitted' : 'Draft',
     submitted: 'Submitted',
     under_review: 'Under Review',
     accepted: 'Accepted',
@@ -51,8 +54,9 @@ const TYPE_LABELS: Record<string, string> = {
   workshop: 'Workshop',
 };
 
-export default function SubmissionDetail({ submission }: SubmissionDetailProps) {
+export default function SubmissionDetail({ submission, isSubmissionClosed }: SubmissionDetailProps) {
   const router = useRouter();
+  const toast = useToast();
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -69,12 +73,19 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
   const visibleStatus = getSpeakerVisibleStatus(submission);
 
   const isDraft = visibleStatus === 'draft';
-  const canEdit = isDraft;
-  const canSubmit = isDraft;
+  const canEdit = isDraft && !isSubmissionClosed;
+  const canSubmit = isDraft && !isSubmissionClosed;
   const canWithdraw = visibleStatus === 'submitted';
-  const canDelete = isDraft;
+  const canDelete = isDraft && !isSubmissionClosed;
   const isAccepted = visibleStatus === 'accepted';
   const isRejected = visibleStatus === 'rejected';
+
+  useEffect(() => {
+    if (router.query.cfp_closed !== '1') return;
+
+    toast.warning('CFP is closed', 'This draft is read-only and can no longer be submitted.');
+    router.replace(`/cfp/submissions/${submission.id}`, undefined, { shallow: true });
+  }, [router, submission.id, toast]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -87,6 +98,9 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
 
       if (!response.ok) {
         const data = await response.json();
+        if (data.code === CFP_CLOSED_ERROR_CODE) {
+          toast.warning('CFP is closed', data.error || 'CFP submissions are closed.');
+        }
         throw new Error(data.error || 'Failed to submit');
       }
 
@@ -238,7 +252,7 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <StatusBadge status={visibleStatus} />
+                <StatusBadge status={visibleStatus} cfpClosed={isSubmissionClosed} />
                 <span className="text-brand-gray-light text-sm">
                   {TYPE_LABELS[submission.submission_type]}
                 </span>
@@ -278,6 +292,14 @@ export default function SubmissionDetail({ submission }: SubmissionDetailProps) 
               )}
             </div>
           </div>
+
+          {isSubmissionClosed && isDraft && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6">
+              <p className="text-sm text-amber-200/90">
+                CFP is closed. This draft is read-only and can no longer be submitted.
+              </p>
+            </div>
+          )}
 
           {/* Acceptance Section */}
           {isAccepted && (
@@ -655,10 +677,13 @@ export const getServerSideProps: GetServerSideProps<SubmissionDetailProps> = asy
     return { notFound: true };
   }
 
+  const isSubmissionClosed = isSubmissionClosedForSpeaker(submission);
+
   return {
     props: {
       speaker,
       submission,
+      isSubmissionClosed,
     },
   };
 };

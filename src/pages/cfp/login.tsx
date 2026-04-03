@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
-import { createSupabaseServerClient } from '@/lib/cfp/auth';
+import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { Input, Button, Heading } from '@/components/atoms';
 import { cfpLoginSchema } from '@/lib/validations/cfp';
 import { trackCfpLoginAttempt, captureValidationError } from '@/lib/analytics/helpers';
@@ -201,7 +201,10 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const { data: { session } } = await supabaseServer.auth.getSession();
 
   if (session) {
-    return { redirect: { destination: '/cfp/dashboard', permanent: false } };
+    const speaker = await getSpeakerByUserId(session.user.id);
+    if (speaker) {
+      return { redirect: { destination: '/cfp/dashboard', permanent: false } };
+    }
   }
 
   return { props: {} };

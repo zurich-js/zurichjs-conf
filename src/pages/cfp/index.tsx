@@ -15,9 +15,7 @@ import { SectionSplitView } from '@/components/organisms/SectionSplitView';
 import { BackgroundMedia, Countdown } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
 import { timelineData } from '@/data';
-
-// Get CFP close date from centralized timeline data
-const cfpCloseDate = timelineData.entries.find(entry => entry.id === 'cfp-ends')?.dateISO || '2026-04-03';
+import { CFP_MEETUP_CFP_URL, getCfpCloseDate, isCfpClosed } from '@/lib/cfp/closure';
 
 const SUBMISSION_TYPES = [
   {
@@ -85,6 +83,8 @@ const TIMELINE_ITEMS = timelineData.entries
 function CfpLanding() {
   const { shouldAnimate } = useMotion();
   const router = useRouter();
+  const cfpClosed = isCfpClosed();
+  const cfpCloseDate = getCfpCloseDate();
 
   const handleCtaClick = () => {
     router.push('/cfp/login');
@@ -140,23 +140,42 @@ function CfpLanding() {
                     </p>
                   </div>
 
-                  <IconButton
-                    onClick={handleCtaClick}
-                    icon={
-                      <div className="relative w-14 h-14">
-                        <div className="absolute inset-0 rounded-full border border-brand-gray-light" />
-                        <div className="absolute inset-3 rounded-full bg-brand-yellow-main flex items-center justify-center">
-                          <ArrowRight size={16} strokeWidth={2} className="text-black" />
+                  {!cfpClosed && (
+                    <IconButton
+                      onClick={handleCtaClick}
+                      icon={
+                        <div className="relative w-14 h-14">
+                          <div className="absolute inset-0 rounded-full border border-brand-gray-light" />
+                          <div className="absolute inset-3 rounded-full bg-brand-yellow-main flex items-center justify-center">
+                            <ArrowRight size={16} strokeWidth={2} className="text-black" />
+                          </div>
                         </div>
-                      </div>
-                    }
-                  >
-                    Submit a Proposal
-                  </IconButton>
+                      }
+                    >
+                      Submit a Proposal
+                    </IconButton>
+                  )}
                 </motion.div>
 
                 <div className="lg:shrink-0 lg:pb-2 xl:scale-110 2xl:scale-125 xl:mr-4 2xl:mr-8">
-                  <Countdown targetDate={cfpCloseDate} kicker="CFP closes in" />
+                  {cfpClosed ? (
+                    <div className="rounded-2xl border border-brand-gray-medium bg-black/40 p-4 md:p-5 max-w-xs">
+                      <p className="font-semibold text-white mb-1">CFP is closed.</p>
+                      <p className="text-xs text-brand-gray-light">
+                        But we&apos;d be happy to host you at one of our meetups. CFP for meetup is here:{' '}
+                        <a
+                          href={CFP_MEETUP_CFP_URL}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-brand-primary underline"
+                        >
+                          www.zurichjs.com/cfp
+                        </a>
+                      </p>
+                    </div>
+                  ) : (
+                    <Countdown targetDate={cfpCloseDate} kicker="CFP closes in" />
+                  )}
                 </div>
               </div>
 
@@ -393,13 +412,27 @@ function CfpLanding() {
               Our first review stage is anonymous — your proposal is judged on the strength of the content.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/cfp/login"
-                className="inline-flex items-center justify-center gap-2 bg-brand-orange text-white px-6 py-3 rounded-full font-semibold hover:bg-brand-gray-darkest transition-colors"
-              >
-                Start Your Submission
-                <ArrowRight size={16} />
-              </Link>
+              {cfpClosed ? (
+                <p className="text-sm max-w-xl mx-auto">
+                  CFP is closed. But we&apos;d be happy to host you at one of our meetups. CFP for meetup is here:{' '}
+                  <a
+                    href={CFP_MEETUP_CFP_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline font-semibold"
+                  >
+                    www.zurichjs.com/cfp
+                  </a>
+                </p>
+              ) : (
+                <Link
+                  href="/cfp/login"
+                  className="inline-flex items-center justify-center gap-2 bg-brand-orange text-white px-6 py-3 rounded-full font-semibold hover:bg-brand-gray-darkest transition-colors"
+                >
+                  Start Your Submission
+                  <ArrowRight size={16} />
+                </Link>
+              )}
             </div>
           </div>
         </ShapedSection>

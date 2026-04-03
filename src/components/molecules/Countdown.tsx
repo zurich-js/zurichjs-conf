@@ -39,7 +39,7 @@ export const Countdown: React.FC<CountdownProps> = ({
         role="status"
         aria-live="polite"
       >
-        <p className="text-xl font-semibold">Event has started!</p>
+        <p className="text-xl font-semibold">Time is over</p>
       </div>
     );
   }
