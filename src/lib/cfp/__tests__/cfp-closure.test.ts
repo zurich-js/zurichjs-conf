@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   getCfpCloseDate,
   isCfpClosed,
-  isCfpClosedForSubmission,
 } from '../closure';
 
 describe('CFP closure timing', () => {
@@ -13,11 +12,7 @@ describe('CFP closure timing', () => {
     expect(isCfpClosed(justBeforeClose)).toBe(false);
     expect(isCfpClosed(closeDate)).toBe(true);
   });
-});
-
-describe('submission closure behavior', () => {
-  it('marks submission as closed when CFP is closed', () => {
-    const now = new Date('2026-04-10T12:00:00.000Z');
-    expect(isCfpClosedForSubmission({}, now)).toBe(true);
+  it('uses Zurich end of day for the timeline close date', () => {
+    expect(getCfpCloseDate().toISOString()).toBe('2026-04-03T21:59:59.000Z');
   });
 });

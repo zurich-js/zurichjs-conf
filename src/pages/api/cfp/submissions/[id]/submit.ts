@@ -9,7 +9,7 @@ import { submitForReview, getSubmissionById } from '@/lib/cfp/submissions';
 import { logger } from '@/lib/logger';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { notifyCfpTalkSubmitted } from '@/lib/platform-notifications';
-import { CFP_CLOSED_ERROR_CODE, canSubmitOrEditSubmission } from '@/lib/cfp/closure';
+import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
 
 const log = logger.scope('CFP Submit API');
 
@@ -56,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    if (!canSubmitOrEditSubmission(submission)) {
+    if (isCfpClosed()) {
       return res.status(403).json({
         code: CFP_CLOSED_ERROR_CODE,
         error: 'CFP is closed. This submission cannot be submitted for review right now.',

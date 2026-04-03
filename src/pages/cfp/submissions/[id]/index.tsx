@@ -13,7 +13,7 @@ import { Button, Heading } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getSubmissionWithDetails, getSpeakerVisibleStatus, type SpeakerVisibleStatus } from '@/lib/cfp/submissions';
 import type { CfpSpeaker, CfpSubmissionWithDetails } from '@/lib/types/cfp';
-import { CFP_CLOSED_ERROR_CODE, isSubmissionClosedForSpeaker } from '@/lib/cfp/closure';
+import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
 import { useToast } from '@/contexts/ToastContext';
 
 interface SubmissionDetailProps {
@@ -677,7 +677,7 @@ export const getServerSideProps: GetServerSideProps<SubmissionDetailProps> = asy
     return { notFound: true };
   }
 
-  const isSubmissionClosed = isSubmissionClosedForSpeaker(submission);
+  const isSubmissionClosed = isCfpClosed();
 
   return {
     props: {
