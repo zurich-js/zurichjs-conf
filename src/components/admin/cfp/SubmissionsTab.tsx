@@ -4,7 +4,8 @@
  */
 
 import { useMutation } from '@tanstack/react-query';
-import { Pagination } from '@/components/atoms';
+import type { ChangeEvent } from 'react';
+import { BusyArea, Pagination } from '@/components/atoms';
 import { StatusBadge } from './StatusBadge';
 import { ShortlistBadge } from './ShortlistBadge';
 import { SpeakerAvatar } from './SpeakerAvatar';
@@ -16,6 +17,23 @@ import {
 } from './SubmissionsTabHelpers';
 import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { formatScore } from '@/lib/cfp/scoring';
+import { cycleMultiSort, getMultiSortDirection, SortIndicator, type MultiSort } from './tableSort';
+
+export type SubmissionSortKey = 'title' | 'speaker' | 'reviews' | 'score' | 'coverage' | 'shortlist';
+
+const STATUS_OPTIONS = [
+  'draft',
+  'submitted',
+  'under_review',
+  'shortlisted',
+  'accepted',
+  'rejected',
+  'waitlisted',
+  'withdrawn',
+] as const;
+
+const TYPE_OPTIONS = ['talk', 'workshop', 'lightning'] as const;
+const SHORTLIST_OPTIONS = ['likely_shortlisted', 'maybe_shortlisted', 'unlikely_shortlisted'] as const;
 
 interface SubmissionsTabProps {
   submissions: CfpAdminSubmission[];
@@ -25,18 +43,20 @@ interface SubmissionsTabProps {
   onPageChange: (page: number) => void;
   pageSize: number;
   isLoading: boolean;
-  statusFilter: string;
-  setStatusFilter: (v: string) => void;
-  typeFilter: string;
-  setTypeFilter: (v: string) => void;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
-  sortBy: string;
-  setSortBy: (v: string) => void;
-  minReviews: string;
-  setMinReviews: (v: string) => void;
-  shortlistOnly: boolean;
-  setShortlistOnly: (v: boolean) => void;
+  statuses: string[];
+  setStatuses: (v: string[]) => void;
+  submissionTypes: string[];
+  setSubmissionTypes: (v: string[]) => void;
+  shortlistStatuses: string[];
+  setShortlistStatuses: (v: string[]) => void;
+  coverageMin: string;
+  setCoverageMin: (v: string) => void;
+  coverageMax: string;
+  setCoverageMax: (v: string) => void;
+  sort: MultiSort<SubmissionSortKey>;
+  setSort: (v: MultiSort<SubmissionSortKey>) => void;
   selectedIds: Set<string>;
   toggleSelection: (id: string) => void;
   toggleSelectAll: () => void;
@@ -44,6 +64,10 @@ interface SubmissionsTabProps {
   setBulkActionStatus: (v: string) => void;
   bulkUpdateStatusMutation: ReturnType<typeof useMutation<void, Error, { ids: string[]; status: string }>>;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
+}
+
+function getMultiSelectValues(event: ChangeEvent<HTMLSelectElement>) {
+  return Array.from(event.target.selectedOptions).map((option) => option.value);
 }
 
 export function SubmissionsTab({
@@ -54,18 +78,20 @@ export function SubmissionsTab({
   onPageChange,
   pageSize,
   isLoading,
-  statusFilter,
-  setStatusFilter,
-  typeFilter,
-  setTypeFilter,
   searchQuery,
   setSearchQuery,
-  sortBy,
-  setSortBy,
-  minReviews,
-  setMinReviews,
-  shortlistOnly,
-  setShortlistOnly,
+  statuses,
+  setStatuses,
+  submissionTypes,
+  setSubmissionTypes,
+  shortlistStatuses,
+  setShortlistStatuses,
+  coverageMin,
+  setCoverageMin,
+  coverageMax,
+  setCoverageMax,
+  sort,
+  setSort,
   selectedIds,
   toggleSelection,
   toggleSelectAll,
@@ -75,6 +101,10 @@ export function SubmissionsTab({
   onSelectSubmission,
 }: SubmissionsTabProps) {
   const totalPages = Math.ceil(total / pageSize);
+
+  const handleSortClick = (key: SubmissionSortKey) => {
+    setSort(cycleMultiSort(sort, key));
+  };
 
   return (
     <div>
@@ -86,79 +116,73 @@ export function SubmissionsTab({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search submissions (e.g. react -"beginner" "event sourcing")...'
+              placeholder='Search topic content (e.g. react -"beginner" "event sourcing")...'
               className="w-full px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
             />
           </div>
 
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            multiple
+            value={statuses}
+            onChange={(e) => setStatuses(getMultiSelectValues(e))}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none min-h-[44px]"
+            aria-label="Filter statuses"
           >
-            <option value="all">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="submitted">Submitted</option>
-            <option value="under_review">Under Review</option>
-            <option value="shortlisted">Shortlisted</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="waitlisted">Waitlisted</option>
+            {STATUS_OPTIONS.map((status) => (
+              <option key={status} value={status}>{status.replace('_', ' ')}</option>
+            ))}
           </select>
 
           <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            multiple
+            value={submissionTypes}
+            onChange={(e) => setSubmissionTypes(getMultiSelectValues(e))}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none min-h-[44px]"
+            aria-label="Filter submission types"
           >
-            <option value="all">All Types</option>
-            <option value="talk">Talk</option>
-            <option value="workshop">Workshop</option>
-            <option value="lightning">Lightning Talk</option>
+            {TYPE_OPTIONS.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
           </select>
 
           <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            multiple
+            value={shortlistStatuses}
+            onChange={(e) => setShortlistStatuses(getMultiSelectValues(e))}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none min-h-[44px]"
+            aria-label="Filter shortlist statuses"
           >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="most_reviews">Most Reviews</option>
-            <option value="least_reviews">Least Reviews</option>
-            <option value="highest_score">Highest Score</option>
-            <option value="lowest_score">Lowest Score</option>
-            <option value="highest_coverage">Highest Coverage</option>
-            <option value="lowest_coverage">Lowest Coverage</option>
-            <option value="last_reviewed">Last Reviewed</option>
-            <option value="title">Title A-Z</option>
+            {SHORTLIST_OPTIONS.map((status) => (
+              <option key={status} value={status}>{status.replace('_', ' ')}</option>
+            ))}
           </select>
         </div>
 
-        {/* Additional Filters Row */}
+        {/* Numeric Filters Row */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <select
-            value={minReviews}
-            onChange={(e) => setMinReviews(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-          >
-            <option value="0">Min Reviews: Any</option>
-            <option value="1">Min 1 Review</option>
-            <option value="2">Min 2 Reviews</option>
-            <option value="3">Min 3 Reviews</option>
-            <option value="4">Min 4 Reviews</option>
-            <option value="5+">Min 5+ Reviews</option>
-          </select>
-
-          <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center gap-2">
+            <label htmlFor="coverage-min" className="text-sm font-medium text-black">Coverage %</label>
             <input
-              type="checkbox"
-              checked={shortlistOnly}
-              onChange={(e) => setShortlistOnly(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-[#F1E271] focus:ring-[#F1E271]"
+              id="coverage-min"
+              type="number"
+              min={0}
+              max={100}
+              value={coverageMin}
+              onChange={(e) => setCoverageMin(e.target.value)}
+              placeholder="Min"
+              className="w-20 px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
             />
-            <span className="text-sm font-medium text-black">Likely Shortlisted Only</span>
-          </label>
+            <span className="text-gray-500">to</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={coverageMax}
+              onChange={(e) => setCoverageMax(e.target.value)}
+              placeholder="Max"
+              className="w-20 px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            />
+          </div>
         </div>
 
         {/* Bulk Actions */}
@@ -198,30 +222,29 @@ export function SubmissionsTab({
           total={total}
           totalUnfiltered={totalUnfiltered}
           searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          typeFilter={typeFilter}
-          minReviews={minReviews}
-          shortlistOnly={shortlistOnly}
+          statuses={statuses}
+          submissionTypes={submissionTypes}
+          shortlistStatuses={shortlistStatuses}
+          coverageMin={coverageMin}
+          coverageMax={coverageMax}
           onClearSearch={() => setSearchQuery('')}
-          onClearStatus={() => setStatusFilter('all')}
-          onClearType={() => setTypeFilter('all')}
-          onClearMinReviews={() => setMinReviews('0')}
-          onClearShortlist={() => setShortlistOnly(false)}
+          onClearStatuses={() => setStatuses([])}
+          onClearTypes={() => setSubmissionTypes([])}
+          onClearShortlistStatuses={() => setShortlistStatuses([])}
+          onClearCoverageMin={() => setCoverageMin('')}
+          onClearCoverageMax={() => setCoverageMax('')}
           onClearAll={() => {
             setSearchQuery('');
-            setStatusFilter('all');
-            setTypeFilter('all');
-            setMinReviews('0');
-            setShortlistOnly(false);
+            setStatuses([]);
+            setSubmissionTypes([]);
+            setShortlistStatuses([]);
+            setCoverageMin('');
+            setCoverageMax('');
           }}
         />
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        </div>
-      ) : (
+      <BusyArea busy={isLoading}>
         <>
           {/* Mobile Card View */}
           <MobileSubmissionsList
@@ -239,6 +262,8 @@ export function SubmissionsTab({
             toggleSelection={toggleSelection}
             toggleSelectAll={toggleSelectAll}
             onSelectSubmission={onSelectSubmission}
+            sort={sort}
+            onSortClick={handleSortClick}
           />
 
           <Pagination
@@ -250,7 +275,7 @@ export function SubmissionsTab({
             variant="light"
           />
         </>
-      )}
+      </BusyArea>
     </div>
   );
 }
@@ -363,12 +388,16 @@ function DesktopSubmissionsTable({
   toggleSelection,
   toggleSelectAll,
   onSelectSubmission,
+  sort,
+  onSortClick,
 }: {
   submissions: CfpAdminSubmission[];
   selectedIds: Set<string>;
   toggleSelection: (id: string) => void;
   toggleSelectAll: () => void;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
+  sort: MultiSort<SubmissionSortKey>;
+  onSortClick: (key: SubmissionSortKey) => void;
 }) {
   return (
     <div className="hidden lg:block overflow-x-auto">
@@ -383,14 +412,68 @@ function DesktopSubmissionsTable({
                 className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
               />
             </th>
-            <th className="px-2 py-3">Title</th>
-            <th className="px-2 py-3">Speaker</th>
+            <th className="px-2 py-3">
+              <button
+                type="button"
+                onClick={() => onSortClick('title')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Title</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'title')} />
+              </button>
+            </th>
+            <th className="px-2 py-3">
+              <button
+                type="button"
+                onClick={() => onSortClick('speaker')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Speaker</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'speaker')} />
+              </button>
+            </th>
             <th className="px-2 py-3 w-20">Type</th>
             <th className="px-2 py-3 w-24">Status</th>
-            <th className="px-2 py-3 w-20 text-center">Reviews</th>
-            <th className="px-2 py-3 w-16 text-center">Score</th>
-            <th className="px-2 py-3 w-20 text-center">Coverage</th>
-            <th className="px-2 py-3 w-32">Shortlist</th>
+            <th className="px-2 py-3 w-20 text-center">
+              <button
+                type="button"
+                onClick={() => onSortClick('reviews')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Reviews</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'reviews')} />
+              </button>
+            </th>
+            <th className="px-2 py-3 w-16 text-center">
+              <button
+                type="button"
+                onClick={() => onSortClick('score')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Score</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'score')} />
+              </button>
+            </th>
+            <th className="px-2 py-3 w-20 text-center">
+              <button
+                type="button"
+                onClick={() => onSortClick('coverage')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Coverage</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'coverage')} />
+              </button>
+            </th>
+            <th className="px-2 py-3 w-32">
+              <button
+                type="button"
+                onClick={() => onSortClick('shortlist')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Shortlist</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'shortlist')} />
+              </button>
+            </th>
             <th className="px-2 py-3 w-20">Actions</th>
           </tr>
         </thead>

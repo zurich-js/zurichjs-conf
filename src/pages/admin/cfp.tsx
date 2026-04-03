@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo, useRef } from 'react';
 import Head from 'next/head';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
@@ -21,6 +21,8 @@ import {
   StatsCards,
   TabNavigation,
 } from '@/components/admin/cfp';
+import type { SubmissionSortKey } from '@/components/admin/cfp/SubmissionsTab';
+import type { MultiSort } from '@/components/admin/cfp/tableSort';
 import {
   type CfpTab,
   type CfpAdminSubmission,
@@ -38,6 +40,7 @@ import {
   deleteTag,
 } from '@/lib/cfp/api';
 import type { SubmissionQueryParams } from '@/lib/cfp/api';
+import type { SubmissionSortRule } from '@/lib/types/cfp/admin';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const ITEMS_PER_PAGE = 10;
@@ -52,13 +55,14 @@ export default function CfpAdminDashboard() {
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
 
   // Submission filter state (lifted from SubmissionsTab for server-side pagination)
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statuses, setStatuses] = useState<string[]>([]);
+  const [submissionTypes, setSubmissionTypes] = useState<string[]>([]);
+  const [shortlistStatuses, setShortlistStatuses] = useState<string[]>([]);
+  const [coverageMin, setCoverageMin] = useState<string>('');
+  const [coverageMax, setCoverageMax] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('newest');
-  const [minReviews, setMinReviews] = useState<string>('0');
-  const [shortlistOnly, setShortlistOnly] = useState<boolean>(false);
+  const [submissionSort, setSubmissionSort] = useState<MultiSort<SubmissionSortKey>>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Debounced search: updates debouncedSearch 400ms after typing stops
@@ -72,42 +76,67 @@ export default function CfpAdminDashboard() {
     }, 400);
   }, []);
 
-  // Map client sort options to server sort_by + sort_order
-  const sortParams = useMemo(() => {
-    const map: Record<string, { sort_by: string; sort_order: string }> = {
-      newest: { sort_by: 'created_at', sort_order: 'desc' },
-      oldest: { sort_by: 'created_at', sort_order: 'asc' },
-      most_reviews: { sort_by: 'review_count', sort_order: 'desc' },
-      least_reviews: { sort_by: 'review_count', sort_order: 'asc' },
-      highest_score: { sort_by: 'avg_score', sort_order: 'desc' },
-      lowest_score: { sort_by: 'avg_score', sort_order: 'asc' },
-      highest_coverage: { sort_by: 'coverage', sort_order: 'desc' },
-      lowest_coverage: { sort_by: 'coverage', sort_order: 'asc' },
-      last_reviewed: { sort_by: 'last_reviewed', sort_order: 'desc' },
-      title: { sort_by: 'title', sort_order: 'asc' },
-    };
-    return map[sortBy] || map.newest;
-  }, [sortBy]);
+  const submissionSortParams = useMemo<SubmissionSortRule[]>(
+    () =>
+      submissionSort.map((rule): SubmissionSortRule => ({
+        key:
+          rule.key === 'title'
+            ? 'title'
+            : rule.key === 'speaker'
+              ? 'speaker'
+              : rule.key === 'reviews'
+                ? 'review_count'
+                : rule.key === 'score'
+                  ? 'avg_score'
+                  : rule.key === 'coverage'
+                    ? 'coverage'
+                    : 'shortlist',
+        direction: rule.direction,
+      })),
+    [submissionSort]
+  );
 
   // Build query params object for React Query key and fetch
   const submissionQueryParams: SubmissionQueryParams = useMemo(() => ({
-    status: statusFilter,
-    submission_type: typeFilter !== 'all' ? typeFilter : undefined,
+    statuses: statuses.length > 0 ? statuses : undefined,
+    types: submissionTypes.length > 0 ? submissionTypes : undefined,
+    shortlistStatuses: shortlistStatuses.length > 0 ? shortlistStatuses : undefined,
     search: debouncedSearch || undefined,
-    sort_by: sortParams.sort_by,
-    sort_order: sortParams.sort_order,
-    min_review_count: minReviews === '5+' ? 5 : parseInt(minReviews, 10) || undefined,
-    shortlist_only: shortlistOnly || undefined,
+    sort: submissionSortParams.length > 0 ? submissionSortParams : undefined,
+    coverage_min: coverageMin.trim() ? Math.max(0, Math.min(100, Number(coverageMin))) : undefined,
+    coverage_max: coverageMax.trim() ? Math.max(0, Math.min(100, Number(coverageMax))) : undefined,
     limit: ITEMS_PER_PAGE,
     offset: (currentPage - 1) * ITEMS_PER_PAGE,
-  }), [statusFilter, typeFilter, debouncedSearch, sortParams, minReviews, shortlistOnly, currentPage]);
+  }), [statuses, submissionTypes, shortlistStatuses, debouncedSearch, submissionSortParams, coverageMin, coverageMax, currentPage]);
 
-  // Reset page when filters change (not when page changes)
-  const updateFilter = useCallback(<T,>(setter: React.Dispatch<React.SetStateAction<T>>) => {
-    return (value: T) => {
-      setter(value);
-      setCurrentPage(1);
-    };
+  const setSubmissionStatuses = useCallback((value: string[]) => {
+    setStatuses(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionTypesFilter = useCallback((value: string[]) => {
+    setSubmissionTypes(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionShortlistStatuses = useCallback((value: string[]) => {
+    setShortlistStatuses(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionCoverageMin = useCallback((value: string) => {
+    setCoverageMin(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionCoverageMax = useCallback((value: string) => {
+    setCoverageMax(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionSortState = useCallback((value: MultiSort<SubmissionSortKey>) => {
+    setSubmissionSort(value);
+    setCurrentPage(1);
   }, []);
 
   // Fetch data
@@ -123,6 +152,7 @@ export default function CfpAdminDashboard() {
     queryFn: () => fetchSubmissions(submissionQueryParams),
     enabled: isAuthenticated === true && activeTab === 'submissions',
     staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
   });
 
   const { data: speakersData, isLoading: isLoadingSpeakers } = useQuery({
@@ -290,18 +320,20 @@ export default function CfpAdminDashboard() {
                   onPageChange={setCurrentPage}
                   pageSize={ITEMS_PER_PAGE}
                   isLoading={isLoadingSubmissions}
-                  statusFilter={statusFilter}
-                  setStatusFilter={updateFilter(setStatusFilter)}
-                  typeFilter={typeFilter}
-                  setTypeFilter={updateFilter(setTypeFilter)}
                   searchQuery={searchQuery}
                   setSearchQuery={handleSearchChange}
-                  sortBy={sortBy}
-                  setSortBy={updateFilter(setSortBy)}
-                  minReviews={minReviews}
-                  setMinReviews={updateFilter(setMinReviews)}
-                  shortlistOnly={shortlistOnly}
-                  setShortlistOnly={updateFilter(setShortlistOnly)}
+                  statuses={statuses}
+                  setStatuses={setSubmissionStatuses}
+                  submissionTypes={submissionTypes}
+                  setSubmissionTypes={setSubmissionTypesFilter}
+                  shortlistStatuses={shortlistStatuses}
+                  setShortlistStatuses={setSubmissionShortlistStatuses}
+                  coverageMin={coverageMin}
+                  setCoverageMin={setSubmissionCoverageMin}
+                  coverageMax={coverageMax}
+                  setCoverageMax={setSubmissionCoverageMax}
+                  sort={submissionSort}
+                  setSort={setSubmissionSortState}
                   selectedIds={selectedIds}
                   toggleSelection={toggleSelection}
                   toggleSelectAll={toggleSelectAll}

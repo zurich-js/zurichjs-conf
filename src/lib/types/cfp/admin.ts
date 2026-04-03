@@ -18,6 +18,21 @@ import type {
 /**
  * Submission list filters for admin
  */
+export type SubmissionSortKey =
+  | 'created_at'
+  | 'title'
+  | 'speaker'
+  | 'review_count'
+  | 'avg_score'
+  | 'coverage'
+  | 'shortlist'
+  | 'last_reviewed';
+
+export interface SubmissionSortRule {
+  key: SubmissionSortKey;
+  direction: 'asc' | 'desc';
+}
+
 export interface CfpSubmissionFilters {
   status?: CfpSubmissionStatus | CfpSubmissionStatus[];
   submission_type?: CfpSubmissionType | CfpSubmissionType[];
@@ -26,12 +41,16 @@ export interface CfpSubmissionFilters {
   company_can_cover_travel?: boolean;
   tag_ids?: string[];
   search?: string;
-  sort_by?: 'created_at' | 'avg_score' | 'review_count' | 'title' | 'coverage' | 'last_reviewed';
+  sort?: SubmissionSortRule[];
+  sort_by?: SubmissionSortKey;
   sort_order?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
   min_review_count?: number;
   shortlist_only?: boolean;
+  shortlist_statuses?: string[];
+  coverage_min?: number;
+  coverage_max?: number;
 }
 
 /**

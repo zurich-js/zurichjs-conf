@@ -7,6 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminSubmissions } from '@/lib/cfp/admin';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import type { CfpSubmissionStatus, CfpSubmissionType, CfpTalkLevel } from '@/lib/types/cfp';
+import type { SubmissionSortRule } from '@/lib/types/cfp/admin';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('CFP Admin Submissions API');
@@ -26,27 +27,80 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const {
       status,
       submission_type,
+      statuses,
+      types,
       talk_level,
       search,
+      sort,
       sort_by,
       sort_order,
       limit,
       offset,
       min_review_count,
       shortlist_only,
+      shortlistStatuses,
+      coverage_min,
+      coverage_max,
     } = req.query;
 
+    let parsedSort: SubmissionSortRule[] | undefined;
+    if (typeof sort === 'string') {
+      try {
+        const value = JSON.parse(sort) as SubmissionSortRule[];
+        if (Array.isArray(value)) {
+          parsedSort = value.filter((item): item is SubmissionSortRule =>
+            Boolean(item && typeof item.key === 'string' && (item.direction === 'asc' || item.direction === 'desc'))
+          );
+        }
+      } catch {
+        parsedSort = undefined;
+      }
+    }
+
+    const parsedStatuses = Array.isArray(statuses)
+      ? statuses
+      : typeof statuses === 'string'
+        ? [statuses]
+        : undefined;
+
+    const parsedTypes = Array.isArray(types)
+      ? types
+      : typeof types === 'string'
+        ? [types]
+        : undefined;
+
+    const parsedShortlistStatuses = Array.isArray(shortlistStatuses)
+      ? shortlistStatuses
+      : typeof shortlistStatuses === 'string'
+        ? [shortlistStatuses]
+        : undefined;
+
+    const parsedCoverageMin = typeof coverage_min === 'string' ? Number(coverage_min) : undefined;
+    const parsedCoverageMax = typeof coverage_max === 'string' ? Number(coverage_max) : undefined;
+
     const { submissions, total, totalUnfiltered } = await getAdminSubmissions({
-      status: status ? (status as CfpSubmissionStatus) : undefined,
-      submission_type: submission_type ? (submission_type as CfpSubmissionType) : undefined,
+      status: parsedStatuses?.length
+        ? (parsedStatuses as CfpSubmissionStatus[])
+        : status
+          ? (status as CfpSubmissionStatus)
+          : undefined,
+      submission_type: parsedTypes?.length
+        ? (parsedTypes as CfpSubmissionType[])
+        : submission_type
+          ? (submission_type as CfpSubmissionType)
+          : undefined,
       talk_level: talk_level ? (talk_level as CfpTalkLevel) : undefined,
       search: search as string | undefined,
-      sort_by: sort_by as 'created_at' | 'avg_score' | 'review_count' | 'title' | 'coverage' | 'last_reviewed' | undefined,
+      sort: parsedSort,
+      sort_by: sort_by as 'created_at' | 'avg_score' | 'review_count' | 'title' | 'coverage' | 'last_reviewed' | 'speaker' | 'shortlist' | undefined,
       sort_order: sort_order as 'asc' | 'desc' | undefined,
       limit: limit ? parseInt(limit as string) : 10,
       offset: offset ? parseInt(offset as string) : 0,
       min_review_count: min_review_count ? parseInt(min_review_count as string) : undefined,
       shortlist_only: shortlist_only === 'true',
+      shortlist_statuses: parsedShortlistStatuses,
+      coverage_min: Number.isFinite(parsedCoverageMin) ? parsedCoverageMin : undefined,
+      coverage_max: Number.isFinite(parsedCoverageMax) ? parsedCoverageMax : undefined,
     });
 
     return res.status(200).json({ submissions, total, totalUnfiltered });

@@ -67,15 +67,17 @@ interface ActiveFiltersBarProps {
   total: number;
   totalUnfiltered: number;
   searchQuery: string;
-  statusFilter: string;
-  typeFilter: string;
-  minReviews: string;
-  shortlistOnly: boolean;
+  statuses: string[];
+  submissionTypes: string[];
+  shortlistStatuses: string[];
+  coverageMin: string;
+  coverageMax: string;
   onClearSearch: () => void;
-  onClearStatus: () => void;
-  onClearType: () => void;
-  onClearMinReviews: () => void;
-  onClearShortlist: () => void;
+  onClearStatuses: () => void;
+  onClearTypes: () => void;
+  onClearShortlistStatuses: () => void;
+  onClearCoverageMin: () => void;
+  onClearCoverageMax: () => void;
   onClearAll: () => void;
 }
 
@@ -83,15 +85,17 @@ export function ActiveFiltersBar({
   total,
   totalUnfiltered,
   searchQuery,
-  statusFilter,
-  typeFilter,
-  minReviews,
-  shortlistOnly,
+  statuses,
+  submissionTypes,
+  shortlistStatuses,
+  coverageMin,
+  coverageMax,
   onClearSearch,
-  onClearStatus,
-  onClearType,
-  onClearMinReviews,
-  onClearShortlist,
+  onClearStatuses,
+  onClearTypes,
+  onClearShortlistStatuses,
+  onClearCoverageMin,
+  onClearCoverageMax,
   onClearAll,
 }: ActiveFiltersBarProps) {
   const activeFilters: Array<{ label: string; onRemove: () => void }> = [];
@@ -99,17 +103,23 @@ export function ActiveFiltersBar({
   if (searchQuery.trim()) {
     activeFilters.push({ label: `Search: "${searchQuery}"`, onRemove: onClearSearch });
   }
-  if (statusFilter !== 'all') {
-    activeFilters.push({ label: `Status: ${statusFilter.replace('_', ' ')}`, onRemove: onClearStatus });
+  if (statuses.length > 0) {
+    activeFilters.push({ label: `Status: ${statuses.join(', ')}`, onRemove: onClearStatuses });
   }
-  if (typeFilter !== 'all') {
-    activeFilters.push({ label: `Type: ${typeFilter}`, onRemove: onClearType });
+  if (submissionTypes.length > 0) {
+    activeFilters.push({ label: `Type: ${submissionTypes.join(', ')}`, onRemove: onClearTypes });
   }
-  if (minReviews !== '0') {
-    activeFilters.push({ label: `Min ${minReviews} reviews`, onRemove: onClearMinReviews });
+  if (shortlistStatuses.length > 0) {
+    activeFilters.push({
+      label: `Shortlist: ${shortlistStatuses.join(', ')}`,
+      onRemove: onClearShortlistStatuses,
+    });
   }
-  if (shortlistOnly) {
-    activeFilters.push({ label: 'Likely shortlisted', onRemove: onClearShortlist });
+  if (coverageMin.trim()) {
+    activeFilters.push({ label: `Coverage min ${coverageMin}%`, onRemove: onClearCoverageMin });
+  }
+  if (coverageMax.trim()) {
+    activeFilters.push({ label: `Coverage max ${coverageMax}%`, onRemove: onClearCoverageMax });
   }
 
   const hasFilters = activeFilters.length > 0;
