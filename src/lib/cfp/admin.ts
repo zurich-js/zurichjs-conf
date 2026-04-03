@@ -782,15 +782,22 @@ export async function getReviewerActivity(
     return { activities: [], total: 0 };
   }
 
-  // Batch fetch submission titles
-  const submissionIds = [...new Set(reviews.map((r) => r.submission_id))];
-  const { data: submissions } = await supabase
-    .from('cfp_submissions')
-    .select('id, title')
-    .in('id', submissionIds);
+  // Fetch submission titles without .in() to avoid URL length limits on large reviewer histories
+  const submissionIds = new Set(reviews.map((r) => r.submission_id).filter(Boolean));
+  const { data: allSubmissions, error: submissionsError } = await fetchAllRows<{ id: string; title: string }>(
+    supabase,
+    'cfp_submissions',
+    'id, title'
+  );
+
+  if (submissionsError) {
+    console.error('[CFP Admin] Error fetching submissions for reviewer activity:', submissionsError);
+  }
 
   const submissionMap = new Map(
-    (submissions || []).map((s) => [s.id, s.title])
+    (allSubmissions || [])
+      .filter((s) => submissionIds.has(s.id))
+      .map((s) => [s.id, s.title])
   );
 
   // Build activity list

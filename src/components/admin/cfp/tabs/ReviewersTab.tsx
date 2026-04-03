@@ -6,6 +6,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminReviewer, type CfpAdminReviewerWithActivity } from '@/lib/types/cfp-admin';
 import { BusyArea, Pagination } from '@/components/atoms';
@@ -34,6 +35,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sort, setSort] = useState<MultiSort<ReviewerSortKey>>([]);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const ITEMS_PER_PAGE = 10;
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -204,9 +206,8 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
 
   return (
     <div>
-      {/* Invite Form and Filters */}
+      {/* Filters */}
       <div className="mb-6 flex flex-col gap-4">
-        <InviteReviewerForm />
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
           <input
             type="text"
@@ -234,6 +235,13 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             <option value="active">Active</option>
             <option value="pending">Pending</option>
           </select>
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Invite Reviewer
+          </button>
         </div>
       </div>
       <BusyArea busy={isLoading}>
@@ -461,6 +469,27 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
           isUpdating={updateMutation.isPending}
           isRevoking={revokeMutation.isPending}
         />
+      )}
+
+      {/* Invite Reviewer Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-black">Invite Reviewer</h3>
+              <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+                <X className="w-5 h-5 text-black" />
+              </button>
+            </div>
+            <div className="p-6">
+              <InviteReviewerForm
+                variant="modal"
+                onCancel={() => setShowInviteModal(false)}
+                onInvited={() => setShowInviteModal(false)}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

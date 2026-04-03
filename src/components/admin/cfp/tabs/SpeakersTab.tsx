@@ -46,7 +46,7 @@ type SpeakerSortKey = 'speaker' | 'company' | 'joined';
 export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: SpeakersTabProps) {
   const [selectedSpeaker, setSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [profileFilter, setProfileFilter] = useState<Array<'complete' | 'incomplete'>>([]);
+  const [profileFilter, setProfileFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<string>('all');
   const [featuredFilter, setFeaturedFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -111,12 +111,11 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
       );
     }
 
-    // Profile status filter (multi-select)
-    if (profileFilter.length > 0) {
-      result = result.filter((s) => {
-        const state: 'complete' | 'incomplete' = s.bio ? 'complete' : 'incomplete';
-        return profileFilter.includes(state);
-      });
+    // Profile status filter
+    if (profileFilter === 'complete') {
+      result = result.filter((s) => Boolean(s.bio));
+    } else if (profileFilter === 'incomplete') {
+      result = result.filter((s) => !s.bio);
     }
 
     // Visibility filter
@@ -217,14 +216,11 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
           />
           <select
-            multiple
             value={profileFilter}
-            onChange={(e) => {
-              const values = Array.from(e.target.selectedOptions).map((option) => option.value as 'complete' | 'incomplete');
-              setProfileFilter(values);
-            }}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none min-h-[44px]"
+            onChange={(e) => setProfileFilter(e.target.value as 'all' | 'complete' | 'incomplete')}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
           >
+            <option value="all">All Profiles</option>
             <option value="complete">Complete</option>
             <option value="incomplete">Incomplete</option>
           </select>
@@ -340,7 +336,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             ))}
             {paginatedSpeakers.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                {searchQuery || profileFilter.length > 0 || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
+                {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
               </div>
             )}
           </div>
@@ -456,7 +452,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
                 {paginatedSpeakers.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-8 text-center text-black">
-                      {searchQuery || profileFilter.length > 0 || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
+                      {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
                     </td>
                   </tr>
                 )}

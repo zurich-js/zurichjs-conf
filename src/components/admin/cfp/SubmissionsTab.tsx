@@ -4,7 +4,8 @@
  */
 
 import { useMutation } from '@tanstack/react-query';
-import type { ChangeEvent } from 'react';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { Check, ChevronDown, Filter } from 'lucide-react';
 import { BusyArea, Pagination } from '@/components/atoms';
 import { StatusBadge } from './StatusBadge';
 import { ShortlistBadge } from './ShortlistBadge';
@@ -13,7 +14,6 @@ import {
   getScoreColor,
   getScoreBgColor,
   CoverageBar,
-  ActiveFiltersBar,
 } from './SubmissionsTabHelpers';
 import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { formatScore } from '@/lib/cfp/scoring';
@@ -66,8 +66,61 @@ interface SubmissionsTabProps {
   onSelectSubmission: (s: CfpAdminSubmission) => void;
 }
 
-function getMultiSelectValues(event: ChangeEvent<HTMLSelectElement>) {
-  return Array.from(event.target.selectedOptions).map((option) => option.value);
+function MultiSelectFilterPopover({
+  label,
+  options,
+  selected,
+  onChange,
+  formatOption = (value: string) => value,
+}: {
+  label: string;
+  options: readonly string[];
+  selected: string[];
+  onChange: (value: string[]) => void;
+  formatOption?: (value: string) => string;
+}) {
+  const toggleValue = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((item) => item !== value));
+      return;
+    }
+    onChange([...selected, value]);
+  };
+
+  return (
+    <Popover className="relative">
+      <PopoverButton className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black hover:bg-gray-50 cursor-pointer">
+        <span>{label}</span>
+        {selected.length > 0 && (
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F1E271] px-1 text-xs font-semibold text-black">
+            {selected.length}
+          </span>
+        )}
+        <ChevronDown className="w-4 h-4 text-gray-500" />
+      </PopoverButton>
+      <PopoverPanel
+        anchor="bottom end"
+        className="z-40 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-2 shadow-lg"
+      >
+        <div className="max-h-64 overflow-auto space-y-1">
+          {options.map((option) => {
+            const checked = selected.includes(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => toggleValue(option)}
+                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-black hover:bg-gray-100 cursor-pointer"
+              >
+                <span>{formatOption(option)}</span>
+                {checked ? <Check className="w-4 h-4 text-black" /> : <span className="w-4 h-4" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverPanel>
+    </Popover>
+  );
 }
 
 export function SubmissionsTab({
@@ -108,86 +161,116 @@ export function SubmissionsTab({
 
   return (
     <div>
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
+      <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span>
+                Showing <span className="font-semibold text-black">{total}</span>
+                {total !== totalUnfiltered && (
+                  <>
+                    {' '}of <span className="font-semibold text-black">{totalUnfiltered}</span>
+                  </>
+                )}{' '}
+                submission{total !== 1 ? 's' : ''}
+              </span>
+            </div>
+            {(searchQuery || statuses.length || submissionTypes.length || shortlistStatuses.length || coverageMin || coverageMax) ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatuses([]);
+                  setSubmissionTypes([]);
+                  setShortlistStatuses([]);
+                  setCoverageMin('');
+                  setCoverageMax('');
+                }}
+                className="mt-1 inline-flex w-fit text-xs text-gray-600 hover:text-black underline cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search topic content (e.g. react -"beginner" "event sourcing")...'
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              placeholder='Search topic content...'
+              className="w-full lg:w-80 px-3 py-2 rounded-lg border border-gray-300 bg-white text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none text-sm"
             />
-          </div>
 
-          <select
-            multiple
-            value={statuses}
-            onChange={(e) => setStatuses(getMultiSelectValues(e))}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none min-h-[44px]"
-            aria-label="Filter statuses"
-          >
-            {STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>{status.replace('_', ' ')}</option>
-            ))}
-          </select>
-
-          <select
-            multiple
-            value={submissionTypes}
-            onChange={(e) => setSubmissionTypes(getMultiSelectValues(e))}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none min-h-[44px]"
-            aria-label="Filter submission types"
-          >
-            {TYPE_OPTIONS.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-
-          <select
-            multiple
-            value={shortlistStatuses}
-            onChange={(e) => setShortlistStatuses(getMultiSelectValues(e))}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none min-h-[44px]"
-            aria-label="Filter shortlist statuses"
-          >
-            {SHORTLIST_OPTIONS.map((status) => (
-              <option key={status} value={status}>{status.replace('_', ' ')}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Numeric Filters Row */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="flex items-center gap-2">
-            <label htmlFor="coverage-min" className="text-sm font-medium text-black">Coverage %</label>
-            <input
-              id="coverage-min"
-              type="number"
-              min={0}
-              max={100}
-              value={coverageMin}
-              onChange={(e) => setCoverageMin(e.target.value)}
-              placeholder="Min"
-              className="w-20 px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            <MultiSelectFilterPopover
+              label="Status"
+              options={STATUS_OPTIONS}
+              selected={statuses}
+              onChange={setStatuses}
+              formatOption={(value) => value.replaceAll('_', ' ')}
             />
-            <span className="text-gray-500">to</span>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={coverageMax}
-              onChange={(e) => setCoverageMax(e.target.value)}
-              placeholder="Max"
-              className="w-20 px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            <MultiSelectFilterPopover
+              label="Type"
+              options={TYPE_OPTIONS}
+              selected={submissionTypes}
+              onChange={setSubmissionTypes}
             />
+            <MultiSelectFilterPopover
+              label="Shortlist"
+              options={SHORTLIST_OPTIONS}
+              selected={shortlistStatuses}
+              onChange={setShortlistStatuses}
+              formatOption={(value) => value.replaceAll('_', ' ')}
+            />
+
+            <Popover className="relative">
+              <PopoverButton className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black hover:bg-gray-50 cursor-pointer">
+                <span>Coverage</span>
+                {(coverageMin || coverageMax) && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F1E271] px-1 text-xs font-semibold text-black">
+                    1
+                  </span>
+                )}
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </PopoverButton>
+              <PopoverPanel
+                anchor="bottom end"
+                className="z-40 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg"
+              >
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-gray-700">Coverage %</div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={coverageMin}
+                      onChange={(e) => setCoverageMin(e.target.value)}
+                      placeholder="Min"
+                      className="w-20 px-2 py-1.5 rounded-md border border-gray-300 text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={coverageMax}
+                      onChange={(e) => setCoverageMax(e.target.value)}
+                      placeholder="Max"
+                      className="w-20 px-2 py-1.5 rounded-md border border-gray-300 text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </PopoverPanel>
+            </Popover>
+
           </div>
         </div>
 
         {/* Bulk Actions */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-2 w-fit">
+          <div className="mt-3 flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-4 py-2 w-fit">
             <span className="text-sm font-medium text-black">{selectedIds.size} selected</span>
             <div className="h-4 w-px bg-gray-300" />
             <select
@@ -216,32 +299,6 @@ export function SubmissionsTab({
             </button>
           </div>
         )}
-
-        {/* Active Filters and Summary Bar */}
-        <ActiveFiltersBar
-          total={total}
-          totalUnfiltered={totalUnfiltered}
-          searchQuery={searchQuery}
-          statuses={statuses}
-          submissionTypes={submissionTypes}
-          shortlistStatuses={shortlistStatuses}
-          coverageMin={coverageMin}
-          coverageMax={coverageMax}
-          onClearSearch={() => setSearchQuery('')}
-          onClearStatuses={() => setStatuses([])}
-          onClearTypes={() => setSubmissionTypes([])}
-          onClearShortlistStatuses={() => setShortlistStatuses([])}
-          onClearCoverageMin={() => setCoverageMin('')}
-          onClearCoverageMax={() => setCoverageMax('')}
-          onClearAll={() => {
-            setSearchQuery('');
-            setStatuses([]);
-            setSubmissionTypes([]);
-            setShortlistStatuses([]);
-            setCoverageMin('');
-            setCoverageMax('');
-          }}
-        />
       </div>
 
       <BusyArea busy={isLoading}>

@@ -25,7 +25,17 @@ const REVIEWER_ROLES: { value: ReviewerRole; label: string; description: string 
   },
 ];
 
-export function InviteReviewerForm() {
+interface InviteReviewerFormProps {
+  onInvited?: () => void;
+  variant?: 'default' | 'modal';
+  onCancel?: () => void;
+}
+
+export function InviteReviewerForm({
+  onInvited,
+  variant = 'default',
+  onCancel,
+}: InviteReviewerFormProps = {}) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<ReviewerRole>('anonymous');
@@ -51,6 +61,7 @@ export function InviteReviewerForm() {
       setRole('anonymous');
       setError('');
       queryClient.invalidateQueries({ queryKey: cfpQueryKeys.reviewers });
+      onInvited?.();
     },
     onError: (err: Error) => {
       setError(err.message);
@@ -75,10 +86,8 @@ export function InviteReviewerForm() {
   const selectedRole = REVIEWER_ROLES.find((r) => r.value === role);
 
   return (
-    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-      <h4 className="text-sm font-bold text-black mb-4">Invite New Reviewer</h4>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
+        <div className={variant === 'modal' ? 'space-y-4' : 'grid grid-cols-1 sm:grid-cols-3 gap-4'}>
           <div>
             <label className="block text-sm font-medium text-black mb-1">Email</label>
             <input
@@ -90,29 +99,31 @@ export function InviteReviewerForm() {
               className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-black mb-1">Name (optional)</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-black mb-1">Access Level</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as ReviewerRole)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none cursor-pointer"
-            >
-              {REVIEWER_ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+          <div className={variant === 'modal' ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'contents'}>
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">Name (optional)</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Doe"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-black mb-1">Access Level</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as ReviewerRole)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none cursor-pointer"
+              >
+                {REVIEWER_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -128,17 +139,36 @@ export function InviteReviewerForm() {
           </div>
         )}
 
-        <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={inviteMutation.isPending}
-            className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium rounded-lg disabled:opacity-50 transition-all cursor-pointer"
-          >
-            {inviteMutation.isPending ? 'Sending Invite...' : 'Send Invite'}
-          </button>
-          {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
-        </div>
+        {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
+
+        {variant === 'modal' ? (
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-black hover:bg-gray-100 rounded-lg cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={inviteMutation.isPending}
+              className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg disabled:opacity-50 transition-all cursor-pointer"
+            >
+              {inviteMutation.isPending ? 'Sending Invite...' : 'Send Invite'}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-4">
+            <button
+              type="submit"
+              disabled={inviteMutation.isPending}
+              className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-medium rounded-lg disabled:opacity-50 transition-all cursor-pointer"
+            >
+              {inviteMutation.isPending ? 'Sending Invite...' : 'Send Invite'}
+            </button>
+          </div>
+        )}
       </form>
-    </div>
   );
 }
