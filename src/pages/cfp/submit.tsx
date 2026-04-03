@@ -16,6 +16,7 @@ import type { CfpSpeaker, CfpTag } from '@/lib/types/cfp';
 import { getSubmissionCount } from '@/lib/cfp/submissions';
 import { SUBMISSION_LIMITS } from '@/lib/cfp/config';
 import { getSuggestedTags } from '@/lib/cfp/tags';
+import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
 import {
   WizardStep,
   FormData,
@@ -166,6 +167,9 @@ export default function SubmitPage({ speaker, suggestedTags, currentSubmissionCo
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.code === CFP_CLOSED_ERROR_CODE) {
+          toast.warning('CFP is closed', data.error || 'CFP submissions are closed.');
+        }
         throw new Error(data.error || 'Failed to create submission');
       }
 
@@ -176,6 +180,9 @@ export default function SubmitPage({ speaker, suggestedTags, currentSubmissionCo
 
         if (!submitResponse.ok) {
           const submitData = await submitResponse.json();
+          if (submitData.code === CFP_CLOSED_ERROR_CODE) {
+            toast.warning('CFP is closed', submitData.error || 'CFP submissions are closed.');
+          }
           throw new Error(submitData.error || 'Failed to submit for review');
         }
 
@@ -344,6 +351,12 @@ export default function SubmitPage({ speaker, suggestedTags, currentSubmissionCo
 }
 
 export const getServerSideProps: GetServerSideProps<SubmitPageProps> = async (ctx) => {
+  if (isCfpClosed()) {
+    return {
+      redirect: { destination: '/cfp/dashboard?cfp_closed=1', permanent: false },
+    };
+  }
+
   const supabase = createSupabaseServerClient(ctx);
 
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();

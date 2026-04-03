@@ -8,6 +8,7 @@ import { updateSubmissionStatus } from '@/lib/cfp/admin';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { updateSubmissionStatusSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
+import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
 
 const log = logger.scope('CFP Admin Status API');
 
@@ -38,6 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    if (isCfpClosed() && result.data.status === 'submitted') {
+      return res.status(403).json({
+        code: CFP_CLOSED_ERROR_CODE,
+        error: 'CFP is closed. Submissions can no longer be submitted.',
+      });
+    }
+
     const { success, error } = await updateSubmissionStatus(id, result.data.status);
 
     if (!success) {
