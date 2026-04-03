@@ -12,7 +12,6 @@ import type {
   CfpTravelOption,
 } from './base';
 import type { CfpReview } from './reviews';
-import type { CfpSubmissionMetadata } from '@/lib/cfp/closure';
 
 /**
  * Speaker profile for CFP
@@ -96,7 +95,7 @@ export interface CfpSubmission {
   status: CfpSubmissionStatus;
   submitted_at: string | null;
   withdrawn_at: string | null;
-  metadata: CfpSubmissionMetadata;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 

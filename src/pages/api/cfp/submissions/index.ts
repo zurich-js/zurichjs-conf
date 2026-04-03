@@ -11,7 +11,7 @@ import { submissionSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { SUBMISSION_LIMITS } from '@/lib/cfp/config';
-import { CFP_CLOSED_ERROR_CODE, canCreateSubmissionNow } from '@/lib/cfp/closure';
+import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
 
 const log = logger.scope('CFP Submissions API');
 
@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      if (!canCreateSubmissionNow()) {
+      if (isCfpClosed()) {
         return res.status(403).json({
           code: CFP_CLOSED_ERROR_CODE,
           error: 'CFP is closed. New submissions are no longer accepted.',
