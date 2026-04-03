@@ -4,7 +4,6 @@
  */
 
 import { X, Filter } from 'lucide-react';
-import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
 
 // Score color coding helper
 export function getScoreColor(score: number | null): string {
@@ -65,8 +64,8 @@ export function FilterChip({ label, onRemove }: { label: string; onRemove: () =>
 
 // Active filters bar with summary
 interface ActiveFiltersBarProps {
-  submissions: CfpAdminSubmission[];
-  filteredSubmissions: CfpAdminSubmission[];
+  total: number;
+  totalUnfiltered: number;
   searchQuery: string;
   statusFilter: string;
   typeFilter: string;
@@ -81,8 +80,8 @@ interface ActiveFiltersBarProps {
 }
 
 export function ActiveFiltersBar({
-  submissions,
-  filteredSubmissions,
+  total,
+  totalUnfiltered,
   searchQuery,
   statusFilter,
   typeFilter,
@@ -114,7 +113,7 @@ export function ActiveFiltersBar({
   }
 
   const hasFilters = activeFilters.length > 0;
-  const isFiltered = filteredSubmissions.length !== submissions.length;
+  const isFiltered = total !== totalUnfiltered;
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -123,14 +122,14 @@ export function ActiveFiltersBar({
         <Filter className="w-4 h-4 text-gray-500" />
         <span className="text-gray-700">
           Showing{' '}
-          <span className="font-semibold text-black">{filteredSubmissions.length}</span>
+          <span className="font-semibold text-black">{total}</span>
           {isFiltered && (
             <>
               {' '}of{' '}
-              <span className="font-semibold text-black">{submissions.length}</span>
+              <span className="font-semibold text-black">{totalUnfiltered}</span>
             </>
           )}
-          {' '}submission{filteredSubmissions.length !== 1 ? 's' : ''}
+          {' '}submission{total !== 1 ? 's' : ''}
         </span>
       </div>
 

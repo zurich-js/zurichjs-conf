@@ -1,9 +1,8 @@
 /**
  * CFP Submissions Tab Component
- * Table/card view for managing CFP submissions
+ * Table/card view for managing CFP submissions with server-side pagination
  */
 
-import { useState, useMemo, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Pagination } from '@/components/atoms';
 import { StatusBadge } from './StatusBadge';
@@ -18,58 +17,26 @@ import {
 import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { formatScore } from '@/lib/cfp/scoring';
 
-const ITEMS_PER_PAGE = 10;
-
-interface SubmissionSearchFilters {
-  include: string[];
-  exclude: string[];
-}
-
-function parseSubmissionSearch(search: string): SubmissionSearchFilters {
-  const filters: SubmissionSearchFilters = { include: [], exclude: [] };
-  const tokens = search.match(/-?"[^"]+"|-?\S+/g) || [];
-
-  for (const rawToken of tokens) {
-    const isExclude = rawToken.startsWith('-');
-    const token = isExclude ? rawToken.slice(1) : rawToken;
-    if (!token) continue;
-
-    const unquoted = token.startsWith('"') && token.endsWith('"')
-      ? token.slice(1, -1)
-      : token;
-    const normalized = unquoted.trim().toLowerCase();
-    if (!normalized) continue;
-
-    if (isExclude) filters.exclude.push(normalized);
-    else filters.include.push(normalized);
-  }
-
-  return filters;
-}
-
-function matchesSubmissionSearch(submission: CfpAdminSubmission, filters: SubmissionSearchFilters): boolean {
-  const speaker = submission.speaker
-    ? `${submission.speaker.first_name || ''} ${submission.speaker.last_name || ''} ${submission.speaker.email || ''}`
-    : '';
-  const tags = (submission.tags || []).map((tag) => tag.name).join(' ');
-  const haystack = `${submission.title} ${submission.abstract} ${speaker} ${tags}`.toLowerCase();
-
-  if (filters.include.some((term) => !haystack.includes(term))) {
-    return false;
-  }
-
-  if (filters.exclude.some((term) => haystack.includes(term))) {
-    return false;
-  }
-
-  return true;
-}
-
 interface SubmissionsTabProps {
   submissions: CfpAdminSubmission[];
+  total: number;
+  totalUnfiltered: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  pageSize: number;
   isLoading: boolean;
   statusFilter: string;
   setStatusFilter: (v: string) => void;
+  typeFilter: string;
+  setTypeFilter: (v: string) => void;
+  searchQuery: string;
+  setSearchQuery: (v: string) => void;
+  sortBy: string;
+  setSortBy: (v: string) => void;
+  minReviews: string;
+  setMinReviews: (v: string) => void;
+  shortlistOnly: boolean;
+  setShortlistOnly: (v: boolean) => void;
   selectedIds: Set<string>;
   toggleSelection: (id: string) => void;
   toggleSelectAll: () => void;
@@ -81,9 +48,24 @@ interface SubmissionsTabProps {
 
 export function SubmissionsTab({
   submissions,
+  total,
+  totalUnfiltered,
+  currentPage,
+  onPageChange,
+  pageSize,
   isLoading,
   statusFilter,
   setStatusFilter,
+  typeFilter,
+  setTypeFilter,
+  searchQuery,
+  setSearchQuery,
+  sortBy,
+  setSortBy,
+  minReviews,
+  setMinReviews,
+  shortlistOnly,
+  setShortlistOnly,
   selectedIds,
   toggleSelection,
   toggleSelectAll,
@@ -92,83 +74,7 @@ export function SubmissionsTab({
   bulkUpdateStatusMutation,
   onSelectSubmission,
 }: SubmissionsTabProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [minReviews, setMinReviews] = useState<string>('0');
-  const [shortlistOnly, setShortlistOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('newest');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Filter and sort submissions
-  const filteredSubmissions = useMemo(() => {
-    let result = [...submissions];
-
-    if (searchQuery.trim()) {
-      const filters = parseSubmissionSearch(searchQuery);
-      if (filters.include.length > 0 || filters.exclude.length > 0) {
-        result = result.filter((submission) => matchesSubmissionSearch(submission, filters));
-      }
-    }
-
-    if (typeFilter !== 'all') {
-      result = result.filter((s) => s.submission_type === typeFilter);
-    }
-
-    // Min reviews filter
-    const minReviewCount = minReviews === '5+' ? 5 : parseInt(minReviews, 10);
-    if (minReviewCount > 0) {
-      result = result.filter((s) => (s.stats?.review_count || 0) >= minReviewCount);
-    }
-
-    // Shortlist only filter
-    if (shortlistOnly) {
-      result = result.filter((s) => s.stats?.shortlist_status === 'likely_shortlisted');
-    }
-
-    // Sort
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case 'oldest':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        case 'newest':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'most_reviews':
-          return (b.stats?.review_count || 0) - (a.stats?.review_count || 0);
-        case 'least_reviews':
-          return (a.stats?.review_count || 0) - (b.stats?.review_count || 0);
-        case 'highest_score':
-          return (b.stats?.avg_overall || 0) - (a.stats?.avg_overall || 0);
-        case 'lowest_score':
-          return (a.stats?.avg_overall || 0) - (b.stats?.avg_overall || 0);
-        case 'highest_coverage':
-          return (b.stats?.coverage_percent || 0) - (a.stats?.coverage_percent || 0);
-        case 'lowest_coverage':
-          return (a.stats?.coverage_percent || 0) - (b.stats?.coverage_percent || 0);
-        case 'last_reviewed':
-          const aTime = a.stats?.last_reviewed_at ? new Date(a.stats.last_reviewed_at).getTime() : 0;
-          const bTime = b.stats?.last_reviewed_at ? new Date(b.stats.last_reviewed_at).getTime() : 0;
-          return bTime - aTime;
-        case 'title':
-          return a.title.localeCompare(b.title);
-        default:
-          return 0;
-      }
-    });
-
-    return result;
-  }, [submissions, searchQuery, typeFilter, minReviews, shortlistOnly, sortBy]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE);
-  const paginatedSubmissions = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredSubmissions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredSubmissions, currentPage]);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, typeFilter, minReviews, shortlistOnly, statusFilter, sortBy]);
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div>
@@ -289,8 +195,8 @@ export function SubmissionsTab({
 
         {/* Active Filters and Summary Bar */}
         <ActiveFiltersBar
-          submissions={submissions}
-          filteredSubmissions={filteredSubmissions}
+          total={total}
+          totalUnfiltered={totalUnfiltered}
           searchQuery={searchQuery}
           statusFilter={statusFilter}
           typeFilter={typeFilter}
@@ -319,7 +225,7 @@ export function SubmissionsTab({
         <>
           {/* Mobile Card View */}
           <MobileSubmissionsList
-            submissions={paginatedSubmissions}
+            submissions={submissions}
             selectedIds={selectedIds}
             toggleSelection={toggleSelection}
             toggleSelectAll={toggleSelectAll}
@@ -328,7 +234,7 @@ export function SubmissionsTab({
 
           {/* Desktop Table View */}
           <DesktopSubmissionsTable
-            submissions={paginatedSubmissions}
+            submissions={submissions}
             selectedIds={selectedIds}
             toggleSelection={toggleSelection}
             toggleSelectAll={toggleSelectAll}
@@ -338,9 +244,9 @@ export function SubmissionsTab({
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            pageSize={ITEMS_PER_PAGE}
-            totalItems={filteredSubmissions.length}
+            onPageChange={onPageChange}
+            pageSize={pageSize}
+            totalItems={total}
             variant="light"
           />
         </>

@@ -54,7 +54,7 @@ const newsletterConfig = {
 
 const socials = [
   { kind: 'linkedin' as const, href: 'https://www.linkedin.com/company/zurichjs', label: 'Follow ZurichJS on LinkedIn' },
-  { kind: 'bluesky' as const, href: 'https://bsky.app/profile/zurichjs.bsky.social', label: 'Follow ZurichJS on Bluesky' },
+  { kind: 'bluesky' as const, href: 'https://bsky.app/profile/zurichjs.com', label: 'Follow ZurichJS on Bluesky' },
   { kind: 'x' as const, href: 'https://www.x.com/zurichjs', label: 'Follow ZurichJS on X' },
   { kind: 'instagram' as const, href: 'https://www.instagram.com/zurich.js', label: 'Follow ZurichJS on Instagram' },
 ];

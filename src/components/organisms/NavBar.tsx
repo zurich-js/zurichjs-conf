@@ -25,7 +25,7 @@ const socialLinks = [
   { kind: "x" as const, href: "https://x.com/zurichjs", showOnDesktop: false },
   {
     kind: "bluesky" as const,
-    href: "https://bsky.app/profile/zurichjs.bsky.social",
+    href: "https://bsky.app/profile/zurichjs.com",
     showOnDesktop: true,
   },
   {

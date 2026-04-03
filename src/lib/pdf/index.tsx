@@ -8,8 +8,11 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { TicketPDF, type TicketPDFProps } from './ticket-pdf';
 import { InvoicePDF } from './invoice-pdf';
 import { SponsorshipInvoicePDF } from './sponsorship-invoice-pdf';
+import { TicketInvoicePDF } from './ticket-invoice-pdf';
 import type { InvoicePDFProps } from '@/lib/types/b2b';
 import type { SponsorshipInvoicePDFProps } from '@/lib/types/sponsorship';
+import type { TicketInvoicePDFProps } from '@/lib/types/ticket-invoice';
+import { logger } from '@/lib/logger';
 
 /**
  * Generate a PDF ticket and return as buffer
@@ -100,6 +103,24 @@ export async function generateSponsorshipInvoicePDF(
   }
 }
 
+const log = logger.scope('PDF');
+
+/**
+ * Generate a ticket invoice PDF and return as buffer
+ */
+export async function generateTicketInvoicePDF(props: TicketInvoicePDFProps): Promise<Buffer> {
+  try {
+    log.info('Generating ticket invoice PDF', { invoiceNumber: props.invoiceNumber });
+    const pdfBuffer = await renderToBuffer(<TicketInvoicePDF {...props} />);
+    log.info('Ticket invoice PDF generated', { invoiceNumber: props.invoiceNumber, bytes: pdfBuffer.length });
+    return pdfBuffer;
+  } catch (error) {
+    log.error('Error generating ticket invoice PDF', error);
+    throw error;
+  }
+}
+
 export type { TicketPDFProps } from './ticket-pdf';
 export type { InvoicePDFProps } from '@/lib/types/b2b';
 export type { SponsorshipInvoicePDFProps } from '@/lib/types/sponsorship';
+export type { TicketInvoicePDFProps } from '@/lib/types/ticket-invoice';

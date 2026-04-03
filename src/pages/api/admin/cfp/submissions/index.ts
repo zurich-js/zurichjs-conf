@@ -32,20 +32,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       sort_order,
       limit,
       offset,
+      min_review_count,
+      shortlist_only,
     } = req.query;
 
-    const { submissions, total } = await getAdminSubmissions({
+    const { submissions, total, totalUnfiltered } = await getAdminSubmissions({
       status: status ? (status as CfpSubmissionStatus) : undefined,
       submission_type: submission_type ? (submission_type as CfpSubmissionType) : undefined,
       talk_level: talk_level ? (talk_level as CfpTalkLevel) : undefined,
       search: search as string | undefined,
-      sort_by: sort_by as 'created_at' | 'avg_score' | 'review_count' | 'title' | undefined,
+      sort_by: sort_by as 'created_at' | 'avg_score' | 'review_count' | 'title' | 'coverage' | 'last_reviewed' | undefined,
       sort_order: sort_order as 'asc' | 'desc' | undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined,
+      limit: limit ? parseInt(limit as string) : 10,
+      offset: offset ? parseInt(offset as string) : 0,
+      min_review_count: min_review_count ? parseInt(min_review_count as string) : undefined,
+      shortlist_only: shortlist_only === 'true',
     });
 
-    return res.status(200).json({ submissions, total });
+    return res.status(200).json({ submissions, total, totalUnfiltered });
   } catch (error) {
     log.error('Error fetching submissions', error);
     return res.status(500).json({ error: 'Internal server error' });

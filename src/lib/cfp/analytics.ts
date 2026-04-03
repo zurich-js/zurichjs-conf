@@ -35,11 +35,11 @@ export async function getCfpAnalytics(): Promise<CfpAnalytics> {
     tagJoinsResult,
     tagsResult,
   ] = await Promise.all([
-    supabase.from('cfp_submissions').select('id, status, submission_type, talk_level, speaker_id, created_at, submitted_at, title, abstract, additional_notes, outline, slides_url, previous_recording_url'),
-    supabase.from('cfp_speakers').select('id, first_name, last_name, company, country, city, bio, profile_image_url, travel_assistance_required, assistance_type, departure_airport, special_requirements, company_interested_in_sponsoring'),
-    supabase.from('cfp_reviews').select('id, submission_id, score_overall, created_at'),
-    supabase.from('cfp_submission_tags').select('submission_id, tag_id'),
-    supabase.from('cfp_tags').select('id, name'),
+    supabase.from('cfp_submissions').select('id, status, submission_type, talk_level, speaker_id, created_at, submitted_at, title, abstract, additional_notes, outline, slides_url, previous_recording_url').limit(10000),
+    supabase.from('cfp_speakers').select('id, first_name, last_name, company, country, city, bio, profile_image_url, travel_assistance_required, assistance_type, departure_airport, special_requirements, company_interested_in_sponsoring').limit(10000),
+    supabase.from('cfp_reviews').select('id, submission_id, score_overall, created_at').limit(10000),
+    supabase.from('cfp_submission_tags').select('submission_id, tag_id').limit(10000),
+    supabase.from('cfp_tags').select('id, name').limit(10000),
   ]);
 
   const submissions = (submissionsResult.data || []) as Array<{
