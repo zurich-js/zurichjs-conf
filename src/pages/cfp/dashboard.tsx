@@ -28,9 +28,9 @@ interface DashboardProps {
   missingFields: string[];
 }
 
-const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
+const StatusBadge = ({ status, cfpClosed }: { status: SpeakerVisibleStatus; cfpClosed: boolean }) => {
   const styles: Record<SpeakerVisibleStatus, string> = {
-    draft: 'bg-gray-500/20 text-gray-300',
+    draft: cfpClosed ? 'bg-orange-500/20 text-orange-300' : 'bg-gray-500/20 text-gray-300',
     submitted: 'bg-blue-500/20 text-blue-300',
     under_review: 'bg-purple-500/20 text-purple-300',
     accepted: 'bg-green-500/20 text-green-300',
@@ -39,7 +39,7 @@ const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
   };
 
   const labels: Record<SpeakerVisibleStatus, string> = {
-    draft: 'Draft',
+    draft: cfpClosed ? 'Not Submitted' : 'Draft',
     submitted: 'Submitted',
     under_review: 'Under Review',
     accepted: 'Accepted',
@@ -54,7 +54,7 @@ const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
   );
 };
 
-const SubmissionCard = ({ submission }: { submission: CfpSubmission }) => {
+const SubmissionCard = ({ submission, cfpClosed }: { submission: CfpSubmission; cfpClosed: boolean }) => {
   const typeLabels: Record<string, string> = {
     lightning: 'Lightning Talk',
     standard: 'Talk',
@@ -70,7 +70,7 @@ const SubmissionCard = ({ submission }: { submission: CfpSubmission }) => {
           <h3 className="text-lg font-semibold text-white line-clamp-2">
             {submission.title}
           </h3>
-          <StatusBadge status={visibleStatus} />
+          <StatusBadge status={visibleStatus} cfpClosed={cfpClosed} />
         </div>
         <div className="flex items-center gap-3 text-sm text-brand-gray-light">
           <span className="px-2 py-0.5 bg-brand-gray-darkest rounded text-xs">
@@ -270,7 +270,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
                 </h2>
                 <div className="flex flex-col gap-4">
                   {draftSubmissions.map((submission) => (
-                    <SubmissionCard key={submission.id} submission={submission} />
+                    <SubmissionCard key={submission.id} submission={submission} cfpClosed={cfpClosed} />
                   ))}
                 </div>
               </section>
@@ -287,7 +287,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
                 </h2>
                 <div className="flex flex-col gap-4">
                   {submittedSubmissions.map((submission) => (
-                    <SubmissionCard key={submission.id} submission={submission} />
+                    <SubmissionCard key={submission.id} submission={submission} cfpClosed={cfpClosed} />
                   ))}
                 </div>
               </section>

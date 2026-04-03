@@ -2,7 +2,7 @@
  * CFP closure and reopen window helpers.
  */
 
-const CFP_CLOSES_AT_UTC = '2026-04-02T21:59:59.000Z';
+const CFP_CLOSES_AT_UTC = '2026-04-03T21:59:59.000Z';
 const CFP_CLOSES_AT_MS = new Date(CFP_CLOSES_AT_UTC).getTime();
 
 export const CFP_MEETUP_CFP_URL = 'https://www.zurichjs.com/cfp?utm_source=conf&utm_medium=confwebsite';

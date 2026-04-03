@@ -22,9 +22,9 @@ interface SubmissionDetailProps {
   isSubmissionClosed: boolean;
 }
 
-const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
+const StatusBadge = ({ status, cfpClosed }: { status: SpeakerVisibleStatus; cfpClosed: boolean }) => {
   const styles: Record<SpeakerVisibleStatus, string> = {
-    draft: 'bg-gray-500/20 text-gray-300',
+    draft: cfpClosed ? 'bg-orange-500/20 text-orange-300' : 'bg-gray-500/20 text-gray-300',
     submitted: 'bg-blue-500/20 text-blue-300',
     under_review: 'bg-purple-500/20 text-purple-300',
     accepted: 'bg-green-500/20 text-green-300',
@@ -33,7 +33,7 @@ const StatusBadge = ({ status }: { status: SpeakerVisibleStatus }) => {
   };
 
   const labels: Record<SpeakerVisibleStatus, string> = {
-    draft: 'Draft',
+    draft: cfpClosed ? 'Not Submitted' : 'Draft',
     submitted: 'Submitted',
     under_review: 'Under Review',
     accepted: 'Accepted',
@@ -252,7 +252,7 @@ export default function SubmissionDetail({ submission, isSubmissionClosed }: Sub
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <StatusBadge status={visibleStatus} />
+                <StatusBadge status={visibleStatus} cfpClosed={isSubmissionClosed} />
                 <span className="text-brand-gray-light text-sm">
                   {TYPE_LABELS[submission.submission_type]}
                 </span>
