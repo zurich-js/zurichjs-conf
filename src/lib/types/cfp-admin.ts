@@ -25,6 +25,7 @@ export interface CfpAdminSpeaker {
   bluesky_handle: string | null;
   mastodon_handle: string | null;
   profile_image_url: string | null;
+  header_image_url: string | null;
   is_visible: boolean;
   is_featured: boolean;
   city: string | null;
@@ -67,6 +68,7 @@ export interface CfpAdminSubmission {
     bluesky_handle?: string | null;
     mastodon_handle?: string | null;
     profile_image_url?: string | null;
+    header_image_url?: string | null;
     tshirt_size?: string | null;
     company_interested_in_sponsoring?: boolean | null;
     city?: string | null;

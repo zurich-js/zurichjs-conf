@@ -1,0 +1,99 @@
+/**
+ * Speaker Header Image Upload API
+ * POST /api/cfp/speaker/header-image
+ *
+ * Accepts an image file upload and stores it in Supabase storage.
+ * Updates the speaker's header_image_url.
+ */
+
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
+import { uploadSpeakerImage } from '@/lib/cfp/speakers';
+import formidable from 'formidable';
+import fs from 'fs';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Speaker Header Image Upload');
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const supabase = createSupabaseApiClient(req, res);
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const speaker = await getSpeakerByUserId(session.user.id);
+
+  if (!speaker) {
+    return res.status(404).json({ error: 'Speaker profile not found' });
+  }
+
+  try {
+    const form = formidable({
+      maxFileSize: MAX_FILE_SIZE,
+      filter: (part) => ALLOWED_MIME_TYPES.includes(part.mimetype || ''),
+    });
+
+    const [, files] = await form.parse(req);
+    const uploadedFile = files.image?.[0] || files.file?.[0];
+
+    if (!uploadedFile) {
+      return res.status(400).json({
+        error: 'No image file provided. Accepted formats: JPG, PNG, WebP, GIF (max 5MB)',
+      });
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(uploadedFile.mimetype || '')) {
+      return res.status(400).json({
+        error: 'Invalid file type. Accepted formats: JPG, PNG, WebP, GIF',
+      });
+    }
+
+    const fileBuffer = await fs.promises.readFile(uploadedFile.filepath);
+    const extension = uploadedFile.mimetype?.split('/')[1] || 'jpg';
+    const fileName = `header.${extension}`;
+
+    const { url, error } = await uploadSpeakerImage(
+      speaker.id,
+      fileBuffer,
+      fileName,
+      uploadedFile.mimetype || 'image/jpeg',
+      'header_image_url'
+    );
+
+    await fs.promises.unlink(uploadedFile.filepath).catch(() => {});
+
+    if (error || !url) {
+      return res.status(500).json({ error: error || 'Failed to upload image' });
+    }
+
+    log.info('Speaker header image uploaded', { speakerId: speaker.id });
+
+    return res.status(200).json({
+      success: true,
+      imageUrl: url,
+    });
+  } catch (error) {
+    log.error('Failed to upload header image', error, { speakerId: speaker.id });
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to upload image',
+    });
+  }
+}

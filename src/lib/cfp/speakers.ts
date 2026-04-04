@@ -159,7 +159,8 @@ export async function uploadSpeakerImage(
   speakerId: string,
   file: Buffer,
   fileName: string,
-  contentType: string
+  contentType: string,
+  imageField: 'profile_image_url' | 'header_image_url' = 'profile_image_url'
 ): Promise<{ url: string | null; error?: string }> {
   const supabase = createCfpServiceClient();
 
@@ -187,7 +188,7 @@ export async function uploadSpeakerImage(
   // Update speaker profile with new image URL (including cache buster)
   const { error: updateError } = await supabase
     .from('cfp_speakers')
-    .update({ profile_image_url: cacheBustedUrl })
+    .update({ [imageField]: cacheBustedUrl })
     .eq('id', speakerId);
 
   if (updateError) {
@@ -217,6 +218,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       company,
       bio,
       profile_image_url,
+      header_image_url,
       is_featured,
       linkedin_url,
       github_url,
@@ -313,6 +315,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       company: speaker.company,
       bio: speaker.bio,
       profile_image_url: speaker.profile_image_url,
+      header_image_url: speaker.header_image_url,
       is_featured: speaker.is_featured ?? false,
       socials: {
         linkedin_url: speaker.linkedin_url,
@@ -383,6 +386,7 @@ export async function createSpeaker(
     bluesky_handle: data.bluesky_handle || null,
     mastodon_handle: data.mastodon_handle || null,
     profile_image_url: data.profile_image_url || null,
+    header_image_url: data.header_image_url || null,
     is_visible: data.is_visible ?? false,
   };
 

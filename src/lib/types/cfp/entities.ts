@@ -33,6 +33,7 @@ export interface CfpSpeaker {
   bluesky_handle: string | null;
   mastodon_handle: string | null;
   profile_image_url: string | null;
+  header_image_url: string | null;
   tshirt_size: CfpTshirtSize | null;
   travel_option: CfpTravelOption | null; // Which travel arrangement: employer_covers, self_managed, need_assistance
   travel_assistance_required: boolean | null; // Whether speaker needs travel/accommodation covered

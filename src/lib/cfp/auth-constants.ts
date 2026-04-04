@@ -73,10 +73,23 @@ export function isSpeakerProfileComplete(speaker: CfpSpeaker): boolean {
   );
 }
 
+export function isSpeakerProfileCompleteForRequirements(
+  speaker: CfpSpeaker,
+  options?: { requiresHeaderImage?: boolean }
+): boolean {
+  return !!(
+    isSpeakerProfileComplete(speaker) &&
+    (!options?.requiresHeaderImage || speaker.header_image_url)
+  );
+}
+
 /**
  * Get list of missing required profile fields
  */
-export function getMissingProfileFields(speaker: CfpSpeaker): string[] {
+export function getMissingProfileFields(
+  speaker: CfpSpeaker,
+  options?: { requiresHeaderImage?: boolean }
+): string[] {
   const missing: string[] = [];
   if (!speaker.first_name) missing.push('First name');
   if (!speaker.last_name) missing.push('Last name');
@@ -86,5 +99,6 @@ export function getMissingProfileFields(speaker: CfpSpeaker): string[] {
   if (!speaker.country) missing.push('Country');
   if (!speaker.bio) missing.push('Bio');
   if (!speaker.tshirt_size) missing.push('T-shirt size');
+  if (options?.requiresHeaderImage && !speaker.header_image_url) missing.push('Header image');
   return missing;
 }

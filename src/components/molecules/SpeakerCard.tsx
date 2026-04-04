@@ -57,7 +57,7 @@ function SpeakerCardInner({
                             src={header}
                             alt=""
                             fill
-                            className="object-cover"
+                            className="object-cover object-bottom"
                             sizes="(max-width: 640px) 21rem, 22rem"
                         />
                       ) : (
