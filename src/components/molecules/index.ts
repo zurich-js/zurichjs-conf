@@ -1,7 +1,8 @@
 export { Countdown } from './Countdown';
 export { BackgroundMedia } from './BackgroundMedia';
 export { SpeakerCard } from './SpeakerCard';
-export { SpeakerGrid } from './SpeakerGrid';
+export { HeroSpeakerCard } from './HeroSpeakerCard';
+export { HeroSpeakerGrid } from './HeroSpeakerGrid';
 export { EventItem } from './EventItem';
 export { DayTabs } from './DayTabs';
 export { FeatureList } from './FeatureList';
@@ -41,8 +42,10 @@ export { PackedGrid } from './PackedGrid';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
-export type { SpeakerCardProps } from './SpeakerCard';
-export type { SpeakerGridProps } from './SpeakerGrid';
+export type { PublicSpeakerCardProps } from './SpeakerCard';
+export type { HeroSpeakerCardProps as SpeakerCardProps } from './HeroSpeakerCard';
+export type { HeroSpeakerCardProps } from './HeroSpeakerCard';
+export type { HeroSpeakerGridProps } from './HeroSpeakerGrid';
 export type { EventItemProps } from './EventItem';
 export type { DayTabsProps, DayTab } from './DayTabs';
 export type { FeatureListProps, Feature } from './FeatureList';

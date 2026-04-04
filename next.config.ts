@@ -1,19 +1,35 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
+/* Cover localhost image optimization and storage */
+const isDev = process.env.NEXT_PUBLIC_BASE_URL?.startsWith('http://localhost')
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   // Configure image optimization for Supabase storage
   // Optimized to reduce Vercel Image Optimization usage
   images: {
+    dangerouslyAllowLocalIP: isDev,
     // Only allow Supabase storage images (removed unused Unsplash)
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
+        {
+            protocol: 'https',
+            hostname: '**.supabase.co',
+            pathname: '/storage/v1/object/public/**',
+        },
+        {
+            protocol: 'http',
+            hostname: '127.0.0.1',
+            port: '54321',
+            pathname: '/storage/v1/object/public/**',
+        },
+        {
+            protocol: 'http',
+            hostname: 'localhost',
+            port: '54321',
+            pathname: '/storage/v1/object/public/**',
+        }
     ],
     // Cache optimized images for 31 days to reduce transformations
     minimumCacheTTL: 2678400,
