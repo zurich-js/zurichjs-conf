@@ -40,8 +40,8 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(speaker.profile_image_url);
-  const [headerImageUrl, setHeaderImageUrl] = useState<string | null>(speaker.header_image_url);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(speaker.profile_image_url ?? null);
+  const [headerImageUrl, setHeaderImageUrl] = useState<string | null>(speaker.header_image_url ?? null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewVariant, setPreviewVariant] = useState<'compact' | 'default' | 'full'>('default');
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, ModalBody } from '@/components/atoms/Modal';
 import { SpeakerCard } from '@/components/molecules/SpeakerCard';
 import {Button} from "@/components/atoms";
+import {cn} from "@/lib/utils";
 
 type SpeakerCardVariant = 'compact' | 'default' | 'full';
 
@@ -64,11 +65,14 @@ export function SpeakerCardPreviewModal({
 
             return (
               <Button
-                variant={isActive ? 'primary' : 'outline'}
+                variant={isActive ? 'dark' : 'ghost'}
                 key={option}
                 size="sm"
                 onClick={() => onVariantChange(option)}
-                className="capitalize"
+                className={cn(
+                    'capitalize',
+                    !isActive && 'text-brand-black!'
+                )}
               >
                 {option}
               </Button>
