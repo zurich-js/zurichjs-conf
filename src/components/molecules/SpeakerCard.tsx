@@ -73,10 +73,7 @@ function SpeakerCardInner({
                   )}
               >
               <div
-                  className={cn(
-                          'relative overflow-hidden rounded-full border-2 border-brand-gray-lightest transition-all duration-300',
-                          isFull ? 'size-32' : 'size-24'
-                  )}
+                  className="relative overflow-hidden rounded-full border-2 border-brand-gray-lightest transition-all duration-300 size-20 @6xs:size-24 @5xs:size-28 @4xs:size-32 @3xs:size-36 @2xs:size-40 @xs:size-48"
               >
                   {avatar ? (
                           <Image
@@ -145,7 +142,7 @@ export function SpeakerCard(props: PublicSpeakerCardProps) {
     return (
       <Link
         href={props.to}
-        className={cn('group block w-full rounded-2xl focus-visible:outline-none', className)}
+        className={cn('group @container block w-full rounded-2xl focus-visible:outline-none', className)}
       >
         <SpeakerCardInner {...rest} />
       </Link>
@@ -156,7 +153,7 @@ export function SpeakerCard(props: PublicSpeakerCardProps) {
     <button
       type="button"
       onClick={props.onClick}
-      className={cn('group block w-full rounded-2xl bg-transparent text-left focus-visible:outline-none', className)}
+      className={cn('group @container block w-full rounded-2xl bg-transparent text-left focus-visible:outline-none', className)}
     >
       <SpeakerCardInner {...rest} />
     </button>

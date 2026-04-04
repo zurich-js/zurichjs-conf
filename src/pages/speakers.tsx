@@ -105,7 +105,7 @@ export default function SpeakersPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data, isLoading } = useQuery(publicSpeakersQueryOptions);
 
-  const speakers = data?.speakers || [];
+  const speakers = useMemo(() => data?.speakers ?? [], [data?.speakers]);
   const availableTags = useMemo(
     () => Array.from(new Set(speakers.flatMap((speaker) => speaker.sessions.flatMap((session) => session.tags)))).sort(),
     [speakers]
@@ -132,7 +132,7 @@ export default function SpeakersPage() {
   }, [selectedTags, sortMode, speakers]);
 
   const sortLabel = sortMode === 'none' ? 'Default' : sortMode === 'asc' ? 'Name A-Z' : 'Name Z-A';
-  const cardSize = viewMode === 'compact' ? '200px' : viewMode === 'full' ? '360px' : '280px';
+  const cardSize = viewMode === 'compact' ? 'var(--container-6xs)' : viewMode === 'default' ? 'var(--container-5xs)' : 'var(--container-4xs)';
   const gridStyle = { '--card-size': cardSize } as CSSProperties;
 
   return (
@@ -145,23 +145,21 @@ export default function SpeakersPage() {
       />
       <main className="min-h-screen bg-brand-white">
         <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
-          <div className="mx-auto max-w-6xl">
             <Kicker variant="dark" className="mb-4">
-              Speakers
+              September 11, 2026
             </Kicker>
-            <Heading level="h1" variant="dark" className="max-w-4xl text-3xl font-bold leading-none sm:text-4xl">
+            <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none">
               ZurichJS Conf Speakers
             </Heading>
-            <p className="mt-6 max-w-2xl text-lg text-brand-gray-light">
-              TODO: Replace this placeholder hero copy with the final speakers intro.
+            <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl eget aliquam tincidunt, nunc nisl aliquam nisl, eget aliquam nisl nisl eget nisl.
             </p>
-          </div>
         </ShapedSection>
 
         <SectionContainer>
           <div className="py-16 md:py-20">
             <div className="flex flex-col gap-6">
-              <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
+              <div className="flex flex-col justify-between items-end gap-5 lg:flex-row">
                 <div>
                   <p className="mb-2.5 px-4 text-sm">Grid view</p>
                   <div className="inline-flex rounded-full border border-brand-black bg-brand-white p-1">

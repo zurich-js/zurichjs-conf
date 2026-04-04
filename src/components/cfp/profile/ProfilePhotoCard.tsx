@@ -84,7 +84,7 @@ export function PhotosCard({
       <div>
         <h3 className="text-lg font-semibold text-white">Photos</h3>
         <p className="mt-2 text-sm text-brand-gray-light">
-          Upload an avatar photo and a header image of your choice (5:2 ratio, bottom aligned)
+          Upload an avatar photo and a cover photo of your choice (5:2 ratio, bottom aligned)
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export function PhotosCard({
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium text-white">
-              Header{requiresHeaderImage ? ' *' : ''}
+              Cover{requiresHeaderImage ? ' *' : ''}
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export function PhotosCard({
                 setIsUploadingHeader,
                 onHeaderImageChange,
                 'Header Updated',
-                'Your speaker card header image has been saved.',
+                'Your cover photo has been saved.',
                 headerInputRef
               );
             }}
@@ -195,7 +195,7 @@ export function PhotosCard({
               ) : (
                 <div className="flex h-full items-center justify-center">
                     <p className="text-xxs text-center text-brand-gray-light">
-                      {isUploadingHeader ? 'Uploading...' : 'Upload header image'}
+                      {isUploadingHeader ? 'Uploading...' : 'Upload cover photo'}
                     </p>
                 </div>
               )}
