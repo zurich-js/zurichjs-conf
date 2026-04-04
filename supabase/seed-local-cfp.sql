@@ -1,6 +1,6 @@
--- Local CFP reviewer dashboard seed data
+-- Local CFP seed data
 -- Applied automatically by `supabase db reset` for local development.
--- Scoped to reviewer-dashboard testing: submissions, tags, reviewers, reviews.
+-- Covers reviewer-dashboard testing plus a small public speakers lineup.
 
 -- Reviewers
 insert into public.cfp_reviewers (
@@ -248,20 +248,96 @@ insert into public.cfp_speakers (
     email,
     first_name,
     last_name,
-    job_title
+    job_title,
+    company,
+    bio,
+    profile_image_url,
+    is_visible,
+    is_featured
 )
 values
-    ('11111111-1111-4111-8111-111111111111', 'speaker@zurichjs.test', 'Alex', 'Ng', 'Engineer'),
-    ('22222222-2222-4222-8222-222222222222', 'sam.nuxt@example.test', 'Sam', 'Rivera', 'Frontend Lead'),
-    ('33333333-3333-4333-8333-333333333333', 'maya.web@example.test', 'Maya', 'Khan', 'Developer Advocate'),
-    ('44444444-4444-4444-8444-444444444444', 'leo.misc@example.test', 'Leo', 'Berg', 'Staff Engineer'),
-    ('55555555-5555-4555-8555-555555555555', 'nina.scale@example.test', 'Nina', 'Costa', 'Platform Engineer'),
-    ('66666666-6666-4666-8666-666666666666', 'omar.cache@example.test', 'Omar', 'Haddad', 'Principal Engineer')
+    (
+        '11111111-1111-4111-8111-111111111111',
+        'alex.ai@example.test',
+        'Alex',
+        'Ng',
+        'Engineer',
+        'Example Labs',
+        'Alex builds AI tooling for JavaScript teams and likes talks that stay grounded in production reality.',
+        '/images/meetups/nico.jpg',
+        true,
+        true
+    ),
+    (
+        '22222222-2222-4222-8222-222222222222',
+        'sam.nuxt@example.test',
+        'Sam',
+        'Rivera',
+        'Frontend Lead',
+        'Nuxt Forge',
+        'Sam helps product teams ship large frontend apps and enjoys sharing practical lessons from framework adoption.',
+        '/images/meetups/jens.png',
+        true,
+        true
+    ),
+    (
+        '33333333-3333-4333-8333-333333333333',
+        'maya.web@example.test',
+        'Maya',
+        'Khan',
+        'Developer Advocate',
+        'Vue Forge',
+        'Maya works with growing frontend teams on architecture, migration strategy, and developer experience.',
+        '/images/meetups/ginetta.png',
+        true,
+        false
+    ),
+    (
+        '44444444-4444-4444-8444-444444444444',
+        'leo.misc@example.test',
+        'Leo',
+        'Berg',
+        'Staff Engineer',
+        'State Systems',
+        'Leo likes modeling hard product problems with clear system boundaries and resilient client-side patterns.',
+        null,
+        false,
+        false
+    ),
+    (
+        '55555555-5555-4555-8555-555555555555',
+        'nina.scale@example.test',
+        'Nina',
+        'Costa',
+        'Platform Engineer',
+        'Typed Systems',
+        'Nina focuses on refactors, contracts, and helping teams move fast without losing confidence.',
+        '/images/meetups/bogdan.png',
+        true,
+        false
+    ),
+    (
+        '66666666-6666-4666-8666-666666666666',
+        'omar.cache@example.test',
+        'Omar',
+        'Haddad',
+        'Principal Engineer',
+        'Edge Cache Co',
+        'Omar spends most of his time on caching, performance, and the messy details between browser and edge.',
+        null,
+        true,
+        false
+    )
 on conflict (id) do update set
     email = excluded.email,
     first_name = excluded.first_name,
     last_name = excluded.last_name,
-    job_title = excluded.job_title;
+    job_title = excluded.job_title,
+    company = excluded.company,
+    bio = excluded.bio,
+    profile_image_url = excluded.profile_image_url,
+    is_visible = excluded.is_visible,
+    is_featured = excluded.is_featured;
 
 -- Tags
 insert into public.cfp_tags (
@@ -308,7 +384,7 @@ values
         'standard',
         'intermediate',
         null,
-        'submitted',
+        'accepted',
         '2026-02-20T10:00:00.000Z',
         '2026-02-19T14:00:00.000Z',
         '2026-02-20T10:00:00.000Z'
@@ -321,7 +397,7 @@ values
         'standard',
         'advanced',
         null,
-        'under_review',
+        'accepted',
         '2026-02-21T10:00:00.000Z',
         '2026-02-20T15:30:00.000Z',
         '2026-02-21T10:00:00.000Z'
@@ -334,7 +410,7 @@ values
         'standard',
         'beginner',
         null,
-        'submitted',
+        'accepted',
         '2026-02-22T10:00:00.000Z',
         '2026-02-21T16:45:00.000Z',
         '2026-02-22T10:00:00.000Z'
@@ -399,7 +475,7 @@ values
         'workshop',
         'intermediate',
         4,
-        'submitted',
+        'accepted',
         '2026-02-27T10:00:00.000Z',
         '2026-02-26T19:05:00.000Z',
         '2026-02-27T10:00:00.000Z'

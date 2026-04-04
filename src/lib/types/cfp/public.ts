@@ -12,6 +12,7 @@ export interface PublicSession {
   id: string;
   title: string;
   abstract: string;
+  tags: string[];
   type: CfpSubmissionType;
   level: CfpTalkLevel;
   schedule: {
@@ -28,6 +29,7 @@ export interface PublicSession {
  */
 export interface PublicSpeaker {
   id: string;
+  slug: string;
   first_name: string;
   last_name: string;
   job_title: string | null;
