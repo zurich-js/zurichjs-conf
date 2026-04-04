@@ -5,9 +5,10 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import { ChevronLeft, Check, AlertCircle, Mail } from 'lucide-react';
+import { ChevronLeft, Check, AlertCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/atoms';
 import { useToast } from '@/contexts/ToastContext';
@@ -24,6 +25,7 @@ import {
   ConferenceDetailsSection,
   PhotoUploadCard,
   SocialLinksCard,
+  SpeakerCardPreviewModal,
   type TravelOption,
 } from '@/components/cfp/profile';
 
@@ -40,6 +42,8 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(speaker.profile_image_url);
   const [headerImageUrl, setHeaderImageUrl] = useState<string | null>(speaker.header_image_url);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewVariant, setPreviewVariant] = useState<'compact' | 'default' | 'full'>('default');
 
   const [formData, setFormData] = useState<SpeakerProfileFormData>({
     first_name: speaker.first_name || '',
@@ -86,6 +90,14 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
       ),
     [formData, headerImageUrl, profileImageUrl, requiresHeaderImage, speaker]
   );
+  const previewName = useMemo(() => {
+    const fullName = [formData.first_name, formData.last_name].filter(Boolean).join(' ').trim();
+    return fullName || 'Your name';
+  }, [formData.first_name, formData.last_name]);
+  const previewTitle = useMemo(() => {
+    const parts = [formData.job_title, formData.company].filter(Boolean);
+    return parts.length > 0 ? parts.join(' @ ') : undefined;
+  }, [formData.company, formData.job_title]);
 
   const handleChange = (field: keyof SpeakerProfileFormData, value: string | boolean | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -170,7 +182,7 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href="/cfp/dashboard" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
+              <Image width={40} height={40} src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
               <span className="text-white font-semibold">CFP</span>
             </Link>
             <Link href="/cfp/dashboard" className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2">
@@ -274,6 +286,16 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
                     variant="desktop"
                     onUploadSuccess={setHeaderImageUrl}
                   />
+                  <div className="w-full flex items-center justify-center">
+                      <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => setIsPreviewOpen(true)}
+                      >
+                          Preview speaker card
+                      </Button>
+                  </div>
                   <SocialLinksCard formData={formData} errors={errors} handleChange={handleChange} />
 
                   {/* Actions Card */}
@@ -286,9 +308,9 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
                       <Button
                         href="mailto:hello@zurichjs.com?subject=CFP%20Question"
                         variant="ghost"
-                        className="w-full text-center"
+                        className="w-full"
                       >
-                        <Mail className="w-4 h-4" /> Contact the team
+                        Contact the team
                       </Button>
                     </div>
                   </div>
@@ -298,6 +320,20 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
           </form>
         </main>
       </div>
+
+      <SpeakerCardPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        variant={previewVariant}
+        onVariantChange={setPreviewVariant}
+        speaker={{
+          name: previewName,
+          title: previewTitle,
+          avatar: profileImageUrl,
+          header: headerImageUrl,
+          footer: 'Lorem ipsum',
+        }}
+      />
     </>
   );
 }

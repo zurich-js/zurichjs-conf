@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 type SharedSpeakerCardProps = {
   variant: 'compact' | 'default' | 'full';
-  header?: string;
+  header?: string | null;
   avatar?: string | null;
   name: string;
   title?: string;

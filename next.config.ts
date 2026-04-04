@@ -8,24 +8,25 @@ const nextConfig: NextConfig = {
   // Optimized to reduce Vercel Image Optimization usage
   images: {
     // Only allow Supabase storage images (removed unused Unsplash)
+    // dangerouslyAllowLocalIP: process.env.NODE_ENV === 'development',
     remotePatterns: [
         {
             protocol: 'https',
             hostname: '**.supabase.co',
             pathname: '/storage/v1/object/public/**',
         },
-        {
-            protocol: 'http',
-            hostname: '127.0.0.1',
-            port: '54321',
-            pathname: '/storage/v1/object/public/**',
-        },
-        {
-            protocol: 'http',
-            hostname: 'localhost',
-            port: '54321',
-            pathname: '/storage/v1/object/public/**',
-        }
+        // {
+        //     protocol: 'http',
+        //     hostname: '127.0.0.1',
+        //     port: '54321',
+        //     pathname: '/storage/v1/object/public/**',
+        // },
+        // {
+        //     protocol: 'http',
+        //     hostname: 'localhost',
+        //     port: '54321',
+        //     pathname: '/storage/v1/object/public/**',
+        // }
     ],
     // Cache optimized images for 31 days to reduce transformations
     minimumCacheTTL: 2678400,
