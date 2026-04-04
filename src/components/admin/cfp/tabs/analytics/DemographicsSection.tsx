@@ -155,7 +155,7 @@ function MetricCard({
         {icon}
         <span className="text-xs text-gray-500">{label}</span>
       </div>
-      <div className={`text-2xl font-bold ${valueColor}`}>{value}</div>
+      <div className={`text-xl sm:text-2xl font-bold ${valueColor} break-words`}>{value}</div>
       {subtitle && <div className="text-xs text-gray-400 mt-0.5">{subtitle}</div>}
     </div>
   );

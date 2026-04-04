@@ -77,11 +77,11 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
             <Clock className="w-4 h-4 text-gray-500" />
             <h4 className="text-sm font-semibold text-black">Reviews / Day (Last 30 Days)</h4>
           </div>
-          <div className="flex items-end gap-px h-16 sm:h-24">
+          <div className="flex items-end gap-px h-16 sm:h-24 overflow-hidden">
             {reviewsPerDay.map(({ date, count }) => (
               <div
                 key={date}
-                className="flex-1 bg-blue-200 hover:bg-blue-400 rounded-t transition-colors cursor-default group relative"
+                className="flex-1 min-w-0 bg-blue-200 hover:bg-blue-400 rounded-t transition-colors cursor-default group relative"
                 style={{ height: `${maxDayCount > 0 ? Math.max((count / maxDayCount) * 100, 2) : 2}%` }}
                 title={`${date}: ${count} review${count !== 1 ? 's' : ''}`}
               />
@@ -103,13 +103,13 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
               <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
             </Tooltip>
           </div>
-          <div className="flex items-end gap-px h-16 sm:h-20">
+          <div className="flex items-end gap-px h-16 sm:h-20 overflow-hidden">
             {timeline.map(({ date, cumulative }) => {
               const maxCumulative = timeline[timeline.length - 1]?.cumulative || 1;
               return (
                 <div
                   key={date}
-                  className="flex-1 bg-green-200 hover:bg-green-400 rounded-t transition-colors cursor-default"
+                  className="flex-1 min-w-0 bg-green-200 hover:bg-green-400 rounded-t transition-colors cursor-default"
                   style={{ height: `${(cumulative / maxCumulative) * 100}%` }}
                   title={`${date}: ${cumulative} total submissions`}
                 />

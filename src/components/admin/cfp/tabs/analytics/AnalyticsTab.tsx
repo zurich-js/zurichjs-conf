@@ -35,7 +35,7 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-10">
+    <div className="space-y-6 sm:space-y-10 overflow-hidden">
       <FunnelSection funnel={analytics.funnel} />
 
       <div className="border-t border-gray-100" />
