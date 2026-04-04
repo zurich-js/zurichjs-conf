@@ -23,7 +23,7 @@ import {
   TravelSection,
   SupportSection,
   ConferenceDetailsSection,
-  PhotoUploadCard,
+  PhotosCard,
   SocialLinksCard,
   SpeakerCardPreviewModal,
   type TravelOption,
@@ -230,29 +230,6 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <PhotoUploadCard
-              title="Profile photo"
-              description="Upload a professional photo for the conference website. Preferably at least 600x600 pixels."
-              initialImageUrl={speaker.profile_image_url}
-              uploadEndpoint="/api/cfp/speaker/image"
-              successToastTitle="Photo Updated"
-              successToastDescription="Your profile picture has been saved."
-              variant="mobile"
-              onUploadSuccess={setProfileImageUrl}
-            />
-
-            <PhotoUploadCard
-              title={`Header photo${requiresHeaderImage ? ' *' : ''}`}
-              description="Upload a wide banner image for your public speaker card. A landscape image works best."
-              initialImageUrl={speaker.header_image_url}
-              uploadEndpoint="/api/cfp/speaker/header-image"
-              successToastTitle="Header Updated"
-              successToastDescription="Your speaker card header image has been saved."
-              previewVariant="banner"
-              variant="mobile"
-              onUploadSuccess={setHeaderImageUrl}
-            />
-
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Main Content */}
               <div className="flex-1 space-y-8 min-w-0">
@@ -265,37 +242,14 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
               {/* Sidebar */}
               <div className="lg:w-80 flex-shrink-0 space-y-6">
                 <div className="lg:sticky lg:top-8 space-y-6">
-                  <PhotoUploadCard
-                    title="Profile photo"
-                    description="Upload a professional photo for the conference website. Preferably at least 600x600 pixels."
-                    initialImageUrl={speaker.profile_image_url}
-                    uploadEndpoint="/api/cfp/speaker/image"
-                    successToastTitle="Photo Updated"
-                    successToastDescription="Your profile picture has been saved."
-                    variant="desktop"
-                    onUploadSuccess={setProfileImageUrl}
+                  <PhotosCard
+                    profileImageUrl={profileImageUrl}
+                    headerImageUrl={headerImageUrl}
+                    requiresHeaderImage={requiresHeaderImage}
+                    onProfileImageChange={setProfileImageUrl}
+                    onHeaderImageChange={setHeaderImageUrl}
+                    onPreview={() => setIsPreviewOpen(true)}
                   />
-                  <PhotoUploadCard
-                    title={`Header photo${requiresHeaderImage ? ' *' : ''}`}
-                    description="Upload a banner image for your public speaker card. AR 5:2, aligned to the bottom."
-                    initialImageUrl={speaker.header_image_url}
-                    uploadEndpoint="/api/cfp/speaker/header-image"
-                    successToastTitle="Header Updated"
-                    successToastDescription="Your speaker card header image has been saved."
-                    previewVariant="banner"
-                    variant="desktop"
-                    onUploadSuccess={setHeaderImageUrl}
-                  />
-                  <div className="w-full flex items-center justify-center">
-                      <Button
-                          type="button"
-                          variant="ghost"
-                          size="xs"
-                          onClick={() => setIsPreviewOpen(true)}
-                      >
-                          Preview speaker card
-                      </Button>
-                  </div>
                   <SocialLinksCard formData={formData} errors={errors} handleChange={handleChange} />
 
                   {/* Actions Card */}

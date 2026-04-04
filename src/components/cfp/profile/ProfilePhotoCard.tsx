@@ -1,70 +1,61 @@
-/**
- * Photo upload card for speaker profile images
- */
-
 import { useId, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ImageIcon, Check, AlertCircle } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import { Button } from '@/components/atoms';
 import { useToast } from '@/contexts/ToastContext';
 
-interface PhotoUploadCardProps {
-  title: string;
-  description: string;
-  initialImageUrl?: string | null;
-  uploadEndpoint: string;
-  successToastTitle: string;
-  successToastDescription: string;
-  previewVariant?: 'square' | 'banner';
-  variant?: 'mobile' | 'desktop';
-  onUploadSuccess?: (imageUrl: string | null) => void;
+interface PhotosCardProps {
+  profileImageUrl: string | null;
+  headerImageUrl: string | null;
+  requiresHeaderImage: boolean;
+  onProfileImageChange: (imageUrl: string | null) => void;
+  onHeaderImageChange: (imageUrl: string | null) => void;
+  onPreview: () => void;
 }
 
-export function PhotoUploadCard({
-  title,
-  description,
-  initialImageUrl,
-  uploadEndpoint,
-  successToastTitle,
-  successToastDescription,
-  previewVariant = 'square',
-  variant = 'desktop',
-  onUploadSuccess,
-}: PhotoUploadCardProps) {
+export function PhotosCard({
+  profileImageUrl,
+  headerImageUrl,
+  requiresHeaderImage,
+  onProfileImageChange,
+  onHeaderImageChange,
+  onPreview,
+}: PhotosCardProps) {
   const toast = useToast();
-  const uploadInputId = useId();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(initialImageUrl ?? null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [imageError, setImageError] = useState<string | null>(null);
-  const [imageSuccess, setImageSuccess] = useState<string | null>(null);
+  const profileInputId = useId();
+  const headerInputId = useId();
+  const profileInputRef = useRef<HTMLInputElement>(null);
+  const headerInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingProfile, setIsUploadingProfile] = useState(false);
+  const [isUploadingHeader, setIsUploadingHeader] = useState(false);
 
-  const handleImageSelect = () => fileInputRef.current?.click();
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleUpload = async (
+    file: File,
+    endpoint: string,
+    setUploading: (value: boolean) => void,
+    onSuccess: (imageUrl: string | null) => void,
+    successToastTitle: string,
+    successToastDescription: string,
+    inputRef: React.RefObject<HTMLInputElement | null>
+  ) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
-      setImageError('Invalid file type. Accepted formats: JPG, PNG, WebP, GIF');
+      toast.error('Upload failed', 'Invalid file type. Accepted formats: JPG, PNG, WebP, GIF');
       return;
     }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setImageError('File too large. Maximum size is 5MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Upload failed', 'File too large. Maximum size is 5MB');
       return;
     }
 
-    setIsUploadingImage(true);
-    setImageError(null);
-    setImageSuccess(null);
+    setUploading(true);
 
     try {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch(uploadEndpoint, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
@@ -75,145 +66,160 @@ export function PhotoUploadCard({
         throw new Error(data.error || 'Failed to upload image');
       }
 
-      setProfileImageUrl(data.imageUrl);
-      setImageSuccess('Image updated!');
-      onUploadSuccess?.(data.imageUrl);
+      onSuccess(data.imageUrl);
       toast.success(successToastTitle, successToastDescription);
 
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch (err) {
-      setImageError(err instanceof Error ? err.message : 'Failed to upload image');
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+    } catch (error) {
+      toast.error('Upload failed', error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
-      setIsUploadingImage(false);
+      setUploading(false);
     }
   };
 
-  if (variant === 'mobile') {
-    return (
-      <div className="lg:hidden mb-8">
-        <div className="bg-brand-gray-dark rounded-2xl p-6">
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-white mb-2">
-                {title}
-              </h3>
-              <p className="text-sm text-brand-gray-light">
-                {description}
-              </p>
-            </div>
-            <ImagePreview url={profileImageUrl} previewVariant={previewVariant} />
+  return (
+    <div className="bg-brand-gray-dark rounded-2xl p-6 space-y-5">
+      <div>
+        <h3 className="text-lg font-semibold text-white">Photos</h3>
+        <p className="mt-2 text-sm text-brand-gray-light">
+          Upload an avatar photo and a header image of your choice (5:2 ratio, bottom aligned)
+        </p>
+      </div>
+
+      <div className="grid grid-cols-[2fr_5fr] gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-white">Profile</p>
           </div>
 
           <input
+            ref={profileInputRef}
+            id={profileInputId}
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleImageUpload}
             className="hidden"
-            id={uploadInputId}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+
+              void handleUpload(
+                file,
+                '/api/cfp/speaker/image',
+                setIsUploadingProfile,
+                onProfileImageChange,
+                'Photo Updated',
+                'Your profile picture has been saved.',
+                profileInputRef
+              );
+            }}
           />
 
-          <label
-            htmlFor={uploadInputId}
-            className={`w-full px-4 py-3 bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 ${
-              isUploadingImage ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-            }`}
+          <button
+            type="button"
+            onClick={() => profileInputRef.current?.click()}
+            disabled={isUploadingProfile}
+            className="group relative block w-full overflow-hidden rounded-xl cursor-pointer border-2 border-dashed border-brand-gray-medium bg-brand-gray-darkest text-left transition-colors hover:border-brand-gray-light disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isUploadingImage ? (
-              <>
-                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                Uploading...
-              </>
-            ) : profileImageUrl ? 'Upload new image' : 'Upload image'}
-          </label>
+            <div className="aspect-square">
+              {profileImageUrl ? (
+                <Image
+                  src={profileImageUrl}
+                  alt="Profile photo"
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 9rem"
+                  className="object-cover"
+                />
+              ) : (
+                  <div className="flex h-full items-center justify-center">
+                      <p className="text-xxs text-center text-brand-gray-light">
+                          {isUploadingProfile ? 'Uploading...' : 'Upload avatar'}
+                      </p>
+                  </div>
+              )}
+            </div>
 
-          <StatusMessages success={imageSuccess} error={imageError} />
+            {profileImageUrl ? (
+              <span className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-black/70 text-white backdrop-blur-sm">
+                <Pencil className="h-4 w-4" />
+              </span>
+            ) : null}
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-white">
+              Header{requiresHeaderImage ? ' *' : ''}
+            </p>
+          </div>
+
+          <input
+            ref={headerInputRef}
+            id={headerInputId}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+
+              void handleUpload(
+                file,
+                '/api/cfp/speaker/header-image',
+                setIsUploadingHeader,
+                onHeaderImageChange,
+                'Header Updated',
+                'Your speaker card header image has been saved.',
+                headerInputRef
+              );
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={() => headerInputRef.current?.click()}
+            disabled={isUploadingHeader}
+            className="group relative block w-full overflow-hidden rounded-xl cursor-pointer border-2 border-dashed border-brand-gray-medium bg-brand-gray-darkest text-left transition-colors hover:border-brand-gray-light disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <div className="aspect-[5/2]">
+              {headerImageUrl ? (
+                <Image
+                  src={headerImageUrl}
+                  alt="Header image"
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 9rem"
+                  className="object-cover object-bottom"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                    <p className="text-xxs text-center text-brand-gray-light">
+                      {isUploadingHeader ? 'Uploading...' : 'Upload header image'}
+                    </p>
+                </div>
+              )}
+            </div>
+
+            {headerImageUrl ? (
+              <span className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-black/70 text-white backdrop-blur-sm">
+                <Pencil className="h-4 w-4" />
+              </span>
+            ) : null}
+          </button>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="hidden lg:block bg-brand-gray-dark rounded-2xl p-6">
-      <div className="flex gap-4 mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-white mb-2">
-            {title}
-          </h3>
-          <p className="text-sm text-brand-gray-light">
-            {description}
-          </p>
-        </div>
-        <ImagePreview url={profileImageUrl} previewVariant={previewVariant} />
-      </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        onChange={handleImageUpload}
-        className="hidden"
-      />
-
-      <button
+      <Button
         type="button"
-        onClick={handleImageSelect}
-        disabled={isUploadingImage}
-        className="w-full px-4 py-3 bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+        variant="ghost"
+        className="w-full"
+        onClick={onPreview}
       >
-        {isUploadingImage ? (
-          <>
-            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            Uploading...
-          </>
-        ) : profileImageUrl ? 'Upload new image' : 'Upload image'}
-      </button>
-
-      <StatusMessages success={imageSuccess} error={imageError} />
+        Preview speaker card
+      </Button>
     </div>
   );
 }
 
-function ImagePreview({ url, previewVariant }: { url: string | null; previewVariant: 'square' | 'banner' }) {
-  const previewClassName = previewVariant === 'banner'
-    ? 'w-24 h-16 rounded-lg'
-    : 'w-16 h-16 rounded-lg';
-
-  if (url) {
-    return (
-      <Image
-        width={100}
-        height={100}
-        key={url}
-        src={url}
-        alt="Profile"
-        className={`${previewClassName} object-cover border border-dashed border-brand-gray-medium flex-shrink-0`}
-      />
-    );
-  }
-  return (
-    <div className={`${previewClassName} bg-brand-gray-darkest border border-dashed border-brand-gray-medium flex items-center justify-center flex-shrink-0`}>
-      <ImageIcon className="w-6 h-6 text-brand-gray-medium" />
-    </div>
-  );
-}
-
-function StatusMessages({ success, error }: { success: string | null; error: string | null }) {
-  return (
-    <>
-      {success && (
-        <div className="flex items-center gap-2 text-green-400 text-sm mt-3">
-          <Check className="w-4 h-4" />
-          {success}
-        </div>
-      )}
-      {error && (
-        <div className="flex items-center gap-2 text-red-400 text-sm mt-3">
-          <AlertCircle className="w-4 h-4" />
-          {error}
-        </div>
-      )}
-    </>
-  );
-}
-
-export const ProfilePhotoCard = PhotoUploadCard;
+export const ProfilePhotoCard = PhotosCard;
