@@ -3,19 +3,20 @@
  */
 
 import { useId, useRef, useState } from 'react';
+import Image from 'next/image';
 import { ImageIcon, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 
 interface PhotoUploadCardProps {
   title: string;
   description: string;
-  initialImageUrl: string | null;
+  initialImageUrl?: string | null;
   uploadEndpoint: string;
   successToastTitle: string;
   successToastDescription: string;
   previewVariant?: 'square' | 'banner';
   variant?: 'mobile' | 'desktop';
-  onUploadSuccess?: (imageUrl: string) => void;
+  onUploadSuccess?: (imageUrl: string | null) => void;
 }
 
 export function PhotoUploadCard({
@@ -32,7 +33,7 @@ export function PhotoUploadCard({
   const toast = useToast();
   const uploadInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(initialImageUrl);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(initialImageUrl ?? null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageSuccess, setImageSuccess] = useState<string | null>(null);
@@ -179,7 +180,9 @@ function ImagePreview({ url, previewVariant }: { url: string | null; previewVari
 
   if (url) {
     return (
-      <img
+      <Image
+        width={100}
+        height={100}
         key={url}
         src={url}
         alt="Profile"
