@@ -34,6 +34,20 @@
   --breakpoint-3xl: 1920px;
   --breakpoint-4xl: 2560px;
 
+  --container-6xs: 200px;
+  --container-5xs: 250px;
+  --container-4xs: 300px;
+  --container-3xs: 400px;
+  --container-2xs: 450px;
+  --container-xs: 480px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+  --container-3xl: 1920px;
+  --container-4xl: 2560px;
+
   --radius-4xl: 2.5rem;
 
   /* Brand Colors */
