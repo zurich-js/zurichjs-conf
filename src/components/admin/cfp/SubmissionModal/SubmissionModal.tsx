@@ -405,7 +405,7 @@ export function SubmissionModal({
 
             {/* Step 1: Decision */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-start justify-between gap-4">
                 <div>
                   <h5 className="text-sm font-semibold text-black flex items-center gap-2">
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-xs font-bold">1</span>
