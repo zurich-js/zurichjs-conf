@@ -1,8 +1,8 @@
 import React from 'react';
-import { SpeakerCard, SpeakerCardProps } from './SpeakerCard';
+import { HeroSpeakerCard, HeroSpeakerCardProps } from './HeroSpeakerCard';
 
-export interface SpeakerGridProps {
-  speakers: SpeakerCardProps[];
+export interface HeroSpeakerGridProps {
+  speakers: HeroSpeakerCardProps[];
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full';
   className?: string;
 }
@@ -21,12 +21,7 @@ const maxWidthStyles = {
   full: 'max-w-full',
 };
 
-/**
- * Composable speaker grid component
- * Desktop: Shows 4 cards in a grid
- * Mobile/Tablet: Horizontally scrollable cards
- */
-export const SpeakerGrid: React.FC<SpeakerGridProps> = ({
+export const HeroSpeakerGrid: React.FC<HeroSpeakerGridProps> = ({
   speakers,
   maxWidth = '7xl',
   className = '',
@@ -34,13 +29,10 @@ export const SpeakerGrid: React.FC<SpeakerGridProps> = ({
   return (
     <div className={`w-full ${className}`}>
       <div className={`${maxWidthStyles[maxWidth]} mx-auto px-6 lg:px-8`}>
-        <div className="flex lg:grid lg:grid-cols-4 gap-3 pb-4 lg:pb-0 overflow-x-auto lg:overflow-visible overflow-y-hidden scrollbar-hide">
+        <div className="scrollbar-hide flex gap-3 overflow-x-auto overflow-y-hidden pb-4 lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0">
           {speakers.map((speaker, index) => (
             <div key={speaker.name || `speaker-${index}`} className="shrink-0 lg:shrink">
-              <SpeakerCard
-                {...speaker}
-                index={index}
-              />
+              <HeroSpeakerCard {...speaker} index={index} />
             </div>
           ))}
         </div>
@@ -48,4 +40,3 @@ export const SpeakerGrid: React.FC<SpeakerGridProps> = ({
     </div>
   );
 };
-
