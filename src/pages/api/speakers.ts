@@ -4,7 +4,7 @@
  *
  * This endpoint is public and returns only speakers who:
  * 1. Have is_visible = true
- * 2. Have at least one accepted submission (talk or workshop)
+ * 2. May have zero or more accepted submissions exposed by the public contract
  *
  * Response format:
  * {

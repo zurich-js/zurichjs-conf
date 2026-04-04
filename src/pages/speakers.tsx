@@ -1,61 +1,312 @@
-import React from 'react';
+import { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
+import type { DehydratedState } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
+import { Button, Heading, Kicker } from '@/components/atoms';
 import { SpeakerCard } from '@/components/molecules';
+import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
+import { getQueryClient } from '@/lib/query-client';
+import { createPrefetch } from '@/lib/prefetch';
+import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
+import type { PublicSpeaker } from '@/lib/types/cfp';
+import { cn } from '@/lib/utils';
+import { Check, ChevronDown, ArrowDownAZ, ArrowUpAZ, ArrowUpDown, Filter } from 'lucide-react';
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 
-const demoAvatar = '/images/meetups/nico.jpg';
-const demoHeader = '/images/meetups/cloudflare.png';
+type ViewMode = 'compact' | 'default' | 'full';
+type SortMode = 'none' | 'asc' | 'desc';
+
+interface SpeakersPageProps {
+  dehydratedState: DehydratedState;
+}
+
+function TagFilter({
+  options,
+  value,
+  onChange,
+}: {
+  options: string[];
+  value: string[];
+  onChange: (nextValue: string[]) => void;
+}) {
+  const [query, setQuery] = useState('');
+
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return options;
+    }
+
+    return options.filter((option) => option.toLowerCase().includes(normalizedQuery));
+  }, [options, query]);
+
+  return (
+    <Combobox
+      value={value}
+      onChange={(nextValue: string[]) => {
+        onChange(nextValue);
+        setQuery('');
+      }}
+      multiple
+    >
+      <div className="w-full relative min-w-0">
+        <div className="flex min-h-12 w-full flex-wrap items-center gap-2 rounded-2xl border border-brand-gray-light bg-brand-white px-4 py-2 pr-11 text-sm text-brand-black shadow-[0_20px_50px_rgba(0,0,0,0.08)] focus-within:border-brand-gray-medium">
+          {value.length > 0 ? (
+            <span className="grid size-5 place-items-center rounded-full bg-brand-yellow-main text-xs font-semibold text-brand-black">
+              {value.length}
+            </span>
+          ) : null}
+
+          <ComboboxInput
+            className="min-w-[140px] flex-1 bg-transparent text-sm text-brand-black placeholder:text-brand-gray-medium outline-none"
+            displayValue={() => ''}
+            onChange={(event) => setQuery(event.target.value)}
+            onBlur={() => setQuery('')}
+            placeholder={value.length > 0 ? 'Add another tag...' : 'Search or select tags...'}
+            aria-label="Filter speakers by tags"
+          />
+        </div>
+
+        <ComboboxButton className="absolute top-4 right-0 flex items-center pr-4 text-brand-gray-medium">
+          <ChevronDown className="size-4" />
+        </ComboboxButton>
+
+        <ComboboxOptions className="mt-3 max-h-64 overflow-auto rounded-2xl border border-brand-gray-light bg-brand-white py-2 shadow-[0_20px_50px_rgba(0,0,0,0.14)] outline-none">
+          {filteredOptions.length === 0 ? (
+            <div className="px-4 py-3 text-sm text-brand-gray-medium">No matching tags</div>
+          ) : (
+            filteredOptions.map((option) => {
+              const isSelected = value.includes(option);
+
+              return (
+                <ComboboxOption
+                  key={option}
+                  value={option}
+                  className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm text-brand-black transition-colors data-[focus]:bg-brand-gray-lightest"
+                >
+                  <span className={cn(isSelected && 'font-semibold')}>{option}</span>
+                  {isSelected ? <Check className="size-4 text-brand-blue" /> : null}
+                </ComboboxOption>
+              );
+            })
+          )}
+        </ComboboxOptions>
+      </div>
+    </Combobox>
+  );
+}
 
 export default function SpeakersPage() {
+  const [viewMode, setViewMode] = useState<ViewMode>('default');
+  const [sortMode, setSortMode] = useState<SortMode>('none');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { data, isLoading } = useQuery(publicSpeakersQueryOptions);
+
+  const speakers = data?.speakers || [];
+  const availableTags = useMemo(
+    () => Array.from(new Set(speakers.flatMap((speaker) => speaker.sessions.flatMap((session) => session.tags)))).sort(),
+    [speakers]
+  );
+
+  const visibleSpeakers = useMemo(() => {
+    let nextSpeakers = [...speakers];
+
+    if (selectedTags.length > 0) {
+      nextSpeakers = nextSpeakers.filter((speaker) =>
+        speaker.sessions.some((session) => session.tags.some((tag) => selectedTags.includes(tag)))
+      );
+    }
+
+    if (sortMode !== 'none') {
+      nextSpeakers.sort((left, right) => {
+        const leftName = `${left.first_name} ${left.last_name}`.trim().toLowerCase();
+        const rightName = `${right.first_name} ${right.last_name}`.trim().toLowerCase();
+        return sortMode === 'asc' ? leftName.localeCompare(rightName) : rightName.localeCompare(leftName);
+      });
+    }
+
+    return nextSpeakers;
+  }, [selectedTags, sortMode, speakers]);
+
+  const sortLabel = sortMode === 'none' ? 'Default' : sortMode === 'asc' ? 'Name A-Z' : 'Name Z-A';
+  const cardSize = viewMode === 'compact' ? '200px' : viewMode === 'full' ? '360px' : '280px';
+  const gridStyle = { '--card-size': cardSize } as CSSProperties;
+
   return (
     <>
       <SEO
         title="Speakers"
-        description="Preview the public speaker card variants for ZurichJS Conference."
+        description="Explore the public speakers lineup for ZurichJS Conference."
         canonical="/speakers"
-        keywords="zurichjs speakers, speaker cards, conference speakers"
+        keywords="zurichjs speakers, conference speakers, public speaker lineup"
       />
-      <main className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#ecece6_100%)] px-6 py-16 sm:px-8 lg:px-12">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-blue">Speaker Cards</p>
-            <h1 className="mt-4 text-2xl font-bold text-gray-900 sm:text-3xl">Public speaker card variants</h1>
-            <p className="mt-4 text-base leading-relaxed text-gray-700">
-              Demo page for the upcoming public speaker listing. Each card is fully clickable and shows a different
-              presentation mode using the same component API.
+      <main className="min-h-screen bg-brand-white">
+        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
+          <div className="mx-auto max-w-6xl">
+            <Kicker variant="dark" className="mb-4">
+              Speakers
+            </Kicker>
+            <Heading level="h1" variant="dark" className="max-w-4xl text-3xl font-bold leading-none sm:text-4xl">
+              ZurichJS Conf Speakers
+            </Heading>
+            <p className="mt-6 max-w-2xl text-lg text-brand-gray-light">
+              TODO: Replace this placeholder hero copy with the final speakers intro.
             </p>
           </div>
+        </ShapedSection>
 
-          <div className="mt-12 grid gap-10 lg:grid-cols-3 lg:items-start">
-            <SpeakerCard
-              variant="compact"
-              avatar={demoAvatar}
-              name="Daniel Roe"
-              title="Nuxt Team Lead @ Vercel"
-              to="/speakers#compact"
-            />
+        <SectionContainer>
+          <div className="py-16 md:py-20">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
+                <div>
+                  <p className="mb-2.5 px-4 text-sm">Grid view</p>
+                  <div className="inline-flex rounded-full border border-brand-black bg-brand-white p-1">
+                    {(['compact', 'default', 'full'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setViewMode(mode)}
+                        className={cn(
+                          'rounded-full px-5 py-2 text-sm font-semibold transition-colors cursor-pointer',
+                          viewMode === mode
+                            ? 'bg-brand-black text-brand-white'
+                            : 'text-brand-black hover:bg-brand-gray-lightest'
+                        )}
+                      >
+                        {mode === 'compact' ? 'Compact' : mode === 'default' ? 'Default' : 'Full'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <SpeakerCard
-              variant="default"
-              header={demoHeader}
-              avatar={demoAvatar}
-              name="Daniel Roe"
-              title="Nuxt Team Lead"
-              footer="React at the Edge: Building a Framework from Scratch"
-              to="/speakers#default"
-            />
+                <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSortMode((current) => {
+                        if (current === 'none') return 'asc';
+                        if (current === 'asc') return 'desc';
+                        return 'none';
+                      });
+                    }}
+                    className="text-brand-black!"
+                  >
+                    {sortMode === 'none' ? <ArrowUpDown className="size-4" /> : sortMode === 'asc' ? <ArrowDownAZ className="size-4" /> : <ArrowUpAZ className="size-4" />}
+                    Sort: {sortLabel}
+                  </Button>
 
-            <SpeakerCard
-              variant="full"
-              header={demoHeader}
-              avatar={demoAvatar}
-              name="Daniel Roe"
-              title="Nuxt Team Lead"
-              footer="React at the Edge: Building a Framework from Scratch"
-              to="/speakers#full"
-            />
+                  <Popover as="div" className="relative">
+                    <PopoverButton
+                      as={Button}
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                          '!text-brand-black',
+                        selectedTags.length > 0
+                          ? 'border-brand-black bg-brand-black text-brand-white hover:bg-brand-black hover:text-brand-white'
+                          : 'border-brand-gray-light bg-brand-white text-brand-black hover:bg-brand-gray-lightest hover:text-brand-black'
+                      )}
+                    >
+                      <Filter className="size-4" />
+                      Filter
+                      {selectedTags.length > 0 ? ` (${selectedTags.length})` : ''}
+                    </PopoverButton>
+
+                    <PopoverPanel
+                      anchor="bottom end"
+                      className="z-20 mt-3 overflow-visible rounded-3xl border border-brand-gray-light bg-brand-white p-4 shadow-2xl outline-none"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-brand-black">Filter by tags</p>
+                          {selectedTags.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTags([])}
+                              className="text-sm font-medium text-brand-blue transition-colors hover:text-brand-black"
+                            >
+                              Clear
+                            </button>
+                          ) : null}
+                        </div>
+
+                        <TagFilter options={availableTags} value={selectedTags} onChange={setSelectedTags} />
+                      </div>
+                    </PopoverPanel>
+                  </Popover>
+                </div>
+              </div>
+
+              {isLoading ? (
+                <div className="grid min-h-64 place-items-center rounded-3xl bg-brand-gray-lightest">
+                  <div className="flex items-center gap-3 text-sm font-medium text-brand-gray-darkest">
+                    <span className="size-4 animate-spin rounded-full border-2 border-brand-gray-light border-t-brand-black" />
+                    Loading speakers...
+                  </div>
+                </div>
+              ) : visibleSpeakers.length > 0 ? (
+                <div
+                  className="grid gap-8"
+                  style={gridStyle}
+                >
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(var(--card-size),1fr))] gap-4">
+                    {visibleSpeakers.map((speaker: PublicSpeaker) => (
+                        <SpeakerCard
+                          key={speaker.id}
+                          variant={viewMode}
+                          avatar={speaker.profile_image_url}
+                          name={[speaker.first_name, speaker.last_name].filter(Boolean).join(' ')}
+                          title={[speaker.job_title, speaker.company].filter(Boolean).join(' @')}
+                          footer={speaker.sessions?.[0]?.title}
+                          to={`/speakers/${speaker.slug}`}
+                        />
+                      ))
+                    }
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-3xl bg-brand-gray-lightest px-6 py-12 text-center">
+                  <Heading level="h2" variant="light" className="text-lg font-bold">
+                    No speakers match these filters
+                  </Heading>
+                  <p className="mt-3 text-brand-gray-darkest">Try removing one or more selected tags to see the full lineup again.</p>
+                  {selectedTags.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTags([])}
+                      className="mt-6 inline-flex cursor-pointer rounded-full border border-brand-black px-4 py-2 text-sm font-semibold text-brand-black transition-colors hover:bg-brand-black hover:text-brand-white"
+                    >
+                      Clear filters
+                    </button>
+                  ) : null}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </SectionContainer>
+
+        <ShapedSection shape="straight" variant="dark" compactTop>
+          <SiteFooter showContactLinks />
+        </ShapedSection>
       </main>
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps<SpeakersPageProps> = async () => {
+  const queryClient = getQueryClient();
+  const { optionalQuery, dehydrate } = createPrefetch(queryClient);
+
+  await optionalQuery(publicSpeakersQueryOptions);
+
+  return {
+    props: {
+      dehydratedState: dehydrate(),
+    },
+  };
+};

@@ -199,14 +199,14 @@ export async function uploadSpeakerImage(
 }
 
 /**
- * Get visible and featured speakers for public display
- * Returns speakers with is_visible=true AND is_featured=true
- * Includes their accepted sessions if any
+ * Get visible speakers for public display
+ * Returns speakers with is_visible=true and their accepted sessions
+ * Featured speakers are ordered first in the result
  */
 export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
   const supabase = createCfpServiceClient();
 
-  // Fetch visible AND featured speakers with their submissions
+  // Fetch visible speakers with their submissions and tags
   const { data, error } = await supabase
     .from('cfp_speakers')
     .select(`
@@ -233,11 +233,14 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
         scheduled_date,
         scheduled_start_time,
         scheduled_duration_minutes,
-        room
+        room,
+        tags:cfp_submission_tags(
+          tag:cfp_tags(name)
+        )
       )
     `)
     .eq('is_visible', true)
-    .eq('is_featured', true)
+    .order('is_featured', { ascending: false })
     .order('first_name', { ascending: true });
 
   if (error) {
@@ -257,19 +260,37 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     scheduled_start_time: string | null;
     scheduled_duration_minutes: number | null;
     room: string | null;
+    tags?: Array<{
+      tag: Array<{
+        name: string;
+      }> | null;
+    }>;
   }
 
   // Transform to public format
   const publicSpeakers: PublicSpeaker[] = [];
+  const slugCounts = new Map<string, number>();
 
   for (const speaker of data || []) {
-    // Get accepted sessions (may be empty)
+    const baseSlug = `${speaker.first_name} ${speaker.last_name}`
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || speaker.id;
+
+    const existingSlugCount = slugCounts.get(baseSlug) ?? 0;
+    slugCounts.set(baseSlug, existingSlugCount + 1);
+
     const acceptedSessions = (speaker.cfp_submissions || [])
       .filter((s: SubmissionData) => s.status === 'accepted')
       .map((s: SubmissionData): PublicSession => ({
         id: s.id,
         title: s.title,
         abstract: s.abstract,
+        tags: (s.tags || [])
+          .flatMap((entry) => entry.tag || [])
+          .map((tag) => tag.name?.trim())
+          .filter((tag): tag is string => Boolean(tag)),
         type: s.submission_type as PublicSession['type'],
         level: s.talk_level as PublicSession['level'],
         schedule: s.scheduled_date || s.scheduled_start_time
@@ -285,6 +306,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     // Include all visible+featured speakers regardless of sessions
     publicSpeakers.push({
       id: speaker.id,
+      slug: existingSlugCount === 0 ? baseSlug : `${baseSlug}-${speaker.id.split('-')[0]}`,
       first_name: speaker.first_name,
       last_name: speaker.last_name,
       job_title: speaker.job_title,

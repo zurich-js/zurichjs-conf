@@ -1,16 +1,12 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
-/* Cover localhost image optimization and storage */
-const isDev = process.env.NEXT_PUBLIC_BASE_URL?.startsWith('http://localhost')
-
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   // Configure image optimization for Supabase storage
   // Optimized to reduce Vercel Image Optimization usage
   images: {
-    dangerouslyAllowLocalIP: isDev,
     // Only allow Supabase storage images (removed unused Unsplash)
     remotePatterns: [
         {

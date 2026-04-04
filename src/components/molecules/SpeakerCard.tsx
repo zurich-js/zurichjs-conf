@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 type SharedSpeakerCardProps = {
   variant: 'compact' | 'default' | 'full';
   header?: string;
-  avatar: string;
+  avatar?: string | null;
   name: string;
   title?: string;
   footer?: string;
@@ -37,26 +37,32 @@ function SpeakerCardInner({
   const isCompact = variant === 'compact';
   const isDefault = variant === 'default';
   const isFull = variant === 'full';
-  const hasFooter = !isCompact && !!footer;
-  const showHeader = !isCompact && !!header;
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
 
   return (
-      <div className="group p-2.5">
-          <div className="bg-white relative rounded-2xl overflow-hidden shadow-lg">
-              {showHeader ? (
-                  <div
-                      className={cn(
-                          "relative w-full h-auto overflow-hidden border-b-2 border-brand-gray-lightest transition-all duration-300",
-                          isFull ? 'aspect-[10/4]' : 'aspect-[10/3]'
+          <div className="bg-white relative rounded-2xl overflow-hidden h-full transition-all duration-300
+          shadow-md shadow-brand-black/10 group-hover:shadow-brand-black/20 focus-within:shadow-brand-black/20
+          group-hover:shadow-lg group-focus-within:shadow-lg
+          group-hover:-translate-y-0.5 group-focus-within:-translate-y-0.5
+          ">
+              {!isCompact ? (
+                  <div className="relative w-full h-auto aspect-[5/2] overflow-hidden border-b-2 border-brand-gray-lightest transition-all duration-300">
+                      {header ? (
+                        <Image
+                            src={header}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 21rem, 22rem"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-brand-gray-lightest" aria-hidden="true" />
                       )}
-                  >
-                      <Image
-                          src={header}
-                          alt=""
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 21rem, 22rem"
-                      />
                   </div>
               ) : null}
 
@@ -69,9 +75,10 @@ function SpeakerCardInner({
               <div
                   className={cn(
                           'relative overflow-hidden rounded-full border-2 border-brand-gray-lightest transition-all duration-300',
-                          isCompact ? 'size-24' : 'size-32'
+                          isFull ? 'size-32' : 'size-24'
                   )}
               >
+                  {avatar ? (
                           <Image
                               src={avatar}
                               alt={`${name} avatar`}
@@ -79,12 +86,17 @@ function SpeakerCardInner({
                               className="object-cover"
                               sizes={isCompact ? '(max-width: 640px) 6rem, 7rem' : '(max-width: 640px) 8rem, 10rem'}
                           />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-brand-gray-darkest text-xl font-bold text-brand-white">
+                      {initials || '?'}
+                    </div>
+                  )}
                   </div>
               </div>
 
               <div
                   className={cn(
-                      'transition-all duration-300 ease-out',
+                      'transition-all duration-300 ease-out flex-1',
                       'p-2.5 text-center',
                   )}
               >
@@ -94,24 +106,24 @@ function SpeakerCardInner({
                       {name}
                   </h2>
                   {title ? (
-                      <p>
+                      <p className={cn(!isCompact && 'line-clamp-2 min-h-[3rem]')}>
                           {title}
                       </p>
                   ) : null}
               </div>
 
-        {!isCompact && hasFooter ? (
+        {!isCompact && !!footer ? (
           <div
             className={cn(
-              'transition-all duration-300 ease-out',
+              'flex-1 transition-all duration-300 ease-out',
                 isDefault ? 'absolute bottom-0 left-0 right-0' : 'relative',
             )}
           >
 
               <div className={cn(
-                "p-2.5 pl-4 transition-transform duration-300 ease-out bg-white",
-                isFull && 'translate-x-0',
-                isDefault && 'translate-x-full group-hover:translate-x-0 group-focus-within:translate-x-0',
+                "transition-transform duration-300 ease-out bg-white",
+                isFull && 'p-2.5 pl-4 translate-x-0',
+                isDefault && 'p-2.5 pl-4 pt-0 translate-x-full group-hover:translate-x-0 group-focus-within:translate-x-0',
               )}>
                 <div className="flex items-center justify-between gap-2.5">
                   <p className="font-bold">
@@ -123,7 +135,6 @@ function SpeakerCardInner({
           </div>
         ) : null}
       </div>
-    </div>
   );
 }
 
@@ -134,7 +145,7 @@ export function SpeakerCard(props: PublicSpeakerCardProps) {
     return (
       <Link
         href={props.to}
-        className={cn('block w-full max-w-[21rem] rounded-[2rem] focus-visible:outline-none sm:max-w-[22rem]', className)}
+        className={cn('group block w-full rounded-2xl focus-visible:outline-none', className)}
       >
         <SpeakerCardInner {...rest} />
       </Link>
@@ -145,7 +156,7 @@ export function SpeakerCard(props: PublicSpeakerCardProps) {
     <button
       type="button"
       onClick={props.onClick}
-      className={cn('block w-full max-w-[21rem] rounded-[2rem] bg-transparent text-left focus-visible:outline-none sm:max-w-[22rem]', className)}
+      className={cn('group block w-full rounded-2xl bg-transparent text-left focus-visible:outline-none', className)}
     >
       <SpeakerCardInner {...rest} />
     </button>
