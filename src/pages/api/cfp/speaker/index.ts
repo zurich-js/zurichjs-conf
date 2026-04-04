@@ -6,7 +6,8 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
-import { isSpeakerProfileComplete } from '@/lib/cfp/auth-constants';
+import { isSpeakerProfileCompleteForRequirements } from '@/lib/cfp/auth-constants';
+import { getSubmissionsBySpeakerId } from '@/lib/cfp/submissions';
 import { updateSpeaker } from '@/lib/cfp/speakers';
 import { speakerProfileSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
@@ -55,8 +56,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { email: _email, ...updates } = result.data;
 
+      const { submissions } = await getSubmissionsBySpeakerId(speaker.id);
+      const requiresHeaderImage = submissions.some((submission) => ['shortlisted', 'accepted'].includes(submission.status));
+
       // Check if profile was complete before update
-      const wasComplete = isSpeakerProfileComplete(speaker);
+      const wasComplete = isSpeakerProfileCompleteForRequirements(speaker, { requiresHeaderImage });
 
       // Update speaker profile
       const { speaker: updatedSpeaker, error } = await updateSpeaker(speaker.id, updates);
@@ -77,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       // Send Slack notification when profile becomes complete for the first time
-      const isNowComplete = isSpeakerProfileComplete(updatedSpeaker);
+      const isNowComplete = isSpeakerProfileCompleteForRequirements(updatedSpeaker, { requiresHeaderImage });
       if (!wasComplete && isNowComplete) {
         notifyCfpSpeakerProfileCompleted({
           speakerId: updatedSpeaker.id,

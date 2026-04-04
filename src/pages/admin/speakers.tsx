@@ -18,7 +18,7 @@ import {
   AddSpeakerModal,
   AddSessionModal,
   EditSpeakerModal,
-  SpeakerCard,
+  AdminSpeakerCard,
 } from '@/components/admin/speakers';
 
 async function fetchSpeakers(): Promise<{ speakers: SpeakerWithSessions[] }> {
@@ -139,7 +139,7 @@ export default function SpeakersDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredSpeakers.map((speaker) => (
-                <SpeakerCard
+                <AdminSpeakerCard
                   key={speaker.id}
                   speaker={speaker}
                   onToggleVisibility={(id, isVisible) => toggleVisibilityMutation.mutate({ id, isVisible })}

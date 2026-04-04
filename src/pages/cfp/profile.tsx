@@ -13,6 +13,7 @@ import { Button } from '@/components/atoms';
 import { useToast } from '@/contexts/ToastContext';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getMissingProfileFields } from '@/lib/cfp/auth-constants';
+import { getSubmissionsBySpeakerId } from '@/lib/cfp/submissions';
 import { speakerProfileSchema, type SpeakerProfileFormData } from '@/lib/validations/cfp';
 import { isEuropeanCountry } from '@/lib/constants/countries';
 import type { CfpSpeaker } from '@/lib/types/cfp';
@@ -21,21 +22,24 @@ import {
   TravelSection,
   SupportSection,
   ConferenceDetailsSection,
-  ProfilePhotoCard,
+  PhotoUploadCard,
   SocialLinksCard,
   type TravelOption,
 } from '@/components/cfp/profile';
 
 interface ProfileProps {
   speaker: CfpSpeaker;
+  requiresHeaderImage: boolean;
 }
 
-export default function CfpProfile({ speaker }: ProfileProps) {
+export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProps) {
   const router = useRouter();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(speaker.profile_image_url);
+  const [headerImageUrl, setHeaderImageUrl] = useState<string | null>(speaker.header_image_url);
 
   const [formData, setFormData] = useState<SpeakerProfileFormData>({
     first_name: speaker.first_name || '',
@@ -69,7 +73,19 @@ export default function CfpProfile({ speaker }: ProfileProps) {
   });
 
   const isEuropean = useMemo(() => formData.country ? isEuropeanCountry(formData.country) : false, [formData.country]);
-  const missingFields = useMemo(() => getMissingProfileFields(speaker), [speaker]);
+  const missingFields = useMemo(
+    () =>
+      getMissingProfileFields(
+        {
+          ...speaker,
+          ...formData,
+          profile_image_url: profileImageUrl,
+          header_image_url: headerImageUrl,
+        },
+        { requiresHeaderImage }
+      ),
+    [formData, headerImageUrl, profileImageUrl, requiresHeaderImage, speaker]
+  );
 
   const handleChange = (field: keyof SpeakerProfileFormData, value: string | boolean | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -179,7 +195,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                 <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-semibold text-amber-400 mb-1">Profile Incomplete</h3>
-                  <p className="text-sm text-amber-200/80 mb-2">Please complete the following required fields to submit proposals:</p>
+                  <p className="text-sm text-amber-200/80 mb-2">Please complete the following required profile fields:</p>
                   <ul className="text-sm text-amber-200/80 list-disc list-inside">
                     {missingFields.map((field) => <li key={field}>{field}</li>)}
                   </ul>
@@ -202,7 +218,28 @@ export default function CfpProfile({ speaker }: ProfileProps) {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <ProfilePhotoCard initialImageUrl={speaker.profile_image_url} variant="mobile" />
+            <PhotoUploadCard
+              title="Profile photo"
+              description="Upload a professional photo for the conference website. Preferably at least 600x600 pixels."
+              initialImageUrl={speaker.profile_image_url}
+              uploadEndpoint="/api/cfp/speaker/image"
+              successToastTitle="Photo Updated"
+              successToastDescription="Your profile picture has been saved."
+              variant="mobile"
+              onUploadSuccess={setProfileImageUrl}
+            />
+
+            <PhotoUploadCard
+              title={`Header photo${requiresHeaderImage ? ' *' : ''}`}
+              description="Upload a wide banner image for your public speaker card. A landscape image works best."
+              initialImageUrl={speaker.header_image_url}
+              uploadEndpoint="/api/cfp/speaker/header-image"
+              successToastTitle="Header Updated"
+              successToastDescription="Your speaker card header image has been saved."
+              previewVariant="banner"
+              variant="mobile"
+              onUploadSuccess={setHeaderImageUrl}
+            />
 
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Main Content */}
@@ -216,19 +253,43 @@ export default function CfpProfile({ speaker }: ProfileProps) {
               {/* Sidebar */}
               <div className="lg:w-80 flex-shrink-0 space-y-6">
                 <div className="lg:sticky lg:top-8 space-y-6">
-                  <ProfilePhotoCard initialImageUrl={speaker.profile_image_url} variant="desktop" />
+                  <PhotoUploadCard
+                    title="Profile photo"
+                    description="Upload a professional photo for the conference website. Preferably at least 600x600 pixels."
+                    initialImageUrl={speaker.profile_image_url}
+                    uploadEndpoint="/api/cfp/speaker/image"
+                    successToastTitle="Photo Updated"
+                    successToastDescription="Your profile picture has been saved."
+                    variant="desktop"
+                    onUploadSuccess={setProfileImageUrl}
+                  />
+                  <PhotoUploadCard
+                    title={`Header photo${requiresHeaderImage ? ' *' : ''}`}
+                    description="Upload a banner image for your public speaker card. AR 5:2, aligned to the bottom."
+                    initialImageUrl={speaker.header_image_url}
+                    uploadEndpoint="/api/cfp/speaker/header-image"
+                    successToastTitle="Header Updated"
+                    successToastDescription="Your speaker card header image has been saved."
+                    previewVariant="banner"
+                    variant="desktop"
+                    onUploadSuccess={setHeaderImageUrl}
+                  />
                   <SocialLinksCard formData={formData} errors={errors} handleChange={handleChange} />
 
                   {/* Actions Card */}
                   <div className="bg-brand-gray-dark rounded-2xl p-6">
                     <h3 className="text-lg font-semibold text-white mb-4">Actions</h3>
                     <div className="space-y-3">
-                      <Button type="submit" variant="primary" size="lg" loading={isSubmitting} className="w-full">
+                      <Button type="submit" variant="primary" loading={isSubmitting} className="w-full">
                         {isSubmitting ? 'Saving...' : 'Save changes'}
                       </Button>
-                      <a href="mailto:hello@zurichjs.com?subject=CFP%20Question" className="w-full px-4 py-3 bg-transparent text-white font-medium rounded-lg border border-brand-gray-medium hover:border-brand-gray-light transition-colors flex items-center justify-center gap-2">
+                      <Button
+                        href="mailto:hello@zurichjs.com?subject=CFP%20Question"
+                        variant="ghost"
+                        className="w-full text-center"
+                      >
                         <Mail className="w-4 h-4" /> Contact the team
-                      </a>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -255,5 +316,8 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (ctx) 
     return { redirect: { destination: '/cfp/login', permanent: false } };
   }
 
-  return { props: { speaker } };
+  const { submissions } = await getSubmissionsBySpeakerId(speaker.id);
+  const requiresHeaderImage = submissions.some((submission) => ['shortlisted', 'accepted'].includes(submission.status));
+
+  return { props: { speaker, requiresHeaderImage } };
 };

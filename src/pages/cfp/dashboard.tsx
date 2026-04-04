@@ -12,7 +12,7 @@ import { AlertCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
 import { createSupabaseServerClient, getOrCreateSpeaker, getSpeakerByUserId } from '@/lib/cfp/auth';
-import { isSpeakerProfileComplete, getMissingProfileFields } from '@/lib/cfp/auth-constants';
+import { isSpeakerProfileCompleteForRequirements, getMissingProfileFields } from '@/lib/cfp/auth-constants';
 import type { CfpSpeaker, CfpSubmission } from '@/lib/types/cfp';
 import { getSpeakerVisibleStatus, type SpeakerVisibleStatus } from '@/lib/cfp/submissions';
 import { SUBMISSION_LIMITS, getActiveSubmissions, canCreateSubmission } from '@/lib/cfp/config';
@@ -175,7 +175,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
                   {missingFields && missingFields.length > 0 ? (
                     <>
                       <p className="text-sm text-amber-200/80 mb-2">
-                        Please complete the following required fields to submit proposals:
+                        Please complete the following required profile fields:
                       </p>
                       <ul className="text-sm text-amber-200/80 list-disc list-inside mb-3">
                         {missingFields.map((field) => (
@@ -380,8 +380,14 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async (ctx
     props: {
       speaker,
       submissions: (submissions || []) as CfpSubmission[],
-      isProfileComplete: isSpeakerProfileComplete(speaker),
-      missingFields: getMissingProfileFields(speaker),
+      isProfileComplete: isSpeakerProfileCompleteForRequirements(
+        speaker,
+        { requiresHeaderImage: (submissions || []).some((submission) => ['shortlisted', 'accepted'].includes(submission.status)) }
+      ),
+      missingFields: getMissingProfileFields(
+        speaker,
+        { requiresHeaderImage: (submissions || []).some((submission) => ['shortlisted', 'accepted'].includes(submission.status)) }
+      ),
     },
   };
 };

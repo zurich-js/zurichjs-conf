@@ -46,6 +46,7 @@ export interface UpdateCfpSpeakerRequest {
   bluesky_handle?: string;
   mastodon_handle?: string;
   profile_image_url?: string;
+  header_image_url?: string;
   tshirt_size?: CfpTshirtSize | null;
   travel_option?: string | null;
   travel_assistance_required?: boolean | null;

@@ -259,6 +259,7 @@ export default function SpeakersPage() {
                         <SpeakerCard
                           key={speaker.id}
                           variant={viewMode}
+                          header={speaker.header_image_url || undefined}
                           avatar={speaker.profile_image_url}
                           name={[speaker.first_name, speaker.last_name].filter(Boolean).join(' ')}
                           title={[speaker.job_title, speaker.company].filter(Boolean).join(' @')}

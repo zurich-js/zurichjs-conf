@@ -125,6 +125,7 @@ export interface AdminCreateSpeakerRequest {
   bluesky_handle?: string;
   mastodon_handle?: string;
   profile_image_url?: string;
+  header_image_url?: string;
   is_visible?: boolean;
 }
 

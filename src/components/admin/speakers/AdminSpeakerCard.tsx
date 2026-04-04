@@ -6,7 +6,7 @@
 import { User, Plus } from 'lucide-react';
 import type { SpeakerWithSessions, Session } from './types';
 
-interface SpeakerCardProps {
+interface AdminSpeakerCardProps {
   speaker: SpeakerWithSessions;
   onToggleVisibility: (id: string, isVisible: boolean) => void;
   onAddSession: (speakerId: string) => void;
@@ -47,13 +47,13 @@ function SessionItem({ session }: { session: Session }) {
   );
 }
 
-export function SpeakerCard({
+export function AdminSpeakerCard({
   speaker,
   onToggleVisibility,
   onAddSession,
   onEdit,
   isTogglingVisibility,
-}: SpeakerCardProps) {
+}: AdminSpeakerCardProps) {
   const acceptedSessions = speaker.submissions?.filter((s) => s.status === 'accepted') || [];
 
   return (

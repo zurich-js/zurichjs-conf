@@ -17,6 +17,7 @@ export interface Speaker {
   bluesky_handle: string | null;
   mastodon_handle: string | null;
   profile_image_url: string | null;
+  header_image_url: string | null;
   is_visible: boolean;
   created_at: string;
   updated_at: string;

@@ -1,18 +1,36 @@
 /**
- * Profile Photo Card - Photo upload component
+ * Photo upload card for speaker profile images
  */
 
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { ImageIcon, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 
-interface ProfilePhotoCardProps {
+interface PhotoUploadCardProps {
+  title: string;
+  description: string;
   initialImageUrl: string | null;
+  uploadEndpoint: string;
+  successToastTitle: string;
+  successToastDescription: string;
+  previewVariant?: 'square' | 'banner';
   variant?: 'mobile' | 'desktop';
+  onUploadSuccess?: (imageUrl: string) => void;
 }
 
-export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: ProfilePhotoCardProps) {
+export function PhotoUploadCard({
+  title,
+  description,
+  initialImageUrl,
+  uploadEndpoint,
+  successToastTitle,
+  successToastDescription,
+  previewVariant = 'square',
+  variant = 'desktop',
+  onUploadSuccess,
+}: PhotoUploadCardProps) {
   const toast = useToast();
+  const uploadInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(initialImageUrl);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -45,7 +63,7 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch('/api/cfp/speaker/image', {
+      const response = await fetch(uploadEndpoint, {
         method: 'POST',
         body: formData,
       });
@@ -57,8 +75,9 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
       }
 
       setProfileImageUrl(data.imageUrl);
-      setImageSuccess('Profile picture updated!');
-      toast.success('Photo Updated', 'Your profile picture has been saved.');
+      setImageSuccess('Image updated!');
+      onUploadSuccess?.(data.imageUrl);
+      toast.success(successToastTitle, successToastDescription);
 
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
@@ -75,13 +94,13 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
           <div className="flex gap-4 mb-4">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-white mb-2">
-                Profile photo<span className="text-red-400">*</span>
+                {title}
               </h3>
               <p className="text-sm text-brand-gray-light">
-                Upload a professional photo for the conference website. Preferably at least 600x600 pixels.
+                {description}
               </p>
             </div>
-            <ImagePreview url={profileImageUrl} />
+            <ImagePreview url={profileImageUrl} previewVariant={previewVariant} />
           </div>
 
           <input
@@ -89,11 +108,11 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
             accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={handleImageUpload}
             className="hidden"
-            id="mobile-image-upload"
+            id={uploadInputId}
           />
 
           <label
-            htmlFor="mobile-image-upload"
+            htmlFor={uploadInputId}
             className={`w-full px-4 py-3 bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2 ${
               isUploadingImage ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
             }`}
@@ -103,7 +122,7 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
                 <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
                 Uploading...
               </>
-            ) : profileImageUrl ? 'Upload new photo' : 'Upload photo'}
+            ) : profileImageUrl ? 'Upload new image' : 'Upload image'}
           </label>
 
           <StatusMessages success={imageSuccess} error={imageError} />
@@ -117,13 +136,13 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
       <div className="flex gap-4 mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-white mb-2">
-            Profile photo<span className="text-red-400">*</span>
+            {title}
           </h3>
           <p className="text-sm text-brand-gray-light">
-            Upload a professional photo for the conference website. Preferably at least 600x600 pixels.
+            {description}
           </p>
         </div>
-        <ImagePreview url={profileImageUrl} />
+        <ImagePreview url={profileImageUrl} previewVariant={previewVariant} />
       </div>
 
       <input
@@ -145,7 +164,7 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
             <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
             Uploading...
           </>
-        ) : profileImageUrl ? 'Upload new photo' : 'Upload photo'}
+        ) : profileImageUrl ? 'Upload new image' : 'Upload image'}
       </button>
 
       <StatusMessages success={imageSuccess} error={imageError} />
@@ -153,19 +172,23 @@ export function ProfilePhotoCard({ initialImageUrl, variant = 'desktop' }: Profi
   );
 }
 
-function ImagePreview({ url }: { url: string | null }) {
+function ImagePreview({ url, previewVariant }: { url: string | null; previewVariant: 'square' | 'banner' }) {
+  const previewClassName = previewVariant === 'banner'
+    ? 'w-24 h-16 rounded-lg'
+    : 'w-16 h-16 rounded-lg';
+
   if (url) {
     return (
       <img
         key={url}
         src={url}
         alt="Profile"
-        className="w-16 h-16 rounded-lg object-cover border border-dashed border-brand-gray-medium flex-shrink-0"
+        className={`${previewClassName} object-cover border border-dashed border-brand-gray-medium flex-shrink-0`}
       />
     );
   }
   return (
-    <div className="w-16 h-16 rounded-lg bg-brand-gray-darkest border border-dashed border-brand-gray-medium flex items-center justify-center flex-shrink-0">
+    <div className={`${previewClassName} bg-brand-gray-darkest border border-dashed border-brand-gray-medium flex items-center justify-center flex-shrink-0`}>
       <ImageIcon className="w-6 h-6 text-brand-gray-medium" />
     </div>
   );
@@ -189,3 +212,5 @@ function StatusMessages({ success, error }: { success: string | null; error: str
     </>
   );
 }
+
+export const ProfilePhotoCard = PhotoUploadCard;
