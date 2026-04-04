@@ -392,35 +392,66 @@ export function SubmissionModal({
           />
 
           {/* Decision & Communication */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-black uppercase tracking-wide flex items-center gap-2">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-5">
+            <div>
+              <h4 className="text-xs font-bold text-black uppercase tracking-wide flex items-center gap-2 mb-1">
                 <Gavel className="w-4 h-4 text-gray-600" />
-                Decision & Communication
+                Decision & Speaker Communication
               </h4>
-              <button
-                onClick={() => setShowDecisionModal(true)}
-                className="px-3 py-1.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
-              >
-                Make Decision
-              </button>
+              <p className="text-xs text-gray-500">
+                Record your final decision and notify the speaker via email. Emails are sent externally to the speaker.
+              </p>
             </div>
-            <CommunicationSection
-              decisionStatus={decisionStatus}
-              scheduledEmails={scheduledEmails}
-              onScheduleAcceptance={() => {
-                setScheduleEmailType('acceptance');
-                setShowScheduleEmailModal(true);
-              }}
-              onScheduleRejection={() => {
-                setScheduleEmailType('rejection');
-                setShowScheduleEmailModal(true);
-              }}
-              onCancelScheduledEmail={handleCancelScheduledEmail}
-              onSendNow={handleSendNow}
-              isCancelling={cancelEmailMutation.isPending}
-              isSendingNow={sendNowMutation.isPending}
-            />
+
+            {/* Step 1: Decision */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h5 className="text-sm font-semibold text-black flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-xs font-bold">1</span>
+                    Record Decision
+                  </h5>
+                  <p className="text-xs text-gray-500 mt-1 ml-7">
+                    Record whether this talk is accepted or rejected. This is an internal record and does <strong>not</strong> notify the speaker.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDecisionModal(true)}
+                  className="px-3 py-1.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors cursor-pointer flex-shrink-0"
+                >
+                  Make Decision
+                </button>
+              </div>
+            </div>
+
+            {/* Step 2: Communication */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h5 className="text-sm font-semibold text-black flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-xs font-bold">2</span>
+                Notify Speaker
+              </h5>
+              <p className="text-xs text-gray-500 mt-1 ml-7 mb-3">
+                Schedule an email to inform the speaker of your decision. This <strong>will</strong> send an email to the speaker.
+              </p>
+              <div className="ml-7">
+                <CommunicationSection
+                  decisionStatus={decisionStatus}
+                  scheduledEmails={scheduledEmails}
+                  onScheduleAcceptance={() => {
+                    setScheduleEmailType('acceptance');
+                    setShowScheduleEmailModal(true);
+                  }}
+                  onScheduleRejection={() => {
+                    setScheduleEmailType('rejection');
+                    setShowScheduleEmailModal(true);
+                  }}
+                  onCancelScheduledEmail={handleCancelScheduledEmail}
+                  onSendNow={handleSendNow}
+                  isCancelling={cancelEmailMutation.isPending}
+                  isSendingNow={sendNowMutation.isPending}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Status Actions */}
