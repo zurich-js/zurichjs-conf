@@ -41,8 +41,8 @@ const variantStyles: Record<ButtonVariant, string> = {
   ghost: 'bg-transparent text-brand-white font-medium hover:bg-brand-white hover:text-brand-black',
   accent: 'bg-brand-orange text-text-primary font-semibold hover:bg-brand-orange-dark focus:bg-brand-orange-dark',
   outline: 'bg-transparent text-white border-2 border-white font-medium',
-  dark: 'bg-gray-800 text-text-primary font-semibold hover:bg-gray-700 shadow-md hover:shadow-lg',
-  black: 'bg-black text-white border border-white font-bold hover:bg-gray-900 hover:border-gray-100',
+  dark: 'bg-brand-gray-dark text-text-primary font-semibold hover:bg-brand-gray-darkest shadow-md hover:shadow-lg',
+  black: 'bg-black text-white border border-white font-bold hover:bg-brand-gray-darkest hover:border-brand-gray-light',
   blue: 'bg-blue-primary text-white font-bold hover:bg-blue-dark',
 };
 

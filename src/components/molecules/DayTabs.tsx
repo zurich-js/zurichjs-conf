@@ -12,6 +12,7 @@ export interface DayTabsProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
   className?: string;
+  color?: 'yellow' | 'blue';
 }
 
 /**
@@ -24,6 +25,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
   activeTab,
   onTabChange,
   className = '',
+  color = 'yellow',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -209,9 +211,9 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => onTabChange(tab.id)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
-                  className="group relative shrink-0 py-2.5 outline-none min-h-[44px]
-                  flex flex-col gap-2.5 items-start justify-center focus-visible:ring-2 focus-visible:ring-brand-yellow-main/40 focus-visible:ring-offset-2
-                  focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation cursor-pointer"
+                  className={`group relative shrink-0 py-2.5 outline-none min-h-[44px]
+                  flex flex-col gap-2.5 items-start justify-center focus-visible:ring-2 ${color === 'blue' ? 'focus-visible:ring-brand-blue/40' : 'focus-visible:ring-brand-yellow-main/40'} focus-visible:ring-offset-2
+                  focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation cursor-pointer`}
                   style={{
                     WebkitTapHighlightColor: 'transparent',
                   }}
@@ -243,9 +245,9 @@ export const DayTabs: React.FC<DayTabsProps> = ({
           </div>
         </div>
 
-        {/* Animated yellow indicator bar */}
+        {/* Animated active indicator bar */}
         <div
-          className="absolute z-30 bottom-0 h-[4px] rounded-full bg-brand-primary pointer-events-none"
+          className={`absolute z-30 bottom-0 h-[4px] rounded-full ${color === 'blue' ? 'bg-brand-blue' : 'bg-brand-primary'} pointer-events-none`}
           style={{
             left: `${indicatorStyle.left}px`,
             width: `${indicatorStyle.width}px`,
@@ -268,4 +270,3 @@ export const DayTabs: React.FC<DayTabsProps> = ({
     </div>
   );
 };
-

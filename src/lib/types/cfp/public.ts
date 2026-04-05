@@ -10,6 +10,7 @@ import type { CfpSubmissionType, CfpTalkLevel } from './base';
  */
 export interface PublicSession {
   id: string;
+  slug: string;
   title: string;
   abstract: string;
   tags: string[];

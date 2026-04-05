@@ -3,7 +3,7 @@ import type { GetServerSideProps } from 'next';
 import Image from 'next/image';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { DayTabs, SpeakerActionSlider, SpeakerSessionCard } from '@/components/molecules';
+import { DayTabs, SessionCard, SpeakerActionSlider } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
 import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
@@ -83,21 +83,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
 
             <main className="min-h-screen bg-brand-white">
                 <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
-                    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
-                        <div className="max-w-4xl">
-                            <Kicker variant="dark" className="mb-4">
-                                Speaker Detail
-                            </Kicker>
-                            <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none sm:text-4xl">
-                                {fullName}
-                            </Heading>
-                            {role ? <p className="mt-5 max-w-2xl text-lg text-brand-gray-light">{role}</p> : null}
-                            {/* TODO(feature/speakers-grid): Replace this temporary hero copy once the public speaker detail page content is designed. */}
-                            <p className="mt-5 max-w-2xl text-sm leading-7 text-brand-gray-light">
-                                The full hero treatment is still coming. For now, the session details and calls to action are in place so we can keep building the page from the inside out.
-                            </p>
-                        </div>
-
+                    <div className="flex gap-8">
                         <div className="justify-self-start lg:justify-self-end">
                             <div className="relative size-40 overflow-hidden rounded-[2rem] border border-brand-gray-dark bg-brand-gray-darkest shadow-[0_30px_80px_rgba(0,0,0,0.35)] sm:size-48">
                                 {speaker.profile_image_url ? (
@@ -110,16 +96,28 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                 )}
                             </div>
                         </div>
+                        <div className="max-w-screen-lg">
+                            <Kicker variant="dark" className="mb-4">
+                                Speaker Detail
+                            </Kicker>
+                            <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none">
+                                {fullName}
+                            </Heading>
+                            {role ? <p className="mt-5 max-w-2xl text-lg text-brand-gray-light">{role}</p> : null}
+                            {/* TODO(feature/speakers-grid): Replace this temporary hero copy once the public speaker detail page content is designed. */}
+                            <p className="mt-5 max-w-2xl text-sm leading-7 text-brand-gray-light">
+                                The full hero treatment is still coming. For now, the session details and calls to action are in place so we can keep building the page from the inside out.
+                            </p>
+                        </div>
+
                     </div>
                 </ShapedSection>
 
                 <SectionContainer className="py-16 md:py-20">
-                    <div className="mx-auto max-w-5xl">
-                        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
-                            <p className="max-w-3xl text-base leading-8 text-brand-gray-darkest sm:text-lg">
-                                {speaker.bio || `${fullName} is part of the ZurichJS Conf lineup. Session details are already available below while we finish the final hero composition.`}
-                            </p>
-                        </div>
+                    <div className="mx-auto max-w-screen-lg">
+                        <p className="text-base leading-8 text-brand-gray-darkest sm:text-lg">
+                            {speaker.bio || `${fullName} is part of the ZurichJS Conf lineup. Session details are already available below while we finish the final hero composition.`}
+                        </p>
 
                         <section id="speaker-sessions" className="mt-14">
                             {sessionTabs.length > 0 ? (
@@ -138,10 +136,11 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                             {currentTab ? (
                                 <div className="mt-8 space-y-5">
                                     {currentTab.sessions.map((session) => (
-                                        <SpeakerSessionCard
+                                        <SessionCard
                                             key={session.id}
                                             id={`session-${session.id}`}
                                             session={session}
+                                            href={session.type === 'workshop' ? `/workshops/${session.slug}` : undefined}
                                         />
                                     ))}
                                 </div>

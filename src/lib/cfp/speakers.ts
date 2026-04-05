@@ -206,6 +206,7 @@ export async function uploadSpeakerImage(
  */
 export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
   const supabase = createCfpServiceClient();
+  const sessionSlugCounts = new Map<string, number>();
 
   // Fetch visible speakers with their submissions and tags
   const { data, error } = await supabase
@@ -285,25 +286,37 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
 
     const acceptedSessions = (speaker.cfp_submissions || [])
       .filter((s: SubmissionData) => s.status === 'accepted')
-      .map((s: SubmissionData): PublicSession => ({
-        id: s.id,
-        title: s.title,
-        abstract: s.abstract,
-        tags: (s.tags || [])
-          .flatMap((entry) => entry.tag || [])
-          .map((tag) => tag.name?.trim())
-          .filter((tag): tag is string => Boolean(tag)),
-        type: s.submission_type as PublicSession['type'],
-        level: s.talk_level as PublicSession['level'],
-        schedule: s.scheduled_date || s.scheduled_start_time
-          ? {
-              date: s.scheduled_date,
-              start_time: s.scheduled_start_time,
-              duration_minutes: s.scheduled_duration_minutes,
-              room: s.room,
-            }
-          : null,
-      }));
+      .map((s: SubmissionData): PublicSession => {
+        const baseSlug = s.title
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || s.id;
+        const existingSessionSlugCount = sessionSlugCounts.get(baseSlug) ?? 0;
+
+        sessionSlugCounts.set(baseSlug, existingSessionSlugCount + 1);
+
+        return {
+          id: s.id,
+          slug: existingSessionSlugCount === 0 ? baseSlug : `${baseSlug}-${s.id.split('-')[0]}`,
+          title: s.title,
+          abstract: s.abstract,
+          tags: (s.tags || [])
+            .flatMap((entry) => entry.tag || [])
+            .map((tag) => tag.name?.trim())
+            .filter((tag): tag is string => Boolean(tag)),
+          type: s.submission_type as PublicSession['type'],
+          level: s.talk_level as PublicSession['level'],
+          schedule: s.scheduled_date || s.scheduled_start_time
+            ? {
+                date: s.scheduled_date,
+                start_time: s.scheduled_start_time,
+                duration_minutes: s.scheduled_duration_minutes,
+                room: s.room,
+              }
+            : null,
+        };
+      });
 
     // Include all visible+featured speakers regardless of sessions
     publicSpeakers.push({
