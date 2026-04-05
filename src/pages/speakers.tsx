@@ -139,7 +139,7 @@ export default function SpeakersPage() {
             <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none">
               ZurichJS Conf Speakers
             </Heading>
-            {/* TODO: Replace this placeholder intro once public speaker messaging is finalized. */}
+            {/* TODO(feature/speakers-grid): Replace this placeholder intro once public speaker messaging is finalized. */}
             <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl eget aliquam tincidunt, nunc nisl aliquam nisl, eget aliquam nisl nisl eget nisl.
             </p>

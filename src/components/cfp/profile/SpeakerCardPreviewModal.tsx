@@ -30,7 +30,7 @@ export function SpeakerCardPreviewModal({
   onVariantChange,
   speaker,
 }: SpeakerCardPreviewModalProps) {
-  // TODO: Replace placeholder neighboring cards with seeded public speaker previews when that data exists.
+  // TODO(feature/speakers-grid): Replace placeholder neighboring cards with seeded public speaker previews when that data exists.
   const cards = [
       {
           name: 'Amet Consectetur',
