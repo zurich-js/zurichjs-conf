@@ -14,6 +14,7 @@ import type { PublicSpeaker } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, ArrowDownAZ, ArrowUpAZ, ArrowUpDown, Filter } from 'lucide-react';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import Link from "next/link";
 
 type ViewMode = 'compact' | 'default' | 'full';
 type SortMode = 'none' | 'asc' | 'desc';
@@ -275,8 +276,52 @@ export default function SpeakersPage() {
                 </div>
               )}
             </div>
+
+              <div className="mt-20">
+                  <p className="mb-4">This view doesn&#39;t work for you?</p>
+                  <ul className="flex flex-col w-fit ml-6 list-disc gap-2">
+                      <li>
+                          <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/talks">
+                              See the full list of talks
+                          </Link>
+                      </li>
+                      <li>
+                          <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/workshops">
+                              Explore the workshops
+                          </Link>
+                      </li>
+                      <li>
+                          <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/schedule">
+                              Check out the full schedule
+                          </Link>
+                      </li>
+                  </ul>
+              </div>
           </div>
         </SectionContainer>
+
+
+        <ShapedSection shape="straight" variant="medium">
+          <div className="mx-auto max-w-screen-lg">
+            <Kicker variant="dark" className="mb-4">
+              Join The Crowd
+            </Kicker>
+            <Heading level="h2" variant="dark" className="text-lg sm:text-2xl font-bold leading-tight">
+              Want to hang out more with the speakers?
+            </Heading>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-brand-gray-light">
+              The VIP ticket includes conference access, but you also get to take part in speaker activities, such as the after-party and city tour.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button variant="black" asChild href="/#tickets">
+                Get your ticket
+              </Button>
+            <Button variant="primary" asChild href="/#tickets">
+                Get VIP
+            </Button>
+            </div>
+          </div>
+        </ShapedSection>
 
         <ShapedSection shape="straight" variant="dark" compactTop>
           <SiteFooter showContactLinks />
