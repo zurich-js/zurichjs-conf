@@ -391,6 +391,10 @@ insert into public.cfp_submissions (
     submission_type,
     talk_level,
     workshop_duration_hours,
+    scheduled_date,
+    scheduled_start_time,
+    scheduled_duration_minutes,
+    room,
     status,
     submitted_at
 )
@@ -403,6 +407,10 @@ values
         'standard',
         'intermediate',
         null,
+        '2026-09-11',
+        '09:30:00',
+        30,
+        'Auditorium',
         'accepted',
         '2026-02-20T10:00:00.000Z'
     ),
@@ -414,6 +422,10 @@ values
         'standard',
         'advanced',
         null,
+        '2026-09-11',
+        '10:30:00',
+        30,
+        'Auditorium',
         'accepted',
         '2026-02-21T10:00:00.000Z'
     ),
@@ -425,6 +437,10 @@ values
         'standard',
         'beginner',
         null,
+        '2026-09-11',
+        '11:30:00',
+        30,
+        'Studio',
         'accepted',
         '2026-02-22T10:00:00.000Z'
     ),
@@ -435,6 +451,10 @@ values
         'State modeling techniques with snapshots, replay, and conflict resolution for collaborative clients and offline-first UX.',
         'standard',
         'advanced',
+        null,
+        null,
+        null,
+        null,
         null,
         'submitted',
         '2026-02-23T10:00:00.000Z'
@@ -447,6 +467,10 @@ values
         'lightning',
         'intermediate',
         null,
+        null,
+        null,
+        null,
+        null,
         'submitted',
         '2026-02-24T10:00:00.000Z'
     ),
@@ -457,6 +481,10 @@ values
         'Tracing, metrics, cost controls, and failure analysis for LLM-heavy systems with humans still in the loop.',
         'standard',
         'advanced',
+        null,
+        null,
+        null,
+        null,
         null,
         'waitlisted',
         '2026-02-25T10:00:00.000Z'
@@ -469,6 +497,10 @@ values
         'standard',
         'intermediate',
         null,
+        null,
+        null,
+        null,
+        null,
         'submitted',
         '2026-02-26T10:00:00.000Z'
     ),
@@ -480,6 +512,10 @@ values
         'workshop',
         'intermediate',
         4,
+        '2026-09-10',
+        '09:00:00',
+        240,
+        'Technopark',
         'accepted',
         '2026-02-27T10:00:00.000Z'
     ),
@@ -491,6 +527,10 @@ values
         'standard',
         'advanced',
         null,
+        '2026-09-11',
+        '14:30:00',
+        30,
+        'Auditorium',
         'accepted',
         '2026-02-28T10:00:00.000Z'
     ),
@@ -502,6 +542,10 @@ values
         'lightning',
         'beginner',
         null,
+        null,
+        null,
+        null,
+        null,
         'rejected',
         '2026-03-01T10:00:00.000Z'
     )
@@ -512,6 +556,10 @@ on conflict (id) do update set
     submission_type = excluded.submission_type,
     talk_level = excluded.talk_level,
     workshop_duration_hours = excluded.workshop_duration_hours,
+    scheduled_date = excluded.scheduled_date,
+    scheduled_start_time = excluded.scheduled_start_time,
+    scheduled_duration_minutes = excluded.scheduled_duration_minutes,
+    room = excluded.room,
     status = excluded.status,
     submitted_at = excluded.submitted_at;
 

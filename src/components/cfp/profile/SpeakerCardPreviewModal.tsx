@@ -2,7 +2,6 @@ import React from 'react';
 import { Modal, ModalBody } from '@/components/atoms/Modal';
 import { SpeakerCard } from '@/components/molecules/SpeakerCard';
 import {Button} from "@/components/atoms";
-import {cn} from "@/lib/utils";
 
 type SpeakerCardVariant = 'compact' | 'default' | 'full';
 
@@ -31,6 +30,7 @@ export function SpeakerCardPreviewModal({
   onVariantChange,
   speaker,
 }: SpeakerCardPreviewModalProps) {
+  // TODO: Replace placeholder neighboring cards with seeded public speaker previews when that data exists.
   const cards = [
       {
           name: 'Amet Consectetur',
@@ -69,10 +69,8 @@ export function SpeakerCardPreviewModal({
                 key={option}
                 size="sm"
                 onClick={() => onVariantChange(option)}
-                className={cn(
-                    'capitalize',
-                    !isActive && 'text-brand-black!'
-                )}
+                className="capitalize"
+                forceDark={!isActive}
               >
                 {option}
               </Button>
@@ -91,7 +89,7 @@ export function SpeakerCardPreviewModal({
                   header={card.header}
                   avatar={card.avatar}
                   footer={card.footer}
-                  onClick={() => {}}
+                  onClick={() => undefined}
                   className={card.isSpeaker ? 'opacity-100' : 'opacity-50'}
                 />
             ))}

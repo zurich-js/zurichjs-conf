@@ -24,6 +24,7 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   className?: string;
   href?: string;
   loading?: boolean;
+  forceDark?: boolean;
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -59,13 +60,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       className = '',
       href,
       asChild = false,
+      forceDark = false,
       ...props
     },
     ref
   ) => {
     const isDisabled = disabled || loading;
 
-    const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
+    const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${forceDark ? 'text-brand-black!' : ''} ${className}`;
 
     const content = (
       <>

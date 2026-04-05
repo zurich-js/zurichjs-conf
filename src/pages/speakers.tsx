@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { DehydratedState } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
@@ -32,16 +32,10 @@ function TagFilter({
   onChange: (nextValue: string[]) => void;
 }) {
   const [query, setQuery] = useState('');
-
-  const filteredOptions = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return options;
-    }
-
-    return options.filter((option) => option.toLowerCase().includes(normalizedQuery));
-  }, [options, query]);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredOptions = normalizedQuery
+    ? options.filter((option) => option.toLowerCase().includes(normalizedQuery))
+    : options;
 
   return (
     <Combobox
@@ -105,34 +99,28 @@ export default function SpeakersPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data, isLoading } = useQuery(publicSpeakersQueryOptions);
 
-  const speakers = useMemo(() => data?.speakers ?? [], [data?.speakers]);
-  const availableTags = useMemo(
-    () => Array.from(new Set(speakers.flatMap((speaker) => speaker.sessions.flatMap((session) => session.tags)))).sort(),
-    [speakers]
-  );
+  const speakers = data?.speakers ?? [];
+  const availableTags = Array.from(
+    new Set(speakers.flatMap((speaker) => speaker.sessions.flatMap((session) => session.tags)))
+  ).sort();
+  let visibleSpeakers = [...speakers];
 
-  const visibleSpeakers = useMemo(() => {
-    let nextSpeakers = [...speakers];
+  if (selectedTags.length > 0) {
+    visibleSpeakers = visibleSpeakers.filter((speaker) =>
+      speaker.sessions.some((session) => session.tags.some((tag) => selectedTags.includes(tag)))
+    );
+  }
 
-    if (selectedTags.length > 0) {
-      nextSpeakers = nextSpeakers.filter((speaker) =>
-        speaker.sessions.some((session) => session.tags.some((tag) => selectedTags.includes(tag)))
-      );
-    }
-
-    if (sortMode !== 'none') {
-      nextSpeakers.sort((left, right) => {
-        const leftName = `${left.first_name} ${left.last_name}`.trim().toLowerCase();
-        const rightName = `${right.first_name} ${right.last_name}`.trim().toLowerCase();
-        return sortMode === 'asc' ? leftName.localeCompare(rightName) : rightName.localeCompare(leftName);
-      });
-    }
-
-    return nextSpeakers;
-  }, [selectedTags, sortMode, speakers]);
+  if (sortMode !== 'none') {
+    visibleSpeakers.sort((left, right) => {
+      const leftName = `${left.first_name} ${left.last_name}`.trim().toLowerCase();
+      const rightName = `${right.first_name} ${right.last_name}`.trim().toLowerCase();
+      return sortMode === 'asc' ? leftName.localeCompare(rightName) : rightName.localeCompare(leftName);
+    });
+  }
 
   const sortLabel = sortMode === 'none' ? 'Default' : sortMode === 'asc' ? 'Name A-Z' : 'Name Z-A';
-  const cardSize = viewMode === 'compact' ? 'var(--container-6xs)' : viewMode === 'default' ? 'var(--container-5xs)' : 'var(--container-4xs)';
+  const cardSize = viewMode === 'compact' ? '12rem' : viewMode === 'default' ? '15rem' : '17rem';
   const gridStyle = { '--card-size': cardSize } as CSSProperties;
 
   return (
@@ -151,6 +139,7 @@ export default function SpeakersPage() {
             <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none">
               ZurichJS Conf Speakers
             </Heading>
+            {/* TODO: Replace this placeholder intro once public speaker messaging is finalized. */}
             <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl eget aliquam tincidunt, nunc nisl aliquam nisl, eget aliquam nisl nisl eget nisl.
             </p>
@@ -192,7 +181,7 @@ export default function SpeakersPage() {
                         return 'none';
                       });
                     }}
-                    className="text-brand-black!"
+                    forceDark
                   >
                     {sortMode === 'none' ? <ArrowUpDown className="size-4" /> : sortMode === 'asc' ? <ArrowDownAZ className="size-4" /> : <ArrowUpAZ className="size-4" />}
                     Sort: {sortLabel}

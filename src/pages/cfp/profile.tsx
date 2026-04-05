@@ -90,14 +90,8 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
       ),
     [formData, headerImageUrl, profileImageUrl, requiresHeaderImage, speaker]
   );
-  const previewName = useMemo(() => {
-    const fullName = [formData.first_name, formData.last_name].filter(Boolean).join(' ').trim();
-    return fullName || 'Your name';
-  }, [formData.first_name, formData.last_name]);
-  const previewTitle = useMemo(() => {
-    const parts = [formData.job_title, formData.company].filter(Boolean);
-    return parts.length > 0 ? parts.join(' @ ') : undefined;
-  }, [formData.company, formData.job_title]);
+  const previewName = [formData.first_name, formData.last_name].filter(Boolean).join(' ').trim() || 'Your name';
+  const previewTitle = [formData.job_title, formData.company].filter(Boolean).join(' @ ') || undefined;
 
   const handleChange = (field: keyof SpeakerProfileFormData, value: string | boolean | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -285,6 +279,7 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
           title: previewTitle,
           avatar: profileImageUrl,
           header: headerImageUrl,
+          // TODO: Replace this placeholder session label when speaker profiles can preview real public sessions.
           footer: 'Lorem ipsum',
         }}
       />
