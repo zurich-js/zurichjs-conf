@@ -1,6 +1,6 @@
 import React, { forwardRef, ButtonHTMLAttributes } from 'react';
 
-export type ButtonVariant = 'primary' | 'ghost' | 'accent' | 'outline' | 'dark' | 'black';
+export type ButtonVariant = 'primary' | 'ghost' | 'accent' | 'outline' | 'dark' | 'black' | 'blue'
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 // Exclude event handlers that conflict with framer-motion
@@ -43,6 +43,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   outline: 'bg-transparent text-white border-2 border-white font-medium',
   dark: 'bg-gray-800 text-text-primary font-semibold hover:bg-gray-700 shadow-md hover:shadow-lg',
   black: 'bg-black text-white border border-white font-bold hover:bg-gray-900 hover:border-gray-100',
+  blue: 'bg-blue-primary text-white font-bold hover:bg-blue-dark',
 };
 
 /**
