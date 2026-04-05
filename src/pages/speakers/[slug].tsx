@@ -92,7 +92,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                 {fullName}
                             </Heading>
                             {role ? <p className="mt-5 max-w-2xl text-lg text-brand-gray-light">{role}</p> : null}
-                            {/* TODO: Replace this temporary hero copy once the public speaker detail page content is designed. */}
+                            {/* TODO(feature/speakers-grid): Replace this temporary hero copy once the public speaker detail page content is designed. */}
                             <p className="mt-5 max-w-2xl text-sm leading-7 text-brand-gray-light">
                                 The full hero treatment is still coming. For now, the session details and calls to action are in place so we can keep building the page from the inside out.
                             </p>
@@ -150,7 +150,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                     <Heading level="h2" variant="light" className="text-xl font-bold">
                                         Sessions coming soon
                                     </Heading>
-                                    {/* TODO: Replace this temporary empty state once session publishing rules are finalized. */}
+                                    {/* TODO(feature/speakers-grid): Replace this temporary empty state once session publishing rules are finalized. */}
                                     <p className="mt-3 max-w-2xl text-base leading-7 text-brand-gray-darkest">
                                         This speaker is already live on the lineup, but their public sessions are still being finalized.
                                     </p>
@@ -182,7 +182,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                     </Button>
                                     <p className="text-sm text-brand-gray-darkest">... or</p>
                                     <div className="flex gap-2.5 items-center justify-center">
-                                        {/* TODO: Re-enable the reminder CTA when the public conference reminder flow is finalized. */}
+                                        {/* TODO(feature/speakers-grid): Re-enable the reminder CTA when the public conference reminder flow is finalized. */}
                                         <Button variant="outline" size="md" onClick={handleShare} forceDark>
                                             <Share2 className="size-5" /> Share with...
                                         </Button>

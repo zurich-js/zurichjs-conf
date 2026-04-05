@@ -30,7 +30,7 @@ function getPublicSessionCalendarPayload(session: PublicSession, options: Public
     session.abstract,
     '',
     `Speaker details: ${options.speakerDetailUrl || 'https://conf.zurichjs.com/speakers'}`,
-    'TODO: link directly to the dedicated session details page once talk/workshop pages are live.',
+    'TODO(feature/speakers-grid): link directly to the dedicated session details page once talk/workshop pages are live.',
   ].join('\n');
 
   return { start, end, location, title, description };
