@@ -6,6 +6,13 @@
 export { heroData } from './hero';
 export { scheduleData } from './schedule';
 export {
+  publicProgramTabs,
+  workshopProgramSections,
+  workshopSlotCount,
+  talkProgramSlots,
+  conferenceProgramItems,
+} from './public-program';
+export {
   ticketsData,
   createTicketDataFromStripe,
   mapStripePlanToTicketPlan,

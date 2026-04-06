@@ -5,12 +5,14 @@ export interface DayTab {
   id: string;
   label: string;
   date: string;
+  disabled?: boolean;
 }
 
 export interface DayTabsProps {
   tabs: DayTab[];
   activeTab: string;
   onTabChange: (tabId: string) => void;
+  onDisabledTabClick?: (tabId: string) => void;
   className?: string;
   color?: 'yellow' | 'blue';
 }
@@ -24,6 +26,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
   tabs,
   activeTab,
   onTabChange,
+  onDisabledTabClick,
   className = '',
   color = 'yellow',
 }) => {
@@ -160,6 +163,11 @@ export const DayTabs: React.FC<DayTabsProps> = ({
       case 'Enter':
       case ' ':
         e.preventDefault();
+        if (tabs[currentIndex].disabled) {
+          onDisabledTabClick?.(tabs[currentIndex].id);
+          return;
+        }
+
         onTabChange(tabs[currentIndex].id);
         return;
       default:
@@ -170,6 +178,10 @@ export const DayTabs: React.FC<DayTabsProps> = ({
     const targetElement = tabRefs.current.get(targetTab.id);
     if (targetElement) {
       targetElement.focus();
+      if (targetTab.disabled) {
+        return;
+      }
+
       onTabChange(targetTab.id);
     }
   };
@@ -194,6 +206,7 @@ export const DayTabs: React.FC<DayTabsProps> = ({
           >
             {tabs.map((tab, index) => {
               const isActive = activeTab === tab.id;
+              const isDisabled = Boolean(tab.disabled);
               return (
                 <button
                   key={tab.id}
@@ -207,13 +220,21 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                   role="tab"
                   id={`tab-${tab.id}`}
                   aria-selected={isActive}
+                  aria-disabled={isDisabled}
                   aria-controls={`tabpanel-${tab.id}`}
                   tabIndex={isActive ? 0 : -1}
-                  onClick={() => onTabChange(tab.id)}
+                  onClick={() => {
+                    if (isDisabled) {
+                      onDisabledTabClick?.(tab.id);
+                      return;
+                    }
+
+                    onTabChange(tab.id);
+                  }}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   className={`group relative shrink-0 py-2.5 outline-none min-h-[44px]
                   flex flex-col gap-2.5 items-start justify-center focus-visible:ring-2 ${color === 'blue' ? 'focus-visible:ring-brand-blue/40' : 'focus-visible:ring-brand-yellow-main/40'} focus-visible:ring-offset-2
-                  focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation cursor-pointer`}
+                  focus-visible:ring-offset-white rounded-t-md transition-colors touch-manipulation ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   style={{
                     WebkitTapHighlightColor: 'transparent',
                   }}
@@ -223,7 +244,9 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                     className={`block leading-tight text-md xs:text-lg font-bold whitespace-nowrap transition-colors ${
                       isActive
                         ? 'text-brand-black'
-                        : 'text-brand-gray-light group-hover:text-brand-black group-active:text-brand-black'
+                        : isDisabled
+                          ? 'text-brand-gray-light/70'
+                          : 'text-brand-gray-light group-hover:text-brand-black group-active:text-brand-black'
                     }`}
                   >
                     {tab.label}
@@ -234,7 +257,9 @@ export const DayTabs: React.FC<DayTabsProps> = ({
                     className={`block leading-tight text-xs xs:text-sm whitespace-nowrap transition-colors ${
                       isActive
                         ? 'text-brand-black'
-                        : 'text-brand-gray-light group-hover:text-brand-black group-active:text-brand-black'
+                        : isDisabled
+                          ? 'text-brand-gray-light/70'
+                          : 'text-brand-gray-light group-hover:text-brand-black group-active:text-brand-black'
                     }`}
                   >
                     {tab.date}

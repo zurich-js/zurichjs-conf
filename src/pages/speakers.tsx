@@ -7,10 +7,10 @@ import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { SpeakerCard } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
+import { analytics } from '@/lib/analytics';
 import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
-import type { PublicSpeaker } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, ArrowDownAZ, ArrowUpAZ, ArrowUpDown, Filter } from 'lucide-react';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
@@ -18,6 +18,7 @@ import Link from "next/link";
 
 type ViewMode = 'compact' | 'default' | 'full';
 type SortMode = 'none' | 'asc' | 'desc';
+const SPEAKER_SLOT_COUNT = 14;
 
 interface SpeakersPageProps {
   dehydratedState: DehydratedState;
@@ -120,9 +121,27 @@ export default function SpeakersPage() {
     });
   }
 
+  const showNoMatches = selectedTags.length > 0 && visibleSpeakers.length === 0;
+  const speakerSlots = selectedTags.length > 0
+    ? visibleSpeakers
+    : [
+        ...visibleSpeakers,
+        ...Array.from({ length: Math.max(SPEAKER_SLOT_COUNT - visibleSpeakers.length, 0) }, () => null),
+      ];
   const sortLabel = sortMode === 'none' ? 'Default' : sortMode === 'asc' ? 'Name A-Z' : 'Name Z-A';
   const cardSize = viewMode === 'compact' ? '12rem' : viewMode === 'default' ? '15rem' : '17rem';
   const gridStyle = { '--card-size': cardSize } as CSSProperties;
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+
+    try {
+      analytics.getInstance().capture('speakers_grid_view_selected', {
+        view_mode: mode,
+      });
+    } catch {
+      // Ignore analytics failures.
+    }
+  };
 
   return (
     <>
@@ -157,7 +176,7 @@ export default function SpeakersPage() {
                       <button
                         key={mode}
                         type="button"
-                        onClick={() => setViewMode(mode)}
+                        onClick={() => handleViewModeChange(mode)}
                         className={cn(
                           'rounded-full px-5 py-2 text-sm font-semibold transition-colors cursor-pointer',
                           viewMode === mode
@@ -237,13 +256,14 @@ export default function SpeakersPage() {
                     Loading speakers...
                   </div>
                 </div>
-              ) : visibleSpeakers.length > 0 ? (
+              ) : !showNoMatches ? (
                 <div
                   className="grid gap-8"
                   style={gridStyle}
                 >
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(var(--card-size),1fr))] gap-4">
-                    {visibleSpeakers.map((speaker: PublicSpeaker) => (
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(var(--card-size),1fr))] auto-rows-fr gap-4">
+                    {speakerSlots.map((speaker, index) =>
+                      speaker ? (
                         <SpeakerCard
                           key={speaker.id}
                           variant={viewMode}
@@ -254,8 +274,19 @@ export default function SpeakersPage() {
                           footer={speaker.sessions?.[0]?.title}
                           to={`/speakers/${speaker.slug}`}
                         />
-                      ))
-                    }
+                      ) : (
+                        <SpeakerCard
+                          key={`speaker-placeholder-${index}`}
+                          variant={viewMode}
+                          header={undefined}
+                          avatar={undefined}
+                          name="TBA"
+                          title=""
+                          footer=""
+                          to=""
+                        />
+                      )
+                    )}
                   </div>
                 </div>
               ) : (

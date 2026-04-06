@@ -1,8 +1,9 @@
 import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { SessionCard } from '@/components/molecules';
+import { SessionCard } from '@/components/scheduling';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { talkProgramSlots } from '@/data';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession } from '@/lib/types/cfp';
 
@@ -17,6 +18,32 @@ interface TalksPageProps {
 }
 
 export default function TalksPage({ sessions }: TalksPageProps) {
+  const slottedTalks = talkProgramSlots.map((slot) => {
+    const session = sessions.find((entry) => entry.schedule?.start_time?.slice(0, 5) === slot.start) ?? null;
+
+    return session
+      ? { session, placeholder: false }
+      : {
+          session: {
+            id: `talk-slot-${slot.start}`,
+            slug: `talk-slot-${slot.start}`,
+            title: slot.title,
+            abstract: '',
+            tags: [],
+            type: 'standard' as const,
+            level: 'intermediate' as const,
+            schedule: {
+              date: '2026-09-11',
+              start_time: slot.start,
+              duration_minutes: slot.duration,
+              room: null,
+            },
+          },
+          placeholder: true,
+        };
+  });
+  const firstPublishedIndex = slottedTalks.findIndex((slot) => !slot.placeholder);
+
   return (
     <>
       <SEO
@@ -43,14 +70,15 @@ export default function TalksPage({ sessions }: TalksPageProps) {
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto flex max-w-screen-lg flex-col gap-4">
-            {sessions.map((session, index) => (
+            {slottedTalks.map(({ session, placeholder }, index) => (
               <SessionCard
                 key={session.id}
                 session={session}
-                speaker={session.speaker}
-                expandable
-                defaultOpen={index === 0}
-                href={`/talks/${session.slug}`}
+                speaker={'speaker' in session ? session.speaker : undefined}
+                expandable={!placeholder}
+                placeholder={placeholder}
+                defaultOpen={index === firstPublishedIndex && !placeholder}
+                href={placeholder ? undefined : `/talks/${session.slug}`}
               />
             ))}
           </div>

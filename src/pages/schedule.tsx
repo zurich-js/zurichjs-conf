@@ -2,9 +2,10 @@ import { useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { DayTabs, SessionCard } from '@/components/molecules';
+import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
-import { scheduleData } from '@/data';
+import { ScheduleInfoCard, SessionCard } from '@/components/scheduling';
+import { conferenceProgramItems, publicProgramTabs, scheduleData, workshopProgramSections, workshopSlotCount } from '@/data';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession } from '@/lib/types/cfp';
 
@@ -18,21 +19,85 @@ interface SchedulePageProps {
   }>;
 }
 
-const scheduleTabs = [
-  { id: 'community', label: 'Community day', date: 'September 9, 2026', sessionDate: null },
-  { id: 'warmup', label: 'Workshop day', date: 'September 10, 2026', sessionDate: '2026-09-10' },
-  { id: 'conference', label: 'Conference day', date: 'September 11, 2026', sessionDate: '2026-09-11' },
-  { id: 'post-conference', label: 'Post-conf day', date: 'September 12, 2026', sessionDate: null },
-] as const;
 
 export default function SchedulePage({ sessions }: SchedulePageProps) {
-  const [activeTab, setActiveTab] = useState<(typeof scheduleTabs)[number]['id']>('community');
-  const activeScheduleTab = scheduleTabs.find((tab) => tab.id === activeTab) ?? scheduleTabs[0];
+  const [activeTab, setActiveTab] = useState<(typeof publicProgramTabs)[number]['id']>('community');
+  const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
   const visibleSessions = activeScheduleTab.sessionDate
     ? sessions.filter((session) => session.schedule?.date === activeScheduleTab.sessionDate)
     : [];
   const activeDay = scheduleData.days.find((day) => day.id === activeTab);
   const showEventSchedule = !activeScheduleTab.sessionDate;
+  const warmupMorningSessions = sessions.filter((session) => session.type === 'workshop' && Number(session.schedule?.start_time?.slice(0, 2) ?? '0') < 13);
+  const warmupAfternoonSessions = sessions.filter((session) => session.type === 'workshop' && Number(session.schedule?.start_time?.slice(0, 2) ?? '0') >= 14);
+  const warmupMorningSlots = [
+    ...warmupMorningSessions,
+    ...Array.from({ length: Math.max(workshopSlotCount - warmupMorningSessions.length, 0) }, (_, index) => ({
+      id: `schedule-warmup-morning-slot-${index + 1}`,
+      slug: `schedule-warmup-morning-slot-${index + 1}`,
+      title: 'TBA',
+      abstract: '',
+      tags: [],
+      type: 'workshop' as const,
+      level: 'intermediate' as const,
+      schedule: {
+        date: '2026-09-10',
+        start_time: workshopProgramSections[0].start,
+        duration_minutes: workshopProgramSections[0].duration,
+        room: null,
+      },
+    })),
+  ];
+  const warmupAfternoonSlots = [
+    ...warmupAfternoonSessions,
+    ...Array.from({ length: Math.max(workshopSlotCount - warmupAfternoonSessions.length, 0) }, (_, index) => ({
+      id: `schedule-warmup-afternoon-slot-${index + 1}`,
+      slug: `schedule-warmup-afternoon-slot-${index + 1}`,
+      title: 'TBA',
+      abstract: '',
+      tags: [],
+      type: 'workshop' as const,
+      level: 'intermediate' as const,
+      schedule: {
+        date: '2026-09-10',
+        start_time: workshopProgramSections[2].start,
+        duration_minutes: workshopProgramSections[2].duration,
+        room: null,
+      },
+    })),
+  ];
+  const conferenceItems = conferenceProgramItems.map((item) => {
+    if (item.kind === 'event') {
+      return item;
+    }
+
+    const session = sessions.find((entry) => entry.schedule?.date === '2026-09-11' && entry.schedule?.start_time?.slice(0, 5) === item.start) ?? null;
+
+    return session
+      ? { kind: 'session' as const, session, placeholder: false }
+      : {
+          kind: 'session' as const,
+          session: {
+            id: `schedule-conference-slot-${item.start}`,
+            slug: `schedule-conference-slot-${item.start}`,
+            title: item.title,
+            abstract: '',
+            tags: [],
+            type: 'standard' as const,
+            level: 'intermediate' as const,
+            schedule: {
+              date: '2026-09-11',
+              start_time: item.start,
+              duration_minutes: item.duration,
+              room: null,
+            },
+          },
+          placeholder: true,
+        };
+  });
+  const warmupFirstPublishedMorningIndex = warmupMorningSlots.findIndex((slot) => 'speaker' in slot);
+  const warmupFirstPublishedAfternoonIndex = warmupAfternoonSlots.findIndex((slot) => 'speaker' in slot);
+  const conferenceFirstPublishedIndex = conferenceItems.findIndex((item) => item.kind === 'session' && !item.placeholder);
 
   return (
     <>
@@ -59,36 +124,78 @@ export default function SchedulePage({ sessions }: SchedulePageProps) {
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto max-w-screen-lg">
             <DayTabs
-              tabs={scheduleTabs.map((tab) => ({
+              tabs={publicProgramTabs.map((tab) => ({
                 id: tab.id,
                 label: tab.label,
                 date: tab.date,
               }))}
               activeTab={activeTab}
-              onTabChange={(tabId) => setActiveTab(tabId as (typeof scheduleTabs)[number]['id'])}
+              onTabChange={(tabId) => setActiveTab(tabId as (typeof publicProgramTabs)[number]['id'])}
               className="pt-0"
             />
 
             <div className="mt-8 flex flex-col gap-4">
-              {showEventSchedule && activeDay ? (
+              {activeTab === 'warmup' ? (
+                <>
+                  {warmupMorningSlots.map((session, index) => (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      speaker={'speaker' in session ? session.speaker : undefined}
+                      expandable={'speaker' in session}
+                      placeholder={!('speaker' in session)}
+                      defaultOpen={index === warmupFirstPublishedMorningIndex && 'speaker' in session}
+                      href={'speaker' in session ? `/workshops/${session.slug}` : undefined}
+                    />
+                  ))}
+
+                  <ScheduleInfoCard
+                    time="13:00 - 14:00"
+                    title="Lunch break"
+                    copy="Time to take a break, recharge, and connect with other attendees before the afternoon workshop block starts."
+                  />
+
+                  {warmupAfternoonSlots.map((session, index) => (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      speaker={'speaker' in session ? session.speaker : undefined}
+                      expandable={'speaker' in session}
+                      placeholder={!('speaker' in session)}
+                      defaultOpen={index === warmupFirstPublishedAfternoonIndex && 'speaker' in session}
+                      href={'speaker' in session ? `/workshops/${session.slug}` : undefined}
+                    />
+                  ))}
+                </>
+              ) : activeTab === 'conference' ? (
+                conferenceItems.map((item, index) =>
+                  item.kind === 'event' ? (
+                    <ScheduleInfoCard key={`${item.time}-${item.title}`} time={item.time} title={item.title} copy={item.copy} />
+                  ) : (
+                    <SessionCard
+                      key={item.session.id}
+                      session={item.session}
+                      speaker={'speaker' in item.session ? item.session.speaker : undefined}
+                      expandable={!item.placeholder}
+                      placeholder={item.placeholder}
+                      defaultOpen={index === conferenceFirstPublishedIndex && !item.placeholder}
+                      href={item.placeholder ? undefined : item.session.type === 'workshop' ? `/workshops/${item.session.slug}` : `/talks/${item.session.slug}`}
+                    />
+                  )
+                )
+              ) : showEventSchedule && activeDay ? (
                 <div className="flex flex-col gap-4">
                   {activeDay.description ? (
-                    <div className="rounded-[1.25rem] border border-brand-gray-lightest bg-brand-gray-lightest p-5">
-                      <Heading level="h2" variant="light" className="text-lg font-bold">
-                        {activeDay.label}
-                      </Heading>
-                      <p className="mt-3 text-sm leading-7 text-brand-gray-darkest">
-                        {activeDay.description}
-                      </p>
-                    </div>
+                    <ScheduleInfoCard title={activeDay.label} copy={activeDay.description} />
                   ) : null}
 
                   {activeDay.events.map((event) => (
-                    <div key={`${activeDay.id}-${event.time}-${event.title}`} className="rounded-[1.25rem] border border-brand-gray-lightest bg-brand-gray-lightest p-5">
-                      <p className="text-sm text-brand-gray-medium">{event.time}</p>
-                      <h3 className="mt-1 text-lg font-bold leading-tight text-brand-black">{event.title}</h3>
-                      <p className="mt-4 text-sm leading-7 text-brand-gray-darkest">{event.description}</p>
-                    </div>
+                    <ScheduleInfoCard
+                      key={`${activeDay.id}-${event.time}-${event.title}`}
+                      time={event.time}
+                      title={event.title}
+                      copy={event.description}
+                    />
                   ))}
                 </div>
               ) : visibleSessions.length > 0 ? (

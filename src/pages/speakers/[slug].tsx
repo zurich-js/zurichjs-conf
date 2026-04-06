@@ -3,8 +3,11 @@ import type { GetServerSideProps } from 'next';
 import Image from 'next/image';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { DayTabs, SessionCard, SpeakerActionSlider } from '@/components/molecules';
+import { DayTabs, SpeakerActionSlider } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
+import { SessionCard } from '@/components/scheduling';
+import { useToast } from '@/contexts/ToastContext';
+import { analytics } from '@/lib/analytics';
 import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
@@ -20,6 +23,7 @@ interface SessionTab {
     id: SessionTabId;
     label: string;
     summary: string;
+    disabled: boolean;
     sessions: PublicSession[];
 }
 
@@ -39,31 +43,50 @@ function sortSessions(sessions: PublicSession[]) {
 }
 
 export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
+    const toast = useToast();
     const fullName = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
     const role = [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');
     const talks = sortSessions(speaker.sessions.filter((session) => session.type !== 'workshop'));
     const workshops = sortSessions(speaker.sessions.filter((session) => session.type === 'workshop'));
     const sessionTabs: SessionTab[] = [
-        workshops.length > 0
-            ? {
-                id: 'workshops',
-                label: `${speaker.first_name}'s workshops`,
-                summary: 'September 10, 2026',
-                sessions: workshops,
-            }
-            : null,
-        talks.length > 0
-            ? {
-                id: 'talks',
-                label: `${speaker.first_name}'s talks`,
-                summary: 'September 11, 2026',
-                sessions: talks,
-            }
-            : null,
-    ].filter((value): value is SessionTab => Boolean(value));
+        {
+            id: 'workshops',
+            label: `${speaker.first_name}'s workshops`,
+            summary: 'September 10, 2026',
+            disabled: workshops.length === 0,
+            sessions: workshops,
+        },
+        {
+            id: 'talks',
+            label: `${speaker.first_name}'s talks`,
+            summary: 'September 11, 2026',
+            disabled: talks.length === 0,
+            sessions: talks,
+        },
+    ];
   const [activeTab, setActiveTab] = useState<SessionTabId>(talks.length > 0 ? 'talks' : 'workshops');
   const currentTab = sessionTabs.find((tab) => tab.id === activeTab) ?? sessionTabs[0] ?? null;
   const profileUrl = `${BASE_URL}/speakers/${speaker.slug}`;
+  const handleDisabledTabClick = (tabId: string) => {
+    const tabName = tabId === 'workshops' ? 'workshops' : 'talks';
+
+    toast.info(
+      `${fullName} has no public ${tabName} yet`,
+      tabId === 'workshops'
+        ? `If enough people are interested, we can use that signal to invite ${speaker.first_name} to lead one.`
+        : `We are still finalizing which public sessions to announce for ${speaker.first_name}.`
+    );
+
+    try {
+      analytics.getInstance().capture('speaker_session_tab_unavailable_clicked', {
+        speaker_slug: speaker.slug,
+        speaker_name: fullName,
+        requested_tab: tabId,
+      });
+    } catch {
+      // Ignore analytics failures.
+    }
+  };
   const handleShare = async () => {
     await shareNatively({
       title: `${fullName} at ZurichJS Conference`,
@@ -126,21 +149,23 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                         id: tab.id,
                                         label: tab.label,
                                         date: tab.summary,
+                                        disabled: tab.disabled,
                                     }))}
                                     activeTab={currentTab?.id ?? activeTab}
                                     onTabChange={(tabId) => setActiveTab(tabId as SessionTabId)}
+                                    onDisabledTabClick={handleDisabledTabClick}
                                     className="pt-0"
                                 />
                             ) : null}
 
-                            {currentTab ? (
+                            {currentTab && currentTab.sessions.length > 0 ? (
                                 <div className="mt-8 space-y-5">
                                     {currentTab.sessions.map((session) => (
                                         <SessionCard
                                             key={session.id}
                                             id={`session-${session.id}`}
                                             session={session}
-                                            href={session.type === 'workshop' ? `/workshops/${session.slug}` : undefined}
+                                            href={session.type === 'workshop' ? `/workshops/${session.slug}` : `/talks/${session.slug}`}
                                         />
                                     ))}
                                 </div>

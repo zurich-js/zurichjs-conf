@@ -37,12 +37,6 @@ function SpeakerCardInner({
   const isCompact = variant === 'compact';
   const isDefault = variant === 'default';
   const isFull = variant === 'full';
-  const initials = name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
 
   return (
           <div className="bg-white relative rounded-2xl overflow-hidden h-full transition-all duration-300
@@ -85,7 +79,7 @@ function SpeakerCardInner({
                           />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-brand-gray-darkest text-xl font-bold text-brand-white">
-                      {initials || '?'}
+                      ?
                     </div>
                   )}
                   </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellPlus, CalendarPlus, ChevronDown, Share2 } from 'lucide-react';
+import { BellPlus, CalendarPlus, ChevronDown, ChevronRight, Share2 } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { analytics } from '@/lib/analytics';
 import { addPublicConferenceToCalendar, addPublicEngineeringDayToCalendar } from '@/lib/calendar/public-events';
@@ -20,6 +20,7 @@ export interface SessionCardProps {
   };
   expandable?: boolean;
   defaultOpen?: boolean;
+  placeholder?: boolean;
   href?: string;
   className?: string;
   id?: string;
@@ -58,6 +59,7 @@ export function SessionCard({
   speaker,
   expandable = false,
   defaultOpen = false,
+  placeholder = false,
   href,
   className,
   id,
@@ -129,6 +131,30 @@ export function SessionCard({
       url: shareUrl,
     });
   };
+
+  if (placeholder) {
+    return (
+      <article
+        id={resolvedId}
+        className={cn('rounded-[1.25rem] border border-brand-gray-lightest bg-brand-gray-lightest p-5', className)}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            {startTime ? (
+              <p className="text-sm text-brand-gray-medium">
+                {startTime}{endTime ? ` - ${endTime}` : ''}
+              </p>
+            ) : null}
+            <h3 className="mt-1 text-lg font-bold leading-tight text-brand-black">
+              {session.title || 'TBA'}
+            </h3>
+          </div>
+
+          <ChevronRight className="mt-1 size-5 shrink-0 text-brand-black" />
+        </div>
+      </article>
+    );
+  }
 
   if (expandable) {
     return (

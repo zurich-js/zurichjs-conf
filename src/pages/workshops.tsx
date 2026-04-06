@@ -2,8 +2,10 @@ import { useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { DayTabs, SessionCard } from '@/components/molecules';
+import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { ScheduleInfoCard, SessionCard } from '@/components/scheduling';
+import { workshopProgramSections, workshopSlotCount } from '@/data';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession } from '@/lib/types/cfp';
 
@@ -19,20 +21,32 @@ interface WorkshopsPageProps {
 
 export default function WorkshopsPage({ sessions }: WorkshopsPageProps) {
   const [activeTab, setActiveTab] = useState('morning');
-
-  const visibleSessions = sessions.filter((session) => {
-    const hour = Number(session.schedule?.start_time?.slice(0, 2) ?? '0');
-
-    if (activeTab === 'morning') {
-      return hour < 13;
-    }
-
-    if (activeTab === 'lunch') {
-      return hour >= 13 && hour < 14;
-    }
-
-    return hour >= 14;
-  });
+  const morningSection = workshopProgramSections[0];
+  const afternoonSection = workshopProgramSections[2];
+  const morningSessions = sessions.filter((session) => Number(session.schedule?.start_time?.slice(0, 2) ?? '0') < 13);
+  const afternoonSessions = sessions.filter((session) => Number(session.schedule?.start_time?.slice(0, 2) ?? '0') >= 14);
+  const visibleSessions = activeTab === 'morning' ? morningSessions : activeTab === 'afternoon' ? afternoonSessions : [];
+  const sessionSlots = activeTab === 'lunch'
+    ? []
+    : [
+        ...visibleSessions,
+        ...Array.from({ length: Math.max(workshopSlotCount - visibleSessions.length, 0) }, (_, index) => ({
+          id: `${activeTab}-workshop-slot-${index + 1}`,
+          slug: `${activeTab}-workshop-slot-${index + 1}`,
+          title: 'TBA',
+          abstract: '',
+          tags: [],
+          type: 'workshop' as const,
+          level: 'intermediate' as const,
+          schedule: {
+            date: '2026-09-10',
+            start_time: activeTab === 'morning' ? morningSection.start : afternoonSection.start,
+            duration_minutes: activeTab === 'morning' ? morningSection.duration : afternoonSection.duration,
+            room: null,
+          },
+        })),
+      ];
+  const firstPublishedIndex = sessionSlots.findIndex((slot) => 'speaker' in slot);
 
   return (
     <>
@@ -61,11 +75,11 @@ export default function WorkshopsPage({ sessions }: WorkshopsPageProps) {
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto max-w-screen-lg">
             <DayTabs
-              tabs={[
-                { id: 'morning', label: 'Morning sessions', date: '09:00 - 13:00' },
-                { id: 'lunch', label: 'Lunch break', date: '13:00 - 14:00' },
-                { id: 'afternoon', label: 'Afternoon sessions', date: '14:00 - 18:00' },
-              ]}
+              tabs={workshopProgramSections.map((section) => ({
+                id: section.id,
+                label: section.label,
+                date: section.date,
+              }))}
               activeTab={activeTab}
               onTabChange={setActiveTab}
               color="blue"
@@ -73,26 +87,23 @@ export default function WorkshopsPage({ sessions }: WorkshopsPageProps) {
             />
 
             <div className="mt-8 flex flex-col gap-4">
-              {visibleSessions.length > 0 ? (
-                visibleSessions.map((session, index) => (
+              {activeTab === 'lunch' ? (
+                <ScheduleInfoCard
+                  title="Lunch break"
+                  copy="Time to reset, grab food, and meet other attendees before the afternoon workshop block starts."
+                />
+              ) : (
+                sessionSlots.map((session, index) => (
                   <SessionCard
                     key={session.id}
                     session={session}
-                    speaker={session.speaker}
-                    expandable
-                    defaultOpen={index === 0}
-                    href={`/workshops/${session.slug}`}
+                    speaker={'speaker' in session ? session.speaker : undefined}
+                    expandable={'speaker' in session}
+                    placeholder={!('speaker' in session)}
+                    defaultOpen={index === firstPublishedIndex && 'speaker' in session}
+                    href={'speaker' in session ? `/workshops/${session.slug}` : undefined}
                   />
                 ))
-              ) : (
-                <div className="p-4">
-                  <Heading level="h2" variant="light" className="text-lg font-bold">
-                    More workshops are coming
-                  </Heading>
-                  <p className="mt-3 text-sm leading-7 text-brand-gray-darkest">
-                    We have not published the workshops for this time block yet. Check back in later.
-                  </p>
-                </div>
               )}
             </div>
           </div>

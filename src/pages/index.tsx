@@ -108,11 +108,7 @@ export default function Home() {
           <SpeakersSection />
           <div className="flex flex-col items-center gap-3 px-4">
             <p className="text-brand-gray-medium text-md text-center mt-2">
-              Wanna share your knowledge in Zurich?{' '}
-              <Link href="/cfp" className="text-md text-brand-blue hover:text-brand-dark duration-300 ease-in-out">
-                  Apply&nbsp;to&nbsp;speak
-              </Link>
-                {' '}until April 3rd!
+                Check out the <Link href="/speakers" className="text-md text-brand-blue hover:text-brand-dark duration-300 ease-in-out">full lineup</Link>
             </p>
           </div>
         </div>
