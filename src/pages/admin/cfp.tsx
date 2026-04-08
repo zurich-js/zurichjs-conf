@@ -11,6 +11,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import {
+  ConfirmationModal,
   SubmissionModal,
   ReviewersTab,
   SpeakersTab,
@@ -36,6 +37,7 @@ import {
   fetchAnalytics,
   updateSubmissionStatus,
   deleteTag,
+  mergeTags,
 } from '@/lib/cfp/api';
 import type { SubmissionQueryParams } from '@/lib/cfp/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -47,6 +49,11 @@ export default function CfpAdminDashboard() {
   const [selectedSubmission, setSelectedSubmission] = useState<CfpAdminSubmission | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkActionStatus, setBulkActionStatus] = useState<string>('');
+  const [tagPendingDelete, setTagPendingDelete] = useState<{
+    id: string;
+    name: string;
+    submission_count: number;
+  } | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
@@ -238,6 +245,31 @@ export default function CfpAdminDashboard() {
     },
   });
 
+  const mergeTagsMutation = useMutation({
+    mutationFn: ({
+      sourceTagIds,
+      targetName,
+      isSuggested,
+    }: {
+      sourceTagIds: string[];
+      targetName: string;
+      isSuggested: boolean;
+    }) => mergeTags(sourceTagIds, targetName, isSuggested),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.tags });
+      queryClient.invalidateQueries({ queryKey: ['cfp', 'submissions'] });
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.insights });
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.analytics });
+      toast.success(
+        'Tags Merged',
+        `${data.merged_tag_ids.length} tag(s) merged into "${data.tag.name}" across ${data.reassigned_submission_count} submission(s)`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error('Merge Failed', error.message);
+    },
+  });
+
   // Handlers
   const submissions = submissionsData?.submissions || [];
   const submissionsTotal = submissionsData?.total || 0;
@@ -263,6 +295,10 @@ export default function CfpAdminDashboard() {
   const speakers = speakersData?.speakers || [];
   const reviewers = reviewersData?.reviewers || [];
   const tags = tagsData?.tags || [];
+
+  const handleDeleteTag = (tag: { id: string; name: string; submission_count: number }) => {
+    setTagPendingDelete(tag);
+  };
 
   if (isAuthLoading) return <AdminLoadingScreen />;
   if (!isAuthenticated) return <AdminLoginForm title="CFP Admin" />;
@@ -322,7 +358,16 @@ export default function CfpAdminDashboard() {
                 />
               )}
               {activeTab === 'tags' && (
-                <TagsTab tags={tags} isLoading={isLoadingTags} onDelete={(id) => deleteTagMutation.mutate(id)} isDeleting={deleteTagMutation.isPending} />
+                <TagsTab
+                  tags={tags}
+                  isLoading={isLoadingTags}
+                  onDelete={handleDeleteTag}
+                  isDeleting={deleteTagMutation.isPending}
+                  onMerge={(sourceTagIds, targetName, isSuggested) =>
+                    mergeTagsMutation.mutateAsync({ sourceTagIds, targetName, isSuggested }).then(() => undefined)
+                  }
+                  isMerging={mergeTagsMutation.isPending}
+                />
               )}
               {activeTab === 'insights' && (
                 <InsightsTab insights={insightsData?.insights || null} stats={stats} isLoading={isLoadingInsights} />
@@ -344,6 +389,32 @@ export default function CfpAdminDashboard() {
             isDeleting={deleteSubmissionMutation.isPending}
             onEdit={(data) => editSubmissionMutation.mutate({ id: selectedSubmission.id, data })}
             isEditing={editSubmissionMutation.isPending}
+          />
+        )}
+
+        {tagPendingDelete && (
+          <ConfirmationModal
+            isOpen={true}
+            onClose={() => setTagPendingDelete(null)}
+            onConfirm={() => {
+              deleteTagMutation.mutate(tagPendingDelete.id, {
+                onSuccess: () => {
+                  setTagPendingDelete(null);
+                },
+                onError: () => {
+                  setTagPendingDelete(null);
+                },
+              });
+            }}
+            title="Delete Tag?"
+            message={
+              tagPendingDelete.submission_count > 0
+                ? `"${tagPendingDelete.name}" is still linked to ${tagPendingDelete.submission_count} submission${tagPendingDelete.submission_count === 1 ? '' : 's'}. Delete it only if you are sure those references should be removed.`
+                : `Delete "${tagPendingDelete.name}"? This tag is currently unused and will be removed immediately.`
+            }
+            confirmText="Delete Tag"
+            confirmStyle="warning"
+            isLoading={deleteTagMutation.isPending}
           />
         )}
       </div>

@@ -130,6 +130,7 @@ export interface CfpAdminTag {
   name: string;
   is_suggested: boolean;
   created_at: string;
+  submission_count: number;
 }
 
 export interface CfpReviewWithReviewer {

@@ -13,6 +13,7 @@ import type {
   CfpAdminTag,
   CfpInsights,
 } from '@/lib/types/cfp-admin';
+import type { CfpTag } from '@/lib/types/cfp';
 import type { CfpAnalytics } from '@/lib/types/cfp-analytics';
 
 export async function fetchStats(): Promise<CfpStats> {
@@ -88,6 +89,29 @@ export async function deleteTag(id: string): Promise<void> {
     const data = await res.json();
     throw new Error(data.error || 'Failed to delete tag');
   }
+}
+
+export async function mergeTags(
+  sourceTagIds: string[],
+  targetName: string,
+  isSuggested: boolean
+): Promise<{ tag: CfpTag; merged_tag_ids: string[]; reassigned_submission_count: number }> {
+  const res = await fetch('/api/admin/cfp/tags/merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_tag_ids: sourceTagIds,
+      target_name: targetName,
+      is_suggested: isSuggested,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Failed to merge tags');
+  }
+
+  return res.json();
 }
 
 export async function fetchReviewersWithActivity(): Promise<{ reviewers: CfpAdminReviewerWithActivity[] }> {

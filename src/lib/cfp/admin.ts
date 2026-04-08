@@ -60,7 +60,7 @@ async function fetchAllRows<T = Record<string, unknown>>(
   const allRows: T[] = [];
   let offset = 0;
 
-   
+
   while (true) {
     const { data, error } = await supabase
       .from(table)
@@ -112,7 +112,7 @@ export async function getAdminSubmissions(
   const submissions: CfpSubmission[] = [];
   let pageOffset = 0;
 
-   
+
   while (true) {
     let query = supabase
       .from('cfp_submissions')
@@ -609,12 +609,29 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
  */
 export async function getAdminTags(): Promise<CfpTag[]> {
   const supabase = createCfpServiceClient();
-  const { data, error } = await fetchAllRows<CfpTag>(supabase, 'cfp_tags', '*');
-  if (error) {
-    console.error('[CFP Admin] Error fetching tags:', error);
+  const [tagsResult, tagLinksResult] = await Promise.all([
+    fetchAllRows<CfpTag>(supabase, 'cfp_tags', '*'),
+    fetchAllRows<{ tag_id: string }>(supabase, 'cfp_submission_tags', 'tag_id'),
+  ]);
+
+  if (tagsResult.error) {
+    console.error('[CFP Admin] Error fetching tags:', tagsResult.error);
     return [];
   }
-  return data;
+
+  if (tagLinksResult.error) {
+    console.error('[CFP Admin] Error fetching tag relationships:', tagLinksResult.error);
+  }
+
+  const submissionCounts = new Map<string, number>();
+  for (const link of tagLinksResult.data || []) {
+    submissionCounts.set(link.tag_id, (submissionCounts.get(link.tag_id) || 0) + 1);
+  }
+
+  return tagsResult.data.map((tag) => ({
+    ...tag,
+    submission_count: submissionCounts.get(tag.id) || 0,
+  })) as CfpTag[];
 }
 
 /**
