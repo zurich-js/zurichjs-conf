@@ -2,7 +2,7 @@
  * Workshops Module Exports
  */
 
-export { getPublishedWorkshops, getWorkshopById, getAllWorkshops } from './getWorkshops';
+export { getPublishedWorkshops, getWorkshopById, getAllWorkshops, getWorkshopBySlug } from './getWorkshops';
 export type { GetWorkshopsResult } from './getWorkshops';
 
 export { createWorkshopRegistration } from './createRegistration';
@@ -17,3 +17,11 @@ export {
   getRegistrationById,
 } from './getRegistrations';
 export type { GetRegistrationsResult } from './getRegistrations';
+
+export {
+  hasTimeSlotConflict,
+  findConflictingWorkshop,
+  canBookWorkshop,
+  validateWorkshopSelection,
+  calculateWorkshopTotal,
+} from './validation';
