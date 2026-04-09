@@ -198,6 +198,7 @@ export default function ReviewerSubmission() {
       });
 
       dispatch({ type: 'SUBMIT_SUCCESS' });
+      void router.push(nextSubmissionHref ?? dashboardUrl);
     } catch (err) {
       dispatch({ type: 'SET_ERROR', error: err instanceof Error ? err.message : 'An error occurred' });
     }
