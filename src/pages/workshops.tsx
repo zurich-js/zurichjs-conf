@@ -4,49 +4,24 @@ import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
-import { ScheduleInfoCard, SessionCard } from '@/components/scheduling';
-import { workshopProgramSections, workshopSlotCount } from '@/data';
+import { ProgramScheduleItemCard } from '@/components/scheduling';
+import { workshopProgramSections } from '@/data';
+import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
-import type { PublicSession } from '@/lib/types/cfp';
+import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
 interface WorkshopsPageProps {
-  sessions: Array<PublicSession & {
-    speaker: {
-      name: string;
-      role: string;
-      imageUrl: string | null;
-    };
-  }>;
+  items: PublicProgramScheduleItem[];
 }
 
-export default function WorkshopsPage({ sessions }: WorkshopsPageProps) {
+export default function WorkshopsPage({ items }: WorkshopsPageProps) {
   const [activeTab, setActiveTab] = useState('morning');
-  const morningSection = workshopProgramSections[0];
-  const afternoonSection = workshopProgramSections[2];
-  const morningSessions = sessions.filter((session) => Number(session.schedule?.start_time?.slice(0, 2) ?? '0') < 13);
-  const afternoonSessions = sessions.filter((session) => Number(session.schedule?.start_time?.slice(0, 2) ?? '0') >= 14);
-  const visibleSessions = activeTab === 'morning' ? morningSessions : activeTab === 'afternoon' ? afternoonSessions : [];
-  const sessionSlots = activeTab === 'lunch'
-    ? []
-    : [
-        ...visibleSessions,
-        ...Array.from({ length: Math.max(workshopSlotCount - visibleSessions.length, 0) }, (_, index) => ({
-          id: `${activeTab}-workshop-slot-${index + 1}`,
-          slug: `${activeTab}-workshop-slot-${index + 1}`,
-          title: 'TBA',
-          abstract: '',
-          tags: [],
-          type: 'workshop' as const,
-          level: 'intermediate' as const,
-          schedule: {
-            date: '2026-09-10',
-            start_time: activeTab === 'morning' ? morningSection.start : afternoonSection.start,
-            duration_minutes: activeTab === 'morning' ? morningSection.duration : afternoonSection.duration,
-            room: null,
-          },
-        })),
-      ];
-  const firstPublishedIndex = sessionSlots.findIndex((slot) => 'speaker' in slot);
+  const dayItems = items.filter((item) => item.date === '2026-09-10');
+  const morningItems = dayItems.filter((item) => Number(item.start_time.slice(0, 2)) < 13 && item.type !== 'break');
+  const lunchItems = dayItems.filter((item) => item.type === 'break' && Number(item.start_time.slice(0, 2)) === 13);
+  const afternoonItems = dayItems.filter((item) => Number(item.start_time.slice(0, 2)) >= 14 && item.type !== 'event');
+  const visibleItems = activeTab === 'morning' ? morningItems : activeTab === 'afternoon' ? afternoonItems : lunchItems;
+  const firstPublishedIndex = visibleItems.findIndex((item) => item.type === 'session' && Boolean(item.session));
 
   return (
     <>
@@ -87,24 +62,15 @@ export default function WorkshopsPage({ sessions }: WorkshopsPageProps) {
             />
 
             <div className="mt-8 flex flex-col gap-4">
-              {activeTab === 'lunch' ? (
-                <ScheduleInfoCard
-                  title="Lunch break"
-                  copy="Time to reset, grab food, and meet other attendees before the afternoon workshop block starts."
+              {visibleItems.map((item, index) => (
+                <ProgramScheduleItemCard
+                  key={item.id}
+                  item={item}
+                  defaultOpen={index === firstPublishedIndex}
+                  placeholderVariant={activeTab === 'lunch' ? 'slot' : 'plain'}
+                  expandableSessions
                 />
-              ) : (
-                sessionSlots.map((session, index) => (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    speaker={'speaker' in session ? session.speaker : undefined}
-                    expandable={'speaker' in session}
-                    placeholder={!('speaker' in session)}
-                    defaultOpen={index === firstPublishedIndex && 'speaker' in session}
-                    href={'speaker' in session ? `/workshops/${session.slug}` : undefined}
-                  />
-                ))
-              )}
+              ))}
             </div>
           </div>
         </ShapedSection>
@@ -155,33 +121,12 @@ export default function WorkshopsPage({ sessions }: WorkshopsPageProps) {
 
 export const getServerSideProps: GetServerSideProps<WorkshopsPageProps> = async () => {
   const { speakers } = await fetchPublicSpeakers();
-  const sessions = speakers
-    .flatMap((speaker) =>
-      speaker.sessions
-        .filter((session) => session.type === 'workshop')
-        .map((session) => ({
-          ...session,
-          speaker: {
-            name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
-            role: [speaker.job_title, speaker.company].filter(Boolean).join(' @ '),
-            imageUrl: speaker.profile_image_url,
-          },
-        }))
-    )
-    .sort((left, right) => {
-      const leftDate = `${left.schedule?.date ?? '9999-12-31'}T${left.schedule?.start_time ?? '23:59:59'}`;
-      const rightDate = `${right.schedule?.date ?? '9999-12-31'}T${right.schedule?.start_time ?? '23:59:59'}`;
-
-      if (leftDate !== rightDate) {
-        return leftDate.localeCompare(rightDate);
-      }
-
-      return left.title.localeCompare(right.title);
-    });
+  const rows = await getPublicScheduleRows();
+  const items = buildPublicProgramScheduleItems(rows, speakers);
 
   return {
     props: {
-      sessions,
+      items,
     },
   };
 };

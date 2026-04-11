@@ -1,48 +1,22 @@
 import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { SessionCard } from '@/components/scheduling';
+import { ProgramScheduleItemCard } from '@/components/scheduling';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
-import { talkProgramSlots } from '@/data';
+import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
-import type { PublicSession } from '@/lib/types/cfp';
+import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
 interface TalksPageProps {
-  sessions: Array<PublicSession & {
-    speaker: {
-      name: string;
-      role: string;
-      imageUrl: string | null;
-    };
-  }>;
+  items: PublicProgramScheduleItem[];
 }
 
-export default function TalksPage({ sessions }: TalksPageProps) {
-  const slottedTalks = talkProgramSlots.map((slot) => {
-    const session = sessions.find((entry) => entry.schedule?.start_time?.slice(0, 5) === slot.start) ?? null;
-
-    return session
-      ? { session, placeholder: false }
-      : {
-          session: {
-            id: `talk-slot-${slot.start}`,
-            slug: `talk-slot-${slot.start}`,
-            title: slot.title,
-            abstract: '',
-            tags: [],
-            type: 'standard' as const,
-            level: 'intermediate' as const,
-            schedule: {
-              date: '2026-09-11',
-              start_time: slot.start,
-              duration_minutes: slot.duration,
-              room: null,
-            },
-          },
-          placeholder: true,
-        };
-  });
-  const firstPublishedIndex = slottedTalks.findIndex((slot) => !slot.placeholder);
+export default function TalksPage({ items }: TalksPageProps) {
+  const visibleItems = items.filter((item) =>
+    item.date === '2026-09-11' &&
+    (item.type === 'placeholder' || (item.type === 'session' && item.session_kind === 'talk'))
+  );
+  const firstPublishedIndex = visibleItems.findIndex((item) => item.type === 'session' && Boolean(item.session));
 
   return (
     <>
@@ -70,15 +44,13 @@ export default function TalksPage({ sessions }: TalksPageProps) {
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto flex max-w-screen-lg flex-col gap-4">
-            {slottedTalks.map(({ session, placeholder }, index) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                speaker={'speaker' in session ? session.speaker : undefined}
-                expandable={!placeholder}
-                placeholder={placeholder}
-                defaultOpen={index === firstPublishedIndex && !placeholder}
-                href={placeholder ? undefined : `/talks/${session.slug}`}
+            {visibleItems.map((item, index) => (
+              <ProgramScheduleItemCard
+                key={item.id}
+                item={item}
+                defaultOpen={index === firstPublishedIndex}
+                placeholderVariant="slot"
+                expandableSessions
               />
             ))}
           </div>
@@ -113,33 +85,12 @@ export default function TalksPage({ sessions }: TalksPageProps) {
 
 export const getServerSideProps: GetServerSideProps<TalksPageProps> = async () => {
   const { speakers } = await fetchPublicSpeakers();
-  const sessions = speakers
-    .flatMap((speaker) =>
-      speaker.sessions
-        .filter((session) => session.type !== 'workshop')
-        .map((session) => ({
-          ...session,
-          speaker: {
-            name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
-            role: [speaker.job_title, speaker.company].filter(Boolean).join(' @ '),
-            imageUrl: speaker.profile_image_url,
-          },
-        }))
-    )
-    .sort((left, right) => {
-      const leftDate = `${left.schedule?.date ?? '9999-12-31'}T${left.schedule?.start_time ?? '23:59:59'}`;
-      const rightDate = `${right.schedule?.date ?? '9999-12-31'}T${right.schedule?.start_time ?? '23:59:59'}`;
-
-      if (leftDate !== rightDate) {
-        return leftDate.localeCompare(rightDate);
-      }
-
-      return left.title.localeCompare(right.title);
-    });
+  const rows = await getPublicScheduleRows();
+  const items = buildPublicProgramScheduleItems(rows, speakers);
 
   return {
     props: {
-      sessions,
+      items,
     },
   };
 };

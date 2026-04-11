@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
+import { getPublicScheduleRowMapBySubmissionId } from '@/lib/program/schedule';
 import type {
   CfpSpeaker,
   CfpSubmission,
@@ -207,6 +208,7 @@ export async function uploadSpeakerImage(
 export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
   const supabase = createCfpServiceClient();
   const sessionSlugCounts = new Map<string, number>();
+  const scheduleRowMap = await getPublicScheduleRowMapBySubmissionId();
 
   // Fetch visible speakers with their submissions and tags
   const { data, error } = await supabase
@@ -307,14 +309,21 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
             .filter((tag): tag is string => Boolean(tag)),
           type: s.submission_type as PublicSession['type'],
           level: s.talk_level as PublicSession['level'],
-          schedule: s.scheduled_date || s.scheduled_start_time
+          schedule: scheduleRowMap.get(s.id)
             ? {
-                date: s.scheduled_date,
-                start_time: s.scheduled_start_time,
-                duration_minutes: s.scheduled_duration_minutes,
-                room: s.room,
+                date: scheduleRowMap.get(s.id)?.date ?? null,
+                start_time: scheduleRowMap.get(s.id)?.start_time ?? null,
+                duration_minutes: scheduleRowMap.get(s.id)?.duration_minutes ?? null,
+                room: scheduleRowMap.get(s.id)?.room ?? null,
               }
-            : null,
+            : s.scheduled_date || s.scheduled_start_time
+              ? {
+                  date: s.scheduled_date,
+                  start_time: s.scheduled_start_time,
+                  duration_minutes: s.scheduled_duration_minutes,
+                  room: s.room,
+                }
+              : null,
         };
       });
 

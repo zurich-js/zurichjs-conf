@@ -8,3 +8,5 @@ export * from './AddSpeakerModal';
 export * from './AddSessionModal';
 export * from './EditSpeakerModal';
 export * from './AdminSpeakerCard';
+export * from './EditSessionModal';
+export * from './ScheduleItemModal';

@@ -562,15 +562,46 @@ export async function getAdminSpeakers(): Promise<CfpSpeaker[]> {
  * Avoids N+1 query problem by fetching all data in parallel
  */
 export async function getAdminSpeakersWithSubmissions(): Promise<
-  (CfpSpeaker & { submissions: { id: string; title: string; status: string; submission_type: string }[] })[]
+  (CfpSpeaker & {
+    submissions: {
+      id: string;
+      title: string;
+      abstract: string | null;
+      status: string;
+      submission_type: string;
+      talk_level: string | null;
+      workshop_duration_hours: number | null;
+      workshop_max_participants: number | null;
+      scheduled_date: string | null;
+      scheduled_start_time: string | null;
+      scheduled_duration_minutes: number | null;
+      room: string | null;
+    }[];
+  })[]
 > {
   const supabase = createCfpServiceClient();
 
   // Fetch speakers and all submissions in parallel using paginated fetch
   const [speakersResult, submissionsResult] = await Promise.all([
     fetchAllRows<CfpSpeaker>(supabase, 'cfp_speakers', '*'),
-    fetchAllRows<{ id: string; title: string; status: string; submission_type: string; speaker_id: string }>(
-      supabase, 'cfp_submissions', 'id, title, status, submission_type, speaker_id'
+    fetchAllRows<{
+      id: string;
+      title: string;
+      abstract: string | null;
+      status: string;
+      submission_type: string;
+      talk_level: string | null;
+      workshop_duration_hours: number | null;
+      workshop_max_participants: number | null;
+      scheduled_date: string | null;
+      scheduled_start_time: string | null;
+      scheduled_duration_minutes: number | null;
+      room: string | null;
+      speaker_id: string;
+    }>(
+      supabase,
+      'cfp_submissions',
+      'id, title, abstract, status, submission_type, talk_level, workshop_duration_hours, workshop_max_participants, scheduled_date, scheduled_start_time, scheduled_duration_minutes, room, speaker_id'
     ),
   ]);
 
@@ -598,8 +629,16 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
     submissions: (submissionsBySpeakerId.get(speaker.id) || []).map((s) => ({
       id: s.id,
       title: s.title,
+      abstract: s.abstract,
       status: s.status,
       submission_type: s.submission_type,
+      talk_level: s.talk_level,
+      workshop_duration_hours: s.workshop_duration_hours,
+      workshop_max_participants: s.workshop_max_participants,
+      scheduled_date: s.scheduled_date,
+      scheduled_start_time: s.scheduled_start_time,
+      scheduled_duration_minutes: s.scheduled_duration_minutes,
+      room: s.room,
     })),
   }));
 }

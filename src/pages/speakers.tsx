@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { DehydratedState } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
@@ -101,6 +101,16 @@ export default function SpeakersPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data, isLoading } = useQuery(publicSpeakersQueryOptions);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setViewMode('full');
+    }
+  }, []);
+
   const speakers = data?.speakers ?? [];
   const availableTags = Array.from(
     new Set(speakers.flatMap((speaker) => speaker.sessions.flatMap((session) => session.tags)))
@@ -132,6 +142,10 @@ export default function SpeakersPage() {
   const cardSize = viewMode === 'compact' ? '12rem' : viewMode === 'default' ? '15rem' : '17rem';
   const gridStyle = { '--card-size': cardSize } as CSSProperties;
   const handleViewModeChange = (mode: ViewMode) => {
+    if (mode === viewMode) {
+      return;
+    }
+
     setViewMode(mode);
 
     try {
@@ -168,7 +182,7 @@ export default function SpeakersPage() {
         <SectionContainer>
           <div className="py-16 md:py-20">
             <div className="flex flex-col gap-6">
-              <div className="flex flex-col justify-between items-end gap-5 lg:flex-row">
+              <div className="flex flex-col justify-between sm:items-end gap-5 sm:flex-row">
                 <div>
                   <p className="mb-2.5 px-4 text-sm">Grid view</p>
                   <div className="inline-flex rounded-full border border-brand-black bg-brand-white p-1">
@@ -190,7 +204,7 @@ export default function SpeakersPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                <div className="flex gap-3 items-center">
                   <Button
                     variant="ghost"
                     size="sm"

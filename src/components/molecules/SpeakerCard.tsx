@@ -34,6 +34,8 @@ function SpeakerCardInner({
   title,
   footer,
 }: SharedSpeakerCardProps) {
+  // TODO: Rework the sliding footer so it overlays and covers the name/role area,
+  // instead of appearing only below it. This should match the intended speaker card interaction.
   const isCompact = variant === 'compact';
   const isDefault = variant === 'default';
   const isFull = variant === 'full';
@@ -78,8 +80,8 @@ function SpeakerCardInner({
                               sizes={isCompact ? '(max-width: 640px) 6rem, 7rem' : '(max-width: 640px) 8rem, 10rem'}
                           />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-brand-gray-darkest text-xl font-bold text-brand-white">
-                      ?
+                    <div className="flex h-full w-full items-center justify-center bg-brand-white text-xl font-bold text-brand-gray-light">
+                      <Image src="/icons/avatar-placeholder.svg" alt="Avatar placeholder" width={48} height={48} />
                     </div>
                   )}
                   </div>

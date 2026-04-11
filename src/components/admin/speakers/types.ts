@@ -26,9 +26,12 @@ export interface Speaker {
 export interface Session {
   id: string;
   title: string;
+  abstract: string | null;
   status: string;
   submission_type: string;
   talk_level: string;
+  workshop_duration_hours: number | null;
+  workshop_max_participants: number | null;
   scheduled_date: string | null;
   scheduled_start_time: string | null;
   scheduled_duration_minutes: number | null;

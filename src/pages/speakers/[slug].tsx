@@ -6,7 +6,6 @@ import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs, SpeakerActionSlider } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard } from '@/components/scheduling';
-import { useToast } from '@/contexts/ToastContext';
 import { analytics } from '@/lib/analytics';
 import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
@@ -43,7 +42,6 @@ function sortSessions(sessions: PublicSession[]) {
 }
 
 export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
-    const toast = useToast();
     const fullName = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
     const role = [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');
     const talks = sortSessions(speaker.sessions.filter((session) => session.type !== 'workshop'));
@@ -68,15 +66,6 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
   const currentTab = sessionTabs.find((tab) => tab.id === activeTab) ?? sessionTabs[0] ?? null;
   const profileUrl = `${BASE_URL}/speakers/${speaker.slug}`;
   const handleDisabledTabClick = (tabId: string) => {
-    const tabName = tabId === 'workshops' ? 'workshops' : 'talks';
-
-    toast.info(
-      `${fullName} has no public ${tabName} yet`,
-      tabId === 'workshops'
-        ? `If enough people are interested, we can use that signal to invite ${speaker.first_name} to lead one.`
-        : `We are still finalizing which public sessions to announce for ${speaker.first_name}.`
-    );
-
     try {
       analytics.getInstance().capture('speaker_session_tab_unavailable_clicked', {
         speaker_slug: speaker.slug,
@@ -166,6 +155,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                             id={`session-${session.id}`}
                                             session={session}
                                             href={session.type === 'workshop' ? `/workshops/${session.slug}` : `/talks/${session.slug}`}
+                                            showDuration
                                         />
                                     ))}
                                 </div>
@@ -174,10 +164,6 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                     <Heading level="h2" variant="light" className="text-xl font-bold">
                                         Sessions coming soon
                                     </Heading>
-                                    {/* TODO(feature/speakers-grid): Replace this temporary empty state once session publishing rules are finalized. */}
-                                    <p className="mt-3 max-w-2xl text-base leading-7 text-brand-gray-darkest">
-                                        This speaker is already live on the lineup, but their public sessions are still being finalized.
-                                    </p>
                                     <Button variant="primary" size="sm" className="mt-6" asChild href="/#tickets">
                                         Get tickets anyway
                                     </Button>
