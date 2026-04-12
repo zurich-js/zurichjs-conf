@@ -19,15 +19,15 @@ function pct(count: number, total: number): string {
 function MetricBar({ label, count, total }: { label: string; count: number; total: number }) {
   const percentage = total > 0 ? (count / total) * 100 : 0;
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-600 w-40 shrink-0">{label}</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+    <div className="flex items-center gap-2 sm:gap-3">
+      <span className="text-xs sm:text-sm text-gray-600 w-24 sm:w-40 shrink-0">{label}</span>
+      <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-5 overflow-hidden">
         <div
           className="h-full bg-yellow-300 rounded-full transition-all"
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="text-sm font-medium text-black w-20 text-right">
+      <span className="text-xs sm:text-sm font-medium text-black w-16 sm:w-20 text-right shrink-0">
         {count} ({pct(count, total)})
       </span>
     </div>
@@ -60,7 +60,7 @@ export function ContentInsightsSection({ contentInsights }: ContentInsightsSecti
             </Tooltip>
           </div>
 
-          <div className="mb-4 flex items-baseline gap-3">
+          <div className="mb-4 flex flex-wrap items-baseline gap-2 sm:gap-3">
             <span className="text-3xl font-bold text-black">{pct(aiTopicCount, totalAnalyzed)}</span>
             <span className="text-sm text-gray-500">
               {aiTopicCount} of {totalAnalyzed} submissions mention AI topics

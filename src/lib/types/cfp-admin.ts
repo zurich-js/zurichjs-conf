@@ -180,9 +180,9 @@ export const cfpQueryKeys = {
 // Status action descriptions for admin actions
 export const STATUS_ACTIONS: Record<string, { action: string; description: string }> = {
   shortlisted: { action: 'Shortlist', description: 'Mark as top candidate for final selection round.' },
-  accepted: { action: 'Accept', description: 'Confirm this talk for the conference. Speaker will be notified.' },
+  accepted: { action: 'Accept', description: 'Confirm this talk for the conference. No email is sent to the speaker.' },
   waitlisted: { action: 'Waitlist', description: 'Keep as backup. May be accepted if space opens up.' },
-  rejected: { action: 'Reject', description: 'Decline this submission. Speaker will be notified of decision.' },
+  rejected: { action: 'Reject', description: 'Decline this submission. No email is sent to the speaker.' },
   under_review: { action: 'Mark for Review', description: 'Move back to review queue for committee evaluation.' },
   draft: { action: 'Revert to Draft', description: 'Allow speaker to continue editing before resubmitting.' },
   withdrawn: { action: 'Mark as Withdrawn', description: 'Speaker has withdrawn their submission.' },

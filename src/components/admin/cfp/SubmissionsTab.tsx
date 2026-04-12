@@ -4,7 +4,9 @@
  */
 
 import { useMutation } from '@tanstack/react-query';
-import { Pagination } from '@/components/atoms';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { Check, ChevronDown, Filter } from 'lucide-react';
+import { BusyArea, Pagination } from '@/components/atoms';
 import { StatusBadge } from './StatusBadge';
 import { ShortlistBadge } from './ShortlistBadge';
 import { SpeakerAvatar } from './SpeakerAvatar';
@@ -12,10 +14,26 @@ import {
   getScoreColor,
   getScoreBgColor,
   CoverageBar,
-  ActiveFiltersBar,
 } from './SubmissionsTabHelpers';
 import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { formatScore } from '@/lib/cfp/scoring';
+import { cycleMultiSort, getMultiSortDirection, SortIndicator, type MultiSort } from './tableSort';
+
+export type SubmissionSortKey = 'title' | 'speaker' | 'reviews' | 'score' | 'coverage' | 'shortlist';
+
+const STATUS_OPTIONS = [
+  'draft',
+  'submitted',
+  'under_review',
+  'shortlisted',
+  'accepted',
+  'rejected',
+  'waitlisted',
+  'withdrawn',
+] as const;
+
+const TYPE_OPTIONS = ['talk', 'workshop', 'lightning'] as const;
+const SHORTLIST_OPTIONS = ['likely_shortlisted', 'maybe_shortlisted', 'unlikely_shortlisted'] as const;
 
 interface SubmissionsTabProps {
   submissions: CfpAdminSubmission[];
@@ -25,18 +43,20 @@ interface SubmissionsTabProps {
   onPageChange: (page: number) => void;
   pageSize: number;
   isLoading: boolean;
-  statusFilter: string;
-  setStatusFilter: (v: string) => void;
-  typeFilter: string;
-  setTypeFilter: (v: string) => void;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
-  sortBy: string;
-  setSortBy: (v: string) => void;
-  minReviews: string;
-  setMinReviews: (v: string) => void;
-  shortlistOnly: boolean;
-  setShortlistOnly: (v: boolean) => void;
+  statuses: string[];
+  setStatuses: (v: string[]) => void;
+  submissionTypes: string[];
+  setSubmissionTypes: (v: string[]) => void;
+  shortlistStatuses: string[];
+  setShortlistStatuses: (v: string[]) => void;
+  coverageMin: string;
+  setCoverageMin: (v: string) => void;
+  coverageMax: string;
+  setCoverageMax: (v: string) => void;
+  sort: MultiSort<SubmissionSortKey>;
+  setSort: (v: MultiSort<SubmissionSortKey>) => void;
   selectedIds: Set<string>;
   toggleSelection: (id: string) => void;
   toggleSelectAll: () => void;
@@ -44,6 +64,63 @@ interface SubmissionsTabProps {
   setBulkActionStatus: (v: string) => void;
   bulkUpdateStatusMutation: ReturnType<typeof useMutation<void, Error, { ids: string[]; status: string }>>;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
+}
+
+function MultiSelectFilterPopover({
+  label,
+  options,
+  selected,
+  onChange,
+  formatOption = (value: string) => value,
+}: {
+  label: string;
+  options: readonly string[];
+  selected: string[];
+  onChange: (value: string[]) => void;
+  formatOption?: (value: string) => string;
+}) {
+  const toggleValue = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((item) => item !== value));
+      return;
+    }
+    onChange([...selected, value]);
+  };
+
+  return (
+    <Popover className="relative">
+      <PopoverButton className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black hover:bg-gray-50 cursor-pointer">
+        <span>{label}</span>
+        {selected.length > 0 && (
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F1E271] px-1 text-xs font-semibold text-black">
+            {selected.length}
+          </span>
+        )}
+        <ChevronDown className="w-4 h-4 text-gray-500" />
+      </PopoverButton>
+      <PopoverPanel
+        anchor="bottom end"
+        className="z-40 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-2 shadow-lg"
+      >
+        <div className="max-h-64 overflow-auto space-y-1">
+          {options.map((option) => {
+            const checked = selected.includes(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => toggleValue(option)}
+                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-black hover:bg-gray-100 cursor-pointer capitalize"
+              >
+                <span>{formatOption(option)}</span>
+                {checked ? <Check className="w-4 h-4 text-black" /> : <span className="w-4 h-4" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverPanel>
+    </Popover>
+  );
 }
 
 export function SubmissionsTab({
@@ -54,18 +131,20 @@ export function SubmissionsTab({
   onPageChange,
   pageSize,
   isLoading,
-  statusFilter,
-  setStatusFilter,
-  typeFilter,
-  setTypeFilter,
   searchQuery,
   setSearchQuery,
-  sortBy,
-  setSortBy,
-  minReviews,
-  setMinReviews,
-  shortlistOnly,
-  setShortlistOnly,
+  statuses,
+  setStatuses,
+  submissionTypes,
+  setSubmissionTypes,
+  shortlistStatuses,
+  setShortlistStatuses,
+  coverageMin,
+  setCoverageMin,
+  coverageMax,
+  setCoverageMax,
+  sort,
+  setSort,
   selectedIds,
   toggleSelection,
   toggleSelectAll,
@@ -76,94 +155,122 @@ export function SubmissionsTab({
 }: SubmissionsTabProps) {
   const totalPages = Math.ceil(total / pageSize);
 
+  const handleSortClick = (key: SubmissionSortKey) => {
+    setSort(cycleMultiSort(sort, key));
+  };
+
   return (
     <div>
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
+      <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span>
+                Showing <span className="font-semibold text-black">{total}</span>
+                {total !== totalUnfiltered && (
+                  <>
+                    {' '}of <span className="font-semibold text-black">{totalUnfiltered}</span>
+                  </>
+                )}{' '}
+                submission{total !== 1 ? 's' : ''}
+              </span>
+            </div>
+            {(searchQuery || statuses.length || submissionTypes.length || shortlistStatuses.length || coverageMin || coverageMax) ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatuses([]);
+                  setSubmissionTypes([]);
+                  setShortlistStatuses([]);
+                  setCoverageMin('');
+                  setCoverageMax('');
+                }}
+                className="mt-1 inline-flex w-fit text-xs text-gray-600 hover:text-black underline cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search submissions (e.g. react -"beginner" "event sourcing")...'
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              placeholder='Search topic content...'
+              className="w-full lg:w-80 px-3 py-2 rounded-lg border border-gray-300 bg-white text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none text-sm"
             />
+
+            <MultiSelectFilterPopover
+              label="Status"
+              options={STATUS_OPTIONS}
+              selected={statuses}
+              onChange={setStatuses}
+              formatOption={(value) => value.replaceAll('_', ' ')}
+            />
+            <MultiSelectFilterPopover
+              label="Type"
+              options={TYPE_OPTIONS}
+              selected={submissionTypes}
+              onChange={setSubmissionTypes}
+            />
+            <MultiSelectFilterPopover
+              label="Shortlist"
+              options={SHORTLIST_OPTIONS}
+              selected={shortlistStatuses}
+              onChange={setShortlistStatuses}
+              formatOption={(value) => value.replaceAll('_', ' ')}
+            />
+
+            <Popover className="relative">
+              <PopoverButton className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black hover:bg-gray-50 cursor-pointer">
+                <span>Coverage</span>
+                {(coverageMin || coverageMax) && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F1E271] px-1 text-xs font-semibold text-black">
+                    1
+                  </span>
+                )}
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </PopoverButton>
+              <PopoverPanel
+                anchor="bottom end"
+                className="z-40 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg"
+              >
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-gray-700">Coverage %</div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={coverageMin}
+                      onChange={(e) => setCoverageMin(e.target.value)}
+                      placeholder="Min"
+                      className="w-20 px-2 py-1.5 rounded-md border border-gray-300 text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                    <span className="text-gray-500 text-sm">to</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={coverageMax}
+                      onChange={(e) => setCoverageMax(e.target.value)}
+                      placeholder="Max"
+                      className="w-20 px-2 py-1.5 rounded-md border border-gray-300 text-sm text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </PopoverPanel>
+            </Popover>
+
           </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="submitted">Submitted</option>
-            <option value="under_review">Under Review</option>
-            <option value="shortlisted">Shortlisted</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="waitlisted">Waitlisted</option>
-          </select>
-
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-          >
-            <option value="all">All Types</option>
-            <option value="standard">Standard Talk</option>
-            <option value="workshop">Workshop</option>
-            <option value="lightning">Lightning Talk</option>
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="most_reviews">Most Reviews</option>
-            <option value="least_reviews">Least Reviews</option>
-            <option value="highest_score">Highest Score</option>
-            <option value="lowest_score">Lowest Score</option>
-            <option value="highest_coverage">Highest Coverage</option>
-            <option value="lowest_coverage">Lowest Coverage</option>
-            <option value="last_reviewed">Last Reviewed</option>
-            <option value="title">Title A-Z</option>
-          </select>
-        </div>
-
-        {/* Additional Filters Row */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <select
-            value={minReviews}
-            onChange={(e) => setMinReviews(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-          >
-            <option value="0">Min Reviews: Any</option>
-            <option value="1">Min 1 Review</option>
-            <option value="2">Min 2 Reviews</option>
-            <option value="3">Min 3 Reviews</option>
-            <option value="4">Min 4 Reviews</option>
-            <option value="5+">Min 5+ Reviews</option>
-          </select>
-
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={shortlistOnly}
-              onChange={(e) => setShortlistOnly(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-[#F1E271] focus:ring-[#F1E271]"
-            />
-            <span className="text-sm font-medium text-black">Likely Shortlisted Only</span>
-          </label>
         </div>
 
         {/* Bulk Actions */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-2 w-fit">
+          <div className="mt-3 flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-4 py-2 w-fit">
             <span className="text-sm font-medium text-black">{selectedIds.size} selected</span>
             <div className="h-4 w-px bg-gray-300" />
             <select
@@ -192,36 +299,9 @@ export function SubmissionsTab({
             </button>
           </div>
         )}
-
-        {/* Active Filters and Summary Bar */}
-        <ActiveFiltersBar
-          total={total}
-          totalUnfiltered={totalUnfiltered}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          typeFilter={typeFilter}
-          minReviews={minReviews}
-          shortlistOnly={shortlistOnly}
-          onClearSearch={() => setSearchQuery('')}
-          onClearStatus={() => setStatusFilter('all')}
-          onClearType={() => setTypeFilter('all')}
-          onClearMinReviews={() => setMinReviews('0')}
-          onClearShortlist={() => setShortlistOnly(false)}
-          onClearAll={() => {
-            setSearchQuery('');
-            setStatusFilter('all');
-            setTypeFilter('all');
-            setMinReviews('0');
-            setShortlistOnly(false);
-          }}
-        />
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        </div>
-      ) : (
+      <BusyArea busy={isLoading}>
         <>
           {/* Mobile Card View */}
           <MobileSubmissionsList
@@ -239,6 +319,8 @@ export function SubmissionsTab({
             toggleSelection={toggleSelection}
             toggleSelectAll={toggleSelectAll}
             onSelectSubmission={onSelectSubmission}
+            sort={sort}
+            onSortClick={handleSortClick}
           />
 
           <Pagination
@@ -250,7 +332,7 @@ export function SubmissionsTab({
             variant="light"
           />
         </>
-      )}
+      </BusyArea>
     </div>
   );
 }
@@ -363,12 +445,16 @@ function DesktopSubmissionsTable({
   toggleSelection,
   toggleSelectAll,
   onSelectSubmission,
+  sort,
+  onSortClick,
 }: {
   submissions: CfpAdminSubmission[];
   selectedIds: Set<string>;
   toggleSelection: (id: string) => void;
   toggleSelectAll: () => void;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
+  sort: MultiSort<SubmissionSortKey>;
+  onSortClick: (key: SubmissionSortKey) => void;
 }) {
   return (
     <div className="hidden lg:block overflow-x-auto">
@@ -383,14 +469,68 @@ function DesktopSubmissionsTable({
                 className="w-4 h-4 rounded border-gray-300 text-[#F1E271] cursor-pointer"
               />
             </th>
-            <th className="px-2 py-3">Title</th>
-            <th className="px-2 py-3">Speaker</th>
+            <th className="px-2 py-3">
+              <button
+                type="button"
+                onClick={() => onSortClick('title')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Title</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'title')} />
+              </button>
+            </th>
+            <th className="px-2 py-3">
+              <button
+                type="button"
+                onClick={() => onSortClick('speaker')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Speaker</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'speaker')} />
+              </button>
+            </th>
             <th className="px-2 py-3 w-20">Type</th>
             <th className="px-2 py-3 w-24">Status</th>
-            <th className="px-2 py-3 w-20 text-center">Reviews</th>
-            <th className="px-2 py-3 w-16 text-center">Score</th>
-            <th className="px-2 py-3 w-20 text-center">Coverage</th>
-            <th className="px-2 py-3 w-32">Shortlist</th>
+            <th className="px-2 py-3 w-20 text-center">
+              <button
+                type="button"
+                onClick={() => onSortClick('reviews')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Reviews</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'reviews')} />
+              </button>
+            </th>
+            <th className="px-2 py-3 w-16 text-center">
+              <button
+                type="button"
+                onClick={() => onSortClick('score')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Score</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'score')} />
+              </button>
+            </th>
+            <th className="px-2 py-3 w-20 text-center">
+              <button
+                type="button"
+                onClick={() => onSortClick('coverage')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Coverage</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'coverage')} />
+              </button>
+            </th>
+            <th className="px-2 py-3 w-32">
+              <button
+                type="button"
+                onClick={() => onSortClick('shortlist')}
+                className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+              >
+                <span>Shortlist</span>
+                <SortIndicator direction={getMultiSortDirection(sort, 'shortlist')} />
+              </button>
+            </th>
             <th className="px-2 py-3 w-20">Actions</th>
           </tr>
         </thead>

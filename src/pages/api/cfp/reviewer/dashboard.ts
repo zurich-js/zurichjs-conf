@@ -10,6 +10,35 @@ import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('CFP Reviewer Dashboard API');
+const REVIEWER_DASHBOARD_STATUSES = ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted'] as const;
+
+async function fetchAllRows<T = Record<string, unknown>>(
+  supabase: ReturnType<typeof createCfpServiceClient>,
+  table: string,
+  select: string,
+  pageSize = 1000
+): Promise<{ data: T[]; error: unknown | null }> {
+  const allRows: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(select)
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      return { data: allRows, error };
+    }
+    if (!data || data.length === 0) break;
+
+    allRows.push(...(data as T[]));
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return { data: allRows, error: null };
+}
 
 interface SearchFilters {
   includeAny: string[];
@@ -102,7 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fetch submissions for review
     const supabaseAdmin = createCfpServiceClient();
 
-    // Get all submitted submissions (not drafts or withdrawn)
+    // Get all reviewer-visible submissions (not drafts, withdrawn, or rejected)
     const { data: submissions, error: submissionsError } = await supabaseAdmin
       .from('cfp_submissions')
       .select(`
@@ -111,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tag:cfp_tags(*)
         )
       `)
-      .in('status', ['submitted', 'under_review', 'waitlisted', 'accepted', 'rejected'])
+      .in('status', REVIEWER_DASHBOARD_STATUSES)
       .order('submitted_at', { ascending: false });
 
     if (submissionsError) {
@@ -130,9 +159,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get review stats for each submission
-    const { data: reviewStats, error: statsError } = await supabaseAdmin
-      .from('cfp_reviews')
-      .select('submission_id, score_overall, created_at');
+    const { data: reviewStats, error: statsError } = await fetchAllRows<{
+      submission_id: string;
+      score_overall: number | null;
+      created_at: string;
+    }>(
+      supabaseAdmin,
+      'cfp_reviews',
+      'submission_id, score_overall, created_at'
+    );
 
     if (statsError) {
       log.error('Error fetching stats', statsError);

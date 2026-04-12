@@ -24,6 +24,7 @@ export { SearchableSelect } from './SearchableSelect';
 export { AirportInput } from './AirportInput';
 export { Pagination } from './Pagination';
 export { Tooltip } from './Tooltip';
+export { BusyArea } from './BusyArea';
 
 export type { LogoProps } from './Logo';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
@@ -47,4 +48,4 @@ export type { SeparatorProps, SeparatorVariant, SeparatorColor } from './Separat
 export type { ModalProps } from './Modal';
 export type { SelectProps, SelectOption } from './Select';
 export type { DisclosureProps, DisclosureGroupProps, ControlledDisclosureProps } from './Disclosure';
-
+export type { BusyAreaProps } from './BusyArea';

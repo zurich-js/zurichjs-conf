@@ -389,7 +389,7 @@ export async function getSubmissionForReview(
     .from('cfp_submissions')
     .select('*')
     .eq('id', submissionId)
-    .in('status', ['submitted', 'under_review', 'waitlisted', 'accepted', 'rejected'])
+    .in('status', ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted', 'rejected'])
     .single();
 
   if (error || !submission) {

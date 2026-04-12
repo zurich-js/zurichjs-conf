@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { Mail, Clock, Send, XCircle, Check, X, AlertTriangle, Loader2, Zap } from 'lucide-react';
+import { Mail, Clock, Send, XCircle, Check, X, AlertTriangle, Loader2, Zap, AlertCircle } from 'lucide-react';
 import type { CfpDecisionStatus } from '@/lib/types/cfp';
 import type { CfpScheduledEmail } from '@/lib/types/cfp/decisions';
 import { DecisionBadge } from '../DecisionModal';
@@ -86,7 +86,7 @@ export function CommunicationSection({
     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
       <div className="flex items-center gap-2 mb-4">
         <Mail className="w-4 h-4 text-gray-600" />
-        <h4 className="text-xs font-bold text-black uppercase tracking-wide">Communication</h4>
+        <h4 className="text-xs font-bold text-black uppercase tracking-wide">Speaker Email</h4>
       </div>
 
       {/* Decision Status */}
@@ -105,9 +105,22 @@ export function CommunicationSection({
             <div>
               <p className="text-sm font-medium text-amber-800">No decision made yet</p>
               <p className="text-sm text-amber-700 mt-1">
-                Make a decision (Accept or Reject) before scheduling an email to the speaker.
+                Record a decision (Step 1) before scheduling an email to the speaker.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* External communication warning */}
+      {hasDecision && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-800">
+              Scheduling an email will <strong>send a real email</strong> to the speaker at{' '}
+              <strong>their registered email address</strong>. Please double-check the decision before proceeding.
+            </p>
           </div>
         </div>
       )}

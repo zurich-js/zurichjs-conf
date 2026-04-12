@@ -3,7 +3,7 @@
  * Displays status update buttons for submissions
  */
 
-import { Star, Check, Clock, X, Eye } from 'lucide-react';
+import { Star, Check, Clock, X, Eye, Info } from 'lucide-react';
 import { STATUS_ACTIONS } from '@/lib/types/cfp-admin';
 
 interface StatusActionsSectionProps {
@@ -50,7 +50,15 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
     <>
       {/* Primary Status Actions */}
       <div className="border-t border-gray-200 pt-6">
-        <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-4">Update Status</h4>
+        <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-2">Internal Status</h4>
+        <div className="flex items-start gap-2 p-3 mb-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-800">
+            These status changes are <strong>internal only</strong> and used for organising the review pipeline.
+            The speaker will <strong>not</strong> be notified. To communicate a decision to the speaker, use the
+            <strong> Decision &amp; Communication</strong> section above.
+          </p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {PRIMARY_ACTIONS.map(({ status, icon: Icon, activeClass, defaultClass }) => {
             const isActive = currentStatus === status;

@@ -27,6 +27,17 @@ values
         true
     ),
     (
+        'e58748da-a000-43b7-a2bc-528b7c6763db',
+        'admin+local@zurichjs.test',
+        'Local Admin',
+        'super_admin',
+        true,
+        null,
+        '2026-02-26T00:00:00.000Z',
+        '2026-02-26T08:05:00.000Z',
+        true
+    ),
+    (
         '6b111111-1111-4111-8111-111111111111',
         'committee+local@zurichjs.test',
         'Committee Reviewer',

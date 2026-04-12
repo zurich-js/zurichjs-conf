@@ -407,6 +407,8 @@ function buildTopTags(
 const AI_KEYWORDS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\bai\b/i, label: 'AI' },
   { pattern: /\bartificial intelligence\b/i, label: 'AI' },
+  { pattern: /\bai adoption\b/i, label: 'AI Adoption' },
+  { pattern: /\bai(?:[\s-/]+)ml\b/i, label: 'AI/ML' },
   { pattern: /\bmachine learning\b/i, label: 'Machine Learning' },
   { pattern: /\bml\b/i, label: 'Machine Learning' },
   { pattern: /\bdeep learning\b/i, label: 'Deep Learning' },
@@ -421,11 +423,25 @@ const AI_KEYWORDS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\bmodel context protocol\b/i, label: 'MCP' },
   { pattern: /\brag\b/i, label: 'RAG' },
   { pattern: /\bretrieval.augmented/i, label: 'RAG' },
-  { pattern: /\bvector\b/i, label: 'Vector/Embeddings' },
-  { pattern: /\bembedding/i, label: 'Vector/Embeddings' },
-  { pattern: /\bagent(?:ic|s)?\b/i, label: 'Agents' },
+  { pattern: /\bsemantic search\b/i, label: 'Semantic Search' },
+  { pattern: /\bvector databases?\b/i, label: 'Vector Databases' },
+  { pattern: /\bvector\b/i, label: 'Embeddings' },
+  { pattern: /\bembeddings?\b/i, label: 'Embeddings' },
+  { pattern: /\bai(?:[\s-]+)s?\b/i, label: 'AI Agents' },
+  { pattern: /\bai(?:[\s-]+)agent\b/i, label: 'AI Agents' },
+  { pattern: /\bagent(?:ic|s)?\b/i, label: 'AI Agents' },
   { pattern: /\bcopilot\b/i, label: 'Copilot' },
   { pattern: /\bgen(?:erative)?\s*ai\b/i, label: 'Generative AI' },
+  { pattern: /\bgenerative[\s-]+ui\b/i, label: 'Generative UI' },
+  { pattern: /\bgrounding\b/i, label: 'Grounding' },
+  { pattern: /\bai(?:[\s-]+)assisted[\s-]+development\b/i, label: 'AI-Assisted Development' },
+  { pattern: /\bai(?:[\s-]+)engineering\b/i, label: 'AI Engineering' },
+  { pattern: /\bai(?:[\s-]+)interfaces\b/i, label: 'AI Interfaces' },
+  { pattern: /\bweb ai\b/i, label: 'Web AI' },
+  { pattern: /\bwebmcp\b/i, label: 'WebMCP' },
+  { pattern: /\bspeech recognition\b/i, label: 'Speech Recognition' },
+  { pattern: /\bvibe[\s-]+coding\b/i, label: 'Vibe Coding' },
+  { pattern: /\bagentic tooling\b/i, label: 'Agentic Tooling' },
   { pattern: /\bprompt engineering\b/i, label: 'Prompt Engineering' },
   { pattern: /\bfine.?tun/i, label: 'Fine-tuning' },
   { pattern: /\btransformer\b/i, label: 'Transformer' },
@@ -435,12 +451,14 @@ const AI_KEYWORDS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\bgemini\b/i, label: 'Gemini' },
   { pattern: /\bmistral\b/i, label: 'Mistral' },
   { pattern: /\bollama\b/i, label: 'Ollama' },
-  { pattern: /\blangchain\b/i, label: 'LangChain' },
+  { pattern: /\blangchain(?:\.js)?\b/i, label: 'LangChain.js' },
   { pattern: /\bvercel ai\b/i, label: 'Vercel AI SDK' },
   { pattern: /\bai sdk\b/i, label: 'AI SDK' },
+  { pattern: /\bcode generation\b/i, label: 'Code Generation' },
+  { pattern: /\baccelerated engineering\b/i, label: 'Accelerated Engineering' },
 ];
 
-function buildContentInsights(
+export function buildContentInsights(
   submissions: Array<{
     id: string;
     status: string;

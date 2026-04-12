@@ -75,7 +75,7 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
           const barWidth = total > 0 ? Math.max((count / maxCount) * 100, 2) : 0;
           return (
             <div key={stage.key} className="flex items-center gap-3">
-              <div className={`text-xs font-medium ${stage.color} w-16 sm:w-24 text-right`}>
+              <div className={`text-xs font-medium ${stage.color} w-20 sm:w-24 text-right shrink-0`}>
                 {stage.label}
               </div>
               <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
@@ -88,14 +88,14 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
                   )}
                 </div>
               </div>
-              <div className="text-xs text-gray-400 w-10">{pct}%</div>
+              <div className="text-xs text-gray-400 w-8 sm:w-10 text-right shrink-0">{pct}%</div>
             </div>
           );
         })}
       </div>
 
       {/* Summary row */}
-      <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-3 sm:gap-6 text-sm">
+      <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 sm:gap-6 text-sm">
         <div>
           <span className="text-gray-500">Total:</span>{' '}
           <span className="font-semibold text-black">{total}</span>

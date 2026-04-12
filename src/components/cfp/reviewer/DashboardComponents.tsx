@@ -4,7 +4,7 @@
  */
 
 import { PropsWithChildren, useMemo, useState } from 'react';
-import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import Link from 'next/link';
 import { Search, X, Filter, Check, Bookmark, ChevronDown } from 'lucide-react';
 import { Heading, Select } from '@/components/atoms';
@@ -58,6 +58,7 @@ export function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     submitted: 'bg-brand-blue',
     under_review: 'bg-brand-orange',
+    shortlisted: 'bg-purple-400',
     waitlisted: 'bg-brand-yellow-main',
     accepted: 'bg-brand-green',
     rejected: 'bg-brand-red',
@@ -66,6 +67,7 @@ export function StatusBadge({ status }: { status: string }) {
   const labels: Record<string, string> = {
     submitted: 'Submitted',
     under_review: 'In Review',
+    shortlisted: 'Shortlisted',
     waitlisted: 'Waitlisted',
     accepted: 'Accepted',
     rejected: 'Rejected',
@@ -131,7 +133,7 @@ interface FilterBarProps {
   reviewFilter: ReviewFilterType;
   typeFilter: string;
   levelFilter: string;
-  statusFilter: string;
+  statusFilters: string[];
   coverageMinFilter: number;
   tagFilters: string[];
   availableTags: string[];
@@ -143,7 +145,7 @@ interface FilterBarProps {
   onReviewFilterChange: (filter: ReviewFilterType) => void;
   onTypeFilterChange: (type: string) => void;
   onLevelFilterChange: (level: string) => void;
-  onStatusFilterChange: (status: string) => void;
+  onStatusFiltersChange: (statuses: string[]) => void;
   onCoverageMinFilterChange: (value: number | null) => void;
   onTagFiltersChange: (tags: string[]) => void;
   onSortChange: (sort: string) => void;
@@ -230,12 +232,60 @@ function TagMultiSelect({ label, options, value, onChange }: TagMultiSelectProps
   );
 }
 
+function StatusMultiSelectFilterPopover({ selected, isAnonymous, onChange }: { selected: string[]; isAnonymous: boolean; onChange: (value: string[]) => void }) {
+  const options = STATUS_OPTIONS.filter((option) => (
+    option.value && (!isAnonymous || !['accepted', 'waitlisted'].includes(option.value))
+  ));
+  const toggleValue = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((item) => item !== value));
+      return;
+    }
+
+    onChange([...selected, value]);
+  };
+
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1.5 text-brand-gray-light">Status</label>
+      <Popover className="relative">
+        <PopoverButton className="flex w-full items-center justify-between gap-2 rounded-lg bg-brand-gray-darkest px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer">
+          <span>{selected.length > 0 ? 'Status' : 'All Statuses'}</span>
+          <span className="inline-flex items-center gap-2">
+            {selected.length > 0 && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-yellow-main px-1 text-xs font-semibold text-black">{selected.length}</span>}
+            <ChevronDown className="h-4 w-4 text-brand-gray-medium" />
+          </span>
+        </PopoverButton>
+        <PopoverPanel anchor="bottom end" className="z-50 mt-2 w-64 rounded-lg border border-brand-gray-medium bg-brand-gray-dark p-2 shadow-lg">
+          <div className="max-h-64 overflow-auto space-y-1">
+            {options.map((option) => {
+              const checked = selected.includes(option.value);
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => toggleValue(option.value)}
+                  className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-brand-gray-light hover:bg-brand-gray-medium hover:text-white cursor-pointer"
+                >
+                  <span>{option.label}</span>
+                  {checked ? <Check className="w-4 h-4 text-brand-primary" /> : <span className="w-4 h-4" />}
+                </button>
+              );
+            })}
+          </div>
+        </PopoverPanel>
+      </Popover>
+    </div>
+  );
+}
+
 export function FilterBar({
   searchQuery,
   reviewFilter,
   typeFilter,
   levelFilter,
-  statusFilter,
+  statusFilters,
   coverageMinFilter,
   tagFilters,
   availableTags,
@@ -247,7 +297,7 @@ export function FilterBar({
   onReviewFilterChange,
   onTypeFilterChange,
   onLevelFilterChange,
-  onStatusFilterChange,
+  onStatusFiltersChange,
   onCoverageMinFilterChange,
   onTagFiltersChange,
   onSortChange,
@@ -336,13 +386,10 @@ export function FilterBar({
               variant="dark"
               size="sm"
             />
-            <Select
-              label="Status"
-              value={statusFilter}
-              onChange={onStatusFilterChange}
-              options={STATUS_OPTIONS}
-              variant="dark"
-              size="sm"
+            <StatusMultiSelectFilterPopover
+              selected={statusFilters}
+              isAnonymous={isAnonymous}
+              onChange={onStatusFiltersChange}
             />
             <div>
               <label htmlFor="coverage-min-filter" className="block text-xs font-medium mb-1.5 text-brand-gray-light">
@@ -450,12 +497,15 @@ export function SubmissionCard({
       .slice(0, 5);
   }, [submission.tags, hasActiveTagFilters, activeTagFilters]);
 
+  const reviewCount = submission.stats.review_count || 0;
   const coverageLabel =
-    (submission.stats.coverage_percent || 0) < 25
-      ? 'Low coverage'
-      : (submission.stats.coverage_percent || 0) < 60
-        ? 'Some coverage'
-        : 'Well covered';
+    reviewCount < 3
+      ? 'critical coverage'
+      : reviewCount < 5
+        ? 'low coverage'
+        : reviewCount < 7
+          ? 'some coverage'
+          : 'well covered';
 
   return (
     <Link
@@ -506,6 +556,9 @@ export function SubmissionCard({
                 </ReviewerPill>
                 <ReviewerPill tone="ghost">
                   {coverageLabel}
+                  <span className="text-brand-gray-medium">
+                    {reviewCount}
+                  </span>
                 </ReviewerPill>
                 {!isAnonymous && (
                   <div className="text-sm text-brand-gray-light">
