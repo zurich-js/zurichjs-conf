@@ -6,12 +6,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminReviewer, type CfpAdminReviewerWithActivity } from '@/lib/types/cfp-admin';
-import { Pagination } from '@/components/atoms';
+import { BusyArea, Pagination } from '@/components/atoms';
 import { InviteReviewerForm } from '../InviteReviewerForm';
 import { ReviewerModal } from '../ReviewerModal';
 import { formatScore } from '@/lib/cfp/scoring';
+import { cycleMultiSort, getMultiSortDirection, SortIndicator, type MultiSort } from '../tableSort';
 
 type ReviewerData = CfpAdminReviewer | CfpAdminReviewerWithActivity;
 
@@ -24,11 +26,16 @@ interface ReviewersTabProps {
   isLoading: boolean;
 }
 
+type ReviewerSortKey = 'name' | 'role' | 'status' | 'reviews' | 'reviews7d' | 'lastActive' | 'avgScore';
+
 export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const [selectedReviewer, setSelectedReviewer] = useState<ReviewerData | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sort, setSort] = useState<MultiSort<ReviewerSortKey>>([]);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const ITEMS_PER_PAGE = 10;
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -118,6 +125,13 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const filteredReviewers = useMemo(() => {
     let result = reviewers.filter(r => r.is_active);
 
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((r) =>
+        (r.name || '').toLowerCase().includes(query) || r.email.toLowerCase().includes(query)
+      );
+    }
+
     // Role filter
     if (roleFilter !== 'all') {
       result = result.filter((r) => r.role === roleFilter);
@@ -130,8 +144,49 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
       result = result.filter((r) => !r.accepted_at);
     }
 
+    result.sort((a, b) => {
+      const compareByKey = (key: ReviewerSortKey) => {
+        const compareText = (aValue: string | null | undefined, bValue: string | null | undefined) =>
+          (aValue || '').localeCompare(bValue || '', undefined, { sensitivity: 'base' });
+
+        const compareNum = (aValue: number | null | undefined, bValue: number | null | undefined) =>
+          (aValue || 0) - (bValue || 0);
+
+        const compareDate = (aValue: string | null | undefined, bValue: string | null | undefined) =>
+          (new Date(aValue || 0).getTime() || 0) - (new Date(bValue || 0).getTime() || 0);
+
+        switch (key) {
+          case 'name':
+            return compareText(a.name, b.name);
+          case 'role':
+            return compareText(a.role, b.role);
+          case 'status':
+            return compareNum(a.accepted_at ? 1 : 0, b.accepted_at ? 1 : 0);
+          case 'reviews':
+            return compareNum(hasActivityData(a) ? a.total_reviews : 0, hasActivityData(b) ? b.total_reviews : 0);
+          case 'reviews7d':
+            return compareNum(hasActivityData(a) ? a.reviews_last_7_days : 0, hasActivityData(b) ? b.reviews_last_7_days : 0);
+          case 'lastActive':
+            return compareDate(hasActivityData(a) ? a.last_activity_at : null, hasActivityData(b) ? b.last_activity_at : null);
+          case 'avgScore':
+            return compareNum(hasActivityData(a) ? a.avg_score_given : null, hasActivityData(b) ? b.avg_score_given : null);
+          default:
+            return 0;
+        }
+      };
+
+      for (const rule of sort) {
+        const cmp = compareByKey(rule.key);
+        if (cmp !== 0) {
+          return rule.direction === 'asc' ? cmp : -cmp;
+        }
+      }
+
+      return 0;
+    });
+
     return result;
-  }, [reviewers, roleFilter, statusFilter]);
+  }, [reviewers, roleFilter, statusFilter, searchQuery, sort]);
 
   // Pagination
   const totalPages = Math.ceil(filteredReviewers.length / ITEMS_PER_PAGE);
@@ -143,14 +198,24 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [roleFilter, statusFilter]);
+  }, [roleFilter, statusFilter, searchQuery, sort]);
+
+  const toggleSort = (key: ReviewerSortKey) => {
+    setSort((prev) => cycleMultiSort(prev, key));
+  };
 
   return (
     <div>
-      {/* Invite Form and Filters */}
+      {/* Filters */}
       <div className="mb-6 flex flex-col gap-4">
-        <InviteReviewerForm />
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search reviewers by name or email..."
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+          />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -170,13 +235,16 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             <option value="active">Active</option>
             <option value="pending">Pending</option>
           </select>
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="px-4 py-2 bg-[#F1E271] hover:bg-[#e8d95e] text-black font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Invite Reviewer
+          </button>
         </div>
       </div>
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        </div>
-      ) : (
+      <BusyArea busy={isLoading}>
         <>
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
@@ -252,7 +320,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             ))}
             {paginatedReviewers.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                {roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
+                {roleFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim() ? 'No reviewers match your filters' : 'No reviewers found'}
               </div>
             )}
           </div>
@@ -262,16 +330,44 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             <table className="w-full">
               <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
                 <tr>
-                  <th className="px-3 py-3">Name</th>
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => toggleSort('name')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Name</span><SortIndicator direction={getMultiSortDirection(sort, 'name')} />
+                    </button>
+                  </th>
                   <th className="px-3 py-3">Email</th>
-                  <th className="px-3 py-3">Access Level</th>
-                  <th className="px-3 py-3">Status</th>
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => toggleSort('role')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Access Level</span><SortIndicator direction={getMultiSortDirection(sort, 'role')} />
+                    </button>
+                  </th>
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => toggleSort('status')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Status</span><SortIndicator direction={getMultiSortDirection(sort, 'status')} />
+                    </button>
+                  </th>
                   {showActivityColumns && (
                     <>
-                      <th className="px-3 py-3 text-center">Reviews</th>
-                      <th className="px-3 py-3 text-center">7 Days</th>
-                      <th className="px-3 py-3">Last Active</th>
-                      <th className="px-3 py-3 text-center">Avg Score</th>
+                      <th className="px-3 py-3 text-center">
+                        <button type="button" onClick={() => toggleSort('reviews')} className="inline-flex items-center gap-1 cursor-pointer">
+                          <span>Reviews</span><SortIndicator direction={getMultiSortDirection(sort, 'reviews')} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-3 text-center">
+                        <button type="button" onClick={() => toggleSort('reviews7d')} className="inline-flex items-center gap-1 cursor-pointer">
+                          <span>7 Days</span><SortIndicator direction={getMultiSortDirection(sort, 'reviews7d')} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-3">
+                        <button type="button" onClick={() => toggleSort('lastActive')} className="inline-flex items-center gap-1 cursor-pointer">
+                          <span>Last Active</span><SortIndicator direction={getMultiSortDirection(sort, 'lastActive')} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-3 text-center">
+                        <button type="button" onClick={() => toggleSort('avgScore')} className="inline-flex items-center gap-1 cursor-pointer">
+                          <span>Avg Score</span><SortIndicator direction={getMultiSortDirection(sort, 'avgScore')} />
+                        </button>
+                      </th>
                     </>
                   )}
                   <th className="px-3 py-3">Actions</th>
@@ -340,8 +436,8 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 ))}
                 {paginatedReviewers.length === 0 && (
                   <tr>
-                    <td colSpan={showActivityColumns ? 10 : 6} className="px-4 py-8 text-center text-black">
-                      {roleFilter !== 'all' || statusFilter !== 'all' ? 'No reviewers match your filters' : 'No reviewers found'}
+                    <td colSpan={showActivityColumns ? 9 : 5} className="px-4 py-8 text-center text-black">
+                      {roleFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim() ? 'No reviewers match your filters' : 'No reviewers found'}
                     </td>
                   </tr>
                 )}
@@ -359,7 +455,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             variant="light"
           />
         </>
-      )}
+      </BusyArea>
 
       {/* Reviewer Management Modal */}
       {selectedReviewer && (
@@ -373,6 +469,27 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
           isUpdating={updateMutation.isPending}
           isRevoking={revokeMutation.isPending}
         />
+      )}
+
+      {/* Invite Reviewer Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-black">Invite Reviewer</h3>
+              <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+                <X className="w-5 h-5 text-black" />
+              </button>
+            </div>
+            <div className="p-6">
+              <InviteReviewerForm
+                variant="modal"
+                onCancel={() => setShowInviteModal(false)}
+                onInvited={() => setShowInviteModal(false)}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

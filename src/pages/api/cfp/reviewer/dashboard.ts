@@ -10,6 +10,7 @@ import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('CFP Reviewer Dashboard API');
+const REVIEWER_DASHBOARD_STATUSES = ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted'] as const;
 
 interface SearchFilters {
   includeAny: string[];
@@ -102,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fetch submissions for review
     const supabaseAdmin = createCfpServiceClient();
 
-    // Get all submitted submissions (not drafts or withdrawn)
+    // Get all reviewer-visible submissions (not drafts, withdrawn, or rejected)
     const { data: submissions, error: submissionsError } = await supabaseAdmin
       .from('cfp_submissions')
       .select(`
@@ -111,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tag:cfp_tags(*)
         )
       `)
-      .in('status', ['submitted', 'under_review', 'waitlisted', 'accepted', 'rejected'])
+      .in('status', REVIEWER_DASHBOARD_STATUSES)
       .order('submitted_at', { ascending: false });
 
     if (submissionsError) {

@@ -8,9 +8,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Building2 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminSpeaker, type CfpAdminSubmission } from '@/lib/types/cfp-admin';
-import { Pagination } from '@/components/atoms';
+import { BusyArea, Pagination } from '@/components/atoms';
 import { SpeakerModal } from './SpeakerModal';
 import { AddSpeakerModal } from './AddSpeakerModal';
+import { cycleSingleSort, SortIndicator, type SingleSort } from '../tableSort';
 
 // Avatar component with initials fallback
 function SpeakerAvatar({ speaker, size = 'md' }: { speaker: CfpAdminSpeaker; size?: 'sm' | 'md' }) {
@@ -40,15 +41,18 @@ interface SpeakersTabProps {
   onSelectSubmission?: (submission: CfpAdminSubmission) => void;
 }
 
+type SpeakerSortKey = 'speaker' | 'company' | 'joined';
+
 export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: SpeakersTabProps) {
   const [selectedSpeaker, setSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [profileFilter, setProfileFilter] = useState<string>('all');
+  const [profileFilter, setProfileFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<string>('all');
-  const [sponsorFilter, setSponsorFilter] = useState<string>('all');
+  const [featuredFilter, setFeaturedFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showAddSpeaker, setShowAddSpeaker] = useState(false);
+  const [sort, setSort] = useState<SingleSort<SpeakerSortKey>>({ key: 'joined', direction: 'desc' });
   const ITEMS_PER_PAGE = 10;
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -109,7 +113,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
 
     // Profile status filter
     if (profileFilter === 'complete') {
-      result = result.filter((s) => s.bio);
+      result = result.filter((s) => Boolean(s.bio));
     } else if (profileFilter === 'incomplete') {
       result = result.filter((s) => !s.bio);
     }
@@ -121,15 +125,38 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
       result = result.filter((s) => !s.is_visible);
     }
 
-    // Sponsorship interest filter
-    if (sponsorFilter === 'interested') {
-      result = result.filter((s) => s.company_interested_in_sponsoring === true);
-    } else if (sponsorFilter === 'not_interested') {
-      result = result.filter((s) => s.company_interested_in_sponsoring !== true);
+    // Featured filter
+    if (featuredFilter === 'featured') {
+      result = result.filter((s) => s.is_featured);
+    } else if (featuredFilter === 'not_featured') {
+      result = result.filter((s) => !s.is_featured);
     }
 
+    result.sort((a, b) => {
+      const directionFactor = sort.direction === 'asc' ? 1 : -1;
+
+      const compareText = (aValue: string | null | undefined, bValue: string | null | undefined) =>
+        (aValue || '').localeCompare(bValue || '', undefined, { sensitivity: 'base' }) * directionFactor;
+
+      const compareDate = (aValue: string | null | undefined, bValue: string | null | undefined) =>
+        ((new Date(aValue || 0).getTime() || 0) - (new Date(bValue || 0).getTime() || 0)) * directionFactor;
+
+      switch (sort.key) {
+        case 'speaker': {
+          const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim();
+          const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim();
+          return compareText(aName, bName);
+        }
+        case 'company':
+          return compareText(a.company, b.company);
+        case 'joined':
+        default:
+          return compareDate(a.created_at, b.created_at);
+      }
+    });
+
     return result;
-  }, [speakers, searchQuery, profileFilter, visibilityFilter, sponsorFilter]);
+  }, [speakers, searchQuery, profileFilter, visibilityFilter, featuredFilter, sort]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSpeakers.length / ITEMS_PER_PAGE);
@@ -141,7 +168,13 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, profileFilter, visibilityFilter, sponsorFilter]);
+  }, [searchQuery, profileFilter, visibilityFilter, featuredFilter, sort]);
+
+  const toggleSort = (key: SpeakerSortKey) => {
+    setSort((prev) => cycleSingleSort(prev, key));
+  };
+
+  const sortIndicator = (key: SpeakerSortKey) => (sort.key === key ? sort.direction : null);
 
   const handleSpeakerUpdated = () => {
     queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
@@ -184,7 +217,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
           />
           <select
             value={profileFilter}
-            onChange={(e) => setProfileFilter(e.target.value)}
+            onChange={(e) => setProfileFilter(e.target.value as 'all' | 'complete' | 'incomplete')}
             className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
           >
             <option value="all">All Profiles</option>
@@ -201,13 +234,13 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             <option value="hidden">Hidden</option>
           </select>
           <select
-            value={sponsorFilter}
-            onChange={(e) => setSponsorFilter(e.target.value)}
+            value={featuredFilter}
+            onChange={(e) => setFeaturedFilter(e.target.value)}
             className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
           >
-            <option value="all">All Sponsorship</option>
-            <option value="interested">Interested in Sponsoring</option>
-            <option value="not_interested">Not Interested</option>
+            <option value="all">All Featured</option>
+            <option value="featured">Featured</option>
+            <option value="not_featured">Not Featured</option>
           </select>
           <button
             onClick={() => setShowAddSpeaker(true)}
@@ -219,11 +252,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        </div>
-      ) : (
+      <BusyArea busy={isLoading}>
         <>
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
@@ -307,7 +336,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             ))}
             {paginatedSpeakers.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || sponsorFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
+                {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
               </div>
             )}
           </div>
@@ -317,14 +346,26 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             <table className="w-full table-fixed">
               <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
                 <tr>
-                  <th className="px-4 py-3 w-[200px]">Speaker</th>
+                  <th className="px-4 py-3 w-[200px]">
+                    <button type="button" onClick={() => toggleSort('speaker')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Speaker</span><SortIndicator direction={sortIndicator('speaker')} />
+                    </button>
+                  </th>
                   <th className="px-4 py-3 w-[180px]">Email</th>
-                  <th className="px-4 py-3 w-[120px]">Company</th>
+                  <th className="px-4 py-3 w-[120px]">
+                    <button type="button" onClick={() => toggleSort('company')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Company</span><SortIndicator direction={sortIndicator('company')} />
+                    </button>
+                  </th>
                   <th className="px-4 py-3 w-[90px]">Profile</th>
                   <th className="px-4 py-3 w-[80px]">Sponsor</th>
                   <th className="px-4 py-3 w-[70px]">Visible</th>
                   <th className="px-4 py-3 w-[70px]">Featured</th>
-                  <th className="px-4 py-3 w-[90px]">Joined</th>
+                  <th className="px-4 py-3 w-[90px]">
+                    <button type="button" onClick={() => toggleSort('joined')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Joined</span><SortIndicator direction={sortIndicator('joined')} />
+                    </button>
+                  </th>
                   <th className="px-4 py-3 w-[100px]">Actions</th>
                 </tr>
               </thead>
@@ -411,7 +452,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
                 {paginatedSpeakers.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-8 text-center text-black">
-                      {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || sponsorFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
+                      {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
                     </td>
                   </tr>
                 )}
@@ -429,7 +470,7 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             variant="light"
           />
         </>
-      )}
+      </BusyArea>
 
       {/* Delete Error Alert */}
       {deleteError && (

@@ -3,7 +3,7 @@
  * List of submissions to review with filtering, sorting, and pagination
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSearchParams } from 'next/navigation';
@@ -41,8 +41,9 @@ export default function ReviewerDashboard() {
     'q',
     parseAsString.withDefault('')
   );
-  const [searchInput, setSearchInput] = useState(searchQuery);
-  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+  const hasHydratedSearch = useRef(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [typeFilter, setTypeFilter] = useQueryState(
     'type',
     parseAsString.withDefault('')
@@ -51,7 +52,7 @@ export default function ReviewerDashboard() {
     'level',
     parseAsString.withDefault('')
   );
-  const [statusFilter, setStatusFilter] = useQueryState(
+  const [statusFilterParam, setStatusFilterParam] = useQueryState(
     'status',
     parseAsString.withDefault('')
   );
@@ -79,11 +80,20 @@ export default function ReviewerDashboard() {
   );
 
   useEffect(() => {
-    setSearchInput(searchQuery);
-    setDebouncedSearch(searchQuery);
-  }, [searchQuery]);
+    if (!router.isReady || hasHydratedSearch.current) return;
+    hasHydratedSearch.current = true;
+    const initialSearchQuery = typeof router.query.q === 'string'
+      ? router.query.q
+      : Array.isArray(router.query.q)
+        ? router.query.q[0] || ''
+        : searchQuery;
+    setSearchInput(initialSearchQuery);
+    setDebouncedSearch(initialSearchQuery);
+  }, [router.isReady, router.query.q, searchQuery]);
 
   useEffect(() => {
+    if (!hasHydratedSearch.current) return;
+
     const timeoutId = setTimeout(() => {
       setDebouncedSearch(searchInput);
     }, 400);
@@ -92,6 +102,7 @@ export default function ReviewerDashboard() {
   }, [searchInput]);
 
   useEffect(() => {
+    if (!hasHydratedSearch.current) return;
     if (debouncedSearch === searchQuery) return;
     void setSearchQuery(debouncedSearch || null);
     void setCurrentPage(1);
@@ -125,6 +136,10 @@ export default function ReviewerDashboard() {
     () => tagFilterParam.split(',').map((tag) => tag.trim()).filter(Boolean),
     [tagFilterParam]
   );
+  const statusFilters = useMemo(
+    () => statusFilterParam.split(',').map((status) => status.trim()).filter(Boolean),
+    [statusFilterParam]
+  );
   const availableTags = useMemo(
     () => Array.from(new Set(
       submissions.flatMap((submission) => submission.tags?.map((tag) => tag.name) || [])
@@ -152,8 +167,8 @@ export default function ReviewerDashboard() {
       result = result.filter((s) => s.talk_level === levelFilter);
     }
 
-    if (statusFilter) {
-      result = result.filter((s) => s.status === statusFilter);
+    if (statusFilters.length > 0) {
+      result = result.filter((s) => statusFilters.includes(s.status));
     }
 
     if (tagFilters.length > 0) {
@@ -189,7 +204,7 @@ export default function ReviewerDashboard() {
     });
 
     return result;
-  }, [submissions, reviewFilter, typeFilter, levelFilter, statusFilter, coverageMinFilter, tagFilters, sortBy, isBookmarked]);
+  }, [submissions, reviewFilter, typeFilter, levelFilter, statusFilters, coverageMinFilter, tagFilters, sortBy, isBookmarked]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSubmissions.length / pageSize);
@@ -218,10 +233,10 @@ export default function ReviewerDashboard() {
     setCurrentPage(1);
   }, [setLevelFilter, setCurrentPage]);
 
-  const handleStatusFilterChange = useCallback((value: string) => {
-    setStatusFilter(value || null);
+  const handleStatusFiltersChange = useCallback((value: string[]) => {
+    setStatusFilterParam(value.length > 0 ? value.join(',') : null);
     setCurrentPage(1);
-  }, [setStatusFilter, setCurrentPage]);
+  }, [setStatusFilterParam, setCurrentPage]);
 
   const handleCoverageMinFilterChange = useCallback((value: number | null) => {
     const nextValue = value && value > 0 ? Math.min(Math.max(value, 0), 100) : null;
@@ -257,7 +272,7 @@ export default function ReviewerDashboard() {
     });
   }, [dashboardParams, filteredSubmissions]);
 
-  const hasActiveFilters = searchInput || typeFilter || levelFilter || statusFilter || tagFilters.length > 0;
+  const hasActiveFilters = searchInput || typeFilter || levelFilter || statusFilters.length > 0 || tagFilters.length > 0;
   const hasCoverageFilter = coverageMinFilter > 0;
   const hasAnyActiveFilters = !!(hasActiveFilters || hasCoverageFilter);
 
@@ -268,7 +283,7 @@ export default function ReviewerDashboard() {
       setSearchQuery(null),
       setTypeFilter(null),
       setLevelFilter(null),
-      setStatusFilter(null),
+      setStatusFilterParam(null),
       setCoverageMinFilter(null),
       setTagFilterParam(null),
       setReviewFilter('all'),
@@ -379,7 +394,7 @@ export default function ReviewerDashboard() {
           reviewFilter={reviewFilter}
           typeFilter={typeFilter}
           levelFilter={levelFilter}
-          statusFilter={statusFilter}
+          statusFilters={statusFilters}
           coverageMinFilter={coverageMinFilter}
           tagFilters={tagFilters}
           availableTags={availableTags}
@@ -391,7 +406,7 @@ export default function ReviewerDashboard() {
           onReviewFilterChange={handleReviewFilterChange}
           onTypeFilterChange={handleTypeFilterChange}
           onLevelFilterChange={handleLevelFilterChange}
-          onStatusFilterChange={handleStatusFilterChange}
+          onStatusFiltersChange={handleStatusFiltersChange}
           onCoverageMinFilterChange={handleCoverageMinFilterChange}
           onTagFiltersChange={handleTagFiltersChange}
           onSortChange={handleSortChange}

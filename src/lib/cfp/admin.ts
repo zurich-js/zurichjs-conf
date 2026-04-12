@@ -84,9 +84,9 @@ async function fetchAllRows<T = Record<string, unknown>>(
  * Get submissions with server-side filtering, sorting, and pagination.
  *
  * DB-level filters: status, submission_type, talk_level
- * In-memory filters (after stats enrichment): search (title/abstract/speaker/tags),
- *   min_review_count, shortlist_only
- * In-memory sorting: all sort options including stats-based (score, coverage, reviews)
+ * In-memory filters (after stats enrichment): search (topic content), min_review_count,
+ *   shortlist_only, shortlist_statuses, coverage range
+ * In-memory sorting: multi-sort and legacy single-sort options including stats-based metrics
  * Pagination: applied last, returns one page + total filtered count
  */
 export async function getAdminSubmissions(
@@ -98,12 +98,16 @@ export async function getAdminSubmissions(
     submission_type,
     talk_level,
     search,
+    sort,
     sort_by = 'created_at',
     sort_order = 'desc',
     limit = 10,
     offset = 0,
     min_review_count,
     shortlist_only,
+    shortlist_statuses,
+    coverage_min,
+    coverage_max,
   } = filters;
 
   // Step 1: Fetch all submissions from DB (apply DB-level filters only)
@@ -266,38 +270,73 @@ export async function getAdminSubmissions(
     filtered = filtered.filter((s) => s.stats?.shortlist_status === 'likely_shortlisted');
   }
 
+  if (shortlist_statuses && shortlist_statuses.length > 0) {
+    const shortlistSet = new Set(shortlist_statuses);
+    filtered = filtered.filter((s) => shortlistSet.has(s.stats?.shortlist_status || ''));
+  }
+
+  if (typeof coverage_min === 'number') {
+    filtered = filtered.filter((s) => (s.stats?.coverage_percent || 0) >= coverage_min);
+  }
+
+  if (typeof coverage_max === 'number') {
+    filtered = filtered.filter((s) => (s.stats?.coverage_percent || 0) <= coverage_max);
+  }
+
   const total = filtered.length;
 
-  // Step 5: Sort (all options supported, including stats-based)
-  const ascending = sort_order === 'asc';
-  filtered.sort((a, b) => {
-    let cmp = 0;
-    switch (sort_by) {
+  // Step 5: Sort (supports multi-sort and legacy single-sort fallback)
+  const sortRules = sort && sort.length > 0
+    ? sort
+    : [{ key: sort_by, direction: sort_order }];
+
+  const shortlistRank: Record<string, number> = {
+    unlikely_shortlisted: 0,
+    maybe_shortlisted: 1,
+    likely_shortlisted: 2,
+  };
+
+  const compareByRule = (
+    a: CfpSubmissionWithStats,
+    b: CfpSubmissionWithStats,
+    key: NonNullable<CfpSubmissionFilters['sort_by']>
+  ) => {
+    switch (key) {
       case 'created_at':
-        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        break;
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       case 'title':
-        cmp = a.title.localeCompare(b.title);
-        break;
+        return a.title.localeCompare(b.title);
+      case 'speaker': {
+        const aName = `${a.speaker?.first_name || ''} ${a.speaker?.last_name || ''}`.trim();
+        const bName = `${b.speaker?.first_name || ''} ${b.speaker?.last_name || ''}`.trim();
+        return aName.localeCompare(bName);
+      }
       case 'review_count':
-        cmp = (a.stats?.review_count || 0) - (b.stats?.review_count || 0);
-        break;
+        return (a.stats?.review_count || 0) - (b.stats?.review_count || 0);
       case 'avg_score':
-        cmp = (a.stats?.avg_overall || 0) - (b.stats?.avg_overall || 0);
-        break;
+        return (a.stats?.avg_overall || 0) - (b.stats?.avg_overall || 0);
       case 'coverage':
-        cmp = (a.stats?.coverage_percent || 0) - (b.stats?.coverage_percent || 0);
-        break;
+        return (a.stats?.coverage_percent || 0) - (b.stats?.coverage_percent || 0);
+      case 'shortlist':
+        return (shortlistRank[a.stats?.shortlist_status || ''] ?? -1) - (shortlistRank[b.stats?.shortlist_status || ''] ?? -1);
       case 'last_reviewed': {
         const aTime = a.stats?.last_reviewed_at ? new Date(a.stats.last_reviewed_at).getTime() : 0;
         const bTime = b.stats?.last_reviewed_at ? new Date(b.stats.last_reviewed_at).getTime() : 0;
-        cmp = aTime - bTime;
-        break;
+        return aTime - bTime;
       }
       default:
-        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        return 0;
     }
-    return ascending ? cmp : -cmp;
+  };
+
+  filtered.sort((a, b) => {
+    for (const rule of sortRules) {
+      const cmp = compareByRule(a, b, rule.key);
+      if (cmp !== 0) {
+        return rule.direction === 'asc' ? cmp : -cmp;
+      }
+    }
+    return 0;
   });
 
   // Step 6: Paginate — return only the requested page
@@ -334,17 +373,21 @@ function parseSearchQuery(search: string): { include: string[]; exclude: string[
 }
 
 /**
- * Match a submission against search filters (searches title, abstract, speaker, tags)
+ * Match a submission against search filters (searches title and submission content fields)
  */
 function matchesSearch(
   submission: CfpSubmissionWithStats,
   filters: { include: string[]; exclude: string[] }
 ): boolean {
-  const speaker = submission.speaker
-    ? `${submission.speaker.first_name || ''} ${submission.speaker.last_name || ''} ${submission.speaker.email || ''}`
-    : '';
   const tags = (submission.tags || []).map((tag) => tag.name).join(' ');
-  const haystack = `${submission.title} ${submission.abstract} ${speaker} ${tags}`.toLowerCase();
+  const haystack = [
+    submission.title,
+    submission.abstract,
+    submission.outline || '',
+    submission.additional_notes || '',
+    submission.workshop_special_requirements || '',
+    tags,
+  ].join(' ').toLowerCase();
 
   if (filters.include.some((term) => !haystack.includes(term))) return false;
   if (filters.exclude.some((term) => haystack.includes(term))) return false;
@@ -739,15 +782,22 @@ export async function getReviewerActivity(
     return { activities: [], total: 0 };
   }
 
-  // Batch fetch submission titles
-  const submissionIds = [...new Set(reviews.map((r) => r.submission_id))];
-  const { data: submissions } = await supabase
-    .from('cfp_submissions')
-    .select('id, title')
-    .in('id', submissionIds);
+  // Fetch submission titles without .in() to avoid URL length limits on large reviewer histories
+  const submissionIds = new Set(reviews.map((r) => r.submission_id).filter(Boolean));
+  const { data: allSubmissions, error: submissionsError } = await fetchAllRows<{ id: string; title: string }>(
+    supabase,
+    'cfp_submissions',
+    'id, title'
+  );
+
+  if (submissionsError) {
+    console.error('[CFP Admin] Error fetching submissions for reviewer activity:', submissionsError);
+  }
 
   const submissionMap = new Map(
-    (submissions || []).map((s) => [s.id, s.title])
+    (allSubmissions || [])
+      .filter((s) => submissionIds.has(s.id))
+      .map((s) => [s.id, s.title])
   );
 
   // Build activity list

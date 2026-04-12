@@ -38,6 +38,11 @@ export const STATUS_INFO: Record<string, { label: string; description: string; c
     description: 'Being actively reviewed by the committee',
     color: 'purple',
   },
+  shortlisted: {
+    label: 'Shortlisted',
+    description: 'Selected for final program consideration',
+    color: 'indigo',
+  },
   waitlisted: {
     label: 'Waitlisted',
     description: 'Good submission held for final decisions based on schedule and program balance',
@@ -182,9 +187,9 @@ export const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
   { value: 'submitted', label: 'Submitted' },
   { value: 'under_review', label: 'In Review' },
+  { value: 'shortlisted', label: 'Shortlisted' },
   { value: 'waitlisted', label: 'Waitlisted' },
   { value: 'accepted', label: 'Accepted' },
-  { value: 'rejected', label: 'Rejected' },
 ];
 
 export const SORT_OPTIONS = [
@@ -210,7 +215,7 @@ export interface DashboardFilters {
   searchQuery: string;
   typeFilter: string;
   levelFilter: string;
-  statusFilter: string;
+  statusFilters: string[];
   coverageMinFilter?: number;
   sortBy: string;
 }
