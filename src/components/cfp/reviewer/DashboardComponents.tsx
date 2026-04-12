@@ -497,12 +497,15 @@ export function SubmissionCard({
       .slice(0, 5);
   }, [submission.tags, hasActiveTagFilters, activeTagFilters]);
 
+  const reviewCount = submission.stats.review_count || 0;
   const coverageLabel =
-    (submission.stats.coverage_percent || 0) < 25
-      ? 'Low coverage'
-      : (submission.stats.coverage_percent || 0) < 60
-        ? 'Some coverage'
-        : 'Well covered';
+    reviewCount < 3
+      ? 'critical coverage'
+      : reviewCount < 5
+        ? 'low coverage'
+        : reviewCount < 7
+          ? 'some coverage'
+          : 'well covered';
 
   return (
     <Link
@@ -553,6 +556,9 @@ export function SubmissionCard({
                 </ReviewerPill>
                 <ReviewerPill tone="ghost">
                   {coverageLabel}
+                  <span className="text-brand-gray-medium">
+                    {reviewCount}
+                  </span>
                 </ReviewerPill>
                 {!isAnonymous && (
                   <div className="text-sm text-brand-gray-light">
