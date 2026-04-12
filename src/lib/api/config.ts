@@ -90,6 +90,7 @@ export const endpoints = {
     reviewerDashboard: () => '/api/cfp/reviewer/dashboard' as const,
     reviewerSubmission: (id: string) => `/api/cfp/reviewer/submissions/${id}` as const,
     reviewerSubmitReview: (id: string) => `/api/cfp/reviewer/submissions/${id}/review` as const,
+    reviewerSharedSubmission: (token: string) => `/api/cfp/reviewer/shared/${token}` as const,
   },
 } as const;
 

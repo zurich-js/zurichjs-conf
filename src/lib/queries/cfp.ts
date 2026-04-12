@@ -93,6 +93,21 @@ export interface ReviewerSubmissionResponse {
   reviewer: CfpReviewer;
 }
 
+export interface ReviewerSharedSubmissionResponse {
+  submission: CfpSubmission & {
+    speaker?: CfpSpeaker | null;
+    tags?: CfpTag[];
+    my_review?: CfpReview | null;
+    all_reviews?: CfpReview[];
+    stats: CfpSubmissionStats;
+  };
+  reviewer: CfpReviewer;
+  share: {
+    note: string | null;
+    created_at: string;
+  };
+}
+
 // ============================================
 // FETCH FUNCTIONS
 // ============================================
@@ -352,5 +367,38 @@ export function reviewerSubmissionQueryOptions(id: string) {
     staleTime: CFP_STALE_TIME,
     gcTime: CFP_GC_TIME,
     enabled: !!id,
+  });
+}
+
+/**
+ * Fetch a shared submission for reviewer via secure token
+ * Uses session-based authentication via cookies
+ */
+export async function fetchReviewerSharedSubmission(
+  token: string
+): Promise<ReviewerSharedSubmissionResponse> {
+  const response = await fetch(endpoints.cfp.reviewerSharedSubmission(token), {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to fetch shared submission');
+  }
+
+  return response.json();
+}
+
+/**
+ * Query options for reviewer shared submission
+ * Uses session-based authentication
+ */
+export function reviewerSharedSubmissionQueryOptions(token: string) {
+  return queryOptions({
+    queryKey: queryKeys.cfp.reviewer.sharedSubmission(token),
+    queryFn: () => fetchReviewerSharedSubmission(token),
+    staleTime: CFP_STALE_TIME,
+    gcTime: CFP_GC_TIME,
+    enabled: !!token,
   });
 }

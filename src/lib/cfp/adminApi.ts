@@ -267,3 +267,19 @@ export async function sendEmailNow(id: string, emailId: string): Promise<void> {
     throw new Error(error.error || 'Failed to send email');
   }
 }
+
+export async function createShareLink(
+  submissionId: string,
+  note?: string
+): Promise<{ token: string; url: string }> {
+  const res = await fetch(`/api/admin/cfp/submissions/${submissionId}/share`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to generate share link');
+  }
+  return res.json();
+}

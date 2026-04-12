@@ -49,6 +49,8 @@ export interface CfpAdminSubmission {
   created_at: string;
   outline?: string | null;
   target_audience?: string | null;
+  previous_recording_url?: string | null;
+  slides_url?: string | null;
   workshop_duration_hours: number | null;
   workshop_expected_compensation: string | null;
   workshop_compensation_amount: number | null;

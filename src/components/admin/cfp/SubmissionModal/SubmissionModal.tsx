@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { X, FileText, Copy, Mail, Pencil, Loader2, Gavel } from 'lucide-react';
+import { X, FileText, Copy, Mail, Pencil, Loader2, Gavel, Video, FileSliders } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import type { CfpAdminSubmission, CfpReviewWithReviewer } from '@/lib/types/cfp-admin';
@@ -26,6 +26,7 @@ import { SpeakerInfoSection } from './SpeakerInfoSection';
 import { ReviewsSection } from './ReviewsSection';
 import { StatusActionsSection } from './StatusActionsSection';
 import { CommunicationSection } from './CommunicationSection';
+import { ShareLinkSection } from './ShareLinkSection';
 
 export interface SubmissionModalProps {
   submission: CfpAdminSubmission;
@@ -354,6 +355,47 @@ export function SubmissionModal({
             )}
           </div>
 
+          {/* Speaker Resources (Recording & Slides) */}
+          {(submission.previous_recording_url || submission.slides_url) && (
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Speaker Resources</h4>
+              <div className="space-y-3">
+                {submission.previous_recording_url && (
+                  <div className="flex items-start gap-3">
+                    <Video className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold mb-0.5">Previous Recording</p>
+                      <a
+                        href={submission.previous_recording_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline break-all"
+                      >
+                        {submission.previous_recording_url}
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {submission.slides_url && (
+                  <div className="flex items-start gap-3">
+                    <FileSliders className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-semibold mb-0.5">Slides</p>
+                      <a
+                        href={submission.slides_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline break-all"
+                      >
+                        {submission.slides_url}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Speaker Info */}
           <SpeakerInfoSection speaker={submission.speaker} />
 
@@ -460,6 +502,9 @@ export function SubmissionModal({
             onUpdateStatus={onUpdateStatus}
             isUpdating={isUpdating}
           />
+
+          {/* Share with Reviewer */}
+          <ShareLinkSection submissionId={submission.id} />
 
           {/* Danger Zone */}
           <div className="border-t border-red-200 pt-6 mt-6">

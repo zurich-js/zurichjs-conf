@@ -108,6 +108,7 @@ export const cfpKeys = {
     dashboardBase: () => [...cfpKeys.reviewer.all(), 'dashboard'] as const,
     dashboard: (search?: string) => [...cfpKeys.reviewer.dashboardBase(), search ?? ''] as const,
     submission: (id: string) => [...cfpKeys.reviewer.all(), 'submission', id] as const,
+    sharedSubmission: (token: string) => [...cfpKeys.reviewer.all(), 'shared', token] as const,
   },
 } as const;
 
