@@ -7,4 +7,6 @@ export * from './types';
 export * from './AddSpeakerModal';
 export * from './AddSessionModal';
 export * from './EditSpeakerModal';
-export * from './SpeakerCard';
+export * from './AdminSpeakerCard';
+export * from './EditSessionModal';
+export * from './ScheduleItemModal';

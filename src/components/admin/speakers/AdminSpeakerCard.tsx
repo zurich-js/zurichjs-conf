@@ -6,7 +6,7 @@
 import { User, Plus } from 'lucide-react';
 import type { SpeakerWithSessions, Session } from './types';
 
-interface SpeakerCardProps {
+interface AdminSpeakerCardProps {
   speaker: SpeakerWithSessions;
   onToggleVisibility: (id: string, isVisible: boolean) => void;
   onAddSession: (speakerId: string) => void;
@@ -34,26 +34,19 @@ function SessionItem({ session }: { session: Session }) {
       <p className="text-sm font-medium text-black truncate">{session.title}</p>
       <div className="flex items-center gap-2 mt-1">
         <SessionTypeBadge type={session.submission_type} />
-        {session.scheduled_date ? (
-          <span className="text-xs text-gray-500">
-            {new Date(session.scheduled_date).toLocaleDateString()}
-            {session.scheduled_start_time && ` at ${session.scheduled_start_time.slice(0, 5)}`}
-          </span>
-        ) : (
-          <span className="text-xs text-gray-400">Not scheduled</span>
-        )}
+        <span className="text-xs text-gray-400">Manage placement from schedule</span>
       </div>
     </div>
   );
 }
 
-export function SpeakerCard({
+export function AdminSpeakerCard({
   speaker,
   onToggleVisibility,
   onAddSession,
   onEdit,
   isTogglingVisibility,
-}: SpeakerCardProps) {
+}: AdminSpeakerCardProps) {
   const acceptedSessions = speaker.submissions?.filter((s) => s.status === 'accepted') || [];
 
   return (

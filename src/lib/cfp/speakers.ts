@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
+import { getPublicScheduleRowMapBySubmissionId } from '@/lib/program/schedule';
 import type {
   CfpSpeaker,
   CfpSubmission,
@@ -159,7 +160,8 @@ export async function uploadSpeakerImage(
   speakerId: string,
   file: Buffer,
   fileName: string,
-  contentType: string
+  contentType: string,
+  imageField: 'profile_image_url' | 'header_image_url' = 'profile_image_url'
 ): Promise<{ url: string | null; error?: string }> {
   const supabase = createCfpServiceClient();
 
@@ -187,7 +189,7 @@ export async function uploadSpeakerImage(
   // Update speaker profile with new image URL (including cache buster)
   const { error: updateError } = await supabase
     .from('cfp_speakers')
-    .update({ profile_image_url: cacheBustedUrl })
+    .update({ [imageField]: cacheBustedUrl })
     .eq('id', speakerId);
 
   if (updateError) {
@@ -199,14 +201,16 @@ export async function uploadSpeakerImage(
 }
 
 /**
- * Get visible and featured speakers for public display
- * Returns speakers with is_visible=true AND is_featured=true
- * Includes their accepted sessions if any
+ * Get visible speakers for public display
+ * Returns speakers with is_visible=true and their accepted sessions
+ * Featured speakers are ordered first in the result
  */
 export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
   const supabase = createCfpServiceClient();
+  const sessionSlugCounts = new Map<string, number>();
+  const scheduleRowMap = await getPublicScheduleRowMapBySubmissionId();
 
-  // Fetch visible AND featured speakers with their submissions
+  // Fetch visible speakers with their submissions and tags
   const { data, error } = await supabase
     .from('cfp_speakers')
     .select(`
@@ -217,6 +221,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       company,
       bio,
       profile_image_url,
+      header_image_url,
       is_featured,
       linkedin_url,
       github_url,
@@ -233,11 +238,14 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
         scheduled_date,
         scheduled_start_time,
         scheduled_duration_minutes,
-        room
+        room,
+        tags:cfp_submission_tags(
+          tag:cfp_tags(name)
+        )
       )
     `)
     .eq('is_visible', true)
-    .eq('is_featured', true)
+    .order('is_featured', { ascending: false })
     .order('first_name', { ascending: true });
 
   if (error) {
@@ -257,40 +265,79 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     scheduled_start_time: string | null;
     scheduled_duration_minutes: number | null;
     room: string | null;
+    tags?: Array<{
+      tag: Array<{
+        name: string;
+      }> | null;
+    }>;
   }
 
   // Transform to public format
   const publicSpeakers: PublicSpeaker[] = [];
+  const slugCounts = new Map<string, number>();
 
   for (const speaker of data || []) {
-    // Get accepted sessions (may be empty)
+    const baseSlug = `${speaker.first_name} ${speaker.last_name}`
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || speaker.id;
+
+    const existingSlugCount = slugCounts.get(baseSlug) ?? 0;
+    slugCounts.set(baseSlug, existingSlugCount + 1);
+
     const acceptedSessions = (speaker.cfp_submissions || [])
       .filter((s: SubmissionData) => s.status === 'accepted')
-      .map((s: SubmissionData): PublicSession => ({
-        id: s.id,
-        title: s.title,
-        abstract: s.abstract,
-        type: s.submission_type as PublicSession['type'],
-        level: s.talk_level as PublicSession['level'],
-        schedule: s.scheduled_date || s.scheduled_start_time
-          ? {
-              date: s.scheduled_date,
-              start_time: s.scheduled_start_time,
-              duration_minutes: s.scheduled_duration_minutes,
-              room: s.room,
-            }
-          : null,
-      }));
+      .map((s: SubmissionData): PublicSession => {
+        const baseSlug = s.title
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || s.id;
+        const existingSessionSlugCount = sessionSlugCounts.get(baseSlug) ?? 0;
+
+        sessionSlugCounts.set(baseSlug, existingSessionSlugCount + 1);
+
+        return {
+          id: s.id,
+          slug: existingSessionSlugCount === 0 ? baseSlug : `${baseSlug}-${s.id.split('-')[0]}`,
+          title: s.title,
+          abstract: s.abstract,
+          tags: (s.tags || [])
+            .flatMap((entry) => entry.tag || [])
+            .map((tag) => tag.name?.trim())
+            .filter((tag): tag is string => Boolean(tag)),
+          type: s.submission_type as PublicSession['type'],
+          level: s.talk_level as PublicSession['level'],
+          schedule: scheduleRowMap.get(s.id)
+            ? {
+                date: scheduleRowMap.get(s.id)?.date ?? null,
+                start_time: scheduleRowMap.get(s.id)?.start_time ?? null,
+                duration_minutes: scheduleRowMap.get(s.id)?.duration_minutes ?? null,
+                room: scheduleRowMap.get(s.id)?.room ?? null,
+              }
+            : s.scheduled_date || s.scheduled_start_time
+              ? {
+                  date: s.scheduled_date,
+                  start_time: s.scheduled_start_time,
+                  duration_minutes: s.scheduled_duration_minutes,
+                  room: s.room,
+                }
+              : null,
+        };
+      });
 
     // Include all visible+featured speakers regardless of sessions
     publicSpeakers.push({
       id: speaker.id,
+      slug: existingSlugCount === 0 ? baseSlug : `${baseSlug}-${speaker.id.split('-')[0]}`,
       first_name: speaker.first_name,
       last_name: speaker.last_name,
       job_title: speaker.job_title,
       company: speaker.company,
       bio: speaker.bio,
       profile_image_url: speaker.profile_image_url,
+      header_image_url: speaker.header_image_url,
       is_featured: speaker.is_featured ?? false,
       socials: {
         linkedin_url: speaker.linkedin_url,
@@ -361,6 +408,7 @@ export async function createSpeaker(
     bluesky_handle: data.bluesky_handle || null,
     mastodon_handle: data.mastodon_handle || null,
     profile_image_url: data.profile_image_url || null,
+    header_image_url: data.header_image_url || null,
     is_visible: data.is_visible ?? false,
   };
 

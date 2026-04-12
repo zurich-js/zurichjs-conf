@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LinkGroup, NewsletterForm } from '@/components/molecules';
 import { Logo, Button, SocialIcon } from '@/components/atoms';
-import { SectionContainer, SectionSplitView } from '@/components/organisms';
+import { SectionSplitView } from '@/components/organisms';
 import { subscribeToNewsletter } from '@/lib/api/newsletter';
 
 export interface SiteFooterProps {
@@ -20,10 +20,11 @@ const conferenceLinks = {
   title: 'Conference',
   links: [
     { label: 'Call for Papers', href: '/cfp' },
-    { label: 'Speakers', href: '/#speakers', locked: true },
-    { label: 'Schedule', href: '/#schedule' },
+    { label: 'Speakers', href: '/speakers' },
+    { label: 'Schedule', href: '/schedule' },
+    { label: 'Talks', href: '/talks' },
+    { label: 'Workshops', href: '/workshops' },
     { label: 'Venue', href: '/about#venue' },
-    { label: 'Workshops', href: '/#schedule', locked: true },
     { label: 'Sponsor us', href: '/sponsorship' },
     { label: 'F.A.Q.', href: '/faq' },
     { label: 'Trip Cost Calculator', href: '/trip-cost' },
@@ -93,7 +94,6 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
 
   return (
     <footer className="relative print:hidden" role="contentinfo">
-      <SectionContainer>
         <motion.div
           variants={container}
           initial="hidden"
@@ -193,7 +193,6 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
             </div>
           </motion.div>
         </motion.div>
-      </SectionContainer>
 
       <p className="text-xs text-brand-gray-light md:text-center absolute -bottom-20 translate-y-full inset-x-0">
         © 2026 Swiss JavaScript Group (CHE-255.581.547). All rights reserved

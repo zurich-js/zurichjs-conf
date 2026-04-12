@@ -86,6 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'bluesky_handle',
         'mastodon_handle',
         'profile_image_url',
+        'header_image_url',
         'is_visible',
         'is_featured',
       ];

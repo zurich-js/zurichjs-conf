@@ -5,14 +5,16 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import { ChevronLeft, Check, AlertCircle, Mail } from 'lucide-react';
+import { ChevronLeft, Check, AlertCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/atoms';
 import { useToast } from '@/contexts/ToastContext';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getMissingProfileFields } from '@/lib/cfp/auth-constants';
+import { getSubmissionsBySpeakerId } from '@/lib/cfp/submissions';
 import { speakerProfileSchema, type SpeakerProfileFormData } from '@/lib/validations/cfp';
 import { isEuropeanCountry } from '@/lib/constants/countries';
 import type { CfpSpeaker } from '@/lib/types/cfp';
@@ -21,21 +23,27 @@ import {
   TravelSection,
   SupportSection,
   ConferenceDetailsSection,
-  ProfilePhotoCard,
+  PhotosCard,
   SocialLinksCard,
+  SpeakerCardPreviewModal,
   type TravelOption,
 } from '@/components/cfp/profile';
 
 interface ProfileProps {
   speaker: CfpSpeaker;
+  requiresHeaderImage: boolean;
 }
 
-export default function CfpProfile({ speaker }: ProfileProps) {
+export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProps) {
   const router = useRouter();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(speaker.profile_image_url ?? null);
+  const [headerImageUrl, setHeaderImageUrl] = useState<string | null>(speaker.header_image_url ?? null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewVariant, setPreviewVariant] = useState<'compact' | 'default' | 'full'>('default');
 
   const [formData, setFormData] = useState<SpeakerProfileFormData>({
     first_name: speaker.first_name || '',
@@ -69,7 +77,21 @@ export default function CfpProfile({ speaker }: ProfileProps) {
   });
 
   const isEuropean = useMemo(() => formData.country ? isEuropeanCountry(formData.country) : false, [formData.country]);
-  const missingFields = useMemo(() => getMissingProfileFields(speaker), [speaker]);
+  const missingFields = useMemo(
+    () =>
+      getMissingProfileFields(
+        {
+          ...speaker,
+          ...formData,
+          profile_image_url: profileImageUrl,
+          header_image_url: headerImageUrl,
+        },
+        { requiresHeaderImage }
+      ),
+    [formData, headerImageUrl, profileImageUrl, requiresHeaderImage, speaker]
+  );
+  const previewName = [formData.first_name, formData.last_name].filter(Boolean).join(' ').trim() || 'Your name';
+  const previewTitle = [formData.job_title, formData.company].filter(Boolean).join(' @ ') || undefined;
 
   const handleChange = (field: keyof SpeakerProfileFormData, value: string | boolean | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -154,7 +176,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href="/cfp/dashboard" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
+              <Image width={40} height={40} src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
               <span className="text-white font-semibold">CFP</span>
             </Link>
             <Link href="/cfp/dashboard" className="text-brand-gray-light hover:text-white text-sm transition-colors inline-flex items-center gap-2">
@@ -179,7 +201,7 @@ export default function CfpProfile({ speaker }: ProfileProps) {
                 <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-semibold text-amber-400 mb-1">Profile Incomplete</h3>
-                  <p className="text-sm text-amber-200/80 mb-2">Please complete the following required fields to submit proposals:</p>
+                  <p className="text-sm text-amber-200/80 mb-2">Please complete the following required profile fields:</p>
                   <ul className="text-sm text-amber-200/80 list-disc list-inside">
                     {missingFields.map((field) => <li key={field}>{field}</li>)}
                   </ul>
@@ -202,8 +224,6 @@ export default function CfpProfile({ speaker }: ProfileProps) {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <ProfilePhotoCard initialImageUrl={speaker.profile_image_url} variant="mobile" />
-
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Main Content */}
               <div className="flex-1 space-y-8 min-w-0">
@@ -216,19 +236,30 @@ export default function CfpProfile({ speaker }: ProfileProps) {
               {/* Sidebar */}
               <div className="lg:w-80 flex-shrink-0 space-y-6">
                 <div className="lg:sticky lg:top-8 space-y-6">
-                  <ProfilePhotoCard initialImageUrl={speaker.profile_image_url} variant="desktop" />
+                  <PhotosCard
+                    profileImageUrl={profileImageUrl}
+                    headerImageUrl={headerImageUrl}
+                    requiresHeaderImage={requiresHeaderImage}
+                    onProfileImageChange={setProfileImageUrl}
+                    onHeaderImageChange={setHeaderImageUrl}
+                    onPreview={() => setIsPreviewOpen(true)}
+                  />
                   <SocialLinksCard formData={formData} errors={errors} handleChange={handleChange} />
 
                   {/* Actions Card */}
                   <div className="bg-brand-gray-dark rounded-2xl p-6">
                     <h3 className="text-lg font-semibold text-white mb-4">Actions</h3>
                     <div className="space-y-3">
-                      <Button type="submit" variant="primary" size="lg" loading={isSubmitting} className="w-full">
+                      <Button type="submit" variant="primary" loading={isSubmitting} className="w-full">
                         {isSubmitting ? 'Saving...' : 'Save changes'}
                       </Button>
-                      <a href="mailto:hello@zurichjs.com?subject=CFP%20Question" className="w-full px-4 py-3 bg-transparent text-white font-medium rounded-lg border border-brand-gray-medium hover:border-brand-gray-light transition-colors flex items-center justify-center gap-2">
-                        <Mail className="w-4 h-4" /> Contact the team
-                      </a>
+                      <Button
+                        href="mailto:hello@zurichjs.com?subject=CFP%20Question"
+                        variant="ghost"
+                        className="w-full"
+                      >
+                        Contact the team
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -237,6 +268,21 @@ export default function CfpProfile({ speaker }: ProfileProps) {
           </form>
         </main>
       </div>
+
+      <SpeakerCardPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        variant={previewVariant}
+        onVariantChange={setPreviewVariant}
+        speaker={{
+          name: previewName,
+          title: previewTitle,
+          avatar: profileImageUrl,
+          header: headerImageUrl,
+          // TODO(feature/speakers-grid): Replace this placeholder session label when speaker profiles can preview real public sessions.
+          footer: 'Lorem ipsum',
+        }}
+      />
     </>
   );
 }
@@ -255,5 +301,8 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (ctx) 
     return { redirect: { destination: '/cfp/login', permanent: false } };
   }
 
-  return { props: { speaker } };
+  const { submissions } = await getSubmissionsBySpeakerId(speaker.id);
+  const requiresHeaderImage = submissions.some((submission) => ['shortlisted', 'accepted'].includes(submission.status));
+
+  return { props: { speaker, requiresHeaderImage } };
 };

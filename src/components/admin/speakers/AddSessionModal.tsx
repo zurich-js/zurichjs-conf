@@ -18,10 +18,6 @@ export function AddSessionModal({ speakerId, onClose, onCreated }: AddSessionMod
     abstract: '',
     submission_type: 'standard',
     talk_level: 'intermediate',
-    scheduled_date: '',
-    scheduled_start_time: '',
-    scheduled_duration_minutes: '',
-    room: '',
     workshop_duration_hours: '',
     workshop_max_participants: '',
   });
@@ -44,10 +40,6 @@ export function AddSessionModal({ speakerId, onClose, onCreated }: AddSessionMod
           submission_type: formData.submission_type,
           talk_level: formData.talk_level,
           status: 'accepted',
-          scheduled_date: formData.scheduled_date || undefined,
-          scheduled_start_time: formData.scheduled_start_time || undefined,
-          scheduled_duration_minutes: formData.scheduled_duration_minutes ? parseInt(formData.scheduled_duration_minutes) : undefined,
-          room: formData.room || undefined,
           ...(formData.submission_type === 'workshop' && {
             workshop_duration_hours: formData.workshop_duration_hours ? parseFloat(formData.workshop_duration_hours) : undefined,
             workshop_max_participants: formData.workshop_max_participants ? parseInt(formData.workshop_max_participants) : undefined,
@@ -166,49 +158,8 @@ export function AddSessionModal({ speakerId, onClose, onCreated }: AddSessionMod
             </div>
           )}
 
-          <div className="border-t border-gray-200 pt-4 mt-4">
-            <h4 className="text-sm font-semibold text-black mb-3">Scheduling (Optional)</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={formData.scheduled_date}
-                  onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Start Time</label>
-                <input
-                  type="time"
-                  value={formData.scheduled_start_time}
-                  onChange={(e) => setFormData({ ...formData, scheduled_start_time: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Duration (minutes)</label>
-                <input
-                  type="number"
-                  min="5"
-                  value={formData.scheduled_duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, scheduled_duration_minutes: e.target.value })}
-                  placeholder="e.g. 45"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Room</label>
-                <input
-                  type="text"
-                  value={formData.room}
-                  onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                  placeholder="e.g. Main Hall"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
-                />
-              </div>
-            </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+            Scheduling now happens from the schedule tab so the public program has one source of truth.
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

@@ -1,7 +1,8 @@
 export { Countdown } from './Countdown';
 export { BackgroundMedia } from './BackgroundMedia';
 export { SpeakerCard } from './SpeakerCard';
-export { SpeakerGrid } from './SpeakerGrid';
+export { HeroSpeakerCard } from './HeroSpeakerCard';
+export { HeroSpeakerGrid } from './HeroSpeakerGrid';
 export { EventItem } from './EventItem';
 export { DayTabs } from './DayTabs';
 export { FeatureList } from './FeatureList';
@@ -26,6 +27,7 @@ export { StudentTicketInfoModal } from './StudentTicketInfoModal';
 export { AttendeeForm, AttendeeTicketForm } from './AttendeeForm';
 export { PhotoSwiper } from './PhotoSwiper';
 export { TierCard } from './TierCard';
+export { SpeakerActionSlider } from './SpeakerActionSlider';
 export {
   StatHighlightCard,
   ProgressBar,
@@ -41,8 +43,10 @@ export { PackedGrid } from './PackedGrid';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
-export type { SpeakerCardProps } from './SpeakerCard';
-export type { SpeakerGridProps } from './SpeakerGrid';
+export type { PublicSpeakerCardProps } from './SpeakerCard';
+export type { HeroSpeakerCardProps as SpeakerCardProps } from './HeroSpeakerCard';
+export type { HeroSpeakerCardProps } from './HeroSpeakerCard';
+export type { HeroSpeakerGridProps } from './HeroSpeakerGrid';
 export type { EventItemProps } from './EventItem';
 export type { DayTabsProps, DayTab } from './DayTabs';
 export type { FeatureListProps, Feature } from './FeatureList';
@@ -66,6 +70,7 @@ export type { StudentTicketInfoModalProps } from './StudentTicketInfoModal';
 export type { AttendeeFormProps, AttendeeTicketFormProps } from './AttendeeForm';
 export type { PhotoSwiperProps, PhotoSlide, PhotoLayout, NestedContainer } from './PhotoSwiper';
 export type { TierCardProps, TierBenefit } from './TierCard';
+export type { SpeakerActionSliderProps } from './SpeakerActionSlider';
 export type {
   StatHighlightCardProps,
   ProgressBarProps,

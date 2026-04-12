@@ -10,8 +10,10 @@ import type { CfpSubmissionType, CfpTalkLevel } from './base';
  */
 export interface PublicSession {
   id: string;
+  slug: string;
   title: string;
   abstract: string;
+  tags: string[];
   type: CfpSubmissionType;
   level: CfpTalkLevel;
   schedule: {
@@ -28,12 +30,14 @@ export interface PublicSession {
  */
 export interface PublicSpeaker {
   id: string;
+  slug: string;
   first_name: string;
   last_name: string;
   job_title: string | null;
   company: string | null;
   bio: string | null;
   profile_image_url: string | null;
+  header_image_url: string | null;
   is_featured: boolean;
   socials: {
     linkedin_url: string | null;

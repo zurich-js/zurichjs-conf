@@ -1,98 +1,157 @@
 import React from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { useMotion } from '@/contexts/MotionContext';
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export interface SpeakerCardProps {
-  imageSrc?: string;
-  name?: string;
-  role?: string;
-  index?: number;
+type SharedSpeakerCardProps = {
+  variant: 'compact' | 'default' | 'full';
+  header?: string | null;
+  avatar?: string | null;
+  name: string;
+  title?: string;
+  footer?: string;
   className?: string;
-}
-
-/**
- * Speaker card component
- * Shows speaker image (or silhouette placeholder) with optional name and role
- * Includes hover animations and stagger effects
- */
-export const SpeakerCard: React.FC<SpeakerCardProps> = ({
-  imageSrc,
-  name,
-  role,
-  index = 0,
-  className = '',
-}) => {
-  const { shouldAnimate } = useMotion();
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        delay: 0.9 + index * 0.1,
-        ease: [0.22, 1, 0.36, 1] as const,
-      },
-    },
-    hover: {
-      y: -8,
-      transition: {
-        duration: 0.25,
-        ease: 'easeOut' as const,
-      },
-    },
-  };
-
-  return (
-    <motion.div
-      className={`group relative ${className}`}
-      initial={shouldAnimate ? 'hidden' : 'visible'}
-      animate="visible"
-      whileHover={shouldAnimate ? 'hover' : undefined}
-      variants={shouldAnimate ? cardVariants : {}}
-    >
-      {/* Card Container */}
-      <div className="relative bg-brand-primary rounded-lg overflow-hidden shadow-md w-[240px] h-[320px] transition-shadow duration-300 group-hover:shadow-xl">
-        {/* Speaker Image or Silhouette */}
-        {imageSrc ? (
-          <Image
-            src={imageSrc}
-            alt={name || 'Speaker'}
-            fill
-            className="object-cover"
-            sizes="240px"
-          />
-        ) : (
-          <div className="w-full h-full flex items-end justify-center pb-4 bg-gradient-to-b from-brand-light to-brand-primary">
-            {/* Silhouette SVG */}
-            <svg
-              viewBox="0 0 100 120"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-3/4 h-3/4 opacity-40"
-              aria-hidden="true"
-            >
-              {/* Head */}
-              <circle cx="50" cy="30" r="18" fill="currentColor" className="text-gray-700" />
-              {/* Body */}
-              <ellipse cx="50" cy="80" rx="30" ry="35" fill="currentColor" className="text-gray-700" />
-            </svg>
-          </div>
-        )}
-
-        {/* Name Badge (if provided) */}
-        {name && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-3 text-brand-white">
-            <h3 className="font-semibold text-sm md:text-base">{name}</h3>
-            {role && (
-              <p className="text-xs md:text-sm text-brand-white/80 mt-0.5">{role}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
 };
 
+type SpeakerCardLinkProps = SharedSpeakerCardProps & {
+  to: string;
+  onClick?: never;
+};
+
+type SpeakerCardButtonProps = SharedSpeakerCardProps & {
+  onClick: () => void;
+  to?: never;
+};
+
+export type PublicSpeakerCardProps = SpeakerCardLinkProps | SpeakerCardButtonProps;
+
+function SpeakerCardInner({
+  variant,
+  header,
+  avatar,
+  name,
+  title,
+  footer,
+}: SharedSpeakerCardProps) {
+  // TODO: Rework the sliding footer so it overlays and covers the name/role area,
+  // instead of appearing only below it. This should match the intended speaker card interaction.
+  const isCompact = variant === 'compact';
+  const isDefault = variant === 'default';
+  const isFull = variant === 'full';
+
+  return (
+          <div className="bg-white relative rounded-2xl overflow-hidden h-full transition-all duration-300
+          shadow-md shadow-brand-black/10 group-hover:shadow-brand-black/20 focus-within:shadow-brand-black/20
+          group-hover:shadow-lg group-focus-within:shadow-lg
+          group-hover:-translate-y-0.5 group-focus-within:-translate-y-0.5
+          ">
+              {!isCompact ? (
+                  <div className="relative w-full h-auto aspect-[5/2] overflow-hidden border-b-2 border-brand-gray-lightest transition-all duration-300">
+                      {header ? (
+                        <Image
+                            src={header}
+                            alt=""
+                            fill
+                            className="object-cover object-bottom"
+                            sizes="(max-width: 640px) 21rem, 22rem"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-brand-gray-lightest" aria-hidden="true" />
+                      )}
+                  </div>
+              ) : null}
+
+              <div
+                  className={cn(
+                      'relative z-10 flex justify-center transition-all duration-300 ease-out',
+                      isCompact ? 'p-2.5 pb-0' : '-mt-16'
+                  )}
+              >
+              <div
+                  className="relative overflow-hidden rounded-full border-2 border-brand-gray-lightest transition-all duration-300 size-20 @6xs:size-24 @5xs:size-28 @4xs:size-32 @3xs:size-36 @2xs:size-40 @xs:size-48"
+              >
+                  {avatar ? (
+                          <Image
+                              src={avatar}
+                              alt={`${name} avatar`}
+                              fill
+                              className="object-cover"
+                              sizes={isCompact ? '(max-width: 640px) 6rem, 7rem' : '(max-width: 640px) 8rem, 10rem'}
+                          />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-brand-white text-xl font-bold text-brand-gray-light">
+                      <Image src="/icons/avatar-placeholder.svg" alt="Avatar placeholder" width={48} height={48} />
+                    </div>
+                  )}
+                  </div>
+              </div>
+
+              <div
+                  className={cn(
+                      'transition-all duration-300 ease-out flex-1',
+                      'p-2.5 text-center',
+                  )}
+              >
+                  <h2
+                      className="font-bold text-md"
+                  >
+                      {name}
+                  </h2>
+                  {title ? (
+                      <p className={cn(!isCompact && 'line-clamp-2 min-h-[3rem]')}>
+                          {title}
+                      </p>
+                  ) : null}
+              </div>
+
+        {!isCompact && !!footer ? (
+          <div
+            className={cn(
+              'flex-1 transition-all duration-300 ease-out',
+                isDefault ? 'absolute bottom-0 left-0 right-0' : 'relative',
+            )}
+          >
+
+              <div className={cn(
+                "transition-transform duration-300 ease-out bg-white",
+                isFull && 'p-2.5 pl-4 translate-x-0',
+                isDefault && 'p-2.5 pl-4 pt-0 translate-x-full group-hover:translate-x-0 group-focus-within:translate-x-0',
+              )}>
+                <div className="flex items-center justify-between gap-2.5">
+                  <p className="font-bold">
+                    {footer}
+                  </p>
+                  <ChevronRight className="mb-1 size-4 shrink-0 text-black" aria-hidden="true" />
+                </div>
+              </div>
+          </div>
+        ) : null}
+      </div>
+  );
+}
+
+export function SpeakerCard(props: PublicSpeakerCardProps) {
+  const { className, ...rest } = props;
+
+  if (typeof props.to === 'string') {
+    return (
+      <Link
+        href={props.to}
+        className={cn('group @container block w-full rounded-2xl focus-visible:outline-none', className)}
+      >
+        <SpeakerCardInner {...rest} />
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      className={cn('group @container block w-full rounded-2xl bg-transparent text-left focus-visible:outline-none', className)}
+    >
+      <SpeakerCardInner {...rest} />
+    </button>
+  );
+}

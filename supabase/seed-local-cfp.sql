@@ -1,6 +1,6 @@
--- Local CFP reviewer dashboard seed data
+-- Local CFP seed data
 -- Applied automatically by `supabase db reset` for local development.
--- Scoped to reviewer-dashboard testing: submissions, tags, reviewers, reviews.
+-- Covers reviewer-dashboard testing plus a small public speakers lineup.
 
 -- Reviewers
 insert into public.cfp_reviewers (
@@ -272,20 +272,104 @@ insert into public.cfp_speakers (
     email,
     first_name,
     last_name,
-    job_title
+    job_title,
+    company,
+    bio,
+    profile_image_url,
+    header_image_url,
+    is_visible,
+    is_featured
 )
 values
-    ('11111111-1111-4111-8111-111111111111', 'alex.ai@example.test', 'Alex', 'Ng', 'Engineer'),
-    ('22222222-2222-4222-8222-222222222222', 'sam.nuxt@example.test', 'Sam', 'Rivera', 'Frontend Lead'),
-    ('33333333-3333-4333-8333-333333333333', 'maya.web@example.test', 'Maya', 'Khan', 'Developer Advocate'),
-    ('44444444-4444-4444-8444-444444444444', 'leo.misc@example.test', 'Leo', 'Berg', 'Staff Engineer'),
-    ('55555555-5555-4555-8555-555555555555', 'nina.scale@example.test', 'Nina', 'Costa', 'Platform Engineer'),
-    ('66666666-6666-4666-8666-666666666666', 'omar.cache@example.test', 'Omar', 'Haddad', 'Principal Engineer')
+    (
+        '11111111-1111-4111-8111-111111111111',
+        'alex.ai@example.test',
+        'Alex',
+        'Ng',
+        'Engineer',
+        'Example Labs',
+        'Alex builds AI tooling for JavaScript teams and likes talks that stay grounded in production reality.',
+        '/images/meetups/nico.jpg',
+        '/images/meetups/cloudflare.png',
+        true,
+        true
+    ),
+    (
+        '22222222-2222-4222-8222-222222222222',
+        'sam.nuxt@example.test',
+        'Sam',
+        'Rivera',
+        'Frontend Lead',
+        'Nuxt Forge',
+        'Sam helps product teams ship large frontend apps and enjoys sharing practical lessons from framework adoption.',
+        '/images/meetups/jens.png',
+        '/images/meetups/june-workshop.png',
+        true,
+        true
+    ),
+    (
+        '33333333-3333-4333-8333-333333333333',
+        'maya.web@example.test',
+        'Maya',
+        'Khan',
+        'Developer Advocate',
+        'Vue Forge',
+        'Maya works with growing frontend teams on architecture, migration strategy, and developer experience.',
+        '/images/meetups/ginetta.png',
+        '/images/meetups/july-group.png',
+        true,
+        false
+    ),
+    (
+        '44444444-4444-4444-8444-444444444444',
+        'leo.misc@example.test',
+        'Leo',
+        'Berg',
+        'Staff Engineer',
+        'State Systems',
+        'Leo likes modeling hard product problems with clear system boundaries and resilient client-side patterns.',
+        null,
+        null,
+        true,
+        false
+    ),
+    (
+        '55555555-5555-4555-8555-555555555555',
+        'nina.scale@example.test',
+        'Nina',
+        'Costa',
+        'Platform Engineer',
+        'Typed Systems',
+        'Nina focuses on refactors, contracts, and helping teams move fast without losing confidence.',
+        '/images/meetups/bogdan.png',
+        '/images/meetups/may.png',
+        true,
+        false
+    ),
+    (
+        '66666666-6666-4666-8666-666666666666',
+        'omar.cache@example.test',
+        'Omar',
+        'Haddad',
+        'Principal Engineer',
+        'Edge Cache Co',
+        'Omar spends most of his time on caching, performance, and the messy details between browser and edge.',
+        null,
+        '/images/meetups/june.png',
+        true,
+        false
+    )
 on conflict (id) do update set
     email = excluded.email,
     first_name = excluded.first_name,
     last_name = excluded.last_name,
-    job_title = excluded.job_title;
+    job_title = excluded.job_title,
+    company = excluded.company,
+    bio = excluded.bio,
+    profile_image_url = excluded.profile_image_url,
+    header_image_url = excluded.header_image_url,
+    is_visible = excluded.is_visible,
+    is_featured = excluded.is_featured;
 
 -- Tags
 insert into public.cfp_tags (
@@ -318,6 +402,10 @@ insert into public.cfp_submissions (
     submission_type,
     talk_level,
     workshop_duration_hours,
+    scheduled_date,
+    scheduled_start_time,
+    scheduled_duration_minutes,
+    room,
     status,
     submitted_at
 )
@@ -327,10 +415,14 @@ values
         '11111111-1111-4111-8111-111111111111',
         'Practical AI Agents in JavaScript',
         'Build robust agent workflows with guardrails, evals, and telemetry. Covers tool calling, retries, and production debugging for AI agents.',
-        'standard',
+        'lightning',
         'intermediate',
         null,
-        'submitted',
+        '2026-09-11',
+        '10:55:00',
+        45,
+        'Auditorium',
+        'accepted',
         '2026-02-20T10:00:00.000Z'
     ),
     (
@@ -338,10 +430,14 @@ values
         '22222222-2222-4222-8222-222222222222',
         'Shipping Nuxt 4 in Production',
         'Patterns for SSR, caching, and deployment hardening in Nuxt 4 apps, with notes on when plain Nuxt defaults stop being enough.',
-        'standard',
+        'workshop',
         'advanced',
-        null,
-        'under_review',
+        4,
+        '2026-09-10',
+        '09:00:00',
+        240,
+        'Technopark',
+        'accepted',
         '2026-02-21T10:00:00.000Z'
     ),
     (
@@ -349,10 +445,14 @@ values
         '33333333-3333-4333-8333-333333333333',
         'Nuxt Patterns for Vue Teams',
         'A migration playbook for Vue teams adopting modern Nuxt architecture, composables, and layered code ownership.',
-        'standard',
+        'workshop',
         'beginner',
-        null,
-        'submitted',
+        4,
+        '2026-09-10',
+        '09:00:00',
+        240,
+        'Technopark',
+        'accepted',
         '2026-02-22T10:00:00.000Z'
     ),
     (
@@ -362,6 +462,10 @@ values
         'State modeling techniques with snapshots, replay, and conflict resolution for collaborative clients and offline-first UX.',
         'standard',
         'advanced',
+        null,
+        null,
+        null,
+        null,
         null,
         'submitted',
         '2026-02-23T10:00:00.000Z'
@@ -374,6 +478,10 @@ values
         'lightning',
         'intermediate',
         null,
+        null,
+        null,
+        null,
+        null,
         'submitted',
         '2026-02-24T10:00:00.000Z'
     ),
@@ -384,6 +492,10 @@ values
         'Tracing, metrics, cost controls, and failure analysis for LLM-heavy systems with humans still in the loop.',
         'standard',
         'advanced',
+        null,
+        null,
+        null,
+        null,
         null,
         'waitlisted',
         '2026-02-25T10:00:00.000Z'
@@ -396,6 +508,10 @@ values
         'standard',
         'intermediate',
         null,
+        null,
+        null,
+        null,
+        null,
         'submitted',
         '2026-02-26T10:00:00.000Z'
     ),
@@ -407,6 +523,10 @@ values
         'workshop',
         'intermediate',
         4,
+        null,
+        null,
+        null,
+        null,
         'submitted',
         '2026-02-27T10:00:00.000Z'
     ),
@@ -418,6 +538,10 @@ values
         'standard',
         'advanced',
         null,
+        '2026-09-11',
+        '14:05:00',
+        30,
+        'Auditorium',
         'accepted',
         '2026-02-28T10:00:00.000Z'
     ),
@@ -429,6 +553,10 @@ values
         'lightning',
         'beginner',
         null,
+        null,
+        null,
+        null,
+        null,
         'rejected',
         '2026-03-01T10:00:00.000Z'
     )
@@ -439,8 +567,372 @@ on conflict (id) do update set
     submission_type = excluded.submission_type,
     talk_level = excluded.talk_level,
     workshop_duration_hours = excluded.workshop_duration_hours,
+    scheduled_date = excluded.scheduled_date,
+    scheduled_start_time = excluded.scheduled_start_time,
+    scheduled_duration_minutes = excluded.scheduled_duration_minutes,
+    room = excluded.room,
     status = excluded.status,
     submitted_at = excluded.submitted_at;
+
+insert into public.program_schedule_items (
+    id,
+    date,
+    start_time,
+    duration_minutes,
+    room,
+    type,
+    title,
+    description,
+    submission_id,
+    is_visible
+)
+values
+    (
+        'd1000000-0000-4000-8000-000000000001',
+        '2026-09-09',
+        '17:00:00',
+        300,
+        null,
+        'event',
+        'ZurichJS Special Edition Warm-up Meetup',
+        'Kick off the conference week with a relaxed community evening for local and visiting JavaScript developers.',
+        null,
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000001',
+        '2026-09-10',
+        '09:00:00',
+        240,
+        'Technopark',
+        'session',
+        'Shipping Nuxt 4 in Production',
+        'Workshop slot',
+        'aaaa2222-2222-4222-8222-222222222222',
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000002',
+        '2026-09-10',
+        '09:00:00',
+        240,
+        'Technopark',
+        'session',
+        'Nuxt Patterns for Vue Teams',
+        'Workshop slot',
+        'aaaa3333-3333-4333-8333-333333333333',
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000003',
+        '2026-09-10',
+        '09:00:00',
+        240,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000004',
+        '2026-09-10',
+        '13:00:00',
+        60,
+        null,
+        'break',
+        'Lunch break',
+        'Time to reset, grab food, and meet other attendees before the afternoon workshop block starts.',
+        null,
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000005',
+        '2026-09-10',
+        '14:00:00',
+        240,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000006',
+        '2026-09-10',
+        '14:00:00',
+        240,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000007',
+        '2026-09-10',
+        '14:00:00',
+        240,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd2000000-0000-4000-8000-000000000008',
+        '2026-09-10',
+        '19:00:00',
+        180,
+        null,
+        'event',
+        'Speakers Dinner',
+        'An exclusive dinner for speakers to connect before the main conference day.',
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000001',
+        '2026-09-11',
+        '08:00:00',
+        45,
+        null,
+        'event',
+        'Doors open, registration, coffee, sponsors',
+        'Arrive early, get settled, grab coffee, and spend time with the sponsors before the main program starts.',
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000002',
+        '2026-09-11',
+        '08:45:00',
+        15,
+        null,
+        'event',
+        'Opening remarks',
+        'Opening remarks to kick off the conference day.',
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000003',
+        '2026-09-11',
+        '09:00:00',
+        30,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000005',
+        '2026-09-11',
+        '09:35:00',
+        30,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000007',
+        '2026-09-11',
+        '10:10:00',
+        30,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000008',
+        '2026-09-11',
+        '10:40:00',
+        15,
+        null,
+        'break',
+        'Break',
+        'Take a break, recharge, and say hi to the people around you.',
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000009',
+        '2026-09-11',
+        '10:55:00',
+        45,
+        'Auditorium',
+        'session',
+        'Practical AI Agents in JavaScript',
+        'Talk slot',
+        'aaaa1111-1111-4111-8111-111111111111',
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000011',
+        '2026-09-11',
+        '11:45:00',
+        30,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000012',
+        '2026-09-11',
+        '12:15:00',
+        10,
+        null,
+        'break',
+        'Lunch transition, food pickup',
+        'Pick up food, get settled, and get ready for the midday program.',
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000013',
+        '2026-09-11',
+        '12:25:00',
+        25,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000015',
+        '2026-09-11',
+        '12:55:00',
+        25,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000016',
+        '2026-09-11',
+        '13:20:00',
+        45,
+        null,
+        'break',
+        'Networking, sponsor time, hallway track',
+        'Take time to connect, chat with sponsors, and follow the hallway track.',
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000017',
+        '2026-09-11',
+        '14:05:00',
+        30,
+        'Auditorium',
+        'session',
+        'Type-Safe MCP Servers with TypeScript',
+        'Talk slot',
+        'cccc1111-1111-4111-8111-111111111111',
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000019',
+        '2026-09-11',
+        '14:40:00',
+        30,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000021',
+        '2026-09-11',
+        '15:15:00',
+        45,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000023',
+        '2026-09-11',
+        '16:05:00',
+        30,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000025',
+        '2026-09-11',
+        '16:40:00',
+        30,
+        null,
+        'placeholder',
+        'TBA',
+        null,
+        null,
+        true
+    ),
+    (
+        'd3000000-0000-4000-8000-000000000026',
+        '2026-09-11',
+        '17:10:00',
+        50,
+        null,
+        'event',
+        'Closing remarks, thank-yous, drinks & networking',
+        'Wrap up the conference day and stay around for drinks and networking.',
+        null,
+        true
+    ),
+    (
+        'd4000000-0000-4000-8000-000000000001',
+        '2026-09-12',
+        '10:00:00',
+        300,
+        null,
+        'event',
+        'Speaker activities',
+        'Exclusive post-conference activities for VIP ticket holders and speakers.',
+        null,
+        true
+    )
+on conflict (id) do update set
+    date = excluded.date,
+    start_time = excluded.start_time,
+    duration_minutes = excluded.duration_minutes,
+    room = excluded.room,
+    type = excluded.type,
+    title = excluded.title,
+    description = excluded.description,
+    submission_id = excluded.submission_id,
+    is_visible = excluded.is_visible;
 
 -- Submission/tag links
 insert into public.cfp_submission_tags (
