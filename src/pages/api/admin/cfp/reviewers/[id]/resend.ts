@@ -40,11 +40,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Reviewer has already accepted the invitation' });
     }
 
-    // Determine access level from role and can_see_speaker_identity
-    let accessLevel: 'full_access' | 'anonymous' | 'readonly' = 'anonymous';
+    // Determine access level from role.
+    let accessLevel: 'full_access' | 'committee_member' | 'anonymous' | 'readonly' = 'anonymous';
     if (reviewer.role === 'readonly') {
       accessLevel = 'readonly';
-    } else if (reviewer.can_see_speaker_identity) {
+    } else if (reviewer.role === 'committee_member') {
+      accessLevel = 'committee_member';
+    } else if (reviewer.role === 'super_admin') {
       accessLevel = 'full_access';
     }
 

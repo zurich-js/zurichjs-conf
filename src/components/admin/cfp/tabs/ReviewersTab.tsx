@@ -114,10 +114,27 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
     switch (role) {
       case 'super_admin':
         return 'bg-purple-100 text-purple-800';
+      case 'committee_member':
+        return 'bg-amber-100 text-amber-800';
       case 'reviewer':
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-black';
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'super_admin':
+        return 'Super Admin';
+      case 'committee_member':
+        return 'Committee Member';
+      case 'reviewer':
+        return 'Anonymous Review';
+      case 'readonly':
+        return 'Read Only';
+      default:
+        return role.replace(/_/g, ' ');
     }
   };
 
@@ -223,7 +240,8 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
           >
             <option value="all">All Roles</option>
             <option value="super_admin">Super Admin</option>
-            <option value="reviewer">Reviewer</option>
+            <option value="committee_member">Committee Member</option>
+            <option value="reviewer">Anonymous Review</option>
             <option value="readonly">Read Only</option>
           </select>
           <select
@@ -263,7 +281,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 </div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeStyle(r.role)}`}>
-                    {r.role === 'super_admin' ? 'Super Admin' : r.role === 'reviewer' ? 'Reviewer' : 'Read Only'}
+                    {getRoleLabel(r.role)}
                   </span>
                   <span className="text-xs text-gray-500">
                     Invited {new Date(r.created_at).toLocaleDateString()}
@@ -380,7 +398,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                     <td className="px-3 py-3 text-sm text-black">{r.email}</td>
                     <td className="px-3 py-3">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeStyle(r.role)}`}>
-                        {r.role === 'super_admin' ? 'Super Admin' : r.role === 'reviewer' ? 'Reviewer' : 'Read Only'}
+                        {getRoleLabel(r.role)}
                       </span>
                     </td>
                     <td className="px-3 py-3">

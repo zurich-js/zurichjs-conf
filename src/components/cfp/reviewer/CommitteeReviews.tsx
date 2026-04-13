@@ -45,7 +45,7 @@ function ReviewCard({ review }: { review: ReviewData }) {
           </div>
           <div>
             <div className="text-white text-sm font-medium">{reviewerName}</div>
-            {review.reviewer?.name && (
+            {review.reviewer?.name && review.reviewer.email && (
               <div className="text-xs text-brand-gray-medium">
                 {review.reviewer.email}
               </div>

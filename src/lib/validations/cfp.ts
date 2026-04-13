@@ -356,7 +356,7 @@ export type ReimbursementFormData = z.infer<typeof reimbursementSchema>;
 export const reviewerInviteSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   name: z.string().optional(),
-  role: z.enum(['reviewer', 'readonly']).default('reviewer'),
+  role: z.enum(['super_admin', 'committee_member', 'reviewer', 'readonly']).default('reviewer'),
   can_see_speaker_identity: z.boolean().default(false),
 });
 

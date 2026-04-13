@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const { email, name, role, can_see_speaker_identity } = result.data;
+  const { email, name, role } = result.data;
 
   try {
     const { reviewer, error } = await inviteReviewer(
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email,
         name: name || undefined,
         role: role || 'reviewer',
-        can_see_speaker_identity: can_see_speaker_identity ?? false,
+        can_see_speaker_identity: false,
       },
       null // Admin invitations don't have a reviewer ID
     );
@@ -52,10 +52,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Determine access level for email
-    let accessLevel: 'full_access' | 'anonymous' | 'readonly' = 'anonymous';
+    let accessLevel: 'full_access' | 'committee_member' | 'anonymous' | 'readonly' = 'anonymous';
     if (role === 'readonly') {
       accessLevel = 'readonly';
-    } else if (can_see_speaker_identity) {
+    } else if (role === 'committee_member') {
+      accessLevel = 'committee_member';
+    } else if (role === 'super_admin') {
       accessLevel = 'full_access';
     }
 

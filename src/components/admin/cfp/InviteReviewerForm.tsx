@@ -14,6 +14,11 @@ const REVIEWER_ROLES: { value: ReviewerRole; label: string; description: string 
     description: 'Can see speaker names, emails, and all details. Can score and leave feedback.',
   },
   {
+    value: 'committee_member',
+    label: 'Committee Member',
+    description: 'Can see speaker details except email and anonymized committee reviews. Can score and leave feedback.',
+  },
+  {
     value: 'anonymous',
     label: 'Anonymous Review',
     description: 'Cannot see speaker names or personal details. Can score submissions blindly.',
@@ -72,14 +77,13 @@ export function InviteReviewerForm({
     e.preventDefault();
     if (!email) return;
 
-    const apiRole = role === 'readonly' ? 'readonly' : role === 'super_admin' ? 'super_admin' : 'reviewer';
-    const canSeeSpeakerIdentity = role === 'super_admin';
+    const apiRole = role === 'anonymous' ? 'reviewer' : role;
 
     inviteMutation.mutate({
       email,
       name,
       role: apiRole,
-      can_see_speaker_identity: canSeeSpeakerIdentity,
+      can_see_speaker_identity: false,
     });
   };
 

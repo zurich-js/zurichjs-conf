@@ -4,6 +4,7 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { getReviewerPermissions } from '@/lib/cfp/reviewer-permissions';
 import type {
   CfpReview,
   CfpSubmission,
@@ -11,8 +12,12 @@ import type {
   CfpSpeaker,
   CfpTag,
   CfpReviewer,
+  CfpSubmissionStatus,
   CreateCfpReviewRequest
 } from '../types/cfp';
+
+const REVIEWER_RESTRICTED_STATUSES: CfpSubmissionStatus[] = ['submitted', 'under_review', 'shortlisted', 'waitlisted'];
+const REVIEWER_FULL_STATUSES: CfpSubmissionStatus[] = [...REVIEWER_RESTRICTED_STATUSES, 'accepted', 'rejected'];
 
 /**
  * Get a review by ID
@@ -269,6 +274,7 @@ export async function getSubmissionsForReview(
   total: number;
 }> {
   const supabase = createCfpServiceClient();
+  const permissions = getReviewerPermissions(reviewer.role);
   const { status = ['submitted', 'under_review'], excludeReviewed = false, limit = 50, offset = 0 } = options;
 
   // Build query - get submissions in review-ready states
@@ -288,14 +294,17 @@ export async function getSubmissionsForReview(
   const speakerIds = [...new Set(submissions.map((s: { speaker_id: string }) => s.speaker_id))];
   let speakerMap: Record<string, CfpSpeaker> = {};
 
-  if (reviewer.can_see_speaker_identity && speakerIds.length > 0) {
+  if (permissions.canSeeSpeakerIdentity && speakerIds.length > 0) {
     const { data: speakers } = await supabase
       .from('cfp_speakers')
       .select('*')
       .in('id', speakerIds);
 
     if (speakers) {
-      speakerMap = Object.fromEntries(speakers.map((s: CfpSpeaker) => [s.id, s]));
+      speakerMap = Object.fromEntries(speakers.map((s: CfpSpeaker) => [
+        s.id,
+        permissions.canSeeSpeakerEmail ? s : { ...s, email: '' },
+      ]));
     }
   }
 
@@ -345,7 +354,7 @@ export async function getSubmissionsForReview(
 
     return {
       ...s,
-      speaker: reviewer.can_see_speaker_identity ? speakerMap[s.speaker_id] : undefined,
+      speaker: permissions.canSeeSpeakerIdentity ? speakerMap[s.speaker_id] : undefined,
       tags: submissionTagIds.map((tid: string) => tagMap[tid]).filter(Boolean),
       my_review: myReviewMap[s.id] || null,
       stats: statsMap[s.id],
@@ -382,29 +391,37 @@ export async function getSubmissionForReview(
   error?: string;
 }> {
   const supabase = createCfpServiceClient();
-  const isSuperAdmin = reviewer.role === 'super_admin';
+  const permissions = getReviewerPermissions(reviewer.role);
+  const visibleStatuses = permissions.canSeeDecisionStatuses
+    ? REVIEWER_FULL_STATUSES
+    : REVIEWER_RESTRICTED_STATUSES;
 
   // Get submission
   const { data: submission, error } = await supabase
     .from('cfp_submissions')
     .select('*')
     .eq('id', submissionId)
-    .in('status', ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted', 'rejected'])
+    .in('status', visibleStatuses)
     .single();
 
   if (error || !submission) {
     return { submission: null, error: 'Submission not found' };
   }
 
-  // Get speaker only for super_admin
+  // Get speaker for committee members and super admins.
   let speaker: CfpSpeaker | null = null;
-  if (isSuperAdmin) {
+  if (permissions.canSeeSpeakerIdentity) {
     const { data } = await supabase
       .from('cfp_speakers')
       .select('*')
       .eq('id', submission.speaker_id)
       .single();
-    speaker = data as CfpSpeaker | null;
+    speaker = data
+      ? {
+          ...(data as CfpSpeaker),
+          email: permissions.canSeeSpeakerEmail ? data.email : '',
+        }
+      : null;
   }
 
   // Get tags
@@ -432,10 +449,10 @@ export async function getSubmissionForReview(
     .eq('reviewer_id', reviewer.id)
     .single();
 
-  // Get all reviews with reviewer info for super_admin
+  // Get all reviews with reviewer info where allowed.
   // Using a looser type here since we're attaching partial reviewer info
   let allReviews: Array<CfpReview & { reviewer?: { name: string | null; email: string } }> = [];
-  if (isSuperAdmin) {
+  if (permissions.canSeeCommitteeReviews) {
     const { data: reviews } = await supabase
       .from('cfp_reviews')
       .select('*')
@@ -443,31 +460,35 @@ export async function getSubmissionForReview(
       .order('created_at', { ascending: false });
 
     if (reviews && reviews.length > 0) {
-      // Get reviewer info for all reviews
-      const reviewerIds = [...new Set(reviews.map((r: CfpReview) => r.reviewer_id))];
-      const { data: reviewers } = await supabase
-        .from('cfp_reviewers')
-        .select('id, name, email')
-        .in('id', reviewerIds);
-
       const reviewerMap: Record<string, { name: string | null; email: string }> = {};
-      if (reviewers) {
-        for (const r of reviewers) {
-          reviewerMap[r.id] = { name: r.name, email: r.email };
+      if (permissions.canSeeReviewerIdentity) {
+        // Get reviewer info for all reviews
+        const reviewerIds = [...new Set(reviews.map((r: CfpReview) => r.reviewer_id))];
+        const { data: reviewers } = await supabase
+          .from('cfp_reviewers')
+          .select('id, name, email')
+          .in('id', reviewerIds);
+
+        if (reviewers) {
+          for (const r of reviewers) {
+            reviewerMap[r.id] = { name: r.name, email: r.email };
+          }
         }
       }
 
       // Cast to the expected type since we're augmenting with partial reviewer info
-      allReviews = reviews.map((r: CfpReview) => ({
+      allReviews = reviews.map((r: CfpReview, index) => ({
         ...r,
-        reviewer: reviewerMap[r.reviewer_id],
+        reviewer: permissions.canSeeReviewerIdentity
+          ? reviewerMap[r.reviewer_id]
+          : { name: `Reviewer ${index + 1}`, email: '' },
       })) as Array<CfpReview & { reviewer?: { name: string | null; email: string } }>;
     }
   }
 
-  // Get stats - for non-super_admin, only show review count (no averages to prevent bias)
+  // Get stats - for anonymous roles, only show review count (no averages to prevent bias)
   const fullStats = await getSubmissionStats(submissionId);
-  const stats: CfpSubmissionStats = isSuperAdmin
+  const stats: CfpSubmissionStats = permissions.canSeeReviewStats
     ? fullStats
     : {
         submission_id: submissionId,
@@ -480,8 +501,8 @@ export async function getSubmissionForReview(
       };
 
   // Build the submission response
-  // For non-super_admin, strip out sensitive fields that could bias review
-  const sanitizedSubmission = isSuperAdmin
+  // Strip out sensitive fields that could bias review where the role cannot see them.
+  const sanitizedSubmission = permissions.canSeeSpeakerResources
     ? submission
     : {
         ...submission,

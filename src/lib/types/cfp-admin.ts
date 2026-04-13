@@ -152,7 +152,7 @@ export interface CfpReviewWithReviewer {
   };
 }
 
-export type ReviewerRole = 'super_admin' | 'anonymous' | 'readonly';
+export type ReviewerRole = 'super_admin' | 'committee_member' | 'anonymous' | 'readonly';
 
 export interface CfpInsights {
   byStatus: Record<ShortlistStatus, number>;

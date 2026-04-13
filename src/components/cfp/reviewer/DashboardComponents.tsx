@@ -141,6 +141,7 @@ interface FilterBarProps {
   showFilters: boolean;
   hasActiveFilters: boolean;
   isAnonymous?: boolean;
+  canSeeDecisionStatuses?: boolean;
   onSearchChange: (query: string) => void;
   onReviewFilterChange: (filter: ReviewFilterType) => void;
   onTypeFilterChange: (type: string) => void;
@@ -232,9 +233,9 @@ function TagMultiSelect({ label, options, value, onChange }: TagMultiSelectProps
   );
 }
 
-function StatusMultiSelectFilterPopover({ selected, isAnonymous, onChange }: { selected: string[]; isAnonymous: boolean; onChange: (value: string[]) => void }) {
+function StatusMultiSelectFilterPopover({ selected, canSeeDecisionStatuses, onChange }: { selected: string[]; canSeeDecisionStatuses: boolean; onChange: (value: string[]) => void }) {
   const options = STATUS_OPTIONS.filter((option) => (
-    option.value && (!isAnonymous || !['accepted', 'waitlisted'].includes(option.value))
+    option.value && (canSeeDecisionStatuses || !['accepted', 'rejected'].includes(option.value))
   ));
   const toggleValue = (value: string) => {
     if (selected.includes(value)) {
@@ -293,6 +294,7 @@ export function FilterBar({
   showFilters,
   hasActiveFilters,
   isAnonymous = false,
+  canSeeDecisionStatuses = !isAnonymous,
   onSearchChange,
   onReviewFilterChange,
   onTypeFilterChange,
@@ -388,7 +390,7 @@ export function FilterBar({
             />
             <StatusMultiSelectFilterPopover
               selected={statusFilters}
-              isAnonymous={isAnonymous}
+              canSeeDecisionStatuses={canSeeDecisionStatuses}
               onChange={onStatusFiltersChange}
             />
             <div>

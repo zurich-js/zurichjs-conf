@@ -8,9 +8,10 @@ import type { Speaker } from './types';
 
 interface SpeakerInfoProps {
   speaker: Speaker;
+  showEmail?: boolean;
 }
 
-export function SpeakerInfo({ speaker }: SpeakerInfoProps) {
+export function SpeakerInfo({ speaker, showEmail = true }: SpeakerInfoProps) {
   return (
     <section className="bg-brand-gray-dark rounded-xl p-6">
       <h2 className="text-sm font-semibold text-brand-gray-medium mb-3">Speaker</h2>
@@ -33,9 +34,11 @@ export function SpeakerInfo({ speaker }: SpeakerInfoProps) {
               {speaker.company && speaker.company}
             </div>
           )}
-          <div className="text-sm text-brand-gray-medium mt-1">
-            {speaker.email}
-          </div>
+          {showEmail && speaker.email && (
+            <div className="text-sm text-brand-gray-medium mt-1">
+              {speaker.email}
+            </div>
+          )}
 
           {/* Social Links */}
           <div className="flex flex-wrap gap-3 mt-3">

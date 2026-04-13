@@ -29,7 +29,7 @@ export type CfpSubmissionStatus =
 /**
  * Reviewer role for access control
  */
-export type CfpReviewerRole = 'super_admin' | 'reviewer' | 'readonly';
+export type CfpReviewerRole = 'super_admin' | 'committee_member' | 'reviewer' | 'readonly';
 
 /**
  * Flight direction

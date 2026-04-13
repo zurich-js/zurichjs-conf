@@ -5,27 +5,63 @@
 
 import { useState } from 'react';
 import { User, Ban } from 'lucide-react';
-import type { CfpAdminReviewer, ReviewerRole } from '@/lib/types/cfp-admin';
+import type { CfpAdminReviewer } from '@/lib/types/cfp-admin';
 import { Modal, ModalBody, Select } from '@/components/atoms';
 import { ConfirmationModal } from './ConfirmationModal';
 
-const REVIEWER_ROLE_OPTIONS = [
+type ReviewerModalRole = 'super_admin' | 'committee_member' | 'anonymous' | 'readonly';
+
+const REVIEWER_ROLE_OPTIONS: { value: ReviewerModalRole; label: string; description: string }[] = [
   {
     value: 'super_admin',
     label: 'Super Admin',
     description: 'Can see speaker names, emails, and all details. Can score and leave feedback.',
   },
   {
-    value: 'anonymous' as const,
+    value: 'committee_member',
+    label: 'Committee Member',
+    description: 'Can see speaker details except email and anonymized committee reviews. Can score and leave feedback.',
+  },
+  {
+    value: 'anonymous',
     label: 'Anonymous Review',
     description: 'Cannot see speaker names or personal details. Can score submissions blindly.',
   },
   {
-    value: 'readonly' as const,
+    value: 'readonly',
     label: 'Read Only',
     description: 'Can view submissions but cannot score or leave feedback. Observer access.',
   },
 ];
+
+function getRoleLabel(role: string) {
+  switch (role) {
+    case 'super_admin':
+      return 'Super Admin';
+    case 'committee_member':
+      return 'Committee Member';
+    case 'reviewer':
+      return 'Anonymous Review';
+    case 'readonly':
+      return 'Read Only';
+    default:
+      return role.replace(/_/g, ' ');
+  }
+}
+
+function getReviewerModalRole(role: string): ReviewerModalRole {
+  switch (role) {
+    case 'super_admin':
+      return 'super_admin';
+    case 'committee_member':
+      return 'committee_member';
+    case 'readonly':
+      return 'readonly';
+    case 'reviewer':
+    default:
+      return 'anonymous';
+  }
+}
 
 interface ReviewerModalProps {
   reviewer: CfpAdminReviewer;
@@ -44,20 +80,16 @@ export function ReviewerModal({
   isUpdating,
   isRevoking,
 }: ReviewerModalProps) {
-  const [selectedRole, setSelectedRole] = useState<ReviewerRole>(() => {
-    if (reviewer.role === 'readonly') return 'readonly';
-    if (reviewer.role === 'super_admin') return 'super_admin';
-    // Regular reviewer - check if they can see speaker identity
-    if (reviewer.can_see_speaker_identity) return 'super_admin';
-    return 'anonymous';
-  });
+  const [selectedRole, setSelectedRole] = useState<ReviewerModalRole>(() => getReviewerModalRole(reviewer.role));
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
 
   const handleUpdateRole = () => {
     const { apiRole, canSeeSpeakerIdentity } = (() => {
       switch (selectedRole) {
         case 'super_admin':
-          return { apiRole: 'super_admin', canSeeSpeakerIdentity: true };
+          return { apiRole: 'super_admin', canSeeSpeakerIdentity: false };
+        case 'committee_member':
+          return { apiRole: 'committee_member', canSeeSpeakerIdentity: false };
         case 'anonymous':
           return { apiRole: 'reviewer', canSeeSpeakerIdentity: false };
         case 'readonly':
@@ -111,7 +143,7 @@ export function ReviewerModal({
               <div>
                 <p className="text-xs text-gray-500 font-medium mb-1">Current Role</p>
                 <p className="text-sm text-black font-medium capitalize">
-                  {reviewer.role.replace('_', ' ')}
+                  {getRoleLabel(reviewer.role)}
                 </p>
               </div>
               <div>
@@ -131,7 +163,7 @@ export function ReviewerModal({
             <div className="space-y-3">
               <Select
                 value={selectedRole}
-                onChange={(value) => setSelectedRole(value as ReviewerRole)}
+                onChange={(value) => setSelectedRole(value as ReviewerModalRole)}
                 options={REVIEWER_ROLE_OPTIONS}
               />
               {selectedRoleInfo && (

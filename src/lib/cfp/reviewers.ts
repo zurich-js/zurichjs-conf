@@ -123,7 +123,7 @@ export async function inviteReviewer(
       email,
       name: request.name || null,
       role: request.role || 'reviewer',
-      can_see_speaker_identity: request.can_see_speaker_identity ?? false,
+      can_see_speaker_identity: false,
       invited_by: invitedBy,
       invited_at: new Date().toISOString(),
       is_active: true,
@@ -178,11 +178,14 @@ export async function updateReviewer(
   }
 ): Promise<{ reviewer: CfpReviewer | null; error: string | null }> {
   const supabase = createCfpServiceClient();
+  const normalizedUpdates = updates.role || updates.can_see_speaker_identity !== undefined
+    ? { ...updates, can_see_speaker_identity: false }
+    : updates;
 
   const { data, error } = await supabase
     .from('cfp_reviewers')
     .update({
-      ...updates,
+      ...normalizedUpdates,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

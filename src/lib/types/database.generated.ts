@@ -1847,7 +1847,7 @@ export type Database = {
         | "delayed"
       cfp_reimbursement_status: "pending" | "approved" | "rejected" | "paid"
       cfp_reimbursement_type: "flight" | "accommodation" | "transport" | "other"
-      cfp_reviewer_role: "super_admin" | "reviewer" | "readonly"
+      cfp_reviewer_role: "super_admin" | "committee_member" | "reviewer" | "readonly"
       cfp_submission_status:
         | "draft"
         | "submitted"
@@ -2033,7 +2033,7 @@ export const Constants = {
       ],
       cfp_reimbursement_status: ["pending", "approved", "rejected", "paid"],
       cfp_reimbursement_type: ["flight", "accommodation", "transport", "other"],
-      cfp_reviewer_role: ["super_admin", "reviewer", "readonly"],
+      cfp_reviewer_role: ["super_admin", "committee_member", "reviewer", "readonly"],
       cfp_submission_status: [
         "draft",
         "submitted",

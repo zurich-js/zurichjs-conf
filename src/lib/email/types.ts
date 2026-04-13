@@ -61,7 +61,7 @@ export interface VoucherConfirmationData {
 export interface ReviewerInvitationData {
   to: string;
   reviewerName?: string;
-  accessLevel: 'full_access' | 'anonymous' | 'readonly';
+  accessLevel: 'full_access' | 'committee_member' | 'anonymous' | 'readonly';
 }
 
 /**

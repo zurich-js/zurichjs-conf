@@ -50,13 +50,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const updates: {
         name?: string;
-        role?: 'super_admin' | 'reviewer' | 'readonly';
+        role?: 'super_admin' | 'committee_member' | 'reviewer' | 'readonly';
         can_see_speaker_identity?: boolean;
       } = {};
 
       if (name !== undefined) updates.name = name;
-      if (role !== undefined) updates.role = role;
-      if (can_see_speaker_identity !== undefined) updates.can_see_speaker_identity = can_see_speaker_identity;
+      if (role !== undefined) {
+        updates.role = role;
+        updates.can_see_speaker_identity = false;
+      } else if (can_see_speaker_identity !== undefined) {
+        updates.can_see_speaker_identity = false;
+      }
 
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ error: 'No updates provided' });

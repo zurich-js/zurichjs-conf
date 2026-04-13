@@ -162,7 +162,7 @@ export interface Submission {
 }
 
 export interface Reviewer {
-  role: 'reviewer' | 'readonly' | 'super_admin';
+  role: 'reviewer' | 'committee_member' | 'readonly' | 'super_admin';
   name?: string | null;
   email: string;
   can_see_speaker_identity: boolean;
@@ -190,6 +190,7 @@ export const STATUS_OPTIONS = [
   { value: 'shortlisted', label: 'Shortlisted' },
   { value: 'waitlisted', label: 'Waitlisted' },
   { value: 'accepted', label: 'Accepted' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 export const SORT_OPTIONS = [

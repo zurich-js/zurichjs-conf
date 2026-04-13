@@ -5,12 +5,14 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseApiClient, getReviewerByUserId } from '@/lib/cfp/auth';
+import { getReviewerPermissions } from '@/lib/cfp/reviewer-permissions';
 import { computeSubmissionScoring } from '@/lib/cfp/scoring';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('CFP Reviewer Dashboard API');
-const REVIEWER_DASHBOARD_STATUSES = ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted'] as const;
+const REVIEWER_RESTRICTED_STATUSES = ['submitted', 'under_review', 'shortlisted', 'waitlisted'] as const;
+const REVIEWER_FULL_STATUSES = ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted', 'rejected'] as const;
 
 interface ReviewerDashboardReview {
   id: string;
@@ -170,11 +172,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     log.info('Reviewer found', { email: reviewer.email, reviewerId: reviewer.id });
+    const permissions = getReviewerPermissions(reviewer.role);
+    const visibleStatuses = permissions.canSeeDecisionStatuses
+      ? REVIEWER_FULL_STATUSES
+      : REVIEWER_RESTRICTED_STATUSES;
 
     // Fetch submissions for review
     const supabaseAdmin = createCfpServiceClient();
 
-    // Get all reviewer-visible submissions (not drafts, withdrawn, or rejected)
+    // Get all submissions visible to this reviewer role.
     const { data: submissions, error: submissionsError } = await supabaseAdmin
       .from('cfp_submissions')
       .select(`
@@ -183,7 +189,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tag:cfp_tags(*)
         )
       `)
-      .in('status', REVIEWER_DASHBOARD_STATUSES)
+      .in('status', visibleStatuses)
       .order('submitted_at', { ascending: false });
 
     if (submissionsError) {
@@ -272,17 +278,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ?.map((t: { tag: { id: string; name: string } }) => t.tag)
         .filter(Boolean) || [];
 
+      const stats = statsMap.get(submission.id) || {
+        review_count: 0,
+        avg_overall: null,
+        total_reviewers: totalReviewerCount,
+        coverage_ratio: 0,
+        coverage_percent: 0,
+      };
+
       return {
         ...submission,
         tags,
         my_review: myReviewsMap.get(submission.id) || null,
-        stats: statsMap.get(submission.id) || {
-          review_count: 0,
-          avg_overall: null,
-          total_reviewers: totalReviewerCount,
-          coverage_ratio: 0,
-          coverage_percent: 0,
-        },
+        stats: permissions.canSeeReviewStats
+          ? stats
+          : { ...stats, avg_overall: null },
       };
     });
 

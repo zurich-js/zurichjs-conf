@@ -149,7 +149,7 @@ export interface CreateCfpReviewRequest {
 export interface InviteCfpReviewerRequest {
   email: string;
   name?: string;
-  role?: 'reviewer' | 'readonly';
+  role?: 'super_admin' | 'committee_member' | 'reviewer' | 'readonly';
   can_see_speaker_identity?: boolean;
 }
 
