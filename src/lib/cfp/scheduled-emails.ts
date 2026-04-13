@@ -201,7 +201,6 @@ export async function scheduleAcceptanceEmail(
   adminId: string
 ): Promise<ScheduleEmailResult> {
   const supabase = createCfpServiceClient();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
 
   log.info('Scheduling acceptance email', { submission_id: request.submission_id, admin_id: adminId });
 
@@ -227,28 +226,10 @@ export async function scheduleAcceptanceEmail(
       return { success: false, error: 'Speaker not found' };
     }
 
-    // Create attendance confirmation record (without token - speakers confirm via dashboard)
-    const { error: attendanceError } = await supabase
-      .from('cfp_speaker_attendance')
-      .upsert({
-        speaker_id: speaker.id,
-        submission_id: request.submission_id,
-        status: 'pending',
-        confirmation_token: `dashboard-${speaker.id}-${request.submission_id}`, // Placeholder token
-        token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // Far future
-      }, {
-        onConflict: 'speaker_id,submission_id',
-      });
-
-    if (attendanceError) {
-      log.error('Failed to create attendance record', { error: attendanceError.message });
-      return { success: false, error: 'Failed to create attendance confirmation' };
-    }
-
     // Compose speaker full name
     const speakerFullName = `${speaker.first_name} ${speaker.last_name}`.trim() || speaker.email;
 
-    // Prepare email data - link to dashboard where speakers can confirm
+    // Prepare email data - speakers reply to the email to confirm/decline
     const emailData: CfpAcceptanceEmailData = {
       to: speaker.email,
       speaker_name: speakerFullName,
@@ -258,7 +239,6 @@ export async function scheduleAcceptanceEmail(
       conference_name: 'ZurichJS Conference 2026',
       conference_date: 'September 27, 2026',
       personal_message: request.personal_message,
-      confirmation_url: `${baseUrl}/cfp/dashboard`,
     };
 
     // Render email
@@ -775,7 +755,7 @@ export async function sendScheduledEmailNow(
     let emailHtml: string;
 
     if (scheduledEmail.email_type === 'acceptance') {
-      // Acceptance email links to dashboard where speakers can confirm
+      // Acceptance email asks speakers to reply to confirm/decline
       const emailData: CfpAcceptanceEmailData = {
         to: speaker.email,
         speaker_name: speakerFullName,
@@ -785,7 +765,6 @@ export async function sendScheduledEmailNow(
         conference_name: 'ZurichJS Conference 2026',
         conference_date: 'September 27, 2026',
         personal_message: scheduledEmail.personal_message || undefined,
-        confirmation_url: `${baseUrl}/cfp/dashboard`,
       };
 
       emailHtml = await render(

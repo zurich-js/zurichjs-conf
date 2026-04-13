@@ -46,28 +46,6 @@ export const CONFERENCE_SLOTS = {
 } as const;
 
 /**
- * Attendance confirmation configuration
- */
-export const ATTENDANCE_CONFIRMATION = {
-  /** Token validity in days */
-  TOKEN_VALIDITY_DAYS: 30,
-  /** Token length in bytes (will be hex encoded to 2x this) */
-  TOKEN_LENGTH_BYTES: 32,
-} as const;
-
-/**
- * Decline reasons for attendance
- */
-export const DECLINE_REASONS = {
-  conflict: 'Schedule conflict',
-  travel: 'Cannot travel',
-  personal: 'Personal reasons',
-  other: 'Other',
-} as const;
-
-export type DeclineReason = keyof typeof DECLINE_REASONS;
-
-/**
  * Submission limits configuration
  */
 export const SUBMISSION_LIMITS = {

@@ -299,8 +299,6 @@ async function sendDecisionEmail(params: {
 
   if (params.decision === 'accepted') {
     // Note: This code path is deprecated. Use scheduled-emails.ts instead.
-    // The acceptance email now requires a confirmation_url with a token,
-    // which is generated in scheduleAcceptanceEmail.
     return sendCfpAcceptanceEmail({
       to: params.speaker_email,
       speaker_name: params.speaker_name,
@@ -310,7 +308,6 @@ async function sendDecisionEmail(params: {
       conference_name: conferenceName,
       conference_date: conferenceDate,
       personal_message: params.personal_message,
-      confirmation_url: `${baseUrl}/cfp/speaker`,
     });
   } else {
     return sendCfpRejectionEmail({
