@@ -12,6 +12,7 @@ export {
   getSponsor,
   updateSponsor,
   updateSponsorLogo,
+  updateSponsorColorLogo,
   toggleLogoPublic,
   listSponsors,
   deleteSponsor,

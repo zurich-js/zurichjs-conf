@@ -1,5 +1,26 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
+import {RemotePattern} from "next/dist/shared/lib/image-config";
+
+/* Cover localhost image optimization and storage */
+const isDev = process.env.NEXT_PUBLIC_BASE_URL?.includes('localhost')
+const remotePatterns: RemotePattern[] = [{
+  protocol: 'https',
+  hostname: '**.supabase.co',
+  pathname: '/storage/v1/object/public/**',
+}]
+if (isDev) remotePatterns.push({
+  protocol: 'http',
+  hostname: '127.0.0.1',
+  port: '54321',
+  pathname: '/storage/v1/object/public/**',
+},
+{
+  protocol: 'http',
+  hostname: 'localhost',
+  port: '54321',
+  pathname: '/storage/v1/object/public/**',
+})
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -7,20 +28,15 @@ const nextConfig: NextConfig = {
   // Configure image optimization for Supabase storage
   // Optimized to reduce Vercel Image Optimization usage
   images: {
-    // Only allow Supabase storage images (removed unused Unsplash)
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
-    ],
+    // Allow Next image optimizer to fetch local Supabase URLs in development
+    dangerouslyAllowLocalIP: isDev,
+    remotePatterns,
+
     // Cache optimized images for 31 days to reduce transformations
     minimumCacheTTL: 2678400,
     // Use only WebP format (avif adds extra transformations)
     formats: ['image/webp'],
-    // Reduce device sizes to match actual usage (removed 3840px ultra-wide)
-    deviceSizes: [640, 750, 828, 1080, 1280, 1536, 2048],
+    deviceSizes: [350, 480, 640, 768, 1024, 1280, 1536, 1920, 2560],
     // Reduce image sizes to match actual component usage
     imageSizes: [32, 48, 64, 96, 128, 256, 384],
     // Limit quality options to reduce transformation variants
