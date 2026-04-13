@@ -3,7 +3,7 @@
  * Sent to speakers when their submission is accepted
  */
 
-import { Button, Hr, Link, Section, Text } from '@react-email/components';
+import { Hr, Link, Section, Text } from '@react-email/components';
 import * as React from 'react';
 import { EmailLayout } from '../components';
 import { colors, spacing, typography, radii } from '../design/tokens';
@@ -22,7 +22,6 @@ export const CfpAcceptanceEmail: React.FC<CfpAcceptanceEmailData> = ({
   submission_type,
   conference_name,
   personal_message,
-  confirmation_url,
 }) => {
   // Use first_name if provided, otherwise extract from speaker_name
   const displayFirstName = first_name || speaker_name.split(' ')[0];
@@ -74,9 +73,10 @@ export const CfpAcceptanceEmail: React.FC<CfpAcceptanceEmailData> = ({
         {/* Next Steps */}
         <Text style={sectionTitleStyle}>What Happens Next</Text>
         <Text style={bodyStyle}>
-          Please confirm your attendance by clicking the button below.
-          <strong> We need to hear from you within the next 7 days</strong> so we can
-          plan accordingly.
+          Please <strong>reply to this email</strong> to let us know whether you can
+          attend the conference, or if something has changed and you are unable to
+          make it. <strong>We need to hear from you within the next 7 days</strong> so
+          we can plan accordingly.
         </Text>
 
         <Text style={bodyStyle}>
@@ -85,13 +85,6 @@ export const CfpAcceptanceEmail: React.FC<CfpAcceptanceEmailData> = ({
           or have specific travel needs (different inbound/outbound dates, etc.),
           please let us know so we can coordinate your flights accordingly.
         </Text>
-
-        {/* CTA Button */}
-        <Section style={ctaContainerStyle}>
-          <Button href={confirmation_url} style={buttonStyle}>
-            Confirm Your Attendance
-          </Button>
-        </Section>
       </Section>
 
       {/* Questions Section */}
@@ -223,22 +216,6 @@ const messageTextStyle: React.CSSProperties = {
   margin: 0,
   fontStyle: 'italic',
   whiteSpace: 'pre-wrap' as const,
-};
-
-const ctaContainerStyle: React.CSSProperties = {
-  textAlign: 'center' as const,
-  padding: `${spacing.lg}px 0`,
-};
-
-const buttonStyle: React.CSSProperties = {
-  backgroundColor: colors.brand.green,
-  color: '#FFFFFF',
-  fontSize: typography.body.fontSize,
-  fontWeight: 600,
-  padding: `${spacing.md}px ${spacing.xl}px`,
-  borderRadius: `${radii.button}px`,
-  textDecoration: 'none',
-  display: 'inline-block',
 };
 
 const questionsSectionStyle: React.CSSProperties = {

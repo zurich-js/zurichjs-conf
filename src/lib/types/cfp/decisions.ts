@@ -19,11 +19,6 @@ export type CfpEmailType = 'acceptance' | 'rejection';
 export type CfpScheduledEmailStatus = 'pending' | 'sent' | 'cancelled' | 'failed';
 
 /**
- * Attendance confirmation status
- */
-export type CfpAttendanceStatus = 'pending' | 'confirmed' | 'declined';
-
-/**
  * Decision record for a submission
  * Stored in cfp_submissions table as additional columns
  */
@@ -94,8 +89,6 @@ export interface CfpAcceptanceEmailData {
   conference_name: string;
   conference_date: string;
   personal_message?: string;
-  // URL to speaker dashboard where they can confirm attendance
-  confirmation_url: string;
 }
 
 /**
@@ -179,30 +172,3 @@ export interface ScheduleEmailResult {
   scheduled_for?: string;
 }
 
-/**
- * Speaker attendance confirmation record
- */
-export interface CfpSpeakerAttendance {
-  id: string;
-  speaker_id: string;
-  submission_id: string;
-  status: CfpAttendanceStatus;
-  responded_at: string | null;
-  decline_reason: string | null;
-  decline_notes: string | null;
-  confirmation_token: string;
-  token_expires_at: string;
-  token_used_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Request to confirm/decline attendance
- */
-export interface AttendanceResponseRequest {
-  token: string;
-  response: 'confirm' | 'decline';
-  decline_reason?: string;
-  decline_notes?: string;
-}

@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import { Check, X, MessageSquare } from 'lucide-react';
+import { Check, X, MessageSquare, Mail } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
@@ -60,7 +60,6 @@ export default function SubmissionDetail({ submission, isSubmissionClosed }: Sub
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,33 +154,6 @@ export default function SubmissionDetail({ submission, isSubmissionClosed }: Sub
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
-    }
-  };
-
-  const handleConfirmAttendance = async (response: 'confirm' | 'decline') => {
-    setIsConfirming(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/cfp/attendance/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submission_id: submission.id,
-          response,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to update attendance');
-      }
-
-      router.reload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsConfirming(false);
     }
   };
 
@@ -312,28 +284,22 @@ export default function SubmissionDetail({ submission, isSubmissionClosed }: Sub
                   <h2 className="text-lg font-semibold text-green-400 mb-2">
                     Your talk has been accepted!
                   </h2>
-                  <p className="text-brand-gray-light text-sm mb-4">
-                    Congratulations! Please confirm whether you can attend the conference to secure your speaking slot.
+                  <p className="text-brand-gray-light text-sm mb-3">
+                    Congratulations! Please check your inbox for the acceptance email and
+                    reply to let us know whether you can attend, or if something has changed
+                    and you&apos;re unable to make it.
                   </p>
-                  <div className="flex gap-3">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleConfirmAttendance('confirm')}
-                      loading={isConfirming}
-                    >
-                      <Check className="w-4 h-4" />
-                      Confirm Attendance
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleConfirmAttendance('decline')}
-                      disabled={isConfirming}
-                    >
-                      <X className="w-4 h-4" />
-                      Decline
-                    </Button>
+                  <div className="flex items-center gap-2 text-sm text-brand-gray-light">
+                    <Mail className="w-4 h-4 text-green-400" />
+                    <span>
+                      Reply to the acceptance email, or email{' '}
+                      <a
+                        href="mailto:hello@zurichjs.com"
+                        className="text-brand-primary hover:underline"
+                      >
+                        hello@zurichjs.com
+                      </a>
+                    </span>
                   </div>
                 </div>
               </div>
