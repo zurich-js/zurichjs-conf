@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
+import { CFP_REVIEWER_ROLES } from '@/lib/types/cfp';
 import { cfpQueryKeys, type CfpAdminReviewer, type CfpAdminReviewerWithActivity } from '@/lib/types/cfp-admin';
 import { BusyArea, Pagination } from '@/components/atoms';
 import { InviteReviewerForm } from '../InviteReviewerForm';
@@ -116,11 +117,11 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
 
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
-      case 'super_admin':
+      case CFP_REVIEWER_ROLES.SUPER_ADMIN:
         return 'bg-purple-100 text-purple-800';
-      case 'committee_member':
+      case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
         return 'bg-amber-100 text-amber-800';
-      case 'reviewer':
+      case CFP_REVIEWER_ROLES.REVIEWER:
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-black';
@@ -129,13 +130,13 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'super_admin':
+      case CFP_REVIEWER_ROLES.SUPER_ADMIN:
         return 'Super Admin';
-      case 'committee_member':
+      case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
         return 'Committee Member';
-      case 'reviewer':
+      case CFP_REVIEWER_ROLES.REVIEWER:
         return 'Anonymous Review';
-      case 'readonly':
+      case CFP_REVIEWER_ROLES.READONLY:
         return 'Read Only';
       default:
         return role.replace(/_/g, ' ');
@@ -276,10 +277,10 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
           >
             <option value="all">All Roles</option>
-            <option value="super_admin">Super Admin</option>
-            <option value="committee_member">Committee Member</option>
-            <option value="reviewer">Anonymous Review</option>
-            <option value="readonly">Read Only</option>
+            <option value={CFP_REVIEWER_ROLES.SUPER_ADMIN}>Super Admin</option>
+            <option value={CFP_REVIEWER_ROLES.COMMITTEE_MEMBER}>Committee Member</option>
+            <option value={CFP_REVIEWER_ROLES.REVIEWER}>Anonymous Review</option>
+            <option value={CFP_REVIEWER_ROLES.READONLY}>Read Only</option>
           </select>
           <select
             value={statusFilter}

@@ -9,6 +9,7 @@ import type {
   CfpAssistanceType,
   CfpFlightDirection,
   CfpReimbursementType,
+  CfpReviewerRole,
 } from './base';
 
 /**
@@ -149,7 +150,7 @@ export interface CreateCfpReviewRequest {
 export interface InviteCfpReviewerRequest {
   email: string;
   name?: string;
-  role?: 'super_admin' | 'committee_member' | 'reviewer' | 'readonly';
+  role?: CfpReviewerRole;
   can_see_speaker_identity?: boolean;
 }
 

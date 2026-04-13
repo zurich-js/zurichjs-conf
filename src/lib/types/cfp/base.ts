@@ -29,7 +29,21 @@ export type CfpSubmissionStatus =
 /**
  * Reviewer role for access control
  */
-export type CfpReviewerRole = 'super_admin' | 'committee_member' | 'reviewer' | 'readonly';
+export const CFP_REVIEWER_ROLES = {
+  SUPER_ADMIN: 'super_admin',
+  COMMITTEE_MEMBER: 'committee_member',
+  REVIEWER: 'reviewer',
+  READONLY: 'readonly',
+} as const;
+
+export const CFP_REVIEWER_ROLE_VALUES = [
+  CFP_REVIEWER_ROLES.SUPER_ADMIN,
+  CFP_REVIEWER_ROLES.COMMITTEE_MEMBER,
+  CFP_REVIEWER_ROLES.REVIEWER,
+  CFP_REVIEWER_ROLES.READONLY,
+] as const;
+
+export type CfpReviewerRole = typeof CFP_REVIEWER_ROLE_VALUES[number];
 
 /**
  * Flight direction

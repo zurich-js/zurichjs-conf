@@ -4,6 +4,8 @@
  */
 
 import type { ShortlistStatus } from '@/lib/cfp/scoring';
+import { CFP_REVIEWER_ROLES } from './cfp/base';
+import type { CfpReviewerRole } from './cfp/base';
 import type { CfpDecisionStatus } from './cfp/decisions';
 
 // Re-export CfpStats from the canonical location
@@ -102,7 +104,7 @@ export interface CfpAdminReviewer {
   id: string;
   email: string;
   name: string | null;
-  role: string;
+  role: CfpReviewerRole;
   is_active: boolean;
   can_see_speaker_identity: boolean;
   accepted_at: string | null;
@@ -166,7 +168,21 @@ export interface CfpReviewWithReviewer {
   };
 }
 
-export type ReviewerRole = 'super_admin' | 'committee_member' | 'anonymous' | 'readonly';
+export const ADMIN_REVIEWER_ROLES = {
+  SUPER_ADMIN: CFP_REVIEWER_ROLES.SUPER_ADMIN,
+  COMMITTEE_MEMBER: CFP_REVIEWER_ROLES.COMMITTEE_MEMBER,
+  ANONYMOUS: 'anonymous',
+  READONLY: CFP_REVIEWER_ROLES.READONLY,
+} as const;
+
+export const ADMIN_REVIEWER_ROLE_VALUES = [
+  ADMIN_REVIEWER_ROLES.SUPER_ADMIN,
+  ADMIN_REVIEWER_ROLES.COMMITTEE_MEMBER,
+  ADMIN_REVIEWER_ROLES.ANONYMOUS,
+  ADMIN_REVIEWER_ROLES.READONLY,
+] as const;
+
+export type ReviewerRole = typeof ADMIN_REVIEWER_ROLE_VALUES[number];
 
 export interface CfpInsights {
   byStatus: Record<ShortlistStatus, number>;

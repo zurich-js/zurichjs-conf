@@ -7,6 +7,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { inviteReviewer } from '@/lib/cfp/reviewers';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { sendReviewerInvitationEmail } from '@/lib/email';
+import {
+  REVIEWER_INVITATION_ACCESS_LEVELS,
+  type ReviewerInvitationAccessLevel,
+} from '@/lib/email/types';
+import { CFP_REVIEWER_ROLES } from '@/lib/types/cfp';
 import { reviewerInviteSchema } from '@/lib/validations/cfp';
 import { logger } from '@/lib/logger';
 
@@ -40,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       {
         email,
         name: name || undefined,
-        role: role || 'reviewer',
+        role: role || CFP_REVIEWER_ROLES.REVIEWER,
         can_see_speaker_identity: false,
       },
       null // Admin invitations don't have a reviewer ID
@@ -52,13 +57,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Determine access level for email
-    let accessLevel: 'full_access' | 'committee_member' | 'anonymous' | 'readonly' = 'anonymous';
-    if (role === 'readonly') {
-      accessLevel = 'readonly';
-    } else if (role === 'committee_member') {
-      accessLevel = 'committee_member';
-    } else if (role === 'super_admin') {
-      accessLevel = 'full_access';
+    let accessLevel: ReviewerInvitationAccessLevel = REVIEWER_INVITATION_ACCESS_LEVELS.ANONYMOUS;
+    if (role === CFP_REVIEWER_ROLES.READONLY) {
+      accessLevel = REVIEWER_INVITATION_ACCESS_LEVELS.READONLY;
+    } else if (role === CFP_REVIEWER_ROLES.COMMITTEE_MEMBER) {
+      accessLevel = REVIEWER_INVITATION_ACCESS_LEVELS.COMMITTEE_MEMBER;
+    } else if (role === CFP_REVIEWER_ROLES.SUPER_ADMIN) {
+      accessLevel = REVIEWER_INVITATION_ACCESS_LEVELS.FULL_ACCESS;
     }
 
     // Send invitation email

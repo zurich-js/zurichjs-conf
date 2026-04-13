@@ -1,6 +1,13 @@
-import type { CfpReviewerRole } from '@/lib/types/cfp';
+import { CFP_REVIEWER_ROLES, type CfpReviewerRole } from '@/lib/types/cfp';
 
-export type ReviewerAccessLevel = 'anonymous' | 'committee' | 'admin' | 'readonly';
+export const REVIEWER_ACCESS_LEVELS = {
+  ANONYMOUS: 'anonymous',
+  COMMITTEE: 'committee',
+  ADMIN: 'admin',
+  READONLY: 'readonly',
+} as const;
+
+export type ReviewerAccessLevel = typeof REVIEWER_ACCESS_LEVELS[keyof typeof REVIEWER_ACCESS_LEVELS];
 
 export interface ReviewerPermissions {
   accessLevel: ReviewerAccessLevel;
@@ -19,9 +26,9 @@ export interface ReviewerPermissions {
 
 export function getReviewerPermissions(role: CfpReviewerRole): ReviewerPermissions {
   switch (role) {
-    case 'super_admin':
+    case CFP_REVIEWER_ROLES.SUPER_ADMIN:
       return {
-        accessLevel: 'admin',
+        accessLevel: REVIEWER_ACCESS_LEVELS.ADMIN,
         canReview: true,
         canSeeSpeakerIdentity: true,
         canSeeSpeakerEmail: true,
@@ -34,9 +41,9 @@ export function getReviewerPermissions(role: CfpReviewerRole): ReviewerPermissio
         canUseReviewBasedFilters: true,
         canSeeDecisionStatuses: true,
       };
-    case 'committee_member':
+    case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
       return {
-        accessLevel: 'committee',
+        accessLevel: REVIEWER_ACCESS_LEVELS.COMMITTEE,
         canReview: true,
         canSeeSpeakerIdentity: true,
         canSeeSpeakerEmail: false,
@@ -49,9 +56,9 @@ export function getReviewerPermissions(role: CfpReviewerRole): ReviewerPermissio
         canUseReviewBasedFilters: true,
         canSeeDecisionStatuses: true,
       };
-    case 'readonly':
+    case CFP_REVIEWER_ROLES.READONLY:
       return {
-        accessLevel: 'readonly',
+        accessLevel: REVIEWER_ACCESS_LEVELS.READONLY,
         canReview: false,
         canSeeSpeakerIdentity: false,
         canSeeSpeakerEmail: false,
@@ -64,10 +71,10 @@ export function getReviewerPermissions(role: CfpReviewerRole): ReviewerPermissio
         canUseReviewBasedFilters: false,
         canSeeDecisionStatuses: false,
       };
-    case 'reviewer':
+    case CFP_REVIEWER_ROLES.REVIEWER:
     default:
       return {
-        accessLevel: 'anonymous',
+        accessLevel: REVIEWER_ACCESS_LEVELS.ANONYMOUS,
         canReview: true,
         canSeeSpeakerIdentity: false,
         canSeeSpeakerEmail: false,
@@ -85,13 +92,13 @@ export function getReviewerPermissions(role: CfpReviewerRole): ReviewerPermissio
 
 export function getReviewerAccessLabel(role: CfpReviewerRole): string {
   switch (role) {
-    case 'super_admin':
+    case CFP_REVIEWER_ROLES.SUPER_ADMIN:
       return 'Super Admin';
-    case 'committee_member':
+    case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
       return 'Committee Member';
-    case 'readonly':
+    case CFP_REVIEWER_ROLES.READONLY:
       return 'Read Only';
-    case 'reviewer':
+    case CFP_REVIEWER_ROLES.REVIEWER:
     default:
       return 'Anonymous Review';
   }

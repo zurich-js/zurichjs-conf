@@ -10,6 +10,7 @@ import { updateReviewer, deactivateReviewer } from '@/lib/cfp/reviewers';
 import { getAdminReviewersWithActivity } from '@/lib/cfp/admin';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
+import type { CfpReviewerRole } from '@/lib/types/cfp';
 
 const log = logger.scope('Admin Reviewer API');
 
@@ -50,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const updates: {
         name?: string;
-        role?: 'super_admin' | 'committee_member' | 'reviewer' | 'readonly';
+        role?: CfpReviewerRole;
         can_see_speaker_identity?: boolean;
       } = {};
 

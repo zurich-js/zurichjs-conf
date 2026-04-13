@@ -5,7 +5,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
-import type { CfpReviewer, CfpReviewerRole, InviteCfpReviewerRequest } from '../types/cfp';
+import {
+  CFP_REVIEWER_ROLES,
+  type CfpReviewer,
+  type CfpReviewerRole,
+  type InviteCfpReviewerRequest,
+} from '../types/cfp';
 
 /**
  * Create untyped Supabase client for CFP tables
@@ -122,7 +127,7 @@ export async function inviteReviewer(
     .insert({
       email,
       name: request.name || null,
-      role: request.role || 'reviewer',
+      role: request.role || CFP_REVIEWER_ROLES.REVIEWER,
       can_see_speaker_identity: false,
       invited_by: invitedBy,
       invited_at: new Date().toISOString(),
@@ -249,7 +254,7 @@ export async function reactivateReviewer(id: string): Promise<{ success: boolean
  */
 export async function isSuperAdmin(userId: string): Promise<boolean> {
   const reviewer = await getReviewerByUserId(userId);
-  return reviewer?.role === 'super_admin' && reviewer?.is_active === true;
+  return reviewer?.role === CFP_REVIEWER_ROLES.SUPER_ADMIN && reviewer?.is_active === true;
 }
 
 /**
