@@ -12,6 +12,21 @@ import { logger } from '@/lib/logger';
 const log = logger.scope('CFP Reviewer Dashboard API');
 const REVIEWER_DASHBOARD_STATUSES = ['submitted', 'under_review', 'shortlisted', 'waitlisted', 'accepted'] as const;
 
+interface ReviewerDashboardReview {
+  id: string;
+  submission_id: string;
+  reviewer_id: string;
+  score_overall: number | null;
+  score_relevance: number | null;
+  score_technical_depth: number | null;
+  score_clarity: number | null;
+  score_diversity: number | null;
+  private_notes: string | null;
+  feedback_to_speaker: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 async function fetchAllRows<T = Record<string, unknown>>(
   supabase: ReturnType<typeof createCfpServiceClient>,
   table: string,
@@ -33,6 +48,34 @@ async function fetchAllRows<T = Record<string, unknown>>(
     if (!data || data.length === 0) break;
 
     allRows.push(...(data as T[]));
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return { data: allRows, error: null };
+}
+
+async function fetchReviewerReviews(
+  supabase: ReturnType<typeof createCfpServiceClient>,
+  reviewerId: string,
+  pageSize = 1000
+): Promise<{ data: ReviewerDashboardReview[]; error: unknown | null }> {
+  const allRows: ReviewerDashboardReview[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('cfp_reviews')
+      .select('id, submission_id, reviewer_id, score_overall, score_relevance, score_technical_depth, score_clarity, score_diversity, private_notes, feedback_to_speaker, created_at, updated_at')
+      .eq('reviewer_id', reviewerId)
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      return { data: allRows, error };
+    }
+    if (!data || data.length === 0) break;
+
+    allRows.push(...(data as ReviewerDashboardReview[]));
     if (data.length < pageSize) break;
     offset += pageSize;
   }
@@ -148,11 +191,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to fetch submissions' });
     }
 
+    const submissionIds = (submissions || []).map((submission) => submission.id);
+
     // Get this reviewer's reviews
-    const { data: myReviews, error: reviewsError } = await supabaseAdmin
-      .from('cfp_reviews')
-      .select('*')
-      .eq('reviewer_id', reviewer.id);
+    const { data: myReviews, error: reviewsError } = await fetchReviewerReviews(supabaseAdmin, reviewer.id);
 
     if (reviewsError) {
       log.error('Error fetching reviews', reviewsError);
@@ -183,8 +225,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create a map of my reviews by submission_id
+    const submissionIdSet = new Set(submissionIds);
     const myReviewsMap = new Map(
-      (myReviews || []).map(review => [review.submission_id, review])
+      (myReviews || [])
+        .filter((review) => submissionIdSet.has(review.submission_id))
+        .map((review) => [review.submission_id, review])
     );
 
     // Calculate stats per submission

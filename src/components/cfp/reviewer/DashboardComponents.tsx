@@ -506,6 +506,8 @@ export function SubmissionCard({
         : reviewCount < 7
           ? 'some coverage'
           : 'well covered';
+  const myScore = submission.my_review?.score_overall;
+  const scoreLabel = typeof myScore === 'number' ? myScore : '-';
 
   return (
     <Link
@@ -562,7 +564,7 @@ export function SubmissionCard({
                 </ReviewerPill>
                 {!isAnonymous && (
                   <div className="text-sm text-brand-gray-light">
-                    Score: {submission.my_review?.score_overall || 0}/4
+                    Score: {scoreLabel}/4
                   </div>
                 )}
             </div>

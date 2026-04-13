@@ -543,7 +543,7 @@ values
         '70000000-0000-4000-8000-000000000005',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b111111-1111-4111-8111-111111111111',
-        4, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Committee review: relevant and timely.',
         null,
         '2026-03-02T15:00:00.000Z',
@@ -553,7 +553,7 @@ values
         '70000000-0000-4000-8000-000000000006',
         'aaaa4444-4444-4444-8444-444444444444',
         '6b111111-1111-4111-8111-111111111111',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Excellent depth and strong frontend angle.',
         null,
         '2026-03-04T09:00:00.000Z',
@@ -573,7 +573,7 @@ values
         '70000000-0000-4000-8000-000000000008',
         'cccc1111-1111-4111-8111-111111111111',
         '6b111111-1111-4111-8111-111111111111',
-        5, 5, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Great fit for advanced backend/frontend crossover audience.',
         null,
         '2026-03-04T11:00:00.000Z',
@@ -583,7 +583,7 @@ values
         '70000000-0000-4000-8000-000000000009',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b222222-2222-4222-8222-222222222222',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Very strong premise and easy to program.',
         null,
         '2026-03-04T12:00:00.000Z',
@@ -603,7 +603,7 @@ values
         '70000000-0000-4000-8000-000000000011',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b444444-4444-4444-8444-444444444444',
-        4, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Would work well for the main track.',
         null,
         '2026-03-04T13:00:00.000Z',
@@ -613,7 +613,7 @@ values
         '70000000-0000-4000-8000-000000000012',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b555555-5555-4555-8555-555555555555',
-        4, 4, 4, 5, 4,
+        4, 4, 4, 4, 4,
         'Practical and current topic.',
         null,
         '2026-03-04T13:30:00.000Z',
@@ -623,7 +623,7 @@ values
         '70000000-0000-4000-8000-000000000013',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b666666-6666-4666-8666-666666666666',
-        5, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Helpful production focus.',
         null,
         '2026-03-04T14:00:00.000Z',
@@ -773,7 +773,7 @@ values
         '70000000-0000-4000-8000-000000000028',
         'bbbb2222-2222-4222-8222-222222222222',
         '6b555555-5555-4555-8555-555555555555',
-        4, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Well-targeted for the audience.',
         null,
         '2026-03-05T15:30:00.000Z',
@@ -813,7 +813,7 @@ values
         '70000000-0000-4000-8000-000000000032',
         'bbbb4444-4444-4444-8444-444444444444',
         '6b222222-2222-4222-8222-222222222222',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'High-value workshop topic.',
         null,
         '2026-03-06T09:00:00.000Z',
@@ -833,7 +833,7 @@ values
         '70000000-0000-4000-8000-000000000034',
         'bbbb4444-4444-4444-8444-444444444444',
         '6b444444-4444-4444-8444-444444444444',
-        4, 5, 4, 4, 3,
+        4, 4, 4, 4, 3,
         'Would fill a useful workshop slot.',
         null,
         '2026-03-06T10:00:00.000Z',
@@ -853,7 +853,7 @@ values
         '70000000-0000-4000-8000-000000000036',
         'bbbb4444-4444-4444-8444-444444444444',
         '6b666666-6666-4666-8666-666666666666',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Detailed enough for a workshop.',
         null,
         '2026-03-06T11:00:00.000Z',
@@ -873,7 +873,7 @@ values
         '70000000-0000-4000-8000-000000000038',
         'cccc1111-1111-4111-8111-111111111111',
         '6b222222-2222-4222-8222-222222222222',
-        5, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Very strong TypeScript angle.',
         null,
         '2026-03-06T12:00:00.000Z',
@@ -897,6 +897,7 @@ on conflict (submission_id, reviewer_id) do update set
     score_diversity = excluded.score_diversity,
     private_notes = excluded.private_notes,
     feedback_to_speaker = excluded.feedback_to_speaker,
+    created_at = excluded.created_at,
     updated_at = excluded.updated_at;
 
 -- Additional generated load-test data merged into the main reviewer dashboard seed.
@@ -1111,7 +1112,14 @@ generated_reviews as (
         row_number() over (order by submission_series, reviewer_sort) as row_id,
         submission_id,
         reviewer_id,
-        submission_series
+        submission_series,
+        reviewer_sort,
+        now()
+            - make_interval(
+                days => least((submission_series % 45), ((submission_series * 7 + reviewer_sort * 3) % 30)),
+                hours => ((submission_series + reviewer_sort * 5) % 12),
+                mins => ((submission_series * reviewer_sort) % 60)
+            ) as reviewed_at
     from (
         select
             series as submission_series,
@@ -1132,20 +1140,40 @@ insert into public.cfp_reviews (
     score_clarity,
     score_diversity,
     private_notes,
-    feedback_to_speaker
+    feedback_to_speaker,
+    created_at,
+    updated_at
 )
 select
     ('84000000-0000-4000-8000-' || lpad(row_id::text, 12, '0'))::uuid as id,
     submission_id,
     reviewer_id,
-    ((submission_series % 5) + 1) as score_overall,
-    (((submission_series + 1) % 5) + 1) as score_relevance,
-    (((submission_series + 2) % 5) + 1) as score_technical_depth,
-    (((submission_series + 3) % 5) + 1) as score_clarity,
-    (((submission_series + 4) % 5) + 1) as score_diversity,
+    seeded_scores.score_overall,
+    seeded_scores.score_relevance,
+    seeded_scores.score_technical_depth,
+    seeded_scores.score_clarity,
+    seeded_scores.score_diversity,
     ('Seeded private note for submission ' || submission_series::text) as private_notes,
-    ('Seeded speaker feedback for submission ' || submission_series::text) as feedback_to_speaker
+    ('Seeded speaker feedback for submission ' || submission_series::text) as feedback_to_speaker,
+    reviewed_at as created_at,
+    reviewed_at as updated_at
 from generated_reviews
+cross join lateral (
+    select case
+        when ((submission_series * 17 + reviewer_sort * 11) % 20) < 2 then 1
+        when ((submission_series * 17 + reviewer_sort * 11) % 20) < 7 then 2
+        when ((submission_series * 17 + reviewer_sort * 11) % 20) < 15 then 3
+        else 4
+    end as score_overall
+) as base_score
+cross join lateral (
+    select
+        base_score.score_overall,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series + reviewer_sort) % 6 = 0 then -1 when (submission_series + reviewer_sort) % 7 = 0 then 1 else 0 end)) as score_relevance,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series + reviewer_sort * 2) % 5 = 0 then -1 when (submission_series + reviewer_sort * 2) % 11 = 0 then 1 else 0 end)) as score_technical_depth,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series * 2 + reviewer_sort) % 7 = 0 then -1 when (submission_series * 2 + reviewer_sort) % 13 = 0 then 1 else 0 end)) as score_clarity,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series + reviewer_sort * 3) % 8 = 0 then -1 when (submission_series + reviewer_sort * 3) % 17 = 0 then 1 else 0 end)) as score_diversity
+) as seeded_scores
 on conflict (submission_id, reviewer_id) do update set
     score_overall = excluded.score_overall,
     score_relevance = excluded.score_relevance,
@@ -1153,4 +1181,6 @@ on conflict (submission_id, reviewer_id) do update set
     score_clarity = excluded.score_clarity,
     score_diversity = excluded.score_diversity,
     private_notes = excluded.private_notes,
-    feedback_to_speaker = excluded.feedback_to_speaker;
+    feedback_to_speaker = excluded.feedback_to_speaker,
+    created_at = excluded.created_at,
+    updated_at = excluded.updated_at;
