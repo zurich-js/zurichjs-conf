@@ -295,7 +295,9 @@ insert into public.cfp_submissions (
     talk_level,
     workshop_duration_hours,
     status,
-    submitted_at
+    submitted_at,
+    created_at,
+    updated_at
 )
 values
     (
@@ -307,6 +309,8 @@ values
         'intermediate',
         null,
         'submitted',
+        '2026-02-20T10:00:00.000Z',
+        '2026-02-19T14:00:00.000Z',
         '2026-02-20T10:00:00.000Z'
     ),
     (
@@ -318,6 +322,8 @@ values
         'advanced',
         null,
         'under_review',
+        '2026-02-21T10:00:00.000Z',
+        '2026-02-20T15:30:00.000Z',
         '2026-02-21T10:00:00.000Z'
     ),
     (
@@ -329,6 +335,8 @@ values
         'beginner',
         null,
         'submitted',
+        '2026-02-22T10:00:00.000Z',
+        '2026-02-21T16:45:00.000Z',
         '2026-02-22T10:00:00.000Z'
     ),
     (
@@ -340,6 +348,8 @@ values
         'advanced',
         null,
         'submitted',
+        '2026-02-23T10:00:00.000Z',
+        '2026-02-22T09:15:00.000Z',
         '2026-02-23T10:00:00.000Z'
     ),
     (
@@ -351,6 +361,8 @@ values
         'intermediate',
         null,
         'submitted',
+        '2026-02-24T10:00:00.000Z',
+        '2026-02-23T13:20:00.000Z',
         '2026-02-24T10:00:00.000Z'
     ),
     (
@@ -362,6 +374,8 @@ values
         'advanced',
         null,
         'waitlisted',
+        '2026-02-25T10:00:00.000Z',
+        '2026-02-24T18:40:00.000Z',
         '2026-02-25T10:00:00.000Z'
     ),
     (
@@ -373,6 +387,8 @@ values
         'intermediate',
         null,
         'submitted',
+        '2026-02-26T10:00:00.000Z',
+        '2026-02-25T11:10:00.000Z',
         '2026-02-26T10:00:00.000Z'
     ),
     (
@@ -384,6 +400,8 @@ values
         'intermediate',
         4,
         'submitted',
+        '2026-02-27T10:00:00.000Z',
+        '2026-02-26T19:05:00.000Z',
         '2026-02-27T10:00:00.000Z'
     ),
     (
@@ -395,6 +413,8 @@ values
         'advanced',
         null,
         'accepted',
+        '2026-02-28T10:00:00.000Z',
+        '2026-02-27T08:50:00.000Z',
         '2026-02-28T10:00:00.000Z'
     ),
     (
@@ -406,6 +426,8 @@ values
         'beginner',
         null,
         'rejected',
+        '2026-03-01T10:00:00.000Z',
+        '2026-02-28T12:35:00.000Z',
         '2026-03-01T10:00:00.000Z'
     )
 on conflict (id) do update set
@@ -416,7 +438,9 @@ on conflict (id) do update set
     talk_level = excluded.talk_level,
     workshop_duration_hours = excluded.workshop_duration_hours,
     status = excluded.status,
-    submitted_at = excluded.submitted_at;
+    submitted_at = excluded.submitted_at,
+    created_at = excluded.created_at,
+    updated_at = excluded.updated_at;
 
 -- Submission/tag links
 insert into public.cfp_submission_tags (
@@ -981,6 +1005,8 @@ insert into public.cfp_submissions (
     workshop_duration_hours,
     status,
     submitted_at,
+    created_at,
+    updated_at,
     metadata
 )
 select
@@ -1000,6 +1026,8 @@ select
     end as workshop_duration_hours,
     status,
     now() - make_interval(days => series % 45, hours => series % 12) as submitted_at,
+    now() - make_interval(days => (series % 45) + 1, hours => (series * 3) % 24, mins => (series * 11) % 60) as created_at,
+    now() - make_interval(days => series % 45, hours => series % 12) as updated_at,
     jsonb_build_object('seed_source', 'reviewer-dashboard-load-test', 'seed_index', series) as metadata
 from generated_submissions
 on conflict (id) do update set
@@ -1011,6 +1039,8 @@ on conflict (id) do update set
     workshop_duration_hours = excluded.workshop_duration_hours,
     status = excluded.status,
     submitted_at = excluded.submitted_at,
+    created_at = excluded.created_at,
+    updated_at = excluded.updated_at,
     metadata = excluded.metadata;
 
 -- Extra submission/tag links
