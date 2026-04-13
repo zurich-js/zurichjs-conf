@@ -5,21 +5,27 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Info } from 'lucide-react';
-import { cfpQueryKeys, type ReviewerRole } from '@/lib/types/cfp-admin';
+import { CFP_REVIEWER_ROLES } from '@/lib/types/cfp';
+import { ADMIN_REVIEWER_ROLES, cfpQueryKeys, type ReviewerRole } from '@/lib/types/cfp-admin';
 
 const REVIEWER_ROLES: { value: ReviewerRole; label: string; description: string }[] = [
   {
-    value: 'super_admin',
+    value: ADMIN_REVIEWER_ROLES.SUPER_ADMIN,
     label: 'Super Admin',
     description: 'Can see speaker names, emails, and all details. Can score and leave feedback.',
   },
   {
-    value: 'anonymous',
+    value: ADMIN_REVIEWER_ROLES.COMMITTEE_MEMBER,
+    label: 'Committee Member',
+    description: 'Can see speaker details except email and anonymized committee reviews. Can score and leave feedback.',
+  },
+  {
+    value: ADMIN_REVIEWER_ROLES.ANONYMOUS,
     label: 'Anonymous Review',
     description: 'Cannot see speaker names or personal details. Can score submissions blindly.',
   },
   {
-    value: 'readonly',
+    value: ADMIN_REVIEWER_ROLES.READONLY,
     label: 'Read Only',
     description: 'Can view submissions but cannot score or leave feedback. Observer access.',
   },
@@ -38,7 +44,7 @@ export function InviteReviewerForm({
 }: InviteReviewerFormProps = {}) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<ReviewerRole>('anonymous');
+  const [role, setRole] = useState<ReviewerRole>(ADMIN_REVIEWER_ROLES.ANONYMOUS);
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
 
@@ -58,7 +64,7 @@ export function InviteReviewerForm({
     onSuccess: () => {
       setEmail('');
       setName('');
-      setRole('anonymous');
+      setRole(ADMIN_REVIEWER_ROLES.ANONYMOUS);
       setError('');
       queryClient.invalidateQueries({ queryKey: cfpQueryKeys.reviewers });
       onInvited?.();
@@ -72,14 +78,13 @@ export function InviteReviewerForm({
     e.preventDefault();
     if (!email) return;
 
-    const apiRole = role === 'readonly' ? 'readonly' : role === 'super_admin' ? 'super_admin' : 'reviewer';
-    const canSeeSpeakerIdentity = role === 'super_admin';
+    const apiRole = role === ADMIN_REVIEWER_ROLES.ANONYMOUS ? CFP_REVIEWER_ROLES.REVIEWER : role;
 
     inviteMutation.mutate({
       email,
       name,
       role: apiRole,
-      can_see_speaker_identity: canSeeSpeakerIdentity,
+      can_see_speaker_identity: false,
     });
   };
 

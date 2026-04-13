@@ -173,9 +173,9 @@ export default ReviewerLoginPage;
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabaseServer = createSupabaseServerClient(ctx);
-  const { data: { session } } = await supabaseServer.auth.getSession();
+  const { data: { user }, error } = await supabaseServer.auth.getUser();
 
-  if (session) {
+  if (!error && user) {
     return { redirect: { destination: '/cfp/reviewer/dashboard', permanent: false } };
   }
 

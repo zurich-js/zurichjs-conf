@@ -11,19 +11,21 @@ import { colors, spacing, typography, radii } from '../design/tokens';
 export interface ReviewerInvitationEmailProps {
   reviewerName?: string;
   reviewerEmail: string;
-  accessLevel: 'full_access' | 'anonymous' | 'readonly';
+  accessLevel: 'full_access' | 'committee_member' | 'anonymous' | 'readonly';
   loginUrl: string;
   supportEmail?: string;
 }
 
 const ACCESS_LEVEL_DESCRIPTIONS = {
   full_access: 'You have full access to view speaker names, emails, and all submission details. You can score submissions and leave feedback.',
+  committee_member: 'You can see speaker details except email addresses, plus anonymized committee reviews. You can score submissions and leave feedback.',
   anonymous: 'You will review submissions anonymously - speaker names and personal details are hidden. You can score submissions and leave feedback.',
   readonly: 'You have read-only access to view submissions but cannot score or leave feedback. This is an observer role.',
 };
 
 const ACCESS_LEVEL_LABELS = {
   full_access: 'Full Access Reviewer',
+  committee_member: 'Committee Member',
   anonymous: 'Anonymous Reviewer',
   readonly: 'Read-Only Observer',
 };

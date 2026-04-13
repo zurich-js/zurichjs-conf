@@ -24,6 +24,28 @@ function createCfpServiceClient() {
   });
 }
 
+type CfpServiceClient = ReturnType<typeof createCfpServiceClient>;
+
+interface ReviewActivityCounts {
+  totalReviews: number;
+  avgScore: number | null;
+  scoreDistribution: Array<{ range: string; count: number }>;
+  reviewsPerDay: Array<{ date: string; count: number }>;
+  unreviewed: number;
+}
+
+const SCORE_RANGES = [
+  { range: '0-0.5', min: 0, max: 0.5 },
+  { range: '0.5-1', min: 0.5, max: 1 },
+  { range: '1-1.5', min: 1, max: 1.5 },
+  { range: '1.5-2', min: 1.5, max: 2 },
+  { range: '2-2.5', min: 2, max: 2.5 },
+  { range: '2.5-3', min: 2.5, max: 3 },
+  { range: '3-3.5', min: 3, max: 3.5 },
+  { range: '3.5-4', min: 3.5, max: 4 },
+] as const;
+const SCORE_VALUES = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4] as const;
+
 export async function getCfpAnalytics(): Promise<CfpAnalytics> {
   const supabase = createCfpServiceClient();
 
@@ -34,12 +56,14 @@ export async function getCfpAnalytics(): Promise<CfpAnalytics> {
     reviewsResult,
     tagJoinsResult,
     tagsResult,
+    reviewActivityCounts,
   ] = await Promise.all([
     supabase.from('cfp_submissions').select('id, status, submission_type, talk_level, speaker_id, created_at, submitted_at, title, abstract, additional_notes, outline, slides_url, previous_recording_url').limit(10000),
     supabase.from('cfp_speakers').select('id, first_name, last_name, company, country, city, bio, profile_image_url, travel_assistance_required, assistance_type, departure_airport, special_requirements, company_interested_in_sponsoring').limit(10000),
     supabase.from('cfp_reviews').select('id, submission_id, score_overall, created_at').limit(10000),
     supabase.from('cfp_submission_tags').select('submission_id, tag_id').limit(10000),
     supabase.from('cfp_tags').select('id, name').limit(10000),
+    fetchReviewActivityCounts(supabase),
   ]);
 
   const submissions = (submissionsResult.data || []) as Array<{
@@ -126,7 +150,7 @@ export async function getCfpAnalytics(): Promise<CfpAnalytics> {
   const logistics = buildLogistics(speakers);
 
   // --- Review Activity ---
-  const reviewActivity = buildReviewActivity(reviews, submissions.length);
+  const reviewActivity = buildReviewActivity(submissions.length, reviewActivityCounts);
 
   // --- Submission Timeline ---
   const submissionTimeline = buildTimeline(submissions);
@@ -147,6 +171,70 @@ export async function getCfpAnalytics(): Promise<CfpAnalytics> {
     submissionTimeline,
     topTags,
     contentInsights,
+  };
+}
+
+async function fetchReviewActivityCounts(supabase: CfpServiceClient): Promise<ReviewActivityCounts> {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const dayStarts: Date[] = [];
+  for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
+    dayStarts.push(new Date(d));
+  }
+
+  const [totalReviewsResult, unreviewedResult, ...countResults] = await Promise.all([
+    supabase
+      .from('cfp_reviews')
+      .select('*', { count: 'exact', head: true }),
+    supabase
+      .from('cfp_submissions')
+      .select('id, cfp_reviews!left(id)', { count: 'exact', head: true })
+      .is('cfp_reviews.id', null),
+    ...SCORE_VALUES.map((score) => (
+      supabase
+        .from('cfp_reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('score_overall', score)
+    )),
+    ...dayStarts.map((dayStart) => {
+      const nextDay = new Date(dayStart);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      return supabase
+        .from('cfp_reviews')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', dayStart.toISOString())
+        .lt('created_at', nextDay.toISOString());
+    }),
+  ]);
+  const scoreResults = countResults.slice(0, SCORE_VALUES.length);
+  const dailyResults = countResults.slice(SCORE_VALUES.length);
+  const scoreCounts = SCORE_VALUES.map((score, index) => ({
+    score,
+    count: scoreResults[index]?.count || 0,
+  }));
+  const scoreDistribution = SCORE_RANGES.map(({ range, min, max }) => ({
+    range,
+    count: scoreCounts
+      .filter(({ score }) => score >= min && (max === 4 ? score <= max : score < max))
+      .reduce((total, { count }) => total + count, 0),
+  }));
+  const scoreTotal = scoreCounts.reduce((total, { count }) => total + count, 0);
+  const scoreSum = scoreCounts.reduce((total, { score, count }) => {
+    return total + (score * count);
+  }, 0);
+
+  return {
+    totalReviews: totalReviewsResult.count || 0,
+    avgScore: scoreTotal > 0 ? scoreSum / scoreTotal : null,
+    scoreDistribution,
+    reviewsPerDay: dayStarts.map((dayStart, index) => ({
+      date: dayStart.toISOString().split('T')[0],
+      count: dailyResults[index]?.count || 0,
+    })),
+    unreviewed: unreviewedResult.count || 0,
   };
 }
 
@@ -297,58 +385,16 @@ function buildLogistics(
 }
 
 function buildReviewActivity(
-  reviews: Array<{ id: string; score_overall: number | null; created_at: string; submission_id: string }>,
-  totalSubmissions: number
+  totalSubmissions: number,
+  counts: ReviewActivityCounts
 ): CfpReviewActivity {
-  const scores = reviews.map((r) => r.score_overall).filter((s): s is number => s !== null);
-  const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-
-  // Score distribution in 0.5 increments from 0 to 4
-  const scoreRanges = [
-    { range: '0-0.5', min: 0, max: 0.5 },
-    { range: '0.5-1', min: 0.5, max: 1 },
-    { range: '1-1.5', min: 1, max: 1.5 },
-    { range: '1.5-2', min: 1.5, max: 2 },
-    { range: '2-2.5', min: 2, max: 2.5 },
-    { range: '2.5-3', min: 2.5, max: 3 },
-    { range: '3-3.5', min: 3, max: 3.5 },
-    { range: '3.5-4', min: 3.5, max: 4 },
-  ];
-  const scoreDistribution = scoreRanges.map(({ range, min, max }) => ({
-    range,
-    count: scores.filter((s) => s >= min && (max === 4 ? s <= max : s < max)).length,
-  }));
-
-  // Reviews per day (last 30 days)
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now);
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const dayCounts = new Map<string, number>();
-  for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
-    dayCounts.set(d.toISOString().split('T')[0], 0);
-  }
-  for (const r of reviews) {
-    const day = r.created_at.split('T')[0];
-    if (dayCounts.has(day)) {
-      dayCounts.set(day, (dayCounts.get(day) || 0) + 1);
-    }
-  }
-  const reviewsPerDay = [...dayCounts.entries()]
-    .map(([date, count]) => ({ date, count }))
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  // Unreviewed submissions
-  const reviewedSubmissions = new Set(reviews.map((r) => r.submission_id));
-  const unreviewed = totalSubmissions - reviewedSubmissions.size;
-
   return {
-    totalReviews: reviews.length,
-    avgScore,
-    scoreDistribution,
-    reviewsPerDay,
-    avgReviewsPerSubmission: totalSubmissions > 0 ? reviews.length / totalSubmissions : 0,
-    unreviewed,
+    totalReviews: counts.totalReviews,
+    avgScore: counts.avgScore,
+    scoreDistribution: counts.scoreDistribution,
+    reviewsPerDay: counts.reviewsPerDay,
+    avgReviewsPerSubmission: totalSubmissions > 0 ? counts.totalReviews / totalSubmissions : 0,
+    unreviewed: counts.unreviewed,
   };
 }
 

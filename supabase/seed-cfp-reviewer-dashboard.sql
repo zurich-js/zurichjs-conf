@@ -8,7 +8,6 @@ insert into public.cfp_reviewers (
     email,
     name,
     role,
-    can_see_speaker_identity,
     invited_by,
     invited_at,
     accepted_at,
@@ -17,10 +16,9 @@ insert into public.cfp_reviewers (
 values
     (
         'e58748da-c000-43b7-a2bc-528b7c6763db',
-        'reviewer+local@zurichjs.test',
-        'Local Reviewer',
+        'anonymous-review@zurichjs.test',
+        'Anonymous Review',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T08:00:00.000Z',
@@ -28,10 +26,9 @@ values
     ),
     (
         'e58748da-a000-43b7-a2bc-528b7c6763db',
-        'admin+local@zurichjs.test',
-        'Local Admin',
+        'admin-review@zurichjs.test',
+        'Admin Review',
         'super_admin',
-        true,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T08:05:00.000Z',
@@ -39,10 +36,9 @@ values
     ),
     (
         '6b111111-1111-4111-8111-111111111111',
-        'committee+local@zurichjs.test',
-        'Committee Reviewer',
-        'reviewer',
-        true,
+        'member-review@zurichjs.test',
+        'Member Review',
+        'committee_member',
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T09:00:00.000Z',
@@ -52,8 +48,7 @@ values
         '6b222222-2222-4222-8222-222222222222',
         'reviewer2+local@zurichjs.test',
         'Reviewer Two',
-        'reviewer',
-        false,
+        'committee_member',
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T09:15:00.000Z',
@@ -64,7 +59,6 @@ values
         'reviewer3+local@zurichjs.test',
         'Reviewer Three',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T09:30:00.000Z',
@@ -75,7 +69,6 @@ values
         'reviewer4+local@zurichjs.test',
         'Reviewer Four',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T09:45:00.000Z',
@@ -86,7 +79,6 @@ values
         'reviewer5+local@zurichjs.test',
         'Reviewer Five',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T10:00:00.000Z',
@@ -97,7 +89,6 @@ values
         'reviewer6+local@zurichjs.test',
         'Reviewer Six',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T10:15:00.000Z',
@@ -108,7 +99,6 @@ values
         'reviewer7+local@zurichjs.test',
         'Reviewer Seven',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T10:30:00.000Z',
@@ -119,7 +109,6 @@ values
         'reviewer8+local@zurichjs.test',
         'Reviewer Eight',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T10:45:00.000Z',
@@ -130,7 +119,6 @@ values
         'reviewer9+local@zurichjs.test',
         'Reviewer Nine',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T11:00:00.000Z',
@@ -141,7 +129,6 @@ values
         'reviewer10+local@zurichjs.test',
         'Reviewer Ten',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T11:15:00.000Z',
@@ -152,7 +139,6 @@ values
         'reviewer11+local@zurichjs.test',
         'Reviewer Eleven',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T11:30:00.000Z',
@@ -163,7 +149,6 @@ values
         'reviewer12+local@zurichjs.test',
         'Reviewer Twelve',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T11:45:00.000Z',
@@ -174,7 +159,6 @@ values
         'reviewer13+local@zurichjs.test',
         'Reviewer Thirteen',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T12:00:00.000Z',
@@ -185,7 +169,6 @@ values
         'reviewer14+local@zurichjs.test',
         'Reviewer Fourteen',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T12:15:00.000Z',
@@ -196,7 +179,6 @@ values
         'reviewer15+local@zurichjs.test',
         'Reviewer Fifteen',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T12:30:00.000Z',
@@ -207,7 +189,6 @@ values
         'reviewer16+local@zurichjs.test',
         'Reviewer Sixteen',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T12:45:00.000Z',
@@ -218,7 +199,6 @@ values
         'reviewer17+local@zurichjs.test',
         'Reviewer Seventeen',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T13:00:00.000Z',
@@ -229,7 +209,6 @@ values
         'reviewer18+local@zurichjs.test',
         'Reviewer Eighteen',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T13:15:00.000Z',
@@ -240,7 +219,6 @@ values
         'reviewer19+local@zurichjs.test',
         'Reviewer Nineteen',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T13:30:00.000Z',
@@ -251,7 +229,6 @@ values
         'reviewer20+local@zurichjs.test',
         'Reviewer Twenty',
         'reviewer',
-        false,
         null,
         '2026-02-26T00:00:00.000Z',
         '2026-02-26T13:45:00.000Z',
@@ -261,7 +238,6 @@ on conflict (id) do update set
     email = excluded.email,
     name = excluded.name,
     role = excluded.role,
-    can_see_speaker_identity = excluded.can_see_speaker_identity,
     invited_at = excluded.invited_at,
     accepted_at = excluded.accepted_at,
     is_active = excluded.is_active;
@@ -275,7 +251,7 @@ insert into public.cfp_speakers (
     job_title
 )
 values
-    ('11111111-1111-4111-8111-111111111111', 'alex.ai@example.test', 'Alex', 'Ng', 'Engineer'),
+    ('11111111-1111-4111-8111-111111111111', 'speaker@zurichjs.test', 'Alex', 'Ng', 'Engineer'),
     ('22222222-2222-4222-8222-222222222222', 'sam.nuxt@example.test', 'Sam', 'Rivera', 'Frontend Lead'),
     ('33333333-3333-4333-8333-333333333333', 'maya.web@example.test', 'Maya', 'Khan', 'Developer Advocate'),
     ('44444444-4444-4444-8444-444444444444', 'leo.misc@example.test', 'Leo', 'Berg', 'Staff Engineer'),
@@ -319,7 +295,9 @@ insert into public.cfp_submissions (
     talk_level,
     workshop_duration_hours,
     status,
-    submitted_at
+    submitted_at,
+    created_at,
+    updated_at
 )
 values
     (
@@ -331,6 +309,8 @@ values
         'intermediate',
         null,
         'submitted',
+        '2026-02-20T10:00:00.000Z',
+        '2026-02-19T14:00:00.000Z',
         '2026-02-20T10:00:00.000Z'
     ),
     (
@@ -342,6 +322,8 @@ values
         'advanced',
         null,
         'under_review',
+        '2026-02-21T10:00:00.000Z',
+        '2026-02-20T15:30:00.000Z',
         '2026-02-21T10:00:00.000Z'
     ),
     (
@@ -353,6 +335,8 @@ values
         'beginner',
         null,
         'submitted',
+        '2026-02-22T10:00:00.000Z',
+        '2026-02-21T16:45:00.000Z',
         '2026-02-22T10:00:00.000Z'
     ),
     (
@@ -364,6 +348,8 @@ values
         'advanced',
         null,
         'submitted',
+        '2026-02-23T10:00:00.000Z',
+        '2026-02-22T09:15:00.000Z',
         '2026-02-23T10:00:00.000Z'
     ),
     (
@@ -375,6 +361,8 @@ values
         'intermediate',
         null,
         'submitted',
+        '2026-02-24T10:00:00.000Z',
+        '2026-02-23T13:20:00.000Z',
         '2026-02-24T10:00:00.000Z'
     ),
     (
@@ -386,6 +374,8 @@ values
         'advanced',
         null,
         'waitlisted',
+        '2026-02-25T10:00:00.000Z',
+        '2026-02-24T18:40:00.000Z',
         '2026-02-25T10:00:00.000Z'
     ),
     (
@@ -397,6 +387,8 @@ values
         'intermediate',
         null,
         'submitted',
+        '2026-02-26T10:00:00.000Z',
+        '2026-02-25T11:10:00.000Z',
         '2026-02-26T10:00:00.000Z'
     ),
     (
@@ -408,6 +400,8 @@ values
         'intermediate',
         4,
         'submitted',
+        '2026-02-27T10:00:00.000Z',
+        '2026-02-26T19:05:00.000Z',
         '2026-02-27T10:00:00.000Z'
     ),
     (
@@ -419,6 +413,8 @@ values
         'advanced',
         null,
         'accepted',
+        '2026-02-28T10:00:00.000Z',
+        '2026-02-27T08:50:00.000Z',
         '2026-02-28T10:00:00.000Z'
     ),
     (
@@ -430,6 +426,8 @@ values
         'beginner',
         null,
         'rejected',
+        '2026-03-01T10:00:00.000Z',
+        '2026-02-28T12:35:00.000Z',
         '2026-03-01T10:00:00.000Z'
     )
 on conflict (id) do update set
@@ -440,7 +438,9 @@ on conflict (id) do update set
     talk_level = excluded.talk_level,
     workshop_duration_hours = excluded.workshop_duration_hours,
     status = excluded.status,
-    submitted_at = excluded.submitted_at;
+    submitted_at = excluded.submitted_at,
+    created_at = excluded.created_at,
+    updated_at = excluded.updated_at;
 
 -- Submission/tag links
 insert into public.cfp_submission_tags (
@@ -543,7 +543,7 @@ values
         '70000000-0000-4000-8000-000000000005',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b111111-1111-4111-8111-111111111111',
-        4, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Committee review: relevant and timely.',
         null,
         '2026-03-02T15:00:00.000Z',
@@ -553,7 +553,7 @@ values
         '70000000-0000-4000-8000-000000000006',
         'aaaa4444-4444-4444-8444-444444444444',
         '6b111111-1111-4111-8111-111111111111',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Excellent depth and strong frontend angle.',
         null,
         '2026-03-04T09:00:00.000Z',
@@ -573,7 +573,7 @@ values
         '70000000-0000-4000-8000-000000000008',
         'cccc1111-1111-4111-8111-111111111111',
         '6b111111-1111-4111-8111-111111111111',
-        5, 5, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Great fit for advanced backend/frontend crossover audience.',
         null,
         '2026-03-04T11:00:00.000Z',
@@ -583,7 +583,7 @@ values
         '70000000-0000-4000-8000-000000000009',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b222222-2222-4222-8222-222222222222',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Very strong premise and easy to program.',
         null,
         '2026-03-04T12:00:00.000Z',
@@ -603,7 +603,7 @@ values
         '70000000-0000-4000-8000-000000000011',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b444444-4444-4444-8444-444444444444',
-        4, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Would work well for the main track.',
         null,
         '2026-03-04T13:00:00.000Z',
@@ -613,7 +613,7 @@ values
         '70000000-0000-4000-8000-000000000012',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b555555-5555-4555-8555-555555555555',
-        4, 4, 4, 5, 4,
+        4, 4, 4, 4, 4,
         'Practical and current topic.',
         null,
         '2026-03-04T13:30:00.000Z',
@@ -623,7 +623,7 @@ values
         '70000000-0000-4000-8000-000000000013',
         'aaaa1111-1111-4111-8111-111111111111',
         '6b666666-6666-4666-8666-666666666666',
-        5, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Helpful production focus.',
         null,
         '2026-03-04T14:00:00.000Z',
@@ -773,7 +773,7 @@ values
         '70000000-0000-4000-8000-000000000028',
         'bbbb2222-2222-4222-8222-222222222222',
         '6b555555-5555-4555-8555-555555555555',
-        4, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Well-targeted for the audience.',
         null,
         '2026-03-05T15:30:00.000Z',
@@ -813,7 +813,7 @@ values
         '70000000-0000-4000-8000-000000000032',
         'bbbb4444-4444-4444-8444-444444444444',
         '6b222222-2222-4222-8222-222222222222',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'High-value workshop topic.',
         null,
         '2026-03-06T09:00:00.000Z',
@@ -833,7 +833,7 @@ values
         '70000000-0000-4000-8000-000000000034',
         'bbbb4444-4444-4444-8444-444444444444',
         '6b444444-4444-4444-8444-444444444444',
-        4, 5, 4, 4, 3,
+        4, 4, 4, 4, 3,
         'Would fill a useful workshop slot.',
         null,
         '2026-03-06T10:00:00.000Z',
@@ -853,7 +853,7 @@ values
         '70000000-0000-4000-8000-000000000036',
         'bbbb4444-4444-4444-8444-444444444444',
         '6b666666-6666-4666-8666-666666666666',
-        5, 4, 5, 4, 4,
+        4, 4, 4, 4, 4,
         'Detailed enough for a workshop.',
         null,
         '2026-03-06T11:00:00.000Z',
@@ -873,7 +873,7 @@ values
         '70000000-0000-4000-8000-000000000038',
         'cccc1111-1111-4111-8111-111111111111',
         '6b222222-2222-4222-8222-222222222222',
-        5, 5, 4, 4, 4,
+        4, 4, 4, 4, 4,
         'Very strong TypeScript angle.',
         null,
         '2026-03-06T12:00:00.000Z',
@@ -897,6 +897,7 @@ on conflict (submission_id, reviewer_id) do update set
     score_diversity = excluded.score_diversity,
     private_notes = excluded.private_notes,
     feedback_to_speaker = excluded.feedback_to_speaker,
+    created_at = excluded.created_at,
     updated_at = excluded.updated_at;
 
 -- Additional generated load-test data merged into the main reviewer dashboard seed.
@@ -1004,6 +1005,8 @@ insert into public.cfp_submissions (
     workshop_duration_hours,
     status,
     submitted_at,
+    created_at,
+    updated_at,
     metadata
 )
 select
@@ -1023,6 +1026,8 @@ select
     end as workshop_duration_hours,
     status,
     now() - make_interval(days => series % 45, hours => series % 12) as submitted_at,
+    now() - make_interval(days => (series % 45) + 1, hours => (series * 3) % 24, mins => (series * 11) % 60) as created_at,
+    now() - make_interval(days => series % 45, hours => series % 12) as updated_at,
     jsonb_build_object('seed_source', 'reviewer-dashboard-load-test', 'seed_index', series) as metadata
 from generated_submissions
 on conflict (id) do update set
@@ -1034,6 +1039,8 @@ on conflict (id) do update set
     workshop_duration_hours = excluded.workshop_duration_hours,
     status = excluded.status,
     submitted_at = excluded.submitted_at,
+    created_at = excluded.created_at,
+    updated_at = excluded.updated_at,
     metadata = excluded.metadata;
 
 -- Extra submission/tag links
@@ -1111,7 +1118,14 @@ generated_reviews as (
         row_number() over (order by submission_series, reviewer_sort) as row_id,
         submission_id,
         reviewer_id,
-        submission_series
+        submission_series,
+        reviewer_sort,
+        now()
+            - make_interval(
+                days => least((submission_series % 45), ((submission_series * 7 + reviewer_sort * 3) % 30)),
+                hours => ((submission_series + reviewer_sort * 5) % 12),
+                mins => ((submission_series * reviewer_sort) % 60)
+            ) as reviewed_at
     from (
         select
             series as submission_series,
@@ -1132,20 +1146,93 @@ insert into public.cfp_reviews (
     score_clarity,
     score_diversity,
     private_notes,
-    feedback_to_speaker
+    feedback_to_speaker,
+    created_at,
+    updated_at
 )
 select
     ('84000000-0000-4000-8000-' || lpad(row_id::text, 12, '0'))::uuid as id,
     submission_id,
     reviewer_id,
-    ((submission_series % 5) + 1) as score_overall,
-    (((submission_series + 1) % 5) + 1) as score_relevance,
-    (((submission_series + 2) % 5) + 1) as score_technical_depth,
-    (((submission_series + 3) % 5) + 1) as score_clarity,
-    (((submission_series + 4) % 5) + 1) as score_diversity,
-    ('Seeded private note for submission ' || submission_series::text) as private_notes,
-    ('Seeded speaker feedback for submission ' || submission_series::text) as feedback_to_speaker
+    seeded_scores.score_overall,
+    seeded_scores.score_relevance,
+    seeded_scores.score_technical_depth,
+    seeded_scores.score_clarity,
+    seeded_scores.score_diversity,
+    case
+        -- High-volume reviewers with sparse internal notes.
+        when reviewer_sort = 1 and submission_series % 20 = 0
+            then ('Sparse internal note for high-volume reviewer on submission ' || submission_series::text)
+        when reviewer_sort = 2 and submission_series % 12 = 0
+            then ('Occasional internal note from high-volume reviewer on submission ' || submission_series::text)
+        -- Lower-volume reviewers with consistent written notes.
+        when reviewer_sort >= 15 and submission_series % 2 = 0
+            then ('Detailed internal note from thoughtful reviewer on submission ' || submission_series::text)
+        -- Flat scorers still leave occasional notes, so their spread penalty is visible.
+        when reviewer_sort in (9, 10) and submission_series % 5 = 0
+            then ('Flat-score reviewer note for submission ' || submission_series::text)
+        -- Mid-pack reviewers write notes sometimes.
+        when reviewer_sort between 3 and 8 and (submission_series + reviewer_sort) % 3 = 0
+            then ('Seeded private note for submission ' || submission_series::text)
+        else null
+    end as private_notes,
+    case
+        -- High-volume reviewers rarely write speaker-facing feedback.
+        when reviewer_sort = 1 and submission_series % 30 = 0
+            then ('Short speaker feedback from high-volume reviewer for submission ' || submission_series::text)
+        when reviewer_sort = 2 and submission_series % 18 = 0
+            then ('Short speaker feedback from high-volume reviewer for submission ' || submission_series::text)
+        -- Lower-volume reviewers write speaker-facing feedback frequently.
+        when reviewer_sort >= 15
+            then ('Detailed speaker feedback from thoughtful reviewer for submission ' || submission_series::text)
+        -- Mid-pack reviewers write speaker-facing feedback occasionally.
+        when reviewer_sort between 3 and 8 and submission_series % 4 = 0
+            then ('Seeded speaker feedback for submission ' || submission_series::text)
+        else null
+    end as feedback_to_speaker,
+    reviewed_at as created_at,
+    reviewed_at as updated_at
 from generated_reviews
+cross join lateral (
+    select case
+        -- High-volume reviewers have enough volume, but not always enough score variation.
+        when reviewer_sort = 1 then case when submission_series % 4 in (0, 1) then 3 else 4 end
+        when reviewer_sort = 2 then case when submission_series % 5 in (0, 1) then 2 else 3 end
+        -- Mid-volume reviewers use a moderate spread.
+        when reviewer_sort between 3 and 5 then case
+            when submission_series % 6 in (0, 1) then 2
+            when submission_series % 6 in (2, 3) then 3
+            else 4
+        end
+        when reviewer_sort between 6 and 8 then case when submission_series % 3 = 0 then 2 else 3 end
+        -- Deliberately flat reviewers demonstrate the rating-spread penalty.
+        when reviewer_sort = 9 then 4
+        when reviewer_sort = 10 then 1
+        -- Later reviewers have fewer reviews and a healthier but not maximal spread.
+        when reviewer_sort between 11 and 14 then case
+            when submission_series % 4 = 0 then 1
+            when submission_series % 4 in (1, 2) then 2
+            else 3
+        end
+        when reviewer_sort >= 15 then case
+            when submission_series % 5 in (0, 1) then 2
+            when submission_series % 5 in (2, 3) then 3
+            else 4
+        end
+        when ((submission_series * 17 + reviewer_sort * 11) % 20) < 2 then 1
+        when ((submission_series * 17 + reviewer_sort * 11) % 20) < 7 then 2
+        when ((submission_series * 17 + reviewer_sort * 11) % 20) < 15 then 3
+        else 4
+    end as score_overall
+) as base_score
+cross join lateral (
+    select
+        base_score.score_overall,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series + reviewer_sort) % 6 = 0 then -1 when (submission_series + reviewer_sort) % 7 = 0 then 1 else 0 end)) as score_relevance,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series + reviewer_sort * 2) % 5 = 0 then -1 when (submission_series + reviewer_sort * 2) % 11 = 0 then 1 else 0 end)) as score_technical_depth,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series * 2 + reviewer_sort) % 7 = 0 then -1 when (submission_series * 2 + reviewer_sort) % 13 = 0 then 1 else 0 end)) as score_clarity,
+        greatest(1, least(4, base_score.score_overall + case when (submission_series + reviewer_sort * 3) % 8 = 0 then -1 when (submission_series + reviewer_sort * 3) % 17 = 0 then 1 else 0 end)) as score_diversity
+) as seeded_scores
 on conflict (submission_id, reviewer_id) do update set
     score_overall = excluded.score_overall,
     score_relevance = excluded.score_relevance,
@@ -1153,4 +1240,6 @@ on conflict (submission_id, reviewer_id) do update set
     score_clarity = excluded.score_clarity,
     score_diversity = excluded.score_diversity,
     private_notes = excluded.private_notes,
-    feedback_to_speaker = excluded.feedback_to_speaker;
+    feedback_to_speaker = excluded.feedback_to_speaker,
+    created_at = excluded.created_at,
+    updated_at = excluded.updated_at;

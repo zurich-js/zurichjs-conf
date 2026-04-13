@@ -4,6 +4,8 @@
  */
 
 import type { ShortlistStatus } from '@/lib/cfp/scoring';
+import { CFP_REVIEWER_ROLES } from './cfp/base';
+import type { CfpReviewerRole } from './cfp/base';
 import type { CfpDecisionStatus } from './cfp/decisions';
 
 // Re-export CfpStats from the canonical location
@@ -102,7 +104,7 @@ export interface CfpAdminReviewer {
   id: string;
   email: string;
   name: string | null;
-  role: string;
+  role: CfpReviewerRole;
   is_active: boolean;
   can_see_speaker_identity: boolean;
   accepted_at: string | null;
@@ -114,6 +116,15 @@ export interface CfpAdminReviewerWithActivity extends CfpAdminReviewer {
   reviews_last_7_days: number;
   last_activity_at: string | null;
   avg_score_given: number | null;
+  feedback_written_count: number;
+  feedback_written_percent: number;
+  rating_spread: number | null;
+  category_rating_spread: number | null;
+  contribution_score: number;
+  contribution_volume_score: number;
+  contribution_feedback_score: number;
+  contribution_rating_spread_score: number;
+  contribution_category_rating_spread_score: number;
 }
 
 export interface CfpReviewerActivity {
@@ -121,7 +132,12 @@ export interface CfpReviewerActivity {
   submission_id: string;
   submission_title: string;
   score_overall: number | null;
+  score_relevance: number | null;
+  score_technical_depth: number | null;
+  score_clarity: number | null;
+  score_diversity: number | null;
   private_notes: string | null;
+  feedback_to_speaker: string | null;
   created_at: string;
 }
 
@@ -152,7 +168,21 @@ export interface CfpReviewWithReviewer {
   };
 }
 
-export type ReviewerRole = 'super_admin' | 'anonymous' | 'readonly';
+export const ADMIN_REVIEWER_ROLES = {
+  SUPER_ADMIN: CFP_REVIEWER_ROLES.SUPER_ADMIN,
+  COMMITTEE_MEMBER: CFP_REVIEWER_ROLES.COMMITTEE_MEMBER,
+  ANONYMOUS: 'anonymous',
+  READONLY: CFP_REVIEWER_ROLES.READONLY,
+} as const;
+
+export const ADMIN_REVIEWER_ROLE_VALUES = [
+  ADMIN_REVIEWER_ROLES.SUPER_ADMIN,
+  ADMIN_REVIEWER_ROLES.COMMITTEE_MEMBER,
+  ADMIN_REVIEWER_ROLES.ANONYMOUS,
+  ADMIN_REVIEWER_ROLES.READONLY,
+] as const;
+
+export type ReviewerRole = typeof ADMIN_REVIEWER_ROLE_VALUES[number];
 
 export interface CfpInsights {
   byStatus: Record<ShortlistStatus, number>;

@@ -10,6 +10,7 @@ import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { getNextReviewerSubmissionId } from '@/lib/cfp/reviewer-navigation';
+import { getReviewerPermissions } from '@/lib/cfp/reviewer-permissions';
 import { supabase } from '@/lib/supabase/client';
 import { useCfpReviewerSubmission, useSubmitReview } from '@/hooks/useCfp';
 import { useBookmarks } from '@/hooks/cfp';
@@ -244,8 +245,7 @@ export default function ReviewerSubmission() {
     );
   }
 
-  const isSuperAdmin = reviewer.role === 'super_admin';
-  const canSeeSpeakerIdentity = isSuperAdmin || reviewer.can_see_speaker_identity;
+  const permissions = getReviewerPermissions(reviewer.role);
 
   return (
     <>
@@ -323,20 +323,20 @@ export default function ReviewerSubmission() {
               </div>
 
 
-              {/* Speaker Info (visible to super_admin or those with can_see_speaker_identity) */}
-              {submission.speaker && canSeeSpeakerIdentity && (
-                <SpeakerInfo speaker={submission.speaker} />
+              {/* Speaker Info */}
+              {submission.speaker && permissions.canSeeSpeakerIdentity && (
+                <SpeakerInfo speaker={submission.speaker} showEmail={permissions.canSeeSpeakerEmail} />
               )}
 
               {/* Submission Content */}
               <SubmissionDetails
                 submission={submission}
-                isAnonymous={!canSeeSpeakerIdentity}
-                isSuperAdmin={isSuperAdmin}
+                isAnonymous={!permissions.canSeeSpeakerIdentity}
+                canSeeSpeakerResources={permissions.canSeeSpeakerResources}
               />
 
-              {/* Committee Reviews (super_admin only) */}
-              {isSuperAdmin && (
+              {/* Committee Reviews */}
+              {permissions.canSeeCommitteeReviews && (
                 <CommitteeReviews
                   reviews={submission.all_reviews || []}
                   stats={submission.stats}

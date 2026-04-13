@@ -4,6 +4,11 @@
  */
 
 // Base types (enums, literal types)
+export {
+  CFP_REVIEWER_ROLES,
+  CFP_REVIEWER_ROLE_VALUES,
+} from './base';
+
 export type {
   CfpSubmissionType,
   CfpTalkLevel,

@@ -25,7 +25,7 @@ interface SubmissionDetailsProps {
     } | null;
   };
   isAnonymous: boolean;
-  isSuperAdmin?: boolean;
+  canSeeSpeakerResources?: boolean;
 }
 
 // Helper to get duration label
@@ -39,7 +39,7 @@ function getDurationLabel(type: string, workshopHours?: number | null): string {
   return '30 min - Standard talk';
 }
 
-export function SubmissionDetails({ submission, isAnonymous, isSuperAdmin = false }: SubmissionDetailsProps) {
+export function SubmissionDetails({ submission, isAnonymous, canSeeSpeakerResources = false }: SubmissionDetailsProps) {
   return (
     <div className="space-y-6 w-full">
       {/* Anonymous Notice */}
@@ -161,22 +161,24 @@ export function SubmissionDetails({ submission, isAnonymous, isSuperAdmin = fals
         </section>
       )}
 
-      {/* Video/Slides Links - super admin only */}
-      {isSuperAdmin && submission.previous_recording_url && (
+      {/* Video/Slides Links */}
+      {canSeeSpeakerResources && (submission.previous_recording_url || submission.slides_url) && (
         <section className="bg-brand-gray-dark rounded-2xl p-6">
           <h2 className="text-md sm:text-lg font-semibold text-white mb-4">Speaker Resources</h2>
           <div className="space-y-3">
-            <div>
-              <h3 className="text-xs sm:text-sm font-medium text-brand-gray-medium mb-1">Previous Recording</h3>
-              <a
-                href={submission.previous_recording_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand-primary hover:text-brand-primary/80 underline break-all"
-              >
-                {submission.previous_recording_url}
-              </a>
-            </div>
+            {submission.previous_recording_url && (
+              <div>
+                <h3 className="text-xs sm:text-sm font-medium text-brand-gray-medium mb-1">Previous Recording</h3>
+                <a
+                  href={submission.previous_recording_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-primary hover:text-brand-primary/80 underline break-all"
+                >
+                  {submission.previous_recording_url}
+                </a>
+              </div>
+            )}
             {submission.slides_url && (
               <div>
                 <h3 className="text-xs sm:text-sm font-medium text-brand-gray-medium mb-1">Slides</h3>

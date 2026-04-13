@@ -5,27 +5,62 @@
 
 import { useState } from 'react';
 import { User, Ban } from 'lucide-react';
-import type { CfpAdminReviewer, ReviewerRole } from '@/lib/types/cfp-admin';
+import { CFP_REVIEWER_ROLES } from '@/lib/types/cfp';
+import { ADMIN_REVIEWER_ROLES, type CfpAdminReviewer, type ReviewerRole } from '@/lib/types/cfp-admin';
 import { Modal, ModalBody, Select } from '@/components/atoms';
 import { ConfirmationModal } from './ConfirmationModal';
 
-const REVIEWER_ROLE_OPTIONS = [
+const REVIEWER_ROLE_OPTIONS: { value: ReviewerRole; label: string; description: string }[] = [
   {
-    value: 'super_admin',
+    value: ADMIN_REVIEWER_ROLES.SUPER_ADMIN,
     label: 'Super Admin',
     description: 'Can see speaker names, emails, and all details. Can score and leave feedback.',
   },
   {
-    value: 'anonymous' as const,
+    value: ADMIN_REVIEWER_ROLES.COMMITTEE_MEMBER,
+    label: 'Committee Member',
+    description: 'Can see speaker details except email and anonymized committee reviews. Can score and leave feedback.',
+  },
+  {
+    value: ADMIN_REVIEWER_ROLES.ANONYMOUS,
     label: 'Anonymous Review',
     description: 'Cannot see speaker names or personal details. Can score submissions blindly.',
   },
   {
-    value: 'readonly' as const,
+    value: ADMIN_REVIEWER_ROLES.READONLY,
     label: 'Read Only',
     description: 'Can view submissions but cannot score or leave feedback. Observer access.',
   },
 ];
+
+function getRoleLabel(role: string) {
+  switch (role) {
+    case CFP_REVIEWER_ROLES.SUPER_ADMIN:
+      return 'Super Admin';
+    case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
+      return 'Committee Member';
+    case CFP_REVIEWER_ROLES.REVIEWER:
+      return 'Anonymous Review';
+    case CFP_REVIEWER_ROLES.READONLY:
+      return 'Read Only';
+    default:
+      return role.replace(/_/g, ' ');
+  }
+}
+
+function getReviewerModalRole(role: string): ReviewerRole {
+  switch (role) {
+    case CFP_REVIEWER_ROLES.SUPER_ADMIN:
+      return ADMIN_REVIEWER_ROLES.SUPER_ADMIN;
+    case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
+      return ADMIN_REVIEWER_ROLES.COMMITTEE_MEMBER;
+    case CFP_REVIEWER_ROLES.READONLY:
+      return ADMIN_REVIEWER_ROLES.READONLY;
+    case CFP_REVIEWER_ROLES.REVIEWER:
+    default:
+      return ADMIN_REVIEWER_ROLES.ANONYMOUS;
+  }
+}
 
 interface ReviewerModalProps {
   reviewer: CfpAdminReviewer;
@@ -44,25 +79,21 @@ export function ReviewerModal({
   isUpdating,
   isRevoking,
 }: ReviewerModalProps) {
-  const [selectedRole, setSelectedRole] = useState<ReviewerRole>(() => {
-    if (reviewer.role === 'readonly') return 'readonly';
-    if (reviewer.role === 'super_admin') return 'super_admin';
-    // Regular reviewer - check if they can see speaker identity
-    if (reviewer.can_see_speaker_identity) return 'super_admin';
-    return 'anonymous';
-  });
+  const [selectedRole, setSelectedRole] = useState<ReviewerRole>(() => getReviewerModalRole(reviewer.role));
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
 
   const handleUpdateRole = () => {
     const { apiRole, canSeeSpeakerIdentity } = (() => {
       switch (selectedRole) {
-        case 'super_admin':
-          return { apiRole: 'super_admin', canSeeSpeakerIdentity: true };
-        case 'anonymous':
-          return { apiRole: 'reviewer', canSeeSpeakerIdentity: false };
-        case 'readonly':
+        case ADMIN_REVIEWER_ROLES.SUPER_ADMIN:
+          return { apiRole: CFP_REVIEWER_ROLES.SUPER_ADMIN, canSeeSpeakerIdentity: false };
+        case ADMIN_REVIEWER_ROLES.COMMITTEE_MEMBER:
+          return { apiRole: CFP_REVIEWER_ROLES.COMMITTEE_MEMBER, canSeeSpeakerIdentity: false };
+        case ADMIN_REVIEWER_ROLES.ANONYMOUS:
+          return { apiRole: CFP_REVIEWER_ROLES.REVIEWER, canSeeSpeakerIdentity: false };
+        case ADMIN_REVIEWER_ROLES.READONLY:
         default:
-          return { apiRole: 'readonly', canSeeSpeakerIdentity: false };
+          return { apiRole: CFP_REVIEWER_ROLES.READONLY, canSeeSpeakerIdentity: false };
       }
     })();
 
@@ -111,7 +142,7 @@ export function ReviewerModal({
               <div>
                 <p className="text-xs text-gray-500 font-medium mb-1">Current Role</p>
                 <p className="text-sm text-black font-medium capitalize">
-                  {reviewer.role.replace('_', ' ')}
+                  {getRoleLabel(reviewer.role)}
                 </p>
               </div>
               <div>

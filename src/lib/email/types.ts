@@ -58,10 +58,20 @@ export interface VoucherConfirmationData {
 /**
  * Data structure for reviewer invitation email
  */
+export const REVIEWER_INVITATION_ACCESS_LEVELS = {
+  FULL_ACCESS: 'full_access',
+  COMMITTEE_MEMBER: 'committee_member',
+  ANONYMOUS: 'anonymous',
+  READONLY: 'readonly',
+} as const;
+
+export type ReviewerInvitationAccessLevel =
+  typeof REVIEWER_INVITATION_ACCESS_LEVELS[keyof typeof REVIEWER_INVITATION_ACCESS_LEVELS];
+
 export interface ReviewerInvitationData {
   to: string;
   reviewerName?: string;
-  accessLevel: 'full_access' | 'anonymous' | 'readonly';
+  accessLevel: ReviewerInvitationAccessLevel;
 }
 
 /**

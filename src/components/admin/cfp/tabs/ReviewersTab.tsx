@@ -5,14 +5,17 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, X } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
+import { CFP_REVIEWER_ROLES } from '@/lib/types/cfp';
 import { cfpQueryKeys, type CfpAdminReviewer, type CfpAdminReviewerWithActivity } from '@/lib/types/cfp-admin';
 import { BusyArea, Pagination } from '@/components/atoms';
 import { InviteReviewerForm } from '../InviteReviewerForm';
 import { ReviewerModal } from '../ReviewerModal';
 import { formatScore } from '@/lib/cfp/scoring';
+import { formatRatingSpreadLabel } from '@/lib/cfp/reviewer-scoring';
 import { cycleMultiSort, getMultiSortDirection, SortIndicator, type MultiSort } from '../tableSort';
 
 type ReviewerData = CfpAdminReviewer | CfpAdminReviewerWithActivity;
@@ -27,6 +30,7 @@ interface ReviewersTabProps {
 }
 
 type ReviewerSortKey = 'name' | 'role' | 'status' | 'reviews' | 'reviews7d' | 'lastActive' | 'avgScore';
+type ContributorSortKey = 'rating' | 'reviews' | 'feedbackShare';
 
 export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const [selectedReviewer, setSelectedReviewer] = useState<ReviewerData | null>(null);
@@ -35,6 +39,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sort, setSort] = useState<MultiSort<ReviewerSortKey>>([]);
+  const [contributorSort, setContributorSort] = useState<MultiSort<ContributorSortKey>>([{ key: 'rating', direction: 'desc' }]);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const ITEMS_PER_PAGE = 10;
   const queryClient = useQueryClient();
@@ -112,12 +117,29 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
 
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
-      case 'super_admin':
+      case CFP_REVIEWER_ROLES.SUPER_ADMIN:
         return 'bg-purple-100 text-purple-800';
-      case 'reviewer':
+      case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
+        return 'bg-amber-100 text-amber-800';
+      case CFP_REVIEWER_ROLES.REVIEWER:
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-black';
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case CFP_REVIEWER_ROLES.SUPER_ADMIN:
+        return 'Super Admin';
+      case CFP_REVIEWER_ROLES.COMMITTEE_MEMBER:
+        return 'Committee Member';
+      case CFP_REVIEWER_ROLES.REVIEWER:
+        return 'Anonymous Review';
+      case CFP_REVIEWER_ROLES.READONLY:
+        return 'Read Only';
+      default:
+        return role.replace(/_/g, ' ');
     }
   };
 
@@ -195,6 +217,35 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
     return filteredReviewers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredReviewers, currentPage]);
 
+  const contributors = useMemo(() => {
+    return filteredReviewers
+      .filter((r): r is CfpAdminReviewerWithActivity => hasActivityData(r) && r.total_reviews > 0)
+      .slice()
+      .sort((a, b) => {
+        const compareByKey = (key: ContributorSortKey) => {
+          switch (key) {
+            case 'rating':
+              return a.contribution_score - b.contribution_score;
+            case 'reviews':
+              return a.total_reviews - b.total_reviews;
+            case 'feedbackShare':
+              return a.feedback_written_percent - b.feedback_written_percent;
+            default:
+              return 0;
+          }
+        };
+
+        for (const rule of contributorSort) {
+          const cmp = compareByKey(rule.key);
+          if (cmp !== 0) {
+            return rule.direction === 'asc' ? cmp : -cmp;
+          }
+        }
+
+        return b.contribution_score - a.contribution_score || b.total_reviews - a.total_reviews;
+      });
+  }, [filteredReviewers, contributorSort]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -202,6 +253,10 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
 
   const toggleSort = (key: ReviewerSortKey) => {
     setSort((prev) => cycleMultiSort(prev, key));
+  };
+
+  const toggleContributorSort = (key: ContributorSortKey) => {
+    setContributorSort((prev) => cycleMultiSort(prev, key));
   };
 
   return (
@@ -222,9 +277,10 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
           >
             <option value="all">All Roles</option>
-            <option value="super_admin">Super Admin</option>
-            <option value="reviewer">Reviewer</option>
-            <option value="readonly">Read Only</option>
+            <option value={CFP_REVIEWER_ROLES.SUPER_ADMIN}>Super Admin</option>
+            <option value={CFP_REVIEWER_ROLES.COMMITTEE_MEMBER}>Committee Member</option>
+            <option value={CFP_REVIEWER_ROLES.REVIEWER}>Anonymous Review</option>
+            <option value={CFP_REVIEWER_ROLES.READONLY}>Read Only</option>
           </select>
           <select
             value={statusFilter}
@@ -263,7 +319,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 </div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeStyle(r.role)}`}>
-                    {r.role === 'super_admin' ? 'Super Admin' : r.role === 'reviewer' ? 'Reviewer' : 'Read Only'}
+                    {getRoleLabel(r.role)}
                   </span>
                   <span className="text-xs text-gray-500">
                     Invited {new Date(r.created_at).toLocaleDateString()}
@@ -335,17 +391,6 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                       <span>Name</span><SortIndicator direction={getMultiSortDirection(sort, 'name')} />
                     </button>
                   </th>
-                  <th className="px-3 py-3">Email</th>
-                  <th className="px-3 py-3">
-                    <button type="button" onClick={() => toggleSort('role')} className="inline-flex items-center gap-1 cursor-pointer">
-                      <span>Access Level</span><SortIndicator direction={getMultiSortDirection(sort, 'role')} />
-                    </button>
-                  </th>
-                  <th className="px-3 py-3">
-                    <button type="button" onClick={() => toggleSort('status')} className="inline-flex items-center gap-1 cursor-pointer">
-                      <span>Status</span><SortIndicator direction={getMultiSortDirection(sort, 'status')} />
-                    </button>
-                  </th>
                   {showActivityColumns && (
                     <>
                       <th className="px-3 py-3 text-center">
@@ -358,11 +403,6 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                           <span>7 Days</span><SortIndicator direction={getMultiSortDirection(sort, 'reviews7d')} />
                         </button>
                       </th>
-                      <th className="px-3 py-3">
-                        <button type="button" onClick={() => toggleSort('lastActive')} className="inline-flex items-center gap-1 cursor-pointer">
-                          <span>Last Active</span><SortIndicator direction={getMultiSortDirection(sort, 'lastActive')} />
-                        </button>
-                      </th>
                       <th className="px-3 py-3 text-center">
                         <button type="button" onClick={() => toggleSort('avgScore')} className="inline-flex items-center gap-1 cursor-pointer">
                           <span>Avg Score</span><SortIndicator direction={getMultiSortDirection(sort, 'avgScore')} />
@@ -370,6 +410,23 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                       </th>
                     </>
                   )}
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => toggleSort('status')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Status</span><SortIndicator direction={getMultiSortDirection(sort, 'status')} />
+                    </button>
+                  </th>
+                  {showActivityColumns && (
+                    <th className="px-3 py-3">
+                      <button type="button" onClick={() => toggleSort('lastActive')} className="inline-flex items-center gap-1 cursor-pointer">
+                        <span>Last Active</span><SortIndicator direction={getMultiSortDirection(sort, 'lastActive')} />
+                      </button>
+                    </th>
+                  )}
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => toggleSort('role')} className="inline-flex items-center gap-1 cursor-pointer">
+                      <span>Access Level</span><SortIndicator direction={getMultiSortDirection(sort, 'role')} />
+                    </button>
+                  </th>
                   <th className="px-3 py-3">Actions</th>
                 </tr>
               </thead>
@@ -377,12 +434,15 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 {paginatedReviewers.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3 font-medium text-black">{r.name || '-'}</td>
-                    <td className="px-3 py-3 text-sm text-black">{r.email}</td>
-                    <td className="px-3 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeStyle(r.role)}`}>
-                        {r.role === 'super_admin' ? 'Super Admin' : r.role === 'reviewer' ? 'Reviewer' : 'Read Only'}
-                      </span>
-                    </td>
+                    {showActivityColumns && hasActivityData(r) && (
+                      <>
+                        <td className="px-3 py-3 text-sm text-black text-center font-medium">{r.total_reviews}</td>
+                        <td className="px-3 py-3 text-sm text-black text-center">{r.reviews_last_7_days}</td>
+                        <td className="px-3 py-3 text-sm text-black text-center">
+                          {formatScore(r.avg_score_given)}
+                        </td>
+                      </>
+                    )}
                     <td className="px-3 py-3">
                       {r.accepted_at ? (
                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Active</span>
@@ -391,17 +451,15 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                       )}
                     </td>
                     {showActivityColumns && hasActivityData(r) && (
-                      <>
-                        <td className="px-3 py-3 text-sm text-black text-center font-medium">{r.total_reviews}</td>
-                        <td className="px-3 py-3 text-sm text-black text-center">{r.reviews_last_7_days}</td>
-                        <td className="px-3 py-3 text-sm text-black">
-                          {r.last_activity_at ? new Date(r.last_activity_at).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="px-3 py-3 text-sm text-black text-center">
-                          {formatScore(r.avg_score_given)}
-                        </td>
-                      </>
+                      <td className="px-3 py-3 text-sm text-black">
+                        {r.last_activity_at ? new Date(r.last_activity_at).toLocaleDateString() : '-'}
+                      </td>
                     )}
+                    <td className="px-3 py-3">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeStyle(r.role)}`}>
+                        {getRoleLabel(r.role)}
+                      </span>
+                    </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         {showActivityColumns && (
@@ -436,7 +494,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                 ))}
                 {paginatedReviewers.length === 0 && (
                   <tr>
-                    <td colSpan={showActivityColumns ? 9 : 5} className="px-4 py-8 text-center text-black">
+                    <td colSpan={showActivityColumns ? 8 : 4} className="px-4 py-8 text-center text-black">
                       {roleFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim() ? 'No reviewers match your filters' : 'No reviewers found'}
                     </td>
                   </tr>
@@ -454,6 +512,78 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
             totalItems={filteredReviewers.length}
             variant="light"
           />
+
+          {showActivityColumns && contributors.length > 0 && (
+            <section className="mt-8">
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-black">Top Contributors</h3>
+                <p className="text-sm text-gray-600">
+                  Full ranked contributor list for discount decisions.
+                </p>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="w-full bg-white">
+                  <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
+                    <tr>
+                      <th className="px-3 py-3 text-center">
+                        <button type="button" onClick={() => toggleContributorSort('rating')} className="inline-flex items-center gap-1 cursor-pointer">
+                          <span>Rating</span><SortIndicator direction={getMultiSortDirection(contributorSort, 'rating')} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-3">Reviewer</th>
+                      <th className="px-3 py-3 text-center">
+                        <button type="button" onClick={() => toggleContributorSort('reviews')} className="inline-flex items-center gap-1 cursor-pointer">
+                          <span>Reviews</span><SortIndicator direction={getMultiSortDirection(contributorSort, 'reviews')} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-3 text-center">
+                        <button type="button" onClick={() => toggleContributorSort('feedbackShare')} className="inline-flex items-center gap-1 cursor-pointer">
+                          <span>Feedback Share</span><SortIndicator direction={getMultiSortDirection(contributorSort, 'feedbackShare')} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-3 text-center">Score Range</th>
+                      <th className="px-3 py-3">Score Breakdown</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-sm">
+                    <tr className="bg-white">
+                      <td colSpan={6} className="px-3 py-3 text-xs text-gray-600">
+                        Rating is a 100-point reviewer contribution score: 45 points for review volume, 35 points for written internal or speaker feedback, 15 points for useful overall score range, and 5 points for category score range.
+                      </td>
+                    </tr>
+                    {contributors.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-3 text-center">
+                          <span className="inline-flex min-w-12 justify-center rounded bg-black px-2 py-1 font-bold text-[#F1E271]">
+                            {formatScore(r.contribution_score)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <Link
+                            href={`/admin/cfp/reviewers/${r.id}`}
+                            className="font-medium text-black underline decoration-gray-300 underline-offset-2 hover:decoration-black"
+                          >
+                            {r.name || r.email}
+                          </Link>
+                        </td>
+                        <td className="px-3 py-3 text-center text-black">{r.total_reviews}</td>
+                        <td className="px-3 py-3 text-center text-black">
+                          {Math.round(r.feedback_written_percent)}%
+                          <span className="ml-1 text-xs text-gray-500">({r.feedback_written_count})</span>
+                        </td>
+                        <td className="px-3 py-3 text-center text-black" title={`Overall score range: ${formatScore(r.rating_spread)}`}>
+                          {formatRatingSpreadLabel(r.rating_spread)}
+                        </td>
+                        <td className="px-3 py-3 text-xs text-gray-600">
+                          {formatScore(r.contribution_volume_score)} volume + {formatScore(r.contribution_feedback_score)} feedback + {formatScore(r.contribution_rating_spread_score)} overall range + {formatScore(r.contribution_category_rating_spread_score)} category range
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </>
       </BusyArea>
 

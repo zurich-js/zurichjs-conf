@@ -29,6 +29,7 @@ import {
   type ShortlistStatus,
   type ReviewInput,
 } from './scoring';
+import { computeReviewerContributionMetrics } from './reviewer-scoring';
 
 /**
  * Create untyped Supabase client for CFP tables
@@ -670,8 +671,18 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
   // Get reviewers and reviews in parallel using paginated fetch
   const [reviewersResult, reviewsResult] = await Promise.all([
     fetchAllRows<CfpReviewer>(supabase, 'cfp_reviewers', '*'),
-    fetchAllRows<{ reviewer_id: string; score_overall: number | null; created_at: string }>(
-      supabase, 'cfp_reviews', 'reviewer_id, score_overall, created_at'
+    fetchAllRows<{
+      reviewer_id: string;
+      score_overall: number | null;
+      score_relevance: number | null;
+      score_technical_depth: number | null;
+      score_clarity: number | null;
+      score_diversity: number | null;
+      private_notes: string | null;
+      feedback_to_speaker: string | null;
+      created_at: string;
+    }>(
+      supabase, 'cfp_reviews', 'reviewer_id, score_overall, score_relevance, score_technical_depth, score_clarity, score_diversity, private_notes, feedback_to_speaker, created_at'
     ),
   ]);
 
@@ -698,6 +709,10 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
     }
     reviewsByReviewer.get(reviewerId)!.push(review);
   }
+  const maxReviewCount = Math.max(
+    0,
+    ...reviewers.map((reviewer) => reviewsByReviewer.get(reviewer.id)?.length || 0)
+  );
 
   // Build enhanced reviewer data
   const result: CfpAdminReviewerWithActivity[] = reviewers.map((reviewer) => {
@@ -722,6 +737,7 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
     const avgScoreGiven = scores.length > 0
       ? scores.reduce((a, b) => a + b, 0) / scores.length
       : null;
+    const contribution = computeReviewerContributionMetrics(reviewerReviews, maxReviewCount);
 
     return {
       id: reviewer.id,
@@ -736,6 +752,15 @@ export async function getAdminReviewersWithActivity(): Promise<CfpAdminReviewerW
       reviews_last_7_days: reviewsLast7Days,
       last_activity_at: lastActivityAt,
       avg_score_given: avgScoreGiven,
+      feedback_written_count: contribution.feedbackWrittenCount,
+      feedback_written_percent: contribution.feedbackWrittenPercent,
+      rating_spread: contribution.ratingSpread,
+      category_rating_spread: contribution.categoryRatingSpread,
+      contribution_score: contribution.contributionScore,
+      contribution_volume_score: contribution.volumeScore,
+      contribution_feedback_score: contribution.feedbackScore,
+      contribution_rating_spread_score: contribution.ratingSpreadScore,
+      contribution_category_rating_spread_score: contribution.categoryRatingSpreadScore,
     };
   });
 
@@ -766,7 +791,10 @@ export async function getReviewerActivity(
   // Get reviews for this reviewer
   let reviewsQuery = supabase
     .from('cfp_reviews')
-    .select('id, submission_id, score_overall, private_notes, created_at', { count: 'exact' })
+    .select(
+      'id, submission_id, score_overall, score_relevance, score_technical_depth, score_clarity, score_diversity, private_notes, feedback_to_speaker, created_at',
+      { count: 'exact' }
+    )
     .eq('reviewer_id', reviewerId)
     .order('created_at', { ascending: false })
     .range(0, 4999);
@@ -806,7 +834,12 @@ export async function getReviewerActivity(
     submission_id: review.submission_id,
     submission_title: submissionMap.get(review.submission_id) || 'Unknown',
     score_overall: review.score_overall,
+    score_relevance: review.score_relevance,
+    score_technical_depth: review.score_technical_depth,
+    score_clarity: review.score_clarity,
+    score_diversity: review.score_diversity,
     private_notes: review.private_notes,
+    feedback_to_speaker: review.feedback_to_speaker,
     created_at: review.created_at,
   }));
 

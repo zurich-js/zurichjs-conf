@@ -12,6 +12,7 @@ import { useQueryState, parseAsString, parseAsInteger, parseAsStringLiteral } fr
 import { SEO } from '@/components/SEO';
 import { Heading } from '@/components/atoms';
 import { saveReviewerNavigationSnapshot } from '@/lib/cfp/reviewer-navigation';
+import { getReviewerPermissions } from '@/lib/cfp/reviewer-permissions';
 import { supabase } from '@/lib/supabase/client';
 import { useCfpReviewerDashboard } from '@/hooks/useCfp';
 import { useBookmarks } from '@/hooks/cfp';
@@ -130,8 +131,8 @@ export default function ReviewerDashboard() {
   // Bookmarks
   const { isBookmarked } = useBookmarks(reviewer?.email);
 
-  // Determine if reviewer is anonymous (cannot see speaker identity or review stats)
-  const isAnonymous = reviewer ? reviewer.role !== 'super_admin' && !reviewer.can_see_speaker_identity : true;
+  const reviewerPermissions = reviewer ? getReviewerPermissions(reviewer.role) : null;
+  const isAnonymous = !reviewerPermissions?.canUseReviewBasedFilters;
   const tagFilters = useMemo(
     () => tagFilterParam.split(',').map((tag) => tag.trim()).filter(Boolean),
     [tagFilterParam]
@@ -402,6 +403,7 @@ export default function ReviewerDashboard() {
           showFilters={showFilters}
           hasActiveFilters={hasAnyActiveFilters}
           isAnonymous={isAnonymous}
+          canSeeDecisionStatuses={!!reviewerPermissions?.canSeeDecisionStatuses}
           onSearchChange={handleSearchChange}
           onReviewFilterChange={handleReviewFilterChange}
           onTypeFilterChange={handleTypeFilterChange}
