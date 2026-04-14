@@ -24,6 +24,7 @@ import type {
 } from '../types/cfp-admin';
 import {
   computeSubmissionScoring,
+  computeReviewerScoreProfiles,
   getScoreBucket,
   getCoverageBucket,
   type ShortlistStatus,
@@ -109,6 +110,7 @@ export async function getAdminSubmissions(
     shortlist_statuses,
     coverage_min,
     coverage_max,
+    experiment = false,
   } = filters;
 
   // Step 1: Fetch all submissions from DB (apply DB-level filters only)
@@ -171,8 +173,8 @@ export async function getAdminSubmissions(
   const [speakersResult, tagJoinsResult, reviewsResult, reviewerCountResult] = await Promise.all([
     fetchAllRows<CfpSpeaker>(supabase, 'cfp_speakers', '*'),
     fetchAllRows<{ submission_id: string; tag_id: string }>(supabase, 'cfp_submission_tags', 'submission_id, tag_id'),
-    fetchAllRows<{ submission_id: string; score_overall: number | null; created_at: string }>(
-      supabase, 'cfp_reviews', 'submission_id, score_overall, created_at'
+    fetchAllRows<{ submission_id: string; reviewer_id: string | null; score_overall: number | null; created_at: string }>(
+      supabase, 'cfp_reviews', 'submission_id, reviewer_id, score_overall, created_at'
     ),
     supabase
       .from('cfp_reviewers')
@@ -209,6 +211,9 @@ export async function getAdminSubmissions(
 
   // Build reviews-by-submission map (filter to only our submissions)
   const totalReviewerCount = reviewerCountResult.count || 0;
+  const { globalAvgScore, reviewerProfiles } = experiment
+    ? computeReviewerScoreProfiles(reviewsResult.data || [])
+    : { globalAvgScore: null, reviewerProfiles: new Map() };
   const reviewsBySubmission = new Map<string, ReviewInput[]>();
   for (const review of reviewsResult.data || []) {
     const submissionId = review.submission_id as string;
@@ -219,13 +224,20 @@ export async function getAdminSubmissions(
     reviewsBySubmission.get(submissionId)!.push({
       score_overall: review.score_overall as number | null,
       created_at: review.created_at as string,
+      reviewer_id: review.reviewer_id as string | null,
     });
   }
 
   // Step 3: Build enriched submissions with stats
   const enriched: CfpSubmissionWithStats[] = submissions.map((s: CfpSubmission) => {
     const submissionReviews = reviewsBySubmission.get(s.id) || [];
-    const scoring = computeSubmissionScoring(submissionReviews, totalReviewerCount);
+    const scoring = computeSubmissionScoring(
+      submissionReviews,
+      totalReviewerCount,
+      reviewerProfiles,
+      globalAvgScore,
+      experiment
+    );
 
     const submissionTagIds = tagJoins
       .filter((j: { submission_id: string }) => j.submission_id === s.id)
@@ -239,6 +251,8 @@ export async function getAdminSubmissions(
         submission_id: s.id,
         review_count: scoring.reviewCount,
         avg_overall: scoring.avgScore,
+        normalized_overall: scoring.normalizedAvgScore,
+        consensus_normalized_overall: scoring.consensusNormalizedAvgScore,
         avg_relevance: null,
         avg_technical_depth: null,
         avg_clarity: null,
@@ -316,6 +330,12 @@ export async function getAdminSubmissions(
         return (a.stats?.review_count || 0) - (b.stats?.review_count || 0);
       case 'avg_score':
         return (a.stats?.avg_overall || 0) - (b.stats?.avg_overall || 0);
+      case 'normalized_score':
+        if (!experiment) return 0;
+        return (a.stats?.normalized_overall || 0) - (b.stats?.normalized_overall || 0);
+      case 'consensus_score':
+        if (!experiment) return 0;
+        return (a.stats?.consensus_normalized_overall || 0) - (b.stats?.consensus_normalized_overall || 0);
       case 'coverage':
         return (a.stats?.coverage_percent || 0) - (b.stats?.coverage_percent || 0);
       case 'shortlist':

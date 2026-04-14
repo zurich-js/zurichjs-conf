@@ -5,6 +5,7 @@
 
 import { useState, useCallback, useMemo, useRef } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -46,6 +47,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 const ITEMS_PER_PAGE = 10;
 
 export default function CfpAdminDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<CfpTab>('submissions');
   const [selectedSubmission, setSelectedSubmission] = useState<CfpAdminSubmission | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -53,6 +55,7 @@ export default function CfpAdminDashboard() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+  const showExperimentalRatings = router.query.experiment === 'true';
 
   // Submission filter state (lifted from SubmissionsTab for server-side pagination)
   const [statuses, setStatuses] = useState<string[]>([]);
@@ -78,22 +81,28 @@ export default function CfpAdminDashboard() {
 
   const submissionSortParams = useMemo<SubmissionSortRule[]>(
     () =>
-      submissionSort.map((rule): SubmissionSortRule => ({
-        key:
-          rule.key === 'title'
-            ? 'title'
-            : rule.key === 'speaker'
-              ? 'speaker'
-              : rule.key === 'reviews'
-                ? 'review_count'
-                : rule.key === 'score'
-                  ? 'avg_score'
-                  : rule.key === 'coverage'
-                    ? 'coverage'
-                    : 'shortlist',
-        direction: rule.direction,
-      })),
-    [submissionSort]
+      submissionSort
+        .filter((rule) => showExperimentalRatings || (rule.key !== 'normalizedScore' && rule.key !== 'consensusScore'))
+        .map((rule): SubmissionSortRule => ({
+          key:
+            rule.key === 'title'
+              ? 'title'
+              : rule.key === 'speaker'
+                ? 'speaker'
+                : rule.key === 'reviews'
+                  ? 'review_count'
+                  : rule.key === 'score'
+                    ? 'avg_score'
+                    : rule.key === 'normalizedScore'
+                      ? 'normalized_score'
+                      : rule.key === 'consensusScore'
+                        ? 'consensus_score'
+                        : rule.key === 'coverage'
+                          ? 'coverage'
+                          : 'shortlist',
+          direction: rule.direction,
+        })),
+    [submissionSort, showExperimentalRatings]
   );
 
   // Build query params object for React Query key and fetch
@@ -105,9 +114,10 @@ export default function CfpAdminDashboard() {
     sort: submissionSortParams.length > 0 ? submissionSortParams : undefined,
     coverage_min: coverageMin.trim() ? Math.max(0, Math.min(100, Number(coverageMin))) : undefined,
     coverage_max: coverageMax.trim() ? Math.max(0, Math.min(100, Number(coverageMax))) : undefined,
+    experiment: showExperimentalRatings,
     limit: ITEMS_PER_PAGE,
     offset: (currentPage - 1) * ITEMS_PER_PAGE,
-  }), [statuses, submissionTypes, shortlistStatuses, debouncedSearch, submissionSortParams, coverageMin, coverageMax, currentPage]);
+  }), [statuses, submissionTypes, shortlistStatuses, debouncedSearch, submissionSortParams, coverageMin, coverageMax, showExperimentalRatings, currentPage]);
 
   const setSubmissionStatuses = useCallback((value: string[]) => {
     setStatuses(value);
@@ -341,6 +351,7 @@ export default function CfpAdminDashboard() {
                   setBulkActionStatus={setBulkActionStatus}
                   bulkUpdateStatusMutation={bulkUpdateStatusMutation}
                   onSelectSubmission={setSelectedSubmission}
+                  showExperimentalRatings={showExperimentalRatings}
                 />
               )}
 

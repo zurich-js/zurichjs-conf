@@ -19,7 +19,7 @@ import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { formatScore } from '@/lib/cfp/scoring';
 import { cycleMultiSort, getMultiSortDirection, SortIndicator, type MultiSort } from './tableSort';
 
-export type SubmissionSortKey = 'title' | 'speaker' | 'reviews' | 'score' | 'coverage' | 'shortlist';
+export type SubmissionSortKey = 'title' | 'speaker' | 'reviews' | 'score' | 'normalizedScore' | 'consensusScore' | 'coverage' | 'shortlist';
 
 const STATUS_OPTIONS = [
   'draft',
@@ -64,6 +64,7 @@ interface SubmissionsTabProps {
   setBulkActionStatus: (v: string) => void;
   bulkUpdateStatusMutation: ReturnType<typeof useMutation<void, Error, { ids: string[]; status: string }>>;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
+  showExperimentalRatings: boolean;
 }
 
 function MultiSelectFilterPopover({
@@ -152,6 +153,7 @@ export function SubmissionsTab({
   setBulkActionStatus,
   bulkUpdateStatusMutation,
   onSelectSubmission,
+  showExperimentalRatings,
 }: SubmissionsTabProps) {
   const totalPages = Math.ceil(total / pageSize);
 
@@ -310,6 +312,7 @@ export function SubmissionsTab({
             toggleSelection={toggleSelection}
             toggleSelectAll={toggleSelectAll}
             onSelectSubmission={onSelectSubmission}
+            showExperimentalRatings={showExperimentalRatings}
           />
 
           {/* Desktop Table View */}
@@ -321,6 +324,7 @@ export function SubmissionsTab({
             onSelectSubmission={onSelectSubmission}
             sort={sort}
             onSortClick={handleSortClick}
+            showExperimentalRatings={showExperimentalRatings}
           />
 
           <Pagination
@@ -344,12 +348,14 @@ function MobileSubmissionsList({
   toggleSelection,
   toggleSelectAll,
   onSelectSubmission,
+  showExperimentalRatings,
 }: {
   submissions: CfpAdminSubmission[];
   selectedIds: Set<string>;
   toggleSelection: (id: string) => void;
   toggleSelectAll: () => void;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
+  showExperimentalRatings: boolean;
 }) {
   return (
     <div className="lg:hidden space-y-3">
@@ -406,6 +412,18 @@ function MobileSubmissionsList({
               <span className={`px-2 py-0.5 rounded ${getScoreBgColor(s.stats?.avg_overall ?? null)} ${getScoreColor(s.stats?.avg_overall ?? null)} font-semibold`}>
                 {formatScore(s.stats?.avg_overall ?? null)}
               </span>
+              {showExperimentalRatings && (
+                <>
+                  <span className="text-gray-400">•</span>
+                  <span className={`px-2 py-0.5 rounded ${getScoreBgColor(s.stats?.normalized_overall ?? null)} ${getScoreColor(s.stats?.normalized_overall ?? null)} font-semibold`}>
+                    Normalized {formatScore(s.stats?.normalized_overall ?? null)}
+                  </span>
+                  <span className="text-gray-400">•</span>
+                  <span className={`px-2 py-0.5 rounded ${getScoreBgColor(s.stats?.consensus_normalized_overall ?? null)} ${getScoreColor(s.stats?.consensus_normalized_overall ?? null)} font-semibold`}>
+                    Consensus {formatScore(s.stats?.consensus_normalized_overall ?? null)}
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Coverage:</span>
@@ -447,6 +465,7 @@ function DesktopSubmissionsTable({
   onSelectSubmission,
   sort,
   onSortClick,
+  showExperimentalRatings,
 }: {
   submissions: CfpAdminSubmission[];
   selectedIds: Set<string>;
@@ -455,6 +474,7 @@ function DesktopSubmissionsTable({
   onSelectSubmission: (s: CfpAdminSubmission) => void;
   sort: MultiSort<SubmissionSortKey>;
   onSortClick: (key: SubmissionSortKey) => void;
+  showExperimentalRatings: boolean;
 }) {
   return (
     <div className="hidden lg:block overflow-x-auto">
@@ -511,6 +531,30 @@ function DesktopSubmissionsTable({
                 <SortIndicator direction={getMultiSortDirection(sort, 'score')} />
               </button>
             </th>
+            {showExperimentalRatings && (
+              <>
+                <th className="px-2 py-3 w-28 text-center">
+                  <button
+                    type="button"
+                    onClick={() => onSortClick('normalizedScore')}
+                    className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+                  >
+                    <span>Normalized Rating</span>
+                    <SortIndicator direction={getMultiSortDirection(sort, 'normalizedScore')} />
+                  </button>
+                </th>
+                <th className="px-2 py-3 w-24 text-center">
+                  <button
+                    type="button"
+                    onClick={() => onSortClick('consensusScore')}
+                    className="inline-flex items-center gap-1 cursor-pointer hover:text-black/80"
+                  >
+                    <span>Consensus Rating</span>
+                    <SortIndicator direction={getMultiSortDirection(sort, 'consensusScore')} />
+                  </button>
+                </th>
+              </>
+            )}
             <th className="px-2 py-3 w-20 text-center">
               <button
                 type="button"
@@ -578,6 +622,30 @@ function DesktopSubmissionsTable({
                   </span>
                 </div>
               </td>
+              {showExperimentalRatings && (
+                <>
+                  <td className="px-2 py-3">
+                    <div className="flex justify-center">
+                      <span
+                        className={`inline-flex items-center justify-center w-10 h-7 rounded-md text-sm font-semibold ${getScoreBgColor(s.stats?.normalized_overall ?? null)} ${getScoreColor(s.stats?.normalized_overall ?? null)}`}
+                        title="Partially compensates for reviewers whose average score is higher or lower than the committee average"
+                      >
+                        {formatScore(s.stats?.normalized_overall ?? null)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-2 py-3">
+                    <div className="flex justify-center">
+                      <span
+                        className={`inline-flex items-center justify-center w-10 h-7 rounded-md text-sm font-semibold ${getScoreBgColor(s.stats?.consensus_normalized_overall ?? null)} ${getScoreColor(s.stats?.consensus_normalized_overall ?? null)}`}
+                        title="Uses the most common score as the baseline and discounts outlier score buckets by distance from that baseline"
+                      >
+                        {formatScore(s.stats?.consensus_normalized_overall ?? null)}
+                      </span>
+                    </div>
+                  </td>
+                </>
+              )}
               <td className="px-2 py-3">
                 <CoverageBar
                   percent={s.stats?.coverage_percent || 0}
@@ -602,7 +670,7 @@ function DesktopSubmissionsTable({
           ))}
           {submissions.length === 0 && (
             <tr>
-              <td colSpan={10} className="px-4 py-12 text-center text-gray-500">
+              <td colSpan={showExperimentalRatings ? 12 : 10} className="px-4 py-12 text-center text-gray-500">
                 No submissions found
               </td>
             </tr>

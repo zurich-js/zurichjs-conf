@@ -51,6 +51,8 @@ export interface CfpSubmissionStats {
   submission_id: string;
   review_count: number;
   avg_overall: number | null;
+  normalized_overall?: number | null;
+  consensus_normalized_overall?: number | null;
   avg_relevance: number | null;
   avg_technical_depth: number | null;
   avg_clarity: number | null;

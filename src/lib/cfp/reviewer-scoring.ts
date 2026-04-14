@@ -29,6 +29,8 @@ export const REVIEWER_CONTRIBUTION_SCORING_WEIGHTS: ReviewerContributionScoringW
   categoryScoreRange: 5,
 };
 
+const MAX_SCORE_SPREAD = 3;
+
 export interface ReviewerContributionMetrics {
   feedbackWrittenCount: number;
   feedbackWrittenPercent: number;
@@ -56,13 +58,9 @@ function hasWrittenFeedback(review: ReviewerContributionReviewInput): boolean {
 function computeRatingSpreadRatio(ratingSpread: number | null): number {
   if (ratingSpread === null) return 0;
 
-  // Scores are 1-4 in the reviewer UI. A spread near 1.5 suggests thoughtful variation
-  // without rewarding extreme, all-over-the-map scoring.
-  if (ratingSpread === 0) return 0;
-  if (ratingSpread <= 0.5) return 0.25;
-  if (ratingSpread <= 1.5) return 1;
-  if (ratingSpread <= 2.5) return 0.75;
-  return 0.5;
+  // Scores are 1-4 in the reviewer UI, so a wider spread means the reviewer
+  // is using more of the available scoring scale.
+  return Math.max(0, Math.min(1, ratingSpread / MAX_SCORE_SPREAD));
 }
 
 function computeCategoryRatingSpread(review: ReviewerContributionReviewInput): number | null {
@@ -83,30 +81,18 @@ function computeCategoryRatingSpreadRatio(reviews: ReviewerContributionReviewInp
   ratio: number;
 } {
   const scoredReviews = reviews
-    .map((review) => ({
-      overallScore: review.score_overall,
-      categorySpread: computeCategoryRatingSpread(review),
-    }))
-    .filter((review): review is { overallScore: number; categorySpread: number } =>
-      review.overallScore !== null && review.categorySpread !== null
-    );
+    .map((review) => computeCategoryRatingSpread(review))
+    .filter((categorySpread): categorySpread is number => categorySpread !== null);
 
   if (scoredReviews.length === 0) {
     return { categoryRatingSpread: null, ratio: 0 };
   }
 
-  const flatLowScoreReviews = scoredReviews.filter(
-    (review) => review.overallScore <= 2 && review.categorySpread === 0
-  ).length;
-  const nonFlatReviews = scoredReviews.filter((review) => review.categorySpread > 0).length;
-  const flatLowScorePenalty = flatLowScoreReviews / scoredReviews.length;
-  const nonFlatRatio = nonFlatReviews / scoredReviews.length;
-  const ratio = Math.max(0, Math.min(1, nonFlatRatio + 0.5 * (1 - nonFlatRatio) - flatLowScorePenalty));
-  const avgCategoryRatingSpread = scoredReviews.reduce((sum, review) => sum + review.categorySpread, 0) / scoredReviews.length;
+  const avgCategoryRatingSpread = scoredReviews.reduce((sum, categorySpread) => sum + categorySpread, 0) / scoredReviews.length;
 
   return {
     categoryRatingSpread: roundTo(avgCategoryRatingSpread, 1),
-    ratio,
+    ratio: Math.max(0, Math.min(1, avgCategoryRatingSpread / MAX_SCORE_SPREAD)),
   };
 }
 

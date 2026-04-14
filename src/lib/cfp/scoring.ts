@@ -18,6 +18,8 @@ export type ShortlistStatus =
 export interface SubmissionScoring {
   reviewCount: number;
   avgScore: number | null;
+  normalizedAvgScore: number | null;
+  consensusNormalizedAvgScore: number | null;
   totalReviewers: number;
   coverageRatio: number;
   coveragePercent: number;
@@ -101,6 +103,139 @@ export function classifySubmission(input: ClassificationInput): ShortlistStatus 
 export interface ReviewInput {
   score_overall: number | null;
   created_at: string;
+  reviewer_id?: string | null;
+}
+
+export interface ReviewerScoreProfile {
+  avgScore: number;
+  reviewCount: number;
+}
+
+const DEFAULT_REVIEWER_BIAS_COMPENSATION_WEIGHT = 0.5;
+const CONSENSUS_BUCKET_WEIGHT = 2;
+
+function clampScore(score: number): number {
+  return Math.max(1, Math.min(4, score));
+}
+
+export function computeReviewerScoreProfiles(
+  reviews: Array<{ reviewer_id: string | null; score_overall: number | null }>
+): {
+  globalAvgScore: number | null;
+  reviewerProfiles: Map<string, ReviewerScoreProfile>;
+} {
+  const scoredReviews = reviews.filter(
+    (review): review is { reviewer_id: string | null; score_overall: number } => review.score_overall !== null
+  );
+
+  const globalAvgScore = scoredReviews.length > 0
+    ? scoredReviews.reduce((sum, review) => sum + review.score_overall, 0) / scoredReviews.length
+    : null;
+
+  const reviewerTotals = new Map<string, { scoreTotal: number; reviewCount: number }>();
+  for (const review of scoredReviews) {
+    if (!review.reviewer_id) continue;
+
+    const current = reviewerTotals.get(review.reviewer_id) || { scoreTotal: 0, reviewCount: 0 };
+    current.scoreTotal += review.score_overall;
+    current.reviewCount += 1;
+    reviewerTotals.set(review.reviewer_id, current);
+  }
+
+  const reviewerProfiles = new Map<string, ReviewerScoreProfile>();
+  for (const [reviewerId, profile] of reviewerTotals) {
+    reviewerProfiles.set(reviewerId, {
+      avgScore: profile.scoreTotal / profile.reviewCount,
+      reviewCount: profile.reviewCount,
+    });
+  }
+
+  return { globalAvgScore, reviewerProfiles };
+}
+
+export function computeNormalizedAverageScore(
+  reviews: ReviewInput[],
+  reviewerProfiles: Map<string, ReviewerScoreProfile>,
+  globalAvgScore: number | null,
+  biasCompensationWeight = DEFAULT_REVIEWER_BIAS_COMPENSATION_WEIGHT
+): number | null {
+  if (globalAvgScore === null) return null;
+
+  const normalizedScores = reviews
+    .filter((review): review is ReviewInput & { score_overall: number } => review.score_overall !== null)
+    .map((review) => {
+      const reviewerProfile = review.reviewer_id ? reviewerProfiles.get(review.reviewer_id) : undefined;
+      if (!reviewerProfile) return review.score_overall;
+
+      const reviewerBias = reviewerProfile.avgScore - globalAvgScore;
+      return clampScore(review.score_overall - reviewerBias * biasCompensationWeight);
+    });
+
+  return normalizedScores.length > 0
+    ? normalizedScores.reduce((sum, score) => sum + score, 0) / normalizedScores.length
+    : null;
+}
+
+function findConsensusScore(scores: number[]): number | null {
+  const counts = new Map<number, number>();
+  for (const score of scores) {
+    counts.set(score, (counts.get(score) || 0) + 1);
+  }
+
+  let consensusScore: number | null = null;
+  let consensusCount = 0;
+  let tiedTopBucketCount = 0;
+
+  for (const [score, count] of counts) {
+    if (count > consensusCount) {
+      consensusScore = score;
+      consensusCount = count;
+      tiedTopBucketCount = 1;
+      continue;
+    }
+
+    if (count === consensusCount) {
+      tiedTopBucketCount += 1;
+    }
+  }
+
+  return tiedTopBucketCount === 1 ? consensusScore : null;
+}
+
+function getConsensusOutlierContributionWeight(score: number, consensusScore: number): number {
+  const distanceFromConsensus = Math.abs(score - consensusScore);
+  if (distanceFromConsensus === 0) return CONSENSUS_BUCKET_WEIGHT;
+
+  return 2 / (distanceFromConsensus + 1);
+}
+
+export function computeConsensusNormalizedAverageScore(reviews: ReviewInput[]): number | null {
+  const scores = reviews
+    .map((review) => review.score_overall)
+    .filter((score): score is number => score !== null);
+
+  if (scores.length === 0) return null;
+
+  const consensusScore = findConsensusScore(scores);
+  if (consensusScore === null) {
+    return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  }
+
+  let weightedScoreTotal = 0;
+  let denominator = 0;
+
+  for (const score of scores) {
+    if (score === consensusScore) {
+      weightedScoreTotal += score * CONSENSUS_BUCKET_WEIGHT;
+      denominator += CONSENSUS_BUCKET_WEIGHT;
+      continue;
+    }
+
+    weightedScoreTotal += score * getConsensusOutlierContributionWeight(score, consensusScore);
+    denominator += 1;
+  }
+
+  return clampScore(weightedScoreTotal / denominator);
 }
 
 /**
@@ -108,7 +243,10 @@ export interface ReviewInput {
  */
 export function computeSubmissionScoring(
   reviews: ReviewInput[],
-  totalReviewers: number
+  totalReviewers: number,
+  reviewerProfiles: Map<string, ReviewerScoreProfile> = new Map(),
+  globalAvgScore: number | null = null,
+  computeExperimentalRatings = false
 ): SubmissionScoring {
   const reviewCount = reviews.length;
 
@@ -118,6 +256,12 @@ export function computeSubmissionScoring(
     .filter((s): s is number => s !== null);
   const avgScore = scores.length > 0
     ? scores.reduce((a, b) => a + b, 0) / scores.length
+    : null;
+  const normalizedAvgScore = computeExperimentalRatings
+    ? computeNormalizedAverageScore(reviews, reviewerProfiles, globalAvgScore)
+    : null;
+  const consensusNormalizedAvgScore = computeExperimentalRatings
+    ? computeConsensusNormalizedAverageScore(reviews)
     : null;
 
   // Calculate coverage
@@ -139,6 +283,8 @@ export function computeSubmissionScoring(
   return {
     reviewCount,
     avgScore,
+    normalizedAvgScore,
+    consensusNormalizedAvgScore,
     totalReviewers,
     coverageRatio,
     coveragePercent,
