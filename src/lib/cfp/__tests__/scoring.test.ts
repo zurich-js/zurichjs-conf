@@ -9,6 +9,9 @@ import {
   formatPercent,
   classifySubmission,
   computeSubmissionScoring,
+  computeReviewerScoreProfiles,
+  computeNormalizedAverageScore,
+  computeConsensusNormalizedAverageScore,
   getScoreBucket,
   getCoverageBucket,
 } from '../scoring';
@@ -274,6 +277,78 @@ describe('computeSubmissionScoring', () => {
       { score_overall: 1.5, created_at: '2024-01-04T10:00:00Z' },
     ], 6);
     expect(lowScore.status).toBe('likely_reject');
+  });
+
+  it('keeps experimental ratings disabled by default', () => {
+    const result = computeSubmissionScoring([
+      { score_overall: 4, created_at: '2024-01-01T10:00:00Z' },
+      { score_overall: 1, created_at: '2024-01-02T10:00:00Z' },
+    ], 2);
+
+    expect(result.normalizedAvgScore).toBe(null);
+    expect(result.consensusNormalizedAvgScore).toBe(null);
+  });
+});
+
+describe('normalized reviewer scoring', () => {
+  it('computes reviewer score profiles and the global average', () => {
+    const result = computeReviewerScoreProfiles([
+      { reviewer_id: 'strict', score_overall: 1 },
+      { reviewer_id: 'strict', score_overall: 2 },
+      { reviewer_id: 'generous', score_overall: 4 },
+      { reviewer_id: 'generous', score_overall: null },
+    ]);
+
+    expect(result.globalAvgScore).toBeCloseTo(2.33, 2);
+    expect(result.reviewerProfiles.get('strict')?.avgScore).toBe(1.5);
+    expect(result.reviewerProfiles.get('strict')?.reviewCount).toBe(2);
+    expect(result.reviewerProfiles.get('generous')?.avgScore).toBe(4);
+    expect(result.reviewerProfiles.get('generous')?.reviewCount).toBe(1);
+  });
+
+  it('partially compensates for strict and generous reviewer bias', () => {
+    const { globalAvgScore, reviewerProfiles } = computeReviewerScoreProfiles([
+      { reviewer_id: 'strict', score_overall: 2 },
+      { reviewer_id: 'strict', score_overall: 2 },
+      { reviewer_id: 'generous', score_overall: 4 },
+      { reviewer_id: 'generous', score_overall: 4 },
+    ]);
+
+    const normalized = computeNormalizedAverageScore([
+      { reviewer_id: 'strict', score_overall: 3, created_at: '2024-01-01T10:00:00Z' },
+      { reviewer_id: 'generous', score_overall: 3, created_at: '2024-01-02T10:00:00Z' },
+    ], reviewerProfiles, globalAvgScore);
+
+    expect(normalized).toBe(3);
+    expect(computeNormalizedAverageScore([
+      { reviewer_id: 'strict', score_overall: 3, created_at: '2024-01-01T10:00:00Z' },
+    ], reviewerProfiles, globalAvgScore)).toBe(3.5);
+    expect(computeNormalizedAverageScore([
+      { reviewer_id: 'generous', score_overall: 3, created_at: '2024-01-01T10:00:00Z' },
+    ], reviewerProfiles, globalAvgScore)).toBe(2.5);
+  });
+});
+
+describe('consensus normalized scoring', () => {
+  it('uses the most common score as the baseline and discounts distant outliers', () => {
+    const result = computeConsensusNormalizedAverageScore([
+      { score_overall: 4, created_at: '2024-01-01T10:00:00Z' },
+      { score_overall: 4, created_at: '2024-01-02T10:00:00Z' },
+      { score_overall: 4, created_at: '2024-01-03T10:00:00Z' },
+      { score_overall: 4, created_at: '2024-01-04T10:00:00Z' },
+      { score_overall: 1, created_at: '2024-01-05T10:00:00Z' },
+    ]);
+
+    expect(result).toBeCloseTo(3.61, 2);
+  });
+
+  it('falls back to the plain average when there is no clear consensus score', () => {
+    const result = computeConsensusNormalizedAverageScore([
+      { score_overall: 4, created_at: '2024-01-01T10:00:00Z' },
+      { score_overall: 1, created_at: '2024-01-02T10:00:00Z' },
+    ]);
+
+    expect(result).toBe(2.5);
   });
 });
 

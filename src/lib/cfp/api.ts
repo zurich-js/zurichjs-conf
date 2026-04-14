@@ -36,6 +36,7 @@ export interface SubmissionQueryParams {
   shortlist_only?: boolean;
   coverage_min?: number;
   coverage_max?: number;
+  experiment?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -63,6 +64,7 @@ export async function fetchSubmissions(
   if (params.shortlist_only) searchParams.set('shortlist_only', 'true');
   if (typeof params.coverage_min === 'number') searchParams.set('coverage_min', String(params.coverage_min));
   if (typeof params.coverage_max === 'number') searchParams.set('coverage_max', String(params.coverage_max));
+  if (params.experiment) searchParams.set('experiment', 'true');
   if (params.limit) searchParams.set('limit', String(params.limit));
   if (params.offset !== undefined) searchParams.set('offset', String(params.offset));
   const res = await fetch(`/api/admin/cfp/submissions?${searchParams}`);

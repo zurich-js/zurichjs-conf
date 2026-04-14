@@ -86,6 +86,8 @@ export interface CfpAdminSubmission {
 export interface CfpAdminSubmissionStats {
   review_count: number;
   avg_overall: number | null;
+  normalized_overall: number | null;
+  consensus_normalized_overall: number | null;
   total_reviewers: number;
   coverage_ratio: number;
   coverage_percent: number;

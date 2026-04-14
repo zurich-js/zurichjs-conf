@@ -41,6 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       shortlistStatuses,
       coverage_min,
       coverage_max,
+      experiment,
     } = req.query;
 
     let parsedSort: SubmissionSortRule[] | undefined;
@@ -92,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       talk_level: talk_level ? (talk_level as CfpTalkLevel) : undefined,
       search: search as string | undefined,
       sort: parsedSort,
-      sort_by: sort_by as 'created_at' | 'avg_score' | 'review_count' | 'title' | 'coverage' | 'last_reviewed' | 'speaker' | 'shortlist' | undefined,
+      sort_by: sort_by as 'created_at' | 'avg_score' | 'normalized_score' | 'consensus_score' | 'review_count' | 'title' | 'coverage' | 'last_reviewed' | 'speaker' | 'shortlist' | undefined,
       sort_order: sort_order as 'asc' | 'desc' | undefined,
       limit: limit ? parseInt(limit as string) : 10,
       offset: offset ? parseInt(offset as string) : 0,
@@ -101,6 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       shortlist_statuses: parsedShortlistStatuses,
       coverage_min: Number.isFinite(parsedCoverageMin) ? parsedCoverageMin : undefined,
       coverage_max: Number.isFinite(parsedCoverageMax) ? parsedCoverageMax : undefined,
+      experiment: experiment === 'true',
     });
 
     return res.status(200).json({ submissions, total, totalUnfiltered });
