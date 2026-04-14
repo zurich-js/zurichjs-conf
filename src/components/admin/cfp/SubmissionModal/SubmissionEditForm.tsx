@@ -62,7 +62,7 @@ export function SubmissionEditForm({
           >
             <option value="lightning">Lightning (10 min)</option>
             <option value="standard">Standard (30 min)</option>
-            <option value="workshop">Workshop (90+ min)</option>
+            <option value="workshop">Workshop (2-8h)</option>
           </select>
         </div>
         <div>

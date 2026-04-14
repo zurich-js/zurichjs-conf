@@ -9,11 +9,14 @@ import { EmailLayout } from '../components';
 import { colors, spacing, typography, radii } from '../design/tokens';
 import type { CfpAcceptanceEmailData } from '@/lib/types/cfp/decisions';
 
-const submissionTypeLabels: Record<string, string> = {
-  lightning: 'Lightning Talk (10 min)',
-  standard: 'Standard Talk (30 min)',
-  workshop: 'Workshop (90 min)',
-};
+function getSubmissionTypeLabel(type: string, workshopDurationHours?: number | null): string {
+  if (type === 'lightning') return 'Lightning Talk (10 min)';
+  if (type === 'standard') return 'Standard Talk (30 min)';
+  if (type === 'workshop') {
+    return workshopDurationHours ? `Workshop (${workshopDurationHours}h)` : 'Workshop';
+  }
+  return type;
+}
 
 export const CfpAcceptanceEmail: React.FC<CfpAcceptanceEmailData> = ({
   speaker_name,
@@ -22,6 +25,7 @@ export const CfpAcceptanceEmail: React.FC<CfpAcceptanceEmailData> = ({
   submission_type,
   conference_name,
   personal_message,
+  workshop_duration_hours,
 }) => {
   // Use first_name if provided, otherwise extract from speaker_name
   const displayFirstName = first_name || speaker_name.split(' ')[0];
@@ -52,7 +56,7 @@ export const CfpAcceptanceEmail: React.FC<CfpAcceptanceEmailData> = ({
           <Text style={talkTitleStyle}>{talk_title}</Text>
           <div style={badgeContainerStyle}>
             <span style={badgeStyle}>
-              {submissionTypeLabels[submission_type] || submission_type}
+              {getSubmissionTypeLabel(submission_type, workshop_duration_hours)}
             </span>
           </div>
         </div>

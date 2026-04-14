@@ -41,7 +41,7 @@ export async function sendCfpAcceptanceEmail(
     );
 
     // Format subject line
-    const subject = `Congratulations! Your talk "${data.talk_title}" has been accepted to ${data.conference_name}`;
+    const subject = `Congratulations! Your session "${data.talk_title}" has been accepted to ${data.conference_name}`;
 
     // Send email
     log.debug('Sending CFP acceptance email via Resend');

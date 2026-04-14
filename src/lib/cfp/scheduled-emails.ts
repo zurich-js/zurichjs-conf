@@ -239,6 +239,7 @@ export async function scheduleAcceptanceEmail(
       conference_name: 'ZurichJS Conference 2026',
       conference_date: 'September 27, 2026',
       personal_message: request.personal_message,
+      workshop_duration_hours: submission.workshop_duration_hours,
     };
 
     // Render email
@@ -251,7 +252,7 @@ export async function scheduleAcceptanceEmail(
 
     // Send via Resend with scheduled time
     const resend = getResendClient();
-    const subject = `Congratulations! Your talk "${submission.title}" has been accepted to ZurichJS Conference 2026`;
+    const subject = `Congratulations! Your session "${submission.title}" has been accepted to ZurichJS Conference 2026`;
 
     const result = await resend.emails.send({
       from: EMAIL_CONFIG.from,
@@ -765,12 +766,13 @@ export async function sendScheduledEmailNow(
         conference_name: 'ZurichJS Conference 2026',
         conference_date: 'September 27, 2026',
         personal_message: scheduledEmail.personal_message || undefined,
+        workshop_duration_hours: submission.workshop_duration_hours,
       };
 
       emailHtml = await render(
         React.createElement(CfpAcceptanceEmail, emailData)
       );
-      subject = `Congratulations! Your talk "${submission.title}" has been accepted to ZurichJS Conference 2026`;
+      subject = `Congratulations! Your session "${submission.title}" has been accepted to ZurichJS Conference 2026`;
     } else {
       // Rejection email
       const stats = await getCfpStats();

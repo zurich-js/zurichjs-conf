@@ -89,6 +89,7 @@ export interface CfpAcceptanceEmailData {
   conference_name: string;
   conference_date: string;
   personal_message?: string;
+  workshop_duration_hours?: number | null;
 }
 
 /**
