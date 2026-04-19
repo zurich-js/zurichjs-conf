@@ -108,11 +108,6 @@ export interface CfpRejectionEmailData {
   // Transparency stats
   total_submissions?: number;
   total_reviews?: number;
-  // Slot info
-  workshop_slots_min?: number;
-  workshop_slots_max?: number;
-  talks_total?: number;
-  talks_from_cfp?: number;
   // Committee feedback (optional inclusion)
   include_feedback?: boolean;
   feedback_text?: string;

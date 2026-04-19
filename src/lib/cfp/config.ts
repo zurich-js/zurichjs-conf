@@ -32,20 +32,6 @@ export const REJECTION_COUPON = {
 } as const;
 
 /**
- * Conference slot configuration for rejection email transparency
- * These numbers should reflect the actual conference capacity
- */
-export const CONFERENCE_SLOTS = {
-  /** Total workshop slots available */
-  WORKSHOPS_MIN: 4,
-  WORKSHOPS_MAX: 8,
-  /** Total talk slots (including keynotes, sponsor talks, etc.) */
-  TALKS_TOTAL: 14,
-  /** Talk slots available from CFP (excluding invited/keynote) */
-  TALKS_FROM_CFP: 9,
-} as const;
-
-/**
  * Submission limits configuration
  */
 export const SUBMISSION_LIMITS = {

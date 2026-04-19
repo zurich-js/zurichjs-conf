@@ -22,10 +22,6 @@ export const CfpRejectionEmail: React.FC<CfpRejectionEmailData> = ({
   // Transparency stats
   total_submissions,
   total_reviews,
-  workshop_slots_min,
-  workshop_slots_max,
-  talks_total,
-  talks_from_cfp,
   // Committee feedback
   include_feedback,
   feedback_text,
@@ -61,7 +57,7 @@ export const CfpRejectionEmail: React.FC<CfpRejectionEmailData> = ({
         </Text>
 
         <Text style={bodyStyle}>
-          After careful review, we weren&apos;t able to include your talk in this year&apos;s program.
+          After careful review, we weren&apos;t able to include your submission in this year&apos;s program.
           This was a really hard decision for our committee.
         </Text>
 
@@ -73,7 +69,7 @@ export const CfpRejectionEmail: React.FC<CfpRejectionEmailData> = ({
         </Text>
 
         {/* Transparency Stats */}
-        {(total_submissions || talks_from_cfp) && (
+        {(total_submissions || total_reviews) && (
           <div style={statsBoxStyle}>
             <Text style={statsLabelStyle}>Some context on our selection</Text>
             <ul style={statsListStyle}>
@@ -85,16 +81,6 @@ export const CfpRejectionEmail: React.FC<CfpRejectionEmailData> = ({
               {total_reviews && (
                 <li style={statsItemStyle}>
                   Our committee completed <strong>{total_reviews} reviews</strong>
-                </li>
-              )}
-              {talks_from_cfp && talks_total && (
-                <li style={statsItemStyle}>
-                  We only have room for <strong>{talks_from_cfp} talks from the CFP</strong> (out of {talks_total} total speaking slots)
-                </li>
-              )}
-              {workshop_slots_min && workshop_slots_max && (
-                <li style={statsItemStyle}>
-                  Workshop slots: <strong>{workshop_slots_min}-{workshop_slots_max}</strong> available
                 </li>
               )}
             </ul>

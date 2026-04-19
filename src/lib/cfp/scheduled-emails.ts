@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 import { getResendClient, EMAIL_CONFIG } from '@/lib/email/config';
 import { CfpAcceptanceEmail } from '@/emails/templates/CfpAcceptanceEmail';
 import { CfpRejectionEmail } from '@/emails/templates/CfpRejectionEmail';
-import { EMAIL_SCHEDULING, REJECTION_COUPON, CONFERENCE_SLOTS } from './config';
+import { EMAIL_SCHEDULING, REJECTION_COUPON } from './config';
 import { createCfpRejectionCoupon } from './decisions';
 import type {
   CfpEmailType,
@@ -416,10 +416,6 @@ export async function scheduleRejectionEmail(
       // Transparency stats
       total_submissions: stats.total_submissions,
       total_reviews: stats.total_reviews,
-      workshop_slots_min: CONFERENCE_SLOTS.WORKSHOPS_MIN,
-      workshop_slots_max: CONFERENCE_SLOTS.WORKSHOPS_MAX,
-      talks_total: CONFERENCE_SLOTS.TALKS_TOTAL,
-      talks_from_cfp: CONFERENCE_SLOTS.TALKS_FROM_CFP,
       // Feedback
       include_feedback: request.include_feedback,
       feedback_text: request.feedback_text,
@@ -793,10 +789,6 @@ export async function sendScheduledEmailNow(
         tickets_url: `${baseUrl}/#tickets`,
         total_submissions: stats.total_submissions,
         total_reviews: stats.total_reviews,
-        workshop_slots_min: CONFERENCE_SLOTS.WORKSHOPS_MIN,
-        workshop_slots_max: CONFERENCE_SLOTS.WORKSHOPS_MAX,
-        talks_total: CONFERENCE_SLOTS.TALKS_TOTAL,
-        talks_from_cfp: CONFERENCE_SLOTS.TALKS_FROM_CFP,
         include_feedback: scheduledEmail.include_feedback || false,
         feedback_text: scheduledEmail.feedback_text || undefined,
         has_other_pending_submissions: hasOtherPending,
