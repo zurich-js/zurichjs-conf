@@ -34,21 +34,23 @@ export default function WorkshopsPage({ items }: WorkshopsPageProps) {
 
       <main className="min-h-screen bg-brand-white">
         <ShapedSection shape="straight" variant="dark" dropTop dropBottom className="relative">
-          <Heading level="h1" variant="dark" className="max-md:mt-10 text-2xl md:text-3xl font-bold leading-none">
-            Zurich Engineering Day
-          </Heading>
-          <p className="mt-4 text-base md:text-md">
-            September 10, 2026
-          </p>
-          <p className="mt-16 max-w-screen-md text-lg md:text-xl font-bold">
-              Accelerate your learning with a full day of workshops for Software Engineers from all domains.
-          </p>
+          <div className="px-[40px]">
+            <Heading level="h1" variant="dark" className="max-md:mt-10 text-2xl md:text-3xl font-bold leading-none">
+              Zurich Engineering Day
+            </Heading>
+            <p className="mt-4 text-base md:text-md">
+              September 10, 2026
+            </p>
+            <p className="mt-16 max-w-screen-md text-lg md:text-xl font-bold">
+                Accelerate your learning with a full day of workshops for Software Engineers from all domains.
+            </p>
 
-          <p className="text-brand-gray-light absolute bottom-4 sm:bottom-10 md:bottom-20">Organized by the ZurichJS team.</p>
+            <p className="text-brand-gray-light absolute bottom-4 sm:bottom-10 md:bottom-20">Organized by the ZurichJS team.</p>
+          </div>
         </ShapedSection>
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
-          <div className="mx-auto max-w-screen-lg">
+          <div className="mx-auto max-w-screen-lg px-[40px]">
             <DayTabs
               tabs={workshopProgramSections.map((section) => ({
                 id: section.id,
@@ -76,7 +78,7 @@ export default function WorkshopsPage({ items }: WorkshopsPageProps) {
         </ShapedSection>
 
         <ShapedSection shape="straight" variant="dark">
-          <div className="mx-auto max-w-screen-lg">
+          <div className="mx-auto max-w-screen-lg px-[40px]">
             <Kicker variant="dark" className="mb-4">
               Supercharge learning
             </Kicker>
@@ -95,7 +97,7 @@ export default function WorkshopsPage({ items }: WorkshopsPageProps) {
         </ShapedSection>
 
         <ShapedSection shape="straight" variant="medium">
-          <div className="mx-auto max-w-screen-lg">
+          <div className="mx-auto max-w-screen-lg px-[40px]">
             <Heading level="h2" variant="dark" className="text-lg sm:text-2xl font-bold leading-tight">
               Enable learning for everyone
             </Heading>
