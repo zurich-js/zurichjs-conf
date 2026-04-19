@@ -6,7 +6,7 @@
 import type { ShortlistStatus } from '@/lib/cfp/scoring';
 import { CFP_REVIEWER_ROLES } from './cfp/base';
 import type { CfpReviewerRole } from './cfp/base';
-import type { CfpDecisionStatus } from './cfp/decisions';
+import type { CfpDecisionStatus, CfpScheduledEmailStatus } from './cfp/decisions';
 
 // Re-export CfpStats from the canonical location
 export type { CfpStats } from './cfp/admin';
@@ -81,6 +81,9 @@ export interface CfpAdminSubmission {
   tags: Array<{ id: string; name: string }>;
   stats: CfpAdminSubmissionStats;
   decision_status?: CfpDecisionStatus;
+  decision_at?: string | null;
+  decision_email_sent_at?: string | null;
+  latest_scheduled_email_status?: CfpScheduledEmailStatus | null;
 }
 
 export interface CfpAdminSubmissionStats {

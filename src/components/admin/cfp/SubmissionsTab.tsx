@@ -10,6 +10,7 @@ import { BusyArea, Pagination } from '@/components/atoms';
 import { StatusBadge } from './StatusBadge';
 import { ShortlistBadge } from './ShortlistBadge';
 import { SpeakerAvatar } from './SpeakerAvatar';
+import { DecisionStatusBadges } from './DecisionStatusBadges';
 import {
   getScoreColor,
   getScoreBgColor,
@@ -63,6 +64,13 @@ interface SubmissionsTabProps {
   bulkActionStatus: string;
   setBulkActionStatus: (v: string) => void;
   bulkUpdateStatusMutation: ReturnType<typeof useMutation<void, Error, { ids: string[]; status: string }>>;
+  bulkRejectMutation: ReturnType<
+    typeof useMutation<
+      { success: number; failed: number; errors: Array<{ submission_id: string; error: string }> },
+      Error,
+      { ids: string[]; notes?: string }
+    >
+  >;
   onSelectSubmission: (s: CfpAdminSubmission) => void;
 }
 
@@ -151,6 +159,7 @@ export function SubmissionsTab({
   bulkActionStatus,
   setBulkActionStatus,
   bulkUpdateStatusMutation,
+  bulkRejectMutation,
   onSelectSubmission,
 }: SubmissionsTabProps) {
   const totalPages = Math.ceil(total / pageSize);
@@ -270,7 +279,7 @@ export function SubmissionsTab({
 
         {/* Bulk Actions */}
         {selectedIds.size > 0 && (
-          <div className="mt-3 flex items-center gap-3 bg-white rounded-lg border border-gray-200 px-4 py-2 w-fit">
+          <div className="mt-3 flex flex-wrap items-center gap-3 bg-white rounded-lg border border-gray-200 px-4 py-2 w-fit">
             <span className="text-sm font-medium text-black">{selectedIds.size} selected</span>
             <div className="h-4 w-px bg-gray-300" />
             <select
@@ -296,6 +305,24 @@ export function SubmissionsTab({
               className="px-3 py-1 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg disabled:opacity-50 cursor-pointer"
             >
               {bulkUpdateStatusMutation.isPending ? 'Updating...' : 'Apply'}
+            </button>
+            <div className="h-4 w-px bg-gray-300" />
+            <button
+              onClick={() => {
+                const count = selectedIds.size;
+                if (count === 0) return;
+                const confirmed = window.confirm(
+                  `Bulk reject ${count} submission(s)?\n\nThis creates a decision record for each (status → rejected). ` +
+                  `No emails are sent — schedule those separately.`
+                );
+                if (!confirmed) return;
+                bulkRejectMutation.mutate({ ids: Array.from(selectedIds) });
+              }}
+              disabled={bulkRejectMutation.isPending}
+              className="px-3 py-1 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 cursor-pointer"
+              title="Reject selected submissions and create decision records. Emails are scheduled separately."
+            >
+              {bulkRejectMutation.isPending ? 'Rejecting...' : 'Bulk Reject (create decisions)'}
             </button>
           </div>
         )}
@@ -381,7 +408,16 @@ function MobileSubmissionsList({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h3 className="font-semibold text-black text-sm line-clamp-2 flex-1">{s.title}</h3>
-                <StatusBadge status={s.status} />
+                <div className="flex flex-col items-end gap-1">
+                  <StatusBadge status={s.status} />
+                  {s.status === 'rejected' && (
+                    <DecisionStatusBadges
+                      hasDecisionRecord={s.decision_status === 'rejected' && Boolean(s.decision_at)}
+                      emailSentAt={s.decision_email_sent_at}
+                      scheduledEmailStatus={s.latest_scheduled_email_status}
+                    />
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <SpeakerAvatar speaker={s.speaker} size="sm" />
@@ -568,7 +604,16 @@ function DesktopSubmissionsTable({
                 </span>
               </td>
               <td className="px-2 py-3">
-                <StatusBadge status={s.status} />
+                <div className="flex flex-col gap-1 items-start">
+                  <StatusBadge status={s.status} />
+                  {s.status === 'rejected' && (
+                    <DecisionStatusBadges
+                      hasDecisionRecord={s.decision_status === 'rejected' && Boolean(s.decision_at)}
+                      emailSentAt={s.decision_email_sent_at}
+                      scheduledEmailStatus={s.latest_scheduled_email_status}
+                    />
+                  )}
+                </div>
               </td>
               <td className="px-2 py-3 text-sm text-black font-medium text-center">{s.stats?.review_count || 0}</td>
               <td className="px-2 py-3">

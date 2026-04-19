@@ -101,6 +101,7 @@ export interface CfpSubmission {
 
   // Decision fields (populated from DB, used for speaker-visible status)
   decision_status?: 'undecided' | 'accepted' | 'rejected' | null;
+  decision_at?: string | null;
   decision_email_sent_at?: string | null;
 
   // Populated via joins (optional)

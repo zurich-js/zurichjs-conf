@@ -97,6 +97,29 @@ export async function updateSubmissionStatus(id: string, status: string): Promis
   if (!res.ok) throw new Error('Failed to update status');
 }
 
+export interface BulkDecisionResult {
+  success: number;
+  failed: number;
+  errors: Array<{ submission_id: string; error: string }>;
+}
+
+export async function bulkDecideSubmissions(
+  submissionIds: string[],
+  decision: 'accepted' | 'rejected',
+  notes?: string
+): Promise<BulkDecisionResult> {
+  const res = await fetch('/api/admin/cfp/submissions/bulk-decision', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ submission_ids: submissionIds, decision, notes }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to apply bulk decision');
+  }
+  return res.json();
+}
+
 export async function deleteTag(id: string): Promise<void> {
   const res = await fetch('/api/admin/cfp/tags', {
     method: 'DELETE',

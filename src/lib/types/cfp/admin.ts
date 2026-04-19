@@ -73,6 +73,9 @@ export interface CfpSubmissionWithStats extends CfpSubmission {
     last_reviewed_at: string | null;
     shortlist_status: string;
   };
+  // Decision tracking fields (populated by admin list endpoint)
+  decision_at?: string | null;
+  latest_scheduled_email_status?: 'pending' | 'sent' | 'cancelled' | 'failed' | null;
 }
 
 /**

@@ -6,6 +6,7 @@
 export { ConfirmationModal } from './ConfirmationModal';
 export { StatusBadge } from './StatusBadge';
 export { ShortlistBadge } from './ShortlistBadge';
+export { DecisionStatusBadges } from './DecisionStatusBadges';
 export { SubmissionModal } from './SubmissionModal';
 export { InviteReviewerForm } from './InviteReviewerForm';
 export { AddTagForm } from './AddTagForm';

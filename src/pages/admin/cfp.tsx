@@ -38,6 +38,7 @@ import {
   fetchAnalytics,
   updateSubmissionStatus,
   deleteTag,
+  bulkDecideSubmissions,
 } from '@/lib/cfp/api';
 import type { SubmissionQueryParams } from '@/lib/cfp/api';
 import type { SubmissionSortRule } from '@/lib/types/cfp/admin';
@@ -257,6 +258,31 @@ export default function CfpAdminDashboard() {
     },
   });
 
+  const bulkRejectMutation = useMutation({
+    mutationFn: ({ ids, notes }: { ids: string[]; notes?: string }) =>
+      bulkDecideSubmissions(ids, 'rejected', notes),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['cfp', 'submissions'] });
+      queryClient.invalidateQueries({ queryKey: cfpQueryKeys.stats });
+      setSelectedIds(new Set());
+      if (result.failed > 0) {
+        toast.error(
+          'Bulk Reject Partial Failure',
+          `${result.success} rejected, ${result.failed} failed. See console for details.`
+        );
+        console.error('[Bulk reject errors]', result.errors);
+      } else {
+        toast.success(
+          'Bulk Reject Complete',
+          `${result.success} submission(s) rejected with decision records`
+        );
+      }
+    },
+    onError: (error: Error) => {
+      toast.error('Bulk Reject Failed', error.message);
+    },
+  });
+
   const deleteTagMutation = useMutation({
     mutationFn: (id: string) => deleteTag(id),
     onSuccess: () => {
@@ -340,6 +366,7 @@ export default function CfpAdminDashboard() {
                   bulkActionStatus={bulkActionStatus}
                   setBulkActionStatus={setBulkActionStatus}
                   bulkUpdateStatusMutation={bulkUpdateStatusMutation}
+                  bulkRejectMutation={bulkRejectMutation}
                   onSelectSubmission={setSelectedSubmission}
                 />
               )}
