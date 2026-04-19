@@ -37,7 +37,7 @@ export default function WorkshopDetailPage({ session }: WorkshopDetailPageProps)
           <div className="mx-auto max-w-screen-lg">
             {/* TODO(feature/speakers-grid): Add the real workshop detail content here once the final experience is ready. */}
             <p className="text-base leading-8 text-brand-gray-darkest">
-              Workshop detail content is coming soon.
+              Workshop details are coming soon.
             </p>
           </div>
         </ShapedSection>

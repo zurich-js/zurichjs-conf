@@ -5,6 +5,7 @@
  */
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import type { PublicSpeaker } from '@/lib/types/cfp';
@@ -17,13 +18,18 @@ interface SpeakerCardProps {
   name: string;
   title: string;
   avatarUrl: string;
+  href: string;
 }
 
-function SpeakerCard({ name, title, avatarUrl }: SpeakerCardProps) {
+function SpeakerCard({ name, title, avatarUrl, href }: SpeakerCardProps) {
   const hasTextContent = name.trim() || title.trim();
 
   return (
-    <div className="flex-shrink-0 w-[240px] sm:w-[220px] md:w-[240px] lg:w-[230px] xl:w-[260px]">
+    <Link
+      href={href}
+      aria-label={name ? `View ${name}'s speaker profile` : 'View speaker profile'}
+      className="group flex-shrink-0 w-[240px] sm:w-[220px] md:w-[240px] lg:w-[230px] xl:w-[260px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white"
+    >
       <div className="relative rounded-2xl overflow-hidden bg-[#F1E271]">
         {/* Image container */}
         <div className="aspect-[3/4] relative">
@@ -51,7 +57,7 @@ function SpeakerCard({ name, title, avatarUrl }: SpeakerCardProps) {
           </div>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -97,6 +103,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
                 name={fullName}
                 title={titleWithCompany}
                 avatarUrl={speaker.profile_image_url || ''}
+                href={`/speakers/${speaker.slug}`}
               />
             );
           })}

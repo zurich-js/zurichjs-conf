@@ -278,7 +278,7 @@ export default function SpeakersPage() {
                         name={[speaker.first_name, speaker.last_name].filter(Boolean).join(' ')}
                         title={[speaker.job_title, speaker.company].filter(Boolean).join(' @')}
                         footer={speaker.sessions?.[0]?.title}
-                        to={`/speaker/${speaker.slug}`}
+                        to={`/speakers/${speaker.slug}`}
                       />
                     ))}
                   </div>
