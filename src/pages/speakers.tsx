@@ -18,7 +18,6 @@ import Link from "next/link";
 
 type ViewMode = 'compact' | 'default' | 'full';
 type SortMode = 'none' | 'asc' | 'desc';
-const SPEAKER_SLOT_COUNT = 14;
 
 interface SpeakersPageProps {
   dehydratedState: DehydratedState;
@@ -132,12 +131,6 @@ export default function SpeakersPage() {
   }
 
   const showNoMatches = selectedTags.length > 0 && visibleSpeakers.length === 0;
-  const speakerSlots = selectedTags.length > 0
-    ? visibleSpeakers
-    : [
-        ...visibleSpeakers,
-        ...Array.from({ length: Math.max(SPEAKER_SLOT_COUNT - visibleSpeakers.length, 0) }, () => null),
-      ];
   const sortLabel = sortMode === 'none' ? 'Default' : sortMode === 'asc' ? 'Name A-Z' : 'Name Z-A';
   const cardSize = viewMode === 'compact' ? '12rem' : viewMode === 'default' ? '15rem' : '17rem';
   const gridStyle = { '--card-size': cardSize } as CSSProperties;
@@ -276,31 +269,18 @@ export default function SpeakersPage() {
                   style={gridStyle}
                 >
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(var(--card-size),1fr))] auto-rows-fr gap-4">
-                    {speakerSlots.map((speaker, index) =>
-                      speaker ? (
-                        <SpeakerCard
-                          key={speaker.id}
-                          variant={viewMode}
-                          header={speaker.header_image_url || undefined}
-                          avatar={speaker.profile_image_url}
-                          name={[speaker.first_name, speaker.last_name].filter(Boolean).join(' ')}
-                          title={[speaker.job_title, speaker.company].filter(Boolean).join(' @')}
-                          footer={speaker.sessions?.[0]?.title}
-                          to={`/speakers/${speaker.slug}`}
-                        />
-                      ) : (
-                        <SpeakerCard
-                          key={`speaker-placeholder-${index}`}
-                          variant={viewMode}
-                          header={undefined}
-                          avatar={undefined}
-                          name="TBA"
-                          title=""
-                          footer=""
-                          to=""
-                        />
-                      )
-                    )}
+                    {visibleSpeakers.map((speaker) => (
+                      <SpeakerCard
+                        key={speaker.id}
+                        variant={viewMode}
+                        header={speaker.header_image_url || undefined}
+                        avatar={speaker.profile_image_url}
+                        name={[speaker.first_name, speaker.last_name].filter(Boolean).join(' ')}
+                        title={[speaker.job_title, speaker.company].filter(Boolean).join(' @')}
+                        footer={speaker.sessions?.[0]?.title}
+                        to={`/speaker/${speaker.slug}`}
+                      />
+                    ))}
                   </div>
                 </div>
               ) : (
