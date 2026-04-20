@@ -10,7 +10,7 @@ import { analytics } from '@/lib/analytics';
 import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
-import { AtSign, Github, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 
 type SessionTabId = 'talks' | 'workshops';
 
@@ -159,32 +159,15 @@ function SpeakerHeroDetails({
             {socialLinks.length > 0 ? (
                 <div className="flex min-h-6 flex-wrap items-center justify-start gap-2 md:justify-end">
                     {socialLinks.map((link) => {
-                        if (link.kind === 'linkedin' || link.kind === 'x' || link.kind === 'bluesky') {
-                            return (
-                                <SocialIcon
-                                    key={link.kind}
-                                    kind={link.kind}
-                                    href={link.href}
-                                    label={`${fullName} on ${link.label}`}
-                                    tone="dark"
-                                    className="h-6 w-6"
-                                />
-                            );
-                        }
-
-                        const Icon = link.kind === 'github' ? Github : AtSign;
-
                         return (
-                            <a
+                            <SocialIcon
                                 key={link.kind}
+                                kind={link.kind}
                                 href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={`${fullName} on ${link.label}`}
-                                className="inline-flex h-6 w-6 items-center justify-center rounded-md text-brand-black transition-colors hover:text-brand-black/70 focus:outline-none focus:ring-2 focus:ring-black/20"
-                            >
-                                <Icon className="h-5 w-5" aria-hidden="true" />
-                            </a>
+                                label={`${fullName} on ${link.label}`}
+                                tone="dark"
+                                className="size-6!"
+                            />
                         );
                     })}
                 </div>
