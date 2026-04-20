@@ -2,14 +2,16 @@ import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { SessionDetailHero, SessionDetailInfo, SessionSpeakerBlock, type SessionDetailSpeaker } from '@/components/scheduling';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession } from '@/lib/types/cfp';
 
 interface TalkDetailPageProps {
   session: PublicSession;
+  speaker: SessionDetailSpeaker;
 }
 
-export default function TalkDetailPage({ session }: TalkDetailPageProps) {
+export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps) {
   return (
     <>
       <SEO
@@ -20,25 +22,15 @@ export default function TalkDetailPage({ session }: TalkDetailPageProps) {
       />
 
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
-          <Kicker variant="dark" className="mb-4">
-            Talk Detail
-          </Kicker>
-          <Heading level="h1" variant="dark" className="text-2xl md:text-3xl font-bold leading-none">
-            {session.title}
-          </Heading>
-          {/* TODO(feature/speakers-grid): Replace this placeholder talk detail hero with the final content and media layout. */}
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-brand-gray-light">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-          </p>
-        </ShapedSection>
+        <SessionDetailHero session={session} kind="talk" ctaHref="/#tickets" ctaLabel="Get your ticket" />
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto max-w-screen-lg">
-            {/* TODO(feature/speakers-grid): Add the real talk detail content here once the final experience is ready. */}
-            <p className="text-base leading-8 text-brand-gray-darkest">
-              Talk detail content is coming soon.
+            <p className="text-base leading-8 text-brand-gray-darkest sm:text-lg">
+              {session.abstract}
             </p>
+            <SessionDetailInfo session={session} />
+            <SessionSpeakerBlock speaker={speaker} label="Speaker" />
           </div>
         </ShapedSection>
 
@@ -94,17 +86,24 @@ export default function TalkDetailPage({ session }: TalkDetailPageProps) {
 export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async ({ params }) => {
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const { speakers } = await fetchPublicSpeakers();
-  const session = speakers
-    .flatMap((speaker) => speaker.sessions)
-    .find((entry) => entry.type !== 'workshop' && entry.slug === slug);
+  const speaker = speakers.find((entry) =>
+    entry.sessions.some((session) => session.type !== 'workshop' && session.slug === slug)
+  );
+  const session = speaker?.sessions.find((entry) => entry.type !== 'workshop' && entry.slug === slug);
 
-  if (!session) {
+  if (!session || !speaker) {
     return { notFound: true };
   }
 
   return {
     props: {
       session,
+      speaker: {
+        name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
+        slug: speaker.slug,
+        avatarUrl: speaker.profile_image_url,
+        role: [speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || null,
+      },
     },
   };
 };

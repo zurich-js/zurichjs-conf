@@ -2,14 +2,16 @@ import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { SessionDetailHero, SessionDetailInfo, SessionSpeakerBlock, type SessionDetailSpeaker } from '@/components/scheduling';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession } from '@/lib/types/cfp';
 
 interface WorkshopDetailPageProps {
   session: PublicSession;
+  speaker: SessionDetailSpeaker;
 }
 
-export default function WorkshopDetailPage({ session }: WorkshopDetailPageProps) {
+export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailPageProps) {
   return (
     <>
       <SEO
@@ -20,25 +22,15 @@ export default function WorkshopDetailPage({ session }: WorkshopDetailPageProps)
       />
 
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom className="relative">
-          <Kicker variant="dark" className="mb-4">
-            Workshop Detail
-          </Kicker>
-          <Heading level="h1" variant="dark" className="text-2xl md:text-3xl font-bold leading-none">
-            {session.title}
-          </Heading>
-          {/* TODO(feature/speakers-grid): Replace this placeholder workshop detail hero with the final content and media layout. */}
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-brand-gray-light">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-          </p>
-        </ShapedSection>
+        <SessionDetailHero session={session} kind="workshop" ctaHref="/#tickets" ctaLabel="Buy workshop seat" />
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto max-w-screen-lg">
-            {/* TODO(feature/speakers-grid): Add the real workshop detail content here once the final experience is ready. */}
-            <p className="text-base leading-8 text-brand-gray-darkest">
-              Workshop details are coming soon.
+            <p className="text-base leading-8 text-brand-gray-darkest sm:text-lg">
+              {session.abstract}
             </p>
+            <SessionDetailInfo session={session} />
+            <SessionSpeakerBlock speaker={speaker} label="Instructor" />
           </div>
         </ShapedSection>
 
@@ -48,10 +40,10 @@ export default function WorkshopDetailPage({ session }: WorkshopDetailPageProps)
               Keep Exploring
             </Kicker>
             <Heading level="h2" variant="dark" className="text-lg sm:text-2xl font-bold leading-tight">
-              Browse the rest of the program while this page is still taking shape
+              Browse the rest of the program
             </Heading>
             <p className="mt-6 max-w-2xl text-base leading-8 text-brand-gray-light">
-              Use the public pages to discover the other workshops and the conference talks that pair well with this session.
+              Want more hands-on sessions, or a lighter conference day? Browse the rest of the workshops and talks.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button variant="blue" asChild href="/workshops">
@@ -75,17 +67,24 @@ export default function WorkshopDetailPage({ session }: WorkshopDetailPageProps)
 export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = async ({ params }) => {
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const { speakers } = await fetchPublicSpeakers();
-  const session = speakers
-    .flatMap((speaker) => speaker.sessions)
-    .find((entry) => entry.type === 'workshop' && entry.slug === slug);
+  const speaker = speakers.find((entry) =>
+    entry.sessions.some((session) => session.type === 'workshop' && session.slug === slug)
+  );
+  const session = speaker?.sessions.find((entry) => entry.type === 'workshop' && entry.slug === slug);
 
-  if (!session) {
+  if (!session || !speaker) {
     return { notFound: true };
   }
 
   return {
     props: {
       session,
+      speaker: {
+        name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
+        slug: speaker.slug,
+        avatarUrl: speaker.profile_image_url,
+        role: [speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || null,
+      },
     },
   };
 };
