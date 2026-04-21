@@ -10,5 +10,5 @@ export { SupportSection } from './SupportSection';
 export { ConferenceDetailsSection } from './ConferenceDetailsSection';
 export { PhotosCard, ProfilePhotoCard } from './ProfilePhotoCard';
 export { SocialLinksCard } from './SocialLinksCard';
-export { SpeakerCardPreviewModal } from './SpeakerCardPreviewModal';
+export { SpeakerCardPreviewModal, type PreviewCardData } from './SpeakerCardPreviewModal';
 export * from './types';

@@ -6,11 +6,12 @@ import { Button, Heading, SocialIcon } from '@/components/atoms';
 import { DayTabs, SpeakerActionSlider } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard } from '@/components/scheduling';
+import { addConferenceReminder } from '@/components/scheduling/session-actions';
 import { analytics } from '@/lib/analytics';
 import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
-import { Share2 } from 'lucide-react';
+import { BellPlus, Share2 } from 'lucide-react';
 
 type SessionTabId = 'talks' | 'workshops';
 
@@ -224,6 +225,9 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
       url: profileUrl,
     });
   };
+  const handleReminder = () => {
+    addConferenceReminder();
+  };
 
     return (
         <>
@@ -383,7 +387,9 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                     </Button>
                                     <p className="text-sm text-brand-gray-darkest">... or</p>
                                     <div className="flex gap-2.5 items-center justify-center">
-                                        {/* TODO(feature/speakers-grid): Re-enable the reminder CTA when the public conference reminder flow is finalized. */}
+                                        <Button variant="outline" size="md" onClick={handleReminder} forceDark>
+                                            <BellPlus className="size-5" /> Set reminder
+                                        </Button>
                                         <Button variant="outline" size="md" onClick={handleShare} forceDark>
                                             <Share2 className="size-5" /> Share with...
                                         </Button>

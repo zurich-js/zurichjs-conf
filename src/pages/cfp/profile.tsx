@@ -15,6 +15,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { createSupabaseServerClient, getSpeakerByUserId } from '@/lib/cfp/auth';
 import { getMissingProfileFields } from '@/lib/cfp/auth-constants';
 import { getSubmissionsBySpeakerId } from '@/lib/cfp/submissions';
+import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { speakerProfileSchema, type SpeakerProfileFormData } from '@/lib/validations/cfp';
 import { isEuropeanCountry } from '@/lib/constants/countries';
 import type { CfpSpeaker } from '@/lib/types/cfp';
@@ -26,15 +27,23 @@ import {
   PhotosCard,
   SocialLinksCard,
   SpeakerCardPreviewModal,
+  type PreviewCardData,
   type TravelOption,
 } from '@/components/cfp/profile';
 
 interface ProfileProps {
   speaker: CfpSpeaker;
   requiresHeaderImage: boolean;
+  previewSessionTitle: string | null;
+  speakerCardPreviews: PreviewCardData[];
 }
 
-export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProps) {
+export default function CfpProfile({
+  speaker,
+  requiresHeaderImage,
+  previewSessionTitle,
+  speakerCardPreviews,
+}: ProfileProps) {
   const router = useRouter();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -279,9 +288,9 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
           title: previewTitle,
           avatar: profileImageUrl,
           header: headerImageUrl,
-          // TODO(feature/speakers-grid): Replace this placeholder session label when speaker profiles can preview real public sessions.
-          footer: 'Your session',
+          footer: previewSessionTitle ?? 'To be announced',
         }}
+        neighboringSpeakers={speakerCardPreviews}
       />
     </>
   );
@@ -303,6 +312,19 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (ctx) 
 
   const { submissions } = await getSubmissionsBySpeakerId(speaker.id);
   const requiresHeaderImage = submissions.some((submission) => ['shortlisted', 'accepted'].includes(submission.status));
+  const previewSessionTitle =
+    submissions.find((submission) => submission.status === 'accepted')?.title ?? null;
+  const { speakers: publicSpeakers } = await fetchPublicSpeakers();
+  const speakerCardPreviews = publicSpeakers
+    .filter((entry) => entry.id !== speaker.id)
+    .slice(0, 2)
+    .map((entry) => ({
+      name: [entry.first_name, entry.last_name].filter(Boolean).join(' '),
+      title: [entry.job_title, entry.company].filter(Boolean).join(' @ ') || undefined,
+      header: entry.header_image_url,
+      avatar: entry.profile_image_url,
+      footer: entry.sessions[0]?.title ?? 'To be announced',
+    }));
 
-  return { props: { speaker, requiresHeaderImage } };
+  return { props: { speaker, requiresHeaderImage, previewSessionTitle, speakerCardPreviews } };
 };

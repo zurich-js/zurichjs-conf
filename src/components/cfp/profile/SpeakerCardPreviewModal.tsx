@@ -1,11 +1,11 @@
 import React from 'react';
 import { Modal, ModalBody } from '@/components/atoms/Modal';
 import { SpeakerCard } from '@/components/molecules/SpeakerCard';
-import {Button} from "@/components/atoms";
+import { Button } from '@/components/atoms';
 
 type SpeakerCardVariant = 'compact' | 'default' | 'full';
 
-interface PreviewCardData {
+export interface PreviewCardData {
   name: string;
   title?: string;
   header?: string | null;
@@ -19,9 +19,22 @@ interface SpeakerCardPreviewModalProps {
   variant: SpeakerCardVariant;
   onVariantChange: (variant: SpeakerCardVariant) => void;
   speaker: PreviewCardData;
+  neighboringSpeakers?: PreviewCardData[];
 }
 
 const PREVIEW_VARIANTS: SpeakerCardVariant[] = ['compact', 'default', 'full'];
+const FALLBACK_NEIGHBORING_SPEAKERS: PreviewCardData[] = [
+  {
+    name: 'ZurichJS Speaker',
+    title: 'JavaScript practitioner',
+    footer: 'To be announced',
+  },
+  {
+    name: 'Community Guest',
+    title: 'Building with the web platform',
+    footer: 'To be announced',
+  },
+];
 
 export function SpeakerCardPreviewModal({
   isOpen,
@@ -29,26 +42,23 @@ export function SpeakerCardPreviewModal({
   variant,
   onVariantChange,
   speaker,
+  neighboringSpeakers = [],
 }: SpeakerCardPreviewModalProps) {
-  // TODO(feature/speakers-grid): Replace placeholder neighboring cards with seeded public speaker previews when that data exists.
+  const previewNeighbors = [...neighboringSpeakers, ...FALLBACK_NEIGHBORING_SPEAKERS].slice(0, 2);
   const cards = [
-      {
-          name: 'Amet Consectetur',
-          title: 'Staff Engineer @ Placeholder Labs',
-          footer: 'Consectetur adipiscing',
-          isSpeaker: false,
-      },
-      {
-          ...speaker,
-          isSpeaker: true,
-      },
-      {
-          name: 'Adipiscing Elit',
-          title: 'Building community around JavaScript',
-          footer: 'Sed do eiusmod',
-          isSpeaker: false,
-      }
-  ]
+    {
+      ...previewNeighbors[0],
+      isSpeaker: false,
+    },
+    {
+      ...speaker,
+      isSpeaker: true,
+    },
+    {
+      ...previewNeighbors[1],
+      isSpeaker: false,
+    },
+  ];
 
   return (
     <Modal
@@ -81,17 +91,17 @@ export function SpeakerCardPreviewModal({
         <div className="overflow-x-auto pb-2 [scrollbar-width:thin]">
           <div className="grid grid-cols-3 gap-4">
             {cards.map((card, index) => (
-                <SpeakerCard
-                  variant={variant}
-                  key={`${card.name}-${index}`}
-                  name={card.name}
-                  title={card.title ?? 'ZurichJS fan @developer'}
-                  header={card.header}
-                  avatar={card.avatar}
-                  footer={card.footer}
-                  onClick={() => undefined}
-                  className={card.isSpeaker ? 'opacity-100' : 'opacity-50'}
-                />
+              <SpeakerCard
+                variant={variant}
+                key={`${card.name}-${index}`}
+                name={card.name}
+                title={card.title ?? 'ZurichJS fan @developer'}
+                header={card.header}
+                avatar={card.avatar}
+                footer={card.footer}
+                onClick={() => undefined}
+                className={card.isSpeaker ? 'opacity-100' : 'opacity-50'}
+              />
             ))}
           </div>
         </div>

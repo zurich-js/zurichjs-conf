@@ -48,17 +48,22 @@ export async function validateWorkshopCartItems(
     return { valid: true, workshopsById: new Map() };
   }
 
-  // Pull all referenced workshops in one query.
-  const workshopIds = Array.from(
-    new Set(
-      workshopItems
-        .map((item) => item.workshopId)
-        .filter((id): id is string => typeof id === 'string' && id.length > 0)
-    )
+  const missingWorkshopId = workshopItems.some(
+    (item) => typeof item.workshopId !== 'string' || item.workshopId.length === 0
   );
 
-  if (workshopIds.length !== workshopItems.length) {
+  if (missingWorkshopId) {
     return { valid: false, error: 'Every workshop in the cart must include a workshopId.' };
+  }
+
+  // Pull all referenced workshops in one query.
+  const workshopIds = Array.from(new Set(workshopItems.map((item) => item.workshopId!)));
+  const quantityByWorkshopId = new Map<string, number>();
+  for (const item of workshopItems) {
+    quantityByWorkshopId.set(
+      item.workshopId!,
+      (quantityByWorkshopId.get(item.workshopId!) ?? 0) + item.quantity
+    );
   }
 
   const supabase = createServiceRoleClient();
@@ -88,8 +93,12 @@ export async function validateWorkshopCartItems(
     if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
       return { valid: false, error: `Invalid quantity for "${workshop.title}".` };
     }
+  }
+
+  for (const [workshopId, quantity] of quantityByWorkshopId) {
+    const workshop = workshopsById.get(workshopId)!;
     const remaining = Math.max(0, (workshop.capacity ?? 0) - (workshop.enrolled_count ?? 0));
-    if (item.quantity > remaining) {
+    if (quantity > remaining) {
       return {
         valid: false,
         error: `Only ${remaining} seat(s) remain for "${workshop.title}".`,
