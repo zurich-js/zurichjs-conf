@@ -6,6 +6,8 @@ import { Button } from '@/components/atoms';
 import type { PublicSession } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
+import { WorkshopBuyButton } from '@/components/workshops/WorkshopBuyButton';
+import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 import {
   addConferenceReminder,
   addSessionOrEngineeringDayToCalendar,
@@ -34,6 +36,12 @@ export interface SessionCardProps {
   id?: string;
   showDuration?: boolean;
   actionMode?: 'schedule' | 'detail';
+  /**
+   * Published offering for this workshop session — when provided, the card
+   * renders an inline price + Add-to-cart button. Undefined (or set on a
+   * non-workshop session) is a no-op.
+   */
+  offering?: WorkshopOfferingSummary | null;
 }
 
 const LEVEL_LABELS: Record<PublicSession['level'], string> = {
@@ -53,7 +61,9 @@ export function SessionCard({
   id,
   showDuration = false,
   actionMode = 'schedule',
+  offering = null,
 }: SessionCardProps) {
+  const buyEnabled = Boolean(offering);
   const resolvedId = id ?? `session-${session.id}`;
   const timeRange = formatTimeRange(session.schedule?.start_time, session.schedule?.duration_minutes);
   const durationLabel = formatDuration(session.schedule?.duration_minutes);
@@ -62,12 +72,19 @@ export function SessionCard({
   const resolvedSpeakers: SessionCardSpeaker[] = speakers && speakers.length > 0 ? speakers : speaker ? [speaker] : session.speakers;
   const speakerDetailUrl = getCurrentSessionDetailUrl();
 
+  const scheduleOverride = offering
+    ? {
+        room: offering.room,
+        duration_minutes: offering.durationMinutes,
+      }
+    : undefined;
+
   const handleCardCalendar = (calendar: SessionCalendarProvider) => {
-    addSessionOrEngineeringDayToCalendar(session, calendar, speakerDetailUrl);
+    addSessionOrEngineeringDayToCalendar(session, calendar, speakerDetailUrl, scheduleOverride);
   };
 
   const handleBottomReminder = () => {
-    addConferenceReminder();
+    addConferenceReminder(session, scheduleOverride);
   };
 
   const handleShare = async () => {
@@ -171,11 +188,16 @@ export function SessionCard({
         </Button>
       </div>
 
-      {href ? (
-        <Button variant={isWorkshop ? 'blue' : 'primary'} size="sm" asChild href={href}>
-          See details
-        </Button>
-      ) : null}
+      <div className="flex flex-col items-end gap-3 md:flex-row md:items-center md:gap-4">
+        {isWorkshop && buyEnabled && offering ? (
+          <WorkshopBuyButton offering={offering} title={session.title} size="sm" />
+        ) : null}
+        {href ? (
+          <Button variant={isWorkshop ? 'blue' : 'primary'} size="sm" asChild href={href}>
+            See details
+          </Button>
+        ) : null}
+      </div>
     </div>
   ) : isWorkshop ? (
     <div className="flex flex-col-reverse gap-6 border-t border-brand-gray-lightest md:flex-row md:items-center md:justify-between">
@@ -191,13 +213,16 @@ export function SessionCard({
         </Button>
       </div>
 
-      {href ? (
-        <div className="pt-6">
+      <div className="flex flex-col items-end gap-3 pt-6 md:flex-row md:items-center md:gap-4">
+        {buyEnabled && offering ? (
+          <WorkshopBuyButton offering={offering} title={session.title} />
+        ) : null}
+        {href ? (
           <Button variant="blue" asChild href={href}>
             See details
           </Button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   ) : null;
 

@@ -62,7 +62,21 @@ vi.mock('@/lib/tickets', () => ({
 vi.mock('@/lib/email', () => ({
   sendTicketConfirmationEmailsQueued: mocks.mockSendTicketConfirmationEmailsQueued,
   sendVoucherConfirmationEmail: mocks.mockSendVoucherConfirmationEmail,
+  sendWorkshopConfirmationEmail: vi.fn().mockResolvedValue({ success: true }),
   addNewsletterContact: mocks.mockAddNewsletterContact,
+}));
+
+// Keep processWorkshops dependencies isolated from real env/config at import time.
+vi.mock('@/lib/queries/speakers', () => ({
+  fetchPublicSpeakers: vi.fn().mockResolvedValue({ speakers: [] }),
+}));
+
+vi.mock('@/lib/workshops', () => ({
+  createWorkshopRegistration: vi.fn().mockResolvedValue({ success: true, duplicate: false }),
+}));
+
+vi.mock('@/lib/workshops/getOfferings', () => ({
+  getOfferingByLookupKey: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('@/config/pricing-stages', () => ({

@@ -1,106 +1,128 @@
 /**
  * Create Workshop Registration
- * Creates a new workshop registration after successful payment
+ * Creates a new workshop registration after successful payment.
+ *
+ * Backed by the `insert_workshop_registration_atomic` Postgres function, which
+ * locks the workshops row so concurrent webhook deliveries can't oversell.
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import type { WorkshopRegistration, PaymentStatus, Json } from '@/lib/types/database';
+
+const log = logger.scope('Workshop Registration');
 
 export interface CreateRegistrationParams {
   workshopId: string;
-  userId: string;
+  userId?: string | null;
   ticketId?: string;
   stripeSessionId: string;
   stripePaymentIntentId?: string;
   amountPaid: number; // in cents
   currency: string;
   status?: PaymentStatus;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  couponCode?: string | null;
+  partnershipCouponId?: string | null;
+  partnershipVoucherId?: string | null;
+  discountAmount?: number; // in cents
+  /** 0-based index for multi-seat purchases (same session + workshop). Defaults to 0. */
+  seatIndex?: number;
   metadata?: Record<string, unknown>;
 }
 
 export interface CreateRegistrationResult {
   success: boolean;
   registration?: WorkshopRegistration;
+  /** True when the seat was rejected because the workshop is full. The caller
+   *  should issue a Stripe refund for the charged amount. */
+  oversold?: boolean;
+  /** True when the idempotency check found an existing row. */
+  duplicate?: boolean;
   error?: string;
 }
 
+interface AtomicInsertRow {
+  registration: WorkshopRegistration | null;
+  was_oversold: boolean;
+  was_duplicate: boolean;
+}
+
 /**
- * Create a workshop registration for a user after successful payment
- * This should only be called from the Stripe webhook handler
+ * Create a workshop registration for a user after successful payment.
+ * This should only be called from the Stripe webhook handler.
  */
 export async function createWorkshopRegistration(
   params: CreateRegistrationParams
 ): Promise<CreateRegistrationResult> {
   const supabase = createServiceRoleClient();
+  const seatIndex = params.seatIndex ?? 0;
 
   try {
-    // Check if registration already exists (idempotency)
-    const { data: existing } = await supabase
-      .from('workshop_registrations')
-      .select('*')
-      .eq('stripe_session_id', params.stripeSessionId)
-      .single();
-
-    if (existing) {
-      console.log('Registration already exists for session:', params.stripeSessionId);
-      return {
-        success: true,
-        registration: existing as WorkshopRegistration,
-      };
-    }
-
-    // Check workshop capacity
-    const { data: workshop, error: workshopError } = await supabase
-      .from('workshops')
-      .select('capacity, enrolled_count')
-      .eq('id', params.workshopId)
-      .single();
-
-    if (workshopError || !workshop) {
-      return {
-        success: false,
-        error: 'Workshop not found',
-      };
-    }
-
-    if (workshop.enrolled_count >= workshop.capacity) {
-      return {
-        success: false,
-        error: 'Workshop is at full capacity',
-      };
-    }
-
-    // Create the registration
-    const { data: registration, error } = await supabase
-      .from('workshop_registrations')
-      .insert([{
-        workshop_id: params.workshopId,
-        user_id: params.userId,
-        ticket_id: params.ticketId || null,
-        stripe_session_id: params.stripeSessionId,
-        stripe_payment_intent_id: params.stripePaymentIntentId || null,
-        amount_paid: params.amountPaid,
-        currency: params.currency,
-        status: params.status || 'confirmed',
-        metadata: (params.metadata || {}) as Json,
-      }])
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('insert_workshop_registration_atomic', {
+      p_workshop_id: params.workshopId,
+      p_user_id: params.userId ?? null,
+      p_ticket_id: params.ticketId ?? null,
+      p_stripe_session_id: params.stripeSessionId,
+      p_stripe_payment_intent_id: params.stripePaymentIntentId ?? null,
+      p_amount_paid: params.amountPaid,
+      p_currency: params.currency,
+      p_status: params.status ?? 'confirmed',
+      p_first_name: params.firstName ?? null,
+      p_last_name: params.lastName ?? null,
+      p_email: params.email ?? null,
+      p_coupon_code: params.couponCode ?? null,
+      p_partnership_coupon_id: params.partnershipCouponId ?? null,
+      p_partnership_voucher_id: params.partnershipVoucherId ?? null,
+      p_discount_amount: params.discountAmount ?? 0,
+      p_seat_index: seatIndex,
+      p_metadata: (params.metadata ?? {}) as Json,
+    });
 
     if (error) {
-      console.error('Error creating registration:', error);
-      return {
-        success: false,
-        error: error.message,
-      };
+      log.error('RPC insert_workshop_registration_atomic failed', error, {
+        workshopId: params.workshopId,
+        stripeSessionId: params.stripeSessionId,
+        seatIndex,
+      });
+      return { success: false, error: error.message };
+    }
+
+    const row = (Array.isArray(data) ? data[0] : data) as AtomicInsertRow | null;
+    if (!row) {
+      return { success: false, error: 'Empty response from atomic insert' };
+    }
+
+    if (row.was_oversold) {
+      log.warn('Workshop oversold — registration rejected', {
+        workshopId: params.workshopId,
+        stripeSessionId: params.stripeSessionId,
+        seatIndex,
+      });
+      return { success: false, oversold: true, error: 'Workshop is at full capacity' };
+    }
+
+    if (!row.registration) {
+      return { success: false, error: 'Atomic insert returned no registration' };
     }
 
     return {
       success: true,
-      registration: registration as WorkshopRegistration,
+      duplicate: row.was_duplicate,
+      registration: row.registration,
     };
   } catch (error) {
-    console.error('Error in createWorkshopRegistration:', error);
+    log.error(
+      'Unexpected error in createWorkshopRegistration',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        workshopId: params.workshopId,
+        stripeSessionId: params.stripeSessionId,
+        seatIndex,
+      }
+    );
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

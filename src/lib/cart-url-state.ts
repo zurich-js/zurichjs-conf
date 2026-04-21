@@ -32,6 +32,12 @@ interface MinimalCartState {
     priceId: string;
     /** Ticket variant for styling (optional) */
     variant?: 'standard' | 'vip' | 'member';
+    /** Product kind — defaults to 'ticket' when absent for backwards compat. */
+    kind?: 'ticket' | 'workshop';
+    /** Workshop id when kind === 'workshop' */
+    workshopId?: string;
+    workshopRoom?: string | null;
+    workshopDurationMinutes?: number | null;
   }>;
   /** Cart currency */
   currency: string;
@@ -70,6 +76,12 @@ export function encodeCartState(cart: Cart): string {
         quantity: item.quantity,
         priceId: item.priceId,
         ...(item.variant && { variant: item.variant }),
+        ...(item.kind && { kind: item.kind }),
+        ...(item.workshopId && { workshopId: item.workshopId }),
+        ...(item.workshopRoom !== undefined && { workshopRoom: item.workshopRoom }),
+        ...(item.workshopDurationMinutes !== undefined && {
+          workshopDurationMinutes: item.workshopDurationMinutes,
+        }),
       })),
       currency: cart.currency,
       ...(cart.voucherCode && { voucherCode: cart.voucherCode }),
@@ -145,6 +157,12 @@ export function decodeCartState(encoded: string): Cart | null {
       quantity: item.quantity,
       priceId: item.priceId,
       ...(item.variant && { variant: item.variant }),
+      ...(item.kind && { kind: item.kind }),
+      ...(item.workshopId && { workshopId: item.workshopId }),
+      ...(item.workshopRoom !== undefined && { workshopRoom: item.workshopRoom }),
+      ...(item.workshopDurationMinutes !== undefined && {
+        workshopDurationMinutes: item.workshopDurationMinutes,
+      }),
     }));
 
     // Reconstruct full cart object (totals are derived)

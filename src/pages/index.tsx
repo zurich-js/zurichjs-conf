@@ -181,7 +181,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
   const results = await Promise.allSettled([
     optionalQuery(publicSponsorsQueryOptions),
     optionalQuery(communityPartnersQueryOptions),
-    optionalQuery(publicSpeakersQueryOptions),
+    optionalQuery(publicSpeakersQueryOptions({ featured: true })),
     optionalQuery(ticketPricingQueryOptions),
   ]);
 

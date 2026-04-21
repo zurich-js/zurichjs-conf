@@ -6,6 +6,7 @@
 export { processVouchers } from './vouchers';
 export { processTickets } from './tickets';
 export type { AttendeeInfo, TicketCreationResult } from './tickets';
+export { processWorkshops } from './workshops';
 export { handleVipUpgradePayment } from './vip-upgrade';
 export {
   categorizeLineItems,

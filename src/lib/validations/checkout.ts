@@ -51,6 +51,10 @@ export const checkoutFormSchema = z.object({
 
   // Attendee information for each ticket
   attendees: z.array(attendeeInfoSchema).optional(),
+
+  // Per-workshop attendees, keyed by workshopId (workshops support multi-seat
+  // purchase like tickets). Array ordered by seat_index.
+  workshopAttendees: z.record(z.string(), z.array(attendeeInfoSchema)).optional(),
 });
 
 export type CheckoutFormData = z.infer<typeof checkoutFormSchema>;

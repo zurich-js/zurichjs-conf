@@ -7,7 +7,7 @@ import type Stripe from 'stripe';
 import { Resend } from 'resend';
 import { getStripeClient } from '../client';
 import { createServiceRoleClient } from '@/lib/supabase';
-import { isTicketProduct, isWorkshopVoucher } from '../ticket-utils';
+import { isTicketProduct, isWorkshopVoucher, isWorkshopPrice } from '../ticket-utils';
 import { logger } from '@/lib/logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -18,16 +18,19 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export interface CategorizedLineItems {
   tickets: Stripe.LineItem[];
   vouchers: Stripe.LineItem[];
+  workshops: Stripe.LineItem[];
   unrecognized: Stripe.LineItem[];
 }
 
 /**
- * Categorize line items into tickets, vouchers, and unrecognized products
+ * Categorize line items into tickets, vouchers, workshops, and unrecognized products.
+ * Workshop line items are detected by a `workshop_` lookup-key prefix.
  */
 export function categorizeLineItems(lineItems: Stripe.LineItem[]): CategorizedLineItems {
   const result: CategorizedLineItems = {
     tickets: [],
     vouchers: [],
+    workshops: [],
     unrecognized: [],
   };
 
@@ -36,6 +39,8 @@ export function categorizeLineItems(lineItems: Stripe.LineItem[]): CategorizedLi
 
     if (isWorkshopVoucher(price)) {
       result.vouchers.push(item);
+    } else if (isWorkshopPrice(price)) {
+      result.workshops.push(item);
     } else if (isTicketProduct(price)) {
       result.tickets.push(item);
     } else {

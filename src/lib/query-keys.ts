@@ -51,6 +51,29 @@ export const workshopsKeys = {
    * Key for vouchers queries
    */
   vouchers: () => [...workshopsKeys.all, 'vouchers'] as const,
+
+  /**
+   * Key for workshop offering pricing, currency-scoped.
+   * Pass `sessionSlug` or `cfpSubmissionId` to scope to a single workshop.
+   */
+  pricing: (params?: {
+    currency?: SupportedCurrency;
+    slug?: string;
+    sessionSlug?: string;
+    cfpSubmissionId?: string;
+  }) =>
+    [
+      ...workshopsKeys.all,
+      'pricing',
+      params?.currency ?? 'CHF',
+      params?.cfpSubmissionId ?? params?.sessionSlug ?? params?.slug ?? 'all',
+    ] as const,
+
+  /**
+   * Key for the combined workshops schedule + offerings query used by /workshops.
+   */
+  schedule: (currency?: SupportedCurrency) =>
+    [...workshopsKeys.all, 'schedule', currency ?? 'CHF'] as const,
 } as const;
 
 /**
@@ -174,9 +197,11 @@ export const speakersKeys = {
   all: ['speakers'] as const,
 
   /**
-   * Public speakers list (for homepage)
+   * Public speakers list
+   * Pass { featured: true } to scope the cache to featured-only speakers
    */
-  public: () => [...speakersKeys.all, 'public'] as const,
+  public: (params?: { featured?: boolean }) =>
+    [...speakersKeys.all, 'public', params ?? {}] as const,
 } as const;
 
 /**

@@ -1,4 +1,5 @@
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
+import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 import { BreakCard } from './BreakCard';
 import { EventCard } from './EventCard';
 import { PlaceholderCard } from './PlaceholderCard';
@@ -10,6 +11,11 @@ export interface ProgramScheduleItemCardProps {
   placeholderVariant?: 'plain' | 'slot';
   showDuration?: boolean;
   expandableSessions?: boolean;
+  /**
+   * Map of workshop offerings keyed by CFP submission id. When a workshop
+   * session has a matching entry, the card renders a price + Add-to-cart chip.
+   */
+  offeringsBySubmissionId?: Record<string, WorkshopOfferingSummary>;
 }
 
 export function ProgramScheduleItemCard({
@@ -18,9 +24,14 @@ export function ProgramScheduleItemCard({
   placeholderVariant = 'slot',
   showDuration = false,
   expandableSessions = true,
+  offeringsBySubmissionId,
 }: ProgramScheduleItemCardProps) {
   if (item.type === 'session') {
     if (item.session) {
+      const isWorkshop = item.session.type === 'workshop';
+      const offering = isWorkshop
+        ? offeringsBySubmissionId?.[item.session.id] ?? null
+        : null;
       return (
         <SessionCard
           session={item.session}
@@ -28,8 +39,9 @@ export function ProgramScheduleItemCard({
           speakers={item.speakers}
           expandable={expandableSessions}
           defaultOpen={defaultOpen}
-          href={item.session.type === 'workshop' ? `/workshops/${item.session.slug}` : item.session.type === 'panel' ? undefined : `/talks/${item.session.slug}`}
+          href={isWorkshop ? `/workshops/${item.session.slug}` : item.session.type === 'panel' ? undefined : `/talks/${item.session.slug}`}
           showDuration={showDuration}
+          offering={offering}
         />
       );
     }

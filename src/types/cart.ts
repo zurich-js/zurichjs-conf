@@ -6,37 +6,47 @@
 export type { CheckoutFormData } from '@/lib/validations/checkout';
 
 /**
- * Cart item representing a ticket in the cart
+ * Cart item — either a ticket or a workshop seat.
+ * Discriminated by `kind`, default `'ticket'` for backwards compatibility.
  */
 export interface CartItem {
   /**
-   * Unique identifier for the ticket type
+   * Unique identifier. For workshops use `workshop_{workshopId}` so the key
+   * does not collide with ticket item ids.
    */
   id: string;
   /**
-   * Ticket title (e.g., "Standard", "VIP")
+   * Product kind — defaults to `'ticket'` when absent.
+   */
+  kind?: 'ticket' | 'workshop';
+  /**
+   * Ticket title or workshop title.
    */
   title: string;
   /**
-   * Price in base currency units (not cents)
+   * Price in base currency units (not cents).
    */
   price: number;
-  /**
-   * Currency code
-   */
   currency: string;
-  /**
-   * Quantity of this ticket type
-   */
   quantity: number;
   /**
-   * Stripe price ID
+   * Stripe price ID.
    */
   priceId: string;
   /**
-   * Ticket variant for styling
+   * Ticket variant for styling.
    */
   variant?: 'standard' | 'vip' | 'member';
+  /**
+   * Workshop id when `kind === 'workshop'`. Carries through to checkout so
+   * the Stripe webhook can resolve the registration.
+   */
+  workshopId?: string;
+  /**
+   * Optional contextual info shown in the cart line (room, duration, etc.).
+   */
+  workshopRoom?: string | null;
+  workshopDurationMinutes?: number | null;
 }
 
 /**

@@ -15,10 +15,12 @@ import {
   toLegacyType,
   isTicketProduct,
   isWorkshopVoucher,
+  isWorkshopPrice,
 } from './ticket-utils';
 import {
   processVouchers,
   processTickets,
+  processWorkshops,
   handleVipUpgradePayment,
   categorizeLineItems,
   cancelAbandonmentEmails,
@@ -125,12 +127,13 @@ export async function handleCheckoutSessionCompleted(
     throw new Error('No line items in session');
   }
 
-  const { tickets, vouchers, unrecognized } = categorizeLineItems(lineItems.data);
+  const { tickets, vouchers, workshops, unrecognized } = categorizeLineItems(lineItems.data);
 
   log.debug('Line items categorized', {
     total: lineItems.data.length,
     tickets: tickets.length,
     vouchers: vouchers.length,
+    workshops: workshops.length,
     unrecognized: unrecognized.length,
   });
 
@@ -156,6 +159,13 @@ export async function handleCheckoutSessionCompleted(
   // STEP 7: Process tickets (slow path - DB + PDF generation + emails)
   // ─────────────────────────────────────────────────────────────────────────────
   await processTickets(tickets, session, stripeCustomerId, customerEmail, firstName, lastName, log);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STEP 8: Process workshop registrations (runs after tickets so ticket_id can
+  // be linked for registrants who also bought a conference ticket in the same
+  // checkout session).
+  // ─────────────────────────────────────────────────────────────────────────────
+  await processWorkshops(workshops, session, customerEmail, firstName, lastName, log);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // DONE: Track completion
@@ -218,4 +228,5 @@ export const __testing = {
   toLegacyType,
   isTicketProduct,
   isWorkshopVoucher,
+  isWorkshopPrice,
 };

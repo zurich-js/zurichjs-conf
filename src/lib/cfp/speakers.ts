@@ -321,9 +321,9 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       company: speaker.company,
       bio: speaker.bio,
       profile_image_url: speaker.profile_image_url,
-      header_image_url: speaker.header_image_url,
-      portrait_foreground_url: speaker.portrait_foreground_url,
-      portrait_background_url: speaker.portrait_background_url,
+      header_image_url: null,
+      portrait_foreground_url: null,
+      portrait_background_url: null,
       is_featured: speaker.is_featured ?? false,
       speaker_role: 'speaker_role' in speaker ? speaker.speaker_role ?? 'speaker' : 'speaker',
       socials: {

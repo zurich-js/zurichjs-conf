@@ -1706,47 +1706,95 @@ export type Database = {
           },
         ]
       }
+      checkout_cart_snapshots: {
+        Row: {
+          cart_items: Json
+          created_at: string
+          expires_at: string
+          stripe_session_id: string
+          workshop_attendees: Json
+        }
+        Insert: {
+          cart_items?: Json
+          created_at?: string
+          expires_at?: string
+          stripe_session_id: string
+          workshop_attendees?: Json
+        }
+        Update: {
+          cart_items?: Json
+          created_at?: string
+          expires_at?: string
+          stripe_session_id?: string
+          workshop_attendees?: Json
+        }
+        Relationships: []
+      }
       workshop_registrations: {
         Row: {
           amount_paid: number
+          coupon_code: string | null
           created_at: string
           currency: string
+          discount_amount: number
+          email: string | null
+          first_name: string | null
           id: string
+          last_name: string | null
           metadata: Json | null
+          partnership_coupon_id: string | null
+          partnership_voucher_id: string | null
+          seat_index: number
           status: Database["public"]["Enums"]["payment_status"]
           stripe_payment_intent_id: string | null
           stripe_session_id: string
           ticket_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           workshop_id: string
         }
         Insert: {
           amount_paid: number
+          coupon_code?: string | null
           created_at?: string
           currency?: string
+          discount_amount?: number
+          email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           metadata?: Json | null
+          partnership_coupon_id?: string | null
+          partnership_voucher_id?: string | null
+          seat_index?: number
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_payment_intent_id?: string | null
           stripe_session_id: string
           ticket_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           workshop_id: string
         }
         Update: {
           amount_paid?: number
+          coupon_code?: string | null
           created_at?: string
           currency?: string
+          discount_amount?: number
+          email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           metadata?: Json | null
+          partnership_coupon_id?: string | null
+          partnership_voucher_id?: string | null
+          seat_index?: number
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_payment_intent_id?: string | null
           stripe_session_id?: string
           ticket_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           workshop_id?: string
         }
         Relationships: [
@@ -1776,52 +1824,67 @@ export type Database = {
       workshops: {
         Row: {
           capacity: number
+          cfp_submission_id: string | null
           created_at: string
           currency: string
-          date: string
+          date: string | null
           description: string
-          end_time: string
+          duration_minutes: number | null
+          end_time: string | null
           enrolled_count: number
           id: string
           instructor_id: string | null
           metadata: Json | null
-          price: number
-          start_time: string
+          price: number | null
+          room: string | null
+          start_time: string | null
           status: Database["public"]["Enums"]["workshop_status"]
+          stripe_price_lookup_key: string | null
+          stripe_product_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
           capacity?: number
+          cfp_submission_id?: string | null
           created_at?: string
           currency?: string
-          date: string
+          date?: string | null
           description: string
-          end_time: string
+          duration_minutes?: number | null
+          end_time?: string | null
           enrolled_count?: number
           id?: string
           instructor_id?: string | null
           metadata?: Json | null
-          price: number
-          start_time: string
+          price?: number | null
+          room?: string | null
+          start_time?: string | null
           status?: Database["public"]["Enums"]["workshop_status"]
+          stripe_price_lookup_key?: string | null
+          stripe_product_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           capacity?: number
+          cfp_submission_id?: string | null
           created_at?: string
           currency?: string
-          date?: string
+          date?: string | null
           description?: string
-          end_time?: string
+          duration_minutes?: number | null
+          end_time?: string | null
           enrolled_count?: number
           id?: string
           instructor_id?: string | null
           metadata?: Json | null
-          price?: number
-          start_time?: string
+          price?: number | null
+          room?: string | null
+          start_time?: string | null
           status?: Database["public"]["Enums"]["workshop_status"]
+          stripe_price_lookup_key?: string | null
+          stripe_product_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -1840,7 +1903,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      insert_workshop_registration_atomic: {
+        Args: {
+          p_workshop_id: string
+          p_user_id: string | null
+          p_ticket_id: string | null
+          p_stripe_session_id: string
+          p_stripe_payment_intent_id: string | null
+          p_amount_paid: number
+          p_currency: string
+          p_status: Database["public"]["Enums"]["payment_status"]
+          p_first_name: string | null
+          p_last_name: string | null
+          p_email: string | null
+          p_coupon_code: string | null
+          p_partnership_coupon_id: string | null
+          p_partnership_voucher_id: string | null
+          p_discount_amount: number
+          p_seat_index: number
+          p_metadata: Json
+        }
+        Returns: {
+          registration: Database["public"]["Tables"]["workshop_registrations"]["Row"] | null
+          was_oversold: boolean
+          was_duplicate: boolean
+        }[]
+      }
     }
     Enums: {
       b2b_invoice_status: "draft" | "sent" | "paid" | "cancelled"
@@ -1900,7 +1988,7 @@ export type Database = {
         | "raffle"
         | "giveaway"
         | "organizer_discount"
-      workshop_status: "draft" | "published" | "cancelled" | "completed"
+      workshop_status: "draft" | "published" | "cancelled" | "completed" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2091,7 +2179,7 @@ export const Constants = {
         "giveaway",
         "organizer_discount",
       ],
-      workshop_status: ["draft", "published", "cancelled", "completed"],
+      workshop_status: ["draft", "published", "cancelled", "completed", "archived"],
     },
   },
 } as const

@@ -59,6 +59,24 @@ export const endpoints = {
   },
   workshops: {
     vouchers: () => '/api/workshops/vouchers' as const,
+    pricing: (params?: {
+      currency?: SupportedCurrency;
+      slug?: string;
+      sessionSlug?: string;
+      cfpSubmissionId?: string;
+    }) => {
+      const query = new URLSearchParams();
+      if (params?.currency) query.set('currency', params.currency);
+      if (params?.slug) query.set('slug', params.slug);
+      if (params?.sessionSlug) query.set('sessionSlug', params.sessionSlug);
+      if (params?.cfpSubmissionId) query.set('cfpSubmissionId', params.cfpSubmissionId);
+      const qs = query.toString();
+      return (qs ? `/api/workshops/pricing?${qs}` : '/api/workshops/pricing') as string;
+    },
+    schedule: (currency?: SupportedCurrency) =>
+      currency
+        ? (`/api/workshops/schedule?currency=${currency}` as const)
+        : ('/api/workshops/schedule' as const),
   },
   checkout: {
     session: (sessionId: string) => `/api/checkout/session?session_id=${sessionId}` as const,

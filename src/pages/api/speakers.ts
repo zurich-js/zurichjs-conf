@@ -36,7 +36,11 @@ export default async function handler(
   }
 
   try {
-    const speakers = await getVisibleSpeakersWithSessions();
+    let speakers = await getVisibleSpeakersWithSessions();
+
+    if (req.query.featured === 'true') {
+      speakers = speakers.filter((s) => s.is_featured);
+    }
 
     // Set cache headers for CDN caching (5 minutes)
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');

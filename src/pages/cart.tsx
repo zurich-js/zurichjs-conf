@@ -63,6 +63,7 @@ export default function CartPage() {
   const { vouchers: workshopVouchers, isLoading: isVouchersLoading } = useWorkshopVouchers();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
   const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
+  const [workshopAttendees, setWorkshopAttendees] = useState<Record<string, AttendeeInfo[]>>({});
   const [capturedEmail, setCapturedEmail] = useState<string | null>(null);
   const [capturedFirstName, setCapturedFirstName] = useState<string | null>(null);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
@@ -85,16 +86,25 @@ export default function CartPage() {
   const bonusPercent = currentStage === 'blind_bird' ? 25 : currentStage === 'early_bird' ? 15 : 0;
 
   // Filter out workshop vouchers for ticket counting
-  const ticketItems = cart.items.filter(item => !item.title.includes('Workshop Voucher'));
+  const ticketItems = cart.items.filter(
+    (item) => item.kind !== 'workshop' && !item.title.includes('Workshop Voucher')
+  );
+  const workshopItems = cart.items.filter((item) => item.kind === 'workshop');
   const ticketCount = ticketItems.reduce((sum, item) => sum + item.quantity, 0);
-  const needsAttendeeInfo = ticketCount > 1;
+  const workshopSeatCount = workshopItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalSeatCount = ticketCount + workshopSeatCount;
+  const attendeeItems = [...ticketItems, ...workshopItems];
+  // Gather per-seat attendee info whenever there's more than one seat (across
+  // tickets + workshop seats), mirroring how tickets work today.
+  const needsAttendeeInfo = totalSeatCount > 1;
 
   // VIP upsell logic
   const standardTicketItem = cart.items.find(item => item.variant === 'standard' && !item.title.includes('Workshop'));
   const showVipUpsell = ticketCount >= 1 && ticketCount <= 2 && !!standardTicketItem;
 
-  // Team upsell logic
-  const showTeamUpsell = ticketCount >= 3 && !cart.couponCode;
+  // Team upsell logic — include workshop seats so bulk workshop purchases
+  // trigger the team workflow too.
+  const showTeamUpsell = totalSeatCount >= 3 && !cart.couponCode;
 
   // Team request hook
   const {
@@ -112,9 +122,12 @@ export default function CartPage() {
   });
 
   const handleTeamModalOpen = () => {
-    if (ticketCount >= 3) {
-      const ticketSummary = ticketItems.map(t => t.title).join(', ');
-      openTeamModal(ticketSummary, ticketCount);
+    if (totalSeatCount >= 3) {
+      const summary = [
+        ...ticketItems.map((t) => `${t.title} × ${t.quantity}`),
+        ...workshopItems.map((w) => `Workshop: ${w.title} × ${w.quantity}`),
+      ].join(', ');
+      openTeamModal(summary, totalSeatCount);
     }
   };
 
@@ -159,8 +172,12 @@ export default function CartPage() {
     showToast('Upgraded to VIP! 🎉', 'success');
   };
 
-  const handleAttendeesSubmit = (attendeeData: AttendeeInfo[]) => {
-    setAttendees(attendeeData);
+  const handleAttendeesSubmit = (result: {
+    attendees: AttendeeInfo[];
+    workshopAttendees: Record<string, AttendeeInfo[]>;
+  }) => {
+    setAttendees(result.attendees);
+    setWorkshopAttendees(result.workshopAttendees);
     setCurrentStep(showWorkshopUpsells ? 'upsells' : 'checkout');
   };
 
@@ -191,7 +208,7 @@ export default function CartPage() {
     setCheckoutCompleted(true);
     createCheckout({
       cart,
-      customerInfo: { ...data, attendees },
+      customerInfo: { ...data, attendees, workshopAttendees },
     });
   };
 
@@ -330,8 +347,9 @@ export default function CartPage() {
 
             {currentStep === 'attendees' && needsAttendeeInfo && (
               <AttendeeForm
-                cartItems={ticketItems}
+                cartItems={attendeeItems}
                 initialAttendees={attendees}
+                initialWorkshopAttendees={workshopAttendees}
                 onSubmit={handleAttendeesSubmit}
                 onBack={() => setCurrentStep('review')}
               />

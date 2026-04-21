@@ -32,21 +32,32 @@ export interface AttendeeTicketFormProps {
   onChange: (field: keyof AttendeeInfo, value: string) => void;
 }
 
+export interface AttendeeFormSubmitResult {
+  /** Flat list for ticket items, in cart order. */
+  attendees: AttendeeInfo[];
+  /** Per-workshop attendees keyed by workshopId, ordered by seat_index. */
+  workshopAttendees: Record<string, AttendeeInfo[]>;
+}
+
 export interface AttendeeFormProps {
   /**
-   * Cart items to collect attendees for
+   * Cart items to collect attendees for (tickets + workshops).
    */
   cartItems: CartItemType[];
   /**
-   * Initial attendee data (for editing)
+   * Initial ticket-attendee data (for editing).
    */
   initialAttendees?: AttendeeInfo[];
   /**
-   * Called when form is submitted with valid data
+   * Initial workshop-attendee data keyed by workshopId (for editing).
    */
-  onSubmit: (attendees: AttendeeInfo[]) => void;
+  initialWorkshopAttendees?: Record<string, AttendeeInfo[]>;
   /**
-   * Called when user clicks back button
+   * Called when form is submitted with valid data.
+   */
+  onSubmit: (result: AttendeeFormSubmitResult) => void;
+  /**
+   * Called when user clicks back button.
    */
   onBack: () => void;
 }
@@ -206,47 +217,73 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
  * AttendeeForm component
  * Collects attendee information for each ticket in the cart
  */
+/**
+ * Maps each attendee slot to the cart item it belongs to so we can split
+ * results back into ticket vs workshop buckets on submit.
+ */
+interface AttendeeSlot {
+  itemId: string;
+  itemTitle: string;
+  kind: 'ticket' | 'workshop';
+  workshopId: string | null;
+  /** 0-based index within this cart item (i.e. this workshop's seat_index). */
+  positionInItem: number;
+}
+
+function buildSlots(cartItems: CartItemType[]): AttendeeSlot[] {
+  const slots: AttendeeSlot[] = [];
+  for (const item of cartItems) {
+    const kind = item.kind === 'workshop' ? 'workshop' : 'ticket';
+    for (let i = 0; i < item.quantity; i += 1) {
+      slots.push({
+        itemId: item.id,
+        itemTitle: item.title,
+        kind,
+        workshopId: item.workshopId ?? null,
+        positionInItem: i,
+      });
+    }
+  }
+  return slots;
+}
+
+function emptyAttendee(): AttendeeInfo {
+  return { firstName: '', lastName: '', email: '', company: '', jobTitle: '' };
+}
+
 export const AttendeeForm: React.FC<AttendeeFormProps> = ({
   cartItems,
   initialAttendees = [],
+  initialWorkshopAttendees = {},
   onSubmit,
   onBack,
 }) => {
-  // Calculate total number of tickets
-  const totalTickets = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const slots = React.useMemo(() => buildSlots(cartItems), [cartItems]);
 
-  // Create array of attendee forms
+  // Seed the flat form state from initial values, splitting by slot kind.
   const [attendees, setAttendees] = React.useState<AttendeeInfo[]>(() => {
-    // Initialize with existing data or create empty forms
-    if (initialAttendees.length > 0) {
-      return initialAttendees;
-    }
-
-    // Create empty attendee objects (one for each ticket)
-    const emptyAttendees: AttendeeInfo[] = [];
-    for (let i = 0; i < totalTickets; i++) {
-      emptyAttendees.push({
-        firstName: '',
-        lastName: '',
-        email: '',
-        company: '',
-        jobTitle: '',
-      });
-    }
-    return emptyAttendees;
+    let ticketCursor = 0;
+    return slots.map((slot) => {
+      if (slot.kind === 'ticket') {
+        const seed = initialAttendees[ticketCursor];
+        ticketCursor += 1;
+        return seed ?? emptyAttendee();
+      }
+      if (slot.workshopId) {
+        const seed = initialWorkshopAttendees[slot.workshopId]?.[slot.positionInItem];
+        if (seed) return seed;
+      }
+      return emptyAttendee();
+    });
   });
 
   const [errors, setErrors] = React.useState<Record<number, Record<string, string>>>({});
 
   const handleAttendeeChange = (index: number, field: keyof AttendeeInfo, value: string) => {
     const newAttendees = [...attendees];
-    newAttendees[index] = {
-      ...newAttendees[index],
-      [field]: value,
-    };
+    newAttendees[index] = { ...newAttendees[index], [field]: value };
     setAttendees(newAttendees);
 
-    // Clear error for this field
     if (errors[index]?.[field]) {
       const newErrors = { ...errors };
       delete newErrors[index][field];
@@ -257,7 +294,6 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate all attendees
     const validationErrors: Record<number, Record<string, string>> = {};
     let hasErrors = false;
 
@@ -275,17 +311,28 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
 
     if (hasErrors) {
       setErrors(validationErrors);
-      // Scroll to first error
       const firstErrorElement = document.querySelector('[data-error="true"]');
       firstErrorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
-    onSubmit(attendees);
-  };
+    // Bucket the flat list back into tickets vs per-workshop attendees.
+    const ticketAttendees: AttendeeInfo[] = [];
+    const workshopAttendees: Record<string, AttendeeInfo[]> = {};
+    slots.forEach((slot, index) => {
+      const attendee = attendees[index];
+      if (slot.kind === 'ticket') {
+        ticketAttendees.push(attendee);
+      } else if (slot.workshopId) {
+        if (!workshopAttendees[slot.workshopId]) {
+          workshopAttendees[slot.workshopId] = [];
+        }
+        workshopAttendees[slot.workshopId].push(attendee);
+      }
+    });
 
-  // Group tickets by item for display
-  let ticketIndex = 0;
+    onSubmit({ attendees: ticketAttendees, workshopAttendees });
+  };
 
   return (
     <SectionContainer>
@@ -293,28 +340,25 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="">
           <p className="text-sm text-brand-gray-light mb-3">
-            Please provide the name and email for each ticket. Each attendee will receive their individual ticket via email.<br/>
+            Please provide the name and email for each seat. Each attendee will receive their own confirmation.<br/>
             You&#39;ll get a chance to review and fill <b>billing details</b> at the Payment step.
           </p>
         </div>
 
-      {cartItems.map((item) => {
-        const itemTickets = [];
-        for (let i = 0; i < item.quantity; i++) {
-          const currentIndex = ticketIndex++;
-          itemTickets.push(
-            <AttendeeTicketForm
-              key={currentIndex}
-              ticketIndex={currentIndex}
-              itemTitle={item.title}
-              attendee={attendees[currentIndex]}
-              errors={errors[currentIndex]}
-              onChange={(field, value) => handleAttendeeChange(currentIndex, field, value)}
-            />
-          );
-        }
-        return itemTickets;
-      })}
+        {slots.map((slot, index) => (
+          <AttendeeTicketForm
+            key={`${slot.itemId}-${slot.positionInItem}`}
+            ticketIndex={index}
+            itemTitle={
+              slot.kind === 'workshop'
+                ? `Workshop · ${slot.itemTitle} · Seat ${slot.positionInItem + 1}`
+                : slot.itemTitle
+            }
+            attendee={attendees[index]}
+            errors={errors[index]}
+            onChange={(field, value) => handleAttendeeChange(index, field, value)}
+          />
+        ))}
 
         {/* Navigation Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4">

@@ -10,6 +10,9 @@ import { getStripeRedirectUrls } from '@/lib/url';
 import { encodeCartState } from '@/lib/cart-url-state';
 import { logger } from '@/lib/logger';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
+import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
+import { createServiceRoleClient } from '@/lib/supabase';
+import type { Json } from '@/lib/types/database';
 
 const log = logger.scope('Create Checkout Session');
 
@@ -130,6 +133,18 @@ export default async function handler(
       return;
     }
 
+    // Cross-check every workshop cart item against the DB + Stripe so a user
+    // can't pair a cheap priceId with an expensive workshop by tampering the
+    // URL-encoded cart state.
+    const workshopValidation = await validateWorkshopCartItems({ items: cart.items, stripe });
+    if (!workshopValidation.valid) {
+      log.warn('Checkout blocked: workshop cart validation failed', {
+        error: workshopValidation.error,
+      });
+      res.status(400).json({ error: workshopValidation.error ?? 'Invalid workshop in cart' });
+      return;
+    }
+
     // Convert cart items to Stripe line items
     // Note: Prices in cart are in base currency units (e.g., CHF)
     // Stripe expects amounts in cents
@@ -161,6 +176,14 @@ export default async function handler(
       attendees: customerInfo.attendees ? JSON.stringify(customerInfo.attendees) : '',
       totalTickets: cart.totalItems.toString(),
     };
+
+    // Workshop-specific session context is persisted in checkout_cart_snapshots,
+    // not Stripe metadata. This keeps us clear of the 500-char metadata limit
+    // and makes per-seat attendee info round-trip cleanly to the webhook.
+    const workshopCartItems = cart.items.filter((item) => item.kind === 'workshop');
+    if (workshopCartItems.length > 0) {
+      metadata.has_workshops = 'true';
+    }
 
     // Encode cart state for cancel URL (so user can resume checkout)
     const encodedCart = encodeCartState(cart);
@@ -269,6 +292,41 @@ export default async function handler(
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     log.info('Checkout session created', { sessionId: session.id });
+
+    // Persist a cart snapshot so the Stripe webhook can hydrate workshop
+    // attendee info without relying on Stripe metadata (which is capped at
+    // 500 chars per value).
+    if (workshopCartItems.length > 0) {
+      try {
+        const supabase = createServiceRoleClient();
+        const { error: snapshotError } = await supabase
+          .from('checkout_cart_snapshots')
+          .upsert(
+            {
+              stripe_session_id: session.id,
+              workshop_attendees: (customerInfo.workshopAttendees ?? {}) as unknown as Json,
+              cart_items: workshopCartItems.map((item) => ({
+                workshopId: item.workshopId,
+                priceId: item.priceId,
+                quantity: item.quantity,
+                title: item.title,
+              })) as unknown as Json,
+            },
+            { onConflict: 'stripe_session_id' }
+          );
+        if (snapshotError) {
+          log.warn('Failed to persist checkout cart snapshot', {
+            sessionId: session.id,
+            error: snapshotError.message,
+          });
+        }
+      } catch (error) {
+        log.warn('Unexpected error persisting checkout cart snapshot', {
+          sessionId: session.id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
 
     // Return the checkout URL
     res.status(200).json({

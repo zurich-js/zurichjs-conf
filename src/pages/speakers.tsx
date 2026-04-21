@@ -98,7 +98,7 @@ export default function SpeakersPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [sortMode, setSortMode] = useState<SortMode>('none');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const { data, isLoading } = useQuery(publicSpeakersQueryOptions);
+  const { data, isLoading } = useQuery(publicSpeakersQueryOptions());
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -393,7 +393,7 @@ export const getServerSideProps: GetServerSideProps<SpeakersPageProps> = async (
   const queryClient = getQueryClient();
   const { optionalQuery, dehydrate } = createPrefetch(queryClient);
 
-  await optionalQuery(publicSpeakersQueryOptions);
+  await optionalQuery(publicSpeakersQueryOptions());
 
   return {
     props: {

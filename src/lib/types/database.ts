@@ -33,7 +33,7 @@ export type TicketType =
 
 export type PaymentStatus = 'pending' | 'confirmed' | 'cancelled' | 'refunded';
 
-export type WorkshopStatus = 'draft' | 'published' | 'cancelled' | 'completed';
+export type WorkshopStatus = 'draft' | 'published' | 'cancelled' | 'completed' | 'archived';
 
 /**
  * Database Tables
@@ -92,12 +92,17 @@ export interface Workshop {
   title: string;
   description: string;
   instructor_id: string | null;
-  date: string;
-  start_time: string;
-  end_time: string;
+  cfp_submission_id: string | null;
+  room: string | null;
+  duration_minutes: number | null;
+  stripe_product_id: string | null;
+  stripe_price_lookup_key: string | null;
+  date: string | null;
+  start_time: string | null;
+  end_time: string | null;
   capacity: number;
   enrolled_count: number;
-  price: number; // in cents
+  price: number | null; // in cents; legacy, not written by new commerce flow
   currency: string;
   status: WorkshopStatus;
   metadata: Record<string, unknown>;
@@ -108,13 +113,21 @@ export interface Workshop {
 export interface WorkshopRegistration {
   id: string;
   workshop_id: string;
-  user_id: string;
+  user_id: string | null;
   ticket_id: string | null;
   stripe_session_id: string;
   stripe_payment_intent_id: string | null;
   amount_paid: number; // in cents
   currency: string;
   status: PaymentStatus;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  coupon_code: string | null;
+  partnership_coupon_id: string | null;
+  partnership_voucher_id: string | null;
+  discount_amount: number; // in cents
+  seat_index: number; // 0-based within a multi-seat purchase (session + workshop scope)
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;

@@ -26,6 +26,10 @@ export {
 // Voucher emails
 export { sendVoucherConfirmationEmail } from './voucher-emails';
 
+// Workshop emails
+export { sendWorkshopConfirmationEmail } from './workshop-emails';
+export type { WorkshopConfirmationData } from './workshop-emails';
+
 // CFP emails
 export { sendReviewerInvitationEmail, sendCfpFeedbackRequestEmail } from './cfp-emails';
 

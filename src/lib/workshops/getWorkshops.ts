@@ -4,7 +4,10 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
+
+const log = logger.scope('Workshops');
 
 export interface GetWorkshopsResult {
   success: boolean;
@@ -27,7 +30,7 @@ export async function getPublishedWorkshops(): Promise<GetWorkshopsResult> {
       .order('start_time', { ascending: true });
 
     if (error) {
-      console.error('Error fetching published workshops:', error);
+      log.error('Error fetching published workshops', error);
       return {
         success: false,
         error: error.message,
@@ -39,7 +42,7 @@ export async function getPublishedWorkshops(): Promise<GetWorkshopsResult> {
       workshops: (workshops || []) as Workshop[],
     };
   } catch (error) {
-    console.error('Error in getPublishedWorkshops:', error);
+    log.error('Exception in getPublishedWorkshops', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -65,7 +68,7 @@ export async function getWorkshopById(workshopId: string): Promise<{
       .single();
 
     if (error) {
-      console.error('Error fetching workshop:', error);
+      log.error('Error fetching workshop', error, { workshopId });
       return {
         success: false,
         error: error.message,
@@ -84,7 +87,7 @@ export async function getWorkshopById(workshopId: string): Promise<{
       workshop: workshop as Workshop,
     };
   } catch (error) {
-    console.error('Error in getWorkshopById:', error);
+    log.error('Exception in getWorkshopById', error instanceof Error ? error : new Error(String(error)), { workshopId });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -106,7 +109,7 @@ export async function getAllWorkshops(): Promise<GetWorkshopsResult> {
       .order('start_time', { ascending: true });
 
     if (error) {
-      console.error('Error fetching all workshops:', error);
+      log.error('Error fetching all workshops', error);
       return {
         success: false,
         error: error.message,
@@ -118,7 +121,7 @@ export async function getAllWorkshops(): Promise<GetWorkshopsResult> {
       workshops: (workshops || []) as Workshop[],
     };
   } catch (error) {
-    console.error('Error in getAllWorkshops:', error);
+    log.error('Exception in getAllWorkshops', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

@@ -7,8 +7,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-keys';
-import type { PublicSpeaker } from '@/lib/types/cfp';
+import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 
 export interface SpeakersSectionProps {
   className?: string;
@@ -62,15 +61,7 @@ function SpeakerCard({ name, title, avatarUrl, href }: SpeakerCardProps) {
 }
 
 export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.speakers.public(),
-    queryFn: async () => {
-      const res = await fetch('/api/speakers');
-      if (!res.ok) throw new Error('Failed to fetch speakers');
-      return res.json() as Promise<{ speakers: PublicSpeaker[] }>;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  const { data, isLoading } = useQuery(publicSpeakersQueryOptions({ featured: true }));
 
   const speakers = (data?.speakers || []).filter((speaker) => speaker.is_featured);
 

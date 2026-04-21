@@ -15,5 +15,23 @@ export {
   getRegistrationsByUserId,
   getRegistrationsByWorkshopId,
   getRegistrationById,
+  getRegistrantsForAdmin,
 } from './getRegistrations';
-export type { GetRegistrationsResult } from './getRegistrations';
+export type { GetRegistrationsResult, WorkshopRegistrantRow } from './getRegistrations';
+
+export {
+  getOfferingsByCfpSubmissionId,
+  getPublishedOfferingByCfpSubmissionId,
+  getOfferingByLookupKey,
+} from './getOfferings';
+export type {
+  WorkshopOffering,
+  WorkshopOfferingByCfpSubmissionId,
+  GetOfferingsOptions,
+} from './getOfferings';
+
+export { getWorkshopRevenue, getAllWorkshopRevenue } from './getRevenue';
+export type {
+  WorkshopRevenueSummary,
+  WorkshopRevenueByCurrency,
+} from './getRevenue';

@@ -3,6 +3,7 @@ import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
+import { WorkshopPurchasePanel } from '@/components/workshops/WorkshopPurchasePanel';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession } from '@/lib/types/cfp';
 
@@ -23,10 +24,10 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
       />
 
       <main className="min-h-screen bg-brand-white">
-        <SessionDetailHero session={session} kind="workshop" ctaHref="/#tickets" ctaLabel="Buy workshop seat" />
+        <SessionDetailHero session={session} kind="workshop" ctaHref="#purchase" ctaLabel="Buy workshop seat" />
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
-          <div className="mx-auto max-w-screen-lg">
+          <div className="mx-auto max-w-screen-lg space-y-10">
             <SessionCard
               session={session}
               speaker={{
@@ -39,6 +40,11 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
               showDuration
               actionMode="detail"
               className="rounded-none border-0 bg-transparent p-0"
+            />
+            <WorkshopPurchasePanel
+              cfpSubmissionId={session.id}
+              sessionSlug={session.slug}
+              title={session.title}
             />
           </div>
         </ShapedSection>

@@ -7,7 +7,7 @@ import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { CartItem as CartItemType } from '@/types/cart';
 import { formatPrice, calculateOrderSummary } from '@/lib/cart';
-import { CrownIcon, TicketCheck, Trash2Icon, Minus, Plus } from "lucide-react";
+import { CrownIcon, GraduationCap, MapPin, TicketCheck, Timer, Trash2Icon, Minus, Plus } from "lucide-react";
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
 import { mapVariantToCategory } from '@/lib/analytics/helpers';
@@ -45,6 +45,7 @@ export const CartItem: React.FC<CartItemProps> = ({
   const { cart } = useCart();
   const totalPrice = item.price * item.quantity;
   const previousQuantity = useRef(item.quantity);
+  const isWorkshop = item.kind === 'workshop';
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity !== previousQuantity.current) {
@@ -97,14 +98,14 @@ export const CartItem: React.FC<CartItemProps> = ({
       }}
     >
       <div className="flex gap-4">
-        {/* Ticket Icon/Badge */}
-
         {/* Item Details */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-2">
             <h3 className="flex gap-4 text-lg font-bold mb-2 text-brand-white">
               <div className="shrink-0 mt-0.5">
-                { item.variant === 'vip' ? (
+                {isWorkshop ? (
+                  <GraduationCap size={32} className="stroke-current" />
+                ) : item.variant === 'vip' ? (
                   <CrownIcon size={32} className="stroke-brand-yellow-main" />
                 ) : item.variant === 'member' ? (
                   <span>m</span>
@@ -112,22 +113,39 @@ export const CartItem: React.FC<CartItemProps> = ({
                   <TicketCheck size={32} className="stroke-current" />
                 )}
               </div>
-              {item.title} Ticket
+              {isWorkshop ? item.title : `${item.title} Ticket`}
             </h3>
 
             {/* Remove button */}
             <button
               onClick={handleRemove}
               className="ml-auto -mr-2.5 shrink-0 group/btn cursor-pointer p-2.5 rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out"
-              aria-label={`Remove ${item.title} ticket from cart`}
+              aria-label={`Remove ${item.title} from cart`}
             >
               <Trash2Icon size={16} className="stroke-brand-gray-light group-hover/btn:stroke-brand-red transition-colors duration-300 ease-in-out" />
             </button>
           </div>
 
+          {isWorkshop && (item.workshopRoom || item.workshopDurationMinutes) && (
+            <div className="mb-3 flex flex-wrap gap-3 text-xs text-brand-gray-light">
+              {item.workshopDurationMinutes ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Timer size={14} className="stroke-brand-gray-light" />
+                  {item.workshopDurationMinutes} min
+                </span>
+              ) : null}
+              {item.workshopRoom ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin size={14} className="stroke-brand-gray-light" />
+                  {item.workshopRoom}
+                </span>
+              ) : null}
+            </div>
+          )}
+
           {/* Quantity and Total */}
           <div className="flex items-center justify-between gap-4">
-            {/* Quantity Controls */}
+            {/* Quantity controls — workshops and tickets both support multi-seat. */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => handleQuantityChange(Math.max(1, item.quantity - 1))}
@@ -137,11 +155,11 @@ export const CartItem: React.FC<CartItemProps> = ({
               >
                 <Minus size={16} className="stroke-brand-white" />
               </button>
-              
+
               <span className="w-10 text-center text-brand-white font-bold tabular-nums">
                 {item.quantity}
               </span>
-              
+
               <button
                 onClick={() => handleQuantityChange(Math.min(10, item.quantity + 1))}
                 disabled={item.quantity >= 10}
@@ -151,6 +169,7 @@ export const CartItem: React.FC<CartItemProps> = ({
                 <Plus size={16} className="stroke-brand-white" />
               </button>
             </div>
+            <span className="sr-only">{isWorkshop ? 'seats' : 'tickets'}</span>
 
             <div className="text-right">
               <p className="text-lg font-bold text-brand-white">
