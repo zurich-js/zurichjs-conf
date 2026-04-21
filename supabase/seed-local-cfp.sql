@@ -255,6 +255,7 @@ insert into public.cfp_speakers (
     header_image_url,
     portrait_foreground_url,
     portrait_background_url,
+    speaker_role,
     is_visible,
     is_featured
 )
@@ -271,6 +272,7 @@ values
         '/images/meetups/cloudflare.png',
         '/images/meetups/nico.jpg',
         '/images/meetups/cloudflare.png',
+        'speaker',
         true,
         true
     ),
@@ -286,6 +288,7 @@ values
         '/images/meetups/june-workshop.png',
         '/images/meetups/jens.png',
         '/images/meetups/june-workshop.png',
+        'speaker',
         true,
         true
     ),
@@ -301,6 +304,7 @@ values
         '/images/meetups/july-group.png',
         null,
         '/images/meetups/july-group.png',
+        'speaker',
         true,
         false
     ),
@@ -316,6 +320,7 @@ values
         null,
         null,
         null,
+        'speaker',
         true,
         false
     ),
@@ -331,6 +336,7 @@ values
         '/images/meetups/may.png',
         '/images/meetups/bogdan.png',
         null,
+        'speaker',
         true,
         false
     ),
@@ -346,6 +352,23 @@ values
         '/images/meetups/june.png',
         null,
         '/images/meetups/june.png',
+        'speaker',
+        true,
+        false
+    ),
+    (
+        '77777777-7777-4777-8777-777777777777',
+        'rina.mc@example.test',
+        'Rina',
+        'Host',
+        'Conference MC',
+        'ZurichJS',
+        'Rina keeps the conference day moving, introduces speakers, and helps make the room feel welcoming.',
+        '/images/team/nadja.png',
+        '/images/meetups/july-group.png',
+        null,
+        '/images/meetups/july-group.png',
+        'mc',
         true,
         false
     )
@@ -360,6 +383,7 @@ on conflict (id) do update set
     header_image_url = excluded.header_image_url,
     portrait_foreground_url = excluded.portrait_foreground_url,
     portrait_background_url = excluded.portrait_background_url,
+    speaker_role = excluded.speaker_role,
     is_visible = excluded.is_visible,
     is_featured = excluded.is_featured;
 
@@ -454,6 +478,21 @@ values
         '2026-02-22T10:00:00.000Z',
         '2026-02-21T16:45:00.000Z',
         '2026-02-22T10:00:00.000Z'
+    ),
+    (
+        'aaaa7777-7777-4777-8777-777777777777',
+        '11111111-1111-4111-8111-111111111111',
+        'The Future of JavaScript Communities',
+        'A panel discussion about how JavaScript communities evolve, how conferences should support new speakers, and how local meetups can create long-term belonging.',
+        'panel',
+        'intermediate',
+        null,
+        '2026-09-11',
+        '12:25:00',
+        25,
+        'Auditorium',
+        'accepted',
+        '2026-02-22T12:00:00.000Z'
     ),
     (
         'aaaa4444-4444-4444-8444-444444444444',
@@ -590,6 +629,20 @@ on conflict (id) do update set
     created_at = excluded.created_at,
     updated_at = excluded.updated_at;
 
+insert into public.cfp_submission_speakers (
+    submission_id,
+    speaker_id,
+    role
+)
+values
+    (
+        'aaaa7777-7777-4777-8777-777777777777',
+        '33333333-3333-4333-8333-333333333333',
+        'panelist'
+    )
+on conflict (submission_id, speaker_id) do update set
+    role = excluded.role;
+
 insert into public.program_schedule_items (
     id,
     date,
@@ -645,10 +698,10 @@ values
         '09:00:00',
         240,
         null,
-        'placeholder',
-        'TBA',
-        null,
-        null,
+        'session',
+        'The Future of JavaScript Communities',
+        'Panel slot',
+        'aaaa7777-7777-4777-8777-777777777777',
         true
     ),
     (
@@ -968,6 +1021,8 @@ from (
         ('aaaa3333-3333-4333-8333-333333333333', 'Nuxt'),
         ('aaaa3333-3333-4333-8333-333333333333', 'Vue'),
         ('aaaa3333-3333-4333-8333-333333333333', 'DX'),
+        ('aaaa7777-7777-4777-8777-777777777777', 'Architecture'),
+        ('aaaa7777-7777-4777-8777-777777777777', 'DX'),
         ('aaaa4444-4444-4444-8444-444444444444', 'Architecture'),
         ('aaaa4444-4444-4444-8444-444444444444', 'TypeScript'),
         ('bbbb1111-1111-4111-8111-111111111111', 'Architecture'),

@@ -27,6 +27,7 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
     twitter_handle: speaker.twitter_handle || '',
     bluesky_handle: speaker.bluesky_handle || '',
     mastodon_handle: speaker.mastodon_handle || '',
+    speaker_role: speaker.speaker_role || 'speaker',
   });
   const [profileImageUrl, setProfileImageUrl] = useState(speaker.profile_image_url);
   const [portraitForegroundUrl, setPortraitForegroundUrl] = useState(speaker.portrait_foreground_url);
@@ -45,7 +46,7 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
     company: !formData.company.trim(),
     bio: !formData.bio.trim(),
     profile_image_url: !profileImageUrl?.trim(),
-    accepted_session: acceptedSessions.length === 0,
+    accepted_session: false,
     session_title: acceptedSessions.some((session) => !session.title?.trim()),
     session_abstract: acceptedSessions.some((session) => !session.abstract?.trim()),
   };
@@ -286,7 +287,19 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
             />
           </div>
 
-          {(missingFields.accepted_session || missingFields.session_title || missingFields.session_abstract) ? (
+          <div>
+            <label className="block text-sm font-medium text-black mb-1">Public role</label>
+            <select
+              value={formData.speaker_role}
+              onChange={(e) => setFormData({ ...formData, speaker_role: e.target.value as 'speaker' | 'mc' })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+            >
+              <option value="speaker">Speaker</option>
+              <option value="mc">MC</option>
+            </select>
+          </div>
+
+          {(missingFields.session_title || missingFields.session_abstract) ? (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
               Session details need attention before this profile is ready.
             </div>

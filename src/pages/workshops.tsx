@@ -16,7 +16,14 @@ interface WorkshopsPageProps {
 
 export default function WorkshopsPage({ items }: WorkshopsPageProps) {
   const [activeTab, setActiveTab] = useState('morning');
-  const dayItems = items.filter((item) => item.date === '2026-09-10');
+  const dayItems = items.filter((item) =>
+    item.date === '2026-09-10' &&
+    (
+      (item.type === 'session' && item.session_kind === 'workshop' && Boolean(item.session)) ||
+      item.type === 'placeholder' ||
+      (item.type === 'session' && !item.session)
+    )
+  );
   const morningItems = dayItems.filter((item) => Number(item.start_time.slice(0, 2)) < 13 && item.type !== 'break');
   const lunchItems = dayItems.filter((item) => item.type === 'break' && Number(item.start_time.slice(0, 2)) === 13);
   const afternoonItems = dayItems.filter((item) => Number(item.start_time.slice(0, 2)) >= 14 && item.type !== 'event');
@@ -70,7 +77,7 @@ export default function WorkshopsPage({ items }: WorkshopsPageProps) {
                   key={item.id}
                   item={item}
                   defaultOpen={index === firstPublishedIndex}
-                  placeholderVariant={activeTab === 'lunch' ? 'slot' : 'plain'}
+                  placeholderVariant="plain"
                   expandableSessions
                 />
               ))}
@@ -102,9 +109,8 @@ export default function WorkshopsPage({ items }: WorkshopsPageProps) {
             <Heading level="h2" variant="dark" className="text-lg sm:text-2xl font-bold leading-tight">
               Enable learning for everyone
             </Heading>
-            {/* TODO(feature/speakers-grid): Replace this temporary workshops supporting copy with final sponsorship/CFP messaging. */}
             <p className="mt-6 text-base leading-8 text-brand-gray-light">
-              By sponsoring the conference, you not only help us build a great experience for everyone, but you also receive workshop seats to either bring your team to the conference or help support learning at the latest industry standards for those who need it.
+              Sponsorship helps us make Zurich Engineering Day accessible to more people. Partner packages include workshop seats for your team and can help fund learning opportunities for attendees who would otherwise miss out.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button variant="blue" asChild href="/sponsorship">
@@ -126,6 +132,16 @@ export const getServerSideProps: GetServerSideProps<WorkshopsPageProps> = async 
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);
+  const hasWorkshops = items.some((item) => item.type === 'session' && item.session_kind === 'workshop' && Boolean(item.session));
+
+  if (!hasWorkshops) {
+    return {
+      redirect: {
+        destination: '/speakers',
+        permanent: false,
+      },
+    };
+  }
 
   return {
     props: {

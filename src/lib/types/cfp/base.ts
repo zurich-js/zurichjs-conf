@@ -4,9 +4,14 @@
  */
 
 /**
- * Submission type - lightning talk, standard talk, or workshop
+ * Submission type - lightning talk, standard talk, workshop, or panel
  */
-export type CfpSubmissionType = 'lightning' | 'standard' | 'workshop';
+export type CfpSubmissionType = 'lightning' | 'standard' | 'workshop' | 'panel';
+
+/**
+ * Public role for people shown on the speakers page
+ */
+export type CfpSpeakerRole = 'speaker' | 'mc';
 
 /**
  * Talk difficulty level

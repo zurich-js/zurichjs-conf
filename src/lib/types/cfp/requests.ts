@@ -4,9 +4,11 @@
  */
 
 import type {
+  CfpSubmissionType,
   CfpTalkLevel,
   CfpTshirtSize,
   CfpAssistanceType,
+  CfpSpeakerRole,
   CfpFlightDirection,
   CfpReimbursementType,
   CfpReviewerRole,
@@ -57,6 +59,7 @@ export interface UpdateCfpSpeakerRequest {
   company_interested_in_sponsoring?: boolean | null;
   is_visible?: boolean;
   is_featured?: boolean;
+  speaker_role?: CfpSpeakerRole;
 }
 
 /**
@@ -65,7 +68,7 @@ export interface UpdateCfpSpeakerRequest {
 export interface CreateTalkSubmissionRequest {
   title: string;
   abstract: string;
-  submission_type: 'lightning' | 'standard';
+  submission_type: 'lightning' | 'standard' | 'panel';
   talk_level: CfpTalkLevel;
   tags: string[];
   additional_notes?: string;
@@ -117,6 +120,7 @@ export type CreateCfpSubmissionRequest =
 export interface UpdateCfpSubmissionRequest {
   title?: string;
   abstract?: string;
+  submission_type?: CfpSubmissionType;
   talk_level?: CfpTalkLevel;
   tags?: string[];
   additional_notes?: string;

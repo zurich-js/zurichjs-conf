@@ -280,7 +280,7 @@ export default function CfpProfile({ speaker, requiresHeaderImage }: ProfileProp
           avatar: profileImageUrl,
           header: headerImageUrl,
           // TODO(feature/speakers-grid): Replace this placeholder session label when speaker profiles can preview real public sessions.
-          footer: 'Lorem ipsum',
+          footer: 'Your session',
         }}
       />
     </>

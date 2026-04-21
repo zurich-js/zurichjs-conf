@@ -22,6 +22,7 @@ export interface Speaker {
   portrait_background_url: string | null;
   is_visible: boolean;
   is_featured: boolean;
+  speaker_role: 'speaker' | 'mc';
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +40,7 @@ export interface Session {
   scheduled_start_time: string | null;
   scheduled_duration_minutes: number | null;
   room: string | null;
+  participant_speaker_ids?: string[];
 }
 
 export interface SpeakerWithSessions extends Speaker {

@@ -25,9 +25,10 @@ export function ProgramScheduleItemCard({
         <SessionCard
           session={item.session}
           speaker={item.speaker ?? undefined}
+          speakers={item.speakers}
           expandable={expandableSessions}
           defaultOpen={defaultOpen}
-          href={item.session.type === 'workshop' ? `/workshops/${item.session.slug}` : `/talks/${item.session.slug}`}
+          href={item.session.type === 'workshop' ? `/workshops/${item.session.slug}` : item.session.type === 'panel' ? undefined : `/talks/${item.session.slug}`}
           showDuration={showDuration}
         />
       );
@@ -36,7 +37,7 @@ export function ProgramScheduleItemCard({
     return (
       <PlaceholderCard
         id={item.id}
-        title={item.title}
+        title="To be announced"
         startTime={item.start_time}
         durationMinutes={item.duration_minutes}
         variant={placeholderVariant}
@@ -71,7 +72,7 @@ export function ProgramScheduleItemCard({
   return (
     <PlaceholderCard
       id={item.id}
-      title={item.title}
+      title={item.title === 'TBA' ? 'To be announced' : item.title}
       startTime={item.start_time}
       durationMinutes={item.duration_minutes}
       variant={placeholderVariant}

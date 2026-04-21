@@ -35,6 +35,7 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
                 imageUrl: speaker.avatarUrl,
                 slug: speaker.slug,
               }}
+              speakers={session.speakers}
               showDuration
               actionMode="detail"
               className="rounded-none border-0 bg-transparent p-0"
@@ -95,9 +96,9 @@ export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const { speakers } = await fetchPublicSpeakers();
   const speaker = speakers.find((entry) =>
-    entry.sessions.some((session) => session.type !== 'workshop' && session.slug === slug)
+    entry.sessions.some((session) => (session.type === 'standard' || session.type === 'lightning') && session.slug === slug)
   );
-  const session = speaker?.sessions.find((entry) => entry.type !== 'workshop' && entry.slug === slug);
+  const session = speaker?.sessions.find((entry) => (entry.type === 'standard' || entry.type === 'lightning') && entry.slug === slug);
 
   if (!session || !speaker) {
     return { notFound: true };

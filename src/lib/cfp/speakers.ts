@@ -12,6 +12,7 @@ import type {
   UpdateCfpSpeakerRequest,
   PublicSpeaker,
   PublicSession,
+  PublicSessionSpeaker,
   AdminCreateSpeakerRequest,
   AdminCreateSessionRequest,
 } from '@/lib/types/cfp';
@@ -125,7 +126,7 @@ export async function getAcceptedSpeakers(): Promise<CfpSpeaker[]> {
     .from('cfp_speakers')
     .select(`
       *,
-      cfp_submissions!inner (
+      cfp_submissions!cfp_submissions_speaker_id_fkey!inner (
         id,
         status
       )
@@ -220,23 +221,8 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
   const { data, error } = await supabase
     .from('cfp_speakers')
     .select(`
-      id,
-      first_name,
-      last_name,
-      job_title,
-      company,
-      bio,
-      profile_image_url,
-      header_image_url,
-      portrait_foreground_url,
-      portrait_background_url,
-      is_featured,
-      linkedin_url,
-      github_url,
-      twitter_handle,
-      bluesky_handle,
-      mastodon_handle,
-      cfp_submissions (
+      *,
+      cfp_submissions!cfp_submissions_speaker_id_fkey (
         id,
         title,
         abstract,
@@ -280,11 +266,35 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     }>;
   }
 
-  // Transform to public format
-  const publicSpeakers: PublicSpeaker[] = [];
-  const slugCounts = new Map<string, number>();
+  interface ParticipantRow {
+    submission_id: string;
+    speaker_id: string;
+    role: string | null;
+  }
 
-  for (const speaker of data || []) {
+  const visibleSpeakerRows = data || [];
+  const visibleSpeakerIdSet = new Set(visibleSpeakerRows.map((speaker) => speaker.id));
+  const { data: participantRows, error: participantError } = await supabase
+    .from('cfp_submission_speakers')
+    .select('submission_id, speaker_id, role');
+
+  if (participantError) {
+    console.error('[CFP Speakers] Error fetching submission speakers:', participantError.message);
+  }
+
+  const participantsBySubmissionId = new Map<string, ParticipantRow[]>();
+  for (const participant of (participantRows || []) as ParticipantRow[]) {
+    if (!participantsBySubmissionId.has(participant.submission_id)) {
+      participantsBySubmissionId.set(participant.submission_id, []);
+    }
+    participantsBySubmissionId.get(participant.submission_id)!.push(participant);
+  }
+
+  const slugCounts = new Map<string, number>();
+  const publicSpeakersById = new Map<string, PublicSpeaker>();
+  const speakerPreviewsById = new Map<string, PublicSessionSpeaker>();
+
+  for (const speaker of visibleSpeakerRows) {
     const baseSlug = `${speaker.first_name} ${speaker.last_name}`
       .trim()
       .toLowerCase()
@@ -293,52 +303,18 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
 
     const existingSlugCount = slugCounts.get(baseSlug) ?? 0;
     slugCounts.set(baseSlug, existingSlugCount + 1);
+    const slug = existingSlugCount === 0 ? baseSlug : `${baseSlug}-${speaker.id.split('-')[0]}`;
 
-    const acceptedSessions = (speaker.cfp_submissions || [])
-      .filter((s: SubmissionData) => s.status === 'accepted')
-      .map((s: SubmissionData): PublicSession => {
-        const baseSlug = s.title
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '') || s.id;
-        const existingSessionSlugCount = sessionSlugCounts.get(baseSlug) ?? 0;
+    speakerPreviewsById.set(speaker.id, {
+      name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
+      role: [speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || null,
+      imageUrl: speaker.profile_image_url,
+      slug,
+    });
 
-        sessionSlugCounts.set(baseSlug, existingSessionSlugCount + 1);
-
-        return {
-          id: s.id,
-          slug: existingSessionSlugCount === 0 ? baseSlug : `${baseSlug}-${s.id.split('-')[0]}`,
-          title: s.title,
-          abstract: s.abstract,
-          tags: (s.tags || [])
-            .flatMap((entry) => entry.tag || [])
-            .map((tag) => tag.name?.trim())
-            .filter((tag): tag is string => Boolean(tag)),
-          type: s.submission_type as PublicSession['type'],
-          level: s.talk_level as PublicSession['level'],
-          schedule: scheduleRowMap.get(s.id)
-            ? {
-                date: scheduleRowMap.get(s.id)?.date ?? null,
-                start_time: scheduleRowMap.get(s.id)?.start_time ?? null,
-                duration_minutes: scheduleRowMap.get(s.id)?.duration_minutes ?? null,
-                room: scheduleRowMap.get(s.id)?.room ?? null,
-              }
-            : s.scheduled_date || s.scheduled_start_time
-              ? {
-                  date: s.scheduled_date,
-                  start_time: s.scheduled_start_time,
-                  duration_minutes: s.scheduled_duration_minutes,
-                  room: s.room,
-                }
-              : null,
-        };
-      });
-
-    // Include all visible+featured speakers regardless of sessions
-    publicSpeakers.push({
+    publicSpeakersById.set(speaker.id, {
       id: speaker.id,
-      slug: existingSlugCount === 0 ? baseSlug : `${baseSlug}-${speaker.id.split('-')[0]}`,
+      slug,
       first_name: speaker.first_name,
       last_name: speaker.last_name,
       job_title: speaker.job_title,
@@ -349,6 +325,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       portrait_foreground_url: speaker.portrait_foreground_url,
       portrait_background_url: speaker.portrait_background_url,
       is_featured: speaker.is_featured ?? false,
+      speaker_role: 'speaker_role' in speaker ? speaker.speaker_role ?? 'speaker' : 'speaker',
       socials: {
         linkedin_url: speaker.linkedin_url,
         github_url: speaker.github_url,
@@ -356,11 +333,91 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
         bluesky_handle: speaker.bluesky_handle,
         mastodon_handle: speaker.mastodon_handle,
       },
-      sessions: acceptedSessions,
+      sessions: [],
     });
   }
 
-  return publicSpeakers;
+  for (const speaker of visibleSpeakerRows) {
+    for (const s of (speaker.cfp_submissions || []).filter((entry: SubmissionData) => entry.status === 'accepted')) {
+      const scheduleRow = scheduleRowMap.get(s.id);
+      if (!scheduleRow) {
+        continue;
+      }
+
+      const participantIds = [
+        speaker.id,
+        ...(participantsBySubmissionId.get(s.id) || [])
+          .map((participant) => participant.speaker_id)
+          .filter((speakerId) => visibleSpeakerIdSet.has(speakerId)),
+      ];
+      const uniqueParticipantIds = Array.from(new Set(participantIds));
+      const publicSessionSpeakers = uniqueParticipantIds
+        .map((speakerId): PublicSessionSpeaker | null => {
+          const preview = speakerPreviewsById.get(speakerId);
+          if (!preview) {
+            return null;
+          }
+
+          const participantRole = participantsBySubmissionId
+            .get(s.id)
+            ?.find((participant) => participant.speaker_id === speakerId)?.role ?? (speakerId === speaker.id ? 'speaker' : null);
+
+          return {
+            ...preview,
+            participantRole,
+          };
+        })
+        .filter((preview): preview is PublicSessionSpeaker => Boolean(preview));
+
+        const baseSlug = s.title
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || s.id;
+        const existingSessionSlugCount = sessionSlugCounts.get(baseSlug) ?? 0;
+
+        sessionSlugCounts.set(baseSlug, existingSessionSlugCount + 1);
+
+      const publicSession: PublicSession = {
+          id: s.id,
+          slug: existingSessionSlugCount === 0 ? baseSlug : `${baseSlug}-${s.id.split('-')[0]}`,
+          title: s.title,
+          abstract: s.abstract,
+          tags: (s.tags || [])
+            .flatMap((entry: NonNullable<SubmissionData['tags']>[number]) => entry.tag || [])
+            .map((tag: { name: string }) => tag.name?.trim())
+            .filter((tag: string | undefined): tag is string => Boolean(tag)),
+          type: s.submission_type as PublicSession['type'],
+          level: s.talk_level as PublicSession['level'],
+          speakers: publicSessionSpeakers,
+          schedule: {
+            date: scheduleRow.date ?? null,
+            start_time: scheduleRow.start_time ?? null,
+            duration_minutes: scheduleRow.duration_minutes ?? null,
+            room: scheduleRow.room ?? null,
+          },
+        };
+
+      for (const participantId of uniqueParticipantIds) {
+        publicSpeakersById.get(participantId)?.sessions.push(publicSession);
+      }
+    }
+  }
+
+  for (const speaker of publicSpeakersById.values()) {
+    speaker.sessions.sort((left, right) => {
+      const leftDate = `${left.schedule?.date ?? '9999-12-31'}T${left.schedule?.start_time ?? '23:59:59'}`;
+      const rightDate = `${right.schedule?.date ?? '9999-12-31'}T${right.schedule?.start_time ?? '23:59:59'}`;
+
+      if (leftDate !== rightDate) {
+        return leftDate.localeCompare(rightDate);
+      }
+
+      return left.title.localeCompare(right.title);
+    });
+  }
+
+  return Array.from(publicSpeakersById.values());
 }
 
 /**
@@ -421,6 +478,7 @@ export async function createSpeaker(
     header_image_url: data.header_image_url || null,
     portrait_foreground_url: data.portrait_foreground_url || null,
     portrait_background_url: data.portrait_background_url || null,
+    speaker_role: data.speaker_role || 'speaker',
     is_visible: data.is_visible ?? false,
   };
 
@@ -488,6 +546,25 @@ export async function createSession(
   if (error) {
     console.error('[CFP Speakers] Error creating session:', error.message);
     return { submission: null, error: error.message };
+  }
+
+  if (data.participant_speaker_ids && data.participant_speaker_ids.length > 0) {
+    const participantRows = Array.from(new Set(data.participant_speaker_ids.filter((id) => id !== data.speaker_id))).map((speakerId) => ({
+      submission_id: submission.id,
+      speaker_id: speakerId,
+      role: data.submission_type === 'panel' ? 'panelist' : 'speaker',
+    }));
+
+    if (participantRows.length > 0) {
+      const { error: participantError } = await supabase
+        .from('cfp_submission_speakers')
+        .insert(participantRows);
+
+      if (participantError) {
+        console.error('[CFP Speakers] Error linking session speakers:', participantError.message);
+        return { submission: null, error: participantError.message };
+      }
+    }
   }
 
   // Handle tags if provided

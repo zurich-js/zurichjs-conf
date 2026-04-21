@@ -89,6 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'header_image_url',
         'portrait_foreground_url',
         'portrait_background_url',
+        'speaker_role',
         'is_visible',
         'is_featured',
       ];

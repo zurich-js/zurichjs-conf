@@ -15,7 +15,7 @@ export function EventCard({ id, title, description, startTime, durationMinutes, 
   return (
     <ScheduleCard
       id={id}
-      className={cn('rounded-[1.25rem] border border-brand-gray-lightest bg-brand-gray-lightest p-5', className)}
+      className={cn('rounded-[1.25rem] px-3 py-2', className)}
       expandable={Boolean(description)}
       header={(
         <>

@@ -184,8 +184,9 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
     const heroForegroundUrl = hasSplitPortraitHero ? speaker.portrait_foreground_url : null;
     const avatarUrl = speaker.profile_image_url;
     const socialLinks = getSpeakerSocialLinks(speaker);
-    const talks = sortSessions(speaker.sessions.filter((session) => session.type !== 'workshop'));
+    const talks = sortSessions(speaker.sessions.filter((session) => session.type === 'standard' || session.type === 'lightning'));
     const workshops = sortSessions(speaker.sessions.filter((session) => session.type === 'workshop'));
+    const hasSessions = speaker.sessions.length > 0;
     const sessionTabs: SessionTab[] = [
         {
             id: 'workshops',
@@ -327,6 +328,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                             {speaker.bio || `${fullName} is part of the ZurichJS Conf lineup. Session details are already available below while we finish the final hero composition.`}
                         </p>
 
+                        {hasSessions ? (
                         <section id="speaker-sessions" className="mt-14">
                             {sessionTabs.length > 0 ? (
                                 <DayTabs
@@ -350,22 +352,15 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                             key={session.id}
                                             id={`session-${session.id}`}
                                             session={session}
-                                            href={session.type === 'workshop' ? `/workshops/${session.slug}` : `/talks/${session.slug}`}
+                                            speakers={session.speakers}
+                                            href={session.type === 'workshop' ? `/workshops/${session.slug}` : session.type === 'panel' ? undefined : `/talks/${session.slug}`}
                                             showDuration
                                         />
                                     ))}
                                 </div>
-                            ) : (
-                                <div className="mt-8 rounded-[2rem] border border-dashed border-brand-gray-light bg-brand-gray-lightest/50 p-8">
-                                    <Heading level="h2" variant="light" className="text-xl font-bold">
-                                        Sessions coming soon
-                                    </Heading>
-                                    <Button variant="primary" size="sm" className="mt-6" asChild href="/#tickets">
-                                        Get tickets anyway
-                                    </Button>
-                                </div>
-                            )}
+                            ) : null}
                         </section>
+                        ) : null}
                     </div>
                 </SectionContainer>
 

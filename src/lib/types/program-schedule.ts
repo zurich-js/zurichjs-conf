@@ -19,15 +19,17 @@ export interface ProgramScheduleItemRecord {
 
 export interface ProgramScheduleSpeakerPreview {
   name: string;
-  role: string;
+  role: string | null;
   imageUrl: string | null;
   slug: string;
+  participantRole?: string | null;
 }
 
 export interface PublicProgramScheduleItem extends ProgramScheduleItemRecord {
   session: PublicSession | null;
   speaker: ProgramScheduleSpeakerPreview | null;
-  session_kind: 'talk' | 'workshop' | null;
+  speakers: ProgramScheduleSpeakerPreview[];
+  session_kind: 'talk' | 'workshop' | 'panel' | null;
 }
 
 export interface ProgramScheduleItemInput {

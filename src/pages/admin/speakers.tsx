@@ -145,7 +145,6 @@ export default function SpeakersDashboard() {
     if (!speaker.company?.trim()) missing.add('company');
     if (!speaker.bio?.trim()) missing.add('bio');
     if (!speaker.profile_image_url?.trim()) missing.add('profile photo');
-    if (acceptedSpeakerSessions.length === 0) missing.add('accepted session');
 
     for (const session of acceptedSpeakerSessions) {
       if (!session.title?.trim()) missing.add('session title');
@@ -221,7 +220,9 @@ export default function SpeakersDashboard() {
     id: submission.id,
     title: submission.title,
     submission_type: submission.submission_type,
+    participant_speaker_ids: submission.participant_speaker_ids,
     speaker: {
+      id: submission.speaker.id,
       first_name: submission.speaker.first_name,
       last_name: submission.speaker.last_name,
     },
@@ -488,6 +489,8 @@ export default function SpeakersDashboard() {
         {showAddSession ? (
           <AddSessionModal
             speakerId={showAddSession}
+            speakers={speakerOptions}
+            sessions={availableScheduleSessions}
             onClose={() => setShowAddSession(null)}
             onCreated={() => {
               queryClient.invalidateQueries({ queryKey: ['speakers'] });
@@ -512,6 +515,7 @@ export default function SpeakersDashboard() {
         {selectedSession ? (
           <EditSessionModal
             session={selectedSession}
+            speakers={speakerOptions}
             onClose={() => setSelectedSession(null)}
             onUpdated={() => {
               queryClient.invalidateQueries({ queryKey: ['speakers'] });

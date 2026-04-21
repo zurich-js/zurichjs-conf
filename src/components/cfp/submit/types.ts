@@ -54,6 +54,11 @@ export const TYPE_INFO = {
     duration: '30 minutes',
     description: 'The classic conference talk format. Dive deep into a topic with time for context, examples, and takeaways.',
   },
+  panel: {
+    title: 'Panel',
+    duration: '30-45 minutes',
+    description: 'A moderated discussion with multiple speakers.',
+  },
   workshop: {
     title: 'Workshop',
     duration: '2-8 hours',

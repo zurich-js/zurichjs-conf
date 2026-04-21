@@ -31,6 +31,11 @@ export const TYPE_INFO: Record<CfpSubmissionType, { title: string; duration: str
     duration: '30 minutes',
     description: 'The classic conference talk format.',
   },
+  panel: {
+    title: 'Panel',
+    duration: '30-45 minutes',
+    description: 'A moderated discussion with multiple speakers.',
+  },
   workshop: {
     title: 'Workshop',
     duration: '2-8 hours',

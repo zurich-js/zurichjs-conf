@@ -35,6 +35,7 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
                 imageUrl: speaker.avatarUrl,
                 slug: speaker.slug,
               }}
+              speakers={session.speakers}
               showDuration
               actionMode="detail"
               className="rounded-none border-0 bg-transparent p-0"

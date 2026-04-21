@@ -19,6 +19,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
     job_title: '',
     company: '',
     bio: '',
+    speaker_role: 'speaker' as 'speaker' | 'mc',
     is_visible: true,
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -175,6 +176,18 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
             />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-black">Role</label>
+            <select
+              value={formData.speaker_role}
+              onChange={(e) => setFormData({ ...formData, speaker_role: e.target.value as 'speaker' | 'mc' })}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271]"
+            >
+              <option value="speaker">Speaker</option>
+              <option value="mc">MC</option>
+            </select>
           </div>
 
           <div className="flex items-center gap-3">

@@ -58,15 +58,17 @@ function buildPublicSpeakerSessionMap(speakers: PublicSpeaker[]) {
     const role = [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');
 
     for (const session of speaker.sessions) {
-      sessionMap.set(session.id, {
-        session,
-        speaker: {
-          name,
-          role,
-          imageUrl: speaker.profile_image_url,
-          slug: speaker.slug,
-        },
-      });
+      if (!sessionMap.has(session.id)) {
+        sessionMap.set(session.id, {
+          session,
+          speaker: {
+            name,
+            role,
+            imageUrl: speaker.profile_image_url,
+            slug: speaker.slug,
+          },
+        });
+      }
     }
   }
 
@@ -129,7 +131,9 @@ export function buildPublicProgramScheduleItems(rows: ProgramScheduleItemRecord[
   return rows.map((row): PublicProgramScheduleItem => {
     const linkedSession = row.submission_id ? sessionMap.get(row.submission_id) ?? null : null;
     const sessionKind = linkedSession
-      ? linkedSession.session.type === 'workshop'
+      ? linkedSession.session.type === 'panel'
+        ? 'panel'
+        : linkedSession.session.type === 'workshop'
         ? 'workshop'
         : 'talk'
       : null;
@@ -138,6 +142,7 @@ export function buildPublicProgramScheduleItems(rows: ProgramScheduleItemRecord[
       ...row,
       session: linkedSession?.session ?? null,
       speaker: linkedSession?.speaker ?? null,
+      speakers: linkedSession?.session.speakers ?? (linkedSession?.speaker ? [linkedSession.speaker] : []),
       session_kind: sessionKind,
     };
   });

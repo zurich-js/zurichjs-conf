@@ -14,7 +14,7 @@ export function BreakCard({ id, title, description, startTime, durationMinutes, 
   return (
     <article
       id={id}
-      className={cn('rounded-[1.25rem] border border-brand-gray-lightest bg-brand-gray-lightest px-5 py-5', className)}
+      className={cn('rounded-[1.25rem] px-3 py-2', className)}
     >
       <p className="text-sm text-brand-gray-medium">{formatTimeRange(startTime, durationMinutes)}</p>
       <h3 className="mt-1 text-lg font-bold leading-tight text-brand-black">{title}</h3>

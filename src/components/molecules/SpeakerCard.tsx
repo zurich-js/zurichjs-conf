@@ -10,6 +10,7 @@ type SharedSpeakerCardProps = {
   avatar?: string | null;
   name: string;
   title?: string;
+  badge?: string;
   footer?: string;
   className?: string;
 };
@@ -24,7 +25,12 @@ type SpeakerCardButtonProps = SharedSpeakerCardProps & {
   to?: never;
 };
 
-export type PublicSpeakerCardProps = SpeakerCardLinkProps | SpeakerCardButtonProps;
+type SpeakerCardStaticProps = SharedSpeakerCardProps & {
+  to?: never;
+  onClick?: never;
+};
+
+export type PublicSpeakerCardProps = SpeakerCardLinkProps | SpeakerCardButtonProps | SpeakerCardStaticProps;
 
 function SpeakerCardInner({
   variant,
@@ -32,6 +38,7 @@ function SpeakerCardInner({
   avatar,
   name,
   title,
+  badge,
   footer,
 }: SharedSpeakerCardProps) {
   // TODO: Rework the sliding footer so it overlays and covers the name/role area,
@@ -98,6 +105,11 @@ function SpeakerCardInner({
                   >
                       {name}
                   </h2>
+                  {badge ? (
+                    <span className="mt-2 inline-flex rounded-full bg-brand-yellow-main px-2.5 py-1 text-xs font-bold text-brand-black">
+                      {badge}
+                    </span>
+                  ) : null}
                   {title ? (
                       <p className={cn(!isCompact && 'line-clamp-2 min-h-[3rem]')}>
                           {title}
@@ -122,7 +134,9 @@ function SpeakerCardInner({
                   <p className="font-bold">
                     {footer}
                   </p>
-                  <ChevronRight className="mb-1 size-4 shrink-0 text-black" aria-hidden="true" />
+                  {(footer !== 'To be announced') ? (
+                    <ChevronRight className="mb-1 size-4 shrink-0 text-black" aria-hidden="true" />
+                  ) : null}
                 </div>
               </div>
           </div>
@@ -145,7 +159,8 @@ export function SpeakerCard(props: PublicSpeakerCardProps) {
     );
   }
 
-  return (
+  if (typeof props.onClick === 'function') {
+    return (
     <button
       type="button"
       onClick={props.onClick}
@@ -153,5 +168,12 @@ export function SpeakerCard(props: PublicSpeakerCardProps) {
     >
       <SpeakerCardInner {...rest} />
     </button>
+    );
+  }
+
+  return (
+    <div className={cn('group @container block w-full rounded-2xl', className)}>
+      <SpeakerCardInner {...rest} />
+    </div>
   );
 }

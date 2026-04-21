@@ -29,7 +29,7 @@ export function TypeStep({ formData, updateField, onNext, isEditMode, onSaveDraf
       </div>
 
       <div className="grid gap-4">
-        {(['lightning', 'standard', 'workshop'] as CfpSubmissionType[]).map((type) => (
+        {(['lightning', 'standard', 'workshop'] as Array<Exclude<CfpSubmissionType, 'panel'>>).map((type) => (
           <button
             key={type}
             type="button"

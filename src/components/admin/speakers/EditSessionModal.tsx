@@ -4,11 +4,12 @@ import type { Session } from './types';
 
 interface EditSessionModalProps {
   session: Session;
+  speakers: Array<{ id: string; first_name: string; last_name: string }>;
   onClose: () => void;
   onUpdated: () => void;
 }
 
-export function EditSessionModal({ session, onClose, onUpdated }: EditSessionModalProps) {
+export function EditSessionModal({ session, speakers, onClose, onUpdated }: EditSessionModalProps) {
   const [formData, setFormData] = useState({
     title: session.title,
     abstract: session.abstract || '',
@@ -16,6 +17,7 @@ export function EditSessionModal({ session, onClose, onUpdated }: EditSessionMod
     talk_level: session.talk_level || 'intermediate',
     workshop_duration_hours: session.workshop_duration_hours?.toString() || '',
     workshop_max_participants: session.workshop_max_participants?.toString() || '',
+    participant_speaker_ids: session.participant_speaker_ids || [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -40,6 +42,7 @@ export function EditSessionModal({ session, onClose, onUpdated }: EditSessionMod
           workshop_max_participants: formData.submission_type === 'workshop' && formData.workshop_max_participants
             ? parseInt(formData.workshop_max_participants, 10)
             : null,
+          participant_speaker_ids: formData.submission_type === 'panel' ? formData.participant_speaker_ids : [],
         }),
       });
 
@@ -103,6 +106,7 @@ export function EditSessionModal({ session, onClose, onUpdated }: EditSessionMod
               >
                 <option value="lightning">Lightning Talk</option>
                 <option value="standard">Standard Talk</option>
+                <option value="panel">Panel</option>
                 <option value="workshop">Workshop</option>
               </select>
             </div>
@@ -143,6 +147,32 @@ export function EditSessionModal({ session, onClose, onUpdated }: EditSessionMod
                   onChange={(e) => setFormData({ ...formData, workshop_max_participants: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271]"
                 />
+              </div>
+            </div>
+          ) : null}
+
+          {formData.submission_type === 'panel' ? (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <p className="mb-3 text-sm font-medium text-black">Additional panel speakers</p>
+              <div className="grid max-h-44 gap-2 overflow-y-auto">
+                {speakers.map((speaker) => {
+                  const checked = formData.participant_speaker_ids.includes(speaker.id);
+                  return (
+                    <label key={speaker.id} className="flex cursor-pointer items-center gap-2 text-sm text-black">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => setFormData({
+                          ...formData,
+                          participant_speaker_ids: checked
+                            ? formData.participant_speaker_ids.filter((id) => id !== speaker.id)
+                            : [...formData.participant_speaker_ids, speaker.id],
+                        })}
+                      />
+                      {speaker.first_name} {speaker.last_name}
+                    </label>
+                  );
+                })}
               </div>
             </div>
           ) : null}

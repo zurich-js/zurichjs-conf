@@ -15,14 +15,18 @@ import {
 } from './session-actions';
 import { formatDuration, formatTimeRange } from './utils';
 
+type SessionCardSpeaker = {
+  name: string;
+  role?: string | null;
+  imageUrl?: string | null;
+  slug?: string | null;
+  participantRole?: string | null;
+};
+
 export interface SessionCardProps {
   session: PublicSession;
-  speaker?: {
-    name: string;
-    role?: string | null;
-    imageUrl?: string | null;
-    slug?: string | null;
-  };
+  speaker?: SessionCardSpeaker;
+  speakers?: SessionCardSpeaker[];
   expandable?: boolean;
   defaultOpen?: boolean;
   href?: string;
@@ -41,6 +45,7 @@ const LEVEL_LABELS: Record<PublicSession['level'], string> = {
 export function SessionCard({
   session,
   speaker,
+  speakers,
   expandable = false,
   defaultOpen = false,
   href,
@@ -53,6 +58,8 @@ export function SessionCard({
   const timeRange = formatTimeRange(session.schedule?.start_time, session.schedule?.duration_minutes);
   const durationLabel = formatDuration(session.schedule?.duration_minutes);
   const isWorkshop = session.type === 'workshop';
+  const isPanel = session.type === 'panel';
+  const resolvedSpeakers: SessionCardSpeaker[] = speakers && speakers.length > 0 ? speakers : speaker ? [speaker] : session.speakers;
   const speakerDetailUrl = getCurrentSessionDetailUrl();
 
   const handleCardCalendar = (calendar: SessionCalendarProvider) => {
@@ -72,13 +79,13 @@ export function SessionCard({
       {timeRange ? <p className="text-sm text-brand-gray-medium">{timeRange}</p> : null}
       <h3 className="mt-1 text-lg font-bold leading-tight text-brand-black">{session.title}</h3>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-brand-black">
-        {speaker ? (
+        {resolvedSpeakers.length > 0 ? (
           <span>
-            <strong>{isWorkshop ? 'Instructor:' : 'Speaker:'}</strong>{' '}
-            <span className="text-brand-gray-medium">{speaker.name}</span>
+            <strong>{isWorkshop ? 'Instructor:' : isPanel ? 'Panel:' : 'Speaker:'}</strong>{' '}
+            <span className="text-brand-gray-medium">{resolvedSpeakers.map((entry) => entry.name).join(', ')}</span>
           </span>
         ) : null}
-        {speaker ? <span className="text-brand-gray-medium">&bull;</span> : null}
+        {resolvedSpeakers.length > 0 ? <span className="text-brand-gray-medium">&bull;</span> : null}
         <span>
           <strong>Expertise:</strong>{' '}
           <span className="text-brand-gray-medium">{LEVEL_LABELS[session.level]}</span>
@@ -94,40 +101,44 @@ export function SessionCard({
     </>
   );
 
-  const speakerContent = speaker ? (
+  const renderSpeakerContent = (entry: SessionCardSpeaker) => (
     <>
-      {speaker.imageUrl ? (
+      {entry.imageUrl ? (
         <div className="relative size-11 overflow-hidden rounded-full">
-          <Image src={speaker.imageUrl} alt={speaker.name} fill className="object-cover" sizes="44px" />
+          <Image src={entry.imageUrl} alt={entry.name} fill className="object-cover" sizes="44px" />
         </div>
       ) : (
         <div className="flex size-11 items-center justify-center rounded-full bg-brand-black text-sm font-bold text-brand-white">
-          {speaker.name.charAt(0)}
+          {entry.name.charAt(0)}
         </div>
       )}
 
       <div>
-        <p className="text-sm font-semibold text-brand-black">{speaker.name}</p>
-        {speaker.role ? <p className="text-xs text-brand-gray-medium">{speaker.role}</p> : null}
+        <p className="text-sm font-semibold text-brand-black">{entry.name}</p>
+        {entry.role ? <p className="text-xs text-brand-gray-medium">{entry.role}</p> : null}
+        {entry.participantRole && isPanel ? <p className="text-xs font-semibold capitalize text-brand-blue">{entry.participantRole}</p> : null}
       </div>
     </>
-  ) : null;
+  );
 
   const panel = (
     <>
       <p className="text-sm leading-7 text-brand-gray-darkest">{session.abstract}</p>
 
-      {speaker ? (
-        speaker.slug ? (
+      {resolvedSpeakers.length > 0 ? (
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          {resolvedSpeakers.map((entry) => entry.slug ? (
           <Link
-            href={`/speakers/${speaker.slug}`}
-            className="mt-5 flex w-fit items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            key={entry.slug}
+            href={`/speakers/${entry.slug}`}
+            className="flex w-fit items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
           >
-            {speakerContent}
+            {renderSpeakerContent(entry)}
           </Link>
         ) : (
-          <div className="mt-5 flex items-center gap-3">{speakerContent}</div>
-        )
+          <div key={entry.name} className="flex items-center gap-3">{renderSpeakerContent(entry)}</div>
+        ))}
+        </div>
       ) : null}
     </>
   );
@@ -220,7 +231,7 @@ export function SessionCard({
       id={resolvedId}
       className={cn(
         'rounded-[1.25rem] border p-5',
-        isWorkshop ? 'border-brand-gray-lightest bg-brand-gray-lightest' : 'border-brand-gray-light bg-brand-white',
+        isWorkshop || isPanel ? 'border-brand-gray-lightest bg-brand-gray-lightest' : 'border-brand-gray-light bg-brand-white',
         className
       )}
       expandable={expandable}

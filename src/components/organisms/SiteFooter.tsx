@@ -1,9 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { LinkGroup, NewsletterForm } from '@/components/molecules';
 import { Logo, Button, SocialIcon } from '@/components/atoms';
 import { SectionSplitView } from '@/components/organisms';
 import { subscribeToNewsletter } from '@/lib/api/newsletter';
+import { queryKeys } from '@/lib/query-keys';
+import type { PublicSpeakersResponse } from '@/lib/queries/speakers';
 
 export interface SiteFooterProps {
   showContactLinks?: boolean;
@@ -68,6 +71,34 @@ const socials = [
 export const SiteFooter: React.FC<SiteFooterProps> = ({
   showContactLinks = false,
 }) => {
+  const { data } = useQuery({
+    queryKey: queryKeys.speakers.public(),
+    queryFn: async () => {
+      const response = await fetch('/api/speakers');
+
+      if (!response.ok) {
+        throw new Error('Failed to load public speaker availability');
+      }
+
+      return response.json() as Promise<PublicSpeakersResponse>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const publicSessions = data?.speakers.flatMap((speaker) => speaker.sessions) ?? [];
+  const hasTalks = publicSessions.some((session) => session.type === 'standard' || session.type === 'lightning');
+  const hasWorkshops = publicSessions.some((session) => session.type === 'workshop');
+  const hasProgramAvailability = Boolean(data);
+  const resolvedConferenceLinks = conferenceLinks.links.map((link) => {
+    if (link.href === '/talks') {
+      return { ...link, locked: hasProgramAvailability && !hasTalks };
+    }
+
+    if (link.href === '/workshops') {
+      return { ...link, locked: hasProgramAvailability && !hasWorkshops };
+    }
+
+    return link;
+  });
 
   const container = {
     hidden: { opacity: 0 },
@@ -153,7 +184,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
             className="grid grid-cols-1 grid-rows-3 gap-5 pt-8 lg:gap-8 lg:grid-rows-none lg:grid-cols-[2fr_2fr_3fr]"
           >
             <motion.div variants={item} >
-              <LinkGroup title={conferenceLinks.title} links={[...conferenceLinks.links]} />
+              <LinkGroup title={conferenceLinks.title} links={resolvedConferenceLinks} />
             </motion.div>
 
             <motion.div variants={item}>

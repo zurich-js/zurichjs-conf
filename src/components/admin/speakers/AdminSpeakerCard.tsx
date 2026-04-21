@@ -22,6 +22,7 @@ function SessionTypeBadge({ type }: { type: string }) {
     workshop: 'bg-purple-100 text-purple-700',
     lightning: 'bg-yellow-100 text-yellow-700',
     standard: 'bg-blue-100 text-blue-700',
+    panel: 'bg-green-100 text-green-700',
   };
 
   return (
@@ -122,6 +123,11 @@ export function AdminSpeakerCard({
               {speaker.company && (
                 <p className="text-sm text-gray-400 truncate">{speaker.company}</p>
               )}
+              {speaker.speaker_role === 'mc' ? (
+                <span className="mt-2 inline-flex rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                  MC
+                </span>
+              ) : null}
             </div>
           </div>
 

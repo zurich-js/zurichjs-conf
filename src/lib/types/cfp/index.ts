@@ -76,7 +76,7 @@ export type {
 } from './admin';
 
 // Public types
-export type { PublicSession, PublicSpeaker } from './public';
+export type { PublicSession, PublicSessionSpeaker, PublicSpeaker } from './public';
 
 // Decision types
 export type { CfpDecisionStatus } from './decisions';

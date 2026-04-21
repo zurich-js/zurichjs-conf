@@ -646,7 +646,7 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
   const supabase = createCfpServiceClient();
 
   // Fetch speakers and all submissions in parallel using paginated fetch
-  const [speakersResult, submissionsResult] = await Promise.all([
+  const [speakersResult, submissionsResult, participantsResult] = await Promise.all([
     fetchAllRows<CfpSpeaker>(supabase, 'cfp_speakers', '*'),
     fetchAllRows<{
       id: string;
@@ -662,10 +662,16 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
       scheduled_duration_minutes: number | null;
       room: string | null;
       speaker_id: string;
+      participant_speaker_ids?: string[];
     }>(
       supabase,
       'cfp_submissions',
       'id, title, abstract, status, submission_type, talk_level, workshop_duration_hours, workshop_max_participants, scheduled_date, scheduled_start_time, scheduled_duration_minutes, room, speaker_id'
+    ),
+    fetchAllRows<{ submission_id: string; speaker_id: string }>(
+      supabase,
+      'cfp_submission_speakers',
+      'submission_id, speaker_id'
     ),
   ]);
 
@@ -676,6 +682,15 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
 
   const speakers = speakersResult.data;
   const submissions = submissionsResult.data;
+  const participantRows = participantsResult.error ? [] : participantsResult.data;
+  const participantsBySubmissionId = new Map<string, string[]>();
+
+  for (const participant of participantRows) {
+    if (!participantsBySubmissionId.has(participant.submission_id)) {
+      participantsBySubmissionId.set(participant.submission_id, []);
+    }
+    participantsBySubmissionId.get(participant.submission_id)!.push(participant.speaker_id);
+  }
 
   // Group submissions by speaker_id for O(n) lookup
   const submissionsBySpeakerId = new Map<string, typeof submissions>();
@@ -703,6 +718,7 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
       scheduled_start_time: s.scheduled_start_time,
       scheduled_duration_minutes: s.scheduled_duration_minutes,
       room: s.room,
+      participant_speaker_ids: participantsBySubmissionId.get(s.id) || [],
     })),
   }));
 }

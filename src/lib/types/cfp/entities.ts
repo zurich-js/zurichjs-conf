@@ -10,6 +10,7 @@ import type {
   CfpTshirtSize,
   CfpAssistanceType,
   CfpTravelOption,
+  CfpSpeakerRole,
 } from './base';
 import type { CfpReview } from './reviews';
 
@@ -45,6 +46,7 @@ export interface CfpSpeaker {
   company_interested_in_sponsoring: boolean | null;
   is_visible: boolean;
   is_featured: boolean;
+  speaker_role: CfpSpeakerRole;
   created_at: string;
   updated_at: string;
 }

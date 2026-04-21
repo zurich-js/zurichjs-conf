@@ -14,7 +14,11 @@ interface TalksPageProps {
 export default function TalksPage({ items }: TalksPageProps) {
   const visibleItems = items.filter((item) =>
     item.date === '2026-09-11' &&
-    (item.type === 'placeholder' || (item.type === 'session' && item.session_kind === 'talk'))
+    (
+      (item.type === 'session' && item.session_kind === 'talk' && Boolean(item.session)) ||
+      item.type === 'placeholder' ||
+      (item.type === 'session' && !item.session)
+    )
   );
   const firstPublishedIndex = visibleItems.findIndex((item) => item.type === 'session' && Boolean(item.session));
 
@@ -36,9 +40,8 @@ export default function TalksPage({ items }: TalksPageProps) {
           <p className="mt-4 text-base md:text-md">
             September 11, 2026
           </p>
-          {/* TODO(feature/speakers-grid): Replace this placeholder talks hero with the final public talks hero treatment. */}
           <p className="mt-16 max-w-screen-md text-lg md:text-xl font-bold">
-            Browse the conference program and pick the sessions you want to build your day around.
+            Browse the conference program and pick the JavaScript, web, and engineering sessions you want to build your day around.
           </p>
           <p className="text-brand-gray-light absolute bottom-4 sm:bottom-10 md:bottom-20">Curated by the ZurichJS team.</p>
         </ShapedSection>
@@ -50,7 +53,7 @@ export default function TalksPage({ items }: TalksPageProps) {
                 key={item.id}
                 item={item}
                 defaultOpen={index === firstPublishedIndex}
-                placeholderVariant="slot"
+                placeholderVariant="plain"
                 expandableSessions
               />
             ))}
@@ -88,6 +91,16 @@ export const getServerSideProps: GetServerSideProps<TalksPageProps> = async () =
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);
+  const hasTalks = items.some((item) => item.type === 'session' && item.session_kind === 'talk' && Boolean(item.session));
+
+  if (!hasTalks) {
+    return {
+      redirect: {
+        destination: '/speakers',
+        permanent: false,
+      },
+    };
+  }
 
   return {
     props: {

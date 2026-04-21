@@ -56,6 +56,7 @@ export function ScheduleItemModal({
     custom_talk_level: 'intermediate',
     custom_workshop_duration_hours: '',
     custom_workshop_max_participants: '',
+    custom_participant_speaker_ids: [] as string[],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -102,6 +103,9 @@ export function ScheduleItemModal({
             ...(formData.custom_submission_type === 'workshop' && {
               workshop_duration_hours: formData.custom_workshop_duration_hours ? parseFloat(formData.custom_workshop_duration_hours) : undefined,
               workshop_max_participants: formData.custom_workshop_max_participants ? parseInt(formData.custom_workshop_max_participants, 10) : undefined,
+            }),
+            ...(formData.custom_submission_type === 'panel' && {
+              participant_speaker_ids: formData.custom_participant_speaker_ids,
             }),
           }),
         });
@@ -248,6 +252,7 @@ export function ScheduleItemModal({
                       >
                         <option value="lightning">Lightning Talk</option>
                         <option value="standard">Standard Talk</option>
+                        <option value="panel">Panel</option>
                         <option value="workshop">Workshop</option>
                       </select>
                     </div>
@@ -289,6 +294,32 @@ export function ScheduleItemModal({
                           onChange={(e) => setFormData({ ...formData, custom_workshop_max_participants: e.target.value })}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271]"
                         />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {formData.custom_submission_type === 'panel' ? (
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-black">Additional panel speakers</label>
+                      <div className="grid max-h-44 gap-2 overflow-y-auto rounded-lg border border-gray-300 bg-white p-3">
+                        {speakers.filter((speaker) => speaker.id !== formData.speaker_id).map((speaker) => {
+                          const checked = formData.custom_participant_speaker_ids.includes(speaker.id);
+                          return (
+                            <label key={speaker.id} className="flex cursor-pointer items-center gap-2 text-sm text-black">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => setFormData({
+                                  ...formData,
+                                  custom_participant_speaker_ids: checked
+                                    ? formData.custom_participant_speaker_ids.filter((id) => id !== speaker.id)
+                                    : [...formData.custom_participant_speaker_ids, speaker.id],
+                                })}
+                              />
+                              {speaker.first_name} {speaker.last_name}
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : null}

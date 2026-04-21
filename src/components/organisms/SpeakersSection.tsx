@@ -72,7 +72,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const speakers = data?.speakers || [];
+  const speakers = (data?.speakers || []).filter((speaker) => speaker.is_featured);
 
   // Sort speakers so those with names come first
   const sortedSpeakers = [...speakers].sort((a, b) => {

@@ -12,6 +12,20 @@ interface PublicSessionCalendarOptions {
 
 type SupportedCalendar = 'google' | 'outlook' | 'ics';
 
+function getPublicSessionDetailUrl(session: PublicSession): string | null {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
+
+  if (session.type === 'workshop') {
+    return `${baseUrl}/workshops/${session.slug}`;
+  }
+
+  if (session.type === 'standard' || session.type === 'lightning') {
+    return `${baseUrl}/talks/${session.slug}`;
+  }
+
+  return null;
+}
+
 function getPublicSessionCalendarPayload(session: PublicSession, options: PublicSessionCalendarOptions = {}) {
   const date = session.schedule?.date;
   const startTime = session.schedule?.start_time;
@@ -26,11 +40,11 @@ function getPublicSessionCalendarPayload(session: PublicSession, options: Public
   const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
   const location = session.schedule?.room ? `Technopark Zurich - ${session.schedule.room}` : 'Technopark Zurich';
   const title = `${session.type === 'workshop' ? 'ZurichJS Workshop' : 'ZurichJS Conf'}: ${session.title}`;
+  const detailUrl = getPublicSessionDetailUrl(session) || options.speakerDetailUrl || 'https://conf.zurichjs.com/speakers';
   const description = [
     session.abstract,
     '',
-    `Speaker details: ${options.speakerDetailUrl || 'https://conf.zurichjs.com/speakers'}`,
-    'TODO(feature/speakers-grid): link directly to the dedicated session details page once talk/workshop pages are live.',
+    `Session details: ${detailUrl}`,
   ].join('\n');
 
   return { start, end, location, title, description };

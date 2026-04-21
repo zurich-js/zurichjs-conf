@@ -111,6 +111,13 @@ export default function SpeakersPage() {
   }, []);
 
   const speakers = data?.speakers ?? [];
+  const hasSpeakers = speakers.length > 0;
+  const hasPublicTalks = speakers.some((speaker) =>
+    speaker.sessions.some((session) => session.type === 'standard' || session.type === 'lightning')
+  );
+  const hasPublicWorkshops = speakers.some((speaker) =>
+    speaker.sessions.some((session) => session.type === 'workshop')
+  );
   const availableTags = Array.from(
     new Set(speakers.flatMap((speaker) => speaker.sessions.flatMap((session) => session.tags)))
   ).sort();
@@ -167,9 +174,8 @@ export default function SpeakersPage() {
             <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none">
               ZurichJS Conf Speakers
             </Heading>
-            {/* TODO(feature/speakers-grid): Replace this placeholder intro once public speaker messaging is finalized. */}
             <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, nisl eget aliquam tincidunt, nunc nisl aliquam nisl, eget aliquam nisl nisl eget nisl.
+              Meet the engineers, makers, and community leaders shaping this year&apos;s ZurichJS Conf program. Explore their sessions, save your favorites, and start planning who you want to learn from in September.
             </p>
         </ShapedSection>
 
@@ -264,24 +270,44 @@ export default function SpeakersPage() {
                     Loading speakers...
                   </div>
                 </div>
+              ) : !hasSpeakers ? (
+                <div className="rounded-3xl bg-brand-gray-lightest px-6 py-12 text-center">
+                  <Heading level="h2" variant="light" className="text-lg font-bold">
+                    No speakers announced yet
+                  </Heading>
+                  <p className="mt-3 text-brand-gray-darkest">
+                    The lineup is still being prepared. Check back soon for the first speaker announcements.
+                  </p>
+                </div>
               ) : !showNoMatches ? (
                 <div
                   className="grid gap-8"
                   style={gridStyle}
                 >
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(var(--card-size),1fr))] auto-rows-fr gap-4">
-                    {visibleSpeakers.map((speaker) => (
-                      <SpeakerCard
-                        key={speaker.id}
-                        variant={viewMode}
-                        header={speaker.header_image_url || undefined}
-                        avatar={speaker.profile_image_url}
-                        name={[speaker.first_name, speaker.last_name].filter(Boolean).join(' ')}
-                        title={[speaker.job_title, speaker.company].filter(Boolean).join(' @')}
-                        footer={speaker.sessions?.[0]?.title}
-                        to={`/speakers/${speaker.slug}`}
-                      />
-                    ))}
+                    {visibleSpeakers.map((speaker) => {
+                      const hasPublicSession = speaker.sessions.length > 0;
+
+                      const cardProps = {
+                        key: speaker.id,
+                        variant: viewMode,
+                        header: speaker.header_image_url || undefined,
+                        avatar: speaker.profile_image_url,
+                        name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
+                        title: [speaker.job_title, speaker.company].filter(Boolean).join(' @'),
+                        badge: speaker.speaker_role === 'mc' ? 'MC' : undefined,
+                        footer: speaker.sessions?.[0]?.title || 'To be announced',
+                      };
+
+                      return hasPublicSession ? (
+                        <SpeakerCard
+                          {...cardProps}
+                          to={`/speakers/${speaker.slug}`}
+                        />
+                      ) : (
+                        <SpeakerCard {...cardProps} />
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
@@ -303,26 +329,32 @@ export default function SpeakersPage() {
               )}
             </div>
 
+            {hasSpeakers ? (
               <div className="mt-20">
-                  <p className="mb-4">This view doesn&#39;t work for you?</p>
-                  <ul className="flex flex-col w-fit ml-6 list-disc gap-2">
-                      <li>
-                          <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/talks">
-                              See the full list of talks
-                          </Link>
-                      </li>
-                      <li>
-                          <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/workshops">
-                              Explore the workshops
-                          </Link>
-                      </li>
-                      <li>
-                          <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/schedule">
-                              Check out the full schedule
-                          </Link>
-                      </li>
-                  </ul>
+                <p className="mb-4">This view doesn&#39;t work for you?</p>
+                <ul className="flex flex-col w-fit ml-6 list-disc gap-2">
+                  {hasPublicTalks ? (
+                    <li>
+                      <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/talks">
+                        See the full list of talks
+                      </Link>
+                    </li>
+                  ) : null}
+                  {hasPublicWorkshops ? (
+                    <li>
+                      <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/workshops">
+                        Explore the workshops
+                      </Link>
+                    </li>
+                  ) : null}
+                  <li>
+                    <Link className="text-brand-blue font-bold underline decoration-dotted hover:text-brand-black transition-all duration-200" href="/schedule">
+                      Check out the full schedule
+                    </Link>
+                  </li>
+                </ul>
               </div>
+            ) : null}
           </div>
         </SectionContainer>
 

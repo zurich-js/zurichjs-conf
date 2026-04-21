@@ -32,9 +32,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    if (!data.submission_type || !['lightning', 'standard', 'workshop'].includes(data.submission_type)) {
+    if (!data.submission_type || !['lightning', 'standard', 'workshop', 'panel'].includes(data.submission_type)) {
       return res.status(400).json({
-        error: 'Valid submission type is required (lightning, standard, or workshop)',
+        error: 'Valid submission type is required (lightning, standard, workshop, or panel)',
       });
     }
 

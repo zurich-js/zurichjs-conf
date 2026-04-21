@@ -149,7 +149,7 @@ const baseSubmissionSchema = z.object({
     .string()
     .min(100, 'Abstract must be at least 100 characters')
     .max(3000, 'Abstract is too long'),
-  submission_type: z.enum(['lightning', 'standard', 'workshop']),
+  submission_type: z.enum(['lightning', 'standard', 'workshop', 'panel']),
   talk_level: z.enum(['beginner', 'intermediate', 'advanced']),
   tags: z
     .array(z.string())
@@ -199,7 +199,7 @@ const workshopFieldsSchema = z.object({
  * Talk submission schema (lightning or standard)
  */
 export const talkSubmissionSchema = baseSubmissionSchema.extend({
-  submission_type: z.enum(['lightning', 'standard']),
+  submission_type: z.enum(['lightning', 'standard', 'panel']),
 });
 
 export type TalkSubmissionFormData = z.infer<typeof talkSubmissionSchema>;
@@ -447,6 +447,7 @@ export const adminCreateSpeakerSchema = z.object({
   job_title: z.string().optional(),
   company: z.string().optional(),
   bio: z.string().max(2000).optional(),
+  speaker_role: z.enum(['speaker', 'mc']).default('speaker'),
   is_visible: z.boolean().default(true),
 });
 

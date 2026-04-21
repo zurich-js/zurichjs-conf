@@ -128,6 +128,7 @@ export interface AdminCreateSpeakerRequest {
   header_image_url?: string;
   portrait_foreground_url?: string;
   portrait_background_url?: string;
+  speaker_role?: 'speaker' | 'mc';
   is_visible?: boolean;
 }
 
@@ -150,6 +151,7 @@ export interface AdminCreateSessionRequest {
   // Workshop fields
   workshop_duration_hours?: number;
   workshop_max_participants?: number;
+  participant_speaker_ids?: string[];
 }
 
 /**

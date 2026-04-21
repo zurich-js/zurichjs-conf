@@ -66,18 +66,21 @@ export default function SchedulePage({ items }: SchedulePageProps) {
                     key={item.id}
                     item={item}
                     defaultOpen={index === firstPublishedIndex}
-                    placeholderVariant={activeTab === 'warmup' ? 'plain' : 'slot'}
+                    placeholderVariant="plain"
                     expandableSessions
                   />
                 ))
               ) : (
-                <div className="p-4">
-                  <Heading level="h2" variant="light" className="text-lg font-bold">
-                    Sessions are still being finalized
+                <div className="rounded-[1.5rem] border border-dashed border-brand-gray-light bg-brand-white p-8">
+                  <Heading level="h2" variant="light" className="text-xl font-bold">
+                    Schedule will follow
                   </Heading>
-                  <p className="mt-3 text-sm leading-7 text-brand-gray-darkest">
-                    We do not have public sessions for this day yet. Check back in later.
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-brand-gray-darkest">
+                    We are announcing speakers progressively. The timing for this day will appear here once those sessions are ready.
                   </p>
+                  <Button variant="primary" size="sm" className="mt-6" asChild href="/speakers">
+                    Meet the speakers
+                  </Button>
                 </div>
               )}
             </div>
