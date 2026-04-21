@@ -124,7 +124,7 @@ export const aboutPageData: AboutPageData = {
         role: "Full-Stack/Frontend Engineer, UI/UX",
       },
       {
-        imageSrc: "/images/team/bogdan.png",
+        imageSrc: "/images/team/bogdan-v2.png",
         imageAlt: "Bogdan Mihai Ilie",
         name: "Bogdan Mihai Ilie",
         role: "Full-Stack/Frontend Engineer, Advocate, Community builder",
