@@ -21,6 +21,9 @@ import {
 import type { ProgramScheduleItemRecord } from '@/lib/types/program-schedule';
 
 type AdminTab = 'speakers' | 'talks' | 'workshops' | 'schedule';
+type SpeakerFilterKey = 'public' | 'featured' | 'scheduled' | 'notScheduled';
+
+type SpeakerFilters = Record<SpeakerFilterKey, boolean>;
 
 async function fetchSpeakers(): Promise<{ speakers: SpeakerWithSessions[] }> {
   const res = await fetch('/api/admin/cfp/speakers');
@@ -37,6 +40,12 @@ async function fetchProgramSchedule(): Promise<{ items: ProgramScheduleItemRecor
 export default function SpeakersDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>('speakers');
   const [searchQuery, setSearchQuery] = useState('');
+  const [speakerFilters, setSpeakerFilters] = useState<SpeakerFilters>({
+    public: false,
+    featured: false,
+    scheduled: false,
+    notScheduled: false,
+  });
   const [showAddSpeaker, setShowAddSpeaker] = useState(false);
   const [selectedSpeaker, setSelectedSpeaker] = useState<SpeakerWithSessions | null>(null);
   const [showAddSession, setShowAddSession] = useState<string | null>(null);
@@ -71,10 +80,28 @@ export default function SpeakersDashboard() {
     },
     onSuccess: (_data, { isVisible }) => {
       queryClient.invalidateQueries({ queryKey: ['speakers'] });
-      toast.success('Visibility Updated', isVisible ? 'Speaker is now visible on the lineup' : 'Speaker is now hidden from the lineup');
+      toast.success('Public Status Updated', isVisible ? 'Speaker is now public on /speakers' : 'Speaker is now hidden from /speakers');
     },
     onError: () => {
       toast.error('Error', 'Failed to update speaker visibility');
+    },
+  });
+
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ id, isFeatured }: { id: string; isFeatured: boolean }) => {
+      const res = await fetch(`/api/admin/cfp/speakers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_featured: isFeatured }),
+      });
+      if (!res.ok) throw new Error('Failed to update featured status');
+    },
+    onSuccess: (_data, { isFeatured }) => {
+      queryClient.invalidateQueries({ queryKey: ['speakers'] });
+      toast.success('Featured Status Updated', isFeatured ? 'Speaker is now featured on the frontpage' : 'Speaker is no longer featured');
+    },
+    onError: () => {
+      toast.error('Error', 'Failed to update featured status');
     },
   });
 
@@ -97,6 +124,36 @@ export default function SpeakersDashboard() {
 
   const speakers = speakersData?.speakers || [];
   const scheduleItems = scheduleData?.items || [];
+  const scheduledSubmissionIds = new Set(
+    scheduleItems
+      .map((item) => item.submission_id)
+      .filter((submissionId): submissionId is string => Boolean(submissionId))
+  );
+
+  const isSpeakerScheduled = (speaker: SpeakerWithSessions) =>
+    speaker.submissions?.some(
+      (submission) => submission.status === 'accepted' && scheduledSubmissionIds.has(submission.id)
+    ) ?? false;
+
+  const getMissingSpeakerFields = (speaker: SpeakerWithSessions) => {
+    const missing = new Set<string>();
+    const acceptedSpeakerSessions = speaker.submissions?.filter((submission) => submission.status === 'accepted') ?? [];
+
+    if (!speaker.first_name?.trim()) missing.add('first name');
+    if (!speaker.last_name?.trim()) missing.add('last name');
+    if (!speaker.job_title?.trim()) missing.add('job title');
+    if (!speaker.company?.trim()) missing.add('company');
+    if (!speaker.bio?.trim()) missing.add('bio');
+    if (!speaker.profile_image_url?.trim()) missing.add('profile photo');
+    if (acceptedSpeakerSessions.length === 0) missing.add('accepted session');
+
+    for (const session of acceptedSpeakerSessions) {
+      if (!session.title?.trim()) missing.add('session title');
+      if (!session.abstract?.trim()) missing.add('session abstract');
+    }
+
+    return Array.from(missing);
+  };
 
   const confirmedSpeakers = speakers.filter((speaker) => {
     const hasAcceptedSession = speaker.submissions?.some((submission) => submission.status === 'accepted');
@@ -104,6 +161,14 @@ export default function SpeakersDashboard() {
   });
 
   const filteredSpeakers = confirmedSpeakers.filter((speaker) => {
+    if (speakerFilters.public && !speaker.is_visible) return false;
+    if (speakerFilters.featured && !speaker.is_featured) return false;
+
+    const scheduled = isSpeakerScheduled(speaker);
+    const hasAcceptedSession = speaker.submissions?.some((submission) => submission.status === 'accepted') ?? false;
+    if (speakerFilters.scheduled && !scheduled) return false;
+    if (speakerFilters.notScheduled && (!hasAcceptedSession || scheduled)) return false;
+
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -133,6 +198,24 @@ export default function SpeakersDashboard() {
     map.set(item.submission_id, (map.get(item.submission_id) || 0) + 1);
     return map;
   }, new Map<string, number>());
+  const incompleteConfirmedSpeakers = confirmedSpeakers.filter((speaker) => getMissingSpeakerFields(speaker).length > 0);
+  const activeSpeakerFilterCount = Object.values(speakerFilters).filter(Boolean).length;
+
+  const toggleSpeakerFilter = (filter: SpeakerFilterKey) => {
+    setSpeakerFilters((current) => ({
+      ...current,
+      [filter]: !current[filter],
+    }));
+  };
+
+  const clearSpeakerFilters = () => {
+    setSpeakerFilters({
+      public: false,
+      featured: false,
+      scheduled: false,
+      notScheduled: false,
+    });
+  };
 
   const availableScheduleSessions = acceptedSessions.map((submission) => ({
     id: submission.id,
@@ -180,9 +263,9 @@ export default function SpeakersDashboard() {
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 sm:py-8">
           <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             <StatCard label="Total Speakers" value={confirmedSpeakers.length} />
-            <StatCard label="Accepted Talks" value={talks.length} valueClassName="text-blue-600" />
-            <StatCard label="Accepted Workshops" value={workshops.length} valueClassName="text-purple-600" />
-            <StatCard label="Schedule Rows" value={scheduleItems.length} valueClassName="text-green-600" />
+            <StatCard label="Public Speakers" value={confirmedSpeakers.filter((speaker) => speaker.is_visible).length} valueClassName="text-green-600" />
+            <StatCard label="Featured Speakers" value={confirmedSpeakers.filter((speaker) => speaker.is_featured).length} valueClassName="text-yellow-600" />
+            <StatCard label="Needs Profile" value={incompleteConfirmedSpeakers.length} valueClassName="text-red-600" />
           </div>
 
           <div className="mb-6">
@@ -208,40 +291,71 @@ export default function SpeakersDashboard() {
             </div>
           </div>
 
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={activeTab === 'schedule' ? 'Search schedule rows...' : 'Search speakers or sessions...'}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271]"
-            />
+          <div className="mb-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={activeTab === 'schedule' ? 'Search schedule rows...' : 'Search speakers or sessions...'}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-[#F1E271]"
+              />
+
+              {activeTab === 'speakers' ? (
+                <button
+                  onClick={() => setShowAddSpeaker(true)}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#F1E271] px-4 py-2 font-semibold text-black transition-all hover:bg-[#e8d95e]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Speaker
+                </button>
+              ) : activeTab === 'schedule' ? (
+                <button
+                  onClick={() => {
+                    setSelectedScheduleItem(null);
+                    setInitialScheduleSubmissionId(null);
+                    setShowScheduleModal(true);
+                  }}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#F1E271] px-4 py-2 font-semibold text-black transition-all hover:bg-[#e8d95e]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Schedule Item
+                </button>
+              ) : null}
+            </div>
 
             {activeTab === 'speakers' ? (
-              <button
-                onClick={() => setShowAddSpeaker(true)}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#F1E271] px-4 py-2 font-semibold text-black transition-all hover:bg-[#e8d95e]"
-              >
-                <Plus className="h-4 w-4" />
-                Add Speaker
-              </button>
-            ) : activeTab === 'schedule' ? (
-              <button
-                onClick={() => {
-                  setSelectedScheduleItem(null);
-                  setInitialScheduleSubmissionId(null);
-                  setShowScheduleModal(true);
-                }}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#F1E271] px-4 py-2 font-semibold text-black transition-all hover:bg-[#e8d95e]"
-              >
-                <Plus className="h-4 w-4" />
-                Add Schedule Item
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterButton active={speakerFilters.public} onClick={() => toggleSpeakerFilter('public')}>
+                  Public
+                </FilterButton>
+                <FilterButton active={speakerFilters.featured} onClick={() => toggleSpeakerFilter('featured')}>
+                  Featured
+                </FilterButton>
+                <FilterButton active={speakerFilters.scheduled} onClick={() => toggleSpeakerFilter('scheduled')}>
+                  Scheduled
+                </FilterButton>
+                <FilterButton active={speakerFilters.notScheduled} onClick={() => toggleSpeakerFilter('notScheduled')}>
+                  Not Scheduled
+                </FilterButton>
+                {activeSpeakerFilterCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={clearSpeakerFilters}
+                    className="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-black"
+                  >
+                    Clear filters
+                  </button>
+                ) : null}
+                <span className="text-sm text-gray-500">
+                  {filteredSpeakers.length} of {confirmedSpeakers.length} speakers
+                </span>
+              </div>
             ) : null}
           </div>
 
           {activeTab === 'speakers' ? (
-            isLoadingSpeakers ? (
+            isLoadingSpeakers || isLoadingSchedule ? (
               <LoadingBlock />
             ) : (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -250,9 +364,12 @@ export default function SpeakersDashboard() {
                     key={speaker.id}
                     speaker={speaker}
                     onToggleVisibility={(id, isVisible) => toggleVisibilityMutation.mutate({ id, isVisible })}
+                    onToggleFeatured={(id, isFeatured) => toggleFeaturedMutation.mutate({ id, isFeatured })}
                     onAddSession={(speakerId) => setShowAddSession(speakerId)}
                     onEdit={(entry) => setSelectedSpeaker(entry)}
                     isTogglingVisibility={toggleVisibilityMutation.isPending}
+                    isTogglingFeatured={toggleFeaturedMutation.isPending}
+                    isIncomplete={getMissingSpeakerFields(speaker).length > 0}
                   />
                 ))}
               </div>
@@ -444,6 +561,30 @@ function StatCard({ label, value, valueClassName = 'text-black' }: { label: stri
       <p className="mb-1 text-sm text-gray-500">{label}</p>
       <p className={`text-2xl font-bold ${valueClassName}`}>{value}</p>
     </div>
+  );
+}
+
+function FilterButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`cursor-pointer rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+        active
+          ? 'border-black bg-black text-white'
+          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-black'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

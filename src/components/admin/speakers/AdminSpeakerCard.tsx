@@ -3,15 +3,18 @@
  * Display a speaker with their sessions in the grid
  */
 
-import { User, Plus } from 'lucide-react';
+import { Plus, User } from 'lucide-react';
 import type { SpeakerWithSessions, Session } from './types';
 
 interface AdminSpeakerCardProps {
   speaker: SpeakerWithSessions;
   onToggleVisibility: (id: string, isVisible: boolean) => void;
+  onToggleFeatured: (id: string, isFeatured: boolean) => void;
   onAddSession: (speakerId: string) => void;
   onEdit: (speaker: SpeakerWithSessions) => void;
   isTogglingVisibility: boolean;
+  isTogglingFeatured: boolean;
+  isIncomplete: boolean;
 }
 
 function SessionTypeBadge({ type }: { type: string }) {
@@ -40,58 +43,117 @@ function SessionItem({ session }: { session: Session }) {
   );
 }
 
+function ToggleButton({
+  label,
+  checked,
+  onClick,
+  disabled,
+  activeClassName,
+  title,
+}: {
+  label: string;
+  checked: boolean;
+  onClick: () => void;
+  disabled: boolean;
+  activeClassName: string;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[11px] font-medium text-gray-500">{label}</span>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${
+          checked ? activeClassName : 'bg-gray-300'
+        }`}
+        title={title}
+      >
+        <span
+          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+            checked ? 'translate-x-5' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 export function AdminSpeakerCard({
   speaker,
   onToggleVisibility,
+  onToggleFeatured,
   onAddSession,
   onEdit,
   isTogglingVisibility,
+  isTogglingFeatured,
+  isIncomplete,
 }: AdminSpeakerCardProps) {
   const acceptedSessions = speaker.submissions?.filter((s) => s.status === 'accepted') || [];
+  const isPublishRisk = isIncomplete && (speaker.is_visible || speaker.is_featured);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className={`overflow-hidden rounded-xl border bg-white shadow-sm ${
+      isPublishRisk ? 'border-red-300 ring-1 ring-red-100' : isIncomplete ? 'border-yellow-300' : 'border-gray-200'
+    }`}>
       {/* Speaker Header */}
       <div className="p-4 border-b border-gray-100">
-        <div className="flex items-start gap-4">
-          {speaker.profile_image_url ? (
-            <img
-              src={speaker.profile_image_url}
-              alt={`${speaker.first_name} ${speaker.last_name}`}
-              className="w-16 h-16 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="w-8 h-8 text-gray-400" />
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-4">
+            {speaker.profile_image_url ? (
+              <img
+                src={speaker.profile_image_url}
+                alt={`${speaker.first_name} ${speaker.last_name}`}
+                className="w-16 h-16 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-16 h-16 shrink-0 rounded-full bg-gray-200 flex items-center justify-center">
+                <User className="w-8 h-8 text-gray-400" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <h3 className="font-semibold text-black truncate">
+                {speaker.first_name} {speaker.last_name}
+              </h3>
+              {speaker.job_title && (
+                <p className="text-sm text-gray-500 truncate">{speaker.job_title}</p>
+              )}
+              {speaker.company && (
+                <p className="text-sm text-gray-400 truncate">{speaker.company}</p>
+              )}
             </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-black truncate">
-              {speaker.first_name} {speaker.last_name}
-            </h3>
-            {speaker.job_title && (
-              <p className="text-sm text-gray-500 truncate">{speaker.job_title}</p>
-            )}
-            {speaker.company && (
-              <p className="text-sm text-gray-400 truncate">{speaker.company}</p>
-            )}
           </div>
-          {/* Visibility Toggle */}
-          <button
-            onClick={() => onToggleVisibility(speaker.id, !speaker.is_visible)}
-            disabled={isTogglingVisibility}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
-              speaker.is_visible ? 'bg-green-500' : 'bg-gray-300'
-            }`}
-            title={speaker.is_visible ? 'Visible on lineup' : 'Hidden from lineup'}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                speaker.is_visible ? 'translate-x-6' : 'translate-x-1'
-              }`}
+
+          <div className="flex shrink-0 flex-col items-end gap-2 sm:items-end">
+            <ToggleButton
+              label="Public"
+              checked={speaker.is_visible}
+              onClick={() => onToggleVisibility(speaker.id, !speaker.is_visible)}
+              disabled={isTogglingVisibility}
+              activeClassName="bg-green-500"
+              title={speaker.is_visible ? 'Public on /speakers' : 'Hidden from /speakers'}
             />
-          </button>
+            <ToggleButton
+              label="Featured"
+              checked={speaker.is_featured}
+              onClick={() => onToggleFeatured(speaker.id, !speaker.is_featured)}
+              disabled={isTogglingFeatured}
+              activeClassName="bg-[#F1E271]"
+              title={speaker.is_featured ? 'Featured on the frontpage speaker strip' : 'Not featured on the frontpage'}
+            />
+          </div>
         </div>
+
+        {isIncomplete ? (
+          <div className="mt-4">
+            <span className={`rounded px-2 py-1 text-xs font-medium ${
+              isPublishRisk ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+            }`}>
+              Incomplete
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {/* Sessions */}

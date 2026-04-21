@@ -37,6 +37,26 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const portraitForegroundInputRef = React.useRef<HTMLInputElement>(null);
   const portraitBackgroundInputRef = React.useRef<HTMLInputElement>(null);
+  const acceptedSessions = speaker.submissions?.filter((submission) => submission.status === 'accepted') ?? [];
+  const missingFields = {
+    first_name: !formData.first_name.trim(),
+    last_name: !formData.last_name.trim(),
+    job_title: !formData.job_title.trim(),
+    company: !formData.company.trim(),
+    bio: !formData.bio.trim(),
+    profile_image_url: !profileImageUrl?.trim(),
+    accepted_session: acceptedSessions.length === 0,
+    session_title: acceptedSessions.some((session) => !session.title?.trim()),
+    session_abstract: acceptedSessions.some((session) => !session.abstract?.trim()),
+  };
+
+  const inputClass = (isMissing: boolean, extra = '') =>
+    `w-full px-3 py-2 border rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none ${
+      isMissing ? 'border-red-400 bg-red-50' : 'border-gray-300'
+    } ${extra}`;
+
+  const labelClass = (isMissing: boolean, extra = 'text-sm') =>
+    `block ${extra} font-medium mb-1 ${isMissing ? 'text-red-700' : 'text-black'}`;
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -121,13 +141,15 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
             <h4 className="text-sm font-semibold text-black mb-3">Speaker Images</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <p className="text-xs font-medium text-gray-600">Profile photo</p>
+                <p className={`text-xs font-medium ${missingFields.profile_image_url ? 'text-red-700' : 'text-gray-600'}`}>Profile photo</p>
                 <div className="flex items-center gap-3">
                   {profileImageUrl ? (
                     <img src={profileImageUrl} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                      <User className="w-8 h-8 text-gray-400" />
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                      missingFields.profile_image_url ? 'bg-red-50 ring-2 ring-red-300' : 'bg-gray-200'
+                    }`}>
+                      <User className={`w-8 h-8 ${missingFields.profile_image_url ? 'text-red-400' : 'text-gray-400'}`} />
                     </div>
                   )}
                   <div>
@@ -214,55 +236,61 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-black mb-1">First Name</label>
+              <label className={labelClass(missingFields.first_name)}>First Name</label>
               <input
                 type="text"
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                className={inputClass(missingFields.first_name)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-black mb-1">Last Name</label>
+              <label className={labelClass(missingFields.last_name)}>Last Name</label>
               <input
                 type="text"
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                className={inputClass(missingFields.last_name)}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-black mb-1">Job Title</label>
+              <label className={labelClass(missingFields.job_title)}>Job Title</label>
               <input
                 type="text"
                 value={formData.job_title}
                 onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                className={inputClass(missingFields.job_title)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-black mb-1">Company</label>
+              <label className={labelClass(missingFields.company)}>Company</label>
               <input
                 type="text"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                className={inputClass(missingFields.company)}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-black mb-1">Bio</label>
+            <label className={labelClass(missingFields.bio)}>Bio</label>
             <textarea
               rows={3}
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+              className={inputClass(missingFields.bio)}
             />
           </div>
+
+          {(missingFields.accepted_session || missingFields.session_title || missingFields.session_abstract) ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+              Session details need attention before this profile is ready.
+            </div>
+          ) : null}
 
           <div className="border-t border-gray-200 pt-4">
             <h4 className="text-sm font-semibold text-black mb-3">Social Links</h4>
@@ -273,7 +301,7 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
                   type="url"
                   value={formData.linkedin_url}
                   onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                  className={inputClass(false, 'text-sm')}
                 />
               </div>
               <div>
@@ -282,7 +310,7 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
                   type="url"
                   value={formData.github_url}
                   onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                  className={inputClass(false, 'text-sm')}
                 />
               </div>
               <div>
@@ -291,7 +319,7 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
                   type="text"
                   value={formData.twitter_handle}
                   onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                  className={inputClass(false, 'text-sm')}
                 />
               </div>
               <div>
@@ -300,7 +328,16 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
                   type="text"
                   value={formData.bluesky_handle}
                   onChange={(e) => setFormData({ ...formData, bluesky_handle: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black text-sm focus:ring-2 focus:ring-[#F1E271] focus:outline-none"
+                  className={inputClass(false, 'text-sm')}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Mastodon Handle</label>
+                <input
+                  type="text"
+                  value={formData.mastodon_handle}
+                  onChange={(e) => setFormData({ ...formData, mastodon_handle: e.target.value })}
+                  className={inputClass(false, 'text-sm')}
                 />
               </div>
             </div>

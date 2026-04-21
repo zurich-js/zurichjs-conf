@@ -21,6 +21,7 @@ export interface Speaker {
   portrait_foreground_url: string | null;
   portrait_background_url: string | null;
   is_visible: boolean;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
 }

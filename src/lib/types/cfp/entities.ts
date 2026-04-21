@@ -44,6 +44,7 @@ export interface CfpSpeaker {
   special_requirements: string | null; // Accessibility needs, dietary restrictions, etc.
   company_interested_in_sponsoring: boolean | null;
   is_visible: boolean;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
 }
