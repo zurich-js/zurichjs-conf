@@ -15,9 +15,9 @@ export const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
   imageAlt,
 }) => {
   return (
-    <div>
+    <div className="mx-auto w-full max-w-[240px]">
       <div
-        className="mb-4 bg-gradient-to-tr from-brand-primary to-brand-dark rounded-lg aspect-square"
+        className="mb-4 aspect-square rounded-lg bg-gradient-to-tr from-brand-primary to-brand-dark"
       >
         <Image
           src={imageSrc || '/images/placeholder-profile.png'}

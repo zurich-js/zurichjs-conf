@@ -88,7 +88,7 @@ export default function AboutUs() {
         <p className="text-base text-gray-700 leading-relaxed mb-12 max-w-3xl">
           {aboutPageData.team.description}
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
           {aboutPageData.team.members.map((member, index) => (
             <TeamMemberCard
               key={index}
