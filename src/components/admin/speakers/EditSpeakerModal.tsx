@@ -99,15 +99,27 @@ export function EditSpeakerModal({ speaker, onClose, onUpdated }: EditSpeakerMod
     setError('');
 
     try {
+      const updates: Record<string, string | null> = {};
+      for (const [key, value] of Object.entries(formData)) {
+        const originalValue = speaker[key as keyof typeof formData] ?? '';
+        if (value !== originalValue) {
+          updates[key] = value;
+        }
+      }
+      if (profileImageUrl !== speaker.profile_image_url) {
+        updates.profile_image_url = profileImageUrl;
+      }
+      if (portraitForegroundUrl !== speaker.portrait_foreground_url) {
+        updates.portrait_foreground_url = portraitForegroundUrl;
+      }
+      if (portraitBackgroundUrl !== speaker.portrait_background_url) {
+        updates.portrait_background_url = portraitBackgroundUrl;
+      }
+
       const res = await fetch(`/api/admin/cfp/speakers/${speaker.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          profile_image_url: profileImageUrl,
-          portrait_foreground_url: portraitForegroundUrl,
-          portrait_background_url: portraitBackgroundUrl,
-        }),
+        body: JSON.stringify(updates),
       });
 
       if (!res.ok) {

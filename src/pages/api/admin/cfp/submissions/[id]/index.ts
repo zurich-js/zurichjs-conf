@@ -168,38 +168,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updateData.workshop_max_participants = null;
       }
 
-      if (Object.keys(updateData).length === 0) {
+      const hasParticipantUpdate = Array.isArray(participant_speaker_ids);
+      if (Object.keys(updateData).length === 0 && !hasParticipantUpdate) {
         return res.status(400).json({ error: 'No fields to update' });
       }
 
-      const { data, error } = await supabase
-        .from('cfp_submissions')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = Object.keys(updateData).length > 0
+        ? await supabase
+          .from('cfp_submissions')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single()
+        : await supabase
+          .from('cfp_submissions')
+          .select('*')
+          .eq('id', id)
+          .single();
 
       if (error) {
         log.error('Error updating submission', error, { submissionId: id });
         return res.status(500).json({ error: 'Failed to update submission' });
       }
 
-      if (Array.isArray(participant_speaker_ids)) {
-        const { data: submissionOwner, error: ownerError } = await supabase
-          .from('cfp_submissions')
-          .select('speaker_id')
-          .eq('id', id)
-          .single();
-
-        if (ownerError || !submissionOwner) {
-          return res.status(404).json({ error: 'Submission not found' });
-        }
-
+      if (hasParticipantUpdate) {
         const uniqueParticipantIds = Array.from(new Set(
           participant_speaker_ids.filter((speakerId: unknown): speakerId is string =>
-            typeof speakerId === 'string' && speakerId !== submissionOwner.speaker_id
+            typeof speakerId === 'string' && speakerId !== data.speaker_id
           )
         ));
+        const participantRole = data.submission_type === 'panel' ? 'panelist' : 'speaker';
 
         const { error: deleteParticipantsError } = await supabase
           .from('cfp_submission_speakers')
@@ -217,7 +215,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .insert(uniqueParticipantIds.map((speakerId) => ({
               submission_id: id,
               speaker_id: speakerId,
-              role: submission_type === 'panel' ? 'panelist' : 'speaker',
+              role: participantRole,
             })));
 
           if (insertParticipantsError) {

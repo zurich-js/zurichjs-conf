@@ -96,9 +96,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const sanitizedUpdates: Record<string, string | boolean | null> = {};
       for (const [key, value] of Object.entries(updates)) {
-        if (allowedFields.includes(key)) {
+        if (allowedFields.includes(key) && value !== undefined) {
           sanitizedUpdates[key] = value === '' ? null : value;
         }
+      }
+
+      if (
+        sanitizedUpdates.speaker_role !== undefined &&
+        sanitizedUpdates.speaker_role !== 'speaker' &&
+        sanitizedUpdates.speaker_role !== 'mc'
+      ) {
+        return res.status(400).json({ error: 'Invalid speaker role' });
       }
 
       if (Object.keys(sanitizedUpdates).length === 0) {
@@ -117,7 +125,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (error) {
         log.error('Error updating speaker', error, { speakerId: id });
-        return res.status(500).json({ error: 'Failed to update speaker' });
+        return res.status(500).json({
+          error: 'Failed to update speaker',
+          details: error.message,
+        });
       }
 
       log.info('Speaker updated', { speakerId: id });

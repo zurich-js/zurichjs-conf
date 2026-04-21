@@ -156,7 +156,10 @@ export async function updateSpeaker(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update speaker');
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.details || body?.error || 'Failed to update speaker');
+  }
   return res.json();
 }
 
