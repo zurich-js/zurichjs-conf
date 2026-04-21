@@ -142,8 +142,18 @@ export const aboutPageData: AboutPageData = {
     volunteers: [
       "Aleksej Dix",
       "Aldous Waites",
+      "Arnau Manyosa",
+      "Ameet Madan",
+      "Diana Ilie",
+      "Efstathios Tantalidis",
+      "Gianpierre Fernandez",
+      "Giovanni Jiayi Hu",
       "Hugo Sousa",
       "Jan Schwarzkopf",
+      "Maximilian Walterskirchen",
+      "Oleh Vdovenko",
+      "Renan Oliveira",
+      "Saurav Tiru",
     ],
   },
   venue: {
