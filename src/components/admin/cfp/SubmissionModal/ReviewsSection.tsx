@@ -1,12 +1,11 @@
 /**
  * Reviews Section Component
- * Simplified committee reviews with copy-as-prompt for feedback generation
+ * Simplified committee reviews with copy options for feedback generation
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Loader2, Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
-import type { CfpReviewWithReviewer } from '@/lib/types/cfp-admin';
-import type { CfpAdminSubmission } from '@/lib/types/cfp-admin';
+import type { CfpReviewWithReviewer, CfpAdminSubmission } from '@/lib/types/cfp-admin';
 
 interface AggregateScores {
   overall: number | null;
@@ -35,49 +34,75 @@ function formatScore(value: number | null): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-function buildPrompt(submission: CfpAdminSubmission, reviews: CfpReviewWithReviewer[]): string {
-  const reviewBlocks = reviews.map((r, i) => {
-    const scores = [
-      `Overall: ${formatScore(r.score_overall)}/5`,
-      `Relevance: ${formatScore(r.score_relevance)}/5`,
-      `Technical Depth: ${formatScore(r.score_technical_depth)}/5`,
-      `Clarity: ${formatScore(r.score_clarity)}/5`,
-      `Originality: ${formatScore(r.score_diversity)}/5`,
-    ].join(', ');
+function buildReviewBlock(r: CfpReviewWithReviewer, i: number): string {
+  const scores = [
+    `Overall: ${formatScore(r.score_overall)}/5`,
+    `Relevance: ${formatScore(r.score_relevance)}/5`,
+    `Technical Depth: ${formatScore(r.score_technical_depth)}/5`,
+    `Clarity: ${formatScore(r.score_clarity)}/5`,
+    `Originality: ${formatScore(r.score_diversity)}/5`,
+  ].join(', ');
 
-    let block = `Review ${i + 1}:\nScores: ${scores}`;
-    if (r.private_notes) block += `\nCommittee notes: ${r.private_notes}`;
-    if (r.feedback_to_speaker) block += `\nFeedback to speaker: ${r.feedback_to_speaker}`;
-    return block;
-  }).join('\n\n');
+  let block = `Review ${i + 1}:\nScores: ${scores}`;
+  if (r.private_notes) block += `\nCommittee notes: ${r.private_notes}`;
+  if (r.feedback_to_speaker) block += `\nFeedback to speaker: ${r.feedback_to_speaker}`;
+  return block;
+}
 
-  return `I need to write a constructive, encouraging feedback summary to send to a conference speaker about their CFP submission. Write it as a short email paragraph — warm but honest, highlighting strengths and suggesting improvements.
+function buildRawContext(submission: CfpAdminSubmission, reviews: CfpReviewWithReviewer[]): string {
+  const reviewBlocks = reviews.map((r, i) => buildReviewBlock(r, i)).join('\n\n');
 
-Talk title: ${submission.title}
+  return `Talk title: ${submission.title}
+Speaker: ${submission.speaker?.first_name} ${submission.speaker?.last_name}
 Talk type: ${submission.submission_type} (${submission.talk_level})
 Abstract: ${submission.abstract}
 
 ${reviews.length} committee reviews:
 
-${reviewBlocks}
+${reviewBlocks}`;
+}
 
-Write a 2-3 paragraph feedback summary that:
+function buildFullPrompt(submission: CfpAdminSubmission, reviews: CfpReviewWithReviewer[]): string {
+  return `I need to write a personalized, constructive feedback email to send to a conference speaker about their CFP submission. I'm writing this on behalf of the review committee.
+
+${buildRawContext(submission, reviews)}
+
+Write a 2-3 paragraph feedback email that:
 - Thanks them for submitting
 - Highlights what reviewers liked
 - Gives constructive suggestions from the feedback
 - Is encouraging regardless of acceptance/rejection
 - Does NOT reveal individual reviewer identities or exact scores
-- Speaks as "the review committee" (not "I")`;
+- Is written from "I" on behalf of the committee (not "we the committee")
+- Feels personal, not templated`;
 }
 
 export function ReviewsSection({ reviews, isLoading, aggregateScores, submission }: ReviewsSectionProps) {
-  const [copied, setCopied] = useState(false);
+  const [copiedType, setCopiedType] = useState<'raw' | 'prompt' | null>(null);
+  const [showCopyMenu, setShowCopyMenu] = useState(false);
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const handleCopyPrompt = () => {
-    navigator.clipboard.writeText(buildPrompt(submission, reviews));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowCopyMenu(false);
+      }
+    }
+    if (showCopyMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCopyMenu]);
+
+  const handleCopy = (type: 'raw' | 'prompt') => {
+    const text = type === 'raw'
+      ? buildRawContext(submission, reviews)
+      : buildFullPrompt(submission, reviews);
+    navigator.clipboard.writeText(text);
+    setCopiedType(type);
+    setShowCopyMenu(false);
+    setTimeout(() => setCopiedType(null), 2000);
   };
 
   const toggleReview = (id: string) => {
@@ -94,13 +119,38 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores, submission
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-xs font-bold text-black uppercase tracking-wide">Committee Reviews</h4>
         {reviews.length > 0 && (
-          <button
-            onClick={handleCopyPrompt}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copied!' : 'Copy as prompt'}
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowCopyMenu((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              {copiedType ? (
+                <Check className="w-3.5 h-3.5 text-green-600" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+              {copiedType ? 'Copied!' : 'Copy for AI'}
+              <ChevronDown className="w-3 h-3 text-gray-400" />
+            </button>
+            {showCopyMenu && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+                <button
+                  onClick={() => handleCopy('raw')}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <p className="text-sm font-medium text-black">Raw review data</p>
+                  <p className="text-xs text-gray-500">Scores & feedback as context for your own prompt</p>
+                </button>
+                <button
+                  onClick={() => handleCopy('prompt')}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <p className="text-sm font-medium text-black">Full prompt</p>
+                  <p className="text-xs text-gray-500">Ready-made prompt to generate a feedback email</p>
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -126,7 +176,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores, submission
             </div>
           )}
 
-          {/* Individual Reviews - collapsed by default, show only score + feedback preview */}
+          {/* Individual Reviews */}
           {reviews.map((review) => {
             const isExpanded = expandedReviews.has(review.id);
             const hasFeedback = review.feedback_to_speaker || review.private_notes;
@@ -162,7 +212,6 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores, submission
 
                 {isExpanded && (
                   <div className="px-3 pb-3 space-y-2 border-t border-gray-100 pt-2">
-                    {/* Score chips */}
                     <div className="flex items-center gap-2 flex-wrap">
                       <ScoreChip label="Relevance" value={review.score_relevance} />
                       <ScoreChip label="Depth" value={review.score_technical_depth} />
