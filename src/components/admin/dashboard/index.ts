@@ -20,4 +20,3 @@ export type { TicketDetailsModalProps } from './TicketDetailsModal';
 export { IssueTicketTab } from './IssueTicketTab';
 export { TicketsTab } from './TicketsTab';
 export { FinancialsTab } from './FinancialsTab';
-export { AttendeeAnalyticsTab } from './attendee-analytics';
