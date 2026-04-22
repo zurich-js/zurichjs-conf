@@ -63,6 +63,17 @@ function percentileColor(value: number | null): string {
   return 'text-red-700 bg-red-50 border-red-200';
 }
 
+/**
+ * One-word description of how much reviewers disagreed.
+ * Based on standard deviation on a 1–5 scale.
+ */
+function agreementLabel(stddev: number | null): { label: string; tone: string } {
+  if (stddev === null) return { label: '—', tone: 'text-gray-500' };
+  if (stddev < 0.5) return { label: 'Aligned', tone: 'text-green-600' };
+  if (stddev < 1) return { label: 'Some disagreement', tone: 'text-yellow-600' };
+  return { label: 'Polarising', tone: 'text-red-600' };
+}
+
 function AggregateRow({ aggregate, reviewCount }: { aggregate: SpeakerFeedbackAggregate; reviewCount: number }) {
   const items: Array<{ label: string; value: number | null }> = [
     { label: 'Overall', value: aggregate.overall },
@@ -179,7 +190,7 @@ function AnalyticsRow({
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       <div
         className={`rounded-lg border p-2 text-center ${percentileColor(analytics.percentile)}`}
-        title={`This submission's mean Overall score ranks above ${formatPercent(analytics.percentile)} of the ${analytics.cohort_size} cohort submissions. Higher is better. 75%+ = strong, 50–75% = middle of pack, under 50% = bottom half.`}
+        title={`Ranks above ${formatPercent(analytics.percentile)} of the ${analytics.cohort_size} reviewed talks. Higher = better.`}
       >
         <p className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide">
           <TrendingUp className="h-3 w-3" />
@@ -190,7 +201,7 @@ function AnalyticsRow({
       </div>
       <div
         className="rounded-lg border border-gray-200 bg-white p-2 text-center"
-        title={`${reviewCount} reviewer${reviewCount === 1 ? '' : 's'} scored this submission. The cohort contains ${analytics.cohort_size} submissions for comparison. Low review counts mean a weaker signal.`}
+        title={`${reviewCount} reviewer${reviewCount === 1 ? '' : 's'} scored this talk. ${analytics.cohort_size} talks reviewed overall. Low counts = weaker signal.`}
       >
         <p className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-gray-500">
           <Users className="h-3 w-3" />
@@ -198,26 +209,31 @@ function AnalyticsRow({
         </p>
         <p className="text-sm font-bold text-black">{reviewCount}</p>
         <p className="text-[10px] text-gray-500">
-          of {analytics.cohort_size || '—'} in cohort
+          of {analytics.cohort_size || '—'} reviewed
         </p>
       </div>
+      {(() => {
+        const agreement = agreementLabel(analytics.score_stddev);
+        const rangeText =
+          analytics.score_min !== null && analytics.score_max !== null
+            ? `${formatScore(analytics.score_min)} → ${formatScore(analytics.score_max)}`
+            : '—';
+        return (
+          <div
+            className="rounded-lg border border-gray-200 bg-white p-2 text-center"
+            title={`Reviewers' Overall scores ranged from ${formatScore(analytics.score_min)} to ${formatScore(analytics.score_max)}. On a 1–5 scale: σ <0.5 means reviewers agreed, 0.5–1 means mixed, 1+ means polarising — read the individual reviews.`}
+          >
+            <p className="text-[10px] uppercase tracking-wide text-gray-500">Agreement</p>
+            <p className={`text-sm font-bold ${agreement.tone}`}>{agreement.label}</p>
+            <p className="text-[10px] text-gray-500">
+              scores {rangeText}
+            </p>
+          </div>
+        );
+      })()}
       <div
         className="rounded-lg border border-gray-200 bg-white p-2 text-center"
-        title="Lowest–highest Overall score from any reviewer. σ is the standard deviation — a small σ means reviewers agreed, a large σ means the submission was polarising and is worth a closer look before acting on the average."
-      >
-        <p className="text-[10px] uppercase tracking-wide text-gray-500">Spread</p>
-        <p className="text-sm font-bold text-black">
-          {analytics.score_min !== null && analytics.score_max !== null
-            ? `${formatScore(analytics.score_min)}–${formatScore(analytics.score_max)}`
-            : '—'}
-        </p>
-        <p className="text-[10px] text-gray-500">
-          σ {analytics.score_stddev !== null ? analytics.score_stddev.toFixed(2) : '—'}
-        </p>
-      </div>
-      <div
-        className="rounded-lg border border-gray-200 bg-white p-2 text-center"
-        title={`${analytics.feedback_written_count} of ${reviewCount} reviewer${reviewCount === 1 ? '' : 's'} left written notes or feedback (not just scores). Low coverage means you have less qualitative signal to explain the outcome.`}
+        title={`${analytics.feedback_written_count} of ${reviewCount} reviewer${reviewCount === 1 ? '' : 's'} left written notes (not just scores). Low = less to share with the speaker.`}
       >
         <p className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-gray-500">
           <PenLine className="h-3 w-3" />
@@ -479,43 +495,30 @@ function AnalyticsHelp() {
         {open ? 'Hide help' : 'How to read these'}
       </button>
       {open && (
-        <div className="mt-2 space-y-2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700">
+        <div className="mt-2 space-y-1.5 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700">
           <p>
-            <strong className="text-black">Cohort</strong> = every CFP submission that has reached
-            the review pool this year (i.e. status is <em>submitted</em>, <em>under review</em>,{' '}
-            <em>shortlisted</em>, <em>accepted</em>, <em>rejected</em>, or <em>waitlisted</em>).
-            Drafts and withdrawn entries are excluded because they carry no committee signal.
-            Numbers like <em>n = 42</em> refer to how many cohort submissions contributed to the
-            comparison.
+            <strong className="text-black">Percentile</strong> — rank vs. other reviewed talks.
+            80% = better than 80% of them. Green ≥75, yellow ≥50, red below.
           </p>
           <p>
-            <strong className="text-black">Percentile</strong> shows where this submission&apos;s
-            <em> average Overall score </em>sits compared to the rest of the cohort.{' '}
-            <em>80%</em> means the submission scored higher than 80% of the cohort. Ties are split
-            in half. Higher is better — the badge colours green at <em>≥75%</em>, yellow at{' '}
-            <em>≥50%</em>, red below that. It&apos;s a ranking, not a quality score — a 60th
-            percentile in a strong year still means the talk is above average.
+            <strong className="text-black">Agreement</strong> — did reviewers agree on this talk?
+            Scores 1 → 2 means the lowest reviewer gave it 1 and the highest gave it 2.{' '}
+            <em>Aligned</em> = reviewers scored within ~0.5 of each other.{' '}
+            <em>Some disagreement</em> = mixed. <em>Polarising</em> = big split, read the
+            individual reviews instead of trusting the average.
           </p>
           <p>
-            <strong className="text-black">Spread &amp; σ</strong> describe how much the reviewers{' '}
-            <em>disagreed</em> on this submission. <em>Spread</em> is the lowest Overall score
-            paired with the highest. <em>σ</em> (standard deviation) is the single-number version —
-            small σ = reviewers agreed, large σ = polarising. A great talk with everyone at 4 looks
-            very different from a 2–5 split even if the average is the same; the split deserves a
-            closer read.
+            <strong className="text-black">Reviews / Written</strong> — how many reviewers scored
+            it, and how many left notes. Low numbers = weaker signal.
           </p>
           <p>
-            <strong className="text-black">Reviews</strong> shows how many reviewers covered this
-            submission (and what share of the reviewer pool that represents).{' '}
-            <strong className="text-black">Written</strong> shows how many of those reviewers
-            actually left a note — low coverage or low written share weakens the signal and is worth
-            flagging before sharing feedback with the speaker.
+            <strong className="text-black">Tags</strong> — topic plus how many other talks share
+            it. Orange = 5+ competitors on that topic.
           </p>
-          <p>
-            <strong className="text-black">Tag chips</strong> show the topic plus{' '}
-            <em>how many other submissions</em> share that tag. Chips turn orange when ≥5 other
-            submissions compete on the same topic — useful context when explaining why a good talk
-            didn&apos;t make the cut.
+          <p className="text-[11px] text-gray-500">
+            &quot;n&quot; and &quot;reviewed avg&quot; only count talks that already have at least
+            one reviewer score — you can&apos;t compare against an unreviewed talk. Drafts and
+            withdrawn submissions are excluded.
           </p>
         </div>
       )}
@@ -627,20 +630,20 @@ export function SpeakerFeedbackPanel({
           </div>
           <div
             className={`rounded-lg border p-2 text-center ${percentileColor(overall.percentile)}`}
-            title="Where this speaker's mean Overall score ranks among all cohort submissions. Higher is better."
+            title="How this speaker's average ranks vs. other reviewed talks. Higher = better."
           >
             <p className="text-[10px] uppercase">Percentile</p>
             <p className="text-lg font-bold sm:text-xl">{formatPercent(overall.percentile)}</p>
           </div>
           <div
             className="rounded-lg bg-white p-2 text-center border border-gray-200"
-            title="Mean Overall score of the whole cohort — all CFP submissions currently in the review pool (drafts and withdrawn excluded)"
+            title="Average Overall score across all talks that have been reviewed so far (drafts and withdrawn excluded)."
           >
-            <p className="text-[10px] uppercase text-gray-500">Cohort avg</p>
+            <p className="text-[10px] uppercase text-gray-500">Reviewed avg</p>
             <p className={`text-lg font-bold sm:text-xl ${scoreColor(overall.cohort_avg)}`}>
               {formatScore(overall.cohort_avg)}
             </p>
-            <p className="text-[10px] text-gray-500">n = {overall.cohort_size}</p>
+            <p className="text-[10px] text-gray-500">n = {overall.cohort_size} reviewed</p>
           </div>
         </div>
       </div>
