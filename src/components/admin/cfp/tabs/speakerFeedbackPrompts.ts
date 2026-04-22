@@ -9,7 +9,6 @@
 
 import type {
   SpeakerFeedbackResponse,
-  SpeakerFeedbackReview,
   SpeakerFeedbackSubmission,
 } from '@/lib/types/cfp-admin';
 
@@ -21,13 +20,6 @@ function fmt(value: number | null): string {
 function pct(value: number | null): string {
   if (value === null) return '—';
   return `${value.toFixed(0)}%`;
-}
-
-function agreementWord(stddev: number | null): string {
-  if (stddev === null) return 'n/a';
-  if (stddev < 0.5) return 'aligned';
-  if (stddev < 1) return 'some disagreement';
-  return 'polarising';
 }
 
 export function buildPlainSummary(speakerName: string, data: SpeakerFeedbackResponse): string {
@@ -76,89 +68,66 @@ export function buildSubmissionFullFeedback(sub: SpeakerFeedbackSubmission): str
 }
 
 /**
- * Structured prompt for ChatGPT/Claude. Tells the model what to do, gives it the
- * full context it needs, and constrains it so it can't fabricate or leak private
- * reviewer notes. The admin just pastes this into the chat.
+ * Structured prompt for ChatGPT/Claude. The prompt style is tuned for outputs
+ * that synthesize recurring themes across reviews rather than listing each
+ * review separately — that's the style that produces useful, personal replies.
+ * The admin just pastes this into the chat and gets a draft back.
  */
 export function buildAiReplyPrompt(speakerName: string, data: SpeakerFeedbackResponse): string {
-  const { overall, submissions } = data;
+  const parts: string[] = [];
+  const multi = data.submissions.length > 1;
 
-  const header = [
-    'You are helping an admin of the ZurichJS Conference CFP draft a warm, concrete, honest email reply to a speaker who is asking about the committee\'s feedback on their submission(s).',
-    '',
-    'Rules:',
-    '- Use ONLY the data below. Do not invent scores, quotes, or reasoning.',
-    '- Do NOT share "Private notes" content with the speaker. Those are internal — let them inform your tone only.',
-    '- Refer to "the committee" or "reviewers" — never name individual reviewers.',
-    '- If the decision is rejected or waitlisted, be kind but specific about what held it back.',
-    '- If accepted, be congratulatory and practical about next steps.',
-    '- Reference 2–4 concrete strengths or weaknesses drawn from the feedback to the speaker.',
-    '- Invite them to reach out for more detail.',
-    '- Target length: 180–300 words. Plain email, no Markdown.',
-  ].join('\n');
+  parts.push(
+    `I need to write a personalized, constructive feedback email to send to a conference speaker about their CFP submission${multi ? 's' : ''}. I'm writing this on behalf of the review committee.`
+  );
+  parts.push('');
+  parts.push(`Speaker: ${speakerName}`);
 
-  const speakerBlock = [
-    '',
-    'SPEAKER',
-    `Name: ${speakerName}`,
-    `Across all submissions: ${overall.total_submissions} submission(s), ${overall.total_reviews} review(s), avg Overall ${fmt(overall.avg_overall)}${
-      overall.percentile !== null
-        ? ` (${pct(overall.percentile)} percentile of ${overall.cohort_size} reviewed talks; reviewed avg ${fmt(overall.cohort_avg)})`
-        : ''
-    }.`,
-  ].join('\n');
+  data.submissions.forEach((sub, i) => {
+    parts.push('');
+    if (multi) parts.push(`--- Submission ${i + 1} of ${data.submissions.length} ---`);
+    parts.push(formatSubmissionForPrompt(sub));
+  });
 
-  const submissionBlocks = submissions.map((sub, i) => formatSubmissionForPrompt(sub, i + 1)).join('\n\n');
+  parts.push('');
+  parts.push(`Write a 2-3 paragraph feedback email${multi ? ' covering all the submissions above' : ''} that:`);
+  parts.push('- Thanks them for submitting');
+  parts.push('- Highlights what reviewers liked (find the recurring positives across reviews)');
+  parts.push("- Gives constructive suggestions (synthesize recurring concerns into a clear theme — don't list each reviewer's point separately)");
+  parts.push('- Is encouraging regardless of acceptance/rejection');
+  parts.push('- Does NOT reveal individual reviewer identities or exact scores');
+  parts.push('- Is written from "I" on behalf of the committee (not "we the committee")');
+  parts.push('- Feels personal, not templated');
 
-  const footer = '\n\nTASK\nDraft the email now.';
-
-  return [header, speakerBlock, '', submissionBlocks, footer].join('\n');
+  return parts.join('\n');
 }
 
-function formatSubmissionForPrompt(sub: SpeakerFeedbackSubmission, index: number): string {
-  const a = sub.aggregate;
+function formatSubmissionForPrompt(sub: SpeakerFeedbackSubmission): string {
   const lines: string[] = [];
-  lines.push(`SUBMISSION ${index} — "${sub.title}"`);
-  lines.push(`Status: ${sub.status}  ·  Type: ${sub.submission_type}  ·  Level: ${sub.talk_level}`);
-  if (sub.tags.length > 0) {
-    lines.push(`Tags: ${sub.tags.map((t) => t.name).join(', ')}`);
-  }
+  lines.push(`Talk title: ${sub.title}`);
+  lines.push(`Talk type: ${sub.submission_type} (${sub.talk_level})`);
   lines.push(`Abstract: ${sub.abstract}`);
   if (sub.outline) lines.push(`Outline: ${sub.outline}`);
   if (sub.additional_notes) lines.push(`Additional notes from speaker: ${sub.additional_notes}`);
 
-  lines.push('');
-  lines.push(
-    `Aggregate scores (1–5): Overall ${fmt(a.overall)}, Relevance ${fmt(a.relevance)}, Depth ${fmt(a.technical_depth)}, Clarity ${fmt(a.clarity)}, Originality ${fmt(a.diversity)}`
-  );
-  lines.push(
-    `Coverage: ${sub.review_count} reviewer(s), ${sub.analytics.feedback_written_count} left written feedback`
-  );
-  if (sub.analytics.percentile !== null) {
-    lines.push(
-      `Percentile: ${pct(sub.analytics.percentile)} of ${sub.analytics.cohort_size} reviewed talks`
-    );
-  }
-  lines.push(
-    `Reviewer agreement: ${agreementWord(sub.analytics.score_stddev)} (scores ${fmt(sub.analytics.score_min)} → ${fmt(sub.analytics.score_max)})`
-  );
-
-  if (sub.reviews.length > 0) {
+  if (sub.reviews.length === 0) {
     lines.push('');
-    lines.push('Reviews:');
-    for (const r of sub.reviews) {
-      lines.push(formatReviewForPrompt(r));
-    }
+    lines.push('No committee reviews yet.');
+    return lines.join('\n');
   }
 
-  return lines.join('\n');
-}
+  lines.push('');
+  lines.push(`${sub.reviews.length} committee review${sub.reviews.length === 1 ? '' : 's'}:`);
 
-function formatReviewForPrompt(r: SpeakerFeedbackReview): string {
-  const lines = [
-    `  — Reviewer (${new Date(r.created_at).toLocaleDateString()}): Overall ${fmt(r.score_overall)}, Relevance ${fmt(r.score_relevance)}, Depth ${fmt(r.score_technical_depth)}, Clarity ${fmt(r.score_clarity)}, Originality ${fmt(r.score_diversity)}`,
-    `    Feedback to speaker: ${r.feedback_to_speaker || '(none)'}`,
-    `    Private notes (internal only — do not share): ${r.private_notes || '(none)'}`,
-  ];
+  sub.reviews.forEach((r, i) => {
+    lines.push('');
+    lines.push(`Review ${i + 1}:`);
+    lines.push(
+      `Scores: Overall: ${fmt(r.score_overall)}/5, Relevance: ${fmt(r.score_relevance)}/5, Technical Depth: ${fmt(r.score_technical_depth)}/5, Clarity: ${fmt(r.score_clarity)}/5, Originality: ${fmt(r.score_diversity)}/5`
+    );
+    const notes = [r.feedback_to_speaker, r.private_notes].filter(Boolean).join(' ');
+    if (notes) lines.push(`Committee notes: ${notes}`);
+  });
+
   return lines.join('\n');
 }
