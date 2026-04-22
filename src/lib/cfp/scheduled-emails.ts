@@ -95,6 +95,9 @@ interface SubmissionForEmail {
 async function getSubmissionForEmail(submissionId: string): Promise<SubmissionForEmail | null> {
   const supabase = createCfpServiceClient();
 
+  // `!speaker_id` hint is required because cfp_submission_speakers (panel
+  // support) introduces a second relationship between cfp_submissions and
+  // cfp_speakers that PostgREST cannot auto-resolve.
   const { data, error } = await supabase
     .from('cfp_submissions')
     .select(`
@@ -103,7 +106,7 @@ async function getSubmissionForEmail(submissionId: string): Promise<SubmissionFo
       submission_type,
       decision_status,
       workshop_duration_hours,
-      speaker:cfp_speakers(
+      speaker:cfp_speakers!speaker_id(
         id,
         first_name,
         last_name,
