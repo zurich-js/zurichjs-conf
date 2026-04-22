@@ -83,10 +83,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to fetch tickets' });
     }
 
-    // Get payment intent IDs for confirmed tickets (for Stripe fee lookup)
-    const confirmedPaymentIntentIds = tickets
-      .filter((t) => t.status === 'confirmed' && t.stripe_payment_intent_id)
-      .map((t) => t.stripe_payment_intent_id as string);
+    const { data: workshopRegistrations, error: workshopRegistrationsError } = await supabase
+      .from('workshop_registrations')
+      .select('amount_paid, currency, discount_amount, status, stripe_payment_intent_id')
+      .eq('status', 'confirmed');
+
+    if (workshopRegistrationsError) {
+      log.error('Error fetching workshop registrations', workshopRegistrationsError);
+      return res.status(500).json({ error: 'Failed to fetch workshop registrations' });
+    }
+
+    // Get payment intent IDs for confirmed tickets/workshop seats (for Stripe fee lookup)
+    const confirmedPaymentIntentIds = [
+      ...tickets
+        .filter((t) => t.status === 'confirmed' && t.stripe_payment_intent_id)
+        .map((t) => t.stripe_payment_intent_id as string),
+      ...(workshopRegistrations ?? [])
+        .filter((registration) => registration.stripe_payment_intent_id)
+        .map((registration) => registration.stripe_payment_intent_id as string),
+    ];
 
     // Fetch actual Stripe fees
     const stripeFees = await getStripeFees(confirmedPaymentIntentIds);
@@ -113,6 +128,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       } else if (ticket.status === 'refunded') {
         refundedByCurrency[cur] = (refundedByCurrency[cur] || 0) + ticket.amount_paid;
+      }
+    }
+
+    const workshopSummary = {
+      soldSeats: 0,
+      grossRevenue: 0,
+      totalDiscounts: 0,
+      totalStripeFees: 0,
+      revenueByCurrency: {} as Record<string, number>,
+      registrationsByCurrency: {} as Record<string, number>,
+      discountsByCurrency: {} as Record<string, number>,
+      stripeFeesByCurrency: {} as Record<string, number>,
+    };
+
+    for (const registration of workshopRegistrations ?? []) {
+      const cur = registration.currency?.toUpperCase() || 'CHF';
+      workshopSummary.soldSeats += 1;
+      workshopSummary.grossRevenue += registration.amount_paid || 0;
+      workshopSummary.totalDiscounts += registration.discount_amount || 0;
+      workshopSummary.revenueByCurrency[cur] =
+        (workshopSummary.revenueByCurrency[cur] || 0) + (registration.amount_paid || 0);
+      workshopSummary.registrationsByCurrency[cur] =
+        (workshopSummary.registrationsByCurrency[cur] || 0) + 1;
+      workshopSummary.discountsByCurrency[cur] =
+        (workshopSummary.discountsByCurrency[cur] || 0) + (registration.discount_amount || 0);
+
+      const piId = registration.stripe_payment_intent_id;
+      if (piId && stripeFees.has(piId) && !countedPIs.has(piId)) {
+        countedPIs.add(piId);
+        const fee = stripeFees.get(piId)!;
+        workshopSummary.totalStripeFees += fee;
+        workshopSummary.stripeFeesByCurrency[cur] =
+          (workshopSummary.stripeFeesByCurrency[cur] || 0) + fee;
       }
     }
 
@@ -373,6 +421,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       revenueBreakdown,
       b2bSummary,
       sponsorshipSummary,
+      workshopSummary,
       purchasesTimeSeries,
     });
   } catch (error) {

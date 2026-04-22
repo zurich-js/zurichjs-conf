@@ -2,12 +2,13 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import Head from 'next/head';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarPlus, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CircleDollarSign, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { WorkshopAdminModal } from '@/components/admin/workshops/WorkshopAdminModal';
 import {
   AddSessionModal,
   AddSpeakerModal,
@@ -19,11 +20,19 @@ import {
   ScheduleItemModal,
 } from '@/components/admin/speakers';
 import type { ProgramScheduleItemRecord } from '@/lib/types/program-schedule';
+import type { Workshop } from '@/lib/types/database';
+import type { AdminWorkshopListItem } from '@/pages/api/admin/workshops';
 
 type AdminTab = 'speakers' | 'talks' | 'workshops' | 'schedule';
 type SpeakerFilterKey = 'public' | 'featured' | 'scheduled' | 'notScheduled';
+type SessionTableRow = Session & { speaker: SpeakerWithSessions };
 
 type SpeakerFilters = Record<SpeakerFilterKey, boolean>;
+
+const adminWorkshopKeys = {
+  all: ['admin', 'workshops'] as const,
+  list: () => [...adminWorkshopKeys.all, 'list'] as const,
+};
 
 async function fetchSpeakers(): Promise<{ speakers: SpeakerWithSessions[] }> {
   const res = await fetch('/api/admin/cfp/speakers');
@@ -34,6 +43,12 @@ async function fetchSpeakers(): Promise<{ speakers: SpeakerWithSessions[] }> {
 async function fetchProgramSchedule(): Promise<{ items: ProgramScheduleItemRecord[] }> {
   const res = await fetch('/api/admin/program-schedule');
   if (!res.ok) throw new Error('Failed to fetch schedule');
+  return res.json();
+}
+
+async function fetchAdminWorkshops(): Promise<{ items: AdminWorkshopListItem[] }> {
+  const res = await fetch('/api/admin/workshops');
+  if (!res.ok) throw new Error('Failed to fetch workshops');
   return res.json();
 }
 
@@ -53,6 +68,8 @@ export default function SpeakersDashboard() {
   const [selectedScheduleItem, setSelectedScheduleItem] = useState<ProgramScheduleItemRecord | null>(null);
   const [initialScheduleSubmissionId, setInitialScheduleSubmissionId] = useState<string | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedWorkshopSession, setSelectedWorkshopSession] = useState<(Session & { speaker: SpeakerWithSessions }) | null>(null);
+  const [createdWorkshopOffering, setCreatedWorkshopOffering] = useState<Workshop | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
@@ -66,6 +83,12 @@ export default function SpeakersDashboard() {
   const { data: scheduleData, isLoading: isLoadingSchedule } = useQuery({
     queryKey: ['program-schedule'],
     queryFn: fetchProgramSchedule,
+    enabled: isAuthenticated === true,
+  });
+
+  const { data: adminWorkshopsData } = useQuery({
+    queryKey: adminWorkshopKeys.list(),
+    queryFn: fetchAdminWorkshops,
     enabled: isAuthenticated === true,
   });
 
@@ -210,6 +233,22 @@ export default function SpeakersDashboard() {
 
   const talks = acceptedSessions.filter((submission) => submission.submission_type !== 'workshop');
   const workshops = acceptedSessions.filter((submission) => submission.submission_type === 'workshop');
+  const adminWorkshopItems = adminWorkshopsData?.items || [];
+  const selectedWorkshopItem = selectedWorkshopSession
+    ? adminWorkshopItems.find((item) => item.cfpSubmissionId === selectedWorkshopSession.id)
+    : null;
+  const selectedWorkshopOffering = selectedWorkshopItem?.offering ?? createdWorkshopOffering;
+  const selectedWorkshopScheduleItem = selectedWorkshopSession
+    ? scheduleItems.find((item) => item.submission_id === selectedWorkshopSession.id)
+    : null;
+  const selectedWorkshopDurationMinutes =
+    selectedWorkshopScheduleItem?.duration_minutes ??
+    selectedWorkshopSession?.scheduled_duration_minutes ??
+    (selectedWorkshopSession?.workshop_duration_hours
+      ? Math.round(selectedWorkshopSession.workshop_duration_hours * 60)
+      : null);
+  const selectedWorkshopStartTime =
+    selectedWorkshopScheduleItem?.start_time ?? selectedWorkshopSession?.scheduled_start_time ?? null;
   const scheduleCountBySubmissionId = scheduleItems.reduce((map, item) => {
     if (!item.submission_id) {
       return map;
@@ -241,6 +280,7 @@ export default function SpeakersDashboard() {
     id: submission.id,
     title: submission.title,
     submission_type: submission.submission_type,
+    workshop_duration_hours: submission.workshop_duration_hours,
     participant_speaker_ids: submission.participant_speaker_ids,
     speaker: {
       id: submission.speaker.id,
@@ -295,9 +335,9 @@ export default function SpeakersDashboard() {
               <div className="inline-flex space-x-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
                 {([
                   ['speakers', 'Speakers'],
+                  ['schedule', 'Schedule'],
                   ['talks', 'Talks'],
                   ['workshops', 'Workshops'],
-                  ['schedule', 'Schedule'],
                 ] as const).map(([tab, label]) => (
                   <button
                     key={tab}
@@ -408,11 +448,6 @@ export default function SpeakersDashboard() {
               })}
               scheduleCountBySubmissionId={scheduleCountBySubmissionId}
               onEdit={(session) => setSelectedSession(session)}
-              onSchedule={(session) => {
-                setSelectedScheduleItem(null);
-                setInitialScheduleSubmissionId(session.id);
-                setShowScheduleModal(true);
-              }}
             />
           ) : activeTab === 'workshops' ? (
             <SessionTable
@@ -426,10 +461,9 @@ export default function SpeakersDashboard() {
               })}
               scheduleCountBySubmissionId={scheduleCountBySubmissionId}
               onEdit={(session) => setSelectedSession(session)}
-              onSchedule={(session) => {
-                setSelectedScheduleItem(null);
-                setInitialScheduleSubmissionId(session.id);
-                setShowScheduleModal(true);
+              onCommerce={(session) => {
+                setCreatedWorkshopOffering(null);
+                setSelectedWorkshopSession(session);
               }}
             />
           ) : isLoadingSchedule ? (
@@ -583,6 +617,46 @@ export default function SpeakersDashboard() {
             }}
           />
         ) : null}
+
+        {selectedWorkshopSession ? (
+          <WorkshopAdminModal
+            offering={selectedWorkshopOffering}
+            session={selectedWorkshopSession}
+            scheduleItem={selectedWorkshopScheduleItem}
+            speakers={speakerOptions}
+            createDraft={{
+              cfpSubmissionId: selectedWorkshopSession.id,
+              title: selectedWorkshopSession.title,
+              description: selectedWorkshopSession.abstract,
+              talkLevel: selectedWorkshopSession.talk_level,
+              durationMinutes: selectedWorkshopDurationMinutes,
+              capacity: selectedWorkshopSession.workshop_max_participants,
+              date: selectedWorkshopScheduleItem?.date ?? selectedWorkshopSession.scheduled_date,
+              startTime: selectedWorkshopStartTime,
+              room: selectedWorkshopScheduleItem?.room ?? selectedWorkshopSession.room,
+              participantSpeakerIds: selectedWorkshopSession.participant_speaker_ids,
+            }}
+            open={Boolean(selectedWorkshopSession)}
+            onClose={() => {
+              setSelectedWorkshopSession(null);
+              setCreatedWorkshopOffering(null);
+            }}
+            onSaved={(offering) => {
+              if (offering) setCreatedWorkshopOffering(offering);
+              queryClient.invalidateQueries({ queryKey: adminWorkshopKeys.list() });
+              queryClient.invalidateQueries({ queryKey: ['speakers'] });
+              queryClient.invalidateQueries({ queryKey: ['program-schedule'] });
+            }}
+            listQueryKey={adminWorkshopKeys.list()}
+            onToast={(message, type = 'success') => {
+              if (type === 'error') {
+                toast.error('Workshop', message);
+              } else {
+                toast.success(message);
+              }
+            }}
+          />
+        ) : null}
       </div>
     </>
   );
@@ -641,12 +715,12 @@ function SessionTable({
   rows,
   scheduleCountBySubmissionId,
   onEdit,
-  onSchedule,
+  onCommerce,
 }: {
-  rows: Array<Session & { speaker: SpeakerWithSessions }>;
+  rows: SessionTableRow[];
   scheduleCountBySubmissionId: Map<string, number>;
   onEdit: (session: Session) => void;
-  onSchedule: (session: Session) => void;
+  onCommerce?: (session: SessionTableRow) => void;
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -673,19 +747,23 @@ function SessionTable({
                 </BodyCell>
                 <BodyCell>
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => onEdit(session)}
-                      className="cursor-pointer text-blue-600 hover:text-blue-700"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onSchedule(session)}
-                      className="cursor-pointer text-gray-500 hover:text-black"
-                      title="Add to schedule"
-                    >
-                      <CalendarPlus className="h-4 w-4" />
-                    </button>
+                    {onCommerce ? (
+                      <button
+                        onClick={() => onCommerce(session)}
+                        className="cursor-pointer text-green-700 hover:text-green-800"
+                        title="Edit workshop details and payments"
+                      >
+                        <CircleDollarSign className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onEdit(session)}
+                        className="cursor-pointer text-blue-600 hover:text-blue-700"
+                        title="Edit talk details"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </BodyCell>
               </tr>

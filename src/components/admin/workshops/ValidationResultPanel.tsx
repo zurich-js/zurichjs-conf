@@ -1,5 +1,5 @@
 /**
- * Inline Stripe validation result inside the drawer's Pricing section.
+ * Inline Stripe validation result inside the modal's Pricing section.
  */
 
 import type { StripeValidation } from './readiness';

@@ -629,6 +629,7 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
   (CfpSpeaker & {
     submissions: {
       id: string;
+      speaker_id: string;
       title: string;
       abstract: string | null;
       status: string;
@@ -707,6 +708,7 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
     ...speaker,
     submissions: (submissionsBySpeakerId.get(speaker.id) || []).map((s) => ({
       id: s.id,
+      speaker_id: s.speaker_id,
       title: s.title,
       abstract: s.abstract,
       status: s.status,

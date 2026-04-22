@@ -257,7 +257,8 @@ insert into public.cfp_speakers (
     portrait_background_url,
     speaker_role,
     is_visible,
-    is_featured
+    is_featured,
+    is_admin_managed
 )
 values
     (
@@ -274,7 +275,8 @@ values
         '/images/meetups/cloudflare.png',
         'speaker',
         true,
-        true
+        true,
+        false
     ),
     (
         '22222222-2222-4222-8222-222222222222',
@@ -290,7 +292,8 @@ values
         '/images/meetups/june-workshop.png',
         'speaker',
         true,
-        true
+        true,
+        false
     ),
     (
         '33333333-3333-4333-8333-333333333333',
@@ -306,6 +309,7 @@ values
         '/images/meetups/july-group.png',
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -322,6 +326,7 @@ values
         null,
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -338,6 +343,7 @@ values
         null,
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -354,6 +360,7 @@ values
         '/images/meetups/june.png',
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -370,7 +377,78 @@ values
         '/images/meetups/july-group.png',
         'mc',
         true,
-        false
+        false,
+        true
+    ),
+    -- Invited speakers (no CFP submissions). Emulate admin-curated lineup additions
+    -- (keynotes, featured guests, and non-featured invited speakers).
+    (
+        '99999999-1111-4999-8999-111111111111',
+        'priya.keynote@example.test',
+        'Priya',
+        'Desai',
+        'Keynote Speaker',
+        'Runtime Collective',
+        'Priya is an invited keynote speaker who leads platform engineering across distributed JavaScript runtimes and speaks about the next decade of the web.',
+        '/images/meetups/ginetta.png',
+        '/images/meetups/cloudflare.png',
+        '/images/meetups/ginetta.png',
+        '/images/meetups/cloudflare.png',
+        'speaker',
+        true,
+        true,
+        true
+    ),
+    (
+        '99999999-2222-4999-8999-222222222222',
+        'theo.invited@example.test',
+        'Theo',
+        'Blanc',
+        'Principal Architect',
+        'Edge Runtime Labs',
+        'Theo is an invited featured speaker known for deep-dive sessions on browser internals, rendering pipelines, and low-level web performance.',
+        '/images/meetups/jens.png',
+        '/images/meetups/may.png',
+        '/images/meetups/jens.png',
+        '/images/meetups/may.png',
+        'speaker',
+        true,
+        true,
+        true
+    ),
+    (
+        '99999999-3333-4999-8999-333333333333',
+        'yuki.invited@example.test',
+        'Yuki',
+        'Tanaka',
+        'Staff Engineer',
+        'Pattern Works',
+        'Yuki is an invited featured speaker who explores the boundary between design systems, component APIs, and accessible product engineering.',
+        '/images/team/nadja.png',
+        '/images/meetups/june.png',
+        '/images/team/nadja.png',
+        '/images/meetups/june.png',
+        'speaker',
+        true,
+        true,
+        true
+    ),
+    (
+        '99999999-4444-4999-8999-444444444444',
+        'dominik.invited@example.test',
+        'Dominik',
+        'Fischer',
+        'Senior Engineer',
+        'Helvetic Build',
+        'Dominik is an invited guest speaker joining the program without a CFP submission to share lessons learned from running large Swiss engineering teams.',
+        '/images/meetups/bogdan.png',
+        null,
+        '/images/meetups/bogdan.png',
+        null,
+        'speaker',
+        true,
+        false,
+        true
     )
 on conflict (id) do update set
     email = excluded.email,
@@ -385,7 +463,8 @@ on conflict (id) do update set
     portrait_background_url = excluded.portrait_background_url,
     speaker_role = excluded.speaker_role,
     is_visible = excluded.is_visible,
-    is_featured = excluded.is_featured;
+    is_featured = excluded.is_featured,
+    is_admin_managed = excluded.is_admin_managed;
 
 -- Tags
 insert into public.cfp_tags (
@@ -492,6 +571,8 @@ values
         25,
         'Auditorium',
         'accepted',
+        '2026-02-22T12:00:00.000Z',
+        '2026-02-21T17:30:00.000Z',
         '2026-02-22T12:00:00.000Z'
     ),
     (
@@ -1002,6 +1083,136 @@ on conflict (id) do update set
     description = excluded.description,
     submission_id = excluded.submission_id,
     is_visible = excluded.is_visible;
+
+-- Workshop commerce overlays and local purchase fixtures
+insert into public.workshops (
+    id,
+    title,
+    description,
+    cfp_submission_id,
+    date,
+    start_time,
+    end_time,
+    capacity,
+    price,
+    currency,
+    status,
+    room,
+    duration_minutes,
+    stripe_product_id,
+    stripe_price_lookup_key,
+    metadata,
+    created_at,
+    updated_at
+)
+values
+    (
+        'eeee2222-2222-4222-8222-222222222222',
+        'Shipping Nuxt 4 in Production',
+        'Patterns for SSR, caching, and deployment hardening in Nuxt 4 apps, with notes on when plain Nuxt defaults stop being enough.',
+        'aaaa2222-2222-4222-8222-222222222222',
+        '2026-09-10',
+        '09:00:00',
+        '13:00:00',
+        24,
+        9900,
+        'CHF',
+        'draft',
+        'Technopark',
+        240,
+        null,
+        'workshop_shipping-nuxt-4-production',
+        '{"seeded": true, "note": "Draft local fixture; validate Stripe before publishing."}'::jsonb,
+        '2026-04-20T10:00:00.000Z',
+        '2026-04-20T10:00:00.000Z'
+    )
+on conflict (id) do update set
+    title = excluded.title,
+    description = excluded.description,
+    cfp_submission_id = excluded.cfp_submission_id,
+    date = excluded.date,
+    start_time = excluded.start_time,
+    end_time = excluded.end_time,
+    capacity = excluded.capacity,
+    price = excluded.price,
+    currency = excluded.currency,
+    status = excluded.status,
+    room = excluded.room,
+    duration_minutes = excluded.duration_minutes,
+    stripe_product_id = excluded.stripe_product_id,
+    stripe_price_lookup_key = excluded.stripe_price_lookup_key,
+    metadata = excluded.metadata,
+    updated_at = excluded.updated_at;
+
+insert into public.workshop_registrations (
+    id,
+    workshop_id,
+    user_id,
+    ticket_id,
+    stripe_session_id,
+    stripe_payment_intent_id,
+    amount_paid,
+    currency,
+    status,
+    first_name,
+    last_name,
+    email,
+    discount_amount,
+    seat_index,
+    metadata,
+    created_at,
+    updated_at
+)
+values
+    (
+        'eeee9000-0000-4000-8000-000000000001',
+        'eeee2222-2222-4222-8222-222222222222',
+        null,
+        null,
+        'cs_test_seed_workshop_nuxt_multi',
+        null,
+        9900,
+        'CHF',
+        'confirmed',
+        'Local',
+        'Buyer',
+        'local.buyer@example.test',
+        0,
+        0,
+        '{"seeded": true}'::jsonb,
+        '2026-04-21T09:00:00.000Z',
+        '2026-04-21T09:00:00.000Z'
+    ),
+    (
+        'eeee9000-0000-4000-8000-000000000002',
+        'eeee2222-2222-4222-8222-222222222222',
+        null,
+        null,
+        'cs_test_seed_workshop_nuxt_multi',
+        null,
+        8900,
+        'CHF',
+        'confirmed',
+        'Second',
+        'Buyer',
+        'second.buyer@example.test',
+        1000,
+        1,
+        '{"seeded": true}'::jsonb,
+        '2026-04-21T09:01:00.000Z',
+        '2026-04-21T09:01:00.000Z'
+    )
+on conflict (id) do update set
+    amount_paid = excluded.amount_paid,
+    currency = excluded.currency,
+    status = excluded.status,
+    first_name = excluded.first_name,
+    last_name = excluded.last_name,
+    email = excluded.email,
+    discount_amount = excluded.discount_amount,
+    seat_index = excluded.seat_index,
+    metadata = excluded.metadata,
+    updated_at = excluded.updated_at;
 
 -- Submission/tag links
 insert into public.cfp_submission_tags (

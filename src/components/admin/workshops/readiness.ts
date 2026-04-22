@@ -1,6 +1,6 @@
 /**
  * Publish-readiness computation for a workshop offering.
- * Used by the card to show "X issues", by the drawer checklist, and as the
+ * Used by the card to show "X issues", by the modal checklist, and as the
  * hard gate on the Publish action.
  */
 

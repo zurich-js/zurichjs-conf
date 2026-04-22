@@ -1,5 +1,5 @@
 /**
- * Publish-readiness checklist rendered at the top of the edit drawer.
+ * Publish-readiness checklist rendered at the top of the edit modal.
  */
 
 import { AlertTriangle, Check } from 'lucide-react';

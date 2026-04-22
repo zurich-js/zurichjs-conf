@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { BarChart3, FileText, GraduationCap, Plane, Users, LogOut, Menu, X, Handshake, Building2, type LucideIcon } from 'lucide-react';
+import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, type LucideIcon } from 'lucide-react';
 
 interface AdminHeaderProps {
   title: string;
@@ -30,7 +30,6 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
     { href: '/admin/cfp', label: 'CFP', icon: FileText },
     { href: '/admin/cfp-travel', label: 'Travel', icon: Plane },
     { href: '/admin/speakers', label: 'Speakers', icon: Users },
-    { href: '/admin/workshops', label: 'Workshops', icon: GraduationCap },
     { href: '/admin/partnerships', label: 'Partners', icon: Handshake },
     { href: '/admin/sponsorships', label: 'Sponsors', icon: Building2 },
   ];

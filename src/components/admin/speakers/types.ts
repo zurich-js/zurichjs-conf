@@ -30,6 +30,7 @@ export interface Speaker {
 
 export interface Session {
   id: string;
+  speaker_id: string;
   title: string;
   abstract: string | null;
   status: string;

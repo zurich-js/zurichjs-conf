@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import type { ProgramScheduleItemRecord, ProgramScheduleItemType } from '@/lib/types/program-schedule';
 
@@ -6,6 +6,7 @@ interface AvailableSession {
   id: string;
   title: string;
   submission_type: string;
+  workshop_duration_hours?: number | null;
   speaker: {
     first_name: string;
     last_name: string;
@@ -29,6 +30,73 @@ interface ScheduleItemModalProps {
 
 const EDIT_TYPE_OPTIONS: ProgramScheduleItemType[] = ['session', 'event', 'break', 'placeholder'];
 
+function getDefaultDurationMinutes(submissionType: string, workshopDurationHours?: number | null): string {
+  if (submissionType === 'lightning') {
+    return '20';
+  }
+
+  if (submissionType === 'standard') {
+    return '35';
+  }
+
+  if (submissionType === 'workshop' && workshopDurationHours && workshopDurationHours > 0) {
+    return Math.round(workshopDurationHours * 60).toString();
+  }
+
+  return '30';
+}
+
+function getSubmissionTypeSummary(submissionType: string, workshopDurationHours?: number | null): string {
+  if (submissionType === 'lightning') {
+    return 'Lightning talk';
+  }
+
+  if (submissionType === 'standard') {
+    return 'Standard talk';
+  }
+
+  if (submissionType === 'workshop') {
+    if (workshopDurationHours && workshopDurationHours > 0) {
+      return `Workshop (${workshopDurationHours}h)`;
+    }
+
+    return 'Workshop';
+  }
+
+  if (submissionType === 'panel') {
+    return 'Panel';
+  }
+
+  return submissionType;
+}
+
+function VisibilityToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
+        checked
+          ? 'border-green-300 bg-green-50 text-green-900'
+          : 'border-gray-300 bg-gray-50 text-gray-700'
+      }`}
+    >
+      <span className="font-medium">{checked ? 'Visible' : 'Hidden'}</span>
+      <span className={`relative inline-flex h-6 w-11 items-center rounded-full ${checked ? 'bg-green-600' : 'bg-gray-300'}`}>
+        <span className={`inline-block size-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
+      </span>
+    </button>
+  );
+}
+
 export function ScheduleItemModal({
   item,
   sessions,
@@ -38,13 +106,14 @@ export function ScheduleItemModal({
   onSaved,
 }: ScheduleItemModalProps) {
   const linkedSessionId = item?.submission_id || initialSubmissionId || '';
+  const initialLinkedSession = sessions.find((session) => session.id === linkedSessionId) || null;
   const [mode, setMode] = useState<'link' | 'custom'>('link');
   const [formData, setFormData] = useState({
     type: item?.type || 'session',
     submission_id: linkedSessionId,
     date: item?.date || '2026-09-11',
     start_time: item?.start_time?.slice(0, 5) || '09:00',
-    duration_minutes: item?.duration_minutes?.toString() || '30',
+    duration_minutes: item?.duration_minutes?.toString() || getDefaultDurationMinutes(initialLinkedSession?.submission_type || 'session', initialLinkedSession?.workshop_duration_hours),
     room: item?.room || '',
     title: item?.title || '',
     description: item?.description || '',
@@ -70,6 +139,22 @@ export function ScheduleItemModal({
     : initialSubmissionId
       ? 'Schedule session'
       : 'Add schedule item';
+
+  useEffect(() => {
+    if (mode !== 'link' || !selectedLinkedSession) {
+      return;
+    }
+
+    if (!item || isPlaceholderEdit) {
+      setFormData((current) => ({
+        ...current,
+        duration_minutes: getDefaultDurationMinutes(
+          selectedLinkedSession.submission_type,
+          selectedLinkedSession.workshop_duration_hours
+        ),
+      }));
+    }
+  }, [item, isPlaceholderEdit, mode, selectedLinkedSession]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,11 +259,17 @@ export function ScheduleItemModal({
                   <select
                     value={formData.submission_id}
                     onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const chosenSession = availableSessions.find((session) => session.id === selectedId) || null;
+
                       setMode('link');
                       setFormData({
                         ...formData,
-                        type: e.target.value ? 'session' : item?.type || 'session',
-                        submission_id: e.target.value,
+                        type: selectedId ? 'session' : item?.type || 'session',
+                        submission_id: selectedId,
+                        duration_minutes: chosenSession
+                          ? getDefaultDurationMinutes(chosenSession.submission_type, chosenSession.workshop_duration_hours)
+                          : formData.duration_minutes,
                       });
                     }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
@@ -203,6 +294,19 @@ export function ScheduleItemModal({
                   Custom submission
                 </button>
               </div>
+
+              {formData.submission_id && selectedLinkedSession ? (
+                <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+                  <p>
+                    <span className="font-medium">Session:</span>{' '}
+                    {getSubmissionTypeSummary(selectedLinkedSession.submission_type, selectedLinkedSession.workshop_duration_hours)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Speaker:</span>{' '}
+                    {selectedLinkedSession.speaker.first_name} {selectedLinkedSession.speaker.last_name}
+                  </p>
+                </div>
+              ) : null}
 
               {mode === 'custom' ? (
                 <div className="mt-4 grid gap-4 border-t border-gray-200 pt-4">
@@ -247,7 +351,17 @@ export function ScheduleItemModal({
                       <label className="mb-1 block text-sm font-medium text-black">Type</label>
                       <select
                         value={formData.custom_submission_type}
-                        onChange={(e) => setFormData({ ...formData, custom_submission_type: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            custom_submission_type: e.target.value,
+                            duration_minutes: getDefaultDurationMinutes(
+                              e.target.value,
+                              formData.custom_workshop_duration_hours
+                                ? parseFloat(formData.custom_workshop_duration_hours)
+                                : null
+                            ),
+                          })}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
                       >
                         <option value="lightning">Lightning Talk</option>
@@ -280,7 +394,19 @@ export function ScheduleItemModal({
                           min="0.5"
                           step="0.5"
                           value={formData.custom_workshop_duration_hours}
-                          onChange={(e) => setFormData({ ...formData, custom_workshop_duration_hours: e.target.value })}
+                          onChange={(e) => {
+                            const workshopDurationHours = e.target.value;
+                            setFormData({
+                              ...formData,
+                              custom_workshop_duration_hours: workshopDurationHours,
+                              duration_minutes: formData.custom_submission_type === 'workshop'
+                                ? getDefaultDurationMinutes(
+                                  'workshop',
+                                  workshopDurationHours ? parseFloat(workshopDurationHours) : null
+                                )
+                                : formData.duration_minutes,
+                            });
+                          }}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
                         />
                       </div>
@@ -343,14 +469,10 @@ export function ScheduleItemModal({
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-black">Visibility</label>
-                <select
-                  value={formData.is_visible ? 'visible' : 'hidden'}
-                  onChange={(e) => setFormData({ ...formData, is_visible: e.target.value === 'visible' })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                >
-                  <option value="visible">Visible</option>
-                  <option value="hidden">Hidden</option>
-                </select>
+                <VisibilityToggle
+                  checked={formData.is_visible}
+                  onChange={(is_visible) => setFormData({ ...formData, is_visible })}
+                />
               </div>
             </div>
           )}
@@ -403,14 +525,10 @@ export function ScheduleItemModal({
               {!item ? (
                 <div>
                   <label className="mb-1 block text-sm font-medium text-black">Visibility</label>
-                  <select
-                    value={formData.is_visible ? 'visible' : 'hidden'}
-                    onChange={(e) => setFormData({ ...formData, is_visible: e.target.value === 'visible' })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                  >
-                    <option value="visible">Visible</option>
-                    <option value="hidden">Hidden</option>
-                  </select>
+                  <VisibilityToggle
+                    checked={formData.is_visible}
+                    onChange={(is_visible) => setFormData({ ...formData, is_visible })}
+                  />
                 </div>
               ) : null}
 
@@ -429,6 +547,18 @@ export function ScheduleItemModal({
                       </option>
                     ))}
                   </select>
+                  {formData.submission_id && selectedLinkedSession ? (
+                    <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+                      <p>
+                        <span className="font-medium">Session:</span>{' '}
+                        {getSubmissionTypeSummary(selectedLinkedSession.submission_type, selectedLinkedSession.workshop_duration_hours)}
+                      </p>
+                      <p>
+                        <span className="font-medium">Speaker:</span>{' '}
+                        {selectedLinkedSession.speaker.first_name} {selectedLinkedSession.speaker.last_name}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

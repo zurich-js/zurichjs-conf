@@ -6,7 +6,9 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { env } from '@/config/env';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
 import { logger } from '@/lib/logger';
@@ -18,6 +20,19 @@ import {
 } from '@/lib/admin/workshopValidation';
 
 const log = logger.scope('Admin Workshop API');
+
+function createProgramScheduleClient() {
+  return createClient(
+    env.supabase.url,
+    env.supabase.serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const access = verifyAdminAccess(req);
@@ -103,6 +118,16 @@ async function handlePatch(
   if (body.stripePriceLookupKey !== undefined) {
     updates.stripe_price_lookup_key = body.stripePriceLookupKey;
   }
+  if (body.stripeValidation !== undefined) {
+    const currentMetadata =
+      current.metadata && typeof current.metadata === 'object' && !Array.isArray(current.metadata)
+        ? current.metadata
+        : {};
+    updates.metadata = {
+      ...currentMetadata,
+      stripeValidation: body.stripeValidation,
+    };
+  }
   if (body.status !== undefined) updates.status = body.status;
   if (body.title !== undefined) updates.title = body.title;
   if (body.description !== undefined) updates.description = body.description;
@@ -167,6 +192,10 @@ async function handlePatch(
         submissionId: data.cfp_submission_id,
       });
     }
+
+    await syncProgramScheduleForWorkshop(data as Workshop, scheduleUpdate, {
+      publish: body.status === 'published',
+    });
   }
 
   auditAdminWorkshopMutation({
@@ -180,6 +209,68 @@ async function handlePatch(
   });
 
   return res.status(200).json({ offering: data as Workshop });
+}
+
+async function syncProgramScheduleForWorkshop(
+  workshop: Workshop,
+  schedule: {
+    date: string | null;
+    startTime: string | null;
+    endTime: string | null;
+    durationMinutes: number | null;
+  },
+  options: { publish: boolean }
+) {
+  if (!workshop.cfp_submission_id) return;
+  if (!schedule.date || !schedule.startTime || !schedule.durationMinutes) return;
+
+  const supabase = createProgramScheduleClient();
+  const { data: existing, error: existingError } = await supabase
+    .from('program_schedule_items')
+    .select('id, is_visible')
+    .eq('submission_id', workshop.cfp_submission_id)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) {
+    log.warn('Failed to load program schedule row for workshop sync', {
+      error: existingError.message,
+      submissionId: workshop.cfp_submission_id,
+    });
+    return;
+  }
+
+  const schedulePayload = {
+    date: schedule.date,
+    start_time: schedule.startTime,
+    duration_minutes: schedule.durationMinutes,
+    room: workshop.room,
+    type: 'session',
+    title: workshop.title,
+    description: workshop.description,
+    submission_id: workshop.cfp_submission_id,
+    is_visible: options.publish ? true : existing?.is_visible ?? false,
+  };
+
+  const result = existing
+    ? await supabase
+        .from('program_schedule_items')
+        .update({
+          ...schedulePayload,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+    : await supabase
+        .from('program_schedule_items')
+        .insert(schedulePayload);
+
+  if (result.error) {
+    log.warn('Failed to sync program schedule row for workshop', {
+      error: result.error.message,
+      workshopId: workshop.id,
+      submissionId: workshop.cfp_submission_id,
+    });
+  }
 }
 
 async function handleDelete(

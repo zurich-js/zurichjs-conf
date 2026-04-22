@@ -61,7 +61,7 @@ async function handleList(req: NextApiRequest, res: NextApiResponse) {
         abstract,
         status,
         workshop_duration_hours,
-        speaker:cfp_speakers(first_name, last_name)
+        speaker:cfp_speakers!cfp_submissions_speaker_id_fkey(first_name, last_name)
       `)
       .eq('submission_type', 'workshop')
       .eq('status', 'accepted');

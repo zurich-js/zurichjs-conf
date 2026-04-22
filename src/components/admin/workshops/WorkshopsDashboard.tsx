@@ -1,6 +1,6 @@
 /**
  * Top-level container for the admin workshops page.
- * Owns data fetching, filtering, search, create-offering mutation, and drawer state.
+ * Owns data fetching, filtering, search, create-offering mutation, and modal state.
  */
 
 import { useMemo, useState } from 'react';
@@ -14,7 +14,7 @@ import { ToastContainer } from '@/components/molecules';
 import { WorkshopsSummaryStrip } from './WorkshopsSummaryStrip';
 import { WorkshopsFilterBar, type WorkshopFilterStatus } from './WorkshopsFilterBar';
 import { WorkshopCard } from './WorkshopCard';
-import { WorkshopDrawer } from './WorkshopDrawer';
+import { WorkshopAdminModal } from './WorkshopAdminModal';
 
 const adminKeys = {
   all: ['admin', 'workshops'] as const,
@@ -185,12 +185,12 @@ export function WorkshopsDashboard() {
       )}
 
       {openedOffering && (
-        <WorkshopDrawer
+        <WorkshopAdminModal
           offering={openedOffering}
           open={Boolean(openedSubmissionId)}
           onClose={() => setOpenedSubmissionId(null)}
           onSaved={() => {
-            /* keep drawer open so admin sees the saved state */
+            /* keep modal open so admin sees the saved state */
           }}
           listQueryKey={adminKeys.list()}
           onToast={showToast}

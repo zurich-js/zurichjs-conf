@@ -116,6 +116,18 @@ const buildSummaryMap = (
   return out;
 };
 
+const asWorkshopPlaceholder = (item: PublicProgramScheduleItem): PublicProgramScheduleItem => ({
+  ...item,
+  type: 'placeholder',
+  title: 'To be announced',
+  description: null,
+  submission_id: null,
+  session: null,
+  speaker: null,
+  speakers: [],
+  session_kind: null,
+});
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<WorkshopsScheduleResponse>
@@ -181,9 +193,15 @@ export default async function handler(
       item.submission_id ? !scheduledWorkshopSubmissionIds.has(item.submission_id) : true
     );
 
+    const publicWorkshopItems = scheduledWorkshopItems.map((item) =>
+      item.submission_id && offeringsBySubmissionId[item.submission_id]
+        ? item
+        : asWorkshopPlaceholder(item)
+    );
+
     const merged = [
       ...nonWorkshopItems,
-      ...scheduledWorkshopItems,
+      ...publicWorkshopItems,
       ...extraOfferingWorkshopItems,
     ].sort(compareByDateAndStart);
 

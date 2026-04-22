@@ -93,6 +93,16 @@ export interface FinancialData {
     };
     byTier: Record<string, { count: number; revenueCHF: number; revenueEUR: number }>;
   };
+  workshopSummary?: {
+    soldSeats: number;
+    grossRevenue: number;
+    totalDiscounts: number;
+    totalStripeFees: number;
+    revenueByCurrency: Record<string, number>;
+    registrationsByCurrency: Record<string, number>;
+    discountsByCurrency: Record<string, number>;
+    stripeFeesByCurrency: Record<string, number>;
+  };
   purchasesTimeSeries: Array<{
     date: string;
     count: number;
