@@ -70,6 +70,8 @@ export interface WorkshopPricingQueryParams {
   sessionSlug?: string;
   /** CFP submission id — exact match, fastest path. */
   cfpSubmissionId?: string;
+  /** Program session id — preferred match for post-CFP workshop offerings. */
+  sessionId?: string;
 }
 
 export async function fetchWorkshopPricing(

@@ -23,6 +23,10 @@ overlay to shape the dataset for a specific admin workflow.
 - Includes invited/admin-managed speakers with no CFP submissions:
   - 3 featured invited speakers.
   - 1 non-featured invited speaker.
+- Accepted CFP submissions are promoted into `program_sessions`, and their
+  primary/panel/workshop speakers are linked through `program_session_speakers`.
+- Seeded schedule and workshop commerce rows link to `program_sessions.session_id`
+  while retaining legacy `submission_id`/`cfp_submission_id` for compatibility.
 
 ### `cfp-first-stage`
 
@@ -30,6 +34,7 @@ overlay to shape the dataset for a specific admin workflow.
 - Expected:
   - No workshop commerce data.
   - No schedule items.
+  - No program sessions yet; submitted CFP rows remain intake/review records.
   - CFP submissions normalized to first-stage review state.
   - CFP-linked speakers hidden from the public lineup.
   - Invited/admin-managed speakers (no submissions) remain visible so the
@@ -41,6 +46,8 @@ overlay to shape the dataset for a specific admin workflow.
 - Expected:
   - No schedule yet.
   - No workshop commerce data.
+  - Accepted CFP rows have corresponding `program_sessions`, but those sessions
+    are not scheduled yet.
   - Admissions decisions are present from base data (accepted/rejected/etc.).
   - CFP-linked accepted speakers become visible/admin-managed for lineup review.
   - Invited/admin-managed speakers remain visible and still have no sessions.
@@ -51,6 +58,8 @@ overlay to shape the dataset for a specific admin workflow.
 - Expected:
   - Schedule exists with some sessions attached and open slots still available.
   - No workshop commerce data.
+  - Session schedule rows link through `program_schedule_items.session_id`;
+    legacy `submission_id` is still mirrored for compatibility.
   - Submissions linked to schedule items receive scheduled date/time/room.
   - CFP-linked accepted speakers remain visible/admin-managed.
   - At least one invited/admin-managed speaker remains without a session so you
@@ -61,6 +70,8 @@ overlay to shape the dataset for a specific admin workflow.
 - Purpose: post-scheduling local commerce workflow.
 - Expected:
   - Full schedule and workshop/registration fixtures available.
+  - Workshop offerings link through `workshops.session_id`; legacy
+    `cfp_submission_id` is still retained for compatibility.
   - CFP and invited speaker lineup behavior from prior phases is preserved.
   - Workshop Stripe connection fields are intentionally cleared:
     - `workshops.stripe_product_id = null`

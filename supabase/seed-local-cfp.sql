@@ -724,6 +724,96 @@ values
 on conflict (submission_id, speaker_id) do update set
     role = excluded.role;
 
+-- Program sessions are the post-selection source of truth. CFP submissions
+-- remain intake/review records; accepted/scheduled/sellable submissions are
+-- promoted here so schedule and commerce rows can link to program entities.
+insert into public.program_sessions (
+    cfp_submission_id,
+    kind,
+    title,
+    abstract,
+    level,
+    status,
+    workshop_duration_minutes,
+    workshop_capacity,
+    metadata
+)
+select
+    submission.id,
+    case
+        when submission.submission_type = 'workshop' then 'workshop'::public.program_session_kind
+        when submission.submission_type = 'panel' then 'panel'::public.program_session_kind
+        else 'talk'::public.program_session_kind
+    end,
+    submission.title,
+    submission.abstract,
+    submission.talk_level,
+    'confirmed'::public.program_session_status,
+    case
+        when submission.workshop_duration_hours is not null then submission.workshop_duration_hours * 60
+        else submission.scheduled_duration_minutes
+    end,
+    submission.workshop_max_participants,
+    jsonb_build_object(
+        'seeded', true,
+        'source', 'seed-local-cfp',
+        'legacy_submission_type', submission.submission_type
+    )
+from public.cfp_submissions submission
+where submission.status = 'accepted'
+   or submission.scheduled_date is not null
+on conflict (cfp_submission_id) where cfp_submission_id is not null do update set
+    kind = excluded.kind,
+    title = excluded.title,
+    abstract = excluded.abstract,
+    level = excluded.level,
+    status = excluded.status,
+    workshop_duration_minutes = excluded.workshop_duration_minutes,
+    workshop_capacity = excluded.workshop_capacity,
+    metadata = excluded.metadata,
+    updated_at = now();
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    submission.speaker_id,
+    case
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'speaker'::public.program_session_speaker_role
+    end,
+    0
+from public.program_sessions session
+join public.cfp_submissions submission on submission.id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    participant.speaker_id,
+    case
+        when participant.role in ('host', 'mc', 'instructor') then participant.role::public.program_session_speaker_role
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'panelist'::public.program_session_speaker_role
+    end,
+    (row_number() over (partition by session.id order by participant.speaker_id))::integer
+from public.program_sessions session
+join public.cfp_submission_speakers participant on participant.submission_id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
+
 insert into public.program_schedule_items (
     id,
     date,
@@ -1084,6 +1174,11 @@ on conflict (id) do update set
     submission_id = excluded.submission_id,
     is_visible = excluded.is_visible;
 
+update public.program_schedule_items item
+set session_id = session.id
+from public.program_sessions session
+where item.submission_id = session.cfp_submission_id;
+
 -- Workshop commerce overlays and local purchase fixtures
 insert into public.workshops (
     id,
@@ -1143,6 +1238,11 @@ on conflict (id) do update set
     stripe_price_lookup_key = excluded.stripe_price_lookup_key,
     metadata = excluded.metadata,
     updated_at = excluded.updated_at;
+
+update public.workshops workshop
+set session_id = session.id
+from public.program_sessions session
+where workshop.cfp_submission_id = session.cfp_submission_id;
 
 insert into public.workshop_registrations (
     id,
@@ -1816,6 +1916,93 @@ on conflict (id) do update set
     created_at = excluded.created_at,
     updated_at = excluded.updated_at,
     metadata = excluded.metadata;
+
+insert into public.program_sessions (
+    cfp_submission_id,
+    kind,
+    title,
+    abstract,
+    level,
+    status,
+    workshop_duration_minutes,
+    workshop_capacity,
+    metadata
+)
+select
+    submission.id,
+    case
+        when submission.submission_type = 'workshop' then 'workshop'::public.program_session_kind
+        when submission.submission_type = 'panel' then 'panel'::public.program_session_kind
+        else 'talk'::public.program_session_kind
+    end,
+    submission.title,
+    submission.abstract,
+    submission.talk_level,
+    'confirmed'::public.program_session_status,
+    case
+        when submission.workshop_duration_hours is not null then submission.workshop_duration_hours * 60
+        else submission.scheduled_duration_minutes
+    end,
+    submission.workshop_max_participants,
+    jsonb_build_object(
+        'seeded', true,
+        'source', 'seed-local-cfp-generated',
+        'legacy_submission_type', submission.submission_type
+    )
+from public.cfp_submissions submission
+where submission.status = 'accepted'
+   or submission.scheduled_date is not null
+on conflict (cfp_submission_id) where cfp_submission_id is not null do update set
+    kind = excluded.kind,
+    title = excluded.title,
+    abstract = excluded.abstract,
+    level = excluded.level,
+    status = excluded.status,
+    workshop_duration_minutes = excluded.workshop_duration_minutes,
+    workshop_capacity = excluded.workshop_capacity,
+    metadata = excluded.metadata,
+    updated_at = now();
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    submission.speaker_id,
+    case
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'speaker'::public.program_session_speaker_role
+    end,
+    0
+from public.program_sessions session
+join public.cfp_submissions submission on submission.id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    participant.speaker_id,
+    case
+        when participant.role in ('host', 'mc', 'instructor') then participant.role::public.program_session_speaker_role
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'panelist'::public.program_session_speaker_role
+    end,
+    (row_number() over (partition by session.id order by participant.speaker_id))::integer
+from public.program_sessions session
+join public.cfp_submission_speakers participant on participant.submission_id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
 
 -- Extra submission/tag links
 with generated_links as (

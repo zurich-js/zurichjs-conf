@@ -64,12 +64,14 @@ export const endpoints = {
       slug?: string;
       sessionSlug?: string;
       cfpSubmissionId?: string;
+      sessionId?: string;
     }) => {
       const query = new URLSearchParams();
       if (params?.currency) query.set('currency', params.currency);
       if (params?.slug) query.set('slug', params.slug);
       if (params?.sessionSlug) query.set('sessionSlug', params.sessionSlug);
       if (params?.cfpSubmissionId) query.set('cfpSubmissionId', params.cfpSubmissionId);
+      if (params?.sessionId) query.set('sessionId', params.sessionId);
       const qs = query.toString();
       return (qs ? `/api/workshops/pricing?${qs}` : '/api/workshops/pricing') as string;
     },
@@ -130,6 +132,5 @@ export type EndpointPath = ReturnType<
 export function buildUrl(endpoint: string, config: ApiConfig = defaultApiConfig): string {
   return `${config.baseUrl}${endpoint}`;
 }
-
 
 

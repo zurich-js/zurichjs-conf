@@ -35,10 +35,10 @@ const filterBySlug = (workshops: Workshop[], targetSlug: string | null): Worksho
 
 /**
  * Resolve a title-derived session slug (what /workshops/[slug] uses in its URL)
- * back to the CFP submission id. Returns null if no published workshop session
+ * back to the program session id. Returns null if no published workshop session
  * matches.
  */
-async function resolveSubmissionIdForSessionSlug(slug: string): Promise<string | null> {
+async function resolveProgramSessionIdForSessionSlug(slug: string): Promise<string | null> {
   const { speakers } = await fetchPublicSpeakers();
   for (const speaker of speakers) {
     for (const session of speaker.sessions) {
@@ -64,15 +64,17 @@ export default async function handler(
     const slugParam = typeof req.query.slug === 'string' ? req.query.slug : null;
     const submissionIdParam =
       typeof req.query.cfpSubmissionId === 'string' ? req.query.cfpSubmissionId : null;
+    const sessionIdParam =
+      typeof req.query.sessionId === 'string' ? req.query.sessionId : null;
     const sessionSlugParam =
       typeof req.query.sessionSlug === 'string' ? req.query.sessionSlug : null;
 
     // sessionSlug is the title-derived slug used by /workshops/[slug] URLs.
-    // Resolve it to a submission id so we can match the right workshop row,
+    // Resolve it to a program session id so we can match the right workshop row,
     // regardless of what the admin set as the Stripe lookup-key slug.
-    const resolvedSubmissionId =
-      submissionIdParam ??
-      (sessionSlugParam ? await resolveSubmissionIdForSessionSlug(sessionSlugParam) : null);
+    const resolvedSessionId =
+      sessionIdParam ??
+      (sessionSlugParam ? await resolveProgramSessionIdForSessionSlug(sessionSlugParam) : null);
 
     const supabase = createServiceRoleClient();
     let query = supabase
@@ -81,8 +83,10 @@ export default async function handler(
       .eq('status', 'published' satisfies WorkshopStatus)
       .not('stripe_price_lookup_key', 'is', null);
 
-    if (resolvedSubmissionId) {
-      query = query.eq('cfp_submission_id', resolvedSubmissionId);
+    if (resolvedSessionId) {
+      query = query.eq('session_id', resolvedSessionId);
+    } else if (submissionIdParam) {
+      query = query.eq('cfp_submission_id', submissionIdParam);
     }
 
     const { data, error } = await query;
@@ -96,7 +100,7 @@ export default async function handler(
     // Legacy `?slug=` path still filters on Stripe lookup-key slug for callers
     // that know the lookup-key directly. New code should pass cfpSubmissionId
     // or sessionSlug.
-    const workshops = resolvedSubmissionId
+    const workshops = resolvedSessionId || submissionIdParam
       ? ((data ?? []) as Workshop[])
       : filterBySlug((data ?? []) as Workshop[], slugParam);
 

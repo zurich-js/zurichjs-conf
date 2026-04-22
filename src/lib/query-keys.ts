@@ -205,6 +205,19 @@ export const speakersKeys = {
 } as const;
 
 /**
+ * Program operations query keys
+ */
+export const programKeys = {
+  all: ['program'] as const,
+  sessions: (params?: { status?: string; kind?: string; includeArchived?: boolean }) =>
+    [...programKeys.all, 'sessions', params ?? {}] as const,
+  session: (id: string) => [...programKeys.all, 'session', id] as const,
+  sessionSpeakers: (id: string) => [...programKeys.session(id), 'speakers'] as const,
+  scheduleItems: () => [...programKeys.all, 'schedule-items'] as const,
+  workshopOffering: (sessionId: string) => [...programKeys.all, 'workshop-offering', sessionId] as const,
+} as const;
+
+/**
  * Discount query keys
  */
 export const discountKeys = {
@@ -231,5 +244,6 @@ export const queryKeys = {
   sponsorships: sponsorshipKeys,
   partnerships: partnershipKeys,
   speakers: speakersKeys,
+  program: programKeys,
   discount: discountKeys,
 } as const;

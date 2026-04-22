@@ -70,6 +70,12 @@ function getSubmissionTypeSummary(submissionType: string, workshopDurationHours?
   return submissionType;
 }
 
+function getProgramKind(submissionType: string) {
+  if (submissionType === 'workshop') return 'workshop';
+  if (submissionType === 'panel') return 'panel';
+  return 'talk';
+}
+
 function VisibilityToggle({
   checked,
   onChange,
@@ -169,39 +175,67 @@ export function ScheduleItemModal({
             ? 'session'
             : formData.type;
       let linkedSubmissionId = scheduleType === 'session' ? formData.submission_id || null : null;
+      let linkedProgramSessionId = item?.session_id || null;
 
       if (!item && scheduleType === 'session' && mode === 'custom') {
         if (!formData.speaker_id || !formData.custom_title || !formData.custom_abstract) {
-          throw new Error('Choose a speaker, title, and abstract for the custom submission');
+          throw new Error('Choose a speaker, title, and abstract for the custom session');
         }
 
-        const sessionRes = await fetch('/api/admin/cfp/sessions', {
+        const sessionRes = await fetch('/api/admin/program/sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            speaker_id: formData.speaker_id,
+            kind: getProgramKind(formData.custom_submission_type),
             title: formData.custom_title,
             abstract: formData.custom_abstract,
-            submission_type: formData.custom_submission_type,
-            talk_level: formData.custom_talk_level,
-            status: 'accepted',
+            level: formData.custom_talk_level,
+            status: 'confirmed',
+            metadata: {
+              created_from: 'schedule_modal',
+              legacy_submission_type: formData.custom_submission_type,
+            },
             ...(formData.custom_submission_type === 'workshop' && {
-              workshop_duration_hours: formData.custom_workshop_duration_hours ? parseFloat(formData.custom_workshop_duration_hours) : undefined,
-              workshop_max_participants: formData.custom_workshop_max_participants ? parseInt(formData.custom_workshop_max_participants, 10) : undefined,
+              workshop_duration_minutes: formData.custom_workshop_duration_hours ? Math.round(parseFloat(formData.custom_workshop_duration_hours) * 60) : undefined,
+              workshop_capacity: formData.custom_workshop_max_participants ? parseInt(formData.custom_workshop_max_participants, 10) : undefined,
             }),
-            ...(formData.custom_submission_type === 'panel' && {
-              participant_speaker_ids: formData.custom_participant_speaker_ids,
-            }),
+            speakers: [
+              {
+                speaker_id: formData.speaker_id,
+                role: formData.custom_submission_type === 'workshop' ? 'instructor' : 'speaker',
+                sort_order: 0,
+              },
+              ...formData.custom_participant_speaker_ids.map((speakerId, index) => ({
+                speaker_id: speakerId,
+                role: formData.custom_submission_type === 'panel' ? 'panelist' : 'speaker',
+                sort_order: index + 1,
+              })),
+            ],
           }),
         });
 
         if (!sessionRes.ok) {
           const data = await sessionRes.json();
-          throw new Error(data.error || 'Failed to create custom submission');
+          throw new Error(data.error || 'Failed to create custom session');
         }
 
         const sessionData = await sessionRes.json();
-        linkedSubmissionId = sessionData.session?.id || null;
+        linkedProgramSessionId = sessionData.session?.id || null;
+        linkedSubmissionId = null;
+      } else if (scheduleType === 'session' && linkedSubmissionId) {
+        const promoteRes = await fetch('/api/admin/program/sessions/promote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ submission_id: linkedSubmissionId, status: 'confirmed' }),
+        });
+
+        if (!promoteRes.ok) {
+          const data = await promoteRes.json();
+          throw new Error(data.error || 'Failed to promote CFP submission');
+        }
+
+        const promoteData = await promoteRes.json();
+        linkedProgramSessionId = promoteData.session?.id || null;
       }
 
       const payload = {
@@ -215,7 +249,8 @@ export function ScheduleItemModal({
             ? selectedLinkedSession?.title || formData.custom_title || formData.title || 'TBA'
             : formData.title,
         description: scheduleType === 'session' ? null : formData.description || null,
-        submission_id: linkedSubmissionId,
+        session_id: linkedProgramSessionId,
+        submission_id: linkedProgramSessionId ? undefined : linkedSubmissionId,
         is_visible: formData.is_visible,
       };
 

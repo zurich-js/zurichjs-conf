@@ -92,6 +92,7 @@ export interface Workshop {
   title: string;
   description: string;
   instructor_id: string | null;
+  session_id?: string | null;
   cfp_submission_id: string | null;
   room: string | null;
   duration_minutes: number | null;

@@ -55,9 +55,18 @@ or exists (
 
 update public.workshops
 set
+    session_id = session.id,
     stripe_product_id = null,
     stripe_price_lookup_key = null,
-    metadata = coalesce(metadata, '{}'::jsonb) || '{"seed_phase": "workshop-commerce"}'::jsonb;
+    metadata = coalesce(workshops.metadata, '{}'::jsonb) || '{"seed_phase": "workshop-commerce"}'::jsonb
+from public.program_sessions session
+where workshops.cfp_submission_id = session.cfp_submission_id;
+
+update public.program_sessions
+set
+    metadata = coalesce(metadata, '{}'::jsonb) || '{"seed_phase": "workshop-commerce"}'::jsonb,
+    updated_at = now()
+where status <> 'archived';
 
 update public.workshop_registrations
 set metadata = coalesce(metadata, '{}'::jsonb) || '{"seed_phase": "workshop-commerce"}'::jsonb;

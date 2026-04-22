@@ -51,7 +51,8 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
               className="rounded-none border-0 bg-transparent p-0"
             />
             <WorkshopPurchasePanel
-              cfpSubmissionId={session.id}
+              sessionId={session.id}
+              cfpSubmissionId={session.cfp_submission_id}
               sessionSlug={session.slug}
               title={session.title}
             />

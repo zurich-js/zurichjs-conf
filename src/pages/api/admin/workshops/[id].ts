@@ -221,14 +221,17 @@ async function syncProgramScheduleForWorkshop(
   },
   options: { publish: boolean }
 ) {
-  if (!workshop.cfp_submission_id) return;
+  if (!workshop.cfp_submission_id && !workshop.session_id) return;
   if (!schedule.date || !schedule.startTime || !schedule.durationMinutes) return;
 
   const supabase = createProgramScheduleClient();
   const { data: existing, error: existingError } = await supabase
     .from('program_schedule_items')
     .select('id, is_visible')
-    .eq('submission_id', workshop.cfp_submission_id)
+    .or([
+      workshop.session_id ? `session_id.eq.${workshop.session_id}` : null,
+      workshop.cfp_submission_id ? `submission_id.eq.${workshop.cfp_submission_id}` : null,
+    ].filter(Boolean).join(','))
     .limit(1)
     .maybeSingle();
 
@@ -249,6 +252,7 @@ async function syncProgramScheduleForWorkshop(
     title: workshop.title,
     description: workshop.description,
     submission_id: workshop.cfp_submission_id,
+    session_id: workshop.session_id,
     is_visible: options.publish ? true : existing?.is_visible ?? false,
   };
 
