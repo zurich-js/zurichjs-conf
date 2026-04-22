@@ -80,6 +80,9 @@ let _serverEnv: {
     password: string;
     readonlyApiKey: string | null;
   };
+  anthropic: {
+    apiKey: string | null;
+  };
 } | null = null;
 
 function getServerEnv() {
