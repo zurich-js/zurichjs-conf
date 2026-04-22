@@ -179,7 +179,7 @@ export default function SpeakersPage() {
               ZurichJS Conf Speakers
             </Heading>
             <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
-              Meet the engineers, makers, and community leaders shaping this year&apos;s ZurichJS Conf program. Explore their sessions, save your favorites, and start planning who you want to learn from in September.
+              Meet the engineers, makers, and community leaders shaping the ZurichJS Conf 2026 experience.
             </p>
         </ShapedSection>
 

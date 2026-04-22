@@ -43,8 +43,6 @@ function SpeakerCardInner({
   footer,
   placeholder = false,
 }: SharedSpeakerCardProps) {
-  // TODO: Rework the sliding footer so it overlays and covers the name/role area,
-  // instead of appearing only below it. This should match the intended speaker card interaction.
   const isCompact = variant === 'compact';
   const isDefault = variant === 'default';
   const isFull = variant === 'full';
@@ -58,7 +56,7 @@ function SpeakerCardInner({
   }
 
   return (
-          <div className="bg-white relative rounded-2xl overflow-hidden h-full transition-all duration-300
+          <div className="bg-white relative flex h-full flex-col rounded-2xl overflow-hidden transition-all duration-300
           shadow-md shadow-brand-black/10 group-hover:shadow-brand-black/20 focus-within:shadow-brand-black/20
           group-hover:shadow-lg group-focus-within:shadow-lg
           group-hover:-translate-y-0.5 group-focus-within:-translate-y-0.5
@@ -106,41 +104,45 @@ function SpeakerCardInner({
 
               <div
                   className={cn(
-                      'transition-all duration-300 ease-out flex-1',
-                      'p-2.5 text-center',
+                      'relative transition-all duration-300 ease-out',
+                      isFull ? 'flex justify-center p-2.5 text-center' : 'flex-1 p-2.5 text-center',
                   )}
               >
-                  <h2
-                      className="font-bold text-md"
-                  >
-                      {name}
-                  </h2>
-                  {badge ? (
-                    <span className="mt-2 inline-flex rounded-full bg-brand-yellow-main px-2.5 py-1 text-xs font-bold text-brand-black">
-                      {badge}
-                    </span>
-                  ) : null}
-                  {title ? (
-                      <p className={cn(!isCompact && 'line-clamp-2 min-h-[3rem]')}>
-                          {title}
-                      </p>
+                  <div className={cn(isFull && 'flex max-w-full flex-col items-center justify-center')}>
+                    <h2
+                        className="line-clamp-2 font-bold text-md"
+                    >
+                        {name}
+                    </h2>
+                    {badge ? (
+                      <span className="mt-2 inline-flex rounded-full bg-brand-yellow-main px-2.5 py-1 text-xs font-bold text-brand-black">
+                        {badge}
+                      </span>
+                    ) : null}
+                    {title ? (
+                        <p className={cn(isCompact ? 'line-clamp-2' : 'line-clamp-3')}>
+                            {title}
+                        </p>
+                    ) : null}
+                  </div>
+
+                  {isDefault && footer ? (
+                    <div className="absolute inset-0 flex translate-x-full items-center bg-white p-2.5 pl-4 transition-transform duration-300 ease-out group-hover:translate-x-0 group-focus-within:translate-x-0">
+                      <div className="flex w-full items-center justify-between gap-2.5">
+                        <p className="font-bold">
+                          {footer}
+                        </p>
+                        {(footer !== 'To be announced') ? (
+                          <ChevronRight className="mb-1 size-4 shrink-0 text-black" aria-hidden="true" />
+                        ) : null}
+                      </div>
+                    </div>
                   ) : null}
               </div>
 
-        {!isCompact && !!footer ? (
-          <div
-            className={cn(
-              'flex-1 transition-all duration-300 ease-out',
-                isDefault ? 'absolute bottom-0 left-0 right-0' : 'relative',
-            )}
-          >
-
-              <div className={cn(
-                "transition-transform duration-300 ease-out bg-white",
-                isFull && 'p-2.5 pl-4 translate-x-0',
-                isDefault && 'p-2.5 pl-4 pt-0 translate-x-full group-hover:translate-x-0 group-focus-within:translate-x-0',
-              )}>
-                <div className="flex items-center justify-between gap-2.5">
+        {isFull && !!footer ? (
+          <div className="mt-auto flex p-2.5 pl-4">
+                <div className="flex w-full items-center justify-between gap-2.5">
                   <p className="font-bold">
                     {footer}
                   </p>
@@ -148,7 +150,6 @@ function SpeakerCardInner({
                     <ChevronRight className="mb-1 size-4 shrink-0 text-black" aria-hidden="true" />
                   ) : null}
                 </div>
-              </div>
           </div>
         ) : null}
       </div>
