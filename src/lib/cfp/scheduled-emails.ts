@@ -90,45 +90,52 @@ interface SubmissionForEmail {
 }
 
 /**
- * Get submission with speaker data for email
+ * Get submission with speaker data for email.
+ *
+ * Uses two separate queries rather than a PostgREST embed: the
+ * cfp_submission_speakers junction table (added for panels) makes a
+ * `speaker:cfp_speakers(*)` embed ambiguous. The two-query pattern
+ * matches getAdminSubmissionDetail in ./admin.ts.
  */
 async function getSubmissionForEmail(submissionId: string): Promise<SubmissionForEmail | null> {
   const supabase = createCfpServiceClient();
 
-  const { data, error } = await supabase
+  const { data: submission, error: submissionError } = await supabase
     .from('cfp_submissions')
-    .select(`
-      id,
-      title,
-      submission_type,
-      decision_status,
-      workshop_duration_hours,
-      speaker:cfp_speakers(
-        id,
-        first_name,
-        last_name,
-        email
-      )
-    `)
+    .select('id, title, submission_type, decision_status, workshop_duration_hours, speaker_id')
     .eq('id', submissionId)
     .single();
 
-  if (error || !data) {
-    log.error('Failed to fetch submission for email', { submissionId, error: error?.message });
+  if (submissionError || !submission) {
+    log.error('Failed to fetch submission for email', {
+      submissionId,
+      error: submissionError?.message,
+    });
     return null;
   }
 
-  // Handle speaker data (may be array or object from Supabase join)
-  const speakerData = Array.isArray(data.speaker) ? data.speaker[0] : data.speaker;
+  const { data: speaker, error: speakerError } = await supabase
+    .from('cfp_speakers')
+    .select('id, first_name, last_name, email')
+    .eq('id', submission.speaker_id)
+    .single();
+
+  if (speakerError) {
+    log.error('Failed to fetch speaker for email', {
+      submissionId,
+      speakerId: submission.speaker_id,
+      error: speakerError.message,
+    });
+  }
 
   return {
-    id: data.id,
-    title: data.title,
-    submission_type: data.submission_type,
-    decision_status: data.decision_status,
-    workshop_duration_hours: data.workshop_duration_hours ?? null,
-    speaker: speakerData || null,
-  } as SubmissionForEmail;
+    id: submission.id,
+    title: submission.title,
+    submission_type: submission.submission_type,
+    decision_status: submission.decision_status,
+    workshop_duration_hours: submission.workshop_duration_hours ?? null,
+    speaker: speaker || null,
+  };
 }
 
 /**

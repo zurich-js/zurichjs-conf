@@ -138,24 +138,32 @@ export async function makeDecision(
   });
 
   try {
-    // 1. Get submission with speaker info
+    // Fetch submission and speaker as two separate queries rather than a
+    // PostgREST embed: the cfp_submission_speakers junction table (added for
+    // panels) makes `cfp_speakers(*)` ambiguous, and splitting the calls is
+    // what getAdminSubmissionDetail in ./admin.ts already does.
     const { data: submission, error: fetchError } = await supabase
       .from('cfp_submissions')
-      .select(`
-        *,
-        speaker:cfp_speakers(*)
-      `)
+      .select('*')
       .eq('id', request.submission_id)
       .single();
 
     if (fetchError || !submission) {
-      log.error('Submission not found', { submission_id: request.submission_id });
+      log.error('Submission not found', fetchError, { submission_id: request.submission_id });
       return { success: false, error: 'Submission not found' };
     }
 
-    const speaker = submission.speaker;
-    if (!speaker) {
-      log.error('Speaker not found for submission', { submission_id: request.submission_id });
+    const { data: speaker, error: speakerError } = await supabase
+      .from('cfp_speakers')
+      .select('*')
+      .eq('id', submission.speaker_id)
+      .single();
+
+    if (speakerError || !speaker) {
+      log.error('Speaker not found for submission', speakerError, {
+        submission_id: request.submission_id,
+        speaker_id: submission.speaker_id,
+      });
       return { success: false, error: 'Speaker not found' };
     }
 
