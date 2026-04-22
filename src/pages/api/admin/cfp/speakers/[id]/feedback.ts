@@ -82,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: submissions, error: submissionsError } = await supabase
       .from('cfp_submissions')
       .select(
-        'id, title, abstract, submission_type, talk_level, status, submitted_at, created_at, slides_url, previous_recording_url, outline, additional_notes, target_audience, decision_status, decision_email_sent_at'
+        'id, title, abstract, submission_type, talk_level, status, submitted_at, created_at, slides_url, previous_recording_url, outline, additional_notes, decision_status, decision_email_sent_at'
       )
       .eq('speaker_id', id)
       .order('created_at', { ascending: false });
@@ -293,7 +293,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         previous_recording_url: sub.previous_recording_url ?? null,
         outline: sub.outline ?? null,
         additional_notes: sub.additional_notes ?? null,
-        target_audience: sub.target_audience ?? null,
         tags: tagsBySubmission.get(sub.id) || [],
         analytics,
         reviews: subReviews.map((r) => ({

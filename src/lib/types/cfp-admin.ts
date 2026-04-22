@@ -239,7 +239,6 @@ export interface SpeakerFeedbackSubmission {
   previous_recording_url?: string | null;
   outline?: string | null;
   additional_notes?: string | null;
-  target_audience?: string | null;
   tags: SpeakerFeedbackTagStat[];
   analytics: SpeakerFeedbackSubmissionAnalytics;
 }

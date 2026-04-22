@@ -268,7 +268,7 @@ function SubmissionFeedbackCard({
   const isLoading = loadingSubmissionId === submission.id;
 
   const hasMedia = Boolean(submission.slides_url || submission.previous_recording_url);
-  const hasNotes = Boolean(submission.outline || submission.additional_notes || submission.target_audience);
+  const hasNotes = Boolean(submission.outline || submission.additional_notes);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
@@ -370,12 +370,6 @@ function SubmissionFeedbackCard({
                 <div className="rounded-lg border border-gray-200 bg-white p-3">
                   <p className="mb-1 text-xs font-semibold text-black">Outline</p>
                   <p className="whitespace-pre-wrap text-sm text-gray-700">{submission.outline}</p>
-                </div>
-              )}
-              {submission.target_audience && (
-                <div className="rounded-lg border border-gray-200 bg-white p-3">
-                  <p className="mb-1 text-xs font-semibold text-black">Target audience</p>
-                  <p className="whitespace-pre-wrap text-sm text-gray-700">{submission.target_audience}</p>
                 </div>
               )}
               {submission.additional_notes && (
