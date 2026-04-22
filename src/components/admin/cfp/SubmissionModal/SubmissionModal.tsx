@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { X, FileText, Copy, Mail, Pencil, Loader2, Gavel } from 'lucide-react';
+import { X, FileText, Copy, Mail, Pencil, Loader2, Gavel, ArrowLeft } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import type { CfpAdminSubmission, CfpReviewWithReviewer } from '@/lib/types/cfp-admin';
@@ -36,6 +36,8 @@ export interface SubmissionModalProps {
   isDeleting: boolean;
   onEdit: (data: Partial<CfpAdminSubmission>) => void;
   isEditing: boolean;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 export function SubmissionModal({
@@ -47,6 +49,8 @@ export function SubmissionModal({
   isDeleting,
   onEdit,
   isEditing,
+  onBack,
+  backLabel = 'Back to speaker',
 }: SubmissionModalProps) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -214,6 +218,16 @@ export function SubmissionModal({
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="mb-3 inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-black hover:bg-gray-50 cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {backLabel}
+            </button>
+          )}
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">

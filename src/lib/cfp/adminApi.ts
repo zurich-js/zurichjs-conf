@@ -10,6 +10,7 @@ import type {
   CfpAdminReviewer,
   CfpAdminTag,
   CfpReviewWithReviewer,
+  SpeakerFeedbackResponse,
 } from '@/lib/types/cfp-admin';
 import type { CfpDecisionStatus, CfpDecisionEvent, CfpScheduledEmail } from '@/lib/types/cfp/decisions';
 
@@ -39,6 +40,12 @@ export async function fetchSubmissionDetail(id: string): Promise<{
 export async function fetchSpeakers(): Promise<{ speakers: CfpAdminSpeaker[] }> {
   const res = await fetch('/api/admin/cfp/speakers');
   if (!res.ok) throw new Error('Failed to fetch speakers');
+  return res.json();
+}
+
+export async function fetchSpeakerFeedback(id: string): Promise<SpeakerFeedbackResponse> {
+  const res = await fetch(`/api/admin/cfp/speakers/${id}/feedback`);
+  if (!res.ok) throw new Error('Failed to fetch speaker feedback');
   return res.json();
 }
 
