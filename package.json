@@ -24,7 +24,6 @@
 		]
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^0.78.0",
 		"@headlessui/react": "^2.2.9",
 		"@hookform/resolvers": "^5.2.2",
 		"@nwpr/airport-codes": "^3.0.3",

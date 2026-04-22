@@ -14,24 +14,6 @@ export interface AttendeeAnalytics {
   demographics: AttendeeDemographics;
   /** Acquisition channels: how attendees found/purchased tickets */
   acquisition: AttendeeAcquisition;
-  /** AI-enriched company insights (null if ANTHROPIC_API_KEY not set) */
-  companyInsights: AttendeeCompanyInsights | null;
-}
-
-export interface AttendeeCompanyInsights {
-  /** Each enriched company with size/sector classification */
-  companies: Array<{
-    name: string;
-    size: 'startup' | 'scaleup' | 'sme' | 'enterprise';
-    sector: string;
-    confidence: 'high' | 'medium' | 'low';
-  }>;
-  /** Attendee count by company size (weighted by attendees per company) */
-  bySize: Record<string, number>;
-  /** Attendee count by industry sector (weighted by attendees per company) */
-  bySector: Array<{ sector: string; count: number }>;
-  enrichedCount: number;
-  totalCompanies: number;
 }
 
 export interface AttendeeSummary {

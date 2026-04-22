@@ -80,9 +80,6 @@ let _serverEnv: {
     password: string;
     readonlyApiKey: string | null;
   };
-  anthropic: {
-    apiKey: string | null;
-  };
 } | null = null;
 
 function getServerEnv() {
@@ -135,10 +132,6 @@ function getServerEnv() {
           'ADMIN_PASSWORD'
         ),
         readonlyApiKey: process.env.ADMIN_READONLY_API_KEY || null,
-      },
-
-      anthropic: {
-        apiKey: process.env.ANTHROPIC_API_KEY || null,
       },
     };
   }
