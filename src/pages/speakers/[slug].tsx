@@ -439,7 +439,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                         Get VIP
                                     </Button>
                                     <p className="text-sm text-brand-gray-darkest">... or</p>
-                                    <div className="flex gap-2.5 items-center justify-center">
+                                    <div className="flex flex-col gap-2.5 items-center justify-center xs:flex-row">
                                         <Button variant="outline" size="md" onClick={handleReminder} forceDark>
                                             <BellPlus className="size-5" /> Set reminder
                                         </Button>
