@@ -26,6 +26,7 @@ import type { MultiSort } from '@/components/admin/cfp/tableSort';
 import {
   type CfpTab,
   type CfpAdminSubmission,
+  type CfpAdminSpeaker,
   cfpQueryKeys,
 } from '@/lib/types/cfp-admin';
 import {
@@ -49,6 +50,40 @@ const ITEMS_PER_PAGE = 10;
 export default function CfpAdminDashboard() {
   const [activeTab, setActiveTab] = useState<CfpTab>('submissions');
   const [selectedSubmission, setSelectedSubmission] = useState<CfpAdminSubmission | null>(null);
+  const [selectedSpeaker, setSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
+  const [returnToSpeaker, setReturnToSpeaker] = useState<CfpAdminSpeaker | null>(null);
+  const [speakerInitialTab, setSpeakerInitialTab] = useState<'profile' | 'feedback'>('profile');
+
+  const handleSelectSpeaker = useCallback((speaker: CfpAdminSpeaker | null) => {
+    setSpeakerInitialTab('profile');
+    setSelectedSpeaker(speaker);
+  }, []);
+
+  const handleSelectSubmissionFromSpeaker = useCallback(
+    (submission: CfpAdminSubmission, fromSpeaker?: CfpAdminSpeaker) => {
+      if (fromSpeaker) {
+        setReturnToSpeaker(fromSpeaker);
+        setSelectedSpeaker(null);
+      } else {
+        setReturnToSpeaker(null);
+      }
+      setSelectedSubmission(submission);
+    },
+    []
+  );
+
+  const handleBackToSpeaker = useCallback(() => {
+    if (!returnToSpeaker) return;
+    setSelectedSubmission(null);
+    setSpeakerInitialTab('feedback');
+    setSelectedSpeaker(returnToSpeaker);
+    setReturnToSpeaker(null);
+  }, [returnToSpeaker]);
+
+  const handleCloseSubmission = useCallback(() => {
+    setSelectedSubmission(null);
+    setReturnToSpeaker(null);
+  }, []);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkActionStatus, setBulkActionStatus] = useState<string>('');
   const queryClient = useQueryClient();
@@ -59,6 +94,8 @@ export default function CfpAdminDashboard() {
   const [statuses, setStatuses] = useState<string[]>([]);
   const [submissionTypes, setSubmissionTypes] = useState<string[]>([]);
   const [shortlistStatuses, setShortlistStatuses] = useState<string[]>([]);
+  const [decisionStatuses, setDecisionStatuses] = useState<string[]>([]);
+  const [emailStates, setEmailStates] = useState<string[]>([]);
   const [coverageMin, setCoverageMin] = useState<string>('');
   const [coverageMax, setCoverageMax] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -102,13 +139,15 @@ export default function CfpAdminDashboard() {
     statuses: statuses.length > 0 ? statuses : undefined,
     types: submissionTypes.length > 0 ? submissionTypes : undefined,
     shortlistStatuses: shortlistStatuses.length > 0 ? shortlistStatuses : undefined,
+    decisionStatuses: decisionStatuses.length > 0 ? decisionStatuses : undefined,
+    emailStates: emailStates.length > 0 ? emailStates : undefined,
     search: debouncedSearch || undefined,
     sort: submissionSortParams.length > 0 ? submissionSortParams : undefined,
     coverage_min: coverageMin.trim() ? Math.max(0, Math.min(100, Number(coverageMin))) : undefined,
     coverage_max: coverageMax.trim() ? Math.max(0, Math.min(100, Number(coverageMax))) : undefined,
     limit: ITEMS_PER_PAGE,
     offset: (currentPage - 1) * ITEMS_PER_PAGE,
-  }), [statuses, submissionTypes, shortlistStatuses, debouncedSearch, submissionSortParams, coverageMin, coverageMax, currentPage]);
+  }), [statuses, submissionTypes, shortlistStatuses, decisionStatuses, emailStates, debouncedSearch, submissionSortParams, coverageMin, coverageMax, currentPage]);
 
   const setSubmissionStatuses = useCallback((value: string[]) => {
     setStatuses(value);
@@ -122,6 +161,16 @@ export default function CfpAdminDashboard() {
 
   const setSubmissionShortlistStatuses = useCallback((value: string[]) => {
     setShortlistStatuses(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionDecisionStatuses = useCallback((value: string[]) => {
+    setDecisionStatuses(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionEmailStates = useCallback((value: string[]) => {
+    setEmailStates(value);
     setCurrentPage(1);
   }, []);
 
@@ -354,6 +403,10 @@ export default function CfpAdminDashboard() {
                   setSubmissionTypes={setSubmissionTypesFilter}
                   shortlistStatuses={shortlistStatuses}
                   setShortlistStatuses={setSubmissionShortlistStatuses}
+                  decisionStatuses={decisionStatuses}
+                  setDecisionStatuses={setSubmissionDecisionStatuses}
+                  emailStates={emailStates}
+                  setEmailStates={setSubmissionEmailStates}
                   coverageMin={coverageMin}
                   setCoverageMin={setSubmissionCoverageMin}
                   coverageMax={coverageMax}
@@ -372,7 +425,14 @@ export default function CfpAdminDashboard() {
               )}
 
               {activeTab === 'speakers' && (
-                <SpeakersTab speakers={speakers} isLoading={isLoadingSpeakers} onSelectSubmission={setSelectedSubmission} />
+                <SpeakersTab
+                  speakers={speakers}
+                  isLoading={isLoadingSpeakers}
+                  onSelectSubmission={handleSelectSubmissionFromSpeaker}
+                  selectedSpeaker={selectedSpeaker}
+                  onSelectSpeaker={handleSelectSpeaker}
+                  initialSpeakerTab={speakerInitialTab}
+                />
               )}
               {activeTab === 'reviewers' && (
                 <ReviewersTab
@@ -396,13 +456,19 @@ export default function CfpAdminDashboard() {
         {selectedSubmission && (
           <SubmissionModal
             submission={selectedSubmission}
-            onClose={() => setSelectedSubmission(null)}
+            onClose={handleCloseSubmission}
             onUpdateStatus={(status) => updateStatusMutation.mutate({ id: selectedSubmission.id, status })}
             isUpdating={updateStatusMutation.isPending}
             onDelete={() => deleteSubmissionMutation.mutate(selectedSubmission.id)}
             isDeleting={deleteSubmissionMutation.isPending}
             onEdit={(data) => editSubmissionMutation.mutate({ id: selectedSubmission.id, data })}
             isEditing={editSubmissionMutation.isPending}
+            onBack={returnToSpeaker ? handleBackToSpeaker : undefined}
+            backLabel={
+              returnToSpeaker
+                ? `Back to ${returnToSpeaker.first_name || returnToSpeaker.last_name ? `${returnToSpeaker.first_name} ${returnToSpeaker.last_name}`.trim() : 'speaker'}`
+                : undefined
+            }
           />
         )}
       </div>

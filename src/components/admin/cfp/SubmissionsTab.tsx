@@ -35,6 +35,13 @@ const STATUS_OPTIONS = [
 
 const TYPE_OPTIONS = ['talk', 'workshop', 'lightning'] as const;
 const SHORTLIST_OPTIONS = ['likely_shortlisted', 'maybe_shortlisted', 'unlikely_shortlisted'] as const;
+const DECISION_STATUS_OPTIONS = ['undecided', 'accepted', 'rejected'] as const;
+const EMAIL_STATE_OPTIONS = ['not_scheduled', 'pending', 'sent'] as const;
+const EMAIL_STATE_LABELS: Record<string, string> = {
+  not_scheduled: 'No email scheduled',
+  pending: 'Email pending',
+  sent: 'Email sent',
+};
 
 interface SubmissionsTabProps {
   submissions: CfpAdminSubmission[];
@@ -52,6 +59,10 @@ interface SubmissionsTabProps {
   setSubmissionTypes: (v: string[]) => void;
   shortlistStatuses: string[];
   setShortlistStatuses: (v: string[]) => void;
+  decisionStatuses: string[];
+  setDecisionStatuses: (v: string[]) => void;
+  emailStates: string[];
+  setEmailStates: (v: string[]) => void;
   coverageMin: string;
   setCoverageMin: (v: string) => void;
   coverageMax: string;
@@ -147,6 +158,10 @@ export function SubmissionsTab({
   setSubmissionTypes,
   shortlistStatuses,
   setShortlistStatuses,
+  decisionStatuses,
+  setDecisionStatuses,
+  emailStates,
+  setEmailStates,
   coverageMin,
   setCoverageMin,
   coverageMax,
@@ -185,7 +200,7 @@ export function SubmissionsTab({
                 submission{total !== 1 ? 's' : ''}
               </span>
             </div>
-            {(searchQuery || statuses.length || submissionTypes.length || shortlistStatuses.length || coverageMin || coverageMax) ? (
+            {(searchQuery || statuses.length || submissionTypes.length || shortlistStatuses.length || decisionStatuses.length || emailStates.length || coverageMin || coverageMax) ? (
               <button
                 type="button"
                 onClick={() => {
@@ -193,6 +208,8 @@ export function SubmissionsTab({
                   setStatuses([]);
                   setSubmissionTypes([]);
                   setShortlistStatuses([]);
+                  setDecisionStatuses([]);
+                  setEmailStates([]);
                   setCoverageMin('');
                   setCoverageMax('');
                 }}
@@ -231,6 +248,20 @@ export function SubmissionsTab({
               selected={shortlistStatuses}
               onChange={setShortlistStatuses}
               formatOption={(value) => value.replaceAll('_', ' ')}
+            />
+            <MultiSelectFilterPopover
+              label="Decision"
+              options={DECISION_STATUS_OPTIONS}
+              selected={decisionStatuses}
+              onChange={setDecisionStatuses}
+              formatOption={(value) => value}
+            />
+            <MultiSelectFilterPopover
+              label="Email"
+              options={EMAIL_STATE_OPTIONS}
+              selected={emailStates}
+              onChange={setEmailStates}
+              formatOption={(value) => EMAIL_STATE_LABELS[value] || value}
             />
 
             <Popover className="relative">
