@@ -138,18 +138,21 @@ export async function makeDecision(
   });
 
   try {
-    // 1. Get submission with speaker info
+    // 1. Get submission with speaker info.
+    //    The FK hint `!speaker_id` is required because cfp_submission_speakers
+    //    (added for panels) introduces a second relationship between
+    //    cfp_submissions and cfp_speakers that PostgREST cannot auto-resolve.
     const { data: submission, error: fetchError } = await supabase
       .from('cfp_submissions')
       .select(`
         *,
-        speaker:cfp_speakers(*)
+        speaker:cfp_speakers!speaker_id(*)
       `)
       .eq('id', request.submission_id)
       .single();
 
     if (fetchError || !submission) {
-      log.error('Submission not found', { submission_id: request.submission_id });
+      log.error('Submission not found', fetchError, { submission_id: request.submission_id });
       return { success: false, error: 'Submission not found' };
     }
 
