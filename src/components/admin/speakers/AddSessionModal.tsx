@@ -34,6 +34,8 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
     abstract: '',
     submission_type: 'standard',
     talk_level: 'intermediate',
+    tag_input: '',
+    tags: [] as string[],
     workshop_duration_hours: '',
     workshop_max_participants: '',
     participant_speaker_ids: [] as string[],
@@ -50,6 +52,10 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    const pendingTag = formData.tag_input.trim().toLowerCase();
+    const tags = pendingTag && !formData.tags.includes(pendingTag) && formData.tags.length < 5
+      ? [...formData.tags, pendingTag]
+      : formData.tags;
 
     try {
       if (mode === 'existing') {
@@ -85,6 +91,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
           abstract: formData.abstract,
           submission_type: formData.submission_type,
           talk_level: formData.talk_level,
+          tags,
           status: 'accepted',
           ...(formData.submission_type === 'workshop' && {
             workshop_duration_hours: formData.workshop_duration_hours ? parseFloat(formData.workshop_duration_hours) : undefined,
@@ -217,6 +224,40 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
                 <option value="advanced">Advanced</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-black mb-1">Tags</label>
+            {formData.tags.length > 0 ? (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {formData.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, tags: formData.tags.filter((entry) => entry !== tag) })}
+                    className="cursor-pointer rounded-full bg-gray-100 px-3 py-1 text-sm text-black hover:bg-gray-200"
+                  >
+                    {tag} x
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <input
+              type="text"
+              value={formData.tag_input}
+              onChange={(e) => setFormData({ ...formData, tag_input: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ',') return;
+                e.preventDefault();
+                const tag = formData.tag_input.trim().toLowerCase();
+                if (!tag || formData.tags.includes(tag) || formData.tags.length >= 5) return;
+                setFormData({ ...formData, tag_input: '', tags: [...formData.tags, tag] });
+              }}
+              placeholder="Type a tag and press Enter"
+              disabled={formData.tags.length >= 5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none disabled:bg-gray-100"
+            />
+            <p className="mt-1 text-xs text-gray-500">{formData.tags.length}/5 tags</p>
           </div>
 
           {/* Workshop-specific fields */}

@@ -123,13 +123,21 @@ function Header({ scheduleLabel = 'Sep 11, 2026' }: { scheduleLabel?: string }) 
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <img
-          src={getAbsoluteImageUrl('/images/logo/zurichjs-canton.png') ?? ''}
-          alt=""
-          width={24}
-          height={24}
-          style={{ width: 24, height: 24, display: 'flex' }}
-        />
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            background: COLORS.yellow,
+            color: COLORS.black,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 15,
+            fontWeight: 800,
+          }}
+        >
+          JS
+        </div>
         <div style={{ ...baseTextStyle, fontSize: 30, fontWeight: 700 }}>Zurich JS Conf</div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
@@ -455,10 +463,10 @@ export function renderScheduleOg({ counts }: ScheduleOgInput = {}) {
 }
 
 export async function sendOgImage(res: NextApiResponse, element: React.ReactElement) {
-  const response = new ImageResponse(element, {
+  const render = async (withFonts: boolean) => new ImageResponse(element, {
     width: OG_WIDTH,
     height: OG_HEIGHT,
-    fonts: [
+    fonts: withFonts ? [
       {
         name: 'Figtree',
         data: await getFigtreeFont(400),
@@ -477,9 +485,23 @@ export async function sendOgImage(res: NextApiResponse, element: React.ReactElem
         style: 'normal',
         weight: 800,
       },
-    ],
+    ] : [],
   });
-  const imageBuffer = Buffer.from(await response.arrayBuffer());
+
+  let imageBuffer: Buffer;
+  try {
+    const response = await render(true);
+    imageBuffer = Buffer.from(await response.arrayBuffer());
+  } catch (error) {
+    console.error('[OG] Failed to render with custom fonts, retrying without fonts:', error);
+    try {
+      const response = await render(false);
+      imageBuffer = Buffer.from(await response.arrayBuffer());
+    } catch (fallbackError) {
+      console.error('[OG] Failed to render dynamic image, using static fallback:', fallbackError);
+      imageBuffer = await readFile(path.join(process.cwd(), 'public/images/og-default.png'));
+    }
+  }
 
   res.setHeader('Content-Type', 'image/png');
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');

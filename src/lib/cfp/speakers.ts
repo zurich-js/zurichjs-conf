@@ -336,11 +336,12 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
       company: speaker.company,
       bio: speaker.bio,
       profile_image_url: speaker.profile_image_url,
-      header_image_url: null,
+      header_image_url: speaker.header_image_url,
       portrait_foreground_url: speaker.portrait_foreground_url,
       portrait_background_url: speaker.portrait_background_url,
       is_featured: speaker.is_featured ?? false,
       speaker_role: 'speaker_role' in speaker ? speaker.speaker_role ?? 'speaker' : 'speaker',
+      tags: [],
       socials: {
         linkedin_url: speaker.linkedin_url,
         github_url: speaker.github_url,
@@ -358,6 +359,10 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
 
   for (const speaker of visibleSpeakerRows) {
     for (const s of (speaker.cfp_submissions || []).filter((entry: SubmissionData) => entry.status === 'accepted')) {
+      const submissionTags = (s.tags || [])
+        .flatMap((entry: NonNullable<SubmissionData['tags']>[number]) => entry.tag || [])
+        .map((tag: { name: string }) => tag.name?.trim())
+        .filter((tag: string | undefined): tag is string => Boolean(tag));
       const participantIds = [
         speaker.id,
         ...(participantsBySubmissionId.get(s.id) || [])
@@ -371,6 +376,8 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
         if (!publicSpeaker) {
           continue;
         }
+
+        publicSpeaker.tags = Array.from(new Set([...publicSpeaker.tags, ...submissionTags])).sort();
 
         if (s.submission_type === 'workshop') {
           publicSpeaker.assigned_session_kinds.workshops = true;
@@ -416,10 +423,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
           slug: existingSessionSlugCount === 0 ? baseSlug : `${baseSlug}-${s.id.split('-')[0]}`,
           title: s.title,
           abstract: s.abstract,
-          tags: (s.tags || [])
-            .flatMap((entry: NonNullable<SubmissionData['tags']>[number]) => entry.tag || [])
-            .map((tag: { name: string }) => tag.name?.trim())
-            .filter((tag: string | undefined): tag is string => Boolean(tag)),
+          tags: submissionTags,
           type: s.submission_type as PublicSession['type'],
           level: s.talk_level as PublicSession['level'],
           speakers: publicSessionSpeakers,

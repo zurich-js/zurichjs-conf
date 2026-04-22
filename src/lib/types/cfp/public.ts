@@ -51,6 +51,7 @@ export interface PublicSpeaker {
   portrait_background_url: string | null;
   is_featured: boolean;
   speaker_role: CfpSpeakerRole;
+  tags: string[];
   socials: {
     linkedin_url: string | null;
     github_url: string | null;

@@ -186,9 +186,8 @@ export default function SpeakersDashboard() {
     if (speakerFilters.featured && !speaker.is_featured) return false;
 
     const scheduled = isSpeakerScheduled(speaker);
-    const hasAcceptedSession = speaker.submissions?.some((submission) => submission.status === 'accepted') ?? false;
     if (speakerFilters.scheduled && !scheduled) return false;
-    if (speakerFilters.notScheduled && (!hasAcceptedSession || scheduled)) return false;
+    if (speakerFilters.notScheduled && scheduled) return false;
 
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
