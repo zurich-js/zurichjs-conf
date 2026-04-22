@@ -2,9 +2,9 @@
  * Speaker feedback text builders
  *
  * Pure functions that turn the speaker-feedback API response into text blobs the
- * admin can paste somewhere else: a short plain-text summary, a single-submission
- * feedback dump, and a structured prompt for ChatGPT that lets the admin draft a
- * reply to the speaker. No UI, no side effects.
+ * admin can paste somewhere else: quick text summaries, two LLM prompt variants
+ * (short warm reply and detailed reply), and a raw context dump with no
+ * instructions so the admin can build their own prompt. No UI, no side effects.
  */
 
 import type {
@@ -12,12 +12,19 @@ import type {
   SpeakerFeedbackSubmission,
 } from '@/lib/types/cfp-admin';
 
-/**
- * Calibration context we want the email to convey so the speaker understands
- * where their scores sat. Tweak this phrasing as the review process evolves.
- */
 const SHORTLIST_BAR_CONTEXT =
-  'The bar to be shortlisted was roughly a 3 out of 4 on average across the committee, and even shortlisted talks were not guaranteed acceptance.';
+  'Roughly a 3/5 committee average was the bar to be shortlisted, and even shortlisted talks were not guaranteed acceptance.';
+
+const ANTI_FLUFF_RULES = [
+  'Skip opening clichés. No "I hope this finds you well", "I wanted to reach out", "Thank you so much for submitting", "We were thrilled to receive".',
+  'Skip closing clichés. No "feel free to reach out", "wishing you continued success", "keep up the great work".',
+  'Do not recap the abstract back at the speaker — they wrote it.',
+  'Do not write generic praise ("interesting topic", "great effort") or generic advice ("keep iterating", "consider refining"). If you cannot be specific, leave it out.',
+  'Never name individual reviewers or expose per-reviewer scores. Synthesize — do not list one reviewer per paragraph.',
+  'Use "I" throughout, writing on behalf of the committee. Never "we the committee".',
+  'If reviewers disagreed, say that honestly instead of averaging it into mush.',
+  'Warmth comes from being specific about what you read, not from adjectives. Cut anything that could appear unchanged in a different speaker\'s email.',
+];
 
 function fmt(value: number | null): string {
   if (value === null) return '—';
@@ -75,75 +82,149 @@ export function buildSubmissionFullFeedback(sub: SpeakerFeedbackSubmission): str
 }
 
 /**
- * Structured prompt for ChatGPT/Claude. The prompt style is tuned for outputs
- * that synthesize recurring themes across reviews rather than listing each
- * review separately — that's the style that produces useful, personal replies.
- * The admin just pastes this into the chat and gets a draft back.
+ * Short & warm draft. Aims for ~120-180 words, no score rubric in the body.
+ * Tuned to avoid the "AI thank-you note" tone by giving the model a specific
+ * voice (engineer to engineer) and an explicit list of phrases to avoid.
  */
-export function buildAiReplyPrompt(speakerName: string, data: SpeakerFeedbackResponse): string {
-  const parts: string[] = [];
+export function buildWarmReplyPrompt(speakerName: string, data: SpeakerFeedbackResponse): string {
   const multi = data.submissions.length > 1;
+  const parts: string[] = [];
 
   parts.push(
-    `I need to write a personalized, constructive feedback email to send to a conference speaker about their CFP submission${multi ? 's' : ''}. I'm writing this on behalf of the review committee.`
+    `I'm drafting a short email to ${speakerName}, who submitted to the ZurichJS conference CFP. You are helping me write it. The tone should sound like one engineer to another — not a corporate HR note, not an AI thank-you. A human read their submission and this is that human replying.`
+  );
+  parts.push('');
+  parts.push(`Submission${multi ? 's' : ''} and what the committee said:`);
+
+  data.submissions.forEach((sub, i) => {
+    parts.push('');
+    if (multi) parts.push(`## Submission ${i + 1} of ${data.submissions.length}`);
+    parts.push(formatSubmissionForPrompt(sub, { includeAggregate: false }));
+  });
+
+  parts.push('');
+  parts.push(`Context on where they landed: ${SHORTLIST_BAR_CONTEXT}`);
+  parts.push('');
+  parts.push('Draft the email. Target 120-180 words. Two short paragraphs is usually right — one that gets to the outcome, one with one specific strength and (if warranted) one specific thing reviewers wanted more of.');
+  parts.push('');
+  parts.push('Rules:');
+  ANTI_FLUFF_RULES.forEach((rule) => parts.push(`- ${rule}`));
+  parts.push('- No rubric scores in the body. This variant keeps it short and human.');
+
+  return parts.join('\n');
+}
+
+/**
+ * Longer, substantive draft with the rubric in the body. Used when the
+ * committee has real qualitative material to convey or when the speaker is
+ * likely to want detail (e.g. waitlisted, close call). Same anti-fluff
+ * guardrails; more room for synthesis.
+ */
+export function buildDetailedReplyPrompt(speakerName: string, data: SpeakerFeedbackResponse): string {
+  const multi = data.submissions.length > 1;
+  const parts: string[] = [];
+
+  parts.push(
+    `I'm drafting a thorough feedback email to ${speakerName} about their ZurichJS CFP submission${multi ? 's' : ''}. Several committee members reviewed it independently. The speaker should walk away with specific, actionable feedback grounded in what reviewers actually said — not a generic encouragement letter.`
   );
   parts.push('');
   parts.push(`Speaker: ${speakerName}`);
 
   data.submissions.forEach((sub, i) => {
     parts.push('');
-    if (multi) parts.push(`--- Submission ${i + 1} of ${data.submissions.length} ---`);
-    parts.push(formatSubmissionForPrompt(sub));
+    if (multi) parts.push(`## Submission ${i + 1} of ${data.submissions.length}`);
+    parts.push(formatSubmissionForPrompt(sub, { includeAggregate: true }));
   });
 
   parts.push('');
-  parts.push(`Calibration context: ${SHORTLIST_BAR_CONTEXT}`);
+  parts.push(`Calibration: ${SHORTLIST_BAR_CONTEXT} Work this in plainly if it helps the speaker read their scores.`);
   parts.push('');
-  parts.push(`Write a 2-3 paragraph feedback email${multi ? ' covering all the submissions above' : ''} that:`);
-  parts.push('- Thanks them for submitting');
-  parts.push("- Includes the committee's average scores across the five criteria (Overall, Relevance, Technical Depth, Clarity, Originality) so the speaker can see the rubric and where they scored strongest vs. weakest");
-  parts.push('- Mentions the calibration context above so they understand where their scores sat relative to the shortlist bar');
-  parts.push("- Is TARGETED, not generic — ground every strength and suggestion in something the reviewers actually said about this talk. Avoid platitudes like \"keep iterating\" or \"great effort\" without naming what to iterate on");
-  parts.push('- Highlights what reviewers liked (find the recurring positives across reviews)');
-  parts.push("- Gives constructive suggestions (synthesize recurring concerns into a clear theme — don't list each reviewer's point separately)");
-  parts.push('- Is encouraging regardless of acceptance/rejection');
-  parts.push('- Does NOT reveal individual reviewer identities or per-reviewer scores — only committee averages');
-  parts.push('- Is written from "I" on behalf of the committee (not "we the committee")');
-  parts.push('- Feels personal, not templated');
+  parts.push('Draft the email. Target 250-350 words. Structure roughly: outcome up front, what reviewers liked (specific), what reviewers wanted more of (specific, synthesized — not one bullet per reviewer), their committee averages on the 1-5 rubric (Overall / Relevance / Technical Depth / Clarity / Originality) with a sentence framing where they were strongest vs weakest, short close.');
+  parts.push('');
+  parts.push('Rules:');
+  ANTI_FLUFF_RULES.forEach((rule) => parts.push(`- ${rule}`));
+  parts.push('- Include the five committee averages once. Do not add a score per paragraph.');
 
   return parts.join('\n');
 }
 
-function formatSubmissionForPrompt(sub: SpeakerFeedbackSubmission): string {
+/**
+ * All the same data the prompt variants use, but with zero instructions —
+ * so the admin can paste it into their own prompt or workflow.
+ */
+export function buildRawContextDump(speakerName: string, data: SpeakerFeedbackResponse): string {
+  const parts: string[] = [];
+  const { overall } = data;
+
+  parts.push(`Speaker: ${speakerName}`);
+  parts.push(
+    `${overall.total_submissions} submission(s), ${overall.total_reviews} review(s), avg overall ${fmt(overall.avg_overall)}${
+      overall.percentile !== null ? `, ${pct(overall.percentile)} percentile of ${overall.cohort_size} reviewed` : ''
+    }`
+  );
+  parts.push(`Shortlist bar: ${SHORTLIST_BAR_CONTEXT}`);
+
+  data.submissions.forEach((sub, i) => {
+    parts.push('');
+    parts.push(`## Submission ${i + 1} of ${data.submissions.length}: "${sub.title}" [${sub.status}]`);
+    parts.push(formatSubmissionForPrompt(sub, { includeAggregate: true, includeStatus: false }));
+  });
+
+  return parts.join('\n');
+}
+
+interface FormatOptions {
+  includeAggregate: boolean;
+  includeStatus?: boolean;
+}
+
+function formatSubmissionForPrompt(
+  sub: SpeakerFeedbackSubmission,
+  { includeAggregate, includeStatus = true }: FormatOptions
+): string {
   const lines: string[] = [];
-  lines.push(`Talk title: ${sub.title}`);
-  lines.push(`Talk type: ${sub.submission_type} (${sub.talk_level})`);
-  lines.push(`Abstract: ${sub.abstract}`);
-  if (sub.outline) lines.push(`Outline: ${sub.outline}`);
-  if (sub.additional_notes) lines.push(`Additional notes from speaker: ${sub.additional_notes}`);
+  lines.push(`Title: ${sub.title}`);
+  lines.push(`Type: ${sub.submission_type} · Level: ${sub.talk_level}`);
+  if (includeStatus) lines.push(`Decision: ${sub.status}`);
+  lines.push('');
+  lines.push('Abstract (from the speaker):');
+  lines.push(sub.abstract);
+  if (sub.outline) {
+    lines.push('');
+    lines.push('Outline (from the speaker):');
+    lines.push(sub.outline);
+  }
+  if (sub.additional_notes) {
+    lines.push('');
+    lines.push('Additional notes from the speaker:');
+    lines.push(sub.additional_notes);
+  }
 
   if (sub.reviews.length === 0) {
     lines.push('');
-    lines.push('No committee reviews yet.');
+    lines.push('No committee reviews on record.');
     return lines.join('\n');
   }
 
-  const a = sub.aggregate;
-  lines.push('');
-  lines.push(
-    `Committee averages across ${sub.reviews.length} review${sub.reviews.length === 1 ? '' : 's'} (1–5 scale) — include these in the email: Overall ${fmt(a.overall)}, Relevance ${fmt(a.relevance)}, Technical Depth ${fmt(a.technical_depth)}, Clarity ${fmt(a.clarity)}, Originality ${fmt(a.diversity)}`
-  );
-  lines.push('');
-  lines.push('Individual reviews (for your context — do not reveal per-reviewer scores):');
-
-  sub.reviews.forEach((r, i) => {
+  if (includeAggregate) {
+    const a = sub.aggregate;
     lines.push('');
-    lines.push(`Review ${i + 1}:`);
     lines.push(
-      `Scores: Overall: ${fmt(r.score_overall)}/5, Relevance: ${fmt(r.score_relevance)}/5, Technical Depth: ${fmt(r.score_technical_depth)}/5, Clarity: ${fmt(r.score_clarity)}/5, Originality: ${fmt(r.score_diversity)}/5`
+      `Committee averages across ${sub.reviews.length} review${sub.reviews.length === 1 ? '' : 's'} (1-5): Overall ${fmt(a.overall)} · Relevance ${fmt(a.relevance)} · Technical Depth ${fmt(a.technical_depth)} · Clarity ${fmt(a.clarity)} · Originality ${fmt(a.diversity)}`
     );
-    const notes = [r.feedback_to_speaker, r.private_notes].filter(Boolean).join(' ');
-    if (notes) lines.push(`Committee notes: ${notes}`);
+  }
+
+  lines.push('');
+  lines.push('Committee reviews (anonymized — synthesize, do not attribute):');
+  sub.reviews.forEach((r, i) => {
+    const notes = [r.feedback_to_speaker, r.private_notes].filter(Boolean).join(' / ');
+    lines.push('');
+    lines.push(`Reviewer ${i + 1} — scores: Overall ${fmt(r.score_overall)}, Relevance ${fmt(r.score_relevance)}, Depth ${fmt(r.score_technical_depth)}, Clarity ${fmt(r.score_clarity)}, Originality ${fmt(r.score_diversity)}`);
+    if (notes) {
+      lines.push(`Notes: ${notes}`);
+    } else {
+      lines.push('Notes: (none written)');
+    }
   });
 
   return lines.join('\n');
