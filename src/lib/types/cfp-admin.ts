@@ -107,6 +107,8 @@ export interface CfpSpeakerSubmission {
   title: string;
   status: string;
   submission_type: string;
+  slides_url?: string | null;
+  previous_recording_url?: string | null;
 }
 
 export interface CfpAdminReviewer {
@@ -202,6 +204,25 @@ export interface SpeakerFeedbackReview {
   };
 }
 
+export interface SpeakerFeedbackTagStat {
+  id: string;
+  name: string;
+  submission_count: number;
+}
+
+export interface SpeakerFeedbackSubmissionAnalytics {
+  percentile: number | null;
+  cohort_size: number;
+  cohort_avg: number | null;
+  score_min: number | null;
+  score_max: number | null;
+  score_stddev: number | null;
+  feedback_written_count: number;
+  feedback_written_percent: number;
+  decision_status?: string | null;
+  decision_email_sent_at?: string | null;
+}
+
 export interface SpeakerFeedbackSubmission {
   id: string;
   title: string;
@@ -214,6 +235,13 @@ export interface SpeakerFeedbackSubmission {
   review_count: number;
   aggregate: SpeakerFeedbackAggregate;
   reviews: SpeakerFeedbackReview[];
+  slides_url?: string | null;
+  previous_recording_url?: string | null;
+  outline?: string | null;
+  additional_notes?: string | null;
+  target_audience?: string | null;
+  tags: SpeakerFeedbackTagStat[];
+  analytics: SpeakerFeedbackSubmissionAnalytics;
 }
 
 export interface SpeakerFeedbackResponse {
@@ -223,6 +251,9 @@ export interface SpeakerFeedbackResponse {
     total_submissions: number;
     total_reviews: number;
     avg_overall: number | null;
+    percentile: number | null;
+    cohort_size: number;
+    cohort_avg: number | null;
   };
 }
 

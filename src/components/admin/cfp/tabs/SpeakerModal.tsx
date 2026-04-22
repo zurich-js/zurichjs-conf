@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, User, Trash2, FileText, ExternalLink, MessageSquare, IdCard } from 'lucide-react';
+import { X, User, Trash2, FileText, ExternalLink, MessageSquare, IdCard, Video, Presentation } from 'lucide-react';
 import type { CfpAdminSpeaker, CfpSpeakerSubmission, CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { StatusBadge } from '../StatusBadge';
@@ -461,6 +461,32 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                         <span className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600 capitalize shrink-0">
                           {submission.submission_type}
                         </span>
+                        {submission.previous_recording_url && (
+                          <a
+                            href={submission.previous_recording_url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700 hover:bg-gray-50"
+                            title="Previous recording"
+                          >
+                            <Video className="h-3 w-3" />
+                            Recording
+                          </a>
+                        )}
+                        {submission.slides_url && (
+                          <a
+                            href={submission.slides_url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700 hover:bg-gray-50"
+                            title="Slides"
+                          >
+                            <Presentation className="h-3 w-3" />
+                            Slides
+                          </a>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

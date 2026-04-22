@@ -612,12 +612,17 @@ export async function cancelScheduledEmail(
 }
 
 /**
- * Get all scheduled emails for a submission
+ * Get all scheduled emails for a submission.
+ * Before returning, reconciles any pending emails whose scheduled_for has passed —
+ * Resend sends them on schedule but does not call a webhook, so we flip them to 'sent'
+ * lazily so the admin UI reflects reality.
  */
 export async function getScheduledEmailsForSubmission(
   submissionId: string
 ): Promise<CfpScheduledEmail[]> {
   const supabase = createCfpServiceClient();
+
+  await reconcileOverdueScheduledEmails(submissionId);
 
   const { data, error } = await supabase
     .from('cfp_scheduled_emails')
@@ -631,6 +636,61 @@ export async function getScheduledEmailsForSubmission(
   }
 
   return (data || []) as CfpScheduledEmail[];
+}
+
+/**
+ * Mark pending emails whose scheduled_for has passed as sent. Resend delivers on
+ * schedule with no webhook, so this is the source of truth for "email sent" in the admin UI.
+ */
+export async function reconcileOverdueScheduledEmails(submissionId: string): Promise<void> {
+  const supabase = createCfpServiceClient();
+  const now = new Date().toISOString();
+
+  const { data: overdue, error } = await supabase
+    .from('cfp_scheduled_emails')
+    .select('id, submission_id, scheduled_for')
+    .eq('submission_id', submissionId)
+    .eq('status', 'pending')
+    .lte('scheduled_for', now);
+
+  if (error) {
+    log.error('Failed to fetch overdue scheduled emails', { error: error.message, submissionId });
+    return;
+  }
+
+  if (!overdue || overdue.length === 0) return;
+
+  const ids = overdue.map((e: { id: string }) => e.id);
+
+  const { error: updateError } = await supabase
+    .from('cfp_scheduled_emails')
+    .update({
+      status: 'sent' as CfpScheduledEmailStatus,
+      sent_at: now,
+    })
+    .in('id', ids);
+
+  if (updateError) {
+    log.error('Failed to reconcile overdue scheduled emails', {
+      error: updateError.message,
+      submissionId,
+      ids,
+    });
+    return;
+  }
+
+  // Mirror sent timestamp onto submission so speaker-facing state is accurate
+  const latestScheduled = overdue.reduce(
+    (max: string | null, e: { scheduled_for: string }) =>
+      !max || e.scheduled_for > max ? e.scheduled_for : max,
+    null as string | null
+  );
+  if (latestScheduled) {
+    await supabase
+      .from('cfp_submissions')
+      .update({ decision_email_sent_at: latestScheduled })
+      .eq('id', submissionId);
+  }
 }
 
 /**

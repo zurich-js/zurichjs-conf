@@ -41,6 +41,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       shortlistStatuses,
       coverage_min,
       coverage_max,
+      decisionStatuses,
+      emailStates,
     } = req.query;
 
     let parsedSort: SubmissionSortRule[] | undefined;
@@ -75,6 +77,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ? [shortlistStatuses]
         : undefined;
 
+    const parsedDecisionStatuses = Array.isArray(decisionStatuses)
+      ? decisionStatuses
+      : typeof decisionStatuses === 'string'
+        ? [decisionStatuses]
+        : undefined;
+
+    const parsedEmailStates = Array.isArray(emailStates)
+      ? emailStates
+      : typeof emailStates === 'string'
+        ? [emailStates]
+        : undefined;
+
     const parsedCoverageMin = typeof coverage_min === 'string' ? Number(coverage_min) : undefined;
     const parsedCoverageMax = typeof coverage_max === 'string' ? Number(coverage_max) : undefined;
 
@@ -101,6 +115,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       shortlist_statuses: parsedShortlistStatuses,
       coverage_min: Number.isFinite(parsedCoverageMin) ? parsedCoverageMin : undefined,
       coverage_max: Number.isFinite(parsedCoverageMax) ? parsedCoverageMax : undefined,
+      decision_statuses: parsedDecisionStatuses,
+      email_states: parsedEmailStates,
     });
 
     return res.status(200).json({ submissions, total, totalUnfiltered });

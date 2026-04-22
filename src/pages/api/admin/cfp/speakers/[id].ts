@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Fetch submission statuses
       const { data: submissions } = await supabase
         .from('cfp_submissions')
-        .select('id, title, status, submission_type')
+        .select('id, title, status, submission_type, slides_url, previous_recording_url')
         .eq('speaker_id', id)
         .order('created_at', { ascending: false });
 

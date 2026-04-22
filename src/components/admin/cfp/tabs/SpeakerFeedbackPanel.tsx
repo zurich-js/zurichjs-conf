@@ -1,16 +1,32 @@
 /**
  * Speaker Feedback Panel
- * Unified view of all committee feedback across a speaker's submissions.
- * Used by admins to understand CFP outcomes and explain them to speakers.
+ * Unified view of all committee feedback across a speaker's submissions plus analytics
+ * (percentile, tag overlap, reviewer coverage, past-talk media).
  */
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Copy, Check, Loader2, ExternalLink, FileText, MessageSquare } from 'lucide-react';
+import {
+  ChevronRight,
+  Copy,
+  Check,
+  Loader2,
+  ExternalLink,
+  FileText,
+  MessageSquare,
+  Video,
+  Presentation,
+  TrendingUp,
+  Users,
+  PenLine,
+  Tag,
+} from 'lucide-react';
 import {
   cfpQueryKeys,
   type SpeakerFeedbackSubmission,
   type SpeakerFeedbackAggregate,
+  type SpeakerFeedbackSubmissionAnalytics,
+  type SpeakerFeedbackTagStat,
 } from '@/lib/types/cfp-admin';
 import { fetchSpeakerFeedback } from '@/lib/cfp/adminApi';
 import { StatusBadge } from '../StatusBadge';
@@ -27,11 +43,23 @@ function formatScore(value: number | null): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
+function formatPercent(value: number | null): string {
+  if (value === null) return '-';
+  return `${value.toFixed(0)}%`;
+}
+
 function scoreColor(value: number | null): string {
   if (value === null) return 'text-gray-400';
   if (value >= 4) return 'text-green-600';
   if (value >= 3) return 'text-yellow-600';
   return 'text-red-600';
+}
+
+function percentileColor(value: number | null): string {
+  if (value === null) return 'text-gray-400 bg-gray-50 border-gray-200';
+  if (value >= 75) return 'text-green-700 bg-green-50 border-green-200';
+  if (value >= 50) return 'text-yellow-700 bg-yellow-50 border-yellow-200';
+  return 'text-red-700 bg-red-50 border-red-200';
 }
 
 function AggregateRow({ aggregate, reviewCount }: { aggregate: SpeakerFeedbackAggregate; reviewCount: number }) {
@@ -89,6 +117,108 @@ function CopyButton({ getText, label }: { getText: () => string; label: string }
   );
 }
 
+function MediaLink({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  icon: typeof Video;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-black hover:bg-gray-50 cursor-pointer"
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+      <ExternalLink className="h-3 w-3 text-gray-400" />
+    </a>
+  );
+}
+
+function TagChip({ tag }: { tag: SpeakerFeedbackTagStat }) {
+  const others = Math.max(0, tag.submission_count - 1);
+  const competitive = others >= 5;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+        competitive
+          ? 'border-orange-200 bg-orange-50 text-orange-800'
+          : 'border-gray-200 bg-gray-50 text-gray-700'
+      }`}
+      title={
+        others === 0
+          ? 'No other submissions use this tag'
+          : `${others} other submission${others === 1 ? '' : 's'} share this topic`
+      }
+    >
+      <Tag className="h-2.5 w-2.5" />
+      {tag.name}
+      <span className="text-gray-500">· {others}</span>
+    </span>
+  );
+}
+
+function AnalyticsRow({
+  analytics,
+  reviewCount,
+}: {
+  analytics: SpeakerFeedbackSubmissionAnalytics;
+  reviewCount: number;
+}) {
+  const percentileLabel = analytics.percentile === null
+    ? 'n/a'
+    : `Top ${Math.max(1, 100 - Math.round(analytics.percentile))}%`;
+
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className={`rounded-lg border p-2 text-center ${percentileColor(analytics.percentile)}`}>
+        <p className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide">
+          <TrendingUp className="h-3 w-3" />
+          Percentile
+        </p>
+        <p className="text-sm font-bold">{formatPercent(analytics.percentile)}</p>
+        <p className="text-[10px] opacity-80">{percentileLabel}</p>
+      </div>
+      <div className="rounded-lg border border-gray-200 bg-white p-2 text-center">
+        <p className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-gray-500">
+          <Users className="h-3 w-3" />
+          Reviews
+        </p>
+        <p className="text-sm font-bold text-black">{reviewCount}</p>
+        <p className="text-[10px] text-gray-500">
+          of {analytics.cohort_size || '—'} in cohort
+        </p>
+      </div>
+      <div className="rounded-lg border border-gray-200 bg-white p-2 text-center">
+        <p className="text-[10px] uppercase tracking-wide text-gray-500">Spread</p>
+        <p className="text-sm font-bold text-black">
+          {analytics.score_min !== null && analytics.score_max !== null
+            ? `${formatScore(analytics.score_min)}–${formatScore(analytics.score_max)}`
+            : '—'}
+        </p>
+        <p className="text-[10px] text-gray-500">
+          σ {analytics.score_stddev !== null ? analytics.score_stddev.toFixed(2) : '—'}
+        </p>
+      </div>
+      <div className="rounded-lg border border-gray-200 bg-white p-2 text-center">
+        <p className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-gray-500">
+          <PenLine className="h-3 w-3" />
+          Written
+        </p>
+        <p className="text-sm font-bold text-black">
+          {analytics.feedback_written_count}/{reviewCount}
+        </p>
+        <p className="text-[10px] text-gray-500">{formatPercent(analytics.feedback_written_percent)} of reviewers</p>
+      </div>
+    </div>
+  );
+}
+
 function buildSubmissionScoreText(sub: SpeakerFeedbackSubmission): string {
   const a = sub.aggregate;
   const lines = [
@@ -100,6 +230,9 @@ function buildSubmissionScoreText(sub: SpeakerFeedbackSubmission): string {
     `Clarity: ${formatScore(a.clarity)}`,
     `Originality: ${formatScore(a.diversity)}`,
   ];
+  if (sub.analytics.percentile !== null) {
+    lines.push(`Percentile: ${formatPercent(sub.analytics.percentile)} of ${sub.analytics.cohort_size} submissions`);
+  }
   return lines.join('\n');
 }
 
@@ -133,6 +266,9 @@ function SubmissionFeedbackCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLoading = loadingSubmissionId === submission.id;
+
+  const hasMedia = Boolean(submission.slides_url || submission.previous_recording_url);
+  const hasNotes = Boolean(submission.outline || submission.additional_notes || submission.target_audience);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
@@ -185,17 +321,73 @@ function SubmissionFeedbackCard({
         </div>
       </div>
 
-      {/* Aggregate */}
-      <div className="p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Aggregate scores</p>
+      {/* Body */}
+      <div className="space-y-3 p-4">
+        {/* Media & tags row */}
+        {(hasMedia || submission.tags.length > 0) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {submission.previous_recording_url && (
+              <MediaLink href={submission.previous_recording_url} label="Recording" icon={Video} />
+            )}
+            {submission.slides_url && (
+              <MediaLink href={submission.slides_url} label="Slides" icon={Presentation} />
+            )}
+            {submission.tags.map((tag) => (
+              <TagChip key={tag.id} tag={tag} />
+            ))}
+          </div>
+        )}
+
+        {/* Aggregate scores */}
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Aggregate scores
+          </p>
+          <AggregateRow aggregate={submission.aggregate} reviewCount={submission.review_count} />
         </div>
-        <AggregateRow aggregate={submission.aggregate} reviewCount={submission.review_count} />
+
+        {/* Analytics */}
+        {submission.review_count > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Analytics
+            </p>
+            <AnalyticsRow analytics={submission.analytics} reviewCount={submission.review_count} />
+          </div>
+        )}
       </div>
 
-      {/* Expandable review details */}
+      {/* Expandable details */}
       {expanded && (
-        <div className="border-t border-gray-200 bg-gray-50 p-4">
+        <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4">
+          {/* Speaker-provided context */}
+          {hasNotes && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Speaker-provided context
+              </p>
+              {submission.outline && (
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="mb-1 text-xs font-semibold text-black">Outline</p>
+                  <p className="whitespace-pre-wrap text-sm text-gray-700">{submission.outline}</p>
+                </div>
+              )}
+              {submission.target_audience && (
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="mb-1 text-xs font-semibold text-black">Target audience</p>
+                  <p className="whitespace-pre-wrap text-sm text-gray-700">{submission.target_audience}</p>
+                </div>
+              )}
+              {submission.additional_notes && (
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="mb-1 text-xs font-semibold text-black">Additional notes</p>
+                  <p className="whitespace-pre-wrap text-sm text-gray-700">{submission.additional_notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reviews */}
           {submission.reviews.length === 0 ? (
             <p className="text-sm text-gray-500">No individual reviews on record.</p>
           ) : (
@@ -318,7 +510,13 @@ export function SpeakerFeedbackPanel({
     `Feedback summary — ${speakerName}`,
     `${overall.total_submissions} submission(s), ${overall.total_reviews} review(s)`,
     `Avg overall (across all reviews): ${formatScore(overall.avg_overall)}`,
-  ].join('\n');
+    overall.percentile !== null
+      ? `Speaker percentile: ${formatPercent(overall.percentile)} of ${overall.cohort_size} submissions`
+      : null,
+    overall.cohort_avg !== null ? `Cohort avg: ${formatScore(overall.cohort_avg)}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return (
     <div className="space-y-4">
@@ -336,7 +534,7 @@ export function SpeakerFeedbackPanel({
           </div>
           <CopyButton getText={() => summaryText} label="Copy summary" />
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
           <div className="rounded-lg bg-white p-2 text-center border border-gray-200">
             <p className="text-[10px] uppercase text-gray-500">Submissions</p>
             <p className="text-lg font-bold text-black sm:text-xl">{overall.total_submissions}</p>
@@ -350,6 +548,17 @@ export function SpeakerFeedbackPanel({
             <p className={`text-lg font-bold sm:text-xl ${scoreColor(overall.avg_overall)}`}>
               {formatScore(overall.avg_overall)}
             </p>
+          </div>
+          <div className={`rounded-lg border p-2 text-center ${percentileColor(overall.percentile)}`}>
+            <p className="text-[10px] uppercase">Percentile</p>
+            <p className="text-lg font-bold sm:text-xl">{formatPercent(overall.percentile)}</p>
+          </div>
+          <div className="rounded-lg bg-white p-2 text-center border border-gray-200">
+            <p className="text-[10px] uppercase text-gray-500">Cohort avg</p>
+            <p className={`text-lg font-bold sm:text-xl ${scoreColor(overall.cohort_avg)}`}>
+              {formatScore(overall.cohort_avg)}
+            </p>
+            <p className="text-[10px] text-gray-500">n = {overall.cohort_size}</p>
           </div>
         </div>
       </div>

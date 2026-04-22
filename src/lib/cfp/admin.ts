@@ -109,6 +109,8 @@ export async function getAdminSubmissions(
     shortlist_statuses,
     coverage_min,
     coverage_max,
+    decision_statuses,
+    email_states,
   } = filters;
 
   // Step 1: Fetch all submissions from DB (apply DB-level filters only)
@@ -302,6 +304,28 @@ export async function getAdminSubmissions(
 
   if (typeof coverage_max === 'number') {
     filtered = filtered.filter((s) => (s.stats?.coverage_percent || 0) <= coverage_max);
+  }
+
+  if (decision_statuses && decision_statuses.length > 0) {
+    const decisionSet = new Set(decision_statuses);
+    filtered = filtered.filter((s) => {
+      const current = s.decision_status || 'undecided';
+      return decisionSet.has(current);
+    });
+  }
+
+  if (email_states && email_states.length > 0) {
+    const stateSet = new Set(email_states);
+    filtered = filtered.filter((s) => {
+      const status = s.latest_scheduled_email_status;
+      // Collapse the scheduled-email status into three user-facing buckets.
+      const bucket = status === 'sent'
+        ? 'sent'
+        : status === 'pending'
+          ? 'pending'
+          : 'not_scheduled';
+      return stateSet.has(bucket);
+    });
   }
 
   const total = filtered.length;

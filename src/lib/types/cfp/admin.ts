@@ -51,6 +51,8 @@ export interface CfpSubmissionFilters {
   shortlist_statuses?: string[];
   coverage_min?: number;
   coverage_max?: number;
+  decision_statuses?: string[];
+  email_states?: string[];
 }
 
 /**

@@ -94,6 +94,8 @@ export default function CfpAdminDashboard() {
   const [statuses, setStatuses] = useState<string[]>([]);
   const [submissionTypes, setSubmissionTypes] = useState<string[]>([]);
   const [shortlistStatuses, setShortlistStatuses] = useState<string[]>([]);
+  const [decisionStatuses, setDecisionStatuses] = useState<string[]>([]);
+  const [emailStates, setEmailStates] = useState<string[]>([]);
   const [coverageMin, setCoverageMin] = useState<string>('');
   const [coverageMax, setCoverageMax] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -137,13 +139,15 @@ export default function CfpAdminDashboard() {
     statuses: statuses.length > 0 ? statuses : undefined,
     types: submissionTypes.length > 0 ? submissionTypes : undefined,
     shortlistStatuses: shortlistStatuses.length > 0 ? shortlistStatuses : undefined,
+    decisionStatuses: decisionStatuses.length > 0 ? decisionStatuses : undefined,
+    emailStates: emailStates.length > 0 ? emailStates : undefined,
     search: debouncedSearch || undefined,
     sort: submissionSortParams.length > 0 ? submissionSortParams : undefined,
     coverage_min: coverageMin.trim() ? Math.max(0, Math.min(100, Number(coverageMin))) : undefined,
     coverage_max: coverageMax.trim() ? Math.max(0, Math.min(100, Number(coverageMax))) : undefined,
     limit: ITEMS_PER_PAGE,
     offset: (currentPage - 1) * ITEMS_PER_PAGE,
-  }), [statuses, submissionTypes, shortlistStatuses, debouncedSearch, submissionSortParams, coverageMin, coverageMax, currentPage]);
+  }), [statuses, submissionTypes, shortlistStatuses, decisionStatuses, emailStates, debouncedSearch, submissionSortParams, coverageMin, coverageMax, currentPage]);
 
   const setSubmissionStatuses = useCallback((value: string[]) => {
     setStatuses(value);
@@ -157,6 +161,16 @@ export default function CfpAdminDashboard() {
 
   const setSubmissionShortlistStatuses = useCallback((value: string[]) => {
     setShortlistStatuses(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionDecisionStatuses = useCallback((value: string[]) => {
+    setDecisionStatuses(value);
+    setCurrentPage(1);
+  }, []);
+
+  const setSubmissionEmailStates = useCallback((value: string[]) => {
+    setEmailStates(value);
     setCurrentPage(1);
   }, []);
 
@@ -389,6 +403,10 @@ export default function CfpAdminDashboard() {
                   setSubmissionTypes={setSubmissionTypesFilter}
                   shortlistStatuses={shortlistStatuses}
                   setShortlistStatuses={setSubmissionShortlistStatuses}
+                  decisionStatuses={decisionStatuses}
+                  setDecisionStatuses={setSubmissionDecisionStatuses}
+                  emailStates={emailStates}
+                  setEmailStates={setSubmissionEmailStates}
                   coverageMin={coverageMin}
                   setCoverageMin={setSubmissionCoverageMin}
                   coverageMax={coverageMax}
