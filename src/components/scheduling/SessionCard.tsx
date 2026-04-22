@@ -1,12 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { BellPlus, CalendarPlus, Share2 } from 'lucide-react';
+import { BellPlus, CalendarPlus, Share2, Users } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Button } from '@/components/atoms';
 import type { PublicSession } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
-import { WorkshopBuyButton } from '@/components/workshops/WorkshopBuyButton';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 import {
   addConferenceReminder,
@@ -63,7 +62,6 @@ export function SessionCard({
   actionMode = 'schedule',
   offering = null,
 }: SessionCardProps) {
-  const buyEnabled = Boolean(offering);
   const resolvedId = id ?? `session-${session.id}`;
   const timeRange = formatTimeRange(session.schedule?.start_time, session.schedule?.duration_minutes);
   const durationLabel = formatDuration(session.schedule?.duration_minutes);
@@ -91,11 +89,22 @@ export function SessionCard({
     await shareSession(session, resolvedId);
   };
 
+  const availability = offering
+    ? offering.soldOut
+      ? 'Sold out'
+      : offering.capacityRemaining <= 5
+        ? `${offering.capacityRemaining} of ${offering.capacity} seats left`
+        : `${offering.capacity} seats`
+    : null;
+  const compact = expandable && actionMode === 'schedule';
+
   const header = (
     <>
-      {timeRange ? <p className="text-sm text-brand-gray-medium">{timeRange}</p> : null}
-      <h3 className="mt-1 text-lg font-bold leading-tight text-brand-black">{session.title}</h3>
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-brand-black">
+      {timeRange ? <p className={cn(compact ? 'text-xs' : 'text-sm', 'text-brand-gray-medium')}>{timeRange}</p> : null}
+      <h3 className={cn('mt-1 font-bold leading-tight text-brand-black', compact ? 'text-base md:text-lg' : 'text-lg')}>
+        {session.title}
+      </h3>
+      <div className={cn('mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-brand-black', compact ? 'text-xs md:text-sm' : 'text-sm')}>
         {resolvedSpeakers.length > 0 ? (
           <span>
             <strong>{isWorkshop ? 'Instructor:' : isPanel ? 'Panel:' : 'Speaker:'}</strong>{' '}
@@ -114,6 +123,14 @@ export function SessionCard({
             <span className="text-brand-gray-medium">{durationLabel}</span>
           </span>
         ) : null}
+        {isWorkshop && availability ? <span className="text-brand-gray-medium">&bull;</span> : null}
+        {isWorkshop && availability ? (
+          <span className="inline-flex items-center gap-1">
+            <Users className="size-3.5" />
+            <strong>Capacity:</strong>{' '}
+            <span className="text-brand-gray-medium">{availability}</span>
+          </span>
+        ) : null}
       </div>
     </>
   );
@@ -121,17 +138,17 @@ export function SessionCard({
   const renderSpeakerContent = (entry: SessionCardSpeaker) => (
     <>
       {entry.imageUrl ? (
-        <div className="relative size-11 overflow-hidden rounded-full">
+        <div className={cn('relative overflow-hidden rounded-full', compact ? 'size-9' : 'size-11')}>
           <Image src={entry.imageUrl} alt={entry.name} fill className="object-cover" sizes="44px" />
         </div>
       ) : (
-        <div className="flex size-11 items-center justify-center rounded-full bg-brand-black text-sm font-bold text-brand-white">
+        <div className={cn('flex items-center justify-center rounded-full bg-brand-black font-bold text-brand-white', compact ? 'size-9 text-xs' : 'size-11 text-sm')}>
           {entry.name.charAt(0)}
         </div>
       )}
 
       <div>
-        <p className="text-sm font-semibold text-brand-black">{entry.name}</p>
+        <p className={cn('font-semibold text-brand-black', compact ? 'text-xs md:text-sm' : 'text-sm')}>{entry.name}</p>
         {entry.role ? <p className="text-xs text-brand-gray-medium">{entry.role}</p> : null}
       </div>
     </>
@@ -139,7 +156,7 @@ export function SessionCard({
 
   const panel = (
     <>
-      <p className="text-sm leading-7 text-brand-gray-darkest">{session.abstract}</p>
+      <p className={cn('text-brand-gray-darkest', compact ? 'text-sm leading-6' : 'text-sm leading-7')}>{session.abstract}</p>
 
       {resolvedSpeakers.length > 0 ? (
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -188,9 +205,6 @@ export function SessionCard({
       </div>
 
       <div className="flex flex-col items-end gap-3 md:flex-row md:items-center md:gap-4">
-        {isWorkshop && buyEnabled && offering ? (
-          <WorkshopBuyButton offering={offering} title={session.title} size="sm" />
-        ) : null}
         {href ? (
           <Button variant={isWorkshop ? 'blue' : 'primary'} size="sm" asChild href={href}>
             See details
@@ -213,9 +227,6 @@ export function SessionCard({
       </div>
 
       <div className="flex flex-col gap-3 pt-6 md:flex-row md:items-center md:gap-4">
-        {buyEnabled && offering ? (
-          <WorkshopBuyButton offering={offering} title={session.title} />
-        ) : null}
         {href ? (
           <Button variant="blue" asChild href={href}>
             See details
