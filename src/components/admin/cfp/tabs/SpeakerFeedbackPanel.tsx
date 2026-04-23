@@ -30,10 +30,12 @@ import {
 import { fetchSpeakerFeedback } from '@/lib/cfp/adminApi';
 import { StatusBadge } from '../StatusBadge';
 import {
-  buildAiReplyPrompt,
+  buildDetailedReplyPrompt,
   buildPlainSummary,
+  buildRawContextDump,
   buildSubmissionFullFeedback,
   buildSubmissionScores,
+  buildWarmReplyPrompt,
 } from './speakerFeedbackPrompts';
 
 interface SpeakerFeedbackPanelProps {
@@ -500,10 +502,21 @@ export function SpeakerFeedbackPanel({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <CopyButton
-              getText={() => buildAiReplyPrompt(speakerName, data)}
-              label="Draft AI reply"
+              getText={() => buildWarmReplyPrompt(speakerName, data)}
+              label="Warm reply prompt"
               icon={Sparkles}
               variant="primary"
+            />
+            <CopyButton
+              getText={() => buildDetailedReplyPrompt(speakerName, data)}
+              label="Detailed reply prompt"
+              icon={Sparkles}
+              variant="primary"
+            />
+            <CopyButton
+              getText={() => buildRawContextDump(speakerName, data)}
+              label="Copy raw context"
+              icon={FileText}
             />
             <CopyButton getText={() => buildPlainSummary(speakerName, data)} label="Copy summary" />
             <HelpToggle />
