@@ -112,7 +112,7 @@ export default function SpeakersPage() {
 
   const speakers = data?.speakers ?? [];
   const placeholderSpeakerCount = selectedTags.length === 0
-    ? Math.max(0, (data?.acceptedSpeakerCount ?? speakers.length) - speakers.length)
+    ? Math.max(0, (data?.programSpeakerCount ?? speakers.length) - speakers.length)
     : 0;
   const hasSpeakers = speakers.length > 0;
   const hasLineupCards = hasSpeakers || placeholderSpeakerCount > 0;

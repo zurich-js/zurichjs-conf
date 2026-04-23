@@ -141,23 +141,42 @@ export async function getAcceptedSpeakers(): Promise<CfpSpeaker[]> {
   return (data || []) as CfpSpeaker[];
 }
 
-export async function getAcceptedSpeakerCount(): Promise<number> {
+export async function getProgramSpeakerCount(): Promise<number> {
   const supabase = createCfpServiceClient();
-  const { data, error } = await supabase
-    .from('program_sessions')
-    .select('speakers:program_session_speakers(speaker_id)')
-    .neq('status', 'archived');
+  const [speakersResult, submissionsResult] = await Promise.all([
+    supabase
+      .from('cfp_speakers')
+      .select('id, is_admin_managed, is_featured, is_visible'),
+    supabase
+      .from('cfp_submissions')
+      .select('speaker_id, status'),
+  ]);
 
-  if (error) {
-    console.error('[CFP Speakers] Error fetching program speaker count:', error.message);
+  if (speakersResult.error || submissionsResult.error) {
+    console.error(
+      '[CFP Speakers] Error fetching program speaker count:',
+      speakersResult.error?.message ?? submissionsResult.error?.message
+    );
     return 0;
   }
 
-  return new Set(
-    ((data || []) as Array<{ speakers?: Array<{ speaker_id: string }> }>)
-      .flatMap((session) => session.speakers ?? [])
-      .map((assignment) => assignment.speaker_id)
-  ).size;
+  const acceptedSpeakerIds = new Set(
+    ((submissionsResult.data || []) as Array<{ speaker_id: string; status: string }>)
+      .filter((submission) => submission.status === 'accepted')
+      .map((submission) => submission.speaker_id)
+  );
+
+  return ((speakersResult.data || []) as Array<{
+    id: string;
+    is_admin_managed: boolean;
+    is_featured: boolean;
+    is_visible: boolean;
+  }>).filter((speaker) =>
+    speaker.is_admin_managed ||
+    speaker.is_featured ||
+    speaker.is_visible ||
+    acceptedSpeakerIds.has(speaker.id)
+  ).length;
 }
 
 /**
