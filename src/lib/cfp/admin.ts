@@ -659,7 +659,15 @@ export async function getAdminSpeakers(): Promise<CfpSpeaker[]> {
  * Get all speakers with their submissions for admin (single query)
  * Avoids N+1 query problem by fetching all data in parallel
  */
-export async function getAdminSpeakersWithSubmissions(): Promise<
+type AdminSpeakerScope = 'all' | 'program';
+
+function hasAcceptedSubmission(
+  submissions: Array<{ status: string }>
+): boolean {
+  return submissions.some((submission) => submission.status === 'accepted');
+}
+
+export async function getAdminSpeakersWithSubmissions(scope: AdminSpeakerScope = 'all'): Promise<
   (CfpSpeaker & {
     submissions: {
       id: string;
@@ -738,7 +746,7 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
   }
 
   // Merge speakers with their submissions
-  return speakers.map((speaker) => ({
+  const speakersWithSubmissions = speakers.map((speaker) => ({
     ...speaker,
     submissions: (submissionsBySpeakerId.get(speaker.id) || []).map((s) => ({
       id: s.id,
@@ -757,6 +765,17 @@ export async function getAdminSpeakersWithSubmissions(): Promise<
       participant_speaker_ids: participantsBySubmissionId.get(s.id) || [],
     })),
   }));
+
+  if (scope === 'program') {
+    return speakersWithSubmissions.filter((speaker) =>
+      speaker.is_admin_managed ||
+      speaker.is_featured ||
+      speaker.is_visible ||
+      hasAcceptedSubmission(speaker.submissions)
+    );
+  }
+
+  return speakersWithSubmissions;
 }
 
 /**

@@ -114,6 +114,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'No valid fields to update' });
       }
 
+      // Speakers manually surfaced from CFP into the program workflow should remain
+      // program-managed even if visibility/featured flags are later toggled off.
+      if (sanitizedUpdates.is_visible === true || sanitizedUpdates.is_featured === true) {
+        sanitizedUpdates.is_admin_managed = true;
+      }
+
       // Add updated_at timestamp
       sanitizedUpdates.updated_at = new Date().toISOString();
 

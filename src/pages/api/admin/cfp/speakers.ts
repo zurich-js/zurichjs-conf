@@ -22,9 +22,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
+      const scope = req.query.scope === 'program' ? 'program' : 'all';
+
       // Use optimized function that fetches speakers with submissions in parallel
-      const speakers = await getAdminSpeakersWithSubmissions();
-      log.debug('Fetched speakers with submissions', { count: speakers.length });
+      const speakers = await getAdminSpeakersWithSubmissions(scope);
+      log.debug('Fetched speakers with submissions', { count: speakers.length, scope });
       return res.status(200).json({ speakers });
     } catch (error) {
       log.error('Failed to fetch speakers', error, { type: 'system' });

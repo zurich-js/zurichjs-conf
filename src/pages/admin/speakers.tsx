@@ -24,7 +24,7 @@ const TABS: Array<{ id: ProgramAdminTab; label: string; icon: typeof ListChecks 
 ];
 
 async function fetchSpeakers(): Promise<{ speakers: SpeakerWithSessions[] }> {
-  const res = await fetch('/api/admin/cfp/speakers');
+  const res = await fetch('/api/admin/cfp/speakers?scope=program');
   if (!res.ok) throw new Error('Failed to fetch speakers');
   return res.json();
 }
