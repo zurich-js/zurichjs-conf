@@ -111,7 +111,7 @@ export function ScheduleItemModal({
   onClose,
   onSaved,
 }: ScheduleItemModalProps) {
-  const linkedSessionId = item?.submission_id || initialSubmissionId || '';
+  const linkedSessionId = item?.session_id || item?.submission_id || initialSubmissionId || '';
   const initialLinkedSession = sessions.find((session) => session.id === linkedSessionId) || null;
   const [mode, setMode] = useState<'link' | 'custom'>('link');
   const [formData, setFormData] = useState({

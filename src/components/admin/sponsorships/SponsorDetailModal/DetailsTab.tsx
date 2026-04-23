@@ -155,8 +155,23 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
         </div>
       </div>
 
-      {/* Logo Upload */}
-      <LogoUpload sponsorId={sponsor.id} currentLogoUrl={sponsor.logo_url} onUpdate={onUpdate} />
+      {/* Logo Uploads */}
+      <div className="space-y-6">
+        <LogoUpload
+          sponsorId={sponsor.id}
+          title="Default Logo"
+          endpoint="logo"
+          currentLogoUrl={sponsor.logo_url}
+          onUpdate={onUpdate}
+        />
+        <LogoUpload
+          sponsorId={sponsor.id}
+          title="Hover Color Logo"
+          endpoint="logo-color"
+          currentLogoUrl={sponsor.logo_url_color}
+          onUpdate={onUpdate}
+        />
+      </div>
 
       {/* Logo Visibility */}
       <div className="space-y-4">

@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
   public: {
     Tables: {
       b2b_invoice_attendees: {
@@ -212,6 +207,56 @@ export type Database = {
         }
         Relationships: []
       }
+      cfp_decision_events: {
+        Row: {
+          admin_id: string
+          created_at: string
+          event_type: Database["public"]["Enums"]["cfp_decision_event_type"]
+          id: string
+          metadata: Json | null
+          new_status: Database["public"]["Enums"]["cfp_decision_status"]
+          notes: string | null
+          previous_status:
+            | Database["public"]["Enums"]["cfp_decision_status"]
+            | null
+          submission_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          event_type: Database["public"]["Enums"]["cfp_decision_event_type"]
+          id?: string
+          metadata?: Json | null
+          new_status: Database["public"]["Enums"]["cfp_decision_status"]
+          notes?: string | null
+          previous_status?:
+            | Database["public"]["Enums"]["cfp_decision_status"]
+            | null
+          submission_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["cfp_decision_event_type"]
+          id?: string
+          metadata?: Json | null
+          new_status?: Database["public"]["Enums"]["cfp_decision_status"]
+          notes?: string | null
+          previous_status?:
+            | Database["public"]["Enums"]["cfp_decision_status"]
+            | null
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cfp_decision_events_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cfp_reviewers: {
         Row: {
           accepted_at: string | null
@@ -325,6 +370,92 @@ export type Database = {
           },
         ]
       }
+      cfp_scheduled_emails: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_by: string | null
+          coupon_code: string | null
+          coupon_discount_percent: number | null
+          coupon_expires_at: string | null
+          created_at: string
+          email_type: Database["public"]["Enums"]["cfp_email_type"]
+          failed_at: string | null
+          failure_reason: string | null
+          feedback_text: string | null
+          id: string
+          include_feedback: boolean | null
+          personal_message: string | null
+          recipient_email: string
+          recipient_name: string
+          resend_email_id: string | null
+          scheduled_by: string
+          scheduled_for: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["cfp_scheduled_email_status"]
+          submission_id: string
+          talk_title: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          coupon_code?: string | null
+          coupon_discount_percent?: number | null
+          coupon_expires_at?: string | null
+          created_at?: string
+          email_type: Database["public"]["Enums"]["cfp_email_type"]
+          failed_at?: string | null
+          failure_reason?: string | null
+          feedback_text?: string | null
+          id?: string
+          include_feedback?: boolean | null
+          personal_message?: string | null
+          recipient_email: string
+          recipient_name: string
+          resend_email_id?: string | null
+          scheduled_by: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["cfp_scheduled_email_status"]
+          submission_id: string
+          talk_title: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          coupon_code?: string | null
+          coupon_discount_percent?: number | null
+          coupon_expires_at?: string | null
+          created_at?: string
+          email_type?: Database["public"]["Enums"]["cfp_email_type"]
+          failed_at?: string | null
+          failure_reason?: string | null
+          feedback_text?: string | null
+          id?: string
+          include_feedback?: boolean | null
+          personal_message?: string | null
+          recipient_email?: string
+          recipient_name?: string
+          resend_email_id?: string | null
+          scheduled_by?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["cfp_scheduled_email_status"]
+          submission_id?: string
+          talk_title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cfp_scheduled_emails_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cfp_speaker_accommodation: {
         Row: {
           admin_notes: string | null
@@ -383,6 +514,66 @@ export type Database = {
             columns: ["speaker_id"]
             isOneToOne: false
             referencedRelation: "cfp_speakers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cfp_speaker_attendance: {
+        Row: {
+          confirmation_token: string
+          created_at: string
+          decline_notes: string | null
+          decline_reason: string | null
+          id: string
+          responded_at: string | null
+          speaker_id: string
+          status: Database["public"]["Enums"]["cfp_attendance_status"]
+          submission_id: string
+          token_expires_at: string
+          token_used_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          confirmation_token: string
+          created_at?: string
+          decline_notes?: string | null
+          decline_reason?: string | null
+          id?: string
+          responded_at?: string | null
+          speaker_id: string
+          status?: Database["public"]["Enums"]["cfp_attendance_status"]
+          submission_id: string
+          token_expires_at: string
+          token_used_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confirmation_token?: string
+          created_at?: string
+          decline_notes?: string | null
+          decline_reason?: string | null
+          id?: string
+          responded_at?: string | null
+          speaker_id?: string
+          status?: Database["public"]["Enums"]["cfp_attendance_status"]
+          submission_id?: string
+          token_expires_at?: string
+          token_used_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cfp_speaker_attendance_speaker_id_fkey"
+            columns: ["speaker_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_speakers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cfp_speaker_attendance_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -619,19 +810,22 @@ export type Database = {
           email: string
           first_name: string
           github_url: string | null
+          header_image_url: string | null
           id: string
+          is_admin_managed: boolean
           is_featured: boolean
           is_visible: boolean
           job_title: string | null
           last_name: string
           linkedin_url: string | null
           mastodon_handle: string | null
-          profile_image_url: string | null
-          header_image_url: string | null
-          portrait_foreground_url: string | null
           portrait_background_url: string | null
+          portrait_foreground_url: string | null
+          profile_image_url: string | null
+          speaker_role: Database["public"]["Enums"]["cfp_speaker_role"]
           special_requirements: string | null
           travel_assistance_required: boolean | null
+          travel_option: string | null
           tshirt_size: string | null
           twitter_handle: string | null
           updated_at: string
@@ -650,19 +844,22 @@ export type Database = {
           email: string
           first_name: string
           github_url?: string | null
+          header_image_url?: string | null
           id?: string
+          is_admin_managed?: boolean
           is_featured?: boolean
           is_visible?: boolean
           job_title?: string | null
           last_name: string
           linkedin_url?: string | null
           mastodon_handle?: string | null
-          profile_image_url?: string | null
-          header_image_url?: string | null
-          portrait_foreground_url?: string | null
           portrait_background_url?: string | null
+          portrait_foreground_url?: string | null
+          profile_image_url?: string | null
+          speaker_role?: Database["public"]["Enums"]["cfp_speaker_role"]
           special_requirements?: string | null
           travel_assistance_required?: boolean | null
+          travel_option?: string | null
           tshirt_size?: string | null
           twitter_handle?: string | null
           updated_at?: string
@@ -681,25 +878,64 @@ export type Database = {
           email?: string
           first_name?: string
           github_url?: string | null
+          header_image_url?: string | null
           id?: string
+          is_admin_managed?: boolean
           is_featured?: boolean
           is_visible?: boolean
           job_title?: string | null
           last_name?: string
           linkedin_url?: string | null
           mastodon_handle?: string | null
-          profile_image_url?: string | null
-          header_image_url?: string | null
-          portrait_foreground_url?: string | null
           portrait_background_url?: string | null
+          portrait_foreground_url?: string | null
+          profile_image_url?: string | null
+          speaker_role?: Database["public"]["Enums"]["cfp_speaker_role"]
           special_requirements?: string | null
           travel_assistance_required?: boolean | null
+          travel_option?: string | null
           tshirt_size?: string | null
           twitter_handle?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Relationships: []
+      }
+      cfp_submission_speakers: {
+        Row: {
+          created_at: string
+          role: string
+          speaker_id: string
+          submission_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: string
+          speaker_id: string
+          submission_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          speaker_id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cfp_submission_speakers_speaker_id_fkey"
+            columns: ["speaker_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_speakers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cfp_submission_speakers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cfp_submission_tags: {
         Row: {
@@ -734,13 +970,27 @@ export type Database = {
       cfp_submissions: {
         Row: {
           abstract: string
+          acceptance_email_scheduled_for: string | null
+          acceptance_email_scheduled_id: string | null
           additional_notes: string | null
           company_can_cover_travel: boolean | null
+          coupon_code: string | null
+          coupon_generated_at: string | null
           created_at: string
+          decision_at: string | null
+          decision_by: string | null
+          decision_email_id: string | null
+          decision_email_sent_at: string | null
+          decision_notes: string | null
+          decision_status:
+            | Database["public"]["Enums"]["cfp_decision_status"]
+            | null
           id: string
           metadata: Json | null
           outline: string | null
           previous_recording_url: string | null
+          rejection_email_scheduled_for: string | null
+          rejection_email_scheduled_id: string | null
           room: string | null
           scheduled_date: string | null
           scheduled_duration_minutes: number | null
@@ -765,13 +1015,27 @@ export type Database = {
         }
         Insert: {
           abstract: string
+          acceptance_email_scheduled_for?: string | null
+          acceptance_email_scheduled_id?: string | null
           additional_notes?: string | null
           company_can_cover_travel?: boolean | null
+          coupon_code?: string | null
+          coupon_generated_at?: string | null
           created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_email_id?: string | null
+          decision_email_sent_at?: string | null
+          decision_notes?: string | null
+          decision_status?:
+            | Database["public"]["Enums"]["cfp_decision_status"]
+            | null
           id?: string
           metadata?: Json | null
           outline?: string | null
           previous_recording_url?: string | null
+          rejection_email_scheduled_for?: string | null
+          rejection_email_scheduled_id?: string | null
           room?: string | null
           scheduled_date?: string | null
           scheduled_duration_minutes?: number | null
@@ -796,13 +1060,27 @@ export type Database = {
         }
         Update: {
           abstract?: string
+          acceptance_email_scheduled_for?: string | null
+          acceptance_email_scheduled_id?: string | null
           additional_notes?: string | null
           company_can_cover_travel?: boolean | null
+          coupon_code?: string | null
+          coupon_generated_at?: string | null
           created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_email_id?: string | null
+          decision_email_sent_at?: string | null
+          decision_notes?: string | null
+          decision_status?:
+            | Database["public"]["Enums"]["cfp_decision_status"]
+            | null
           id?: string
           metadata?: Json | null
           outline?: string | null
           previous_recording_url?: string | null
+          rejection_email_scheduled_for?: string | null
+          rejection_email_scheduled_id?: string | null
           room?: string | null
           scheduled_date?: string | null
           scheduled_duration_minutes?: number | null
@@ -826,6 +1104,20 @@ export type Database = {
           workshop_special_requirements?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cfp_submissions_acceptance_email_scheduled_id_fkey"
+            columns: ["acceptance_email_scheduled_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_scheduled_emails"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cfp_submissions_rejection_email_scheduled_id_fkey"
+            columns: ["rejection_email_scheduled_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_scheduled_emails"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cfp_submissions_speaker_id_fkey"
             columns: ["speaker_id"]
@@ -853,6 +1145,30 @@ export type Database = {
           id?: string
           is_suggested?: boolean | null
           name?: string
+        }
+        Relationships: []
+      }
+      checkout_cart_snapshots: {
+        Row: {
+          cart_items: Json
+          created_at: string
+          expires_at: string
+          stripe_session_id: string
+          workshop_attendees: Json
+        }
+        Insert: {
+          cart_items?: Json
+          created_at?: string
+          expires_at?: string
+          stripe_session_id: string
+          workshop_attendees?: Json
+        }
+        Update: {
+          cart_items?: Json
+          created_at?: string
+          expires_at?: string
+          stripe_session_id?: string
+          workshop_attendees?: Json
         }
         Relationships: []
       }
@@ -1144,6 +1460,161 @@ export type Database = {
         }
         Relationships: []
       }
+      program_schedule_items: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_visible: boolean
+          room: string | null
+          session_id: string | null
+          start_time: string
+          submission_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["program_schedule_item_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          is_visible?: boolean
+          room?: string | null
+          session_id?: string | null
+          start_time: string
+          submission_id?: string | null
+          title: string
+          type: Database["public"]["Enums"]["program_schedule_item_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_visible?: boolean
+          room?: string | null
+          session_id?: string | null
+          start_time?: string
+          submission_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["program_schedule_item_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_schedule_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "program_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_schedule_items_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_session_speakers: {
+        Row: {
+          created_at: string
+          role: Database["public"]["Enums"]["program_session_speaker_role"]
+          session_id: string
+          sort_order: number
+          speaker_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: Database["public"]["Enums"]["program_session_speaker_role"]
+          session_id: string
+          sort_order?: number
+          speaker_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: Database["public"]["Enums"]["program_session_speaker_role"]
+          session_id?: string
+          sort_order?: number
+          speaker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_session_speakers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "program_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_session_speakers_speaker_id_fkey"
+            columns: ["speaker_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_speakers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_sessions: {
+        Row: {
+          abstract: string | null
+          cfp_submission_id: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["program_session_kind"]
+          level: Database["public"]["Enums"]["cfp_talk_level"] | null
+          metadata: Json
+          status: Database["public"]["Enums"]["program_session_status"]
+          title: string
+          updated_at: string
+          workshop_capacity: number | null
+          workshop_duration_minutes: number | null
+        }
+        Insert: {
+          abstract?: string | null
+          cfp_submission_id?: string | null
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["program_session_kind"]
+          level?: Database["public"]["Enums"]["cfp_talk_level"] | null
+          metadata?: Json
+          status?: Database["public"]["Enums"]["program_session_status"]
+          title: string
+          updated_at?: string
+          workshop_capacity?: number | null
+          workshop_duration_minutes?: number | null
+        }
+        Update: {
+          abstract?: string | null
+          cfp_submission_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["program_session_kind"]
+          level?: Database["public"]["Enums"]["cfp_talk_level"] | null
+          metadata?: Json
+          status?: Database["public"]["Enums"]["program_session_status"]
+          title?: string
+          updated_at?: string
+          workshop_capacity?: number | null
+          workshop_duration_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_sessions_cfp_submission_id_fkey"
+            columns: ["cfp_submission_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_abandonment_emails: {
         Row: {
           created_at: string | null
@@ -1303,6 +1774,16 @@ export type Database = {
       sponsorship_invoices: {
         Row: {
           adjustments_total: number
+          base_amount_chf: number | null
+          base_currency: string
+          conversion_justification: string | null
+          conversion_rate_chf_to_eur: number | null
+          conversion_rate_source:
+            | Database["public"]["Enums"]["sponsorship_conversion_rate_source"]
+            | null
+          conversion_updated_at: string | null
+          conversion_updated_by: string | null
+          converted_amount_eur: number | null
           created_at: string
           credit_applied: number
           currency: string
@@ -1315,12 +1796,23 @@ export type Database = {
           invoice_pdf_uploaded_at: string | null
           invoice_pdf_url: string | null
           issue_date: string
+          payable_currency: string | null
           subtotal: number
           total_amount: number
           updated_at: string
         }
         Insert: {
           adjustments_total?: number
+          base_amount_chf?: number | null
+          base_currency?: string
+          conversion_justification?: string | null
+          conversion_rate_chf_to_eur?: number | null
+          conversion_rate_source?:
+            | Database["public"]["Enums"]["sponsorship_conversion_rate_source"]
+            | null
+          conversion_updated_at?: string | null
+          conversion_updated_by?: string | null
+          converted_amount_eur?: number | null
           created_at?: string
           credit_applied?: number
           currency: string
@@ -1333,12 +1825,23 @@ export type Database = {
           invoice_pdf_uploaded_at?: string | null
           invoice_pdf_url?: string | null
           issue_date?: string
+          payable_currency?: string | null
           subtotal: number
           total_amount: number
           updated_at?: string
         }
         Update: {
           adjustments_total?: number
+          base_amount_chf?: number | null
+          base_currency?: string
+          conversion_justification?: string | null
+          conversion_rate_chf_to_eur?: number | null
+          conversion_rate_source?:
+            | Database["public"]["Enums"]["sponsorship_conversion_rate_source"]
+            | null
+          conversion_updated_at?: string | null
+          conversion_updated_by?: string | null
+          converted_amount_eur?: number | null
           created_at?: string
           credit_applied?: number
           currency?: string
@@ -1351,6 +1854,7 @@ export type Database = {
           invoice_pdf_uploaded_at?: string | null
           invoice_pdf_url?: string | null
           issue_date?: string
+          payable_currency?: string | null
           subtotal?: number
           total_amount?: number
           updated_at?: string
@@ -1497,6 +2001,93 @@ export type Database = {
           name?: string
           price_chf?: number
           price_eur?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ticket_invoices: {
+        Row: {
+          billing_address_line1: string | null
+          billing_address_line2: string | null
+          billing_city: string | null
+          billing_company: string | null
+          billing_country: string | null
+          billing_email: string
+          billing_name: string
+          billing_postal_code: string | null
+          billing_state: string | null
+          created_at: string
+          currency: string
+          discount_amount: number
+          generated_at: string
+          generated_by: string | null
+          id: string
+          invoice_number: string
+          line_items: Json | null
+          notes: string | null
+          pdf_source: string | null
+          pdf_url: string | null
+          primary_ticket_id: string
+          stripe_session_id: string
+          subtotal_amount: number
+          ticket_ids: string[]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_company?: string | null
+          billing_country?: string | null
+          billing_email: string
+          billing_name: string
+          billing_postal_code?: string | null
+          billing_state?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          invoice_number?: string
+          line_items?: Json | null
+          notes?: string | null
+          pdf_source?: string | null
+          pdf_url?: string | null
+          primary_ticket_id: string
+          stripe_session_id: string
+          subtotal_amount?: number
+          ticket_ids?: string[]
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_city?: string | null
+          billing_company?: string | null
+          billing_country?: string | null
+          billing_email?: string
+          billing_name?: string
+          billing_postal_code?: string | null
+          billing_state?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          invoice_number?: string
+          line_items?: Json | null
+          notes?: string | null
+          pdf_source?: string | null
+          pdf_url?: string | null
+          primary_ticket_id?: string
+          stripe_session_id?: string
+          subtotal_amount?: number
+          ticket_ids?: string[]
+          total_amount?: number
           updated_at?: string
         }
         Relationships: []
@@ -1706,30 +2297,6 @@ export type Database = {
           },
         ]
       }
-      checkout_cart_snapshots: {
-        Row: {
-          cart_items: Json
-          created_at: string
-          expires_at: string
-          stripe_session_id: string
-          workshop_attendees: Json
-        }
-        Insert: {
-          cart_items?: Json
-          created_at?: string
-          expires_at?: string
-          stripe_session_id: string
-          workshop_attendees?: Json
-        }
-        Update: {
-          cart_items?: Json
-          created_at?: string
-          expires_at?: string
-          stripe_session_id?: string
-          workshop_attendees?: Json
-        }
-        Relationships: []
-      }
       workshop_registrations: {
         Row: {
           amount_paid: number
@@ -1799,6 +2366,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "workshop_registrations_partnership_coupon_id_fkey"
+            columns: ["partnership_coupon_id"]
+            isOneToOne: false
+            referencedRelation: "partnership_coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workshop_registrations_partnership_voucher_id_fkey"
+            columns: ["partnership_voucher_id"]
+            isOneToOne: false
+            referencedRelation: "partnership_vouchers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "workshop_registrations_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
@@ -1837,6 +2418,7 @@ export type Database = {
           metadata: Json | null
           price: number | null
           room: string | null
+          session_id: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["workshop_status"]
           stripe_price_lookup_key: string | null
@@ -1859,6 +2441,7 @@ export type Database = {
           metadata?: Json | null
           price?: number | null
           room?: string | null
+          session_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["workshop_status"]
           stripe_price_lookup_key?: string | null
@@ -1881,6 +2464,7 @@ export type Database = {
           metadata?: Json | null
           price?: number | null
           room?: string | null
+          session_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["workshop_status"]
           stripe_price_lookup_key?: string | null
@@ -1890,10 +2474,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "workshops_cfp_submission_id_fkey"
+            columns: ["cfp_submission_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_submissions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "workshops_instructor_id_fkey"
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workshops_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "program_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1905,33 +2503,41 @@ export type Database = {
     Functions: {
       insert_workshop_registration_atomic: {
         Args: {
-          p_workshop_id: string
-          p_user_id: string | null
-          p_ticket_id: string | null
-          p_stripe_session_id: string
-          p_stripe_payment_intent_id: string | null
           p_amount_paid: number
+          p_coupon_code: string
           p_currency: string
-          p_status: Database["public"]["Enums"]["payment_status"]
-          p_first_name: string | null
-          p_last_name: string | null
-          p_email: string | null
-          p_coupon_code: string | null
-          p_partnership_coupon_id: string | null
-          p_partnership_voucher_id: string | null
           p_discount_amount: number
-          p_seat_index: number
+          p_email: string
+          p_first_name: string
+          p_last_name: string
           p_metadata: Json
+          p_partnership_coupon_id: string
+          p_partnership_voucher_id: string
+          p_seat_index: number
+          p_status: Database["public"]["Enums"]["payment_status"]
+          p_stripe_payment_intent_id: string
+          p_stripe_session_id: string
+          p_ticket_id: string
+          p_user_id: string
+          p_workshop_id: string
         }
         Returns: {
-          registration: Database["public"]["Tables"]["workshop_registrations"]["Row"] | null
-          was_oversold: boolean
+          registration: Database["public"]["Tables"]["workshop_registrations"]["Row"]
           was_duplicate: boolean
+          was_oversold: boolean
         }[]
       }
     }
     Enums: {
       b2b_invoice_status: "draft" | "sent" | "paid" | "cancelled"
+      cfp_attendance_status: "pending" | "confirmed" | "declined"
+      cfp_decision_event_type:
+        | "decision_made"
+        | "email_sent"
+        | "coupon_generated"
+        | "decision_changed"
+      cfp_decision_status: "undecided" | "accepted" | "rejected"
+      cfp_email_type: "acceptance" | "rejection"
       cfp_flight_direction: "inbound" | "outbound"
       cfp_flight_status:
         | "pending"
@@ -1944,7 +2550,13 @@ export type Database = {
         | "delayed"
       cfp_reimbursement_status: "pending" | "approved" | "rejected" | "paid"
       cfp_reimbursement_type: "flight" | "accommodation" | "transport" | "other"
-      cfp_reviewer_role: "super_admin" | "committee_member" | "reviewer" | "readonly"
+      cfp_reviewer_role:
+        | "super_admin"
+        | "reviewer"
+        | "readonly"
+        | "committee_member"
+      cfp_scheduled_email_status: "pending" | "sent" | "cancelled" | "failed"
+      cfp_speaker_role: "speaker" | "mc"
       cfp_submission_status:
         | "draft"
         | "submitted"
@@ -1954,12 +2566,22 @@ export type Database = {
         | "accepted"
         | "rejected"
         | "withdrawn"
-      cfp_submission_type: "lightning" | "standard" | "workshop"
+      cfp_submission_type: "lightning" | "standard" | "workshop" | "panel"
       cfp_talk_level: "beginner" | "intermediate" | "advanced"
       coupon_type: "percentage" | "fixed_amount"
       partnership_status: "active" | "inactive" | "pending" | "expired"
       partnership_type: "community" | "individual" | "company" | "sponsor"
       payment_status: "pending" | "confirmed" | "cancelled" | "refunded"
+      program_schedule_item_type: "session" | "event" | "break" | "placeholder"
+      program_session_kind: "talk" | "workshop" | "panel" | "keynote" | "event"
+      program_session_speaker_role:
+        | "speaker"
+        | "panelist"
+        | "host"
+        | "mc"
+        | "instructor"
+      program_session_status: "draft" | "confirmed" | "published" | "archived"
+      sponsorship_conversion_rate_source: "ecb" | "bank" | "manual" | "other"
       sponsorship_deal_status:
         | "draft"
         | "offer_sent"
@@ -1988,7 +2610,12 @@ export type Database = {
         | "raffle"
         | "giveaway"
         | "organizer_discount"
-      workshop_status: "draft" | "published" | "cancelled" | "completed" | "archived"
+      workshop_status:
+        | "draft"
+        | "published"
+        | "cancelled"
+        | "completed"
+        | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2117,6 +2744,15 @@ export const Constants = {
   public: {
     Enums: {
       b2b_invoice_status: ["draft", "sent", "paid", "cancelled"],
+      cfp_attendance_status: ["pending", "confirmed", "declined"],
+      cfp_decision_event_type: [
+        "decision_made",
+        "email_sent",
+        "coupon_generated",
+        "decision_changed",
+      ],
+      cfp_decision_status: ["undecided", "accepted", "rejected"],
+      cfp_email_type: ["acceptance", "rejection"],
       cfp_flight_direction: ["inbound", "outbound"],
       cfp_flight_status: [
         "pending",
@@ -2130,7 +2766,14 @@ export const Constants = {
       ],
       cfp_reimbursement_status: ["pending", "approved", "rejected", "paid"],
       cfp_reimbursement_type: ["flight", "accommodation", "transport", "other"],
-      cfp_reviewer_role: ["super_admin", "committee_member", "reviewer", "readonly"],
+      cfp_reviewer_role: [
+        "super_admin",
+        "reviewer",
+        "readonly",
+        "committee_member",
+      ],
+      cfp_scheduled_email_status: ["pending", "sent", "cancelled", "failed"],
+      cfp_speaker_role: ["speaker", "mc"],
       cfp_submission_status: [
         "draft",
         "submitted",
@@ -2141,12 +2784,23 @@ export const Constants = {
         "rejected",
         "withdrawn",
       ],
-      cfp_submission_type: ["lightning", "standard", "workshop"],
+      cfp_submission_type: ["lightning", "standard", "workshop", "panel"],
       cfp_talk_level: ["beginner", "intermediate", "advanced"],
       coupon_type: ["percentage", "fixed_amount"],
       partnership_status: ["active", "inactive", "pending", "expired"],
       partnership_type: ["community", "individual", "company", "sponsor"],
       payment_status: ["pending", "confirmed", "cancelled", "refunded"],
+      program_schedule_item_type: ["session", "event", "break", "placeholder"],
+      program_session_kind: ["talk", "workshop", "panel", "keynote", "event"],
+      program_session_speaker_role: [
+        "speaker",
+        "panelist",
+        "host",
+        "mc",
+        "instructor",
+      ],
+      program_session_status: ["draft", "confirmed", "published", "archived"],
+      sponsorship_conversion_rate_source: ["ecb", "bank", "manual", "other"],
       sponsorship_deal_status: [
         "draft",
         "offer_sent",
@@ -2179,7 +2833,14 @@ export const Constants = {
         "giveaway",
         "organizer_discount",
       ],
-      workshop_status: ["draft", "published", "cancelled", "completed", "archived"],
+      workshop_status: [
+        "draft",
+        "published",
+        "cancelled",
+        "completed",
+        "archived",
+      ],
     },
   },
 } as const
+

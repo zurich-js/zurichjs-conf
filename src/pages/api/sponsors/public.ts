@@ -6,7 +6,6 @@
  * Returns only sponsors with:
  * - is_logo_public = true
  * - logo_url is not null
- * - logo_url_color is not null
  * - At least one deal in 'paid' status
  */
 

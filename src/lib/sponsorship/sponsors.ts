@@ -161,6 +161,34 @@ export async function updateSponsorLogo(
 }
 
 /**
+ * Update sponsor color logo URL
+ *
+ * @param sponsorId - UUID of the sponsor
+ * @param logoUrlColor - New color logo URL (or null to remove)
+ * @returns Updated sponsor
+ */
+export async function updateSponsorColorLogo(
+  sponsorId: string,
+  logoUrlColor: string | null
+): Promise<Sponsor> {
+  const supabase = createServiceRoleClient();
+
+  const { data: sponsor, error } = await supabase
+    .from('sponsors')
+    .update({ logo_url_color: logoUrlColor })
+    .eq('id', sponsorId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating sponsor color logo:', error);
+    throw new Error(`Failed to update sponsor color logo: ${error.message}`);
+  }
+
+  return sponsor as Sponsor;
+}
+
+/**
  * Toggle logo public visibility
  *
  * @param sponsorId - UUID of the sponsor
@@ -309,7 +337,7 @@ export async function getPublicSponsors(): Promise<PublicSponsor[]> {
       id: sponsor.id,
       name: sponsor.company_name,
       logo: sponsor.logo_url!,
-      logoColor: sponsor.logo_url_color!,
+      logoColor: sponsor.logo_url_color,
       url: sponsor.company_website,
       tier: tierId,
       sizes: displayConfig.sizes,

@@ -192,7 +192,9 @@ async function handlePatch(
         submissionId: data.cfp_submission_id,
       });
     }
+  }
 
+  if (scheduleUpdate && (data.cfp_submission_id || data.session_id)) {
     await syncProgramScheduleForWorkshop(data as Workshop, scheduleUpdate, {
       publish: body.status === 'published',
     });

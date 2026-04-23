@@ -17,7 +17,7 @@ import { formatPrice } from '@/lib/cart';
 interface WorkshopPurchasePanelProps {
   /** Program session id — preferred match for post-CFP workshop offerings. */
   sessionId: string;
-  /** CFP submission id — matches the PublicSession.id on the detail page. */
+  /** Optional legacy CFP submission id — used as a fallback for older workshop offerings. */
   cfpSubmissionId?: string | null;
   /** Title-derived session slug — used as a fallback filter on the pricing API. */
   sessionSlug: string;

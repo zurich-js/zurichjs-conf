@@ -10,7 +10,7 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getAllWorkshopRevenue } from '@/lib/workshops/getRevenue';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
-import type { Workshop, WorkshopStatus } from '@/lib/types/database';
+import type { Database, Workshop, WorkshopStatus } from '@/lib/types/database';
 import { logger } from '@/lib/logger';
 import {
   CreateOfferingSchema,
@@ -183,21 +183,13 @@ async function handleCreate(
     const defaultDurationMinutes = submission.workshop_duration_hours
       ? Math.round(submission.workshop_duration_hours * 60)
       : null;
-    const { data: linkedProgramSession } = await (supabase as never as {
-      from: (table: string) => {
-        select: (columns: string) => {
-          eq: (column: string, value: string) => {
-            maybeSingle: () => Promise<{ data: { id: string } | null }>;
-          };
-        };
-      };
-    })
+    const { data: linkedProgramSession } = await supabase
       .from('program_sessions')
       .select('id')
       .eq('cfp_submission_id', body.cfpSubmissionId)
       .maybeSingle();
 
-    const workshopInsert = {
+    const workshopInsert: Database['public']['Tables']['workshops']['Insert'] = {
       session_id: linkedProgramSession?.id ?? null,
       cfp_submission_id: body.cfpSubmissionId,
       title: body.title ?? submission.title,
@@ -212,7 +204,7 @@ async function handleCreate(
 
     const { data: inserted, error: insertError } = await supabase
       .from('workshops')
-      .insert(workshopInsert as never)
+      .insert(workshopInsert)
       .select()
       .single();
 
