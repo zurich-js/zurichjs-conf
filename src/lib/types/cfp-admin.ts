@@ -107,6 +107,8 @@ export interface CfpSpeakerSubmission {
   title: string;
   status: string;
   submission_type: string;
+  slides_url?: string | null;
+  previous_recording_url?: string | null;
 }
 
 export interface CfpAdminReviewer {
@@ -177,6 +179,83 @@ export interface CfpReviewWithReviewer {
   };
 }
 
+export interface SpeakerFeedbackAggregate {
+  overall: number | null;
+  relevance: number | null;
+  technical_depth: number | null;
+  clarity: number | null;
+  diversity: number | null;
+}
+
+export interface SpeakerFeedbackReview {
+  id: string;
+  score_overall: number | null;
+  score_relevance: number | null;
+  score_technical_depth: number | null;
+  score_clarity: number | null;
+  score_diversity: number | null;
+  private_notes: string | null;
+  feedback_to_speaker: string | null;
+  created_at: string;
+  reviewer: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+}
+
+export interface SpeakerFeedbackTagStat {
+  id: string;
+  name: string;
+  submission_count: number;
+}
+
+export interface SpeakerFeedbackSubmissionAnalytics {
+  percentile: number | null;
+  cohort_size: number;
+  cohort_avg: number | null;
+  score_min: number | null;
+  score_max: number | null;
+  score_stddev: number | null;
+  feedback_written_count: number;
+  feedback_written_percent: number;
+  decision_status?: string | null;
+  decision_email_sent_at?: string | null;
+}
+
+export interface SpeakerFeedbackSubmission {
+  id: string;
+  title: string;
+  abstract: string;
+  submission_type: string;
+  talk_level: string;
+  status: string;
+  submitted_at: string | null;
+  created_at: string;
+  review_count: number;
+  aggregate: SpeakerFeedbackAggregate;
+  reviews: SpeakerFeedbackReview[];
+  slides_url?: string | null;
+  previous_recording_url?: string | null;
+  outline?: string | null;
+  additional_notes?: string | null;
+  tags: SpeakerFeedbackTagStat[];
+  analytics: SpeakerFeedbackSubmissionAnalytics;
+}
+
+export interface SpeakerFeedbackResponse {
+  speakerId: string;
+  submissions: SpeakerFeedbackSubmission[];
+  overall: {
+    total_submissions: number;
+    total_reviews: number;
+    avg_overall: number | null;
+    percentile: number | null;
+    cohort_size: number;
+    cohort_avg: number | null;
+  };
+}
+
 export const ADMIN_REVIEWER_ROLES = {
   SUPER_ADMIN: CFP_REVIEWER_ROLES.SUPER_ADMIN,
   COMMITTEE_MEMBER: CFP_REVIEWER_ROLES.COMMITTEE_MEMBER,
@@ -212,6 +291,7 @@ export const cfpQueryKeys = {
   analytics: ['cfp', 'analytics'] as const,
   decisionData: (id: string) => ['cfp', 'submission', id, 'decision'] as const,
   scheduledEmails: (id: string) => ['cfp', 'submission', id, 'scheduled-emails'] as const,
+  speakerFeedback: (id: string) => ['cfp', 'speaker', id, 'feedback'] as const,
 };
 
 // Status action descriptions for admin actions

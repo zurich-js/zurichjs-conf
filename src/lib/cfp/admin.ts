@@ -30,6 +30,7 @@ import {
   type ReviewInput,
 } from './scoring';
 import { computeReviewerContributionMetrics } from './reviewer-scoring';
+import { reconcileAllOverdueScheduledEmails } from './scheduled-emails';
 
 /**
  * Create untyped Supabase client for CFP tables
@@ -109,6 +110,8 @@ export async function getAdminSubmissions(
     shortlist_statuses,
     coverage_min,
     coverage_max,
+    decision_statuses,
+    email_states,
   } = filters;
 
   // Step 1: Fetch all submissions from DB (apply DB-level filters only)
@@ -159,6 +162,15 @@ export async function getAdminSubmissions(
     submissions.push(...(data as CfpSubmission[]));
     if (data.length < PAGE_SIZE) break;
     pageOffset += PAGE_SIZE;
+  }
+
+  // Reconcile any pending scheduled emails whose scheduled_for has passed to 'sent'
+  // so email-state filters on the list view reflect reality for both acceptance and
+  // rejection emails (Resend delivers on schedule with no webhook).
+  try {
+    await reconcileAllOverdueScheduledEmails();
+  } catch (err) {
+    console.error('[CFP Admin] reconcileAllOverdueScheduledEmails failed:', err);
   }
 
   // Step 2: Fetch related data in parallel
@@ -302,6 +314,28 @@ export async function getAdminSubmissions(
 
   if (typeof coverage_max === 'number') {
     filtered = filtered.filter((s) => (s.stats?.coverage_percent || 0) <= coverage_max);
+  }
+
+  if (decision_statuses && decision_statuses.length > 0) {
+    const decisionSet = new Set(decision_statuses);
+    filtered = filtered.filter((s) => {
+      const current = s.decision_status || 'undecided';
+      return decisionSet.has(current);
+    });
+  }
+
+  if (email_states && email_states.length > 0) {
+    const stateSet = new Set(email_states);
+    filtered = filtered.filter((s) => {
+      const status = s.latest_scheduled_email_status;
+      // Collapse the scheduled-email status into three user-facing buckets.
+      const bucket = status === 'sent'
+        ? 'sent'
+        : status === 'pending'
+          ? 'pending'
+          : 'not_scheduled';
+      return stateSet.has(bucket);
+    });
   }
 
   const total = filtered.length;

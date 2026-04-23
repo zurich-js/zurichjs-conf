@@ -5,11 +5,14 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, User, Trash2, FileText, ExternalLink } from 'lucide-react';
+import { X, User, Trash2, FileText, ExternalLink, MessageSquare, IdCard, Video, Presentation } from 'lucide-react';
 import type { CfpAdminSpeaker, CfpSpeakerSubmission, CfpAdminSubmission } from '@/lib/types/cfp-admin';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { StatusBadge } from '../StatusBadge';
 import { SpeakerInfoSection } from '../SubmissionModal/SpeakerInfoSection';
+import { SpeakerFeedbackPanel } from './SpeakerFeedbackPanel';
+
+type SpeakerModalTab = 'profile' | 'feedback';
 
 interface SpeakerModalProps {
   speaker: CfpAdminSpeaker;
@@ -18,6 +21,7 @@ interface SpeakerModalProps {
   onDeleted: () => void;
   isDeleting: boolean;
   onSelectSubmission?: (submission: CfpAdminSubmission) => void;
+  initialTab?: SpeakerModalTab;
 }
 
 // Fetch speaker details including submissions
@@ -38,7 +42,8 @@ async function fetchSubmissionDetails(submissionId: string): Promise<CfpAdminSub
   return data.submission;
 }
 
-export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeleting, onSelectSubmission }: SpeakerModalProps) {
+export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeleting, onSelectSubmission, initialTab = 'profile' }: SpeakerModalProps) {
+  const [activeTab, setActiveTab] = useState<SpeakerModalTab>(initialTab);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     first_name: speaker.first_name || '',
@@ -184,6 +189,36 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="sticky top-[72px] z-[5] border-b border-gray-200 bg-white px-4 sm:px-6">
+          <nav className="flex gap-4" aria-label="Speaker tabs">
+            <button
+              type="button"
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center gap-1.5 border-b-2 px-1 py-3 text-sm font-medium transition-colors cursor-pointer ${
+                activeTab === 'profile'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              <IdCard className="h-4 w-4" />
+              Profile
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('feedback')}
+              className={`flex items-center gap-1.5 border-b-2 px-1 py-3 text-sm font-medium transition-colors cursor-pointer ${
+                activeTab === 'feedback'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black'
+              }`}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Feedback
+            </button>
+          </nav>
+        </div>
+
         {/* Content */}
         <div className="p-4 sm:p-6 space-y-6">
           {error && (
@@ -192,6 +227,19 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
             </div>
           )}
 
+          {activeTab === 'feedback' ? (
+            <SpeakerFeedbackPanel
+              speakerId={speaker.id}
+              speakerName={
+                speaker.first_name || speaker.last_name
+                  ? `${speaker.first_name} ${speaker.last_name}`.trim()
+                  : speaker.email
+              }
+              onOpenSubmission={(submissionId) => handleViewSubmission(submissionId)}
+              loadingSubmissionId={loadingSubmissionId}
+            />
+          ) : (
+          <>
           {/* Mode Toggle */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -207,6 +255,13 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               >
                 Email Speaker
               </a>
+              <button
+                onClick={() => setActiveTab('feedback')}
+                className="px-3 py-1.5 border border-brand-primary bg-brand-primary/20 hover:bg-brand-primary/40 rounded-lg text-sm font-medium text-black transition-all cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <MessageSquare className="h-4 w-4" />
+                View All Feedback
+              </button>
             </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
@@ -406,6 +461,32 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                         <span className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600 capitalize shrink-0">
                           {submission.submission_type}
                         </span>
+                        {submission.previous_recording_url && (
+                          <a
+                            href={submission.previous_recording_url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700 hover:bg-gray-50"
+                            title="Previous recording"
+                          >
+                            <Video className="h-3 w-3" />
+                            Recording
+                          </a>
+                        )}
+                        {submission.slides_url && (
+                          <a
+                            href={submission.slides_url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-700 hover:bg-gray-50"
+                            title="Slides"
+                          >
+                            <Presentation className="h-3 w-3" />
+                            Slides
+                          </a>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -442,6 +523,8 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+          )}
+          </>
           )}
 
           {/* Danger Zone */}

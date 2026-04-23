@@ -90,45 +90,52 @@ interface SubmissionForEmail {
 }
 
 /**
- * Get submission with speaker data for email
+ * Get submission with speaker data for email.
+ *
+ * Uses two separate queries rather than a PostgREST embed: the
+ * cfp_submission_speakers junction table (added for panels) makes a
+ * `speaker:cfp_speakers(*)` embed ambiguous. The two-query pattern
+ * matches getAdminSubmissionDetail in ./admin.ts.
  */
 async function getSubmissionForEmail(submissionId: string): Promise<SubmissionForEmail | null> {
   const supabase = createCfpServiceClient();
 
-  const { data, error } = await supabase
+  const { data: submission, error: submissionError } = await supabase
     .from('cfp_submissions')
-    .select(`
-      id,
-      title,
-      submission_type,
-      decision_status,
-      workshop_duration_hours,
-      speaker:cfp_speakers(
-        id,
-        first_name,
-        last_name,
-        email
-      )
-    `)
+    .select('id, title, submission_type, decision_status, workshop_duration_hours, speaker_id')
     .eq('id', submissionId)
     .single();
 
-  if (error || !data) {
-    log.error('Failed to fetch submission for email', { submissionId, error: error?.message });
+  if (submissionError || !submission) {
+    log.error('Failed to fetch submission for email', {
+      submissionId,
+      error: submissionError?.message,
+    });
     return null;
   }
 
-  // Handle speaker data (may be array or object from Supabase join)
-  const speakerData = Array.isArray(data.speaker) ? data.speaker[0] : data.speaker;
+  const { data: speaker, error: speakerError } = await supabase
+    .from('cfp_speakers')
+    .select('id, first_name, last_name, email')
+    .eq('id', submission.speaker_id)
+    .single();
+
+  if (speakerError) {
+    log.error('Failed to fetch speaker for email', {
+      submissionId,
+      speakerId: submission.speaker_id,
+      error: speakerError.message,
+    });
+  }
 
   return {
-    id: data.id,
-    title: data.title,
-    submission_type: data.submission_type,
-    decision_status: data.decision_status,
-    workshop_duration_hours: data.workshop_duration_hours ?? null,
-    speaker: speakerData || null,
-  } as SubmissionForEmail;
+    id: submission.id,
+    title: submission.title,
+    submission_type: submission.submission_type,
+    decision_status: submission.decision_status,
+    workshop_duration_hours: submission.workshop_duration_hours ?? null,
+    speaker: speaker || null,
+  };
 }
 
 /**
@@ -605,12 +612,17 @@ export async function cancelScheduledEmail(
 }
 
 /**
- * Get all scheduled emails for a submission
+ * Get all scheduled emails for a submission.
+ * Before returning, reconciles any pending emails whose scheduled_for has passed —
+ * Resend sends them on schedule but does not call a webhook, so we flip them to 'sent'
+ * lazily so the admin UI reflects reality.
  */
 export async function getScheduledEmailsForSubmission(
   submissionId: string
 ): Promise<CfpScheduledEmail[]> {
   const supabase = createCfpServiceClient();
+
+  await reconcileOverdueScheduledEmails(submissionId);
 
   const { data, error } = await supabase
     .from('cfp_scheduled_emails')
@@ -624,6 +636,124 @@ export async function getScheduledEmailsForSubmission(
   }
 
   return (data || []) as CfpScheduledEmail[];
+}
+
+/**
+ * Mark pending emails whose scheduled_for has passed as sent. Resend delivers on
+ * schedule with no webhook, so this is the source of truth for "email sent" in the admin UI.
+ */
+export async function reconcileOverdueScheduledEmails(submissionId: string): Promise<void> {
+  const supabase = createCfpServiceClient();
+  const now = new Date().toISOString();
+
+  const { data: overdue, error } = await supabase
+    .from('cfp_scheduled_emails')
+    .select('id, submission_id, scheduled_for')
+    .eq('submission_id', submissionId)
+    .eq('status', 'pending')
+    .lte('scheduled_for', now);
+
+  if (error) {
+    log.error('Failed to fetch overdue scheduled emails', { error: error.message, submissionId });
+    return;
+  }
+
+  if (!overdue || overdue.length === 0) return;
+
+  const ids = overdue.map((e: { id: string }) => e.id);
+
+  const { error: updateError } = await supabase
+    .from('cfp_scheduled_emails')
+    .update({
+      status: 'sent' as CfpScheduledEmailStatus,
+      sent_at: now,
+    })
+    .in('id', ids);
+
+  if (updateError) {
+    log.error('Failed to reconcile overdue scheduled emails', {
+      error: updateError.message,
+      submissionId,
+      ids,
+    });
+    return;
+  }
+
+  // Mirror sent timestamp onto submission so speaker-facing state is accurate
+  const latestScheduled = overdue.reduce(
+    (max: string | null, e: { scheduled_for: string }) =>
+      !max || e.scheduled_for > max ? e.scheduled_for : max,
+    null as string | null
+  );
+  if (latestScheduled) {
+    await supabase
+      .from('cfp_submissions')
+      .update({ decision_email_sent_at: latestScheduled })
+      .eq('id', submissionId);
+  }
+}
+
+/**
+ * Bulk variant of reconcileOverdueScheduledEmails — flips every pending email
+ * whose scheduled_for has passed to 'sent' in a single UPDATE. Used by the admin
+ * list endpoint so filters like "Email: sent" reflect reality regardless of
+ * email_type (acceptance or rejection) without needing each submission to be
+ * opened individually first.
+ */
+export async function reconcileAllOverdueScheduledEmails(): Promise<number> {
+  const supabase = createCfpServiceClient();
+  const now = new Date().toISOString();
+
+  const { data: overdue, error } = await supabase
+    .from('cfp_scheduled_emails')
+    .select('id, submission_id, scheduled_for')
+    .eq('status', 'pending')
+    .lte('scheduled_for', now);
+
+  if (error) {
+    log.error('Failed to fetch overdue scheduled emails (bulk)', { error: error.message });
+    return 0;
+  }
+
+  if (!overdue || overdue.length === 0) return 0;
+
+  const ids = overdue.map((e: { id: string }) => e.id);
+
+  const { error: updateError } = await supabase
+    .from('cfp_scheduled_emails')
+    .update({
+      status: 'sent' as CfpScheduledEmailStatus,
+      sent_at: now,
+    })
+    .in('id', ids);
+
+  if (updateError) {
+    log.error('Failed to reconcile overdue scheduled emails (bulk)', {
+      error: updateError.message,
+      count: ids.length,
+    });
+    return 0;
+  }
+
+  // Mirror onto each submission's decision_email_sent_at (use the email's own
+  // scheduled_for per submission so the mirror stays accurate for multi-email rows).
+  const latestBySubmission = new Map<string, string>();
+  for (const row of overdue) {
+    const prev = latestBySubmission.get(row.submission_id);
+    if (!prev || row.scheduled_for > prev) {
+      latestBySubmission.set(row.submission_id, row.scheduled_for);
+    }
+  }
+  await Promise.all(
+    Array.from(latestBySubmission.entries()).map(([submissionId, scheduledFor]) =>
+      supabase
+        .from('cfp_submissions')
+        .update({ decision_email_sent_at: scheduledFor })
+        .eq('id', submissionId)
+    )
+  );
+
+  return ids.length;
 }
 
 /**

@@ -26,6 +26,8 @@ export interface SubmissionQueryParams {
   statuses?: string[];
   types?: string[];
   shortlistStatuses?: string[];
+  decisionStatuses?: string[];
+  emailStates?: string[];
   status?: string;
   submission_type?: string;
   search?: string;
@@ -52,6 +54,12 @@ export async function fetchSubmissions(
   }
   if (params.shortlistStatuses?.length) {
     params.shortlistStatuses.forEach((status) => searchParams.append('shortlistStatuses', status));
+  }
+  if (params.decisionStatuses?.length) {
+    params.decisionStatuses.forEach((status) => searchParams.append('decisionStatuses', status));
+  }
+  if (params.emailStates?.length) {
+    params.emailStates.forEach((state) => searchParams.append('emailStates', state));
   }
   if (params.status && params.status !== 'all') searchParams.set('status', params.status);
   if (params.submission_type && params.submission_type !== 'all') searchParams.set('submission_type', params.submission_type);

@@ -38,13 +38,31 @@ function SpeakerAvatar({ speaker, size = 'md' }: { speaker: CfpAdminSpeaker; siz
 interface SpeakersTabProps {
   speakers: CfpAdminSpeaker[];
   isLoading: boolean;
-  onSelectSubmission?: (submission: CfpAdminSubmission) => void;
+  onSelectSubmission?: (submission: CfpAdminSubmission, fromSpeaker?: CfpAdminSpeaker) => void;
+  selectedSpeaker?: CfpAdminSpeaker | null;
+  onSelectSpeaker?: (speaker: CfpAdminSpeaker | null) => void;
+  initialSpeakerTab?: 'profile' | 'feedback';
 }
 
 type SpeakerSortKey = 'speaker' | 'company' | 'joined';
 
-export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: SpeakersTabProps) {
-  const [selectedSpeaker, setSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
+export function SpeakersTab({
+  speakers,
+  isLoading,
+  onSelectSubmission,
+  selectedSpeaker: controlledSpeaker,
+  onSelectSpeaker,
+  initialSpeakerTab,
+}: SpeakersTabProps) {
+  const [internalSelectedSpeaker, setInternalSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
+  const selectedSpeaker = controlledSpeaker !== undefined ? controlledSpeaker : internalSelectedSpeaker;
+  const setSelectedSpeaker = (speaker: CfpAdminSpeaker | null) => {
+    if (onSelectSpeaker) {
+      onSelectSpeaker(speaker);
+    } else {
+      setInternalSelectedSpeaker(speaker);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [profileFilter, setProfileFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<string>('all');
@@ -499,7 +517,12 @@ export function SpeakersTab({ speakers, isLoading, onSelectSubmission }: Speaker
             deleteSpeakerMutation.mutate(selectedSpeaker.id);
           }}
           isDeleting={deleteSpeakerMutation.isPending}
-          onSelectSubmission={onSelectSubmission}
+          onSelectSubmission={
+            onSelectSubmission
+              ? (submission) => onSelectSubmission(submission, selectedSpeaker)
+              : undefined
+          }
+          initialTab={initialSpeakerTab}
         />
       )}
 

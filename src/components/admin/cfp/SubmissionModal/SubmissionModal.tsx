@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { X, FileText, Copy, Mail, Pencil, Loader2, Gavel } from 'lucide-react';
+import { X, FileText, Copy, Mail, Pencil, Loader2, ArrowLeft, Settings } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import type { CfpAdminSubmission, CfpReviewWithReviewer } from '@/lib/types/cfp-admin';
@@ -36,6 +36,8 @@ export interface SubmissionModalProps {
   isDeleting: boolean;
   onEdit: (data: Partial<CfpAdminSubmission>) => void;
   isEditing: boolean;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 export function SubmissionModal({
@@ -47,6 +49,8 @@ export function SubmissionModal({
   isDeleting,
   onEdit,
   isEditing,
+  onBack,
+  backLabel = 'Back to speaker',
 }: SubmissionModalProps) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -88,6 +92,7 @@ export function SubmissionModal({
 
   const decisionStatus = decisionData?.status?.decision_status;
   const scheduledEmails = decisionData?.scheduled_emails ?? [];
+  const decisionHistory = decisionData?.history ?? [];
 
   // Decision mutation
   const decisionMutation = useMutation({
@@ -214,6 +219,16 @@ export function SubmissionModal({
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="mb-3 inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-black hover:bg-gray-50 cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {backLabel}
+            </button>
+          )}
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">
@@ -391,75 +406,43 @@ export function SubmissionModal({
             aggregateScores={aggregateScores}
           />
 
-          {/* Decision & Communication */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-5">
-            <div>
-              <h4 className="text-xs font-bold text-black uppercase tracking-wide flex items-center gap-2 mb-1">
-                <Gavel className="w-4 h-4 text-gray-600" />
-                Decision & Speaker Communication
-              </h4>
-              <p className="text-xs text-gray-500">
-                Record your final decision and notify the speaker via email. Emails are sent externally to the speaker.
-              </p>
-            </div>
-
-            {/* Step 1: Decision */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h5 className="text-sm font-semibold text-black flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-xs font-bold">1</span>
-                    Record Decision
-                  </h5>
-                  <p className="text-xs text-gray-500 mt-1 ml-7">
-                    Record whether this talk is accepted or rejected. This is an internal record and does <strong>not</strong> notify the speaker.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDecisionModal(true)}
-                  className="px-3 py-1.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors cursor-pointer flex-shrink-0"
-                >
-                  Make Decision
-                </button>
-              </div>
-            </div>
-
-            {/* Step 2: Communication */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <h5 className="text-sm font-semibold text-black flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-xs font-bold">2</span>
-                Notify Speaker
-              </h5>
-              <p className="text-xs text-gray-500 mt-1 ml-7 mb-3">
-                Schedule an email to inform the speaker of your decision. This <strong>will</strong> send an email to the speaker.
-              </p>
-              <div className="ml-7">
-                <CommunicationSection
-                  decisionStatus={decisionStatus}
-                  scheduledEmails={scheduledEmails}
-                  onScheduleAcceptance={() => {
-                    setScheduleEmailType('acceptance');
-                    setShowScheduleEmailModal(true);
-                  }}
-                  onScheduleRejection={() => {
-                    setScheduleEmailType('rejection');
-                    setShowScheduleEmailModal(true);
-                  }}
-                  onCancelScheduledEmail={handleCancelScheduledEmail}
-                  onSendNow={handleSendNow}
-                  isCancelling={cancelEmailMutation.isPending}
-                  isSendingNow={sendNowMutation.isPending}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Status Actions */}
-          <StatusActionsSection
-            currentStatus={submission.status}
-            onUpdateStatus={onUpdateStatus}
-            isUpdating={isUpdating}
+          {/* Decision & Speaker Communication */}
+          <CommunicationSection
+            decisionStatus={decisionStatus}
+            scheduledEmails={scheduledEmails}
+            history={decisionHistory}
+            onOpenDecisionModal={() => setShowDecisionModal(true)}
+            onScheduleAcceptance={() => {
+              setScheduleEmailType('acceptance');
+              setShowScheduleEmailModal(true);
+            }}
+            onScheduleRejection={() => {
+              setScheduleEmailType('rejection');
+              setShowScheduleEmailModal(true);
+            }}
+            onCancelScheduledEmail={handleCancelScheduledEmail}
+            onSendNow={handleSendNow}
+            isCancelling={cancelEmailMutation.isPending}
+            isSendingNow={sendNowMutation.isPending}
           />
+
+          {/* Internal pipeline status (collapsed by default to reduce accidental clicks) */}
+          <details className="group rounded-xl border border-gray-200 bg-white">
+            <summary className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-black hover:bg-gray-50">
+              <span className="flex items-center gap-2 font-medium">
+                <Settings className="h-4 w-4 text-gray-500" />
+                Internal pipeline status
+              </span>
+              <span className="text-xs text-gray-500">Speaker is <strong>not</strong> notified · click to expand</span>
+            </summary>
+            <div className="border-t border-gray-200 p-4">
+              <StatusActionsSection
+                currentStatus={submission.status}
+                onUpdateStatus={onUpdateStatus}
+                isUpdating={isUpdating}
+              />
+            </div>
+          </details>
 
           {/* Danger Zone */}
           <div className="border-t border-red-200 pt-6 mt-6">
