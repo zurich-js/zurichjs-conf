@@ -13,9 +13,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { logger } from '@/lib/logger';
 import { parseCurrencyParam, type SupportedCurrency } from '@/config/currency';
+import { createServiceRoleClient } from '@/lib/supabase';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
-import { getOfferingsByCfpSubmissionId } from '@/lib/workshops/getOfferings';
 import { hasScheduleSlot } from '@/lib/workshops/scheduleHelpers';
 import {
   buildOfferingSummaries,
@@ -48,6 +48,9 @@ const indexSpeakerSessions = (speakers: PublicSpeaker[]): Map<string, SpeakerAnd
   for (const speaker of speakers) {
     for (const session of speaker.sessions) {
       map.set(session.id, { session, speaker });
+      if (session.cfp_submission_id) {
+        map.set(session.cfp_submission_id, { session, speaker });
+      }
     }
   }
   return map;
@@ -62,16 +65,17 @@ const toSpeakerPreview = (speaker: PublicSpeaker): ProgramScheduleSpeakerPreview
 
 /**
  * Build a schedule-like item from a workshop row. Returns null when the
- * workshop is missing a date/start/end slot or when the linked CFP submission
- * can't be matched to a speaker.
+ * workshop is missing a date/start/end slot or when the linked program session
+ * can't be matched to a public speaker/session.
  */
 const synthesizeWorkshopItem = (
   workshop: Workshop,
   speakerIndex: Map<string, SpeakerAndSession>
 ): PublicProgramScheduleItem | null => {
-  if (!hasScheduleSlot(workshop) || !workshop.cfp_submission_id) return null;
+  if (!hasScheduleSlot(workshop) || (!workshop.session_id && !workshop.cfp_submission_id)) return null;
 
-  const match = speakerIndex.get(workshop.cfp_submission_id);
+  const match = (workshop.session_id ? speakerIndex.get(workshop.session_id) : null)
+    ?? (workshop.cfp_submission_id ? speakerIndex.get(workshop.cfp_submission_id) : null);
   if (!match) return null;
 
   const durationMinutes = workshop.duration_minutes ?? 0;
@@ -86,6 +90,7 @@ const synthesizeWorkshopItem = (
     type: 'session',
     title: workshop.title,
     description: workshop.description,
+    session_id: workshop.session_id ?? null,
     submission_id: workshop.cfp_submission_id,
     is_visible: true,
     session: match.session,
@@ -109,6 +114,9 @@ const buildSummaryMap = (
   const out: Record<string, WorkshopOfferingSummary> = {};
   for (const summary of summaries) {
     const workshop = workshopById.get(summary.workshopId);
+    if (workshop?.session_id) {
+      out[workshop.session_id] = summary;
+    }
     if (workshop?.cfp_submission_id) {
       out[workshop.cfp_submission_id] = summary;
     }
@@ -145,11 +153,20 @@ export default async function handler(
   try {
     const currency = parseCurrencyParam(req.query.currency);
 
-    const [{ speakers }, scheduleRows, offeringsMap] = await Promise.all([
+    const supabase = createServiceRoleClient();
+    const [{ speakers }, scheduleRows, offeringsResult] = await Promise.all([
       fetchPublicSpeakers(),
       getPublicScheduleRows(),
-      getOfferingsByCfpSubmissionId({ status: 'published' }),
+      supabase
+        .from('workshops')
+        .select('*')
+        .eq('status', 'published')
+        .not('stripe_price_lookup_key', 'is', null),
     ]);
+
+    if (offeringsResult.error) {
+      throw new Error(offeringsResult.error.message);
+    }
 
     // Visible schedule rows are the source of truth for the public program.
     const builtItems = buildPublicProgramScheduleItems(scheduleRows, speakers);
@@ -162,9 +179,7 @@ export default async function handler(
 
     // Workshops with a published offering. Filtering by lookup_key also
     // guarantees we have something priceable in Stripe.
-    const workshops = Array.from(offeringsMap.values()).filter(
-      (w) => Boolean(w.stripe_price_lookup_key)
-    );
+    const workshops = (offeringsResult.data ?? []) as Workshop[];
 
     // Synthesize workshop schedule items from the workshops table.
     const speakerIndex = indexSpeakerSessions(speakers);
@@ -184,17 +199,18 @@ export default async function handler(
       offeringsBySubmissionId = buildSummaryMap(workshops, summaries);
     }
 
-    const scheduledWorkshopSubmissionIds = new Set(
+    const scheduledWorkshopKeys = new Set(
       scheduledWorkshopItems
-        .map((item) => item.submission_id)
-        .filter((submissionId): submissionId is string => Boolean(submissionId))
+        .flatMap((item) => [item.session_id, item.submission_id])
+        .filter((key): key is string => Boolean(key))
     );
     const extraOfferingWorkshopItems = synthesizedWorkshopItems.filter((item) =>
-      item.submission_id ? !scheduledWorkshopSubmissionIds.has(item.submission_id) : true
+      ![item.session_id, item.submission_id].some((key) => key && scheduledWorkshopKeys.has(key))
     );
 
     const publicWorkshopItems = scheduledWorkshopItems.map((item) =>
-      item.submission_id && offeringsBySubmissionId[item.submission_id]
+      (item.session_id && offeringsBySubmissionId[item.session_id]) ||
+      (item.submission_id && offeringsBySubmissionId[item.submission_id])
         ? item
         : asWorkshopPlaceholder(item)
     );

@@ -30,7 +30,9 @@ export function ProgramScheduleItemCard({
     if (item.session) {
       const isWorkshop = item.session.type === 'workshop';
       const offering = isWorkshop
-        ? offeringsBySubmissionId?.[item.session.id] ?? null
+        ? offeringsBySubmissionId?.[item.session.id]
+          ?? (item.session.cfp_submission_id ? offeringsBySubmissionId?.[item.session.cfp_submission_id] : undefined)
+          ?? null
         : null;
       return (
         <SessionCard

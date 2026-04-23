@@ -19,6 +19,20 @@ where type = 'session'
     'd3000000-0000-4000-8000-000000000009'  -- talk
   );
 
+update public.program_schedule_items item
+set session_id = session.id
+from public.program_sessions session
+where item.submission_id = session.cfp_submission_id;
+
+update public.program_sessions session
+set
+    status = 'confirmed',
+    metadata = coalesce(session.metadata, '{}'::jsonb) || '{"seed_phase": "cfp-schedule"}'::jsonb,
+    updated_at = now()
+from public.cfp_submissions submission
+where session.cfp_submission_id = submission.id
+  and submission.status = 'accepted';
+
 update public.cfp_submissions
 set
     scheduled_date = null,

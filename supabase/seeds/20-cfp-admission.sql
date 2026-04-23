@@ -11,6 +11,24 @@ delete from public.workshops;
 delete from public.checkout_cart_snapshots;
 delete from public.program_schedule_items;
 
+delete from public.program_sessions session
+where session.cfp_submission_id is not null
+  and not exists (
+      select 1
+      from public.cfp_submissions submission
+      where submission.id = session.cfp_submission_id
+        and submission.status = 'accepted'
+  );
+
+update public.program_sessions session
+set
+    status = 'confirmed',
+    metadata = coalesce(session.metadata, '{}'::jsonb) || '{"seed_phase": "cfp-admission"}'::jsonb,
+    updated_at = now()
+from public.cfp_submissions submission
+where session.cfp_submission_id = submission.id
+  and submission.status = 'accepted';
+
 update public.cfp_submissions
 set
     scheduled_date = null,

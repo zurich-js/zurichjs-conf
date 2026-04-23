@@ -12,6 +12,7 @@ const log = logger.scope('Workshop Stripe Lookup');
 
 export interface WorkshopOfferingSummary {
   workshopId: string;
+  sessionId: string | null;
   cfpSubmissionId: string | null;
   slug: string;
   lookupKey: string;
@@ -85,6 +86,7 @@ export const buildOfferingSummary = async (
 
   return {
     workshopId: workshop.id,
+    sessionId: workshop.session_id ?? null,
     cfpSubmissionId: workshop.cfp_submission_id,
     slug: slugForWorkshop(workshop) ?? workshop.id,
     lookupKey,
@@ -160,6 +162,7 @@ export const buildOfferingSummaries = async (
     );
     out.push({
       workshopId: workshop.id,
+      sessionId: workshop.session_id ?? null,
       cfpSubmissionId: workshop.cfp_submission_id,
       slug: slugForWorkshop(workshop) ?? workshop.id,
       lookupKey,

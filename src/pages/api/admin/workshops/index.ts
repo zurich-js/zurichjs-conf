@@ -183,20 +183,36 @@ async function handleCreate(
     const defaultDurationMinutes = submission.workshop_duration_hours
       ? Math.round(submission.workshop_duration_hours * 60)
       : null;
+    const { data: linkedProgramSession } = await (supabase as never as {
+      from: (table: string) => {
+        select: (columns: string) => {
+          eq: (column: string, value: string) => {
+            maybeSingle: () => Promise<{ data: { id: string } | null }>;
+          };
+        };
+      };
+    })
+      .from('program_sessions')
+      .select('id')
+      .eq('cfp_submission_id', body.cfpSubmissionId)
+      .maybeSingle();
+
+    const workshopInsert = {
+      session_id: linkedProgramSession?.id ?? null,
+      cfp_submission_id: body.cfpSubmissionId,
+      title: body.title ?? submission.title,
+      description: body.description ?? submission.abstract,
+      capacity: body.capacity ?? defaultCapacity,
+      duration_minutes: body.durationMinutes ?? defaultDurationMinutes,
+      room: body.room ?? null,
+      stripe_product_id: body.stripeProductId ?? null,
+      stripe_price_lookup_key: body.stripePriceLookupKey ?? null,
+      status: (body.status ?? 'draft') satisfies WorkshopStatus,
+    };
 
     const { data: inserted, error: insertError } = await supabase
       .from('workshops')
-      .insert({
-        cfp_submission_id: body.cfpSubmissionId,
-        title: body.title ?? submission.title,
-        description: body.description ?? submission.abstract,
-        capacity: body.capacity ?? defaultCapacity,
-        duration_minutes: body.durationMinutes ?? defaultDurationMinutes,
-        room: body.room ?? null,
-        stripe_product_id: body.stripeProductId ?? null,
-        stripe_price_lookup_key: body.stripePriceLookupKey ?? null,
-        status: (body.status ?? 'draft') satisfies WorkshopStatus,
-      })
+      .insert(workshopInsert as never)
       .select()
       .single();
 

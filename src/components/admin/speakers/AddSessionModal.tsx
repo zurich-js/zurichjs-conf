@@ -47,6 +47,11 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
     session.speaker.id !== speakerId &&
     !(session.participant_speaker_ids || []).includes(speakerId)
   );
+  const getProgramKind = (submissionType: string) => {
+    if (submissionType === 'workshop') return 'workshop';
+    if (submissionType === 'panel') return 'panel';
+    return 'talk';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,12 +69,33 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
           throw new Error('Choose a panel to attach');
         }
 
-        const res = await fetch(`/api/admin/cfp/submissions/${session.id}`, {
+        const promoteRes = await fetch('/api/admin/program/sessions/promote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ submission_id: session.id, status: 'confirmed' }),
+        });
+
+        if (!promoteRes.ok) {
+          const data = await promoteRes.json();
+          throw new Error(data.error || 'Failed to promote panel');
+        }
+
+        const promoteData = await promoteRes.json();
+        const programSessionId = promoteData.session?.id;
+        if (!programSessionId) {
+          throw new Error('Promoted panel did not return a program session');
+        }
+
+        const res = await fetch(`/api/admin/program/sessions/${programSessionId}/speakers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            submission_type: 'panel',
-            participant_speaker_ids: Array.from(new Set([...(session.participant_speaker_ids || []), speakerId])),
+            speakers: [
+              { speaker_id: session.speaker.id, role: 'speaker', sort_order: 0 },
+              ...Array.from(new Set([...(session.participant_speaker_ids || []), speakerId]))
+                .filter((id) => id !== session.speaker.id)
+                .map((id, index) => ({ speaker_id: id, role: 'panelist', sort_order: index + 1 })),
+            ],
           }),
         });
 
@@ -82,24 +108,37 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
         return;
       }
 
-      const res = await fetch('/api/admin/cfp/sessions', {
+      const res = await fetch('/api/admin/program/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          speaker_id: speakerId,
+          kind: getProgramKind(formData.submission_type),
           title: formData.title,
           abstract: formData.abstract,
-          submission_type: formData.submission_type,
-          talk_level: formData.talk_level,
+          level: formData.talk_level,
           tags,
-          status: 'accepted',
+          status: 'confirmed',
+          metadata: {
+            created_from: 'speaker_modal',
+            legacy_submission_type: formData.submission_type,
+            tags,
+          },
           ...(formData.submission_type === 'workshop' && {
-            workshop_duration_hours: formData.workshop_duration_hours ? parseFloat(formData.workshop_duration_hours) : undefined,
-            workshop_max_participants: formData.workshop_max_participants ? parseInt(formData.workshop_max_participants) : undefined,
+            workshop_duration_minutes: formData.workshop_duration_hours ? Math.round(parseFloat(formData.workshop_duration_hours) * 60) : undefined,
+            workshop_capacity: formData.workshop_max_participants ? parseInt(formData.workshop_max_participants) : undefined,
           }),
-          ...(formData.submission_type === 'panel' && {
-            participant_speaker_ids: formData.participant_speaker_ids,
-          }),
+          speakers: [
+            {
+              speaker_id: speakerId,
+              role: formData.submission_type === 'workshop' ? 'instructor' : 'speaker',
+              sort_order: 0,
+            },
+            ...formData.participant_speaker_ids.map((participantId, index) => ({
+              speaker_id: participantId,
+              role: formData.submission_type === 'panel' ? 'panelist' : 'speaker',
+              sort_order: index + 1,
+            })),
+          ],
         }),
       });
 

@@ -11,6 +11,7 @@ delete from public.workshop_registrations;
 delete from public.workshops;
 delete from public.checkout_cart_snapshots;
 delete from public.program_schedule_items;
+delete from public.program_sessions;
 delete from public.cfp_scheduled_emails;
 
 update public.cfp_submissions
