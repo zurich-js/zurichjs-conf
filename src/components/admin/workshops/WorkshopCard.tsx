@@ -1,6 +1,6 @@
 /**
  * Compact workshop card shown in the admin list.
- * Clicking anywhere opens the edit drawer. Includes status chip, readiness
+ * Clicking anywhere opens the edit modal. Includes status chip, readiness
  * indicator, enrollment progress bar, and a revenue summary.
  */
 

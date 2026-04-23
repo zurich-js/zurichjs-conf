@@ -123,13 +123,13 @@ export default function SpeakersPage() {
     speaker.sessions.some((session) => session.type === 'workshop')
   );
   const availableTags = Array.from(
-    new Set(speakers.flatMap((speaker) => speaker.sessions.flatMap((session) => session.tags)))
+    new Set(speakers.flatMap((speaker) => speaker.tags))
   ).sort();
   let visibleSpeakers = [...speakers];
 
   if (selectedTags.length > 0) {
     visibleSpeakers = visibleSpeakers.filter((speaker) =>
-      speaker.sessions.some((session) => session.tags.some((tag) => selectedTags.includes(tag)))
+      speaker.tags.some((tag) => selectedTags.includes(tag))
     );
   }
 

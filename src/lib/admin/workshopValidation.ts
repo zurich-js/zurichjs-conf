@@ -64,6 +64,15 @@ export const PatchOfferingSchema = z
     capacity: z.number().int().positive().optional(),
     stripeProductId: z.string().nullable().optional(),
     stripePriceLookupKey: z.string().nullable().optional(),
+    stripeValidation: z
+      .object({
+        valid: z.boolean(),
+        lookupKey: z.string(),
+        stripeProductId: z.string().nullable(),
+        validatedAt: z.string(),
+        results: z.array(z.record(z.string(), z.unknown())),
+      })
+      .optional(),
     status: z.enum(['draft', 'published', 'cancelled', 'completed', 'archived']).optional(),
     title: z.string().min(1).optional(),
     description: z.string().min(1).optional(),

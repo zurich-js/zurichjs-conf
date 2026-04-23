@@ -8,7 +8,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import type { WorkshopRegistration, PaymentStatus, Json } from '@/lib/types/database';
+import type { Database, WorkshopRegistration, PaymentStatus, Json } from '@/lib/types/database';
 
 const log = logger.scope('Workshop Registration');
 
@@ -50,6 +50,31 @@ interface AtomicInsertRow {
   was_duplicate: boolean;
 }
 
+type AtomicInsertRpcArgs = Omit<
+  Database['public']['Functions']['insert_workshop_registration_atomic']['Args'],
+  | 'p_user_id'
+  | 'p_ticket_id'
+  | 'p_stripe_payment_intent_id'
+  | 'p_first_name'
+  | 'p_last_name'
+  | 'p_email'
+  | 'p_coupon_code'
+  | 'p_partnership_coupon_id'
+  | 'p_partnership_voucher_id'
+> & {
+  // Supabase type generation currently flattens nullable function params to plain
+  // strings, but this RPC is intentionally called with nulls for guest checkout flows.
+  p_user_id: string | null;
+  p_ticket_id: string | null;
+  p_stripe_payment_intent_id: string | null;
+  p_first_name: string | null;
+  p_last_name: string | null;
+  p_email: string | null;
+  p_coupon_code: string | null;
+  p_partnership_coupon_id: string | null;
+  p_partnership_voucher_id: string | null;
+};
+
 /**
  * Create a workshop registration for a user after successful payment.
  * This should only be called from the Stripe webhook handler.
@@ -61,7 +86,7 @@ export async function createWorkshopRegistration(
   const seatIndex = params.seatIndex ?? 0;
 
   try {
-    const { data, error } = await supabase.rpc('insert_workshop_registration_atomic', {
+    const rpcArgs: AtomicInsertRpcArgs = {
       p_workshop_id: params.workshopId,
       p_user_id: params.userId ?? null,
       p_ticket_id: params.ticketId ?? null,
@@ -79,7 +104,12 @@ export async function createWorkshopRegistration(
       p_discount_amount: params.discountAmount ?? 0,
       p_seat_index: seatIndex,
       p_metadata: (params.metadata ?? {}) as Json,
-    });
+    };
+
+    const { data, error } = await supabase.rpc(
+      'insert_workshop_registration_atomic',
+      rpcArgs as Database['public']['Functions']['insert_workshop_registration_atomic']['Args']
+    );
 
     if (error) {
       log.error('RPC insert_workshop_registration_atomic failed', error, {

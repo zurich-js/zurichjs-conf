@@ -9,7 +9,7 @@ export interface PublicSessionSpeaker {
   name: string;
   role: string | null;
   imageUrl: string | null;
-  slug: string;
+  slug: string | null;
   participantRole?: string | null;
 }
 
@@ -18,6 +18,7 @@ export interface PublicSessionSpeaker {
  */
 export interface PublicSession {
   id: string;
+  cfp_submission_id?: string | null;
   slug: string;
   title: string;
   abstract: string;
@@ -51,6 +52,7 @@ export interface PublicSpeaker {
   portrait_background_url: string | null;
   is_featured: boolean;
   speaker_role: CfpSpeakerRole;
+  tags: string[];
   socials: {
     linkedin_url: string | null;
     github_url: string | null;

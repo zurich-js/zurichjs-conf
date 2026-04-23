@@ -29,6 +29,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   const isEmpty = !logo;
   const hasExplicitColorLogo = !!logoColor;
   const isSvgOrGif = logo?.endsWith('.svg') || logo?.endsWith('.gif');
+  const isColorSvgOrGif = logoColor?.endsWith('.svg') || logoColor?.endsWith('.gif');
 
   const baseClasses =
     'block w-full h-full rounded-2xl transition-all duration-300 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none';
@@ -56,7 +57,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
     );
   }
 
-  // --- Filled state: grayscale → color on hover ---
+  // --- Filled state: keep the base logo as-is, unless we need the grayscale fallback. ---
   const content = (
     <div className="relative w-full h-full flex items-center justify-center group">
       {/* Default (grayscale) logo */}
@@ -64,9 +65,9 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         src={logo}
         alt={name ? `${name} logo` : 'Sponsor logo'}
         fill
-        className={`object-contain p-4 transition-opacity duration-300 ${
+        className={`object-contain p-4 transition-all duration-500 ease-in-out ${
           hasExplicitColorLogo
-            ? 'group-hover:opacity-0'
+            ? 'opacity-100 group-hover:opacity-0'
             : 'grayscale group-hover:grayscale-0'
         }`}
         unoptimized={isSvgOrGif}
@@ -77,8 +78,8 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
           src={logoColor}
           alt={name ? `${name} logo` : 'Sponsor logo'}
           fill
-          className="object-contain p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          unoptimized={logoColor.endsWith('.svg') || logoColor.endsWith('.gif')}
+          className="object-contain p-4 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100"
+          unoptimized={isColorSvgOrGif}
         />
       )}
     </div>

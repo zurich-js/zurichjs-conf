@@ -10,6 +10,7 @@ import type {
   UpdateInvoiceConversionRequest,
   SponsorshipInvoicePDFSource,
   SponsorshipCurrency,
+  SponsorshipConversionRateSource,
 } from '@/lib/types/sponsorship';
 import { computeSponsorshipInvoiceTotals } from './calculations';
 import { getLineItemsForDeal } from './line-items';
@@ -70,7 +71,7 @@ export async function createInvoice(
   let conversionRateChfToEur: number | null = null;
   let convertedAmountEur: number | null = null;
   let conversionJustification: string | null = null;
-  let conversionRateSource: string | null = null;
+  let conversionRateSource: SponsorshipConversionRateSource | null = null;
   let conversionUpdatedAt: string | null = null;
 
   // Handle multi-currency conversion (CHF -> EUR)

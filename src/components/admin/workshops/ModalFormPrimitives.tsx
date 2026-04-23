@@ -1,5 +1,5 @@
 /**
- * Small form primitives shared within the workshop edit drawer.
+ * Small form primitives shared within the workshop admin modal.
  */
 
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -22,23 +22,29 @@ export function Section({
   const collapsible = typeof onToggle === 'function';
 
   return (
-    <section className="mt-6 first:mt-0">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700">{title}</h3>
-          {description && <p className="mt-0.5 text-xs text-gray-500">{description}</p>}
-        </div>
+    <section className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white first:mt-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={!collapsible}
+        className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left ${
+          collapsible ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
+        }`}
+      >
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold uppercase tracking-wide text-gray-800">{title}</span>
+          {description && <span className="mt-0.5 block text-xs text-gray-500">{description}</span>}
+        </span>
         {collapsible && (
-          <button
-            onClick={onToggle}
-            className="rounded-md p-1 text-gray-500 hover:bg-gray-100 cursor-pointer"
-            aria-label={collapsed ? 'Expand section' : 'Collapse section'}
+          <span
+            className="flex size-8 shrink-0 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-white"
+            aria-hidden="true"
           >
             {collapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
-          </button>
+          </span>
         )}
-      </div>
-      {(!collapsible || !collapsed) && <div className="mt-3">{children}</div>}
+      </button>
+      {(!collapsible || !collapsed) && <div className="border-t border-gray-100 px-4 py-4">{children}</div>}
     </section>
   );
 }

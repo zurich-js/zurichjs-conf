@@ -10,7 +10,7 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getAllWorkshopRevenue } from '@/lib/workshops/getRevenue';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
-import type { Workshop, WorkshopStatus } from '@/lib/types/database';
+import type { Database, Workshop, WorkshopStatus } from '@/lib/types/database';
 import { logger } from '@/lib/logger';
 import {
   CreateOfferingSchema,
@@ -61,7 +61,7 @@ async function handleList(req: NextApiRequest, res: NextApiResponse) {
         abstract,
         status,
         workshop_duration_hours,
-        speaker:cfp_speakers(first_name, last_name)
+        speaker:cfp_speakers!cfp_submissions_speaker_id_fkey(first_name, last_name)
       `)
       .eq('submission_type', 'workshop')
       .eq('status', 'accepted');
@@ -183,20 +183,28 @@ async function handleCreate(
     const defaultDurationMinutes = submission.workshop_duration_hours
       ? Math.round(submission.workshop_duration_hours * 60)
       : null;
+    const { data: linkedProgramSession } = await supabase
+      .from('program_sessions')
+      .select('id')
+      .eq('cfp_submission_id', body.cfpSubmissionId)
+      .maybeSingle();
+
+    const workshopInsert: Database['public']['Tables']['workshops']['Insert'] = {
+      session_id: linkedProgramSession?.id ?? null,
+      cfp_submission_id: body.cfpSubmissionId,
+      title: body.title ?? submission.title,
+      description: body.description ?? submission.abstract,
+      capacity: body.capacity ?? defaultCapacity,
+      duration_minutes: body.durationMinutes ?? defaultDurationMinutes,
+      room: body.room ?? null,
+      stripe_product_id: body.stripeProductId ?? null,
+      stripe_price_lookup_key: body.stripePriceLookupKey ?? null,
+      status: (body.status ?? 'draft') satisfies WorkshopStatus,
+    };
 
     const { data: inserted, error: insertError } = await supabase
       .from('workshops')
-      .insert({
-        cfp_submission_id: body.cfpSubmissionId,
-        title: body.title ?? submission.title,
-        description: body.description ?? submission.abstract,
-        capacity: body.capacity ?? defaultCapacity,
-        duration_minutes: body.durationMinutes ?? defaultDurationMinutes,
-        room: body.room ?? null,
-        stripe_product_id: body.stripeProductId ?? null,
-        stripe_price_lookup_key: body.stripePriceLookupKey ?? null,
-        status: (body.status ?? 'draft') satisfies WorkshopStatus,
-      })
+      .insert(workshopInsert)
       .select()
       .single();
 

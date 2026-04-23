@@ -41,6 +41,7 @@ describe('getCombinedByCurrency', () => {
     expect(result[0]).toEqual({
       currency: 'CHF',
       ticketGross: 50000,
+      workshopGross: 0,
       sponsorPaid: 0,
       sponsorPending: 0,
       fees: 1500,
@@ -61,10 +62,40 @@ describe('getCombinedByCurrency', () => {
     expect(result).toHaveLength(2);
     expect(result[0].currency).toBe('CHF');
     expect(result[0].ticketGross).toBe(40000);
+    expect(result[0].workshopGross).toBe(0);
     expect(result[0].fees).toBe(1200);
     expect(result[1].currency).toBe('EUR');
     expect(result[1].ticketGross).toBe(10000);
+    expect(result[1].workshopGross).toBe(0);
     expect(result[1].fees).toBe(300);
+  });
+
+  it('adds workshop revenue and fees to combined totals by currency', () => {
+    const workshopSummary: FinancialData['workshopSummary'] = {
+      soldSeats: 3,
+      grossRevenue: 30000,
+      totalDiscounts: 5000,
+      totalStripeFees: 900,
+      revenueByCurrency: { CHF: 20000, EUR: 10000 },
+      registrationsByCurrency: { CHF: 2, EUR: 1 },
+      discountsByCurrency: { CHF: 5000 },
+      stripeFeesByCurrency: { CHF: 600, EUR: 300 },
+    };
+
+    const result = getCombinedByCurrency(baseSummary, undefined, workshopSummary);
+
+    const chf = result.find(r => r.currency === 'CHF')!;
+    expect(chf.ticketGross).toBe(50000);
+    expect(chf.workshopGross).toBe(20000);
+    expect(chf.combinedGross).toBe(70000);
+    expect(chf.fees).toBe(2100);
+    expect(chf.combinedNet).toBe(67900);
+
+    const eur = result.find(r => r.currency === 'EUR')!;
+    expect(eur.ticketGross).toBe(0);
+    expect(eur.workshopGross).toBe(10000);
+    expect(eur.combinedGross).toBe(10000);
+    expect(eur.fees).toBe(300);
   });
 
   it('adds CHF sponsorship revenue to CHF combined gross and net', () => {

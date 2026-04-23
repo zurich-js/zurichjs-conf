@@ -145,6 +145,3 @@ BEGIN
   RETURN NEXT;
 END;
 $$;
-
-COMMENT ON FUNCTION insert_workshop_registration_atomic IS
-  'Inserts a workshop registration with FOR UPDATE locking on the workshops row. Returns was_oversold=TRUE when the seat would exceed capacity instead of raising, so the webhook can issue a refund.';

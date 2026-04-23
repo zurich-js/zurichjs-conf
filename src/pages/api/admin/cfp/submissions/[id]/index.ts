@@ -121,6 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const supabase = createCfpServiceClient();
       const {
         title,
+        speaker_id,
         abstract,
         submission_type,
         talk_level,
@@ -146,6 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Build update object with only provided fields
       const updateData: Record<string, string | number | null> = {};
       if (title !== undefined) updateData.title = title;
+      if (speaker_id !== undefined) updateData.speaker_id = speaker_id;
       if (abstract !== undefined) updateData.abstract = abstract;
       if (submission_type !== undefined) updateData.submission_type = submission_type;
       if (talk_level !== undefined) updateData.talk_level = talk_level;

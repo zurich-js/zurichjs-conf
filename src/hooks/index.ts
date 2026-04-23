@@ -21,3 +21,4 @@ export { useCartAbandonmentEmail } from './useCartAbandonmentEmail';
 
 export { useDiscount } from './useDiscount';
 
+export * from './useProgram';

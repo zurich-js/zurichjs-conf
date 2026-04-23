@@ -34,6 +34,8 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
     abstract: '',
     submission_type: 'standard',
     talk_level: 'intermediate',
+    tag_input: '',
+    tags: [] as string[],
     workshop_duration_hours: '',
     workshop_max_participants: '',
     participant_speaker_ids: [] as string[],
@@ -45,11 +47,20 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
     session.speaker.id !== speakerId &&
     !(session.participant_speaker_ids || []).includes(speakerId)
   );
+  const getProgramKind = (submissionType: string) => {
+    if (submissionType === 'workshop') return 'workshop';
+    if (submissionType === 'panel') return 'panel';
+    return 'talk';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    const pendingTag = formData.tag_input.trim().toLowerCase();
+    const tags = pendingTag && !formData.tags.includes(pendingTag) && formData.tags.length < 5
+      ? [...formData.tags, pendingTag]
+      : formData.tags;
 
     try {
       if (mode === 'existing') {
@@ -58,12 +69,33 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
           throw new Error('Choose a panel to attach');
         }
 
-        const res = await fetch(`/api/admin/cfp/submissions/${session.id}`, {
+        const promoteRes = await fetch('/api/admin/program/sessions/promote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ submission_id: session.id, status: 'confirmed' }),
+        });
+
+        if (!promoteRes.ok) {
+          const data = await promoteRes.json();
+          throw new Error(data.error || 'Failed to promote panel');
+        }
+
+        const promoteData = await promoteRes.json();
+        const programSessionId = promoteData.session?.id;
+        if (!programSessionId) {
+          throw new Error('Promoted panel did not return a program session');
+        }
+
+        const res = await fetch(`/api/admin/program/sessions/${programSessionId}/speakers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            submission_type: 'panel',
-            participant_speaker_ids: Array.from(new Set([...(session.participant_speaker_ids || []), speakerId])),
+            speakers: [
+              { speaker_id: session.speaker.id, role: 'speaker', sort_order: 0 },
+              ...Array.from(new Set([...(session.participant_speaker_ids || []), speakerId]))
+                .filter((id) => id !== session.speaker.id)
+                .map((id, index) => ({ speaker_id: id, role: 'panelist', sort_order: index + 1 })),
+            ],
           }),
         });
 
@@ -76,23 +108,37 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
         return;
       }
 
-      const res = await fetch('/api/admin/cfp/sessions', {
+      const res = await fetch('/api/admin/program/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          speaker_id: speakerId,
+          kind: getProgramKind(formData.submission_type),
           title: formData.title,
           abstract: formData.abstract,
-          submission_type: formData.submission_type,
-          talk_level: formData.talk_level,
-          status: 'accepted',
+          level: formData.talk_level,
+          tags,
+          status: 'confirmed',
+          metadata: {
+            created_from: 'speaker_modal',
+            legacy_submission_type: formData.submission_type,
+            tags,
+          },
           ...(formData.submission_type === 'workshop' && {
-            workshop_duration_hours: formData.workshop_duration_hours ? parseFloat(formData.workshop_duration_hours) : undefined,
-            workshop_max_participants: formData.workshop_max_participants ? parseInt(formData.workshop_max_participants) : undefined,
+            workshop_duration_minutes: formData.workshop_duration_hours ? Math.round(parseFloat(formData.workshop_duration_hours) * 60) : undefined,
+            workshop_capacity: formData.workshop_max_participants ? parseInt(formData.workshop_max_participants) : undefined,
           }),
-          ...(formData.submission_type === 'panel' && {
-            participant_speaker_ids: formData.participant_speaker_ids,
-          }),
+          speakers: [
+            {
+              speaker_id: speakerId,
+              role: formData.submission_type === 'workshop' ? 'instructor' : 'speaker',
+              sort_order: 0,
+            },
+            ...formData.participant_speaker_ids.map((participantId, index) => ({
+              speaker_id: participantId,
+              role: formData.submission_type === 'panel' ? 'panelist' : 'speaker',
+              sort_order: index + 1,
+            })),
+          ],
         }),
       });
 
@@ -217,6 +263,40 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
                 <option value="advanced">Advanced</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-black mb-1">Tags</label>
+            {formData.tags.length > 0 ? (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {formData.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, tags: formData.tags.filter((entry) => entry !== tag) })}
+                    className="cursor-pointer rounded-full bg-gray-100 px-3 py-1 text-sm text-black hover:bg-gray-200"
+                  >
+                    {tag} x
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <input
+              type="text"
+              value={formData.tag_input}
+              onChange={(e) => setFormData({ ...formData, tag_input: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ',') return;
+                e.preventDefault();
+                const tag = formData.tag_input.trim().toLowerCase();
+                if (!tag || formData.tags.includes(tag) || formData.tags.length >= 5) return;
+                setFormData({ ...formData, tag_input: '', tags: [...formData.tags, tag] });
+              }}
+              placeholder="Type a tag and press Enter"
+              disabled={formData.tags.length >= 5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none disabled:bg-gray-100"
+            />
+            <p className="mt-1 text-xs text-gray-500">{formData.tags.length}/5 tags</p>
           </div>
 
           {/* Workshop-specific fields */}

@@ -257,7 +257,8 @@ insert into public.cfp_speakers (
     portrait_background_url,
     speaker_role,
     is_visible,
-    is_featured
+    is_featured,
+    is_admin_managed
 )
 values
     (
@@ -274,7 +275,8 @@ values
         '/images/meetups/cloudflare.png',
         'speaker',
         true,
-        true
+        true,
+        false
     ),
     (
         '22222222-2222-4222-8222-222222222222',
@@ -290,7 +292,8 @@ values
         '/images/meetups/june-workshop.png',
         'speaker',
         true,
-        true
+        true,
+        false
     ),
     (
         '33333333-3333-4333-8333-333333333333',
@@ -306,6 +309,7 @@ values
         '/images/meetups/july-group.png',
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -322,6 +326,7 @@ values
         null,
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -338,6 +343,7 @@ values
         null,
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -354,6 +360,7 @@ values
         '/images/meetups/june.png',
         'speaker',
         true,
+        false,
         false
     ),
     (
@@ -370,7 +377,78 @@ values
         '/images/meetups/july-group.png',
         'mc',
         true,
-        false
+        false,
+        true
+    ),
+    -- Invited speakers (no CFP submissions). Emulate admin-curated lineup additions
+    -- (keynotes, featured guests, and non-featured invited speakers).
+    (
+        '99999999-1111-4999-8999-111111111111',
+        'priya.keynote@example.test',
+        'Priya',
+        'Desai',
+        'Keynote Speaker',
+        'Runtime Collective',
+        'Priya is an invited keynote speaker who leads platform engineering across distributed JavaScript runtimes and speaks about the next decade of the web.',
+        '/images/meetups/ginetta.png',
+        '/images/meetups/cloudflare.png',
+        '/images/meetups/ginetta.png',
+        '/images/meetups/cloudflare.png',
+        'speaker',
+        true,
+        true,
+        true
+    ),
+    (
+        '99999999-2222-4999-8999-222222222222',
+        'theo.invited@example.test',
+        'Theo',
+        'Blanc',
+        'Principal Architect',
+        'Edge Runtime Labs',
+        'Theo is an invited featured speaker known for deep-dive sessions on browser internals, rendering pipelines, and low-level web performance.',
+        '/images/meetups/jens.png',
+        '/images/meetups/may.png',
+        '/images/meetups/jens.png',
+        '/images/meetups/may.png',
+        'speaker',
+        true,
+        true,
+        true
+    ),
+    (
+        '99999999-3333-4999-8999-333333333333',
+        'yuki.invited@example.test',
+        'Yuki',
+        'Tanaka',
+        'Staff Engineer',
+        'Pattern Works',
+        'Yuki is an invited featured speaker who explores the boundary between design systems, component APIs, and accessible product engineering.',
+        '/images/team/nadja.png',
+        '/images/meetups/june.png',
+        '/images/team/nadja.png',
+        '/images/meetups/june.png',
+        'speaker',
+        true,
+        true,
+        true
+    ),
+    (
+        '99999999-4444-4999-8999-444444444444',
+        'dominik.invited@example.test',
+        'Dominik',
+        'Fischer',
+        'Senior Engineer',
+        'Helvetic Build',
+        'Dominik is an invited guest speaker joining the program without a CFP submission to share lessons learned from running large Swiss engineering teams.',
+        '/images/meetups/bogdan.png',
+        null,
+        '/images/meetups/bogdan.png',
+        null,
+        'speaker',
+        true,
+        false,
+        true
     )
 on conflict (id) do update set
     email = excluded.email,
@@ -385,7 +463,8 @@ on conflict (id) do update set
     portrait_background_url = excluded.portrait_background_url,
     speaker_role = excluded.speaker_role,
     is_visible = excluded.is_visible,
-    is_featured = excluded.is_featured;
+    is_featured = excluded.is_featured,
+    is_admin_managed = excluded.is_admin_managed;
 
 -- Tags
 insert into public.cfp_tags (
@@ -492,6 +571,8 @@ values
         25,
         'Auditorium',
         'accepted',
+        '2026-02-22T12:00:00.000Z',
+        '2026-02-21T17:30:00.000Z',
         '2026-02-22T12:00:00.000Z'
     ),
     (
@@ -642,6 +723,102 @@ values
     )
 on conflict (submission_id, speaker_id) do update set
     role = excluded.role;
+
+-- Program sessions are the post-selection source of truth. CFP submissions
+-- remain intake/review records; accepted/scheduled/sellable submissions are
+-- promoted here so schedule and commerce rows can link to program entities.
+insert into public.program_sessions (
+    cfp_submission_id,
+    kind,
+    title,
+    abstract,
+    level,
+    status,
+    workshop_duration_minutes,
+    workshop_capacity,
+    metadata
+)
+select
+    submission.id,
+    case
+        when submission.submission_type = 'workshop' then 'workshop'::public.program_session_kind
+        when submission.submission_type = 'panel' then 'panel'::public.program_session_kind
+        else 'talk'::public.program_session_kind
+    end,
+    submission.title,
+    submission.abstract,
+    submission.talk_level,
+    'confirmed'::public.program_session_status,
+    case
+        when submission.workshop_duration_hours is not null then submission.workshop_duration_hours * 60
+        else submission.scheduled_duration_minutes
+    end,
+    submission.workshop_max_participants,
+    jsonb_build_object(
+        'seeded', true,
+        'source', 'seed-local-cfp',
+        'legacy_submission_type', submission.submission_type,
+        'tags', coalesce((
+            select jsonb_agg(tag.name order by tag.name)
+            from public.cfp_submission_tags submission_tag
+            join public.cfp_tags tag on tag.id = submission_tag.tag_id
+            where submission_tag.submission_id = submission.id
+        ), '[]'::jsonb)
+    )
+from public.cfp_submissions submission
+where submission.status = 'accepted'
+   or submission.scheduled_date is not null
+on conflict (cfp_submission_id) where cfp_submission_id is not null do update set
+    kind = excluded.kind,
+    title = excluded.title,
+    abstract = excluded.abstract,
+    level = excluded.level,
+    status = excluded.status,
+    workshop_duration_minutes = excluded.workshop_duration_minutes,
+    workshop_capacity = excluded.workshop_capacity,
+    metadata = excluded.metadata,
+    updated_at = now();
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    submission.speaker_id,
+    case
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'speaker'::public.program_session_speaker_role
+    end,
+    0
+from public.program_sessions session
+join public.cfp_submissions submission on submission.id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    participant.speaker_id,
+    case
+        when participant.role in ('host', 'mc', 'instructor') then participant.role::public.program_session_speaker_role
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'panelist'::public.program_session_speaker_role
+    end,
+    (row_number() over (partition by session.id order by participant.speaker_id))::integer
+from public.program_sessions session
+join public.cfp_submission_speakers participant on participant.submission_id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
 
 insert into public.program_schedule_items (
     id,
@@ -1002,6 +1179,146 @@ on conflict (id) do update set
     description = excluded.description,
     submission_id = excluded.submission_id,
     is_visible = excluded.is_visible;
+
+update public.program_schedule_items item
+set session_id = session.id
+from public.program_sessions session
+where item.submission_id = session.cfp_submission_id;
+
+-- Workshop commerce overlays and local purchase fixtures
+insert into public.workshops (
+    id,
+    title,
+    description,
+    cfp_submission_id,
+    date,
+    start_time,
+    end_time,
+    capacity,
+    price,
+    currency,
+    status,
+    room,
+    duration_minutes,
+    stripe_product_id,
+    stripe_price_lookup_key,
+    metadata,
+    created_at,
+    updated_at
+)
+values
+    (
+        'eeee2222-2222-4222-8222-222222222222',
+        'Shipping Nuxt 4 in Production',
+        'Patterns for SSR, caching, and deployment hardening in Nuxt 4 apps, with notes on when plain Nuxt defaults stop being enough.',
+        'aaaa2222-2222-4222-8222-222222222222',
+        '2026-09-10',
+        '09:00:00',
+        '13:00:00',
+        24,
+        9900,
+        'CHF',
+        'draft',
+        'Technopark',
+        240,
+        null,
+        'workshop_shipping-nuxt-4-production',
+        '{"seeded": true, "note": "Draft local fixture; validate Stripe before publishing."}'::jsonb,
+        '2026-04-20T10:00:00.000Z',
+        '2026-04-20T10:00:00.000Z'
+    )
+on conflict (id) do update set
+    title = excluded.title,
+    description = excluded.description,
+    cfp_submission_id = excluded.cfp_submission_id,
+    date = excluded.date,
+    start_time = excluded.start_time,
+    end_time = excluded.end_time,
+    capacity = excluded.capacity,
+    price = excluded.price,
+    currency = excluded.currency,
+    status = excluded.status,
+    room = excluded.room,
+    duration_minutes = excluded.duration_minutes,
+    stripe_product_id = excluded.stripe_product_id,
+    stripe_price_lookup_key = excluded.stripe_price_lookup_key,
+    metadata = excluded.metadata,
+    updated_at = excluded.updated_at;
+
+update public.workshops workshop
+set session_id = session.id
+from public.program_sessions session
+where workshop.cfp_submission_id = session.cfp_submission_id;
+
+insert into public.workshop_registrations (
+    id,
+    workshop_id,
+    user_id,
+    ticket_id,
+    stripe_session_id,
+    stripe_payment_intent_id,
+    amount_paid,
+    currency,
+    status,
+    first_name,
+    last_name,
+    email,
+    discount_amount,
+    seat_index,
+    metadata,
+    created_at,
+    updated_at
+)
+values
+    (
+        'eeee9000-0000-4000-8000-000000000001',
+        'eeee2222-2222-4222-8222-222222222222',
+        null,
+        null,
+        'cs_test_seed_workshop_nuxt_multi',
+        null,
+        9900,
+        'CHF',
+        'confirmed',
+        'Local',
+        'Buyer',
+        'local.buyer@example.test',
+        0,
+        0,
+        '{"seeded": true}'::jsonb,
+        '2026-04-21T09:00:00.000Z',
+        '2026-04-21T09:00:00.000Z'
+    ),
+    (
+        'eeee9000-0000-4000-8000-000000000002',
+        'eeee2222-2222-4222-8222-222222222222',
+        null,
+        null,
+        'cs_test_seed_workshop_nuxt_multi',
+        null,
+        8900,
+        'CHF',
+        'confirmed',
+        'Second',
+        'Buyer',
+        'second.buyer@example.test',
+        1000,
+        1,
+        '{"seeded": true}'::jsonb,
+        '2026-04-21T09:01:00.000Z',
+        '2026-04-21T09:01:00.000Z'
+    )
+on conflict (id) do update set
+    amount_paid = excluded.amount_paid,
+    currency = excluded.currency,
+    status = excluded.status,
+    first_name = excluded.first_name,
+    last_name = excluded.last_name,
+    email = excluded.email,
+    discount_amount = excluded.discount_amount,
+    seat_index = excluded.seat_index,
+    metadata = excluded.metadata,
+    updated_at = excluded.updated_at;
 
 -- Submission/tag links
 insert into public.cfp_submission_tags (
@@ -1605,6 +1922,99 @@ on conflict (id) do update set
     created_at = excluded.created_at,
     updated_at = excluded.updated_at,
     metadata = excluded.metadata;
+
+insert into public.program_sessions (
+    cfp_submission_id,
+    kind,
+    title,
+    abstract,
+    level,
+    status,
+    workshop_duration_minutes,
+    workshop_capacity,
+    metadata
+)
+select
+    submission.id,
+    case
+        when submission.submission_type = 'workshop' then 'workshop'::public.program_session_kind
+        when submission.submission_type = 'panel' then 'panel'::public.program_session_kind
+        else 'talk'::public.program_session_kind
+    end,
+    submission.title,
+    submission.abstract,
+    submission.talk_level,
+    'confirmed'::public.program_session_status,
+    case
+        when submission.workshop_duration_hours is not null then submission.workshop_duration_hours * 60
+        else submission.scheduled_duration_minutes
+    end,
+    submission.workshop_max_participants,
+    jsonb_build_object(
+        'seeded', true,
+        'source', 'seed-local-cfp-generated',
+        'legacy_submission_type', submission.submission_type,
+        'tags', coalesce((
+            select jsonb_agg(tag.name order by tag.name)
+            from public.cfp_submission_tags submission_tag
+            join public.cfp_tags tag on tag.id = submission_tag.tag_id
+            where submission_tag.submission_id = submission.id
+        ), '[]'::jsonb)
+    )
+from public.cfp_submissions submission
+where submission.status = 'accepted'
+   or submission.scheduled_date is not null
+on conflict (cfp_submission_id) where cfp_submission_id is not null do update set
+    kind = excluded.kind,
+    title = excluded.title,
+    abstract = excluded.abstract,
+    level = excluded.level,
+    status = excluded.status,
+    workshop_duration_minutes = excluded.workshop_duration_minutes,
+    workshop_capacity = excluded.workshop_capacity,
+    metadata = excluded.metadata,
+    updated_at = now();
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    submission.speaker_id,
+    case
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'speaker'::public.program_session_speaker_role
+    end,
+    0
+from public.program_sessions session
+join public.cfp_submissions submission on submission.id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
+
+insert into public.program_session_speakers (
+    session_id,
+    speaker_id,
+    role,
+    sort_order
+)
+select
+    session.id,
+    participant.speaker_id,
+    case
+        when participant.role in ('host', 'mc', 'instructor') then participant.role::public.program_session_speaker_role
+        when session.kind = 'workshop' then 'instructor'::public.program_session_speaker_role
+        else 'panelist'::public.program_session_speaker_role
+    end,
+    (row_number() over (partition by session.id order by participant.speaker_id))::integer
+from public.program_sessions session
+join public.cfp_submission_speakers participant on participant.submission_id = session.cfp_submission_id
+on conflict (session_id, speaker_id) do update set
+    role = excluded.role,
+    sort_order = excluded.sort_order;
 
 -- Extra submission/tag links
 with generated_links as (

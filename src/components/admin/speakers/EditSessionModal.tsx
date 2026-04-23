@@ -12,6 +12,7 @@ interface EditSessionModalProps {
 export function EditSessionModal({ session, speakers, onClose, onUpdated }: EditSessionModalProps) {
   const [formData, setFormData] = useState({
     title: session.title,
+    speaker_id: session.speaker_id,
     abstract: session.abstract || '',
     submission_type: session.submission_type,
     talk_level: session.talk_level || 'intermediate',
@@ -33,6 +34,7 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: formData.title,
+          speaker_id: formData.speaker_id,
           abstract: formData.abstract,
           submission_type: formData.submission_type,
           talk_level: formData.talk_level,
@@ -83,6 +85,21 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-black">Primary speaker</label>
+            <select
+              value={formData.speaker_id}
+              onChange={(e) => setFormData({ ...formData, speaker_id: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            >
+              {speakers.map((speaker) => (
+                <option key={speaker.id} value={speaker.id}>
+                  {speaker.first_name} {speaker.last_name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

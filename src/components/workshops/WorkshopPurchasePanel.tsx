@@ -15,8 +15,10 @@ import { createWorkshopPricingQueryOptions } from '@/lib/queries/workshops';
 import { formatPrice } from '@/lib/cart';
 
 interface WorkshopPurchasePanelProps {
-  /** CFP submission id — matches the PublicSession.id on the detail page. */
-  cfpSubmissionId: string;
+  /** Program session id — preferred match for post-CFP workshop offerings. */
+  sessionId: string;
+  /** Optional legacy CFP submission id — used as a fallback for older workshop offerings. */
+  cfpSubmissionId?: string | null;
   /** Title-derived session slug — used as a fallback filter on the pricing API. */
   sessionSlug: string;
   /** Human-readable title used in the cart line. */
@@ -25,6 +27,7 @@ interface WorkshopPurchasePanelProps {
 
 export function WorkshopPurchasePanel({
   cfpSubmissionId,
+  sessionId,
   sessionSlug,
   title,
 }: WorkshopPurchasePanelProps) {
@@ -33,12 +36,13 @@ export function WorkshopPurchasePanel({
   const { addToCart, isInCart, navigateToCart } = useCart();
 
   const queryOptions = useMemo(
-    () => createWorkshopPricingQueryOptions({ currency, cfpSubmissionId, sessionSlug }),
-    [currency, cfpSubmissionId, sessionSlug]
+    () => createWorkshopPricingQueryOptions({ currency, sessionId, cfpSubmissionId: cfpSubmissionId ?? undefined, sessionSlug }),
+    [currency, cfpSubmissionId, sessionId, sessionSlug]
   );
   const { data, isLoading, isError } = useQuery(queryOptions);
   const offering =
-    data?.items.find((item) => item.cfpSubmissionId === cfpSubmissionId) ??
+    data?.items.find((item) => item.sessionId === sessionId) ??
+    (cfpSubmissionId ? data?.items.find((item) => item.cfpSubmissionId === cfpSubmissionId) : undefined) ??
     data?.items[0] ??
     null;
 

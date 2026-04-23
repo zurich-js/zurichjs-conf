@@ -12,7 +12,7 @@ import type { CartItem } from '@/types/cart';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
-import { stripCurrencySuffix, isWorkshopPrice } from '@/lib/stripe/ticket-utils';
+import { stripCurrencySuffix } from '@/lib/stripe/ticket-utils';
 
 const log = logger.scope('Workshop Cart Validation');
 
@@ -36,7 +36,6 @@ export interface WorkshopCartValidationInput {
  * on any of:
  * - workshop id missing / doesn't exist
  * - workshop not published
- * - priceId doesn't belong to a workshop Stripe product
  * - priceId doesn't belong to THIS workshop's Stripe product
  * - quantity <= 0 or quantity > remaining capacity
  */
@@ -121,10 +120,10 @@ export async function validateWorkshopCartItems(
     if (!price) {
       return { valid: false, error: `Unknown Stripe price ${item.priceId}.` };
     }
-    if (!isWorkshopPrice(price)) {
+    if (!price.active) {
       return {
         valid: false,
-        error: `Stripe price ${item.priceId} is not a workshop price.`,
+        error: `Stripe price ${item.priceId} is no longer active.`,
       };
     }
 

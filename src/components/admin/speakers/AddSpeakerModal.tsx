@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { AdminModal } from '@/components/admin/AdminModal';
 import type { SpeakerWithSessions } from './types';
 
 interface AddSpeakerModalProps {
@@ -181,16 +182,28 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-black">Include Speaker</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
-            <X className="w-5 h-5 text-black" />
+    <AdminModal
+      title="Include Speaker"
+      maxWidth="lg"
+      showHeader={false}
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+            Cancel
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <button
+            type="submit"
+            form="add-speaker-form"
+            disabled={isSubmitting}
+            className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50"
+          >
+            {isSubmitting ? 'Including...' : mode === 'existing' ? 'Include Selected Speaker' : 'Create Speaker'}
+          </button>
+        </>
+      )}
+    >
+        <form id="add-speaker-form" onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
           )}
@@ -363,20 +376,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
             </>
           )}
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black cursor-pointer">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-brand-primary hover:bg-[#e8d95e] text-black font-semibold rounded-lg disabled:opacity-50 cursor-pointer"
-            >
-              {isSubmitting ? 'Including...' : mode === 'existing' ? 'Include Selected Speaker' : 'Create Speaker'}
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
