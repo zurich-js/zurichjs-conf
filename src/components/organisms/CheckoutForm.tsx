@@ -197,7 +197,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="company" className="block text-sm font-semibold text-brand-white mb-2">
-                Company <span className="text-red-400">*</span>
+                Company
               </label>
               <Input
                 id="company"
