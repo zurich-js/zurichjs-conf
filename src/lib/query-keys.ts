@@ -213,6 +213,7 @@ export const programKeys = {
     [...programKeys.all, 'sessions', params ?? {}] as const,
   session: (id: string) => [...programKeys.all, 'session', id] as const,
   sessionSpeakers: (id: string) => [...programKeys.session(id), 'speakers'] as const,
+  tags: () => [...programKeys.all, 'tags'] as const,
   scheduleItems: () => [...programKeys.all, 'schedule-items'] as const,
   workshopOffering: (sessionId: string) => [...programKeys.all, 'workshop-offering', sessionId] as const,
 } as const;

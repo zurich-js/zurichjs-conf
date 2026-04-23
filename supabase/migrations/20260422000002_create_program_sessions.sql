@@ -127,7 +127,17 @@ select
     else submission.scheduled_duration_minutes
   end,
   submission.workshop_max_participants,
-  jsonb_build_object('source', 'cfp_backfill')
+  jsonb_build_object(
+    'source',
+    'cfp_backfill',
+    'tags',
+    coalesce((
+      select jsonb_agg(tag.name order by tag.name)
+      from public.cfp_submission_tags submission_tag
+      join public.cfp_tags tag on tag.id = submission_tag.tag_id
+      where submission_tag.submission_id = submission.id
+    ), '[]'::jsonb)
+  )
 from public.cfp_submissions submission
 where submission.status = 'accepted'
   or exists (

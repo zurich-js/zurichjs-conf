@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
+import type { CfpTag } from '@/lib/types/cfp';
 import type { Workshop } from '@/lib/types/database';
 import type { ProgramScheduleItemInput, ProgramScheduleItemRecord } from '@/lib/types/program-schedule';
 import type {
@@ -127,6 +128,36 @@ export function useProgramSessionSpeakers(sessionId: string) {
     onSuccess: (session) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.program.session(session.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.program.sessions() });
+    },
+  });
+}
+
+export function useProgramTags() {
+  return useQuery({
+    queryKey: queryKeys.program.tags(),
+    queryFn: async () => {
+      const response = await fetch('/api/admin/cfp/tags', { credentials: 'include' });
+      const data = await readJson<{ tags: CfpTag[] }>(response, 'Failed to load tags');
+      return data.tags;
+    },
+  });
+}
+
+export function useCreateProgramTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const response = await fetch('/api/admin/cfp/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, is_suggested: true }),
+      });
+      const data = await readJson<{ tag: CfpTag }>(response, 'Failed to create tag');
+      return data.tag;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.program.tags() });
     },
   });
 }

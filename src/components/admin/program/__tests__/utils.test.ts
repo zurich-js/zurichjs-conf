@@ -6,6 +6,7 @@ import type { SpeakerWithSessions } from '@/components/admin/speakers';
 import {
   filterProgramSessions,
   getInsertionDraftAfter,
+  getInsertionDraftBefore,
   getScheduleNeighbors,
   groupScheduleItemsByDay,
   getSessionScheduleCount,
@@ -169,6 +170,19 @@ it('creates insertion drafts from previous slot end time', () => {
   expect(getInsertionDraftAfter({ ...scheduleItem, start_time: '10:00:00', duration_minutes: 35, room: 'Main' }, '2026-09-11')).toEqual({
     date: '2026-09-11',
     start_time: '10:35',
+    room: 'Main',
+  });
+});
+
+it('creates insertion drafts before first slot with 9am floor unless the slot is earlier', () => {
+  expect(getInsertionDraftBefore({ ...scheduleItem, start_time: '10:00:00', room: 'Main' }, '2026-09-11')).toEqual({
+    date: '2026-09-11',
+    start_time: '09:00',
+    room: 'Main',
+  });
+  expect(getInsertionDraftBefore({ ...scheduleItem, start_time: '08:30:00', room: 'Main' }, '2026-09-11')).toEqual({
+    date: '2026-09-11',
+    start_time: '08:00',
     room: 'Main',
   });
 });

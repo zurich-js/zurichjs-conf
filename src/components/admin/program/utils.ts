@@ -217,3 +217,26 @@ export function getInsertionDraftAfter(
     room: previous.room,
   };
 }
+
+export function getInsertionDraftBefore(
+  next: ProgramScheduleItemRecord | null,
+  fallbackDate: string,
+  fallbackStartTime = '09:00'
+): ScheduleSlotDraft {
+  if (!next) {
+    return {
+      date: fallbackDate,
+      start_time: fallbackStartTime,
+      room: null,
+    };
+  }
+
+  const nextStart = timeToMinutes(next.start_time);
+  const defaultStart = timeToMinutes(fallbackStartTime);
+
+  return {
+    date: next.date,
+    start_time: minutesToTime(nextStart < defaultStart ? nextStart - 30 : defaultStart),
+    room: next.room,
+  };
+}

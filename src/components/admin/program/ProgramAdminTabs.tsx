@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarPlus, Edit3, Eye, Plus, Trash2, Users } from 'lucide-react';
+import { Edit3, Eye, Plus, Trash2, Users } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import {
   useCreateScheduleItem,
@@ -17,6 +17,7 @@ import type { SpeakerWithSessions } from '@/components/admin/speakers';
 import {
   filterProgramSessions,
   getInsertionDraftAfter,
+  getInsertionDraftBefore,
   getScheduleNeighbors,
   getSessionScheduleCount,
   getSessionSpeakers,
@@ -118,7 +119,7 @@ export function ProgramSessionsTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-950">Sessions</h2>
@@ -331,7 +332,7 @@ export function ProgramScheduleTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-950">Schedule</h2>
           <p className="text-sm text-gray-600">Place program sessions and create non-session events without touching CFP records.</p>
@@ -339,7 +340,7 @@ export function ProgramScheduleTab({
         <div className="flex gap-2">
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search schedule" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
           <button onClick={() => setScheduleModal({ mode: 'create', draft: getInsertionDraftAfter(null, fallbackDate) })} className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]">
-            <CalendarPlus className="size-4" />
+            <Plus className="size-4" />
             Add Slot
           </button>
         </div>
@@ -352,17 +353,17 @@ export function ProgramScheduleTab({
               <h3 className="text-base font-semibold text-black">{group.label}</h3>
               <p className="text-sm text-gray-500">{group.items.length} scheduled {group.items.length === 1 ? 'slot' : 'slots'}</p>
             </div>
-            <div className="grid gap-3">
+            <div className="grid gap-1">
               <InsertionButton
-                label="Add first slot"
-                draft={getInsertionDraftAfter(null, group.date)}
+                label={`Add slot at ${getInsertionDraftBefore(group.items[0] ?? null, group.date).start_time}`}
+                draft={getInsertionDraftBefore(group.items[0] ?? null, group.date)}
                 onInsert={(draft) => setScheduleModal({ mode: 'create', draft })}
               />
               {group.items.map((item) => {
                 const session = item.session_id ? sessionById.get(item.session_id) : null;
                 const neighbors = getScheduleNeighbors(item, scheduleItems);
                 return (
-                  <div key={item.id} className="group/slot grid gap-2">
+                  <div key={item.id} className="group/slot grid gap-1">
                     <div className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm lg:grid-cols-[120px_1fr_170px_90px] lg:items-center">
                       <div className="text-sm text-gray-700">
                         <p className="font-semibold text-gray-950">{item.start_time.slice(0, 5)}</p>
@@ -448,10 +449,11 @@ function InsertionButton({
     <button
       type="button"
       onClick={() => onInsert(draft)}
-      className="group flex h-7 items-center justify-center rounded-md border border-dashed border-transparent text-xs font-medium text-gray-400 opacity-0 transition-all hover:border-brand-primary hover:bg-brand-primary/10 hover:text-black hover:opacity-100 focus:border-brand-primary focus:bg-brand-primary/10 focus:text-black focus:opacity-100 group-hover/slot:opacity-100"
+      className="group relative block h-5 w-full opacity-0 transition-opacity duration-150 hover:opacity-100 focus:opacity-100 group-hover/slot:opacity-100"
     >
-      <span className="inline-flex items-center gap-1">
-        <Plus className="size-3" />
+      <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 rounded-xl bg-brand-blue transition-[height] border border-transparent duration-150 delay-500 group-hover:bg-transparent group-hover:border-brand-blue group-hover:h-full group-focus:h-full" />
+      <span className="absolute left-1/2 top-1/2 inline-flex -translate-y-1/2 -translate-x-1/2 items-center gap-1 whitespace-nowrap text-xs font-medium text-gray-500 opacity-0 transition-opacity group-hover:opacity-100 delay-500 group-focus:opacity-100">
+        <Plus className="size-3" aria-hidden="true" />
         {label}
       </span>
     </button>
@@ -640,7 +642,7 @@ export function ProgramSpeakersTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <h2 className="text-lg font-semibold text-gray-950">Speakers</h2>
         <div className="flex flex-wrap gap-2">
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search speakers" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />

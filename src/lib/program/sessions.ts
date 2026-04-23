@@ -32,6 +32,12 @@ interface CfpSubmissionSource {
   metadata: Record<string, unknown> | null;
 }
 
+interface SubmissionTagRow {
+  tag?: {
+    name?: string | null;
+  } | null;
+}
+
 function submissionTypeToSessionKind(submissionType: string): ProgramSessionKind {
   if (submissionType === 'workshop') return 'workshop';
   if (submissionType === 'panel') return 'panel';
@@ -47,6 +53,57 @@ function cleanSessionInput(input: ProgramSessionInput | ProgramSessionUpdateInpu
   }
 
   return output;
+}
+
+function normalizeTagNames(tags: string[]) {
+  return Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean)));
+}
+
+async function getSubmissionTagNames(supabase: ReturnType<typeof createProgramClient>, submissionId: string) {
+  const { data, error } = await supabase
+    .from('cfp_submission_tags')
+    .select('tag:cfp_tags(name)')
+    .eq('submission_id', submissionId);
+
+  if (error) {
+    return { tags: [] as string[], error: error.message };
+  }
+
+  const tags = ((data || []) as SubmissionTagRow[])
+    .map((row) => row.tag?.name ?? null)
+    .filter((tag): tag is string => Boolean(tag));
+
+  return { tags: normalizeTagNames(tags) };
+}
+
+async function syncSessionTagsFromSubmission(
+  supabase: ReturnType<typeof createProgramClient>,
+  sessionId: string,
+  submissionId: string
+) {
+  const sessionResult = await getProgramSession(sessionId);
+  if (sessionResult.error || !sessionResult.session) return sessionResult;
+
+  const submissionTagsResult = await getSubmissionTagNames(supabase, submissionId);
+  if (submissionTagsResult.error) {
+    return { session: null, error: submissionTagsResult.error };
+  }
+
+  const existingTags = Array.isArray(sessionResult.session.metadata?.tags)
+    ? sessionResult.session.metadata.tags.filter((tag): tag is string => typeof tag === 'string')
+    : [];
+  const mergedTags = normalizeTagNames([...existingTags, ...submissionTagsResult.tags]);
+
+  if (mergedTags.length === existingTags.length && mergedTags.every((tag, index) => tag === existingTags[index])) {
+    return sessionResult;
+  }
+
+  return updateProgramSession(sessionId, {
+    metadata: {
+      ...sessionResult.session.metadata,
+      tags: mergedTags,
+    },
+  });
 }
 
 export async function listProgramSessions(options: {
@@ -236,7 +293,9 @@ export async function promoteCfpSubmissionToProgramSession(
     .maybeSingle();
 
   if (existingError) return { session: null, error: existingError.message };
-  if (existing?.id) return getProgramSession(existing.id);
+  if (existing?.id) {
+    return syncSessionTagsFromSubmission(supabase, existing.id, submissionId);
+  }
 
   const { data: submission, error: submissionError } = await supabase
     .from('cfp_submissions')
@@ -262,6 +321,11 @@ export async function promoteCfpSubmissionToProgramSession(
   }
 
   const source = submission as CfpSubmissionSource;
+  const submissionTagsResult = await getSubmissionTagNames(supabase, submissionId);
+  if (submissionTagsResult.error) {
+    return { session: null, error: submissionTagsResult.error };
+  }
+
   const sessionResult = await createProgramSession({
     cfp_submission_id: source.id,
     kind: submissionTypeToSessionKind(source.submission_type),
@@ -275,6 +339,12 @@ export async function promoteCfpSubmissionToProgramSession(
     workshop_capacity: source.workshop_max_participants,
     metadata: {
       ...(source.metadata ?? {}),
+      tags: normalizeTagNames([
+        ...(Array.isArray(source.metadata?.tags)
+          ? source.metadata.tags.filter((tag): tag is string => typeof tag === 'string')
+          : []),
+        ...submissionTagsResult.tags,
+      ]),
       source: 'cfp_submission',
       promoted_at: new Date().toISOString(),
     },
