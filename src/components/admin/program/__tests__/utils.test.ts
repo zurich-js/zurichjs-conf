@@ -5,6 +5,7 @@ import type { ProgramScheduleItemRecord } from '@/lib/types/program-schedule';
 import type { SpeakerWithSessions } from '@/components/admin/speakers';
 import {
   filterProgramSessions,
+  groupOverlappingScheduleItems,
   getInsertionDraftAfter,
   getInsertionDraftBefore,
   getScheduleNeighbors,
@@ -156,20 +157,37 @@ it('detects schedule overlaps and nearby neighbors in the same room', () => {
 
 it('infers schedule durations from session shape', () => {
   expect(inferScheduleDurationForSession(makeSession({ kind: 'workshop', workshop_duration_minutes: 180 }))).toBe(180);
-  expect(inferScheduleDurationForSession(makeSession({ metadata: { legacy_submission_type: 'lightning' } }))).toBe(20);
-  expect(inferScheduleDurationForSession(makeSession({ metadata: { legacy_submission_type: 'standard' } }))).toBe(35);
+  expect(inferScheduleDurationForSession(makeSession({ metadata: { legacy_submission_type: 'lightning' } }))).toBe(15);
+  expect(inferScheduleDurationForSession(makeSession({ metadata: { legacy_submission_type: 'standard' } }))).toBe(30);
   expect(inferScheduleDurationForSession(null)).toBe(30);
 });
 
-it('creates insertion drafts from previous slot end time', () => {
-  expect(getInsertionDraftAfter(null, '2026-09-11')).toEqual({
+it('creates insertion drafts from previous slot end time with default gaps', () => {
+  expect(getInsertionDraftAfter(null, null, '2026-09-11')).toEqual({
     date: '2026-09-11',
     start_time: '09:00',
     room: null,
   });
-  expect(getInsertionDraftAfter({ ...scheduleItem, start_time: '10:00:00', duration_minutes: 35, room: 'Main' }, '2026-09-11')).toEqual({
+  expect(getInsertionDraftAfter({ ...scheduleItem, start_time: '10:00:00', duration_minutes: 30, room: 'Main' }, null, '2026-09-11')).toEqual({
     date: '2026-09-11',
     start_time: '10:35',
+    room: 'Main',
+  });
+});
+
+it('skips insertion gap when either adjacent slot is a break', () => {
+  const previousBreak = { ...scheduleItem, id: 'break-1', type: 'break' as const, start_time: '10:00:00', duration_minutes: 15 };
+  const nextBreak = { ...scheduleItem, id: 'break-2', type: 'break' as const, start_time: '10:30:00', duration_minutes: 15 };
+
+  expect(getInsertionDraftAfter(previousBreak, null, '2026-09-11')).toEqual({
+    date: '2026-09-11',
+    start_time: '10:15',
+    room: 'Main',
+  });
+
+  expect(getInsertionDraftAfter({ ...scheduleItem, start_time: '10:00:00', duration_minutes: 15 }, nextBreak, '2026-09-11')).toEqual({
+    date: '2026-09-11',
+    start_time: '10:15',
     room: 'Main',
   });
 });
@@ -185,4 +203,19 @@ it('creates insertion drafts before first slot with 9am floor unless the slot is
     start_time: '08:00',
     room: 'Main',
   });
+});
+
+it('groups overlapping schedule items for split layout rendering', () => {
+  const overlapLeft = { ...scheduleItem, id: 'left', start_time: '10:00:00', duration_minutes: 30 };
+  const overlapRight = { ...scheduleItem, id: 'right', start_time: '10:15:00', duration_minutes: 30 };
+  const adjacent = { ...scheduleItem, id: 'adjacent', start_time: '10:45:00', duration_minutes: 15 };
+  const otherRoom = { ...scheduleItem, id: 'other-room', room: 'Side', start_time: '10:10:00', duration_minutes: 20 };
+
+  const groups = groupOverlappingScheduleItems([adjacent, otherRoom, overlapRight, overlapLeft]);
+
+  expect(groups).toHaveLength(3);
+  expect(groups[0].items.map((item) => item.id)).toEqual(['left', 'right']);
+  expect(groups[0].layout.map((entry) => entry.total)).toEqual([2, 2]);
+  expect(groups[1].items.map((item) => item.id)).toEqual(['other-room']);
+  expect(groups[2].items.map((item) => item.id)).toEqual(['adjacent']);
 });

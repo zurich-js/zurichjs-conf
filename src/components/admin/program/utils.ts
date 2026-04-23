@@ -17,11 +17,24 @@ export interface ProgramScheduleNeighborResult {
   overlaps: ProgramScheduleItemRecord[];
 }
 
+export interface ProgramScheduleOverlapLayoutItem {
+  item: ProgramScheduleItemRecord;
+  index: number;
+  total: number;
+}
+
+export interface ProgramScheduleDisplayGroup {
+  items: ProgramScheduleItemRecord[];
+  layout: ProgramScheduleOverlapLayoutItem[];
+}
+
 export interface ScheduleSlotDraft {
   date: string;
   start_time: string;
   room?: string | null;
 }
+
+const DEFAULT_SLOT_GAP_MINUTES = 5;
 
 export function getSessionScheduleCount(session: ProgramSession, scheduleItems: ProgramScheduleItemRecord[]) {
   return scheduleItems.filter((item) =>
@@ -170,8 +183,8 @@ export function inferScheduleDurationForSession(session: ProgramSession | null |
     ? session.metadata.legacy_submission_type
     : null;
 
-  if (legacyType === 'lightning') return 20;
-  if (legacyType === 'standard' || session.kind === 'talk' || session.kind === 'panel' || session.kind === 'keynote') return 35;
+  if (legacyType === 'lightning') return 15;
+  if (legacyType === 'standard' || session.kind === 'talk' || session.kind === 'panel' || session.kind === 'keynote') return 30;
   return 30;
 }
 
@@ -198,8 +211,18 @@ export function getScheduleNeighbors(item: ProgramScheduleItemRecord, items: Pro
   return { previous, next, overlaps };
 }
 
+function getInsertionGapMinutes(
+  previous: ProgramScheduleItemRecord | null,
+  next: ProgramScheduleItemRecord | null
+) {
+  if (!previous) return 0;
+  if (previous.type === 'break' || next?.type === 'break') return 0;
+  return DEFAULT_SLOT_GAP_MINUTES;
+}
+
 export function getInsertionDraftAfter(
   previous: ProgramScheduleItemRecord | null,
+  next: ProgramScheduleItemRecord | null,
   fallbackDate: string,
   fallbackStartTime = '09:00'
 ): ScheduleSlotDraft {
@@ -213,8 +236,11 @@ export function getInsertionDraftAfter(
 
   return {
     date: previous.date,
-    start_time: addMinutesToTime(previous.start_time, previous.duration_minutes),
-    room: previous.room,
+    start_time: addMinutesToTime(
+      previous.start_time,
+      previous.duration_minutes + getInsertionGapMinutes(previous, next)
+    ),
+    room: previous.room ?? next?.room ?? null,
   };
 }
 
@@ -239,4 +265,62 @@ export function getInsertionDraftBefore(
     start_time: minutesToTime(nextStart < defaultStart ? nextStart - 30 : defaultStart),
     room: next.room,
   };
+}
+
+export function groupOverlappingScheduleItems(items: ProgramScheduleItemRecord[]) {
+  const sorted = sortScheduleItems(items);
+  const groupsById = new Map<string, ProgramScheduleDisplayGroup>();
+  const orderedGroupIds: Array<{ id: string; sortValue: string }> = [];
+
+  const trackMap = new Map<string, ProgramScheduleItemRecord[]>();
+  for (const item of sorted) {
+    const key = `${item.date}::${item.room ?? ''}`;
+    const trackItems = trackMap.get(key) ?? [];
+    trackItems.push(item);
+    trackMap.set(key, trackItems);
+  }
+
+  for (const trackItems of trackMap.values()) {
+    let currentGroup: ProgramScheduleItemRecord[] = [];
+
+    const flushGroup = () => {
+      if (currentGroup.length === 0) return;
+      const groupId = currentGroup.map((item) => item.id).join(':');
+      groupsById.set(groupId, {
+        items: currentGroup,
+        layout: currentGroup.map((entry, index) => ({
+          item: entry,
+          index,
+          total: currentGroup.length,
+        })),
+      });
+      orderedGroupIds.push({
+        id: groupId,
+        sortValue: getScheduleSortValue(currentGroup[0]),
+      });
+      currentGroup = [];
+    };
+
+    for (const item of trackItems) {
+      if (currentGroup.length === 0) {
+        currentGroup = [item];
+        continue;
+      }
+
+      if (currentGroup.some((candidate) => scheduleItemsOverlap(candidate, item))) {
+        currentGroup.push(item);
+        continue;
+      }
+
+      flushGroup();
+      currentGroup = [item];
+    }
+
+    flushGroup();
+  }
+
+  return orderedGroupIds
+    .sort((left, right) => left.sortValue.localeCompare(right.sortValue))
+    .map(({ id }) => groupsById.get(id))
+    .filter((group): group is ProgramScheduleDisplayGroup => Boolean(group));
 }
