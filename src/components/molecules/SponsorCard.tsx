@@ -65,9 +65,9 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         src={logo}
         alt={name ? `${name} logo` : 'Sponsor logo'}
         fill
-        className={`object-contain p-4 transition-opacity duration-300 ${
+        className={`object-contain p-4 transition-all duration-500 ease-in-out ${
           hasExplicitColorLogo
-            ? 'group-hover:opacity-0'
+            ? 'opacity-100 group-hover:opacity-0'
             : 'grayscale group-hover:grayscale-0'
         }`}
         unoptimized={isSvgOrGif}
@@ -78,7 +78,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
           src={logoColor}
           alt={name ? `${name} logo` : 'Sponsor logo'}
           fill
-          className="object-contain p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          className="object-contain p-4 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100"
           unoptimized={isColorSvgOrGif}
         />
       )}
