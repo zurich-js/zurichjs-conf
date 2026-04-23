@@ -768,6 +768,7 @@ export async function getAdminSpeakersWithSubmissions(scope: AdminSpeakerScope =
 
   if (scope === 'program') {
     return speakersWithSubmissions.filter((speaker) =>
+      speaker.is_admin_managed ||
       speaker.is_featured ||
       speaker.is_visible ||
       hasAcceptedSubmission(speaker.submissions)

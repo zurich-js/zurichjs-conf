@@ -73,8 +73,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
 
   const speakerOptions = useMemo(() => {
     return speakers.filter((speaker) => {
-      const hasAcceptedSession = speaker.submissions?.some((submission) => submission.status === 'accepted') ?? false;
-      return !speaker.is_admin_managed && !speaker.is_visible && !hasAcceptedSession;
+      return !speaker.is_admin_managed;
     }).sort((left, right) => {
       const leftName = `${left.first_name} ${left.last_name}`.trim().toLowerCase();
       const rightName = `${right.first_name} ${right.last_name}`.trim().toLowerCase();
