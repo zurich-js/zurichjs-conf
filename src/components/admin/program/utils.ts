@@ -17,6 +17,12 @@ export interface ProgramScheduleNeighborResult {
   overlaps: ProgramScheduleItemRecord[];
 }
 
+export interface ScheduleSlotDraft {
+  date: string;
+  start_time: string;
+  room?: string | null;
+}
+
 export function getSessionScheduleCount(session: ProgramSession, scheduleItems: ProgramScheduleItemRecord[]) {
   return scheduleItems.filter((item) =>
     item.session_id === session.id ||
@@ -132,9 +138,20 @@ export function groupScheduleItemsByDay(items: ProgramScheduleItemRecord[]): Pro
   }));
 }
 
-function timeToMinutes(time: string) {
+export function timeToMinutes(time: string) {
   const [hours = '0', minutes = '0'] = time.split(':');
   return Number(hours) * 60 + Number(minutes);
+}
+
+export function minutesToTime(minutes: number) {
+  const normalized = Math.max(0, minutes);
+  const hours = Math.floor(normalized / 60).toString().padStart(2, '0');
+  const mins = (normalized % 60).toString().padStart(2, '0');
+  return `${hours}:${mins}`;
+}
+
+export function addMinutesToTime(time: string, minutes: number) {
+  return minutesToTime(timeToMinutes(time) + minutes);
 }
 
 export function getScheduleRange(item: Pick<ProgramScheduleItemRecord, 'start_time' | 'duration_minutes'>) {
@@ -143,6 +160,19 @@ export function getScheduleRange(item: Pick<ProgramScheduleItemRecord, 'start_ti
     start,
     end: start + item.duration_minutes,
   };
+}
+
+export function inferScheduleDurationForSession(session: ProgramSession | null | undefined) {
+  if (!session) return 30;
+  if (session.kind === 'workshop' && session.workshop_duration_minutes) return session.workshop_duration_minutes;
+
+  const legacyType = typeof session.metadata?.legacy_submission_type === 'string'
+    ? session.metadata.legacy_submission_type
+    : null;
+
+  if (legacyType === 'lightning') return 20;
+  if (legacyType === 'standard' || session.kind === 'talk' || session.kind === 'panel' || session.kind === 'keynote') return 35;
+  return 30;
 }
 
 export function scheduleItemsOverlap(left: ProgramScheduleItemRecord, right: ProgramScheduleItemRecord) {
@@ -166,4 +196,24 @@ export function getScheduleNeighbors(item: ProgramScheduleItemRecord, items: Pro
   const next = sameTrack.find((candidate) => getScheduleRange(candidate).start >= itemRange.end) ?? null;
 
   return { previous, next, overlaps };
+}
+
+export function getInsertionDraftAfter(
+  previous: ProgramScheduleItemRecord | null,
+  fallbackDate: string,
+  fallbackStartTime = '09:00'
+): ScheduleSlotDraft {
+  if (!previous) {
+    return {
+      date: fallbackDate,
+      start_time: fallbackStartTime,
+      room: null,
+    };
+  }
+
+  return {
+    date: previous.date,
+    start_time: addMinutesToTime(previous.start_time, previous.duration_minutes),
+    room: previous.room,
+  };
 }

@@ -5,10 +5,12 @@ import type { ProgramScheduleItemRecord } from '@/lib/types/program-schedule';
 import type { SpeakerWithSessions } from '@/components/admin/speakers';
 import {
   filterProgramSessions,
+  getInsertionDraftAfter,
   getScheduleNeighbors,
   groupScheduleItemsByDay,
   getSessionScheduleCount,
   hasMissingSpeakerProfile,
+  inferScheduleDurationForSession,
   isWorkshopCommerceReady,
   matchesProgramSearch,
   scheduleItemsOverlap,
@@ -149,4 +151,24 @@ it('detects schedule overlaps and nearby neighbors in the same room', () => {
   expect(neighbors.previous?.id).toBe('previous');
   expect(neighbors.next?.id).toBe('next');
   expect(neighbors.overlaps.map((item) => item.id)).toEqual(['overlap']);
+});
+
+it('infers schedule durations from session shape', () => {
+  expect(inferScheduleDurationForSession(makeSession({ kind: 'workshop', workshop_duration_minutes: 180 }))).toBe(180);
+  expect(inferScheduleDurationForSession(makeSession({ metadata: { legacy_submission_type: 'lightning' } }))).toBe(20);
+  expect(inferScheduleDurationForSession(makeSession({ metadata: { legacy_submission_type: 'standard' } }))).toBe(35);
+  expect(inferScheduleDurationForSession(null)).toBe(30);
+});
+
+it('creates insertion drafts from previous slot end time', () => {
+  expect(getInsertionDraftAfter(null, '2026-09-11')).toEqual({
+    date: '2026-09-11',
+    start_time: '09:00',
+    room: null,
+  });
+  expect(getInsertionDraftAfter({ ...scheduleItem, start_time: '10:00:00', duration_minutes: 35, room: 'Main' }, '2026-09-11')).toEqual({
+    date: '2026-09-11',
+    start_time: '10:35',
+    room: 'Main',
+  });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, Edit3, Eye, Plus, Trash2, Users } from 'lucide-react';
+import { AdminModal } from '@/components/admin/AdminModal';
 import {
   useCreateScheduleItem,
   useDeleteScheduleItem,
@@ -15,13 +16,16 @@ import type { CfpSubmissionWithStats } from '@/lib/types/cfp/admin';
 import type { SpeakerWithSessions } from '@/components/admin/speakers';
 import {
   filterProgramSessions,
+  getInsertionDraftAfter,
   getScheduleNeighbors,
   getSessionScheduleCount,
   getSessionSpeakers,
   groupScheduleItemsByDay,
   hasMissingSpeakerProfile,
+  inferScheduleDurationForSession,
   isWorkshopCommerceReady,
   matchesProgramSearch,
+  type ScheduleSlotDraft,
   type ProgramSessionFilter,
 } from './utils';
 import { ProgramSessionModal } from './ProgramSessionModal';
@@ -44,6 +48,11 @@ interface ProgramTabsProps {
 type SessionModalState =
   | { mode: 'create'; speakerId?: string | null }
   | { mode: 'edit'; session: ProgramSession }
+  | null;
+
+type ScheduleModalState =
+  | { mode: 'create'; draft?: ScheduleSlotDraft }
+  | { mode: 'edit'; item: ProgramScheduleItemRecord }
   | null;
 
 export function ProgramSessionsTab({
@@ -272,33 +281,34 @@ function PromoteSubmissionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-xl rounded-lg bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-950">Promote CFP Submission</h3>
-          <button onClick={onClose} className="rounded-md p-2 text-gray-500 hover:bg-gray-100">×</button>
-        </div>
-        <div className="space-y-4 p-5">
-          {isLoading ? <p className="text-sm text-gray-500">Loading submissions...</p> : null}
-          {error ? <p className="text-sm text-red-600">{(error as Error).message}</p> : null}
-          <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
-            <option value="">Choose accepted CFP submission</option>
-            {options.map((submission) => (
-              <option key={submission.id} value={submission.id}>
-                {submission.title} — {submission.speaker?.first_name} {submission.speaker?.last_name}
-              </option>
-            ))}
-          </select>
-          {options.length === 0 && !isLoading ? <p className="text-sm text-gray-500">All accepted submissions have already been promoted.</p> : null}
-          <div className="flex justify-end gap-3">
-            <button onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
-            <button onClick={handlePromote} disabled={!selectedId || promoteMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">
-              {promoteMutation.isPending ? 'Promoting...' : 'Promote'}
-            </button>
-          </div>
-        </div>
+    <AdminModal
+      title="Promote CFP Submission"
+      maxWidth="xl"
+      showHeader={false}
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
+          <button type="button" onClick={handlePromote} disabled={!selectedId || promoteMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">
+            {promoteMutation.isPending ? 'Promoting...' : 'Promote'}
+          </button>
+        </>
+      )}
+    >
+      <div className="space-y-4">
+        {isLoading ? <p className="text-sm text-gray-500">Loading submissions...</p> : null}
+        {error ? <p className="text-sm text-red-600">{(error as Error).message}</p> : null}
+        <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+          <option value="">Choose accepted CFP submission</option>
+          {options.map((submission) => (
+            <option key={submission.id} value={submission.id}>
+              {submission.title} — {submission.speaker?.first_name} {submission.speaker?.last_name}
+            </option>
+          ))}
+        </select>
+        {options.length === 0 && !isLoading ? <p className="text-sm text-gray-500">All accepted submissions have already been promoted.</p> : null}
       </div>
-    </div>
+    </AdminModal>
   );
 }
 
@@ -310,14 +320,14 @@ export function ProgramScheduleTab({
   onToast,
 }: ProgramTabsProps) {
   const [search, setSearch] = useState('');
-  const [editingItem, setEditingItem] = useState<ProgramScheduleItemRecord | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [scheduleModal, setScheduleModal] = useState<ScheduleModalState>(null);
   const deleteMutation = useDeleteScheduleItem();
   const sessionById = new Map(sessions.map((session) => [session.id, session]));
 
   const filteredScheduleItems = scheduleItems
     .filter((item) => !search || `${item.title} ${item.room ?? ''} ${item.program_session?.title ?? ''}`.toLowerCase().includes(search.toLowerCase()))
   const groupedByDay = groupScheduleItemsByDay(filteredScheduleItems);
+  const fallbackDate = groupedByDay[0]?.date ?? '2026-09-11';
 
   return (
     <div className="space-y-4">
@@ -328,7 +338,7 @@ export function ProgramScheduleTab({
         </div>
         <div className="flex gap-2">
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search schedule" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
-          <button onClick={() => setIsCreating(true)} className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]">
+          <button onClick={() => setScheduleModal({ mode: 'create', draft: getInsertionDraftAfter(null, fallbackDate) })} className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]">
             <CalendarPlus className="size-4" />
             Add Slot
           </button>
@@ -343,48 +353,61 @@ export function ProgramScheduleTab({
               <p className="text-sm text-gray-500">{group.items.length} scheduled {group.items.length === 1 ? 'slot' : 'slots'}</p>
             </div>
             <div className="grid gap-3">
+              <InsertionButton
+                label="Add first slot"
+                draft={getInsertionDraftAfter(null, group.date)}
+                onInsert={(draft) => setScheduleModal({ mode: 'create', draft })}
+              />
               {group.items.map((item) => {
                 const session = item.session_id ? sessionById.get(item.session_id) : null;
                 const neighbors = getScheduleNeighbors(item, scheduleItems);
                 return (
-                  <div key={item.id} className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm lg:grid-cols-[120px_1fr_170px_90px] lg:items-center">
-                    <div className="text-sm text-gray-700">
-                      <p className="font-semibold text-gray-950">{item.start_time.slice(0, 5)}</p>
-                      <p>{item.duration_minutes}m{item.room ? ` · ${item.room}` : ''}</p>
+                  <div key={item.id} className="group/slot grid gap-2">
+                    <div className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm lg:grid-cols-[120px_1fr_170px_90px] lg:items-center">
+                      <div className="text-sm text-gray-700">
+                        <p className="font-semibold text-gray-950">{item.start_time.slice(0, 5)}</p>
+                        <p>{item.duration_minutes}m{item.room ? ` · ${item.room}` : ''}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-950">{session?.title ?? item.program_session?.title ?? item.title}</p>
+                        <p className="text-sm text-gray-600">
+                          {item.type === 'session' ? 'Program session' : item.type}
+                          {session ? ` · ${getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}` : ''}
+                        </p>
+                        {session?.kind === 'workshop' ? <WorkshopBuyableSignal sessionId={session.id} /> : null}
+                        {!item.is_visible ? <p className="mt-1 text-xs font-medium text-amber-700">Hidden planning slot</p> : null}
+                        {neighbors.overlaps.length > 0 ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">Overlaps {neighbors.overlaps.length} nearby slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
+                        ) : null}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <p>{item.is_visible ? 'Visible' : 'Hidden'}</p>
+                        <p className="text-xs text-gray-400">
+                          {neighbors.previous ? `After ${neighbors.previous.start_time.slice(0, 5)}` : 'First in room'}
+                          {neighbors.next ? ` · Before ${neighbors.next.start_time.slice(0, 5)}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setScheduleModal({ mode: 'edit', item })} className="rounded-md p-2 text-blue-700 hover:bg-blue-50"><Edit3 className="size-4" /></button>
+                        <button
+                          onClick={() => deleteMutation.mutate(item.id, {
+                            onSuccess: () => {
+                              onRefresh();
+                              onToast('Schedule item deleted');
+                            },
+                            onError: (error) => onToast('Delete failed', (error as Error).message, 'error'),
+                          })}
+                          className="rounded-md p-2 text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-950">{session?.title ?? item.program_session?.title ?? item.title}</p>
-                      <p className="text-sm text-gray-600">
-                        {item.type === 'session' ? 'Program session' : item.type}
-                        {session ? ` · ${getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}` : ''}
-                      </p>
-                      {session?.kind === 'workshop' ? <WorkshopBuyableSignal sessionId={session.id} /> : null}
-                      {neighbors.overlaps.length > 0 ? (
-                        <p className="mt-1 text-xs font-medium text-red-600">Overlaps {neighbors.overlaps.length} nearby slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
-                      ) : null}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <p>{item.is_visible ? 'Visible' : 'Hidden'}</p>
-                      <p className="text-xs text-gray-400">
-                        {neighbors.previous ? `After ${neighbors.previous.start_time.slice(0, 5)}` : 'First in room'}
-                        {neighbors.next ? ` · Before ${neighbors.next.start_time.slice(0, 5)}` : ''}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditingItem(item)} className="rounded-md p-2 text-blue-700 hover:bg-blue-50"><Edit3 className="size-4" /></button>
-                      <button
-                        onClick={() => deleteMutation.mutate(item.id, {
-                          onSuccess: () => {
-                            onRefresh();
-                            onToast('Schedule item deleted');
-                          },
-                          onError: (error) => onToast('Delete failed', (error as Error).message, 'error'),
-                        })}
-                        className="rounded-md p-2 text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </div>
+                    <InsertionButton
+                      label={`Add slot at ${getInsertionDraftAfter(item, group.date).start_time}`}
+                      draft={getInsertionDraftAfter(item, group.date)}
+                      onInsert={(draft) => setScheduleModal({ mode: 'create', draft })}
+                    />
                   </div>
                 );
               })}
@@ -393,17 +416,16 @@ export function ProgramScheduleTab({
         ))}
       </div>
 
-      {(isCreating || editingItem) ? (
+      {scheduleModal ? (
         <ProgramScheduleModal
-          item={editingItem}
+          item={scheduleModal.mode === 'edit' ? scheduleModal.item : null}
+          draft={scheduleModal.mode === 'create' ? scheduleModal.draft : undefined}
           sessions={sessions}
           onClose={() => {
-            setIsCreating(false);
-            setEditingItem(null);
+            setScheduleModal(null);
           }}
           onSaved={() => {
-            setIsCreating(false);
-            setEditingItem(null);
+            setScheduleModal(null);
             onRefresh();
             onToast('Schedule saved');
           }}
@@ -413,13 +435,38 @@ export function ProgramScheduleTab({
   );
 }
 
+function InsertionButton({
+  label,
+  draft,
+  onInsert,
+}: {
+  label: string;
+  draft: ScheduleSlotDraft;
+  onInsert: (draft: ScheduleSlotDraft) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onInsert(draft)}
+      className="group flex h-7 items-center justify-center rounded-md border border-dashed border-transparent text-xs font-medium text-gray-400 opacity-0 transition-all hover:border-brand-primary hover:bg-brand-primary/10 hover:text-black hover:opacity-100 focus:border-brand-primary focus:bg-brand-primary/10 focus:text-black focus:opacity-100 group-hover/slot:opacity-100"
+    >
+      <span className="inline-flex items-center gap-1">
+        <Plus className="size-3" />
+        {label}
+      </span>
+    </button>
+  );
+}
+
 function ProgramScheduleModal({
   item,
+  draft,
   sessions,
   onClose,
   onSaved,
 }: {
   item: ProgramScheduleItemRecord | null;
+  draft?: ScheduleSlotDraft;
   sessions: ProgramSession[];
   onClose: () => void;
   onSaved: () => void;
@@ -430,19 +477,20 @@ function ProgramScheduleModal({
   const [form, setForm] = useState({
     type: item?.type ?? 'session',
     session_id: item?.session_id ?? '',
-    date: item?.date ?? '2026-09-11',
-    start_time: item?.start_time?.slice(0, 5) ?? '09:00',
+    date: item?.date ?? draft?.date ?? '2026-09-11',
+    start_time: item?.start_time?.slice(0, 5) ?? draft?.start_time ?? '09:00',
     duration_minutes: item?.duration_minutes?.toString() ?? '30',
-    room: item?.room ?? '',
+    room: item?.room ?? draft?.room ?? '',
     title: item?.title ?? '',
     description: item?.description ?? '',
     is_visible: item?.is_visible ?? true,
   });
 
+  const selectedSession = sessions.find((session) => session.id === form.session_id);
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
-    const selectedSession = sessions.find((session) => session.id === form.session_id);
     const payload: ProgramScheduleItemInput = {
       type: form.type as ProgramScheduleItemInput['type'],
       session_id: form.type === 'session' ? form.session_id || null : null,
@@ -468,57 +516,91 @@ function ProgramScheduleModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-lg bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 p-5">
-          <h3 className="text-lg font-semibold text-gray-950">{item ? 'Edit Slot' : 'Add Slot'}</h3>
-          <button onClick={onClose} className="rounded-md p-2 text-gray-500 hover:bg-gray-100">×</button>
-        </div>
-        <form onSubmit={submit} className="grid gap-4 p-5">
+    <AdminModal
+      title={item ? 'Edit Slot' : 'Add Slot'}
+      maxWidth="screen-xl"
+      showHeader={false}
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
+          <button type="submit" form="program-schedule-form" disabled={createMutation.isPending || updateMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">Save Slot</button>
+        </>
+      )}
+    >
+        <form id="program-schedule-form" onSubmit={submit} className="grid gap-4">
           {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
-          <div className="grid gap-3 sm:grid-cols-2">
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <label className="grid gap-1 text-sm font-medium text-gray-800">
+              Date
+              <input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-gray-800">
+              Start
+              <input type="time" value={form.start_time} onChange={(event) => setForm({ ...form, start_time: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-gray-800">
+              Duration
+              <input type="number" min="1" value={form.duration_minutes} onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-gray-800">
+              Room
+              <input value={form.room} onChange={(event) => setForm({ ...form, room: event.target.value })} placeholder="Room" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+            </label>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Type
               <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as ProgramScheduleItemInput['type'] })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
                 <option value="session">Session</option>
                 <option value="event">Event</option>
                 <option value="break">Break</option>
-                <option value="placeholder">Placeholder</option>
               </select>
             </label>
             {form.type === 'session' ? (
               <label className="grid gap-1 text-sm font-medium text-gray-800">
                 Program session
-                <select value={form.session_id} onChange={(event) => setForm({ ...form, session_id: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+                <select
+                  value={form.session_id}
+                  onChange={(event) => {
+                    const session = sessions.find((candidate) => candidate.id === event.target.value);
+                    setForm({
+                      ...form,
+                      session_id: event.target.value,
+                      duration_minutes: inferScheduleDurationForSession(session).toString(),
+                      title: session?.title ?? form.title,
+                    });
+                  }}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                >
                   <option value="">Choose session</option>
                   {sessions.map((session) => <option key={session.id} value={session.id}>{session.title}</option>)}
                 </select>
               </label>
             ) : null}
           </div>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
-            <input type="time" value={form.start_time} onChange={(event) => setForm({ ...form, start_time: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
-            <input type="number" min="1" value={form.duration_minutes} onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
-            <input value={form.room} onChange={(event) => setForm({ ...form, room: event.target.value })} placeholder="Room" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
-          </div>
+
           {form.type !== 'session' ? (
             <>
               <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Title" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
               <textarea rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
             </>
           ) : null}
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <input type="checkbox" checked={form.is_visible} onChange={(event) => setForm({ ...form, is_visible: event.target.checked })} />
-            Visible publicly
-          </label>
-          <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
-            <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
-            <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">Save Slot</button>
+          <div className="flex w-fit items-center gap-3 rounded-md border border-gray-200 px-3 py-2">
+            <span className="text-sm font-medium text-gray-800">Visible publicly</span>
+            <ToggleButton
+              label={form.is_visible ? 'Public' : 'Hidden'}
+              checked={form.is_visible}
+              disabled={false}
+              activeClassName="bg-green-500"
+              title={form.is_visible ? 'Visible publicly' : 'Hidden from public schedule'}
+              onClick={() => setForm({ ...form, is_visible: !form.is_visible })}
+            />
           </div>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 

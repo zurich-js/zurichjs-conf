@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { AdminModal } from '@/components/admin/AdminModal';
 import {
   useCreateWorkshopOffering,
   useCreateProgramSession,
@@ -233,21 +234,30 @@ export function ProgramSessionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 p-5">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-950">{session ? 'Edit Session' : 'Create Session'}</h3>
-            {session?.cfp_submission_id ? (
-              <p className="mt-1 text-xs text-gray-500">Promoted from CFP submission</p>
-            ) : null}
-          </div>
-          <button type="button" onClick={onClose} className="rounded-md p-2 text-gray-500 hover:bg-gray-100">
-            <X className="size-5" />
+    <AdminModal
+      title={session ? 'Edit Session' : 'Create Session'}
+      description={session?.cfp_submission_id ? 'Promoted from CFP submission' : undefined}
+      maxWidth="3xl"
+      showHeader={false}
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+            Cancel
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5 p-5">
+          <button
+            type="submit"
+            form="program-session-form"
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50"
+          >
+            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
+            Save Session
+          </button>
+        </>
+      )}
+    >
+        <form id="program-session-form" onSubmit={handleSubmit} className="space-y-5">
           {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -442,21 +452,7 @@ export function ProgramSessionModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
-            <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50"
-            >
-              {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
-              Save Session
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
