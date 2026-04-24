@@ -596,7 +596,7 @@ function ScheduleGridCard({
       <div className="sticky top-40 grid gap-3 [grid-template-areas:'time''title''visibility''actions'] @xs:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @xs:[grid-template-areas:'time_title''visibility_visibility''actions_actions'] @sm:grid-cols-[120px_minmax(0,1fr)_auto] @sm:[grid-template-areas:'time_title_actions''visibility_visibility_visibility'] @lg:grid-cols-[120px_minmax(0,1fr)_130px_120px] @lg:[grid-template-areas:'time_title_visibility_actions'] @lg:items-center">
         <div className="[grid-area:time] text-sm text-brand-gray-medium">
           <p className="font-semibold text-gray-950">{startTime} - {endTime}</p>
-          <p>{item.duration_minutes}m{item.room ? ` · ${item.room}` : ''}</p>
+          <p>{formatScheduleDuration(item.duration_minutes)}{item.room ? ` · ${item.room}` : ''}</p>
             {neighbors.overlaps.length > 0 ? (
                 <p className="mt-1 text-xxs font-medium text-brand-red">Overlaps {neighbors.overlaps.length} slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
             ) : null}
@@ -635,6 +635,33 @@ function ScheduleGridCard({
 
 function getDisplayScheduleType(item: Pick<ProgramScheduleItemRecord, 'type' | 'session_id'>): ProgramScheduleItemRecord['type'] | 'placeholder' {
   return item.type === 'session' && !item.session_id ? 'placeholder' : item.type;
+}
+
+function formatScheduleDuration(durationMinutes: number) {
+  if (durationMinutes < 60) return `${durationMinutes}m`;
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+}
+
+function parseDurationInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/^\d+$/.test(trimmed)) {
+    const minutes = Number.parseInt(trimmed, 10);
+    return Number.isFinite(minutes) && minutes > 0 ? minutes : null;
+  }
+
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+
+  const hours = Number.parseInt(match[1], 10);
+  const minutes = Number.parseInt(match[2], 10);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes < 0 || minutes >= 60) return null;
+
+  const totalMinutes = (hours * 60) + minutes;
+  return totalMinutes > 0 ? totalMinutes : null;
 }
 
 function TypeChip({ type }: { type: ProgramScheduleItemRecord['type'] | 'placeholder' }) {
@@ -691,8 +718,8 @@ function ProgramScheduleModal({
   });
 
   const selectedSession = sessions.find((session) => session.id === form.session_id);
-  const parsedDuration = Number.parseInt(form.duration_minutes, 10);
-  const derivedEndTime = form.start_time && Number.isFinite(parsedDuration)
+  const parsedDuration = parseDurationInput(form.duration_minutes);
+  const derivedEndTime = form.start_time && parsedDuration !== null
     ? minutesToTime(timeToMinutes(form.start_time) + parsedDuration)
     : null;
   const isSessionPlaceholder = form.type === 'session' && !form.session_id;
@@ -700,12 +727,17 @@ function ProgramScheduleModal({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
+    if (!parsedDuration) {
+      setError('Duration must be a positive number of minutes or use HH:MM');
+      return;
+    }
+    const resolvedDuration = parsedDuration;
     const payload: ProgramScheduleItemInput = {
       type: form.type as ProgramScheduleItemInput['type'],
       session_id: form.type === 'session' ? form.session_id || null : null,
       date: form.date,
       start_time: `${form.start_time}:00`,
-      duration_minutes: parseInt(form.duration_minutes, 10),
+      duration_minutes: resolvedDuration,
       room: form.room || null,
       title: form.type === 'session' ? (selectedSession?.title ?? (form.title || 'TBA')) : form.title,
       description: form.type === 'session' ? null : form.description || null,
@@ -751,7 +783,13 @@ function ProgramScheduleModal({
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
                 <span>Duration <span className="text-xs font-normal text-gray-500">(End time {derivedEndTime ?? '--:--'})</span></span>
-              <input type="number" min="1" value={form.duration_minutes} onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+              <input
+                type="text"
+                value={form.duration_minutes}
+                onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })}
+                placeholder="30 or 1:30"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Room
@@ -881,7 +919,7 @@ function SchedulePreviewModal({
             >
               <div className="flex-1 flex flex-wrap gap-4 items-center rounded-lg border border-gray-200 bg-white p-2 text-sm text-brand-gray-medium">
                 <div className="font-medium text-gray-950">
-                  {startTime} - {endTime} ({item.duration_minutes}m)
+                  {startTime} - {endTime} ({formatScheduleDuration(item.duration_minutes)})
                 </div>
                 <TypeChip type={displayType} />
                 <div className="font-medium text-gray-950">{item.program_session?.title ?? item.title}</div>
