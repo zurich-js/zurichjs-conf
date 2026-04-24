@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Edit3, Eye, Plus, Trash2, Users } from 'lucide-react';
+import { CalendarRange, Coffee, Copy, Edit3, Eye, MicVocal, Plus, Trash2, Users } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { ConfirmationModal } from '@/components/admin/cfp';
 import {
@@ -132,7 +132,7 @@ export function ProgramSessionsTab({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowPromote(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50"
             >
               <Eye className="size-4" />
               Promote from CFP
@@ -195,16 +195,16 @@ export function ProgramSessionsTab({
                   <tr key={session.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3">
                       <p className="font-medium text-gray-950">{session.title}</p>
-                      {session.cfp_submission_id ? <p className="text-xs text-blue-700">Promoted from CFP</p> : null}
+                      {session.cfp_submission_id ? <p className="text-xs text-brand-blue">Promoted from CFP</p> : null}
                     </td>
-                    <td className="px-3 py-3 text-sm capitalize text-gray-700">{session.kind}</td>
-                    <td className="px-3 py-3 text-sm text-gray-700">
+                    <td className="px-3 py-3 text-sm capitalize text-brand-gray-medium">{session.kind}</td>
+                    <td className="px-3 py-3 text-sm text-brand-gray-medium">
                       {assignedSpeakers.length > 0
                         ? assignedSpeakers.map((speaker) => `${speaker.first_name} ${speaker.last_name}`).join(', ')
-                        : <span className="text-red-600">Missing</span>}
+                        : <span className="text-brand-red">Missing</span>}
                     </td>
-                    <td className="px-3 py-3 text-sm text-gray-700">{scheduleCount === 0 ? 'Unscheduled' : scheduleCount === 1 ? 'Scheduled once' : `Scheduled ${scheduleCount} times`}</td>
-                    <td className="px-3 py-3 text-sm capitalize text-gray-700">{session.status}</td>
+                    <td className="px-3 py-3 text-sm text-brand-gray-medium">{scheduleCount === 0 ? 'Unscheduled' : scheduleCount === 1 ? 'Scheduled once' : `Scheduled ${scheduleCount} times`}</td>
+                    <td className="px-3 py-3 text-sm capitalize text-brand-gray-medium">{session.status}</td>
                     <td className="px-3 py-3 text-sm">
                       <div className="flex flex-wrap gap-1">
                         {hasMissingSpeakerProfile(session, speakers) ? <Pill tone="red">profile</Pill> : null}
@@ -215,10 +215,10 @@ export function ProgramSessionsTab({
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setModal({ mode: 'edit', session })} className="rounded-md p-2 text-blue-700 hover:bg-blue-50" title="Edit session">
+                        <button onClick={() => setModal({ mode: 'edit', session })} className="rounded-md p-2 text-brand-blue hover:bg-blue-50" title="Edit session">
                           <Edit3 className="size-4" />
                         </button>
-                        <button onClick={() => archiveMutation.mutate(session.id)} className="rounded-md p-2 text-red-700 hover:bg-red-50" title="Archive session">
+                        <button onClick={() => archiveMutation.mutate(session.id)} className="rounded-md p-2 text-brand-red hover:bg-red-50" title="Archive session">
                           <Trash2 className="size-4" />
                         </button>
                       </div>
@@ -302,7 +302,7 @@ function PromoteSubmissionModal({
     >
       <div className="space-y-4">
         {isLoading ? <p className="text-sm text-gray-500">Loading submissions...</p> : null}
-        {error ? <p className="text-sm text-red-600">{(error as Error).message}</p> : null}
+        {error ? <p className="text-sm text-brand-red">{(error as Error).message}</p> : null}
         <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
           <option value="">Choose accepted CFP submission</option>
           {options.map((submission) => (
@@ -419,7 +419,7 @@ export function ProgramScheduleTab({
               <button
                 type="button"
                 onClick={() => setPreviewDate(group.date)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-brand-gray-medium hover:bg-gray-50"
               >
                 Preview schedule
               </button>
@@ -587,30 +587,29 @@ function ScheduleGridCard({
 }) {
   const neighbors = getScheduleNeighbors(item, scheduleItems, { sameRoomOnly: false });
   const visibilityLocked = item.type === 'session' && !item.session_id;
+  const displayType = getDisplayScheduleType(item);
   const startTime = item.start_time.slice(0, 5);
   const endTime = minutesToTime(timeToMinutes(startTime) + item.duration_minutes);
 
   return (
     <div className="@container h-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="sticky top-40 grid gap-3 @xs:grid-cols-[1fr_auto] @xs:items-start @lg:grid-cols-[120px_1fr_130px_120px] @lg:items-center">
-        <div className="text-sm text-gray-700">
+      <div className="sticky top-40 grid gap-3 [grid-template-areas:'time''title''visibility''actions'] @xs:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @xs:[grid-template-areas:'time_title''visibility_visibility''actions_actions'] @sm:grid-cols-[120px_minmax(0,1fr)_auto] @sm:[grid-template-areas:'time_title_actions''visibility_visibility_visibility'] @lg:grid-cols-[120px_minmax(0,1fr)_130px_120px] @lg:[grid-template-areas:'time_title_visibility_actions'] @lg:items-center">
+        <div className="[grid-area:time] text-sm text-brand-gray-medium">
           <p className="font-semibold text-gray-950">{startTime} - {endTime}</p>
           <p>{item.duration_minutes}m{item.room ? ` · ${item.room}` : ''}</p>
+            {neighbors.overlaps.length > 0 ? (
+                <p className="mt-1 text-xxs font-medium text-brand-red">Overlaps {neighbors.overlaps.length} slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
+            ) : null}
         </div>
-        <div>
+        <div className="[grid-area:title]">
           <p className="font-medium text-gray-950">{session?.title ?? item.program_session?.title ?? item.title}</p>
-          <p className="text-sm text-gray-600">
-            {item.type === 'session' ? 'Program session' : item.type}
-            {session ? ` · ${getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}` : ''}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+            <TypeChip type={displayType} />
+            {session ? <span>· {getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}</span> : null}
+          </div>
           {session?.kind === 'workshop' ? <WorkshopBuyableSignal sessionId={session.id} /> : null}
-          {!item.is_visible ? <p className="mt-1 text-xs font-medium text-amber-700">Hidden planning slot</p> : null}
-          {neighbors.overlaps.length > 0 ? (
-            <p className="mt-1 text-xs font-medium text-red-600">Overlaps {neighbors.overlaps.length} nearby slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
-          ) : null}
         </div>
-        <div className="text-sm text-gray-600">
-          <p>{item.is_visible ? 'Visible' : 'Hidden'}</p>
+        <div className="[grid-area:visibility] text-sm text-gray-600">
           <ToggleButton
             label={item.is_visible ? 'Public' : 'Hidden'}
             checked={item.is_visible}
@@ -623,15 +622,40 @@ function ScheduleGridCard({
                 : 'Hidden from public schedule'}
             onClick={onToggleVisibility}
           />
-          {visibilityLocked ? <p className="mt-1 text-xs text-gray-500">Select a talk to publish this slot</p> : null}
         </div>
-        <div className="flex gap-2 @xs:justify-end @lg:justify-start">
-          <button onClick={onEdit} className="rounded-md p-2 text-blue-700 hover:bg-blue-50" title="Edit slot"><Edit3 className="size-4" /></button>
-          <button onClick={onDuplicate} className="rounded-md p-2 text-gray-700 hover:bg-gray-100" title="Duplicate slot"><Copy className="size-4" /></button>
-          <button onClick={onDelete} className="rounded-md p-2 text-red-700 hover:bg-red-50" title="Delete slot"><Trash2 className="size-4" /></button>
+        <div className="[grid-area:actions] flex gap-2 @xs:justify-end @sm:justify-end @lg:justify-start">
+          <button onClick={onEdit} className="rounded-md p-2 h-fit hover:bg-brand-gray-lightest transition-colors duration-200" title="Edit slot"><Edit3 className="size-4" /></button>
+          <button onClick={onDuplicate} className="rounded-md p-2 h-fit hover:bg-brand-gray-lightest transition-colors duration-200" title="Duplicate slot"><Copy className="size-4" /></button>
+          <button onClick={onDelete} className="rounded-md p-2 h-fit hover:bg-brand-gray-lightest transition-colors duration-200" title="Delete slot"><Trash2 className="size-4" /></button>
         </div>
       </div>
     </div>
+  );
+}
+
+function getDisplayScheduleType(item: Pick<ProgramScheduleItemRecord, 'type' | 'session_id'>): ProgramScheduleItemRecord['type'] | 'placeholder' {
+  return item.type === 'session' && !item.session_id ? 'placeholder' : item.type;
+}
+
+function TypeChip({ type }: { type: ProgramScheduleItemRecord['type'] | 'placeholder' }) {
+  const config = {
+    session: { icon: MicVocal, label: 'Session', className: 'border-blue-200 bg-blue-50 text-brand-blue' },
+    event: { icon: CalendarRange, label: 'Event', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+    break: { icon: Coffee, label: 'Break', className: 'border-amber-200 bg-amber-50 text-amber-700' },
+    placeholder: { icon: null, label: 'Placeholder', className: 'border-transparent bg-transparent text-gray-500' },
+  }[type];
+
+  if (!config.icon) {
+    return <span className="text-xs font-medium text-gray-500">{config.label}</span>;
+  }
+
+  const Icon = config.icon;
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-sm border px-1 py-0.5 text-xs font-medium ${config.className}`}>
+      <Icon className="size-3.5" />
+      {config.label}
+    </span>
   );
 }
 
@@ -651,16 +675,19 @@ function ProgramScheduleModal({
   const createMutation = useCreateScheduleItem();
   const updateMutation = useUpdateScheduleItem();
   const [error, setError] = useState('');
+  const initialType = item?.type ?? 'session';
+  const initialSessionId = item?.session_id ?? '';
+  const initialIsSessionPlaceholder = initialType === 'session' && !initialSessionId;
   const [form, setForm] = useState({
-    type: item?.type ?? 'session',
-    session_id: item?.session_id ?? '',
+    type: initialType,
+    session_id: initialSessionId,
     date: item?.date ?? draft?.date ?? '2026-09-11',
     start_time: item?.start_time?.slice(0, 5) ?? draft?.start_time ?? '09:00',
     duration_minutes: item?.duration_minutes?.toString() ?? '30',
     room: item?.room ?? draft?.room ?? '',
     title: item?.title ?? '',
     description: item?.description ?? '',
-    is_visible: item?.is_visible ?? false,
+    is_visible: initialIsSessionPlaceholder ? false : (item?.is_visible ?? false),
   });
 
   const selectedSession = sessions.find((session) => session.id === form.session_id);
@@ -711,7 +738,7 @@ function ProgramScheduleModal({
       )}
     >
         <form id="program-schedule-form" onSubmit={submit} className="grid gap-4">
-          {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+          {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-brand-red">{error}</div> : null}
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <label className="grid gap-1 text-sm font-medium text-gray-800">
@@ -723,8 +750,7 @@ function ProgramScheduleModal({
               <input type="time" value={form.start_time} onChange={(event) => setForm({ ...form, start_time: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
-              Duration
-              <span className="text-xs font-normal text-gray-500">End time {derivedEndTime ?? '--:--'}</span>
+                <span>Duration <span className="text-xs font-normal text-gray-500">(End time {derivedEndTime ?? '--:--'})</span></span>
               <input type="number" min="1" value={form.duration_minutes} onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
@@ -736,7 +762,19 @@ function ProgramScheduleModal({
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Type
-              <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as ProgramScheduleItemInput['type'] })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+              <select
+                value={form.type}
+                onChange={(event) => {
+                  const nextType = event.target.value as ProgramScheduleItemInput['type'];
+                  setForm({
+                    ...form,
+                    type: nextType,
+                    session_id: nextType === 'session' ? form.session_id : '',
+                    is_visible: nextType === 'session' ? false : form.is_visible,
+                  });
+                }}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              >
                 <option value="session">Session</option>
                 <option value="event">Event</option>
                 <option value="break">Break</option>
@@ -754,6 +792,7 @@ function ProgramScheduleModal({
                       session_id: event.target.value,
                       duration_minutes: inferScheduleDurationForSession(session).toString(),
                       title: session?.title ?? form.title,
+                      is_visible: event.target.value ? form.is_visible : false,
                     });
                   }}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
@@ -796,7 +835,6 @@ function ProgramScheduleModal({
               }}
             />
           </div>
-          {isSessionPlaceholder ? <p className="text-xs text-gray-500">Planning-only session slots can have a temporary title, but they stay hidden until you attach a session.</p> : null}
         </form>
     </AdminModal>
   );
@@ -820,7 +858,7 @@ function SchedulePreviewModal({
       footer={<button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Close</button>}
     >
       <div
-        className="grid gap-x-4 gap-y-0"
+        className="grid gap-2"
         style={{
           gridTemplateColumns: `repeat(${layout.totalColumns}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${layout.rows.length}, minmax(0, auto))`,
@@ -828,6 +866,7 @@ function SchedulePreviewModal({
       >
         {layout.layout.map((entry) => {
           const item = entry.item;
+          const displayType = getDisplayScheduleType(item);
           const startTime = item.start_time.slice(0, 5);
           const endTime = minutesToTime(timeToMinutes(startTime) + item.duration_minutes);
 
@@ -840,12 +879,12 @@ function SchedulePreviewModal({
               }}
               className="flex h-full min-h-0 flex-col"
             >
-              <div className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
+              <div className="flex-1 flex flex-wrap gap-4 items-center rounded-lg border border-gray-200 bg-white p-2 text-sm text-brand-gray-medium">
                 <div className="font-medium text-gray-950">
                   {startTime} - {endTime} ({item.duration_minutes}m)
                 </div>
-                <div className="mt-1 capitalize text-gray-600">{item.type}</div>
-                <div className="mt-1 font-medium text-gray-950">{item.program_session?.title ?? item.title}</div>
+                <TypeChip type={displayType} />
+                <div className="font-medium text-gray-950">{item.program_session?.title ?? item.title}</div>
               </div>
             </div>
           );
@@ -971,8 +1010,8 @@ export function ProgramSpeakersTab({
                 )) : <p className="text-sm text-gray-500">No program sessions assigned.</p>}
               </div>
               <div className="mt-4 flex gap-2">
-                <button onClick={() => setModal({ mode: 'create', speakerId: speaker.id })} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Add session</button>
-                <button onClick={() => onEditSpeaker(speaker)} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit profile</button>
+                <button onClick={() => setModal({ mode: 'create', speakerId: speaker.id })} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Add session</button>
+                <button onClick={() => onEditSpeaker(speaker)} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Edit profile</button>
               </div>
             </div>
           );
@@ -1034,7 +1073,7 @@ function ToggleButton({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
           checked ? activeClassName : 'bg-gray-300'
         }`}
         title={title}
@@ -1051,10 +1090,10 @@ function ToggleButton({
 
 function Pill({ children, tone }: { children: ReactNode; tone: 'red' | 'green' | 'amber' | 'blue' }) {
   const classes = {
-    red: 'bg-red-50 text-red-700 ring-red-200',
+    red: 'bg-red-50 text-brand-red ring-red-200',
     green: 'bg-green-50 text-green-700 ring-green-200',
     amber: 'bg-amber-50 text-amber-700 ring-amber-200',
-    blue: 'bg-blue-50 text-blue-700 ring-blue-200',
+    blue: 'bg-blue-50 text-brand-blue ring-blue-200',
   }[tone];
 
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${classes}`}>{children}</span>;
