@@ -21,7 +21,6 @@ export default function SchedulePage({ items }: SchedulePageProps) {
   const visibleItems = activeScheduleTab.sessionDate
     ? items.filter((item) => item.date === activeScheduleTab.sessionDate)
     : items.filter((item) => item.date === (activeTab === 'community' ? '2026-09-09' : '2026-09-12'));
-  const firstPublishedIndex = visibleItems.findIndex((item) => item.type === 'session' && Boolean(item.session));
 
   return (
     <>
@@ -65,7 +64,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
                   <ProgramScheduleItemCard
                     key={item.id}
                     item={item}
-                    defaultOpen={index === firstPublishedIndex}
+                    defaultOpen={index === 0}
                     placeholderVariant="plain"
                     expandableSessions
                   />

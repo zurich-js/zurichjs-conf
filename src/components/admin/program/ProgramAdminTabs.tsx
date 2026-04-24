@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Edit3, Eye, Plus, Trash2, Users } from 'lucide-react';
+import { CalendarRange, Coffee, Copy, Edit3, Eye, MicVocal, Plus, Trash2, Users } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { ConfirmationModal } from '@/components/admin/cfp';
 import {
@@ -132,7 +132,7 @@ export function ProgramSessionsTab({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowPromote(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50"
             >
               <Eye className="size-4" />
               Promote from CFP
@@ -195,16 +195,16 @@ export function ProgramSessionsTab({
                   <tr key={session.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3">
                       <p className="font-medium text-gray-950">{session.title}</p>
-                      {session.cfp_submission_id ? <p className="text-xs text-blue-700">Promoted from CFP</p> : null}
+                      {session.cfp_submission_id ? <p className="text-xs text-brand-blue">Promoted from CFP</p> : null}
                     </td>
-                    <td className="px-3 py-3 text-sm capitalize text-gray-700">{session.kind}</td>
-                    <td className="px-3 py-3 text-sm text-gray-700">
+                    <td className="px-3 py-3 text-sm capitalize text-brand-gray-medium">{session.kind}</td>
+                    <td className="px-3 py-3 text-sm text-brand-gray-medium">
                       {assignedSpeakers.length > 0
                         ? assignedSpeakers.map((speaker) => `${speaker.first_name} ${speaker.last_name}`).join(', ')
-                        : <span className="text-red-600">Missing</span>}
+                        : <span className="text-brand-red">Missing</span>}
                     </td>
-                    <td className="px-3 py-3 text-sm text-gray-700">{scheduleCount === 0 ? 'Unscheduled' : scheduleCount === 1 ? 'Scheduled once' : `Scheduled ${scheduleCount} times`}</td>
-                    <td className="px-3 py-3 text-sm capitalize text-gray-700">{session.status}</td>
+                    <td className="px-3 py-3 text-sm text-brand-gray-medium">{scheduleCount === 0 ? 'Unscheduled' : scheduleCount === 1 ? 'Scheduled once' : `Scheduled ${scheduleCount} times`}</td>
+                    <td className="px-3 py-3 text-sm capitalize text-brand-gray-medium">{session.status}</td>
                     <td className="px-3 py-3 text-sm">
                       <div className="flex flex-wrap gap-1">
                         {hasMissingSpeakerProfile(session, speakers) ? <Pill tone="red">profile</Pill> : null}
@@ -215,10 +215,10 @@ export function ProgramSessionsTab({
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setModal({ mode: 'edit', session })} className="rounded-md p-2 text-blue-700 hover:bg-blue-50" title="Edit session">
+                        <button onClick={() => setModal({ mode: 'edit', session })} className="rounded-md p-2 text-brand-blue hover:bg-blue-50" title="Edit session">
                           <Edit3 className="size-4" />
                         </button>
-                        <button onClick={() => archiveMutation.mutate(session.id)} className="rounded-md p-2 text-red-700 hover:bg-red-50" title="Archive session">
+                        <button onClick={() => archiveMutation.mutate(session.id)} className="rounded-md p-2 text-brand-red hover:bg-red-50" title="Archive session">
                           <Trash2 className="size-4" />
                         </button>
                       </div>
@@ -302,7 +302,7 @@ function PromoteSubmissionModal({
     >
       <div className="space-y-4">
         {isLoading ? <p className="text-sm text-gray-500">Loading submissions...</p> : null}
-        {error ? <p className="text-sm text-red-600">{(error as Error).message}</p> : null}
+        {error ? <p className="text-sm text-brand-red">{(error as Error).message}</p> : null}
         <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
           <option value="">Choose accepted CFP submission</option>
           {options.map((submission) => (
@@ -411,7 +411,7 @@ export function ProgramScheduleTab({
       <div className="space-y-6">
         {groupedByDay.map((group) => (
           <section key={group.date} className="space-y-3">
-            <div className="flex items-start justify-between gap-3 border-b-2 border-brand-gray-lightest pb-2">
+            <div className="sticky top-20 z-30 flex items-start justify-between gap-3 border-b-2 border-brand-gray-lightest bg-[#f7f8fa] pb-2 pt-2">
               <div>
                 <h3 className="text-base font-semibold text-black">{group.label}</h3>
                 <p className="text-sm text-gray-500">{group.items.length} scheduled {group.items.length === 1 ? 'slot' : 'slots'}</p>
@@ -419,7 +419,7 @@ export function ProgramScheduleTab({
               <button
                 type="button"
                 onClick={() => setPreviewDate(group.date)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-brand-gray-medium hover:bg-gray-50"
               >
                 Preview schedule
               </button>
@@ -430,68 +430,77 @@ export function ProgramScheduleTab({
                 draft={getInsertionDraftBefore(group.items[0] ?? null, group.date)}
                 onInsert={(draft) => setScheduleModal({ mode: 'create', draft })}
               />
-              {groupOverlappingScheduleItems(group.items).map((displayGroup) => {
-                const lastItem = displayGroup.items[displayGroup.items.length - 1] ?? null;
-                const nextItem = lastItem ? getScheduleNeighbors(lastItem, scheduleItems).next : null;
+              {(() => {
+                const displayGroup = groupOverlappingScheduleItems(group.items);
+                const hasOverlappingColumns = (left: { colStart: number; colSpan: number }, right: { colStart: number; colSpan: number }) => {
+                  const leftEnd = left.colStart + left.colSpan - 1;
+                  const rightEnd = right.colStart + right.colSpan - 1;
+                  return left.colStart <= rightEnd && right.colStart <= leftEnd;
+                };
+
                 return (
-                  <div key={displayGroup.items.map((item) => item.id).join(':')} className="group/slot grid gap-1">
-                    <div className="grid gap-3" style={displayGroup.items.length > 1 ? { gridTemplateColumns: `repeat(${displayGroup.items.length}, minmax(0, 1fr))` } : undefined}>
-                      {displayGroup.items.map((item) => {
-                        const session = item.session_id ? sessionById.get(item.session_id) : null;
-                        const neighbors = getScheduleNeighbors(item, scheduleItems);
+                  <div className="grid gap-1">
+                    <div
+                      className="grid gap-x-5 gap-y-0"
+                      style={{
+                        gridTemplateColumns: `repeat(${displayGroup.totalColumns}, minmax(0, 1fr))`,
+                        gridTemplateRows: `repeat(${displayGroup.rows.length}, minmax(0, auto))`,
+                      }}
+                    >
+                      {displayGroup.layout.map((entry) => {
+                        const item = entry.item;
+                        const nextItem = getScheduleNeighbors(item, scheduleItems).next;
+                        const hasAfterOverlayAlready = displayGroup.layout.some((candidate) =>
+                          candidate.item.id !== entry.item.id &&
+                          candidate.rowStart + candidate.rowSpan === entry.rowStart &&
+                          hasOverlappingColumns(candidate, entry)
+                        );
 
                         return (
-                          <div key={item.id} className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm lg:grid-cols-[120px_1fr_130px_120px] lg:items-center">
-                            <div className="text-sm text-gray-700">
-                              <p className="font-semibold text-gray-950">{item.start_time.slice(0, 5)}</p>
-                              <p>{item.duration_minutes}m{item.room ? ` · ${item.room}` : ''}</p>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-950">{session?.title ?? item.program_session?.title ?? item.title}</p>
-                              <p className="text-sm text-gray-600">
-                                {item.type === 'session' ? 'Program session' : item.type}
-                                {session ? ` · ${getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}` : ''}
-                              </p>
-                              {session?.kind === 'workshop' ? <WorkshopBuyableSignal sessionId={session.id} /> : null}
-                              {!item.is_visible ? <p className="mt-1 text-xs font-medium text-amber-700">Hidden planning slot</p> : null}
-                              {neighbors.overlaps.length > 0 ? (
-                                <p className="mt-1 text-xs font-medium text-red-600">Overlaps {neighbors.overlaps.length} nearby slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
-                              ) : null}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              <p>{item.is_visible ? 'Visible' : 'Hidden'}</p>
-                              <ToggleButton
-                                label={item.is_visible ? 'Public' : 'Hidden'}
-                                checked={item.is_visible}
-                                disabled={updateMutation.isPending}
-                                activeClassName="bg-green-500"
-                                title={item.is_visible ? 'Visible publicly' : 'Hidden from public schedule'}
-                                onClick={() => handleVisibilityToggle(item)}
+                          <div
+                            key={item.id}
+                            style={{
+                              gridColumn: `${entry.colStart} / span ${entry.colSpan}`,
+                              gridRow: `${entry.rowStart} / span ${entry.rowSpan}`,
+                            }}
+                            className="group/insert flex h-full flex-col"
+                          >
+                            {entry.rowStart > 1 && !hasAfterOverlayAlready ? (
+                              <div>
+                                <InsertionButton
+                                  label={`Add slot at ${getInsertionDraftBefore(item, group.date).start_time}`}
+                                  draft={getInsertionDraftBefore(item, group.date)}
+                                  onInsert={(draft) => setScheduleModal({ mode: 'create', draft })}
+                                />
+                              </div>
+                            ) : null}
+                            <div className="min-h-0 flex-1">
+                              <ScheduleGridCard
+                                item={item}
+                                session={item.session_id ? sessionById.get(item.session_id) ?? null : null}
+                                speakers={speakers}
+                                scheduleItems={scheduleItems}
+                                isUpdatingVisibility={updateMutation.isPending}
+                                onToggleVisibility={() => handleVisibilityToggle(item)}
+                                onEdit={() => setScheduleModal({ mode: 'edit', item })}
+                                onDuplicate={() => handleDuplicate(item)}
+                                onDelete={() => requestDelete(item)}
                               />
                             </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => setScheduleModal({ mode: 'edit', item })} className="rounded-md p-2 text-blue-700 hover:bg-blue-50" title="Edit slot"><Edit3 className="size-4" /></button>
-                              <button onClick={() => handleDuplicate(item)} className="rounded-md p-2 text-gray-700 hover:bg-gray-100" title="Duplicate slot"><Copy className="size-4" /></button>
-                              <button
-                                onClick={() => requestDelete(item)}
-                                className="rounded-md p-2 text-red-700 hover:bg-red-50"
-                                title="Delete slot"
-                              >
-                                <Trash2 className="size-4" />
-                              </button>
+                            <div>
+                              <InsertionButton
+                                label={`Add slot at ${getInsertionDraftAfter(item, nextItem, group.date).start_time}`}
+                                draft={getInsertionDraftAfter(item, nextItem, group.date)}
+                                onInsert={(draft) => setScheduleModal({ mode: 'create', draft })}
+                              />
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                    <InsertionButton
-                      label={`Add slot at ${getInsertionDraftAfter(lastItem, nextItem, group.date).start_time}`}
-                      draft={getInsertionDraftAfter(lastItem, nextItem, group.date)}
-                      onInsert={(draft) => setScheduleModal({ mode: 'create', draft })}
-                    />
                   </div>
                 );
-              })}
+              })()}
             </div>
           </section>
         ))}
@@ -544,7 +553,7 @@ function InsertionButton({
     <button
       type="button"
       onClick={() => onInsert(draft)}
-      className="group relative block h-5 w-full opacity-0 transition-opacity duration-150 hover:opacity-100 focus:opacity-100 group-hover/slot:opacity-100"
+      className="group relative block h-5 w-full opacity-0 transition-opacity duration-150 hover:opacity-100 focus:opacity-100 group-hover/insert:opacity-100"
     >
       <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 rounded-xl bg-brand-blue transition-[height] border border-transparent duration-150 delay-500 group-hover:bg-transparent group-hover:border-brand-blue group-hover:h-full group-focus:h-full" />
       <span className="absolute left-1/2 top-1/2 inline-flex -translate-y-1/2 -translate-x-1/2 items-center gap-1 whitespace-nowrap text-xs font-medium text-gray-500 opacity-0 transition-opacity group-hover:opacity-100 delay-500 group-focus:opacity-100">
@@ -552,6 +561,128 @@ function InsertionButton({
         {label}
       </span>
     </button>
+  );
+}
+
+function ScheduleGridCard({
+  item,
+  session,
+  speakers,
+  scheduleItems,
+  isUpdatingVisibility,
+  onToggleVisibility,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: {
+  item: ProgramScheduleItemRecord;
+  session: ProgramSession | null;
+  speakers: SpeakerWithSessions[];
+  scheduleItems: ProgramScheduleItemRecord[];
+  isUpdatingVisibility: boolean;
+  onToggleVisibility: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}) {
+  const neighbors = getScheduleNeighbors(item, scheduleItems, { sameRoomOnly: false });
+  const visibilityLocked = item.type === 'session' && !item.session_id;
+  const displayType = getDisplayScheduleType(item);
+  const startTime = item.start_time.slice(0, 5);
+  const endTime = minutesToTime(timeToMinutes(startTime) + item.duration_minutes);
+
+  return (
+    <div className="@container h-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="sticky top-40 grid gap-3 [grid-template-areas:'time''title''visibility''actions'] @xs:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @xs:[grid-template-areas:'time_title''visibility_visibility''actions_actions'] @sm:grid-cols-[120px_minmax(0,1fr)_auto] @sm:[grid-template-areas:'time_title_actions''visibility_visibility_visibility'] @lg:grid-cols-[120px_minmax(0,1fr)_130px_120px] @lg:[grid-template-areas:'time_title_visibility_actions'] @lg:items-center">
+        <div className="[grid-area:time] text-sm text-brand-gray-medium">
+          <p className="font-semibold text-gray-950">{startTime} - {endTime}</p>
+          <p>{formatScheduleDuration(item.duration_minutes)}{item.room ? ` · ${item.room}` : ''}</p>
+            {neighbors.overlaps.length > 0 ? (
+                <p className="mt-1 text-xxs font-medium text-brand-red">Overlaps {neighbors.overlaps.length} slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
+            ) : null}
+        </div>
+        <div className="[grid-area:title]">
+          <p className="font-medium text-gray-950">{session?.title ?? item.program_session?.title ?? item.title}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+            <TypeChip type={displayType} />
+            {session ? <span>· {getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}</span> : null}
+          </div>
+          {session?.kind === 'workshop' ? <WorkshopBuyableSignal sessionId={session.id} /> : null}
+        </div>
+        <div className="[grid-area:visibility] text-sm text-gray-600">
+          <ToggleButton
+            label={item.is_visible ? 'Public' : 'Hidden'}
+            checked={item.is_visible}
+            disabled={isUpdatingVisibility || visibilityLocked}
+            activeClassName="bg-green-500"
+            title={visibilityLocked
+              ? 'Select a session before making this slot public'
+              : item.is_visible
+                ? 'Visible publicly'
+                : 'Hidden from public schedule'}
+            onClick={onToggleVisibility}
+          />
+        </div>
+        <div className="[grid-area:actions] flex gap-2 @xs:justify-end @sm:justify-end @lg:justify-start">
+          <button onClick={onEdit} className="rounded-md p-2 h-fit hover:bg-brand-gray-lightest transition-colors duration-200" title="Edit slot"><Edit3 className="size-4" /></button>
+          <button onClick={onDuplicate} className="rounded-md p-2 h-fit hover:bg-brand-gray-lightest transition-colors duration-200" title="Duplicate slot"><Copy className="size-4" /></button>
+          <button onClick={onDelete} className="rounded-md p-2 h-fit hover:bg-brand-gray-lightest transition-colors duration-200" title="Delete slot"><Trash2 className="size-4" /></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getDisplayScheduleType(item: Pick<ProgramScheduleItemRecord, 'type' | 'session_id'>): ProgramScheduleItemRecord['type'] | 'placeholder' {
+  return item.type === 'session' && !item.session_id ? 'placeholder' : item.type;
+}
+
+function formatScheduleDuration(durationMinutes: number) {
+  if (durationMinutes < 60) return `${durationMinutes}m`;
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+}
+
+function parseDurationInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/^\d+$/.test(trimmed)) {
+    const minutes = Number.parseInt(trimmed, 10);
+    return Number.isFinite(minutes) && minutes > 0 ? minutes : null;
+  }
+
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+
+  const hours = Number.parseInt(match[1], 10);
+  const minutes = Number.parseInt(match[2], 10);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes < 0 || minutes >= 60) return null;
+
+  const totalMinutes = (hours * 60) + minutes;
+  return totalMinutes > 0 ? totalMinutes : null;
+}
+
+function TypeChip({ type }: { type: ProgramScheduleItemRecord['type'] | 'placeholder' }) {
+  const config = {
+    session: { icon: MicVocal, label: 'Session', className: 'border-blue-200 bg-blue-50 text-brand-blue' },
+    event: { icon: CalendarRange, label: 'Event', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+    break: { icon: Coffee, label: 'Break', className: 'border-amber-200 bg-amber-50 text-amber-700' },
+    placeholder: { icon: null, label: 'Placeholder', className: 'border-transparent bg-transparent text-gray-500' },
+  }[type];
+
+  if (!config.icon) {
+    return <span className="text-xs font-medium text-gray-500">{config.label}</span>;
+  }
+
+  const Icon = config.icon;
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-sm border px-1 py-0.5 text-xs font-medium ${config.className}`}>
+      <Icon className="size-3.5" />
+      {config.label}
+    </span>
   );
 }
 
@@ -571,33 +702,42 @@ function ProgramScheduleModal({
   const createMutation = useCreateScheduleItem();
   const updateMutation = useUpdateScheduleItem();
   const [error, setError] = useState('');
+  const initialType = item?.type ?? 'session';
+  const initialSessionId = item?.session_id ?? '';
+  const initialIsSessionPlaceholder = initialType === 'session' && !initialSessionId;
   const [form, setForm] = useState({
-    type: item?.type ?? 'session',
-    session_id: item?.session_id ?? '',
+    type: initialType,
+    session_id: initialSessionId,
     date: item?.date ?? draft?.date ?? '2026-09-11',
     start_time: item?.start_time?.slice(0, 5) ?? draft?.start_time ?? '09:00',
     duration_minutes: item?.duration_minutes?.toString() ?? '30',
     room: item?.room ?? draft?.room ?? '',
     title: item?.title ?? '',
     description: item?.description ?? '',
-    is_visible: item?.is_visible ?? false,
+    is_visible: initialIsSessionPlaceholder ? false : (item?.is_visible ?? false),
   });
 
   const selectedSession = sessions.find((session) => session.id === form.session_id);
-  const parsedDuration = Number.parseInt(form.duration_minutes, 10);
-  const derivedEndTime = form.start_time && Number.isFinite(parsedDuration)
+  const parsedDuration = parseDurationInput(form.duration_minutes);
+  const derivedEndTime = form.start_time && parsedDuration !== null
     ? minutesToTime(timeToMinutes(form.start_time) + parsedDuration)
     : null;
+  const isSessionPlaceholder = form.type === 'session' && !form.session_id;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
+    if (!parsedDuration) {
+      setError('Duration must be a positive number of minutes or use HH:MM');
+      return;
+    }
+    const resolvedDuration = parsedDuration;
     const payload: ProgramScheduleItemInput = {
       type: form.type as ProgramScheduleItemInput['type'],
       session_id: form.type === 'session' ? form.session_id || null : null,
       date: form.date,
       start_time: `${form.start_time}:00`,
-      duration_minutes: parseInt(form.duration_minutes, 10),
+      duration_minutes: resolvedDuration,
       room: form.room || null,
       title: form.type === 'session' ? (selectedSession?.title ?? (form.title || 'TBA')) : form.title,
       description: form.type === 'session' ? null : form.description || null,
@@ -630,7 +770,7 @@ function ProgramScheduleModal({
       )}
     >
         <form id="program-schedule-form" onSubmit={submit} className="grid gap-4">
-          {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+          {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-brand-red">{error}</div> : null}
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <label className="grid gap-1 text-sm font-medium text-gray-800">
@@ -642,9 +782,14 @@ function ProgramScheduleModal({
               <input type="time" value={form.start_time} onChange={(event) => setForm({ ...form, start_time: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
-              Duration
-              <span className="text-xs font-normal text-gray-500">End time {derivedEndTime ?? '--:--'}</span>
-              <input type="number" min="1" value={form.duration_minutes} onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+                <span>Duration <span className="text-xs font-normal text-gray-500">(End time {derivedEndTime ?? '--:--'})</span></span>
+              <input
+                type="text"
+                value={form.duration_minutes}
+                onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })}
+                placeholder="30 or 1:30"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Room
@@ -655,7 +800,19 @@ function ProgramScheduleModal({
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Type
-              <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as ProgramScheduleItemInput['type'] })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+              <select
+                value={form.type}
+                onChange={(event) => {
+                  const nextType = event.target.value as ProgramScheduleItemInput['type'];
+                  setForm({
+                    ...form,
+                    type: nextType,
+                    session_id: nextType === 'session' ? form.session_id : '',
+                    is_visible: nextType === 'session' ? false : form.is_visible,
+                  });
+                }}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              >
                 <option value="session">Session</option>
                 <option value="event">Event</option>
                 <option value="break">Break</option>
@@ -673,21 +830,29 @@ function ProgramScheduleModal({
                       session_id: event.target.value,
                       duration_minutes: inferScheduleDurationForSession(session).toString(),
                       title: session?.title ?? form.title,
+                      is_visible: event.target.value ? form.is_visible : false,
                     });
                   }}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
                 >
-                  <option value="">Choose session</option>
+                  <option value="">Keep as planning slot</option>
                   {sessions.map((session) => <option key={session.id} value={session.id}>{session.title}</option>)}
                 </select>
               </label>
             ) : null}
           </div>
 
-          {form.type !== 'session' ? (
+          {form.type !== 'session' || isSessionPlaceholder ? (
             <>
-              <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Title" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
-              <textarea rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+              <input
+                value={form.title}
+                onChange={(event) => setForm({ ...form, title: event.target.value })}
+                placeholder={isSessionPlaceholder ? 'Planning title, e.g. Lightning slot' : 'Title'}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              />
+              {form.type !== 'session' ? (
+                <textarea rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+              ) : null}
             </>
           ) : null}
           <div className="flex w-fit items-center gap-3 rounded-md border border-gray-200 px-3 py-2">
@@ -695,10 +860,17 @@ function ProgramScheduleModal({
             <ToggleButton
               label={form.is_visible ? 'Public' : 'Hidden'}
               checked={form.is_visible}
-              disabled={false}
+              disabled={isSessionPlaceholder}
               activeClassName="bg-green-500"
-              title={form.is_visible ? 'Visible publicly' : 'Hidden from public schedule'}
-              onClick={() => setForm({ ...form, is_visible: !form.is_visible })}
+              title={isSessionPlaceholder
+                ? 'Select a session before making this slot public'
+                : form.is_visible
+                  ? 'Visible publicly'
+                  : 'Hidden from public schedule'}
+              onClick={() => {
+                if (isSessionPlaceholder) return;
+                setForm({ ...form, is_visible: !form.is_visible });
+              }}
             />
           </div>
         </form>
@@ -713,24 +885,45 @@ function SchedulePreviewModal({
   group: { date: string; label: string; items: ProgramScheduleItemRecord[] };
   onClose: () => void;
 }) {
+  const layout = groupOverlappingScheduleItems(group.items);
+
   return (
     <AdminModal
       title={`Schedule preview for ${group.label}`}
-      maxWidth="3xl"
+      maxWidth="4xl"
       showHeader={false}
       onClose={onClose}
       footer={<button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Close</button>}
     >
-      <div className="space-y-3">
-        {group.items.map((item) => {
-          const endTime = minutesToTime(timeToMinutes(item.start_time.slice(0, 5)) + item.duration_minutes);
+      <div
+        className="grid gap-2"
+        style={{
+          gridTemplateColumns: `repeat(${layout.totalColumns}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${layout.rows.length}, minmax(0, auto))`,
+        }}
+      >
+        {layout.layout.map((entry) => {
+          const item = entry.item;
+          const displayType = getDisplayScheduleType(item);
+          const startTime = item.start_time.slice(0, 5);
+          const endTime = minutesToTime(timeToMinutes(startTime) + item.duration_minutes);
+
           return (
-            <div key={item.id} className="grid gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 md:grid-cols-[180px_120px_1fr] md:items-center">
-              <div className="font-medium text-gray-950">
-                {item.start_time.slice(0, 5)} - {endTime} ({item.duration_minutes}m)
+            <div
+              key={item.id}
+              style={{
+                gridColumn: `${entry.colStart} / span ${entry.colSpan}`,
+                gridRow: `${entry.rowStart} / span ${entry.rowSpan}`,
+              }}
+              className="flex h-full min-h-0 flex-col"
+            >
+              <div className="flex-1 flex flex-wrap gap-4 items-center rounded-lg border border-gray-200 bg-white p-2 text-sm text-brand-gray-medium">
+                <div className="font-medium text-gray-950">
+                  {startTime} - {endTime} ({formatScheduleDuration(item.duration_minutes)})
+                </div>
+                <TypeChip type={displayType} />
+                <div className="font-medium text-gray-950">{item.program_session?.title ?? item.title}</div>
               </div>
-              <div className="capitalize text-gray-600">{item.type}</div>
-              <div className="font-medium text-gray-950">{item.program_session?.title ?? item.title}</div>
             </div>
           );
         })}
@@ -855,8 +1048,8 @@ export function ProgramSpeakersTab({
                 )) : <p className="text-sm text-gray-500">No program sessions assigned.</p>}
               </div>
               <div className="mt-4 flex gap-2">
-                <button onClick={() => setModal({ mode: 'create', speakerId: speaker.id })} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Add session</button>
-                <button onClick={() => onEditSpeaker(speaker)} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit profile</button>
+                <button onClick={() => setModal({ mode: 'create', speakerId: speaker.id })} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Add session</button>
+                <button onClick={() => onEditSpeaker(speaker)} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Edit profile</button>
               </div>
             </div>
           );
@@ -918,7 +1111,7 @@ function ToggleButton({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
           checked ? activeClassName : 'bg-gray-300'
         }`}
         title={title}
@@ -935,10 +1128,10 @@ function ToggleButton({
 
 function Pill({ children, tone }: { children: ReactNode; tone: 'red' | 'green' | 'amber' | 'blue' }) {
   const classes = {
-    red: 'bg-red-50 text-red-700 ring-red-200',
+    red: 'bg-red-50 text-brand-red ring-red-200',
     green: 'bg-green-50 text-green-700 ring-green-200',
     amber: 'bg-amber-50 text-amber-700 ring-amber-200',
-    blue: 'bg-blue-50 text-blue-700 ring-blue-200',
+    blue: 'bg-blue-50 text-brand-blue ring-blue-200',
   }[tone];
 
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${classes}`}>{children}</span>;

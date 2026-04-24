@@ -298,6 +298,10 @@ export function buildPublicProgramScheduleItems(rows: ProgramScheduleItemRecord[
 }
 
 export async function createProgramScheduleItem(input: ProgramScheduleItemInput) {
+  if (input.type === 'session' && !input.session_id && input.is_visible) {
+    return { item: null, error: 'Session placeholders cannot be publicly visible until a session is selected' };
+  }
+
   const supabase = createProgramServiceClient();
   const { data, error } = await supabase
     .from('program_schedule_items')
@@ -311,7 +315,7 @@ export async function createProgramScheduleItem(input: ProgramScheduleItemInput)
       description: input.description ?? null,
       session_id: input.session_id ?? null,
       submission_id: input.submission_id ?? (await resolveScheduleSubmissionId(input)),
-      is_visible: input.is_visible ?? true,
+      is_visible: input.is_visible ?? false,
     })
     .select('*')
     .single();
@@ -358,6 +362,15 @@ export async function updateProgramScheduleItem(id: string, input: Partial<Progr
       : input.session_id !== undefined
         ? await getSubmissionIdForSession(input.session_id)
         : existingItem.submission_id ?? null;
+  const resolvedType =
+    input.type !== undefined ? input.type : existingItem.type;
+  const resolvedVisibility =
+    input.is_visible !== undefined ? input.is_visible : existingItem.is_visible;
+
+  if (resolvedType === 'session' && !resolvedSessionId && resolvedVisibility) {
+    return { item: null, error: 'Session placeholders cannot be publicly visible until a session is selected' };
+  }
+
   const updates: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
