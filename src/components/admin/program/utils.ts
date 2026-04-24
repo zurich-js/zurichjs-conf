@@ -17,14 +17,25 @@ export interface ProgramScheduleNeighborResult {
   overlaps: ProgramScheduleItemRecord[];
 }
 
+interface ScheduleNeighborOptions {
+  sameRoomOnly?: boolean;
+}
+
 export interface ProgramScheduleOverlapLayoutItem {
   item: ProgramScheduleItemRecord;
-  index: number;
-  total: number;
+  rowStart: number;
+  rowSpan: number;
+  colStart: number;
+  colSpan: number;
 }
 
 export interface ProgramScheduleDisplayGroup {
-  items: ProgramScheduleItemRecord[];
+  totalColumns: number;
+  rows: Array<{
+    start_time: string;
+    itemsStarting: ProgramScheduleItemRecord[];
+  }>;
+  start_time: string;
   layout: ProgramScheduleOverlapLayoutItem[];
 }
 
@@ -188,21 +199,32 @@ export function inferScheduleDurationForSession(session: ProgramSession | null |
   return 30;
 }
 
-export function scheduleItemsOverlap(left: ProgramScheduleItemRecord, right: ProgramScheduleItemRecord) {
-  if (left.id === right.id || left.date !== right.date || left.room !== right.room) return false;
+export function scheduleItemsOverlap(
+  left: ProgramScheduleItemRecord,
+  right: ProgramScheduleItemRecord,
+  options: ScheduleNeighborOptions = {}
+) {
+  const { sameRoomOnly = true } = options;
+  if (left.id === right.id || left.date !== right.date) return false;
+  if (sameRoomOnly && left.room !== right.room) return false;
   const leftRange = getScheduleRange(left);
   const rightRange = getScheduleRange(right);
   return leftRange.start < rightRange.end && rightRange.start < leftRange.end;
 }
 
-export function getScheduleNeighbors(item: ProgramScheduleItemRecord, items: ProgramScheduleItemRecord[]): ProgramScheduleNeighborResult {
+export function getScheduleNeighbors(
+  item: ProgramScheduleItemRecord,
+  items: ProgramScheduleItemRecord[],
+  options: ScheduleNeighborOptions = {}
+): ProgramScheduleNeighborResult {
+  const { sameRoomOnly = true } = options;
   const sameTrack = sortScheduleItems(items).filter((candidate) =>
     candidate.id !== item.id &&
     candidate.date === item.date &&
-    candidate.room === item.room
+    (!sameRoomOnly || candidate.room === item.room)
   );
   const itemRange = getScheduleRange(item);
-  const overlaps = sameTrack.filter((candidate) => scheduleItemsOverlap(item, candidate));
+  const overlaps = sameTrack.filter((candidate) => scheduleItemsOverlap(item, candidate, { sameRoomOnly }));
   const previous = sameTrack
     .filter((candidate) => getScheduleRange(candidate).end <= itemRange.start)
     .at(-1) ?? null;
@@ -269,58 +291,131 @@ export function getInsertionDraftBefore(
 
 export function groupOverlappingScheduleItems(items: ProgramScheduleItemRecord[]) {
   const sorted = sortScheduleItems(items);
-  const groupsById = new Map<string, ProgramScheduleDisplayGroup>();
-  const orderedGroupIds: Array<{ id: string; sortValue: string }> = [];
+  const distinctStartTimes = Array.from(new Set(sorted.map((item) => item.start_time))).sort((left, right) => left.localeCompare(right));
+  const rowIndexByStartTime = new Map(distinctStartTimes.map((startTime, index) => [startTime, index]));
+  const rows = distinctStartTimes.map((start_time) => ({
+    start_time,
+    itemsStarting: sorted.filter((item) => item.start_time === start_time),
+  }));
 
-  const trackMap = new Map<string, ProgramScheduleItemRecord[]>();
-  for (const item of sorted) {
-    const key = `${item.date}::${item.room ?? ''}`;
-    const trackItems = trackMap.get(key) ?? [];
-    trackItems.push(item);
-    trackMap.set(key, trackItems);
-  }
+  const itemMeta = sorted.map((item) => {
+    const rowStart = rowIndexByStartTime.get(item.start_time) ?? 0;
+    const range = getScheduleRange(item);
+    const activeRowIndexes = distinctStartTimes.reduce<number[]>((acc, startTime, index) => {
+      const startMinutes = timeToMinutes(startTime);
+      if (range.start <= startMinutes && startMinutes < range.end) {
+        acc.push(index);
+      }
+      return acc;
+    }, []);
 
-  for (const trackItems of trackMap.values()) {
-    let currentGroup: ProgramScheduleItemRecord[] = [];
-
-    const flushGroup = () => {
-      if (currentGroup.length === 0) return;
-      const groupId = currentGroup.map((item) => item.id).join(':');
-      groupsById.set(groupId, {
-        items: currentGroup,
-        layout: currentGroup.map((entry, index) => ({
-          item: entry,
-          index,
-          total: currentGroup.length,
-        })),
-      });
-      orderedGroupIds.push({
-        id: groupId,
-        sortValue: getScheduleSortValue(currentGroup[0]),
-      });
-      currentGroup = [];
+    return {
+      item,
+      rowStart,
+      rowSpan: activeRowIndexes.length || 1,
+      rowEndExclusive: (activeRowIndexes.at(-1) ?? rowStart) + 1,
     };
+  });
 
-    for (const item of trackItems) {
-      if (currentGroup.length === 0) {
-        currentGroup = [item];
-        continue;
-      }
+  const maxConcurrent = distinctStartTimes.reduce((max, startTime) => {
+    const startMinutes = timeToMinutes(startTime);
+    const activeCount = sorted.filter((item) => {
+      const range = getScheduleRange(item);
+      return range.start <= startMinutes && startMinutes < range.end;
+    }).length;
+    return Math.max(max, activeCount);
+  }, 1);
+  const totalColumns = Math.max(3, maxConcurrent);
 
-      if (currentGroup.some((candidate) => scheduleItemsOverlap(candidate, item))) {
-        currentGroup.push(item);
-        continue;
-      }
+  const multiRowMeta = itemMeta
+    .filter((meta) => meta.rowSpan > 1)
+    .sort((left, right) => {
+      if (left.rowStart !== right.rowStart) return left.rowStart - right.rowStart;
+      return right.rowSpan - left.rowSpan;
+    });
 
-      flushGroup();
-      currentGroup = [item];
+  const occupiedUntil = Array<number>(totalColumns).fill(0);
+  const columnById = new Map<string, number>();
+
+  for (const meta of multiRowMeta) {
+    let assignedColumn = 0;
+    while (assignedColumn < totalColumns && occupiedUntil[assignedColumn] > meta.rowStart) {
+      assignedColumn += 1;
     }
 
-    flushGroup();
+    if (assignedColumn >= totalColumns) {
+      assignedColumn = totalColumns - 1;
+    }
+
+    occupiedUntil[assignedColumn] = meta.rowEndExclusive;
+    columnById.set(meta.item.id, assignedColumn + 1);
   }
 
-  return orderedGroupIds
-    .sort((left, right) => left.sortValue.localeCompare(right.sortValue))
-    .map(({ id }) => groupsById.get(id))
-    .filter((group): group is ProgramScheduleDisplayGroup => Boolean(group));
+  const layout: ProgramScheduleOverlapLayoutItem[] = [];
+
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const rowItems = itemMeta.filter((meta) => meta.rowStart === rowIndex);
+    const activeMultiColumns = new Set<number>(
+      itemMeta
+        .filter((meta) => meta.rowSpan > 1 && meta.rowStart <= rowIndex && rowIndex < meta.rowEndExclusive)
+        .map((meta) => columnById.get(meta.item.id))
+        .filter((column): column is number => Boolean(column))
+    );
+
+    const singleRowItems = rowItems.filter((meta) => meta.rowSpan === 1);
+    const multiRowStartingItems = rowItems.filter((meta) => meta.rowSpan > 1);
+
+    for (const meta of multiRowStartingItems) {
+      layout.push({
+        item: meta.item,
+        rowStart: meta.rowStart + 1,
+        rowSpan: meta.rowSpan,
+        colStart: columnById.get(meta.item.id) ?? 1,
+        colSpan: 1,
+      });
+    }
+
+    if (singleRowItems.length === 0) {
+      continue;
+    }
+
+    const occupiedColumns = new Set<number>(activeMultiColumns);
+    const freeColumns = Array.from({ length: totalColumns }, (_, index) => index + 1).filter((column) => !occupiedColumns.has(column));
+
+    if (occupiedColumns.size === 0 && singleRowItems.length === 1) {
+      layout.push({
+        item: singleRowItems[0].item,
+        rowStart: rowIndex + 1,
+        rowSpan: 1,
+        colStart: 1,
+        colSpan: totalColumns,
+      });
+      continue;
+    }
+
+    let nextColumn = freeColumns[0] ?? 1;
+
+    singleRowItems.forEach((meta, index) => {
+      const remainingItems = singleRowItems.length - index;
+      const remainingColumns = totalColumns - nextColumn + 1;
+      const colSpan = Math.max(1, Math.floor(remainingColumns / remainingItems));
+
+      layout.push({
+        item: meta.item,
+        rowStart: rowIndex + 1,
+        rowSpan: 1,
+        colStart: nextColumn,
+        colSpan: index === singleRowItems.length - 1 ? remainingColumns : colSpan,
+      });
+
+      nextColumn += index === singleRowItems.length - 1 ? remainingColumns : colSpan;
+    });
+  }
+
+  return {
+    totalColumns,
+    rows,
+    start_time: rows[0]?.start_time ?? '09:00',
+    layout,
+  };
 }

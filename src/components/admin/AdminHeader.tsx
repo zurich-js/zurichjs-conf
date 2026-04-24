@@ -7,6 +7,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, type LucideIcon } from 'lucide-react';
+import {Button} from '@/components/atoms';
 
 interface AdminHeaderProps {
   title: string;
@@ -76,7 +77,6 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
           <div className="hidden md:flex items-center space-x-3">
             {navLinks.map((link) => {
               const isActive = currentPath === link.href;
-              const Icon = link.icon;
               return (
                 <Link
                   key={link.href}
@@ -87,18 +87,19 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
                       : 'border-gray-300 text-black bg-white hover:bg-gray-50'
                   } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary`}
                 >
-                  <Icon className="w-4 h-4 mr-2" />
                   <span>{link.label}</span>
                 </Link>
               );
             })}
-            <button
+            <Button
+                variant="ghost"
+                forceDark
+                size="xs"
               onClick={onLogout}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-black bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all cursor-pointer"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              <span>Logout</span>
-            </button>
+              <LogOut className="w-4 h-4" />
+              <span>Log out</span>
+            </Button>
           </div>
         </div>
 

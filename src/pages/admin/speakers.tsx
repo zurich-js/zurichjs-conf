@@ -135,7 +135,6 @@ export default function ProgramAdminPage() {
       <div className="min-h-screen bg-gray-50">
         <AdminHeader
           title="Program Admin"
-          subtitle="Manage sessions, schedule placement, speakers, and workshop availability"
           onLogout={logout}
         />
 

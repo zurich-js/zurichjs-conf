@@ -155,6 +155,16 @@ it('detects schedule overlaps and nearby neighbors in the same room', () => {
   expect(neighbors.overlaps.map((item) => item.id)).toEqual(['overlap']);
 });
 
+it('can detect overlaps across rooms for admin layout diagnostics', () => {
+  const current = { ...scheduleItem, id: 'current', start_time: '10:00:00', duration_minutes: 30, room: 'Main' };
+  const otherRoomOverlap = { ...scheduleItem, id: 'other-room-overlap', room: 'Side', start_time: '10:15:00', duration_minutes: 30 };
+
+  expect(scheduleItemsOverlap(current, otherRoomOverlap, { sameRoomOnly: false })).toBe(true);
+
+  const neighbors = getScheduleNeighbors(current, [current, otherRoomOverlap], { sameRoomOnly: false });
+  expect(neighbors.overlaps.map((item) => item.id)).toEqual(['other-room-overlap']);
+});
+
 it('infers schedule durations from session shape', () => {
   expect(inferScheduleDurationForSession(makeSession({ kind: 'workshop', workshop_duration_minutes: 180 }))).toBe(180);
   expect(inferScheduleDurationForSession(makeSession({ metadata: { legacy_submission_type: 'lightning' } }))).toBe(15);
@@ -206,16 +216,20 @@ it('creates insertion drafts before first slot with 9am floor unless the slot is
 });
 
 it('groups overlapping schedule items for split layout rendering', () => {
-  const overlapLeft = { ...scheduleItem, id: 'left', start_time: '10:00:00', duration_minutes: 30 };
-  const overlapRight = { ...scheduleItem, id: 'right', start_time: '10:15:00', duration_minutes: 30 };
+  const overlapLeft = { ...scheduleItem, id: 'left', start_time: '10:00:00', duration_minutes: 60 };
+  const overlapRight = { ...scheduleItem, id: 'right', room: 'Side', start_time: '10:15:00', duration_minutes: 30 };
   const adjacent = { ...scheduleItem, id: 'adjacent', start_time: '10:45:00', duration_minutes: 15 };
-  const otherRoom = { ...scheduleItem, id: 'other-room', room: 'Side', start_time: '10:10:00', duration_minutes: 20 };
 
-  const groups = groupOverlappingScheduleItems([adjacent, otherRoom, overlapRight, overlapLeft]);
+  const layout = groupOverlappingScheduleItems([adjacent, overlapRight, overlapLeft]);
 
-  expect(groups).toHaveLength(3);
-  expect(groups[0].items.map((item) => item.id)).toEqual(['left', 'right']);
-  expect(groups[0].layout.map((entry) => entry.total)).toEqual([2, 2]);
-  expect(groups[1].items.map((item) => item.id)).toEqual(['other-room']);
-  expect(groups[2].items.map((item) => item.id)).toEqual(['adjacent']);
+  expect(layout.totalColumns).toBe(3);
+  expect(layout.rows.map((row) => row.start_time)).toEqual(['10:00:00', '10:15:00', '10:45:00']);
+
+  const leftCard = layout.layout.find((entry) => entry.item.id === 'left');
+  const rightCard = layout.layout.find((entry) => entry.item.id === 'right');
+  const adjacentCard = layout.layout.find((entry) => entry.item.id === 'adjacent');
+
+  expect(leftCard).toMatchObject({ rowStart: 1, rowSpan: 3, colStart: 1, colSpan: 1 });
+  expect(rightCard).toMatchObject({ rowStart: 2, rowSpan: 1, colStart: 2, colSpan: 2 });
+  expect(adjacentCard).toMatchObject({ rowStart: 3, rowSpan: 1, colStart: 2, colSpan: 2 });
 });
