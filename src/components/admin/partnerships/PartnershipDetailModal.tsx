@@ -142,7 +142,7 @@ export function PartnershipDetailModal({
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 shrink-0">
+        <div className="border-b border-brand-gray-lightest shrink-0">
           <nav className="flex -mb-px overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
@@ -264,7 +264,7 @@ function OverviewTab({
         onUpdate={onUpdate}
       />
 
-      <hr className="border-gray-200" />
+      <hr className="border-brand-gray-lightest" />
 
       <div className="flex justify-between items-center">
         <h4 className="text-sm font-medium text-black">Details</h4>
@@ -286,7 +286,7 @@ function OverviewTab({
                   company_website: partnership.company_website || '',
                 });
               }}
-              className="text-sm text-gray-600 hover:text-gray-800 cursor-pointer"
+              className="text-sm text-brand-gray-dark hover:text-gray-800 cursor-pointer"
             >
               Cancel
             </button>
@@ -382,7 +382,7 @@ function OverviewTab({
                   </a>
                 </dd>
               ) : (
-                <dd className="text-sm text-gray-400">Not set</dd>
+                <dd className="text-sm text-brand-gray-medium">Not set</dd>
               )}
             </div>
           </dl>
@@ -399,21 +399,21 @@ function OverviewTab({
 
       {/* Visibility Info */}
       {(partnership.type === 'community' || partnership.type === 'company') && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+        <div className="bg-gray-50 border border-brand-gray-lightest rounded-lg p-4 space-y-3">
           <h4 className="text-sm font-medium text-gray-700">Homepage Display Requirements</h4>
           <ul className="space-y-2">
             <li className="flex items-center gap-2 text-sm">
-              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.company_logo_url ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.company_logo_url ? 'bg-green-100 text-green-600' : 'bgbrand-gray-lightest text-brand-gray-medium'}`}>
                 {partnership.company_logo_url ? '✓' : '○'}
               </span>
               <span className={partnership.company_logo_url ? 'text-gray-700' : 'text-brand-gray-medium'}>Logo uploaded</span>
             </li>
             <li className="flex items-center gap-2 text-sm">
-              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
+              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.status === 'active' ? 'bg-green-100 text-green-600' : 'bgbrand-gray-lightest text-brand-gray-medium'}`}>
                 {partnership.status === 'active' ? '✓' : '○'}
               </span>
               <span className={partnership.status === 'active' ? 'text-gray-700' : 'text-brand-gray-medium'}>
-                Status is &quot;Active&quot; {partnership.status !== 'active' && <span className="text-gray-400">(currently: {partnership.status})</span>}
+                Status is &quot;Active&quot; {partnership.status !== 'active' && <span className="text-brand-gray-medium">(currently: {partnership.status})</span>}
               </span>
             </li>
           </ul>
@@ -449,7 +449,7 @@ function TrackingTab({
       <div>
         <h4 className="text-sm font-medium text-black mb-3">Tracking URL</h4>
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex-1 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 font-mono text-xs sm:text-sm break-all">
+          <div className="flex-1 bg-gray-50 px-3 py-2 rounded-lg border border-brand-gray-lightest font-mono text-xs sm:text-sm break-all">
             {trackingUrl}
           </div>
           <button
@@ -473,7 +473,7 @@ function TrackingTab({
 
       <div>
         <h4 className="text-sm font-medium text-black mb-3">UTM Parameters</h4>
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="bg-gray-50 rounded-lg p-4 border border-brand-gray-lightest">
           <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <dt className="text-xs text-black/60 flex items-center gap-1">

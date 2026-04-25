@@ -11,7 +11,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
   return (
     <Link
       href={`/blog/${slug}`}
-      className="group block py-5 border-b border-gray-200"
+      className="group block py-5 border-b border-brand-gray-lightest"
     >
       <h2 className="text-sm font-bold text-gray-700">
         {frontmatter.title}

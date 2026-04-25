@@ -218,7 +218,7 @@ export function SubmissionModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+        <div className="p-4 sm:p-6 border-b border-brand-gray-lightest bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
           {onBack && (
             <button
               type="button"
@@ -282,7 +282,7 @@ export function SubmissionModal({
           </div>
 
           {/* Submission Info */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-bold text-black uppercase tracking-wide">Talk Information</h4>
               {!isEditMode && (
@@ -327,7 +327,7 @@ export function SubmissionModal({
                 )}
                 {/* Workshop details in view mode */}
                 {submission.submission_type === 'workshop' && (
-                  <div className="pt-3 border-t border-gray-200 mt-3">
+                  <div className="pt-3 border-t border-brand-gray-lightest mt-3">
                     <p className="text-xs font-bold text-black uppercase tracking-wide mb-2">Workshop Details</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {submission.workshop_duration_hours && (
@@ -373,7 +373,7 @@ export function SubmissionModal({
           <SpeakerInfoSection speaker={submission.speaker} />
 
           {/* Review Stats */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
             <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Review Statistics</h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
@@ -427,7 +427,7 @@ export function SubmissionModal({
           />
 
           {/* Internal pipeline status (collapsed by default to reduce accidental clicks) */}
-          <details className="group rounded-xl border border-gray-200 bg-white">
+          <details className="group rounded-xl border border-brand-gray-lightest bg-white">
             <summary className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-black hover:bg-gray-50">
               <span className="flex items-center gap-2 font-medium">
                 <Settings className="h-4 w-4 text-brand-gray-medium" />
@@ -435,7 +435,7 @@ export function SubmissionModal({
               </span>
               <span className="text-xs text-brand-gray-medium">Speaker is <strong>not</strong> notified · click to expand</span>
             </summary>
-            <div className="border-t border-gray-200 p-4">
+            <div className="border-t border-brand-gray-lightest p-4">
               <StatusActionsSection
                 currentStatus={submission.status}
                 onUpdateStatus={onUpdateStatus}

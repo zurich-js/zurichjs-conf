@@ -97,7 +97,7 @@ export function DecisionModal({
         {/* Submission Info */}
         <div className="p-4 bg-gray-50 rounded-lg">
           <h4 className="font-medium text-black">{submission.title}</h4>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-brand-gray-dark mt-1">
             by {submission.speaker ? `${submission.speaker.first_name} ${submission.speaker.last_name}` : 'Unknown Speaker'}
           </p>
           <div className="flex gap-2 mt-2">
@@ -105,7 +105,7 @@ export function DecisionModal({
               {submission.submission_type}
             </span>
             {submission.stats?.avg_overall && (
-              <span className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">
+              <span className="px-2 py-0.5 bgbrand-gray-lightest text-gray-700 text-xs rounded-full">
                 Score: {submission.stats.avg_overall.toFixed(2)}
               </span>
             )}
@@ -124,7 +124,7 @@ export function DecisionModal({
               className={`flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all cursor-pointer ${
                 decision === 'accepted'
                   ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                  : 'border-brand-gray-lightest hover:border-green-300 hover:bg-green-50'
               }`}
             >
               <Check className="w-5 h-5" />
@@ -136,7 +136,7 @@ export function DecisionModal({
               className={`flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all cursor-pointer ${
                 decision === 'rejected'
                   ? 'border-red-500 bg-red-50 text-red-800'
-                  : 'border-gray-200 hover:border-red-300 hover:bg-red-50'
+                  : 'border-brand-gray-lightest hover:border-red-300 hover:bg-red-50'
               }`}
             >
               <X className="w-5 h-5" />
@@ -177,7 +177,7 @@ export function DecisionModal({
         {/* Loading overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg">
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-brand-gray-dark">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span>Processing decision...</span>
             </div>
@@ -220,7 +220,7 @@ export function DecisionBadge({
   }
 
   return (
-    <span className={`${baseClasses} inline-flex items-center rounded-full bg-text-brand-gray-lightest text-gray-600 font-medium`}>
+    <span className={`${baseClasses} inline-flex items-center rounded-full bg-text-brand-gray-lightest text-brand-gray-dark font-medium`}>
       Undecided
     </span>
   );

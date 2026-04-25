@@ -146,13 +146,13 @@ export function AddPartnershipModal({
                     className={`flex flex-col p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
                       formData.type === type.value
                         ? 'border-brand-primary bg-brand-primary/10'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-brand-gray-lightest hover:border-gray-300'
                     }`}
                   >
                     <div className="flex items-center">
                       <type.icon
                         className={`h-4 w-4 mr-2 shrink-0 ${
-                          formData.type === type.value ? 'text-black' : 'text-gray-600'
+                          formData.type === type.value ? 'text-black' : 'text-brand-gray-dark'
                         }`}
                       />
                       <span className={`font-medium text-sm ${
@@ -177,7 +177,7 @@ export function AddPartnershipModal({
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
                 placeholder="e.g., React Zurich Meetup"
-                className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
+                className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -202,7 +202,7 @@ export function AddPartnershipModal({
                   value={formData.contact_name}
                   onChange={(e) => handleChange('contact_name', e.target.value)}
                   placeholder="John Doe"
-                  className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
+                  className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
                     errors.contact_name ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -223,7 +223,7 @@ export function AddPartnershipModal({
                   value={formData.contact_email}
                   onChange={(e) => handleChange('contact_email', e.target.value)}
                   placeholder="john@example.com"
-                  className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
+                  className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
                     errors.contact_email ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -238,14 +238,14 @@ export function AddPartnershipModal({
               <div>
                 <label className="block text-sm font-medium text-black mb-1">
                   Contact Phone
-                  <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                  <span className="text-brand-gray-medium font-normal ml-1">(optional)</span>
                 </label>
                 <input
                   type="tel"
                   value={formData.contact_phone}
                   onChange={(e) => handleChange('contact_phone', e.target.value)}
                   placeholder="+41 79 123 4567"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base"
                 />
               </div>
             </div>
@@ -259,27 +259,27 @@ export function AddPartnershipModal({
                   <div>
                     <label className="block text-sm font-medium text-black mb-1">
                       Company Name
-                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                      <span className="text-brand-gray-medium font-normal ml-1">(optional)</span>
                     </label>
                     <input
                       type="text"
                       value={formData.company_name}
                       onChange={(e) => handleChange('company_name', e.target.value)}
                       placeholder="Acme Inc."
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-black mb-1">
                       Company Website
-                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                      <span className="text-brand-gray-medium font-normal ml-1">(optional)</span>
                     </label>
                     <input
                       type="url"
                       value={formData.company_website}
                       onChange={(e) => handleChange('company_website', e.target.value)}
                       placeholder="https://example.com"
-                      className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
+                      className={`w-full px-3 py-2.5 border rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base ${
                         errors.company_website ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
@@ -297,14 +297,14 @@ export function AddPartnershipModal({
             <div className="pt-2 border-t border-text-brand-gray-lightest">
               <label className="block text-sm font-medium text-black mb-1">
                 Notes
-                <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                <span className="text-brand-gray-medium font-normal ml-1">(optional)</span>
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
                 placeholder="Agreement details, special arrangements, follow-up tasks..."
                 rows={3}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base resize-none"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base resize-none"
               />
               <p className="text-xs text-brand-gray-medium mt-1">Internal notes about this partnership</p>
             </div>
@@ -312,7 +312,7 @@ export function AddPartnershipModal({
         </div>
 
         {/* Footer - sticky at bottom */}
-        <div className="shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-3 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end safe-area-pb">
+        <div className="shrink-0 border-t border-brand-gray-lightest bg-gray-50 px-4 py-3 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end safe-area-pb">
           <button
             type="button"
             onClick={onClose}

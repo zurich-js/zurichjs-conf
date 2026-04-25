@@ -19,10 +19,10 @@ export function TagsSection({ topTags }: TagsSectionProps) {
   return (
     <section>
       <div className="flex items-center gap-2 mb-4">
-        <Tag className="w-5 h-5 text-gray-600" />
+        <Tag className="w-5 h-5 text-brand-gray-dark" />
         <h3 className="text-lg font-semibold text-black">Popular Topics</h3>
         <Tooltip content="Most frequently tagged topics across all submissions — larger tags have more submissions.">
-          <Info className="w-4 h-4 text-gray-400 cursor-help" />
+          <Info className="w-4 h-4 text-brand-gray-medium cursor-help" />
         </Tooltip>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -31,7 +31,7 @@ export function TagsSection({ topTags }: TagsSectionProps) {
           return (
             <span
               key={name}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-gray-lightest px-3 py-1.5 text-sm"
               style={{
                 backgroundColor: `rgba(241, 226, 113, ${intensity})`,
               }}

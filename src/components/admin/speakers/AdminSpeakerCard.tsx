@@ -38,7 +38,7 @@ function SessionItem({ session }: { session: Session }) {
       <p className="text-sm font-medium text-black truncate">{session.title}</p>
       <div className="flex items-center gap-2 mt-1">
         <SessionTypeBadge type={session.submission_type} />
-        <span className="text-xs text-gray-400">Manage placement from schedule</span>
+        <span className="text-xs text-brand-gray-medium">Manage placement from schedule</span>
       </div>
     </div>
   );
@@ -109,8 +109,8 @@ export function AdminSpeakerCard({
                 className="w-16 h-16 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <div className="w-16 h-16 shrink-0 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 shrink-0 rounded-full bgbrand-gray-lightest flex items-center justify-center">
+                <User className="w-8 h-8 text-brand-gray-medium" />
               </div>
             )}
             <div className="min-w-0">
@@ -121,7 +121,7 @@ export function AdminSpeakerCard({
                 <p className="text-sm text-brand-gray-medium truncate">{speaker.job_title}</p>
               )}
               {speaker.company && (
-                <p className="text-sm text-gray-400 truncate">{speaker.company}</p>
+                <p className="text-sm text-brand-gray-medium truncate">{speaker.company}</p>
               )}
               {speaker.speaker_role === 'mc' ? (
                 <span className="mt-2 inline-flex rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
@@ -181,7 +181,7 @@ export function AdminSpeakerCard({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-400 italic">No accepted sessions</p>
+          <p className="text-sm text-brand-gray-medium italic">No accepted sessions</p>
         )}
       </div>
 
@@ -189,7 +189,7 @@ export function AdminSpeakerCard({
       <div className="px-4 py-3 border-t-2 border-brand-gray-lightest flex items-center justify-between">
         <a
           href={`mailto:${speaker.email}`}
-          className="text-sm text-gray-600 hover:text-black transition-colors"
+          className="text-sm text-brand-gray-dark hover:text-black transition-colors"
         >
           {speaker.email}
         </a>

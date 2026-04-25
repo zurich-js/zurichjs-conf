@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarRange, Coffee, Copy, Edit3, Eye, MicVocal, Plus, Trash2, Users } from 'lucide-react';
+import { createColumnHelper, type ColumnDef, type SortingState, type Updater } from '@tanstack/react-table';
+import { CalendarRange, Coffee, Copy, Edit3, Eye, MicVocal, Plus, Search, Trash2, Users } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { ConfirmationModal } from '@/components/admin/cfp';
+import { AdminDataTable, AdminMobileCard, AdminTableToolbar } from '@/components/admin/common';
 import {
   useCreateScheduleItem,
   useDeleteScheduleItem,
@@ -60,6 +62,9 @@ type ScheduleModalState =
   | { mode: 'edit'; item: ProgramScheduleItemRecord }
   | null;
 
+const sessionColumnHelper = createColumnHelper<ProgramSession>();
+const speakerColumnHelper = createColumnHelper<SpeakerWithSessions>();
+
 export function ProgramSessionsTab({
   sessions,
   speakers,
@@ -73,6 +78,7 @@ export function ProgramSessionsTab({
   const [modal, setModal] = useState<SessionModalState>(null);
   const [showPromote, setShowPromote] = useState(false);
   const [offeringsBySessionId, setOfferingsBySessionId] = useState<Map<string, Workshop | null>>(new Map());
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'session', desc: false }]);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -116,118 +122,150 @@ export function ProgramSessionsTab({
   });
 
   const visibleSessions = useMemo(() => {
-    return filterProgramSessions(sessions, filter, scheduleItems, speakers, offeringsBySessionId)
+    let next = filterProgramSessions(sessions, filter, scheduleItems, speakers, offeringsBySessionId)
       .filter((session) => kind === 'all' || session.kind === kind)
       .filter((session) => matchesProgramSearch(session, search, speakers));
-  }, [filter, kind, offeringsBySessionId, scheduleItems, search, sessions, speakers]);
+
+    if (sorting.length > 0) {
+      next = [...next].sort((a, b) => {
+        for (const rule of sorting) {
+          const direction = rule.desc ? -1 : 1;
+          let comparison = 0;
+
+          if (rule.id === 'session') {
+            comparison = a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+          } else if (rule.id === 'kind') {
+            comparison = a.kind.localeCompare(b.kind, undefined, { sensitivity: 'base' });
+          } else if (rule.id === 'speakers') {
+            comparison = getSessionSpeakers(a, speakers)
+              .map((speaker) => `${speaker.first_name} ${speaker.last_name}`)
+              .join(', ')
+              .localeCompare(
+                getSessionSpeakers(b, speakers)
+                  .map((speaker) => `${speaker.first_name} ${speaker.last_name}`)
+                  .join(', '),
+                undefined,
+                { sensitivity: 'base' }
+              );
+          } else if (rule.id === 'placement') {
+            comparison = getSessionScheduleCount(a, scheduleItems) - getSessionScheduleCount(b, scheduleItems);
+          } else if (rule.id === 'status') {
+            comparison = a.status.localeCompare(b.status, undefined, { sensitivity: 'base' });
+          }
+
+          if (comparison !== 0) return comparison * direction;
+        }
+
+        return 0;
+      });
+    }
+
+    return next;
+  }, [filter, kind, offeringsBySessionId, scheduleItems, search, sessions, sorting, speakers]);
+
+  const handleSortingChange = (updater: Updater<SortingState>) => {
+    setSorting((previous) => {
+      const next = typeof updater === 'function' ? updater(previous) : updater;
+      return next.slice(0, 1);
+    });
+  };
+
+  const sessionColumns = useMemo<Array<ColumnDef<ProgramSession>>>(
+    () => getProgramSessionColumns({
+      speakers,
+      scheduleItems,
+      offeringsBySessionId,
+      onEdit: (session) => setModal({ mode: 'edit', session }),
+      onArchive: (session) => archiveMutation.mutate(session.id),
+    }),
+    [archiveMutation, offeringsBySessionId, scheduleItems, speakers]
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-black">Sessions</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setShowPromote(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50"
-            >
-              <Eye className="size-4" />
-              Promote from CFP
-            </button>
-            <button
-              onClick={() => setModal({ mode: 'create' })}
-              className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]"
-            >
-              <Plus className="size-4" />
-              Create Session
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-2 lg:grid-cols-[1fr_180px_220px]">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search sessions or speakers"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+      <AdminDataTable
+        data={visibleSessions}
+        columns={sessionColumns}
+        sorting={sorting}
+        onSortingChange={handleSortingChange}
+        getRowId={(session) => session.id}
+        emptyState="No sessions match the current filters"
+        toolbar={(
+          <AdminTableToolbar
+            right={(
+              <>
+                <div className="relative min-w-[280px] max-w-full flex-1 lg:flex-none">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray-medium" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search sessions or speakers"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
+                </div>
+                <select value={kind} onChange={(event) => setKind(event.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary">
+                  <option value="all">All kinds</option>
+                  <option value="talk">Talks</option>
+                  <option value="workshop">Workshops</option>
+                  <option value="panel">Panels</option>
+                  <option value="keynote">Keynotes</option>
+                  <option value="event">Events</option>
+                </select>
+                <select value={filter} onChange={(event) => setFilter(event.target.value as ProgramSessionFilter)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary">
+                  <option value="all">All sessions</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="unscheduled">Unscheduled</option>
+                  <option value="missing-speakers">Missing speakers</option>
+                  <option value="missing-profile">Missing profile data</option>
+                  <option value="commerce-ready">Commerce ready</option>
+                </select>
+                <button
+                  onClick={() => setShowPromote(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50"
+                >
+                  <Eye className="size-4" />
+                  Promote from CFP
+                </button>
+                <button
+                  onClick={() => setModal({ mode: 'create' })}
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]"
+                >
+                  <Plus className="size-4" />
+                  Create Session
+                </button>
+              </>
+            )}
           />
-          <select value={kind} onChange={(event) => setKind(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
-            <option value="all">All kinds</option>
-            <option value="talk">Talks</option>
-            <option value="workshop">Workshops</option>
-            <option value="panel">Panels</option>
-            <option value="keynote">Keynotes</option>
-            <option value="event">Events</option>
-          </select>
-          <select value={filter} onChange={(event) => setFilter(event.target.value as ProgramSessionFilter)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
-            <option value="all">All sessions</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="unscheduled">Unscheduled</option>
-            <option value="missing-speakers">Missing speakers</option>
-            <option value="missing-profile">Missing profile data</option>
-            <option value="commerce-ready">Commerce ready</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="w-full min-w-[900px]">
-          <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-brand-gray-medium">
-            <tr>
-              <th className="px-3 py-3">Session</th>
-              <th className="px-3 py-3">Kind</th>
-              <th className="px-3 py-3">Speakers</th>
-              <th className="px-3 py-3">Placement</th>
-              <th className="px-3 py-3">Status</th>
-              <th className="px-3 py-3">Signals</th>
-              <th className="px-3 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {visibleSessions.map((session) => {
-              const assignedSpeakers = getSessionSpeakers(session, speakers);
-              const scheduleCount = getSessionScheduleCount(session, scheduleItems);
-              const offering = offeringsBySessionId.get(session.id);
-              return (
-                  <tr key={session.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-3">
-                      <p className="font-medium text-black">{session.title}</p>
-                      {session.cfp_submission_id ? <p className="text-xs text-brand-blue">Promoted from CFP</p> : null}
-                    </td>
-                    <td className="px-3 py-3 text-sm capitalize text-brand-gray-medium">{session.kind}</td>
-                    <td className="px-3 py-3 text-sm text-brand-gray-medium">
-                      {assignedSpeakers.length > 0
-                        ? assignedSpeakers.map((speaker) => `${speaker.first_name} ${speaker.last_name}`).join(', ')
-                        : <span className="text-brand-red">Missing</span>}
-                    </td>
-                    <td className="px-3 py-3 text-sm text-brand-gray-medium">{scheduleCount === 0 ? 'Unscheduled' : scheduleCount === 1 ? 'Scheduled once' : `Scheduled ${scheduleCount} times`}</td>
-                    <td className="px-3 py-3 text-sm capitalize text-brand-gray-medium">{session.status}</td>
-                    <td className="px-3 py-3 text-sm">
-                      <div className="flex flex-wrap gap-1">
-                        {hasMissingSpeakerProfile(session, speakers) ? <Pill tone="red">profile</Pill> : null}
-                        {session.kind === 'workshop' && isWorkshopCommerceReady(offering) ? <Pill tone="green">buyable</Pill> : null}
-                        {session.kind === 'workshop' && offering && !isWorkshopCommerceReady(offering) ? <Pill tone="amber">not buyable</Pill> : null}
-                        {session.kind === 'workshop' && !offering ? <Pill tone="amber">no offering</Pill> : null}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setModal({ mode: 'edit', session })} className="rounded-md p-2 text-brand-blue hover:bg-blue-50" title="Edit session">
-                          <Edit3 className="size-4" />
-                        </button>
-                        <button onClick={() => archiveMutation.mutate(session.id)} className="rounded-md p-2 text-brand-red hover:bg-red-50" title="Archive session">
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+        )}
+        mobileList={{
+          renderCard: (session) => (
+            <AdminMobileCard key={session.id}>
+              <div className="space-y-3">
+                <div>
+                  <p className="font-semibold text-black">{session.title}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-brand-gray-dark">
+                    <span className="capitalize">{session.kind}</span>
+                    <span>·</span>
+                    <span>{getSessionScheduleCount(session, scheduleItems) === 0 ? 'Unscheduled' : `${getSessionScheduleCount(session, scheduleItems)} placement${getSessionScheduleCount(session, scheduleItems) === 1 ? '' : 's'}`}</span>
+                  </div>
+                </div>
+                <div className="text-sm text-brand-gray-dark">
+                  {getSessionSpeakers(session, speakers).length > 0
+                    ? getSessionSpeakers(session, speakers).map((speaker) => `${speaker.first_name} ${speaker.last_name}`).join(', ')
+                    : 'Missing speakers'}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {renderSessionSignals(session, speakers, offeringsBySessionId.get(session.id))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setModal({ mode: 'edit', session })} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Edit</button>
+                  <button onClick={() => archiveMutation.mutate(session.id)} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-brand-red hover:bg-red-50">Archive</button>
+                </div>
+              </div>
+            </AdminMobileCard>
+          ),
+        }}
+      />
 
       {modal ? (
         <ProgramSessionModal
@@ -292,7 +330,7 @@ function PromoteSubmissionModal({
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest">Cancel</button>
           <button type="button" onClick={handlePromote} disabled={!selectedId || promoteMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">
             {promoteMutation.isPending ? 'Promoting...' : 'Promote'}
           </button>
@@ -396,7 +434,7 @@ export function ProgramScheduleTab({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-black">Schedule</h2>
-          <p className="text-sm text-gray-600">Place program sessions and create non-session events without touching CFP records.</p>
+          <p className="text-sm text-brand-gray-dark">Place program sessions and create non-session events without touching CFP records.</p>
         </div>
         <div className="flex gap-2">
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search schedule" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
@@ -591,7 +629,7 @@ function ScheduleGridCard({
   const endTime = minutesToTime(timeToMinutes(startTime) + item.duration_minutes);
 
   return (
-    <div className="@container h-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="@container h-full rounded-lg border border-brand-gray-lightest bg-white p-4 shadow-sm">
       <div className="sticky top-40 grid gap-3 [grid-template-areas:'time''title''visibility''actions'] @xs:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @xs:[grid-template-areas:'time_title''visibility_visibility''actions_actions'] @sm:grid-cols-[120px_minmax(0,1fr)_auto] @sm:[grid-template-areas:'time_title_actions''visibility_visibility_visibility'] @lg:grid-cols-[120px_minmax(0,1fr)_130px_120px] @lg:[grid-template-areas:'time_title_visibility_actions'] @lg:items-center">
         <div className="[grid-area:time] text-sm text-brand-gray-medium">
           <p className="font-semibold text-black">{startTime} - {endTime}</p>
@@ -602,13 +640,13 @@ function ScheduleGridCard({
         </div>
         <div className="[grid-area:title]">
           <p className="font-medium text-black">{session?.title ?? item.program_session?.title ?? item.title}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-brand-gray-dark">
             <TypeChip type={displayType} />
             {session ? <span>· {getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}</span> : null}
           </div>
           {session?.kind === 'workshop' ? <WorkshopBuyableSignal sessionId={session.id} /> : null}
         </div>
-        <div className="[grid-area:visibility] text-sm text-gray-600">
+        <div className="[grid-area:visibility] text-sm text-brand-gray-dark">
           <ToggleButton
             label={item.is_visible ? 'Public' : 'Hidden'}
             checked={item.is_visible}
@@ -763,7 +801,7 @@ function ProgramScheduleModal({
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest">Cancel</button>
           <button type="submit" form="program-schedule-form" disabled={createMutation.isPending || updateMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">Save Slot</button>
         </>
       )}
@@ -854,7 +892,7 @@ function ProgramScheduleModal({
               ) : null}
             </>
           ) : null}
-          <div className="flex w-fit items-center gap-3 rounded-md border border-gray-200 px-3 py-2">
+          <div className="flex w-fit items-center gap-3 rounded-md border border-brand-gray-lightest px-3 py-2">
             <span className="text-sm font-medium text-gray-800">Visible publicly</span>
             <ToggleButton
               label={form.is_visible ? 'Public' : 'Hidden'}
@@ -892,7 +930,7 @@ function SchedulePreviewModal({
       maxWidth="4xl"
       showHeader={false}
       onClose={onClose}
-      footer={<button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">Close</button>}
+      footer={<button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest">Close</button>}
     >
       <div
         className="grid gap-2"
@@ -916,7 +954,7 @@ function SchedulePreviewModal({
               }}
               className="flex h-full min-h-0 flex-col"
             >
-              <div className="flex-1 flex flex-wrap gap-4 items-center rounded-lg border border-gray-200 bg-white p-2 text-sm text-brand-gray-medium">
+              <div className="flex-1 flex flex-wrap gap-4 items-center rounded-lg border border-brand-gray-lightest bg-white p-2 text-sm text-brand-gray-medium">
                 <div className="font-medium text-black">
                   {startTime} - {endTime} ({formatScheduleDuration(item.duration_minutes)})
                 </div>
@@ -950,110 +988,168 @@ export function ProgramSpeakersTab({
   const [featuredFilter, setFeaturedFilter] = useState('all');
   const [profileFilter, setProfileFilter] = useState('all');
   const [sessionFilter, setSessionFilter] = useState('all');
-  const visibleSpeakers = speakers.filter((speaker) => {
-    const speakerSessions = sessions.filter((session) => (session.speakers ?? []).some((assignment) => assignment.speaker_id === speaker.id));
-    if (visibilityFilter === 'public' && !speaker.is_visible) return false;
-    if (visibilityFilter === 'hidden' && speaker.is_visible) return false;
-    if (featuredFilter === 'featured' && !speaker.is_featured) return false;
-    if (featuredFilter === 'not-featured' && speaker.is_featured) return false;
-    if (profileFilter === 'complete' && isSpeakerProfileIncomplete(speaker)) return false;
-    if (profileFilter === 'incomplete' && !isSpeakerProfileIncomplete(speaker)) return false;
-    if (sessionFilter === 'has-session' && speakerSessions.length === 0) return false;
-    if (sessionFilter === 'no-session' && speakerSessions.length > 0) return false;
-    if (!search) return true;
-    const query = search.toLowerCase();
-    return `${speaker.first_name} ${speaker.last_name} ${speaker.email} ${speaker.company ?? ''}`.toLowerCase().includes(query);
-  });
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'speaker', desc: false }]);
+  const visibleSpeakers = useMemo(() => {
+    let next = speakers.filter((speaker) => {
+      const speakerSessions = sessions.filter((session) => (session.speakers ?? []).some((assignment) => assignment.speaker_id === speaker.id));
+      if (visibilityFilter === 'public' && !speaker.is_visible) return false;
+      if (visibilityFilter === 'hidden' && speaker.is_visible) return false;
+      if (featuredFilter === 'featured' && !speaker.is_featured) return false;
+      if (featuredFilter === 'not-featured' && speaker.is_featured) return false;
+      if (profileFilter === 'complete' && isSpeakerProfileIncomplete(speaker)) return false;
+      if (profileFilter === 'incomplete' && !isSpeakerProfileIncomplete(speaker)) return false;
+      if (sessionFilter === 'has-session' && speakerSessions.length === 0) return false;
+      if (sessionFilter === 'no-session' && speakerSessions.length > 0) return false;
+      if (!search) return true;
+      const query = search.toLowerCase();
+      return `${speaker.first_name} ${speaker.last_name} ${speaker.email} ${speaker.company ?? ''}`.toLowerCase().includes(query);
+    });
+
+    if (sorting.length > 0) {
+      next = [...next].sort((a, b) => {
+        for (const rule of sorting) {
+          const direction = rule.desc ? -1 : 1;
+          let comparison = 0;
+          const aSessions = sessions.filter((session) => (session.speakers ?? []).some((assignment) => assignment.speaker_id === a.id));
+          const bSessions = sessions.filter((session) => (session.speakers ?? []).some((assignment) => assignment.speaker_id === b.id));
+
+          if (rule.id === 'speaker') {
+            comparison = `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, undefined, { sensitivity: 'base' });
+          } else if (rule.id === 'company') {
+            comparison = `${a.company ?? ''} ${a.job_title ?? ''}`.localeCompare(`${b.company ?? ''} ${b.job_title ?? ''}`, undefined, { sensitivity: 'base' });
+          } else if (rule.id === 'sessions') {
+            comparison = aSessions.length - bSessions.length;
+          } else if (rule.id === 'visibility') {
+            comparison = Number(a.is_visible) - Number(b.is_visible);
+          } else if (rule.id === 'featured') {
+            comparison = Number(a.is_featured) - Number(b.is_featured);
+          }
+
+          if (comparison !== 0) return comparison * direction;
+        }
+
+        return 0;
+      });
+    }
+
+    return next;
+  }, [featuredFilter, profileFilter, search, sessionFilter, sessions, sorting, speakers, visibilityFilter]);
+
+  const handleSortingChange = (updater: Updater<SortingState>) => {
+    setSorting((previous) => {
+      const next = typeof updater === 'function' ? updater(previous) : updater;
+      return next.slice(0, 1);
+    });
+  };
+
+  const speakerColumns = useMemo<Array<ColumnDef<SpeakerWithSessions>>>(
+    () => getProgramSpeakerColumns({
+      sessions,
+      scheduleItems,
+      togglingVisibilityId,
+      togglingFeaturedId,
+      onToggleSpeakerVisibility,
+      onToggleSpeakerFeatured,
+      onCreateSession: (speaker) => setModal({ mode: 'create', speakerId: speaker.id }),
+      onEditSpeaker,
+    }),
+    [
+      onEditSpeaker,
+      onToggleSpeakerFeatured,
+      onToggleSpeakerVisibility,
+      scheduleItems,
+      sessions,
+      togglingFeaturedId,
+      togglingVisibilityId,
+    ]
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="text-lg font-semibold text-black">Speakers</h2>
-        <div className="flex flex-wrap gap-2">
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search speakers" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
-          <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
-            <option value="all">All visibility</option>
-            <option value="public">Public</option>
-            <option value="hidden">Hidden</option>
-          </select>
-          <select value={featuredFilter} onChange={(event) => setFeaturedFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
-            <option value="all">All featured</option>
-            <option value="featured">Featured</option>
-            <option value="not-featured">Not featured</option>
-          </select>
-          <select value={profileFilter} onChange={(event) => setProfileFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
-            <option value="all">All profiles</option>
-            <option value="complete">Profile complete</option>
-            <option value="incomplete">Profile incomplete</option>
-          </select>
-          <select value={sessionFilter} onChange={(event) => setSessionFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
-            <option value="all">All assignments</option>
-            <option value="has-session">Has session</option>
-            <option value="no-session">No session</option>
-          </select>
-          <button onClick={onCreateSpeaker} className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]">
-            <Plus className="size-4" />
-            Add Speaker
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {visibleSpeakers.map((speaker) => {
-          const speakerSessions = sessions.filter((session) => (session.speakers ?? []).some((assignment) => assignment.speaker_id === speaker.id));
-          const incompleteProfile = isSpeakerProfileIncomplete(speaker);
-          const publishRisk = incompleteProfile && (speaker.is_visible || speaker.is_featured);
-          return (
-            <div key={speaker.id} className={`rounded-lg border-2 bg-white p-4 shadow-sm ${
-              publishRisk ? 'border-brand-red ring-1 ring-red-100' : incompleteProfile ? 'border-brand-primary' : 'border-brand-green'
-            }`}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-start gap-3">
-                {speaker.profile_image_url ? <img src={speaker.profile_image_url} alt="" className="size-12 rounded-full object-cover" /> : <div className="flex size-12 items-center justify-center rounded-full bg-text-brand-gray-lightest"><Users className="size-5 text-gray-400" /></div>}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-black">{speaker.first_name} {speaker.last_name}</p>
-                  <p className="truncate text-sm text-gray-600">{[speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || speaker.email}</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {speaker.speaker_role === 'mc' ? <Pill tone="blue">MC</Pill> : null}
-                    {incompleteProfile ? <Pill tone={publishRisk ? 'red' : 'amber'}>incomplete</Pill> : null}
+      <AdminDataTable
+        data={visibleSpeakers}
+        columns={speakerColumns}
+        sorting={sorting}
+        onSortingChange={handleSortingChange}
+        getRowId={(speaker) => speaker.id}
+        emptyState="No speakers match the current filters"
+        toolbar={(
+          <AdminTableToolbar
+            right={(
+              <>
+                <div className="relative min-w-[260px] max-w-full flex-1 lg:flex-none">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray-medium" />
+                  <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search speakers" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary" />
+                </div>
+                <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary">
+                  <option value="all">All visibility</option>
+                  <option value="public">Public</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+                <select value={featuredFilter} onChange={(event) => setFeaturedFilter(event.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary">
+                  <option value="all">All featured</option>
+                  <option value="featured">Featured</option>
+                  <option value="not-featured">Not featured</option>
+                </select>
+                <select value={profileFilter} onChange={(event) => setProfileFilter(event.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary">
+                  <option value="all">All profiles</option>
+                  <option value="complete">Profile complete</option>
+                  <option value="incomplete">Profile incomplete</option>
+                </select>
+                <select value={sessionFilter} onChange={(event) => setSessionFilter(event.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary">
+                  <option value="all">All assignments</option>
+                  <option value="has-session">Has session</option>
+                  <option value="no-session">No session</option>
+                </select>
+                <button onClick={onCreateSpeaker} className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]">
+                  <Plus className="size-4" />
+                  Add Speaker
+                </button>
+              </>
+            )}
+          />
+        )}
+        mobileList={{
+          renderCard: (speaker) => {
+            const speakerSessions = sessions.filter((session) => (session.speakers ?? []).some((assignment) => assignment.speaker_id === speaker.id));
+            const incompleteProfile = isSpeakerProfileIncomplete(speaker);
+            const publishRisk = incompleteProfile && (speaker.is_visible || speaker.is_featured);
+            return (
+              <AdminMobileCard key={speaker.id} className={publishRisk ? 'border-red-200' : undefined}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    {speaker.profile_image_url ? <img src={speaker.profile_image_url} alt="" className="size-12 rounded-full object-cover" /> : <div className="flex size-12 items-center justify-center rounded-full bg-text-brand-gray-lightest"><Users className="size-5 text-brand-gray-medium" /></div>}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-black">{speaker.first_name} {speaker.last_name}</p>
+                      <p className="truncate text-sm text-brand-gray-dark">{[speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || speaker.email}</p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {speaker.speaker_role === 'mc' ? <Pill tone="blue">MC</Pill> : null}
+                        {incompleteProfile ? <Pill tone={publishRisk ? 'red' : 'amber'}>incomplete</Pill> : null}
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <div className="mt-4 flex flex-wrap items-center gap-4">
+                  <ToggleButton label="Public" checked={speaker.is_visible} disabled={togglingVisibilityId === speaker.id} activeClassName="bg-green-500" title={speaker.is_visible ? 'Public on /speakers' : 'Hidden from /speakers'} onClick={() => onToggleSpeakerVisibility(speaker.id, !speaker.is_visible)} />
+                  <ToggleButton label="Featured" checked={speaker.is_featured} disabled={togglingFeaturedId === speaker.id} activeClassName="bg-brand-primary" title={speaker.is_featured ? 'Featured on the frontpage speaker strip' : 'Not featured on the frontpage'} onClick={() => onToggleSpeakerFeatured(speaker.id, !speaker.is_featured)} />
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  <ToggleButton
-                    label="Public"
-                    checked={speaker.is_visible}
-                    disabled={togglingVisibilityId === speaker.id}
-                    activeClassName="bg-green-500"
-                    title={speaker.is_visible ? 'Public on /speakers' : 'Hidden from /speakers'}
-                    onClick={() => onToggleSpeakerVisibility(speaker.id, !speaker.is_visible)}
-                  />
-                  <ToggleButton
-                    label="Featured"
-                    checked={speaker.is_featured}
-                    disabled={togglingFeaturedId === speaker.id}
-                    activeClassName="bg-brand-primary"
-                    title={speaker.is_featured ? 'Featured on the frontpage speaker strip' : 'Not featured on the frontpage'}
-                    onClick={() => onToggleSpeakerFeatured(speaker.id, !speaker.is_featured)}
-                  />
+                <div className="mt-4 space-y-2">
+                  {speakerSessions.length > 0 ? speakerSessions.map((session) => (
+                    <div key={session.id} className="rounded-md bg-gray-50 px-3 py-2 text-sm">
+                      <p className="font-medium text-black">{session.title}</p>
+                      <p className="text-brand-gray-medium">{session.kind} · {getSessionScheduleCount(session, scheduleItems) ? 'scheduled' : 'unscheduled'}</p>
+                    </div>
+                  )) : <p className="text-sm text-brand-gray-medium">No program sessions assigned.</p>}
                 </div>
-              </div>
-              <div className="mt-4 space-y-2">
-                {speakerSessions.length > 0 ? speakerSessions.map((session) => (
-                  <div key={session.id} className="rounded-md bg-gray-50 px-3 py-2 text-sm">
-                    <p className="font-medium text-black">{session.title}</p>
-                    <p className="text-brand-gray-medium">{session.kind} · {getSessionScheduleCount(session, scheduleItems) ? 'scheduled' : 'unscheduled'}</p>
-                  </div>
-                )) : <p className="text-sm text-brand-gray-medium">No program sessions assigned.</p>}
-              </div>
-              <div className="mt-4 flex gap-2">
-                <button onClick={() => setModal({ mode: 'create', speakerId: speaker.id })} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Add session</button>
-                <button onClick={() => onEditSpeaker(speaker)} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Edit profile</button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                <div className="mt-4 flex gap-2">
+                  <button onClick={() => setModal({ mode: 'create', speakerId: speaker.id })} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Add session</button>
+                  <button onClick={() => onEditSpeaker(speaker)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Edit profile</button>
+                </div>
+              </AdminMobileCard>
+            );
+          },
+        }}
+      />
 
       {modal ? (
         <ProgramSessionModal
@@ -1072,9 +1168,238 @@ export function ProgramSpeakersTab({
   );
 }
 
+function getProgramSessionColumns({
+  speakers,
+  scheduleItems,
+  offeringsBySessionId,
+  onEdit,
+  onArchive,
+}: {
+  speakers: SpeakerWithSessions[];
+  scheduleItems: ProgramScheduleItemRecord[];
+  offeringsBySessionId: Map<string, Workshop | null>;
+  onEdit: (session: ProgramSession) => void;
+  onArchive: (session: ProgramSession) => void;
+}): Array<ColumnDef<ProgramSession>> {
+  return [
+    sessionColumnHelper.display({
+      id: 'session',
+      header: 'Session',
+      enableSorting: true,
+      size: 260,
+      cell: ({ row }) => (
+        <div>
+          <p className="font-medium text-black">{row.original.title}</p>
+          {row.original.cfp_submission_id ? <p className="text-xs text-brand-blue">Promoted from CFP</p> : null}
+        </div>
+      ),
+    }),
+    sessionColumnHelper.display({
+      id: 'kind',
+      header: 'Kind',
+      enableSorting: true,
+      size: 110,
+      cell: ({ row }) => <span className="text-sm capitalize text-brand-gray-medium">{row.original.kind}</span>,
+    }),
+    sessionColumnHelper.display({
+      id: 'speakers',
+      header: 'Speakers',
+      enableSorting: true,
+      size: 220,
+      cell: ({ row }) => {
+        const assignedSpeakers = getSessionSpeakers(row.original, speakers);
+        return (
+          <span className="text-sm text-brand-gray-medium">
+            {assignedSpeakers.length > 0
+              ? assignedSpeakers.map((speaker) => `${speaker.first_name} ${speaker.last_name}`).join(', ')
+              : <span className="text-brand-red">Missing</span>}
+          </span>
+        );
+      },
+    }),
+    sessionColumnHelper.display({
+      id: 'placement',
+      header: 'Placement',
+      enableSorting: true,
+      size: 140,
+      cell: ({ row }) => {
+        const scheduleCount = getSessionScheduleCount(row.original, scheduleItems);
+        return <span className="text-sm text-brand-gray-medium">{scheduleCount === 0 ? 'Unscheduled' : scheduleCount === 1 ? 'Scheduled once' : `Scheduled ${scheduleCount} times`}</span>;
+      },
+    }),
+    sessionColumnHelper.display({
+      id: 'status',
+      header: 'Status',
+      enableSorting: true,
+      size: 110,
+      cell: ({ row }) => <span className="text-sm capitalize text-brand-gray-medium">{row.original.status}</span>,
+    }),
+    sessionColumnHelper.display({
+      id: 'signals',
+      header: 'Signals',
+      enableSorting: false,
+      size: 180,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {renderSessionSignals(row.original, speakers, offeringsBySessionId.get(row.original.id))}
+        </div>
+      ),
+    }),
+    sessionColumnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      size: 110,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <button onClick={() => onEdit(row.original)} className="rounded-md p-2 text-brand-blue hover:bg-blue-50" title="Edit session">
+            <Edit3 className="size-4" />
+          </button>
+          <button onClick={() => onArchive(row.original)} className="rounded-md p-2 text-brand-red hover:bg-red-50" title="Archive session">
+            <Trash2 className="size-4" />
+          </button>
+        </div>
+      ),
+    }),
+  ];
+}
+
+function getProgramSpeakerColumns({
+  sessions,
+  scheduleItems,
+  togglingVisibilityId,
+  togglingFeaturedId,
+  onToggleSpeakerVisibility,
+  onToggleSpeakerFeatured,
+  onCreateSession,
+  onEditSpeaker,
+}: {
+  sessions: ProgramSession[];
+  scheduleItems: ProgramScheduleItemRecord[];
+  togglingVisibilityId?: string | null;
+  togglingFeaturedId?: string | null;
+  onToggleSpeakerVisibility: (id: string, isVisible: boolean) => void;
+  onToggleSpeakerFeatured: (id: string, isFeatured: boolean) => void;
+  onCreateSession: (speaker: SpeakerWithSessions) => void;
+  onEditSpeaker: (speaker: SpeakerWithSessions) => void;
+}): Array<ColumnDef<SpeakerWithSessions>> {
+  return [
+    speakerColumnHelper.display({
+      id: 'speaker',
+      header: 'Speaker',
+      enableSorting: true,
+      size: 240,
+      cell: ({ row }) => {
+        const speaker = row.original;
+        const incompleteProfile = isSpeakerProfileIncomplete(speaker);
+        const publishRisk = incompleteProfile && (speaker.is_visible || speaker.is_featured);
+        return (
+          <div className="flex items-start gap-3">
+            {speaker.profile_image_url ? <img src={speaker.profile_image_url} alt="" className="size-10 rounded-full object-cover" /> : <div className="flex size-10 items-center justify-center rounded-full bg-text-brand-gray-lightest"><Users className="size-4 text-brand-gray-medium" /></div>}
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold text-black">{speaker.first_name} {speaker.last_name}</p>
+              <p className="truncate text-sm text-brand-gray-dark">{[speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || speaker.email}</p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {speaker.speaker_role === 'mc' ? <Pill tone="blue">MC</Pill> : null}
+                {incompleteProfile ? <Pill tone={publishRisk ? 'red' : 'amber'}>incomplete</Pill> : null}
+              </div>
+            </div>
+          </div>
+        );
+      },
+    }),
+    speakerColumnHelper.display({
+      id: 'company',
+      header: 'Company',
+      enableSorting: true,
+      size: 180,
+      cell: ({ row }) => (
+        <div className="text-sm text-brand-gray-dark">
+          <div className="font-medium text-black">{row.original.company || '-'}</div>
+          <div>{row.original.job_title || row.original.email}</div>
+        </div>
+      ),
+    }),
+    speakerColumnHelper.display({
+      id: 'sessions',
+      header: 'Sessions',
+      enableSorting: true,
+      size: 260,
+      cell: ({ row }) => {
+        const speakerSessions = sessions.filter((session) => (session.speakers ?? []).some((assignment) => assignment.speaker_id === row.original.id));
+        return speakerSessions.length > 0 ? (
+          <div className="space-y-1">
+            {speakerSessions.map((session) => (
+              <div key={session.id} className="rounded-md bg-gray-50 px-3 py-2 text-sm">
+                <p className="font-medium text-black">{session.title}</p>
+                <p className="text-brand-gray-medium">{session.kind} · {getSessionScheduleCount(session, scheduleItems) ? 'scheduled' : 'unscheduled'}</p>
+              </div>
+            ))}
+          </div>
+        ) : <p className="text-sm text-brand-gray-medium">No program sessions assigned.</p>;
+      },
+    }),
+    speakerColumnHelper.display({
+      id: 'visibility',
+      header: 'Visible',
+      enableSorting: true,
+      size: 90,
+      cell: ({ row }) => (
+        <ToggleButton
+          label="Public"
+          checked={row.original.is_visible}
+          disabled={togglingVisibilityId === row.original.id}
+          activeClassName="bg-green-500"
+          title={row.original.is_visible ? 'Public on /speakers' : 'Hidden from /speakers'}
+          onClick={() => onToggleSpeakerVisibility(row.original.id, !row.original.is_visible)}
+        />
+      ),
+    }),
+    speakerColumnHelper.display({
+      id: 'featured',
+      header: 'Featured',
+      enableSorting: true,
+      size: 100,
+      cell: ({ row }) => (
+        <ToggleButton
+          label="Featured"
+          checked={row.original.is_featured}
+          disabled={togglingFeaturedId === row.original.id}
+          activeClassName="bg-brand-primary"
+          title={row.original.is_featured ? 'Featured on the frontpage speaker strip' : 'Not featured on the frontpage'}
+          onClick={() => onToggleSpeakerFeatured(row.original.id, !row.original.is_featured)}
+        />
+      ),
+    }),
+    speakerColumnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      size: 160,
+      cell: ({ row }) => (
+        <div className="flex gap-2">
+          <button onClick={() => onCreateSession(row.original)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Add session</button>
+          <button onClick={() => onEditSpeaker(row.original)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Edit profile</button>
+        </div>
+      ),
+    }),
+  ];
+}
+
+function renderSessionSignals(session: ProgramSession, speakers: SpeakerWithSessions[], offering: Workshop | null | undefined) {
+  return (
+    <>
+      {hasMissingSpeakerProfile(session, speakers) ? <Pill tone="red">profile</Pill> : null}
+      {session.kind === 'workshop' && isWorkshopCommerceReady(offering) ? <Pill tone="green">buyable</Pill> : null}
+      {session.kind === 'workshop' && offering && !isWorkshopCommerceReady(offering) ? <Pill tone="amber">not buyable</Pill> : null}
+      {session.kind === 'workshop' && !offering ? <Pill tone="amber">no offering</Pill> : null}
+    </>
+  );
+}
+
 function WorkshopBuyableSignal({ sessionId }: { sessionId: string }) {
   const { data: offering, isLoading } = useWorkshopOffering(sessionId);
-  if (isLoading) return <p className="mt-1 text-xs text-gray-400">Checking workshop sales...</p>;
+  if (isLoading) return <p className="mt-1 text-xs text-brand-gray-medium">Checking workshop sales...</p>;
   if (isWorkshopCommerceReady(offering)) return <p className="mt-1 text-xs font-medium text-green-700">Buyable</p>;
   return <p className="mt-1 text-xs font-medium text-amber-700">Not buyable</p>;
 }

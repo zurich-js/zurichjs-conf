@@ -42,7 +42,7 @@ export function AdminLoginForm({ title = 'Admin Dashboard' }: AdminLoginFormProp
                 <Lock className="w-8 h-8 text-black" />
               </div>
               <h2 className="text-3xl font-bold text-black">{title}</h2>
-              <p className="mt-2 text-sm text-gray-600">ZurichJS Conference 2026</p>
+              <p className="mt-2 text-sm text-brand-gray-dark">ZurichJS Conference 2026</p>
             </div>
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
@@ -55,7 +55,7 @@ export function AdminLoginForm({ title = 'Admin Dashboard' }: AdminLoginFormProp
                   type="password"
                   required
                   autoFocus
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
                   placeholder="Enter admin password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

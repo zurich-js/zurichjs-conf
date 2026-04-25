@@ -4,8 +4,10 @@
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ExternalLink, Filter, Search } from 'lucide-react';
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
+import { ExternalLink, Search } from 'lucide-react';
 import { Pagination } from '@/components/atoms';
+import { AdminDataTable, AdminMobileCard, AdminTableToolbar } from '@/components/admin/common';
 import { AdminModal, AdminModalFooter } from '@/components/admin/AdminModal';
 import { cycleMultiSort, getMultiSortDirection, SortIndicator, type MultiSort } from '@/components/admin/cfp/tableSort';
 import type { SpeakerWithTravel, TransportWithSpeaker } from '@/lib/cfp/admin-travel';
@@ -76,6 +78,7 @@ const EMPTY_LEG = (direction: 'inbound' | 'outbound'): TransportationLegInput =>
   transport_link_url: '',
   admin_notes: '',
 });
+const columnHelper = createColumnHelper<TransportationRow>();
 
 export function TransportationTab({
   speakers,
@@ -185,119 +188,89 @@ export function TransportationTab({
 
   return (
     <>
-      <div className="space-y-4">
-        <div className="px-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <Filter className="h-4 w-4 text-brand-gray-medium" />
-              <span>
-                Showing <span className="font-semibold text-black">{rows.length}</span> transportation row{rows.length === 1 ? '' : 's'}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => {
-                  setSearchQuery(event.target.value);
-                  onPageChange(1);
-                }}
-                placeholder="Search speaker or route..."
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary lg:w-80"
-              />
-              <select
-                value={modeFilter}
-                onChange={(event) => {
-                  setModeFilter(event.target.value as typeof modeFilter);
-                  onPageChange(1);
-                }}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              >
-                <option value="all">All modes</option>
-                {TRANSPORT_MODE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(event) => {
-                  setStatusFilter(event.target.value as typeof statusFilter);
-                  onPageChange(1);
-                }}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              >
-                <option value="all">All statuses</option>
-                {TRANSPORT_STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px]">
-              <thead className="bg-gray-50 text-left text-sm text-brand-gray-medium">
-                <tr>
-                  <SortableHeader label="Speaker" sortKey="speaker" sort={sort} onClick={handleSortClick} />
-                  <th className="px-4 py-3">From</th>
-                  <SortableHeader label="Inbound" sortKey="inbound" sort={sort} onClick={handleSortClick} />
-                  <SortableHeader label="Outbound" sortKey="outbound" sort={sort} onClick={handleSortClick} />
-                  <SortableHeader label="Priority" sortKey="priority" sort={sort} onClick={handleSortClick} />
-                  <th className="px-4 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-gray-500">Loading transportation...</td>
-                  </tr>
-                ) : paginatedRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-brand-gray-medium">No transportation plans found</td>
-                  </tr>
-                ) : (
-                  paginatedRows.map((row) => (
-                    <tr
-                      key={row.speaker.id}
-                      className="cursor-pointer hover:bg-gray-50 align-top"
-                      onClick={() => setSelectedRow(row)}
-                    >
-                      <td className="px-4 py-4">
-                        <div className="font-medium text-black">{row.speaker.first_name} {row.speaker.last_name}</div>
-                        <div className="mt-1 text-xs text-gray-400">{row.speaker.program_sessions_count} session{row.speaker.program_sessions_count === 1 ? '' : 's'}</div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">
-                        <div>{[row.speaker.city, row.speaker.country].filter(Boolean).join(', ') || 'Unknown location'}</div>
-                        <div className="mt-1 text-xs text-brand-gray-medium">Airport: {row.speaker.departure_airport || 'Not set'}</div>
-                      </td>
-                      <td className="px-4 py-4"><TransportCell transport={row.inbound} fallbackLabel="No inbound set" /></td>
-                      <td className="px-4 py-4"><TransportCell transport={row.outbound} fallbackLabel="No outbound set" /></td>
-                      <td className="px-4 py-4 text-sm text-gray-600">
-                        <div className="font-medium text-black">{getPriorityLabel(row)}</div>
-                        <div className="mt-1 text-xs text-brand-gray-medium">
-                          {row.speaker.travel?.travel_confirmed ? 'Travel confirmed' : 'Needs confirmation'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <button
-                          type="button"
-                          className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-black hover:bg-text-brand-gray-lightest"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedRow(row);
-                          }}
-                        >
-                          View details
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+      <AdminDataTable
+        data={paginatedRows}
+        columns={getTransportationColumns({ sort, handleSortClick, setSelectedRow })}
+        isLoading={isLoading}
+        emptyState="No transportation plans found"
+        onRowClick={(row) => setSelectedRow(row)}
+        toolbar={(
+          <AdminTableToolbar
+            right={(
+              <>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    onPageChange(1);
+                  }}
+                  placeholder="Search speaker or route..."
+                  className="min-w-[280px] flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary lg:flex-none"
+                />
+                <select
+                  value={modeFilter}
+                  onChange={(event) => {
+                    setModeFilter(event.target.value as typeof modeFilter);
+                    onPageChange(1);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  <option value="all">All modes</option>
+                  {TRANSPORT_MODE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value as typeof statusFilter);
+                    onPageChange(1);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  <option value="all">All statuses</option>
+                  {TRANSPORT_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </>
+            )}
+          />
+        )}
+        mobileList={{
+          renderCard: (row) => (
+            <AdminMobileCard key={row.speaker.id}>
+              <div className="mb-3">
+                <div className="font-medium text-black">{row.speaker.first_name} {row.speaker.last_name}</div>
+                <div className="mt-1 text-xs text-brand-gray-medium">{row.speaker.program_sessions_count} session{row.speaker.program_sessions_count === 1 ? '' : 's'}</div>
+              </div>
+              <div className="mb-3 text-sm text-brand-gray-dark">
+                <div>{[row.speaker.city, row.speaker.country].filter(Boolean).join(', ') || 'Unknown location'}</div>
+                <div className="mt-1 text-xs text-brand-gray-medium">Airport: {row.speaker.departure_airport || 'Not set'}</div>
+              </div>
+              <div className="space-y-3">
+                <TransportCell transport={row.inbound} fallbackLabel="No inbound set" />
+                <TransportCell transport={row.outbound} fallbackLabel="No outbound set" />
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-brand-gray-lightest pt-3">
+                <div className="text-sm text-brand-gray-dark">
+                  <div className="font-medium text-black">{getPriorityLabel(row)}</div>
+                  <div className="mt-1 text-xs text-brand-gray-medium">{row.speaker.travel?.travel_confirmed ? 'Travel confirmed' : 'Needs confirmation'}</div>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-black hover:bg-text-brand-gray-lightest"
+                  onClick={() => setSelectedRow(row)}
+                >
+                  View details
+                </button>
+              </div>
+            </AdminMobileCard>
+          ),
+          emptyState: <div className="py-10 text-center text-brand-gray-medium">No transportation plans found</div>,
+        }}
+        pagination={(
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -306,8 +279,8 @@ export function TransportationTab({
             totalItems={rows.length}
             variant="light"
           />
-        </div>
-      </div>
+        )}
+      />
 
       {selectedRow ? (
         <TransportationModal
@@ -363,25 +336,93 @@ function TransportationModal({
   );
 }
 
-function SortableHeader({
-  label,
-  sortKey,
+function getTransportationColumns({
   sort,
-  onClick,
+  handleSortClick,
+  setSelectedRow,
 }: {
-  label: string;
-  sortKey: TransportationSortKey;
   sort: MultiSort<TransportationSortKey>;
-  onClick: (key: TransportationSortKey) => void;
-}) {
-  return (
-    <th className="px-4 py-3">
-      <button type="button" onClick={() => onClick(sortKey)} className="inline-flex items-center gap-1 font-medium text-gray-500 hover:text-black">
-        <span>{label}</span>
-        <SortIndicator direction={getMultiSortDirection(sort, sortKey)} />
-      </button>
-    </th>
-  );
+  handleSortClick: (key: TransportationSortKey) => void;
+  setSelectedRow: (row: TransportationRow) => void;
+}): Array<ColumnDef<TransportationRow, unknown>> {
+  return [
+    columnHelper.display({
+      id: 'speaker',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('speaker')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Speaker</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'speaker')} />
+        </button>
+      ),
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-black">{row.original.speaker.first_name} {row.original.speaker.last_name}</div>
+          <div className="mt-1 text-xs text-brand-gray-medium">{row.original.speaker.program_sessions_count} session{row.original.speaker.program_sessions_count === 1 ? '' : 's'}</div>
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'from',
+      header: 'From',
+      cell: ({ row }) => (
+        <div className="text-sm text-brand-gray-dark">
+          <div>{[row.original.speaker.city, row.original.speaker.country].filter(Boolean).join(', ') || 'Unknown location'}</div>
+          <div className="mt-1 text-xs text-brand-gray-medium">Airport: {row.original.speaker.departure_airport || 'Not set'}</div>
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'inbound',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('inbound')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Inbound</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'inbound')} />
+        </button>
+      ),
+      cell: ({ row }) => <TransportCell transport={row.original.inbound} fallbackLabel="No inbound set" />,
+    }),
+    columnHelper.display({
+      id: 'outbound',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('outbound')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Outbound</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'outbound')} />
+        </button>
+      ),
+      cell: ({ row }) => <TransportCell transport={row.original.outbound} fallbackLabel="No outbound set" />,
+    }),
+    columnHelper.display({
+      id: 'priority',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('priority')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Priority</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'priority')} />
+        </button>
+      ),
+      cell: ({ row }) => (
+        <div className="text-sm text-brand-gray-dark">
+          <div className="font-medium text-black">{getPriorityLabel(row.original)}</div>
+          <div className="mt-1 text-xs text-brand-gray-medium">{row.original.speaker.travel?.travel_confirmed ? 'Travel confirmed' : 'Needs confirmation'}</div>
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <button
+          type="button"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-black hover:bg-text-brand-gray-lightest"
+          onClick={(event) => {
+            event.stopPropagation();
+            setSelectedRow(row.original);
+          }}
+        >
+          View details
+        </button>
+      ),
+    }),
+  ];
 }
 
 function TransportEditorSection({
@@ -397,7 +438,7 @@ function TransportEditorSection({
   const googleSearchUrl = buildGoogleSearchUrl(leg);
 
   return (
-    <section className="rounded-xl border border-gray-200 p-4">
+    <section className="rounded-xl border border-brand-gray-lightest p-4">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h3 className="text-base font-semibold text-black">{title}</h3>
@@ -469,10 +510,10 @@ function Field({ label, children, className = '' }: { label: string; children: R
 }
 
 function TransportCell({ transport, fallbackLabel }: { transport: TransportWithSpeaker | null; fallbackLabel: string }) {
-  if (!transport) return <span className="text-sm text-gray-400">{fallbackLabel}</span>;
+  if (!transport) return <span className="text-sm text-brand-gray-medium">{fallbackLabel}</span>;
 
   return (
-    <div className="text-sm text-gray-600">
+    <div className="text-sm text-brand-gray-dark">
       <div className="font-medium text-black">{transport.provider || transport.transport_mode} {transport.reference_code || ''}</div>
       <div className="mt-1">{(transport.departure_label || '?')} {'->'} {(transport.arrival_label || '?')}</div>
       <div className="mt-1 text-xs text-brand-gray-medium">{formatTransportTime(transport)}</div>

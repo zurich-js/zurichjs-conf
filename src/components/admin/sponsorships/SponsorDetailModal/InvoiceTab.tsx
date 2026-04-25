@@ -162,7 +162,7 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
             ) : (
               <>
                 <span>{invoice.due_date}</span>
-                <button onClick={() => { setEditDueDate(invoice.due_date); setIsEditingDueDate(true); }} className="p-1 text-gray-400 hover:text-gray-600 hover:bg-text-brand-gray-lightest rounded" title="Edit due date"><Edit2 className="h-3.5 w-3.5" /></button>
+                <button onClick={() => { setEditDueDate(invoice.due_date); setIsEditingDueDate(true); }} className="p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:bg-text-brand-gray-lightest rounded" title="Edit due date"><Edit2 className="h-3.5 w-3.5" /></button>
               </>
             )}
           </div>
@@ -228,7 +228,7 @@ function NoInvoiceView({ deal, dueDate, setDueDate, conversion, setConversion, t
     );
   }
   if (deal.status === 'cancelled') {
-    return <div className="bg-gray-50 border border-gray-200 rounded-lg p-4"><p className="text-sm text-gray-600">This deal has been cancelled. No invoice can be created.</p></div>;
+    return <div className="bg-gray-50 border border-brand-gray-lightest rounded-lg p-4"><p className="text-sm text-brand-gray-dark">This deal has been cancelled. No invoice can be created.</p></div>;
   }
 
   return (
@@ -271,7 +271,7 @@ function ConversionToggle({ conversion, setConversion, total, handleRateChange, 
             payInEur: newPayInEur,
             convertedAmount: newPayInEur ? calculateConvertedAmount(prev.conversionRate, total) : '',
           }));
-        }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bg-gray-200'}`}>
+        }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bgbrand-gray-lightest'}`}>
           <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${conversion.payInEur ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
       </div>
@@ -356,7 +356,7 @@ function ConversionSection({ invoice, conversion, setConversion, isEditing, setI
           <button onClick={() => setIsEditing(true)} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"><Edit2 className="h-3.5 w-3.5" />Edit</button>
         ) : (
           <div className="flex items-center gap-2">
-            <button onClick={resetConversion} className="text-sm text-gray-600 hover:text-black px-2 py-1 rounded">Cancel</button>
+            <button onClick={resetConversion} className="text-sm text-brand-gray-dark hover:text-black px-2 py-1 rounded">Cancel</button>
             <button onClick={onSave} disabled={isUpdating || (conversion.payInEur && !isConversionValid(conversion))} className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded flex items-center gap-1 disabled:opacity-50"><Check className="h-3.5 w-3.5" />Save</button>
           </div>
         )}
@@ -373,7 +373,7 @@ function ConversionSection({ invoice, conversion, setConversion, isEditing, setI
                 payInEur: newPayInEur,
                 convertedAmount: newPayInEur ? calculateConvertedAmount(prev.conversionRate, baseAmount) : prev.convertedAmount,
               }));
-            }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bg-gray-200'}`}>
+            }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bgbrand-gray-lightest'}`}>
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${conversion.payInEur ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
@@ -381,10 +381,10 @@ function ConversionSection({ invoice, conversion, setConversion, isEditing, setI
         </div>
       ) : invoice.payable_currency === 'EUR' && invoice.conversion_rate_chf_to_eur ? (
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-gray-600">Base Amount (CHF):</span><span className="font-medium">{formatAmount(invoice.base_amount_chf ?? invoice.total_amount, 'CHF')}</span></div>
-          <div className="flex justify-between"><span className="text-gray-600">Conversion Rate:</span><span className="font-medium">1 CHF = {invoice.conversion_rate_chf_to_eur} EUR</span></div>
+          <div className="flex justify-between"><span className="text-brand-gray-dark">Base Amount (CHF):</span><span className="font-medium">{formatAmount(invoice.base_amount_chf ?? invoice.total_amount, 'CHF')}</span></div>
+          <div className="flex justify-between"><span className="text-brand-gray-dark">Conversion Rate:</span><span className="font-medium">1 CHF = {invoice.conversion_rate_chf_to_eur} EUR</span></div>
           <div className="flex justify-between text-blue-700"><span>Payable Amount (EUR):</span><span className="font-bold">{formatAmount(invoice.converted_amount_eur!, 'EUR')}</span></div>
-          {invoice.conversion_justification && <div className="pt-2 border-t border-blue-200"><span className="text-gray-600">Justification: </span><span className="text-gray-800">{invoice.conversion_justification}</span></div>}
+          {invoice.conversion_justification && <div className="pt-2 border-t border-blue-200"><span className="text-brand-gray-dark">Justification: </span><span className="text-gray-800">{invoice.conversion_justification}</span></div>}
           {invoice.conversion_rate_source && <div className="text-xs text-brand-gray-medium">Source: {invoice.conversion_rate_source.toUpperCase()}{invoice.conversion_updated_at && ` • Updated: ${new Date(invoice.conversion_updated_at).toLocaleDateString()}`}</div>}
         </div>
       ) : (

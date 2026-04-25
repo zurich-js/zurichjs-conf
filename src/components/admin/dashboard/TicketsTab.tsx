@@ -4,13 +4,27 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { createColumnHelper, type ColumnDef, type SortingState, type Updater } from '@tanstack/react-table';
+import { Eye, Search, Globe2, Plus, X } from 'lucide-react';
+import { AdminModal } from '@/components/admin/AdminModal';
 import { UpgradeToVipModal } from '@/components/admin/tickets';
+import { Button, Pagination } from '@/components/atoms';
+import { AdminDataTable, AdminMobileCard, AdminTableToolbar } from '@/components/admin/common';
+import { IssueTicketTab } from './IssueTicketTab';
 import { TicketDetailsModal } from './TicketDetailsModal';
 import { ReassignModal } from './ReassignModal';
 import { ConfirmModal } from './ConfirmModal';
 import type { Ticket, ToastMessage, SortField, SortDirection } from './types';
 
 const ITEMS_PER_PAGE = 10;
+const columnHelper = createColumnHelper<Ticket>();
+
+function getStatusClass(status: string) {
+  if (status === 'confirmed') return 'bg-green-100 text-green-800';
+  if (status === 'refunded') return 'bg-red-100 text-red-800';
+  if (status === 'cancelled') return 'bg-text-brand-gray-lightest text-gray-800';
+  return 'bg-yellow-100 text-yellow-800';
+}
 
 export function TicketsTab() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -23,6 +37,7 @@ export function TicketsTab() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showIssueTicketModal, setShowIssueTicketModal] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
@@ -93,6 +108,97 @@ export function TicketsTab() {
     else { setSortField(field); setSortDirection('asc'); }
   };
 
+  const sorting = useMemo<SortingState>(() => [{ id: sortField, desc: sortDirection === 'desc' }], [sortField, sortDirection]);
+
+  const handleSortingChange = (updater: Updater<SortingState>) => {
+    const next = typeof updater === 'function' ? updater(sorting) : updater;
+    const nextRule = next[0];
+
+    if (!nextRule) return;
+    handleSort(nextRule.id as SortField);
+  };
+
+  const columns = useMemo(() => ([
+    columnHelper.accessor('id', {
+      header: 'ID',
+      enableSorting: false,
+      size: 120,
+      cell: ({ row }) => (
+        <span className="font-mono text-sm font-medium text-black">
+          {row.original.id.substring(0, 8)}...
+        </span>
+      ),
+    }),
+    columnHelper.display({
+      id: 'first_name',
+      header: 'Name',
+      enableSorting: true,
+      size: 220,
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <div className="font-medium text-black">{row.original.first_name} {row.original.last_name}</div>
+          <div className="mt-1 text-xs text-brand-gray-medium md:hidden">{row.original.email}</div>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('email', {
+      header: 'Email',
+      enableSorting: true,
+      size: 280,
+      cell: ({ getValue }) => <span className="text-gray-700">{getValue()}</span>,
+    }),
+    columnHelper.accessor('ticket_category', {
+      header: 'Type',
+      enableSorting: true,
+      size: 170,
+      cell: ({ row, getValue }) => (
+        <div className="flex flex-col gap-1">
+          <span className="font-medium capitalize text-black">{getValue()}</span>
+          <span className="text-xs capitalize text-brand-gray-medium">{row.original.ticket_stage.replace('_', ' ')}</span>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('amount_paid', {
+      header: 'Amount',
+      enableSorting: true,
+      size: 140,
+      cell: ({ row, getValue }) => (
+        <span className="font-semibold text-black">{(getValue() / 100).toFixed(2)} {row.original.currency}</span>
+      ),
+    }),
+    columnHelper.accessor('status', {
+      header: 'Status',
+      enableSorting: true,
+      size: 150,
+      cell: ({ getValue }) => (
+        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(getValue())}`}>
+          {getValue()}
+        </span>
+      ),
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      size: 120,
+      cell: ({ row }) => (
+        <Button
+          variant="primary"
+          size="sm"
+          className="rounded-lg px-3 py-1.5 text-sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            setSelectedTicket(row.original);
+            setShowDetailsModal(true);
+          }}
+        >
+          <Eye className="h-4 w-4" />
+          <span>View</span>
+        </Button>
+      ),
+    }),
+  ] as Array<ColumnDef<Ticket, unknown>>), []);
+
   const handleResend = async () => {
     if (!selectedTicket) return;
     try {
@@ -143,12 +249,119 @@ export function TicketsTab() {
   return (
     <>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} />
-        <DesktopTable tickets={paginatedTickets} sortField={sortField} sortDirection={sortDirection} onSort={handleSort} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
-        <MobileCards tickets={paginatedTickets} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
-        <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredAndSortedTickets.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
-      </div>
+      <AdminDataTable
+        data={paginatedTickets}
+        columns={columns}
+        sorting={sorting}
+        onSortingChange={handleSortingChange}
+        onRowClick={(ticket) => {
+          setSelectedTicket(ticket);
+          setShowDetailsModal(true);
+        }}
+        toolbar={(
+          <AdminTableToolbar
+            right={(
+              <>
+                <div className="relative min-w-[280px] max-w-full flex-1 lg:flex-none">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray-medium" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, ID, status..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-10 text-sm text-black placeholder:text-brand-gray-medium focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
+                  {searchQuery ? (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-gray-medium transition-colors hover:text-brand-gray-dark"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+                <button
+                  onClick={() => setFilterNonSwiss(!filterNonSwiss)}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                    filterNonSwiss
+                      ? 'border-blue-300 bg-blue-100 text-blue-800'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Globe2 className="h-4 w-4" />
+                  <span>Non-Swiss Only</span>
+                </button>
+                <button
+                  onClick={() => setShowIssueTicketModal(true)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[#e8d95e]"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Issue Ticket</span>
+                </button>
+              </>
+            )}
+          />
+        )}
+        mobileList={{
+          renderCard: (ticket) => (
+            <AdminMobileCard key={ticket.id} className="overflow-hidden p-0">
+              <div className="border-b border-brand-gray-lightest bg-gradient-to-r from-gray-50 to-white px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-base font-bold text-black">{ticket.first_name} {ticket.last_name}</h3>
+                    <p className="mt-0.5 truncate text-xs text-brand-gray-dark">{ticket.email}</p>
+                  </div>
+                  <span className={`ml-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${getStatusClass(ticket.status)}`}>
+                    {ticket.status}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-3 px-4 py-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-brand-gray-medium">Ticket ID</p>
+                    <p className="font-mono text-xs text-black">{ticket.id.substring(0, 12)}...</p>
+                  </div>
+                  <div>
+                    <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-brand-gray-medium">Amount</p>
+                    <p className="font-bold text-black">{(ticket.amount_paid / 100).toFixed(2)} {ticket.currency}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-brand-gray-medium">Ticket Type</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium capitalize text-black">{ticket.ticket_category}</span>
+                    <span className="text-xs text-brand-gray-medium">•</span>
+                    <span className="text-xs capitalize text-brand-gray-dark">{ticket.ticket_stage.replace('_', ' ')}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-brand-gray-lightest bg-gray-50 px-4 py-3">
+                <button
+                  onClick={() => {
+                    setSelectedTicket(ticket);
+                    setShowDetailsModal(true);
+                  }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand-primary bg-brand-primary px-3 py-2.5 text-sm font-medium text-black transition-colors active:bg-[#e8d95e]"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>View Details</span>
+                </button>
+              </div>
+            </AdminMobileCard>
+          ),
+        }}
+        pagination={(
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredAndSortedTickets.length}
+            pageSize={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+            variant="light"
+          />
+        )}
+      />
 
       {/* Modals */}
       {showDetailsModal && selectedTicket && (
@@ -201,6 +414,22 @@ export function TicketsTab() {
           onSuccess={() => { fetchTickets(); showToast('success', 'Ticket upgraded to VIP successfully!'); }}
         />
       )}
+      {showIssueTicketModal && (
+        <AdminModal
+          onClose={() => setShowIssueTicketModal(false)}
+          title="Issue Ticket"
+          description="Create a ticket manually without leaving the tickets table."
+          size="3xl"
+          showHeader={false}
+        >
+          <IssueTicketTab
+            embedded
+            onIssued={() => {
+              fetchTickets();
+            }}
+          />
+        </AdminModal>
+      )}
     </>
   );
 }
@@ -218,171 +447,6 @@ function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDismiss: ()
         <button onClick={onDismiss} className="ml-2 p-1 hover:bg-black/5 rounded transition-colors cursor-pointer">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
-      </div>
-    </div>
-  );
-}
-
-function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, filterNonSwiss, setFilterNonSwiss }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void; filterNonSwiss: boolean; setFilterNonSwiss: (v: boolean) => void }) {
-  return (
-    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <div>
-          <h2 className="text-lg sm:text-xl font-bold text-black">Ticket Management</h2>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">{filteredCount} of {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}{(searchQuery || filterNonSwiss) && ' (filtered)'}</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
-          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-green-100 text-green-800 font-medium">{tickets.filter(t => t.status === 'confirmed').length} confirmed</span>
-          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium">{tickets.filter(t => t.status === 'pending').length} pending</span>
-        </div>
-      </div>
-      <div className="mt-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input type="text" placeholder="Search by name, email, ID, status..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent" />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          )}
-        </div>
-        <button
-          onClick={() => setFilterNonSwiss(!filterNonSwiss)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
-            filterNonSwiss
-              ? 'bg-blue-100 text-blue-800 border border-blue-300'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Non-Swiss Only
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SortIcon({ field, sortField, sortDirection }: { field: SortField; sortField: SortField; sortDirection: SortDirection }) {
-  if (sortField !== field) return <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>;
-  return sortDirection === 'asc'
-    ? <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-    : <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
-}
-
-function DesktopTable({ tickets, sortField, sortDirection, onSort, onViewTicket }: { tickets: Ticket[]; sortField: SortField; sortDirection: SortDirection; onSort: (f: SortField) => void; onViewTicket: (t: Ticket) => void }) {
-  const statusClass = (s: string) => s === 'confirmed' ? 'bg-green-100 text-green-800' : s === 'refunded' ? 'bg-red-100 text-red-800' : s === 'cancelled' ? 'bg-text-brand-gray-lightest text-gray-800' : 'bg-yellow-100 text-yellow-800';
-  return (
-    <div className="hidden md:block overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">ID</th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('first_name')}>
-              <div className="flex items-center gap-1">Name<SortIcon field="first_name" sortField={sortField} sortDirection={sortDirection} /></div>
-            </th>
-            <th className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('email')}>
-              <div className="flex items-center gap-1">Email<SortIcon field="email" sortField={sortField} sortDirection={sortDirection} /></div>
-            </th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('ticket_category')}>
-              <div className="flex items-center gap-1">Type<SortIcon field="ticket_category" sortField={sortField} sortDirection={sortDirection} /></div>
-            </th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('amount_paid')}>
-              <div className="flex items-center gap-1">Amount<SortIcon field="amount_paid" sortField={sortField} sortDirection={sortDirection} /></div>
-            </th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('status')}>
-              <div className="flex items-center gap-1">Status<SortIcon field="status" sortField={sortField} sortDirection={sortDirection} /></div>
-            </th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {tickets.map((t) => (
-            <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-mono text-black font-medium">{t.id.substring(0, 8)}...</td>
-              <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-black font-medium">{t.first_name} {t.last_name}</td>
-              <td className="hidden lg:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-700">{t.email}</td>
-              <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                <div className="flex flex-col space-y-1"><span className="font-medium text-black capitalize">{t.ticket_category}</span><span className="text-xs text-brand-gray-medium capitalize">{t.ticket_stage.replace('_', ' ')}</span></div>
-              </td>
-              <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-black font-semibold">{(t.amount_paid / 100).toFixed(2)} {t.currency}</td>
-              <td className="px-4 lg:px-6 py-4 whitespace-nowrap"><span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${statusClass(t.status)}`}>{t.status}</span></td>
-              <td className="px-4 lg:px-6 py-4 text-sm">
-                <button onClick={() => onViewTicket(t)} className="inline-flex items-center px-3 py-1.5 border border-brand-primary rounded-md text-xs font-medium text-black bg-brand-primary hover:bg-[#e8d95e] cursor-pointer transition-colors">
-                  <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>View
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function MobileCards({ tickets, onViewTicket }: { tickets: Ticket[]; onViewTicket: (t: Ticket) => void }) {
-  const statusClass = (s: string) => s === 'confirmed' ? 'bg-green-100 text-green-800' : s === 'refunded' ? 'bg-red-100 text-red-800' : s === 'cancelled' ? 'bg-text-brand-gray-lightest text-gray-800' : 'bg-yellow-100 text-yellow-800';
-  return (
-    <div className="md:hidden space-y-4 p-4">
-      {tickets.map((t) => (
-        <div key={t.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-gray-50 to-white px-4 py-3 border-b border-gray-200">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 min-w-0"><h3 className="text-base font-bold text-black truncate">{t.first_name} {t.last_name}</h3><p className="text-xs text-gray-600 truncate mt-0.5">{t.email}</p></div>
-              <span className={`ml-2 px-2.5 py-1 text-xs font-bold rounded-full whitespace-nowrap ${statusClass(t.status)}`}>{t.status}</span>
-            </div>
-          </div>
-          <div className="px-4 py-3 space-y-2.5">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><p className="text-xs text-brand-gray-medium uppercase tracking-wide font-semibold mb-0.5">Ticket ID</p><p className="text-black font-mono text-xs">{t.id.substring(0, 12)}...</p></div>
-              <div><p className="text-xs text-brand-gray-medium uppercase tracking-wide font-semibold mb-0.5">Amount</p><p className="text-black font-bold">{(t.amount_paid / 100).toFixed(2)} {t.currency}</p></div>
-            </div>
-            <div><p className="text-xs text-brand-gray-medium uppercase tracking-wide font-semibold mb-0.5">Ticket Type</p><div className="flex items-center gap-2"><span className="text-sm font-medium text-black capitalize">{t.ticket_category}</span><span className="text-xs text-brand-gray-medium">•</span><span className="text-xs text-gray-600 capitalize">{t.ticket_stage.replace('_', ' ')}</span></div></div>
-          </div>
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-            <button onClick={() => onViewTicket(t)} className="w-full flex items-center justify-center px-3 py-2.5 border border-brand-primary rounded-lg text-sm font-medium text-black bg-brand-primary active:bg-[#e8d95e] transition-colors">
-              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>View Details
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange }: { currentPage: number; totalPages: number; totalItems: number; itemsPerPage: number; onPageChange: (p: number) => void }) {
-  if (totalPages <= 1) return null;
-  const start = (currentPage - 1) * itemsPerPage + 1;
-  const end = Math.min(currentPage * itemsPerPage, totalItems);
-  const pages = Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-    if (totalPages <= 5) return i + 1;
-    if (currentPage <= 3) return i + 1;
-    if (currentPage >= totalPages - 2) return totalPages - 4 + i;
-    return currentPage - 2 + i;
-  });
-  return (
-    <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="text-sm text-gray-600">Showing {start} to {end} of {totalItems} results</div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => onPageChange(1)} disabled={currentPage === 1} className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">First</button>
-          <button onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <div className="flex items-center gap-1">
-            {pages.map((p) => (
-              <button key={p} onClick={() => onPageChange(p)} className={`w-8 h-8 text-sm font-medium rounded-lg cursor-pointer ${currentPage === p ? 'bg-brand-primary text-black border border-brand-primary' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}>{p}</button>
-            ))}
-          </div>
-          <button onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-          <button onClick={() => onPageChange(totalPages)} disabled={currentPage === totalPages} className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">Last</button>
-        </div>
       </div>
     </div>
   );

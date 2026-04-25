@@ -49,7 +49,7 @@ export function WorkshopsFilterBar({
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                 active
                   ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                  : 'border-brand-gray-lightest bg-white text-gray-700 hover:border-gray-300'
               }`}
             >
               {filter.label}
@@ -66,13 +66,13 @@ export function WorkshopsFilterBar({
       </div>
 
       <div className="relative w-full sm:w-64">
-        <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-gray-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-brand-gray-medium" />
         <input
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search title or speaker…"
-          className="w-full rounded-lg border border-gray-200 bg-white pl-8 pr-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-gray-400"
+          className="w-full rounded-lg border border-brand-gray-lightest bg-white pl-8 pr-3 py-2 text-sm outline-none placeholder:text-brand-gray-medium focus:border-brand-gray-medium"
         />
       </div>
     </div>

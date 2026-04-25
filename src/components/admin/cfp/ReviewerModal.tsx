@@ -109,7 +109,7 @@ export function ReviewerModal({
       </div>
       <div>
         <h3 className="text-lg font-bold text-black">Manage Reviewer</h3>
-        <p className="text-sm text-gray-600">{reviewer.email}</p>
+        <p className="text-sm text-brand-gray-dark">{reviewer.email}</p>
       </div>
     </div>
   );
@@ -119,7 +119,7 @@ export function ReviewerModal({
       <Modal isOpen={true} onClose={onClose} headerContent={headerContent} size="lg">
         <ModalBody className="space-y-6">
           {/* Reviewer Info */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-brand-gray-medium font-medium mb-1">Name</p>
@@ -181,7 +181,7 @@ export function ReviewerModal({
           </div>
 
           {/* Danger Zone */}
-          <div className="border-t border-gray-200 pt-6">
+          <div className="border-t border-brand-gray-lightest pt-6">
             <h4 className="text-xs font-bold text-red-600 uppercase tracking-wide mb-3">
               Danger Zone
             </h4>

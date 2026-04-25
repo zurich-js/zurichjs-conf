@@ -28,10 +28,10 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
   return (
     <section>
       <div className="flex items-center gap-2 mb-4">
-        <Users className="w-5 h-5 text-gray-600" />
+        <Users className="w-5 h-5 text-brand-gray-dark" />
         <h3 className="text-lg font-semibold text-black">Speaker Demographics</h3>
         <Tooltip content="Geographic and company distribution of speakers, plus profile completion rates.">
-          <Info className="w-4 h-4 text-gray-400 cursor-help" />
+          <Info className="w-4 h-4 text-brand-gray-medium cursor-help" />
         </Tooltip>
       </div>
 
@@ -65,14 +65,14 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
             <h4 className="text-sm font-semibold text-black">Top Countries</h4>
           </div>
           {topCountries.length === 0 ? (
-            <p className="text-sm text-gray-400">No country data available</p>
+            <p className="text-sm text-brand-gray-medium">No country data available</p>
           ) : (
             <div className="space-y-2">
               {topCountries.map(({ country, count }, i) => {
                 const maxCount = topCountries[0]?.count || 1;
                 return (
                   <div key={country} className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
+                    <span className="text-xs text-brand-gray-medium w-4">{i + 1}.</span>
                     <span className="text-sm text-black flex-1 truncate">{country}</span>
                     <div className="hidden sm:block w-16 sm:w-24 bg-text-brand-gray-lightest rounded-full h-2 overflow-hidden">
                       <div
@@ -95,14 +95,14 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
             <h4 className="text-sm font-semibold text-black">Top Companies</h4>
           </div>
           {topCompanies.length === 0 ? (
-            <p className="text-sm text-gray-400">No company data available</p>
+            <p className="text-sm text-brand-gray-medium">No company data available</p>
           ) : (
             <div className="space-y-2">
               {topCompanies.map(({ company, count }, i) => {
                 const maxCount = topCompanies[0]?.count || 1;
                 return (
                   <div key={company} className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
+                    <span className="text-xs text-brand-gray-medium w-4">{i + 1}.</span>
                     <span className="text-sm text-black flex-1 truncate">{company}</span>
                     <div className="hidden sm:block w-16 sm:w-24 bg-text-brand-gray-lightest rounded-full h-2 overflow-hidden">
                       <div
@@ -122,7 +122,7 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
       {/* Profile completeness bar */}
       <div className="mt-6 pt-4 border-t border-text-brand-gray-lightest">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
-          <span className="text-sm text-gray-600">Profile Completeness</span>
+          <span className="text-sm text-brand-gray-dark">Profile Completeness</span>
           <span className="text-sm font-medium text-black">{profileComplete} complete / {profileIncomplete} incomplete</span>
         </div>
         <div className="h-3 bg-text-brand-gray-lightest rounded-full overflow-hidden">
@@ -150,13 +150,13 @@ function MetricCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-brand-gray-lightest bg-white p-4">
       <div className="flex items-center gap-2 mb-1">
         {icon}
         <span className="text-xs text-brand-gray-medium">{label}</span>
       </div>
       <div className={`text-xl sm:text-2xl font-bold ${valueColor} break-words`}>{value}</div>
-      {subtitle && <div className="text-xs text-gray-400 mt-0.5">{subtitle}</div>}
+      {subtitle && <div className="text-xs text-brand-gray-medium mt-0.5">{subtitle}</div>}
     </div>
   );
 }

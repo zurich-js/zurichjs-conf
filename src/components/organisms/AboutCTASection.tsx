@@ -92,7 +92,7 @@ export const AboutCTASection: React.FC<AboutCTASectionProps> = ({ data }) => {
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === currentSlide
                     ? 'bg-gray-900 scale-110'
-                    : 'bg-gray-400 hover:bg-gray-600'
+                    : 'bg-brand-gray-medium hover:bg-brand-gray-dark'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />

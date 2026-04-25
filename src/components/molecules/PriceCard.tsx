@@ -155,7 +155,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
           </Heading>
           {/* Remaining stock badge for limited tickets */}
           {hasLimitedStock && !stock?.soldOut && stock?.remaining && (
-            <span className="bg-gray-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap">
+            <span className="bg-brand-gray-medium text-white text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap">
               {stock.remaining} left
             </span>
           )}

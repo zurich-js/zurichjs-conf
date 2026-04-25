@@ -56,14 +56,14 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 sm:p-4">
       <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-brand-gray-lightest">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-text-brand-gray-lightest overflow-hidden flex-shrink-0">
                 {sponsor.logo_url ? (
                   <Image src={sponsor.logo_url} alt={sponsor.company_name} fill className="object-contain p-1" unoptimized={sponsor.logo_url.endsWith('.svg') || sponsor.logo_url.endsWith('.gif')} />
                 ) : (
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center"><Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" /></div>
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center"><Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-brand-gray-medium" /></div>
                 )}
               </div>
               <div className="min-w-0">
@@ -82,7 +82,7 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
         {error && <div className="px-6 py-3 bg-red-50 border-b border-red-200"><p className="text-sm text-red-700">{error}</p></div>}
 
         {/* Tabs */}
-        <div className="px-4 sm:px-6 py-2 sm:py-0 border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-2 sm:py-0 border-b border-brand-gray-lightest">
           {/* Mobile: Segmented control */}
           <nav className="flex sm:hidden bg-text-brand-gray-lightest rounded-lg p-1">
             {tabs.map((tab) => (

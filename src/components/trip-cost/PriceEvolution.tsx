@@ -22,7 +22,7 @@ export function PriceEvolution({
   isConverted,
 }: PriceEvolutionProps) {
   return (
-    <div id="price-evolution" className="border border-gray-200 rounded-2xl p-5 pb-7 sm:p-6 sm:pb-9 mb-24 sm:mb-32">
+    <div id="price-evolution" className="border border-brand-gray-lightest rounded-2xl p-5 pb-7 sm:p-6 sm:pb-9 mb-24 sm:mb-32">
       <h2 className="text-base font-semibold text-black mb-5">Price evolution</h2>
       <div className="relative mb-6">
         <div className="absolute top-[11px] left-[14px] right-[14px] h-1.5 rounded-full bg-gradient-to-r from-brand-green via-brand-yellow-main to-brand-red" />

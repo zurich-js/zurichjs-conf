@@ -30,7 +30,7 @@ export function RegistrantsPanel({ workshopId, onClose }: { workshopId: string; 
   });
 
   return (
-    <div className="rounded border border-gray-200 bg-white">
+    <div className="rounded border border-brand-gray-lightest bg-white">
       <div className="flex items-center justify-between border-b border-text-brand-gray-lightest px-3 py-2">
         <div className="text-sm font-semibold">Registrants</div>
         <button onClick={onClose} className="text-xs text-brand-gray-medium hover:text-gray-800 cursor-pointer">
@@ -47,7 +47,7 @@ export function RegistrantsPanel({ workshopId, onClose }: { workshopId: string; 
         )}
         {data && data.length > 0 && (
           <table className="min-w-full divide-y divide-text-brand-gray-lightest text-left text-xs">
-            <thead className="bg-gray-50 text-gray-600">
+            <thead className="bg-gray-50 text-brand-gray-dark">
               <tr>
                 <th className="px-3 py-2 font-medium">Name</th>
                 <th className="px-3 py-2 font-medium">Email</th>
@@ -97,7 +97,7 @@ export function RevenuePanel({ workshopId, onClose }: { workshopId: string; onCl
   });
 
   return (
-    <div className="rounded border border-gray-200 bg-white">
+    <div className="rounded border border-brand-gray-lightest bg-white">
       <div className="flex items-center justify-between border-b border-text-brand-gray-lightest px-3 py-2">
         <div className="text-sm font-semibold">Revenue</div>
         <button onClick={onClose} className="text-xs text-brand-gray-medium hover:text-gray-800 cursor-pointer">
@@ -109,14 +109,14 @@ export function RevenuePanel({ workshopId, onClose }: { workshopId: string; onCl
         {isError && <div className="text-xs text-red-700">Error: {(error as Error)?.message}</div>}
         {data && (
           <div className="space-y-2">
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-brand-gray-dark">
               Total registrations: <span className="font-semibold">{data.totalRegistrations}</span>
             </div>
             {data.byCurrency.length === 0 ? (
               <div className="text-xs text-brand-gray-medium">No confirmed revenue yet.</div>
             ) : (
               <table className="min-w-full text-xs">
-                <thead className="text-gray-600">
+                <thead className="text-brand-gray-dark">
                   <tr>
                     <th className="px-2 py-1 text-left font-medium">Currency</th>
                     <th className="px-2 py-1 text-right font-medium">Gross</th>

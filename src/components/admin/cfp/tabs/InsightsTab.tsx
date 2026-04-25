@@ -118,7 +118,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
       <section>
         <h3 className="text-lg font-semibold text-black mb-4">Decision Readiness</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
+          <div className="rounded-xl border border-brand-gray-lightest bg-white p-4 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-black">{totalAnalyzed}</div>
             <div className="text-sm text-brand-gray-medium">Total analyzed</div>
           </div>
@@ -162,12 +162,12 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
       {/* Shortlist Status Distribution */}
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-5 h-5 text-gray-600" />
+          <FileText className="w-5 h-5 text-brand-gray-dark" />
           <h3 className="text-lg font-semibold text-black">Shortlist Status Distribution</h3>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(insights.byStatus).map(([status, count]) => {
-            const colors = STATUS_COLORS[status] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', barColor: 'bg-gray-300' };
+            const colors = STATUS_COLORS[status] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-brand-gray-lightest', barColor: 'bg-gray-300' };
             const pct = totalAnalyzed > 0 ? ((count / totalAnalyzed) * 100).toFixed(0) : '0';
             return (
               <div
@@ -176,7 +176,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
               >
                 <div className="flex items-baseline justify-between">
                   <div className="text-2xl sm:text-3xl font-bold text-black">{count}</div>
-                  <div className="text-sm text-gray-400">{pct}%</div>
+                  <div className="text-sm text-brand-gray-medium">{pct}%</div>
                 </div>
                 <div className={`text-sm font-medium ${colors.text} mt-1`}>
                   {SHORTLIST_STATUS_LABELS[status as keyof typeof SHORTLIST_STATUS_LABELS] || status}
@@ -190,7 +190,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
       {/* Score Distribution */}
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <Star className="w-5 h-5 text-gray-600" />
+          <Star className="w-5 h-5 text-brand-gray-dark" />
           <h3 className="text-lg font-semibold text-black">Average Score Distribution</h3>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -200,10 +200,10 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
             return (
               <div
                 key={bucket}
-                className="rounded-xl p-4 border border-gray-200 bg-white"
+                className="rounded-xl p-4 border border-brand-gray-lightest bg-white"
               >
                 <div className="text-2xl sm:text-3xl font-bold text-black mb-1">{count}</div>
-                <div className="text-sm font-medium text-gray-600 mb-2">
+                <div className="text-sm font-medium text-brand-gray-dark mb-2">
                   {SCORE_BUCKET_LABELS[bucket] || bucket}
                 </div>
                 <div className="h-2 bg-text-brand-gray-lightest rounded-full overflow-hidden">
@@ -221,7 +221,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
       {/* Coverage Distribution */}
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5 text-gray-600" />
+          <Users className="w-5 h-5 text-brand-gray-dark" />
           <h3 className="text-lg font-semibold text-black">Review Coverage Distribution</h3>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -231,10 +231,10 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
             return (
               <div
                 key={bucket}
-                className="rounded-xl p-4 border border-gray-200 bg-white"
+                className="rounded-xl p-4 border border-brand-gray-lightest bg-white"
               >
                 <div className="text-2xl sm:text-3xl font-bold text-black mb-1">{count}</div>
-                <div className="text-sm font-medium text-gray-600 mb-2">
+                <div className="text-sm font-medium text-brand-gray-dark mb-2">
                   {COVERAGE_BUCKET_LABELS[bucket] || bucket}
                 </div>
                 <div className="h-2 bg-text-brand-gray-lightest rounded-full overflow-hidden">
@@ -250,8 +250,8 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
       </section>
 
       {/* Summary */}
-      <section className="pt-4 border-t border-gray-200">
-        <div className="flex flex-wrap gap-3 sm:gap-6 text-sm text-gray-600">
+      <section className="pt-4 border-t border-brand-gray-lightest">
+        <div className="flex flex-wrap gap-3 sm:gap-6 text-sm text-brand-gray-dark">
           <div>
             <span className="font-medium text-black">Total submissions analyzed:</span>{' '}
             {totalAnalyzed}

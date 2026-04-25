@@ -276,7 +276,7 @@ export function ScheduleItemModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 p-6">
+        <div className="flex items-center justify-between border-b border-brand-gray-lightest p-6">
           <h3 className="text-xl font-bold text-black">{modalTitle}</h3>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-text-brand-gray-lightest cursor-pointer">
             <X className="h-5 w-5 text-black" />
@@ -287,7 +287,7 @@ export function ScheduleItemModal({
           {error ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
 
           {!item || isPlaceholderEdit ? (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-xl border border-brand-gray-lightest bg-gray-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1">
                   <label className="mb-1 block text-sm font-medium text-black">Choose CFP submission</label>
@@ -344,7 +344,7 @@ export function ScheduleItemModal({
               ) : null}
 
               {mode === 'custom' ? (
-                <div className="mt-4 grid gap-4 border-t border-gray-200 pt-4">
+                <div className="mt-4 grid gap-4 border-t border-brand-gray-lightest pt-4">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-black">Speaker</label>
                     <select
@@ -626,7 +626,7 @@ export function ScheduleItemModal({
           ) : null}
 
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-gray-600 hover:text-black">
+            <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-brand-gray-dark hover:text-black">
               Cancel
             </button>
             <button

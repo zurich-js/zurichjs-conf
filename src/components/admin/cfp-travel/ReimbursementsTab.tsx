@@ -7,8 +7,10 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ExternalLink, Filter } from 'lucide-react';
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
+import { ExternalLink } from 'lucide-react';
 import { Pagination } from '@/components/atoms';
+import { AdminDataTable, AdminMobileCard, AdminTableToolbar } from '@/components/admin/common';
 import { cycleMultiSort, getMultiSortDirection, SortIndicator, type MultiSort } from '@/components/admin/cfp/tableSort';
 import type { ReimbursementWithSpeaker } from '@/lib/cfp/admin-travel';
 import type { CfpReimbursementStatus } from '@/lib/types/cfp';
@@ -16,6 +18,7 @@ import { formatDate } from './format';
 import { STATUS_COLORS } from './types';
 
 type ReimbursementSortKey = 'speaker' | 'expense' | 'amount' | 'submitted' | 'status';
+const columnHelper = createColumnHelper<ReimbursementWithSpeaker>();
 
 interface ReimbursementsTabProps {
   reimbursements: ReimbursementWithSpeaker[];
@@ -142,209 +145,211 @@ export function ReimbursementsTab({
   const handleSortClick = (key: ReimbursementSortKey) => setSort(cycleMultiSort(sort, key));
 
   return (
-      <div className="space-y-4">
-          <div className="px-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-700">
-            <Filter className="h-4 w-4 text-brand-gray-medium" />
-            <span>
-              Showing <span className="font-semibold text-black">{filteredReimbursements.length}</span> reimbursement
-              {filteredReimbursements.length === 1 ? '' : 's'}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search speaker or expense..."
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary lg:w-80"
-            />
-            <select
-              value={filter}
-              onChange={(event) => setFilter(event.target.value as CfpReimbursementStatus | 'all')}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            >
-              {(['all', 'pending', 'approved', 'rejected', 'paid'] as const).map((status) => (
-                <option key={status} value={status}>
-                  {status === 'all' ? 'All statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px]">
-            <thead className="bg-gray-50 text-left text-sm text-gray-500">
-              <tr>
-                <SortableHeader label="Speaker" sortKey="speaker" sort={sort} onClick={handleSortClick} />
-                <SortableHeader label="Expense" sortKey="expense" sort={sort} onClick={handleSortClick} />
-                <SortableHeader label="Amount" sortKey="amount" sort={sort} onClick={handleSortClick} />
-                <SortableHeader label="Submitted" sortKey="submitted" sort={sort} onClick={handleSortClick} />
-                <SortableHeader label="Status" sortKey="status" sort={sort} onClick={handleSortClick} />
-                <th className="px-4 py-3">Receipt</th>
-                <th className="px-4 py-3">Banking</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
-                    Loading reimbursements...
-                  </td>
-                </tr>
-              ) : paginatedReimbursements.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
-                    No reimbursements found
-                  </td>
-                </tr>
-              ) : (
-                paginatedReimbursements.map((reimbursement) => {
-                  const isHighlighted = reimbursement.id === highlightedReimbursementId;
-
-                  return (
-                    <tr
-                      key={reimbursement.id}
-                      ref={(node) => {
-                        rowRefs.current[reimbursement.id] = node;
-                      }}
-                      className={`align-top transition-colors hover:bg-gray-50 ${
-                        isHighlighted ? 'bg-brand-primary/10' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-4">
-                        <div className="font-medium text-black">
-                          {reimbursement.speaker.first_name} {reimbursement.speaker.last_name}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">
-                        <div className="font-medium text-black">{reimbursement.expense_type}</div>
-                        <div className="mt-1 max-w-md">{reimbursement.description || 'No description'}</div>
-                        {reimbursement.admin_notes ? (
-                          <div className="mt-2 text-xs text-brand-gray-medium">
-                            Admin note: {reimbursement.admin_notes}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">
-                        <div className="font-semibold text-black">
-                          {reimbursement.currency} {(reimbursement.amount / 100).toFixed(2)}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">{formatDate(reimbursement.created_at)}</td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex rounded px-2 py-1 text-xs capitalize ${STATUS_COLORS[reimbursement.status]}`}>
-                          {reimbursement.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">
-                        {reimbursement.receipt_url ? (
-                          <a
-                            href={reimbursement.receipt_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 font-medium text-black hover:bg-text-brand-gray-lightest"
-                          >
-                            <ExternalLink className="size-4" />
-                            Open
-                          </a>
-                        ) : (
-                          <span className="text-gray-400">No receipt</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">
-                        {reimbursement.iban ? (
-                          <div className="space-y-1">
-                            <div className="font-medium text-black">{reimbursement.iban}</div>
-                            {reimbursement.swift_bic ? <div className="text-xs text-brand-gray-medium">SWIFT: {reimbursement.swift_bic}</div> : null}
-                            {reimbursement.bank_account_holder ? (
-                              <div className="text-xs text-brand-gray-medium">{reimbursement.bank_account_holder}</div>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No banking details</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          {reimbursement.status === 'pending' ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => onApprove(reimbursement.id)}
-                                disabled={isUpdating}
-                                className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onReject(reimbursement.id)}
-                                disabled={isUpdating}
-                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          ) : null}
-                          {reimbursement.status === 'approved' ? (
-                            <button
-                              type="button"
-                              onClick={() => onMarkPaid(reimbursement.id)}
-                              disabled={isUpdating}
-                              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                            >
-                              Mark as paid
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-          pageSize={pageSize}
-          totalItems={filteredReimbursements.length}
-          variant="light"
-        />
-      </div>
-    </div>
+      <AdminDataTable
+        data={paginatedReimbursements}
+        columns={getReimbursementColumns({
+          sort,
+          handleSortClick,
+          highlightedReimbursementId,
+          rowRefs,
+          onApprove,
+          onReject,
+          onMarkPaid,
+          isUpdating,
+        })}
+        isLoading={isLoading}
+        emptyState="No reimbursements found"
+        rowClassName={(reimbursement) => reimbursement.id === highlightedReimbursementId ? 'bg-brand-primary/10' : ''}
+        toolbar={(
+          <AdminTableToolbar
+            right={(
+              <>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search speaker or expense..."
+                  className="min-w-[280px] flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary lg:flex-none"
+                />
+                <select
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value as CfpReimbursementStatus | 'all')}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  {(['all', 'pending', 'approved', 'rejected', 'paid'] as const).map((status) => (
+                    <option key={status} value={status}>
+                      {status === 'all' ? 'All statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+          />
+        )}
+        mobileList={{
+          renderCard: (reimbursement) => (
+            <AdminMobileCard key={reimbursement.id} className={reimbursement.id === highlightedReimbursementId ? 'bg-brand-primary/10' : ''}>
+              <div className="mb-3">
+                <div className="font-medium text-black">{reimbursement.speaker.first_name} {reimbursement.speaker.last_name}</div>
+                <div className="mt-1 text-sm text-brand-gray-dark">{reimbursement.expense_type}</div>
+                <div className="mt-1 text-xs text-brand-gray-medium">{reimbursement.description || 'No description'}</div>
+              </div>
+              <div className="mb-3 flex items-center justify-between">
+                <span className="font-semibold text-black">{reimbursement.currency} {(reimbursement.amount / 100).toFixed(2)}</span>
+                <span className={`inline-flex rounded px-2 py-1 text-xs capitalize ${STATUS_COLORS[reimbursement.status]}`}>
+                  {reimbursement.status}
+                </span>
+              </div>
+              <div className="space-y-2 text-sm text-brand-gray-dark">
+                <div>Submitted {formatDate(reimbursement.created_at)}</div>
+                {reimbursement.receipt_url ? (
+                  <a href={reimbursement.receipt_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 font-medium text-black hover:bg-text-brand-gray-lightest">
+                    <ExternalLink className="size-4" />
+                    Open receipt
+                  </a>
+                ) : null}
+              </div>
+            </AdminMobileCard>
+          ),
+        }}
+        pagination={(
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            pageSize={pageSize}
+            totalItems={filteredReimbursements.length}
+            variant="light"
+          />
+        )}
+      />
   );
 }
 
-function SortableHeader({
-  label,
-  sortKey,
+function getReimbursementColumns({
   sort,
-  onClick,
+  handleSortClick,
+  highlightedReimbursementId,
+  rowRefs,
+  onApprove,
+  onReject,
+  onMarkPaid,
+  isUpdating,
 }: {
-  label: string;
-  sortKey: ReimbursementSortKey;
   sort: MultiSort<ReimbursementSortKey>;
-  onClick: (key: ReimbursementSortKey) => void;
-}) {
-  return (
-    <th className="px-4 py-3">
-      <button
-        type="button"
-        onClick={() => onClick(sortKey)}
-        className="inline-flex items-center gap-1 font-medium text-gray-500 hover:text-black"
-      >
-        <span>{label}</span>
-        <SortIndicator direction={getMultiSortDirection(sort, sortKey)} />
-      </button>
-    </th>
-  );
+  handleSortClick: (key: ReimbursementSortKey) => void;
+  highlightedReimbursementId?: string | null;
+  rowRefs: React.MutableRefObject<Record<string, HTMLTableRowElement | null>>;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onMarkPaid: (id: string) => void;
+  isUpdating: boolean;
+}): Array<ColumnDef<ReimbursementWithSpeaker, unknown>> {
+  return [
+    columnHelper.display({
+      id: 'speaker',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('speaker')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Speaker</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'speaker')} />
+        </button>
+      ),
+      cell: ({ row }) => {
+        if (row.original.id === highlightedReimbursementId) {
+          rowRefs.current[row.original.id] = null;
+        }
+        return <div className="font-medium text-black">{row.original.speaker.first_name} {row.original.speaker.last_name}</div>;
+      },
+    }),
+    columnHelper.display({
+      id: 'expense',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('expense')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Expense</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'expense')} />
+        </button>
+      ),
+      cell: ({ row }) => (
+        <div className="text-sm text-brand-gray-dark">
+          <div className="font-medium text-black">{row.original.expense_type}</div>
+          <div className="mt-1 max-w-md">{row.original.description || 'No description'}</div>
+          {row.original.admin_notes ? <div className="mt-2 text-xs text-brand-gray-medium">Admin note: {row.original.admin_notes}</div> : null}
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'amount',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('amount')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Amount</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'amount')} />
+        </button>
+      ),
+      cell: ({ row }) => <div className="text-sm font-semibold text-black">{row.original.currency} {(row.original.amount / 100).toFixed(2)}</div>,
+    }),
+    columnHelper.display({
+      id: 'submitted',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('submitted')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Submitted</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'submitted')} />
+        </button>
+      ),
+      cell: ({ row }) => <span className="text-sm text-brand-gray-dark">{formatDate(row.original.created_at)}</span>,
+    }),
+    columnHelper.display({
+      id: 'status',
+      header: () => (
+        <button type="button" onClick={() => handleSortClick('status')} className="inline-flex items-center gap-1 font-medium text-brand-gray-medium hover:text-black">
+          <span>Status</span>
+          <SortIndicator direction={getMultiSortDirection(sort, 'status')} />
+        </button>
+      ),
+      cell: ({ row }) => <span className={`inline-flex rounded px-2 py-1 text-xs capitalize ${STATUS_COLORS[row.original.status]}`}>{row.original.status}</span>,
+    }),
+    columnHelper.display({
+      id: 'receipt',
+      header: 'Receipt',
+      cell: ({ row }) => row.original.receipt_url ? (
+        <a href={row.original.receipt_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 font-medium text-black hover:bg-text-brand-gray-lightest">
+          <ExternalLink className="size-4" />
+          Open
+        </a>
+      ) : <span className="text-brand-gray-medium">No receipt</span>,
+    }),
+    columnHelper.display({
+      id: 'banking',
+      header: 'Banking',
+      cell: ({ row }) => row.original.iban ? (
+        <div className="space-y-1 text-sm text-brand-gray-dark">
+          <div className="font-medium text-black">{row.original.iban}</div>
+          {row.original.swift_bic ? <div className="text-xs text-brand-gray-medium">SWIFT: {row.original.swift_bic}</div> : null}
+          {row.original.bank_account_holder ? <div className="text-xs text-brand-gray-medium">{row.original.bank_account_holder}</div> : null}
+        </div>
+      ) : <span className="text-brand-gray-medium">No banking details</span>,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-2">
+          {row.original.status === 'pending' ? (
+            <>
+              <button type="button" onClick={() => onApprove(row.original.id)} disabled={isUpdating} className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50">
+                Approve
+              </button>
+              <button type="button" onClick={() => onReject(row.original.id)} disabled={isUpdating} className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50">
+                Reject
+              </button>
+            </>
+          ) : null}
+          {row.original.status === 'approved' ? (
+            <button type="button" onClick={() => onMarkPaid(row.original.id)} disabled={isUpdating} className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
+              Mark as paid
+            </button>
+          ) : null}
+        </div>
+      ),
+    }),
+  ];
 }

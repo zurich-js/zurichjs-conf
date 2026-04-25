@@ -81,7 +81,7 @@ export function SubmissionEditForm({
 
       {/* Workshop-specific fields */}
       {editForm.submission_type === 'workshop' && (
-        <div className="space-y-4 pt-2 border-t border-gray-200 mt-4">
+        <div className="space-y-4 pt-2 border-t border-brand-gray-lightest mt-4">
           <p className="text-xs font-bold text-black uppercase tracking-wide">Workshop Details</p>
           <div className="grid grid-cols-2 gap-4">
             <div>

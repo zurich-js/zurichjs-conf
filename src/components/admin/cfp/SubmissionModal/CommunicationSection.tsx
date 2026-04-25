@@ -115,11 +115,11 @@ export function CommunicationSection({
   );
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-4">
+    <div className="rounded-xl border border-brand-gray-lightest bg-gray-50 p-4 space-y-4">
       {/* Header */}
       <div>
         <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-black">
-          <Gavel className="h-4 w-4 text-gray-600" />
+          <Gavel className="h-4 w-4 text-brand-gray-dark" />
           Decision &amp; Speaker Communication
         </h4>
         <p className="mt-1 text-xs text-brand-gray-medium">
@@ -139,7 +139,7 @@ export function CommunicationSection({
               </span>
             </div>
             <p className="mt-1 text-sm text-black">{state.description}</p>
-            {state.detail && <p className="mt-1 text-xs text-gray-600">{state.detail}</p>}
+            {state.detail && <p className="mt-1 text-xs text-brand-gray-dark">{state.detail}</p>}
           </div>
         </div>
       </div>
@@ -210,7 +210,7 @@ export function CommunicationSection({
                     <button
                       type="button"
                       onClick={() => setConfirmSendNowId(null)}
-                      className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-text-brand-gray-lightest cursor-pointer"
+                      className="rounded px-2 py-1 text-xs font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest cursor-pointer"
                     >
                       No
                     </button>
@@ -234,7 +234,7 @@ export function CommunicationSection({
                     <button
                       type="button"
                       onClick={() => setConfirmCancelId(null)}
-                      className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-text-brand-gray-lightest cursor-pointer"
+                      className="rounded px-2 py-1 text-xs font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest cursor-pointer"
                     >
                       Keep it
                     </button>
@@ -283,9 +283,9 @@ export function CommunicationSection({
       </div>
 
       {/* Unified activity timeline */}
-      <div className="rounded-lg bg-white border border-gray-200">
-        <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-600">
+      <div className="rounded-lg bg-white border border-brand-gray-lightest">
+        <div className="flex items-center justify-between border-b border-brand-gray-lightest px-3 py-2">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-gray-dark">
             <Mail className="h-3.5 w-3.5" />
             Activity timeline
           </p>
@@ -302,7 +302,7 @@ export function CommunicationSection({
                 <span className="mt-0.5 shrink-0">{event.icon}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-black">{event.title}</p>
-                  {event.detail && <p className="text-xs text-gray-600">{event.detail}</p>}
+                  {event.detail && <p className="text-xs text-brand-gray-dark">{event.detail}</p>}
                 </div>
                 <time
                   className="shrink-0 whitespace-nowrap text-[11px] text-brand-gray-medium"
@@ -404,7 +404,7 @@ function buildTimeline(
       at: h.created_at,
       title: formatDecisionEventTitle(h),
       detail: h.notes || undefined,
-      icon: <Gavel className="h-4 w-4 text-gray-600" />,
+      icon: <Gavel className="h-4 w-4 text-brand-gray-dark" />,
     });
   }
 

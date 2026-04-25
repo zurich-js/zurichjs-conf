@@ -17,7 +17,7 @@ const FUNNEL_STAGES: Array<{
   color: string;
   bgColor: string;
 }> = [
-  { key: 'draft', label: 'Draft', color: 'text-gray-600', bgColor: 'bg-text-brand-gray-lightest' },
+  { key: 'draft', label: 'Draft', color: 'text-brand-gray-dark', bgColor: 'bg-text-brand-gray-lightest' },
   { key: 'submitted', label: 'Submitted', color: 'text-blue-600', bgColor: 'bg-blue-50' },
   { key: 'under_review', label: 'Under Review', color: 'text-purple-600', bgColor: 'bg-purple-50' },
   { key: 'shortlisted', label: 'Shortlisted', color: 'text-amber-600', bgColor: 'bg-amber-50' },
@@ -36,7 +36,7 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-lg font-semibold text-black">Submission Funnel</h3>
         <Tooltip content="Tracks how submissions progress through each stage, from draft to final decision.">
-          <Info className="w-4 h-4 text-gray-400 cursor-help" />
+          <Info className="w-4 h-4 text-brand-gray-medium cursor-help" />
         </Tooltip>
       </div>
 
@@ -51,13 +51,13 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
               <div className="flex flex-col items-center flex-1 min-w-[80px]">
                 <span className="text-xl font-bold text-black mb-1">{count}</span>
                 <div
-                  className={`w-full rounded-t-lg ${stage.bgColor} border border-b-0 border-gray-200 transition-all`}
+                  className={`w-full rounded-t-lg ${stage.bgColor} border border-b-0 border-brand-gray-lightest transition-all`}
                   style={{ height: `${barHeight}px` }}
                 />
                 <div className={`text-xs font-medium ${stage.color} mt-2 text-center`}>
                   {stage.label}
                 </div>
-                <div className="text-xs text-gray-400">{pct}%</div>
+                <div className="text-xs text-brand-gray-medium">{pct}%</div>
               </div>
               {i < FUNNEL_STAGES.length - 1 && (
                 <ArrowRight className="w-3 h-3 text-gray-300 mb-8 flex-shrink-0" />
@@ -80,7 +80,7 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
               </div>
               <div className="flex-1 bg-text-brand-gray-lightest rounded-full h-6 overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${stage.bgColor} border border-gray-200 flex items-center justify-end pr-2 transition-all`}
+                  className={`h-full rounded-full ${stage.bgColor} border border-brand-gray-lightest flex items-center justify-end pr-2 transition-all`}
                   style={{ width: `${barWidth}%` }}
                 >
                   {count > 0 && (
@@ -88,7 +88,7 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
                   )}
                 </div>
               </div>
-              <div className="text-xs text-gray-400 w-8 sm:w-10 text-right shrink-0">{pct}%</div>
+              <div className="text-xs text-brand-gray-medium w-8 sm:w-10 text-right shrink-0">{pct}%</div>
             </div>
           );
         })}

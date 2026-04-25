@@ -135,7 +135,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
     <div className="space-y-6">
       {(invoice.status === 'draft' || invoice.status === 'sent') && (
         <div className="flex justify-end">
-          <button onClick={startEditing} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bg-gray-200 rounded-lg transition-colors cursor-pointer text-black">
+          <button onClick={startEditing} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors cursor-pointer text-black">
             Edit Details
           </button>
         </div>
@@ -176,7 +176,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
               <a href={invoice.stripe_payment_link_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm bg-[#635BFF] text-white rounded-lg font-medium hover:bg-[#5046e5] transition-colors cursor-pointer">
                 Open Payment Link
               </a>
-              <button onClick={() => { navigator.clipboard.writeText(invoice.stripe_payment_link_url || ''); alert('Payment link copied!'); }} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bg-gray-200 rounded-lg transition-colors cursor-pointer text-black">
+              <button onClick={() => { navigator.clipboard.writeText(invoice.stripe_payment_link_url || ''); alert('Payment link copied!'); }} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors cursor-pointer text-black">
                 Copy Link
               </button>
             </div>
@@ -224,7 +224,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
             <a href={invoice.invoice_pdf_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm bg-brand-primary text-black rounded-lg font-medium hover:bg-[#e6d766] transition-colors cursor-pointer">
               Download PDF
             </a>
-            <button onClick={handleRegeneratePDF} disabled={actionLoading === 'pdf'} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 cursor-pointer text-black">
+            <button onClick={handleRegeneratePDF} disabled={actionLoading === 'pdf'} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors disabled:opacity-50 cursor-pointer text-black">
               {actionLoading === 'pdf' ? 'Regenerating...' : 'Regenerate PDF'}
             </button>
           </div>
@@ -294,7 +294,7 @@ function EditForm({ formData, setFormData, onSave, onCancel, loading }: {
         <div>
           <label className="block text-sm font-medium text-black mb-1">Unit Price (CHF)</label>
           <input type="number" min={0} step={0.01} value={formData.unitPrice / 100} onChange={(e) => update('unitPrice', Math.round(parseFloat(e.target.value) * 100) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
-          <p className="mt-1 text-xs text-gray-600">Total: {formatAmount(formData.unitPrice * formData.ticketQuantity)}</p>
+          <p className="mt-1 text-xs text-brand-gray-dark">Total: {formatAmount(formData.unitPrice * formData.ticketQuantity)}</p>
         </div>
         <div className="col-span-1 sm:col-span-2">
           <label className="block text-sm font-medium text-black mb-1">Internal Notes <span className="text-brand-gray-medium font-normal ml-1">(admin only)</span></label>
@@ -305,8 +305,8 @@ function EditForm({ formData, setFormData, onSave, onCancel, loading }: {
           <textarea value={formData.invoiceNotes} onChange={(e) => update('invoiceNotes', e.target.value)} rows={2} placeholder="Payment terms..." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black placeholder:text-brand-gray-medium" />
         </div>
       </div>
-      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-black bg-text-brand-gray-lightest rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">Cancel</button>
+      <div className="flex justify-end gap-3 pt-4 border-t border-brand-gray-lightest">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-black bg-text-brand-gray-lightest rounded-lg hover:bgbrand-gray-lightest transition-colors cursor-pointer">Cancel</button>
         <button onClick={onSave} disabled={loading} className="px-4 py-2 bg-brand-primary text-black rounded-lg font-medium hover:bg-[#e6d766] transition-colors disabled:opacity-50 cursor-pointer">
           {loading ? 'Saving...' : 'Save Changes'}
         </button>

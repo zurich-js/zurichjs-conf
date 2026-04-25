@@ -54,7 +54,7 @@ export function CalculatorSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border border-gray-200 rounded-2xl p-5 sm:p-6">
+    <section className="border border-brand-gray-lightest rounded-2xl p-5 sm:p-6">
       <div className="flex items-center gap-2.5 mb-4">
         <div className="w-8 h-8 rounded-lg bg-text-brand-gray-lightest flex items-center justify-center text-gray-700">
           {icon}
@@ -82,7 +82,7 @@ export function SpendLessTips() {
         <Lightbulb className="w-4 h-4 text-brand-yellow-main" />
         <h3 className="text-sm font-semibold text-black">Ways to spend less</h3>
       </div>
-      <ul className="space-y-2 text-sm text-gray-600">
+      <ul className="space-y-2 text-sm text-brand-gray-dark">
         {SPENDING_TIPS.map((tip) => (
           <li key={tip} className="flex items-start gap-2">
             <span className="text-brand-yellow-main mt-0.5">•</span>

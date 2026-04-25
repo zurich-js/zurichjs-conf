@@ -73,7 +73,7 @@ function SummaryCard({
   compact?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4">
+    <div className="rounded-lg border border-brand-gray-lightest bg-white p-3 sm:p-4">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-gray-medium">
           {label}

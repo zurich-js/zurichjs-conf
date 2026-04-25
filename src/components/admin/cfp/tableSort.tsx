@@ -57,5 +57,5 @@ export function SortIndicator({ direction }: { direction: SortDirection | null }
   if (direction === 'desc') {
     return <ArrowDown className="w-3.5 h-3.5 text-gray-700" />;
   }
-  return <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />;
+  return <ArrowUpDown className="w-3.5 h-3.5 text-brand-gray-medium" />;
 }

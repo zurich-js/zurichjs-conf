@@ -18,7 +18,7 @@ export function B2BFilters({
   onStatusChange,
 }: B2BFiltersProps) {
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+    <div className="bg-white rounded-lg p-4 shadow-sm border border-brand-gray-lightest">
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <input

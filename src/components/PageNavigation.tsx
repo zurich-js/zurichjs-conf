@@ -60,7 +60,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
           On this page
         </p> */}
         <ul className="relative space-y-3">
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
+          <div className="absolute left-[7px] top-2 bottom-2 w-px bgbrand-gray-lightest" />
 
           {items.map((item) => {
             const isActive = activeId === item.id;
@@ -81,7 +81,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
                       ${
                         isActive
                           ? 'bg-brand-yellow-main border-brand-yellow-main scale-110'
-                          : 'bg-white border-gray-300 group-hover:border-gray-500'
+                          : 'bg-white border-gray-300 group-hover:border-brand-gray-medium'
                       }
                     `}
                   />
@@ -91,7 +91,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
                       ${
                         isActive
                           ? 'text-black font-semibold'
-                          : 'text-gray-600 group-hover:text-black'
+                          : 'text-brand-gray-dark group-hover:text-black'
                       }
                     `}
                   >

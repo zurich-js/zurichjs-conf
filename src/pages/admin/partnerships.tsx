@@ -4,12 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
-import AdminHeader from '@/components/admin/AdminHeader';
-import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
-import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import {
   Partnership,
@@ -36,7 +33,7 @@ import {
 } from '@/components/admin/partnerships';
 
 export default function PartnershipsDashboard() {
-  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
+  const { isAuthenticated } = useAdminAuth();
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,16 +88,12 @@ export default function PartnershipsDashboard() {
     setEmailPartnership(null);
   });
 
-  if (isAuthLoading) return <AdminLoadingScreen />;
-  if (!isAuthenticated) return <AdminLoginForm title="Partnerships" />;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest text-black">
-      <Head><title>Partnerships | ZurichJS Admin</title></Head>
-
-      <AdminHeader title="Partnerships" />
-
-      <main className="container 2xl:max-w-7xl mx-auto p-4 space-y-4 sm:space-y-6">
+    <AdminLayout
+      title="Partnerships"
+      headTitle="Partnerships | ZurichJS Admin"
+      contentClassName="py-4 sm:py-6 space-y-4 sm:space-y-6"
+    >
         <StatsCards
           stats={stats || { total: 0, byType: {}, byStatus: {}, activeCoupons: 0, activeVouchers: 0, totalCouponRedemptions: 0, totalVoucherRedemptions: 0, totalDiscountGiven: 0, totalTicketsSold: 0, totalRevenue: 0, topPartnerships: [] }}
           isLoading={isLoadingStats}
@@ -119,13 +112,13 @@ export default function PartnershipsDashboard() {
 
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:order-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-gray-medium" />
               <input
                 type="text"
                 placeholder="Search partnerships..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-auto pl-10 pr-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
+                className="w-full sm:w-auto pl-10 pr-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary"
               />
             </div>
 
@@ -177,7 +170,6 @@ export default function PartnershipsDashboard() {
             }}
           />
         )}
-      </main>
 
       <AddPartnershipModal
         isOpen={showAddModal}
@@ -217,6 +209,6 @@ export default function PartnershipsDashboard() {
           onSend={(options) => sendEmailMutation.mutateAsync({ partnershipId: emailPartnership.id, options })}
         />
       )}
-    </div>
+    </AdminLayout>
   );
 }

@@ -7,7 +7,7 @@ import { X, Filter } from 'lucide-react';
 
 // Score color coding helper
 export function getScoreColor(score: number | null): string {
-  if (score === null) return 'text-gray-400';
+  if (score === null) return 'text-brand-gray-medium';
   if (score >= 3.5) return 'text-green-600';
   if (score >= 2.5) return 'text-amber-600';
   if (score >= 1.5) return 'text-orange-600';
@@ -33,13 +33,13 @@ export function CoverageBar({ percent, reviewCount, totalReviewers }: { percent:
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden min-w-[60px]">
+      <div className="flex-1 h-2 bgbrand-gray-lightest rounded-full overflow-hidden min-w-[60px]">
         <div
           className={`h-full ${getBarColor()} transition-all`}
           style={{ width: `${Math.min(percent, 100)}%` }}
         />
       </div>
-      <span className="text-xs text-gray-600 whitespace-nowrap">
+      <span className="text-xs text-brand-gray-dark whitespace-nowrap">
         {reviewCount}/{totalReviewers}
       </span>
     </div>
@@ -126,7 +126,7 @@ export function ActiveFiltersBar({
   const isFiltered = total !== totalUnfiltered;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gray-50 rounded-lg border border-brand-gray-lightest">
       {/* Summary */}
       <div className="flex items-center gap-2 text-sm">
         <Filter className="w-4 h-4 text-brand-gray-medium" />
@@ -152,7 +152,7 @@ export function ActiveFiltersBar({
           {activeFilters.length > 1 && (
             <button
               onClick={onClearAll}
-              className="text-xs font-medium text-gray-600 hover:text-black underline cursor-pointer"
+              className="text-xs font-medium text-brand-gray-dark hover:text-black underline cursor-pointer"
             >
               Clear all
             </button>

@@ -370,7 +370,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="text-gray-400 hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
+          className="text-brand-gray-medium hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
         >
           <svg
             className="w-4 h-4"

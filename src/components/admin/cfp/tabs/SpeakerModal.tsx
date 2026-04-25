@@ -162,7 +162,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
+        <div className="p-4 sm:p-6 border-b border-brand-gray-lightest bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               {profileImageUrl ? (
@@ -190,7 +190,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
         </div>
 
         {/* Tab Navigation */}
-        <div className="sticky top-[72px] z-[5] border-b border-gray-200 bg-white px-4 sm:px-6">
+        <div className="sticky top-[72px] z-[5] border-b border-brand-gray-lightest bg-white px-4 sm:px-6">
           <nav className="flex gap-4" aria-label="Speaker tabs">
             <button
               type="button"
@@ -266,7 +266,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
             <button
               onClick={() => setIsEditing(!isEditing)}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
-                isEditing ? 'bg-gray-200 text-black' : 'bg-brand-primary hover:bg-[#e8d95e] text-black'
+                isEditing ? 'bgbrand-gray-lightest text-black' : 'bg-brand-primary hover:bg-[#e8d95e] text-black'
               }`}
             >
               {isEditing ? 'Cancel Edit' : 'Edit Profile'}
@@ -279,7 +279,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               <SpeakerInfoSection speaker={speaker} />
 
               {/* Account Info */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Account Info</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
@@ -299,13 +299,13 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
           {isEditing && (
             <>
               {/* Profile Image Section */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Profile Photo</h4>
                 <div className="flex items-center gap-4">
                   {profileImageUrl ? (
                     <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
                   ) : (
-                    <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-full bgbrand-gray-lightest flex items-center justify-center">
                       <User className="w-8 h-8 text-brand-gray-medium" />
                     </div>
                   )}
@@ -331,7 +331,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               </div>
 
               {/* Basic Info */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Basic Information</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -374,7 +374,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               </div>
 
               {/* Bio */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Biography</h4>
                 <textarea
                   value={formData.bio}
@@ -386,7 +386,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               </div>
 
               {/* Social Links */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Social Links</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -435,9 +435,9 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
           )}
 
           {/* Submissions Section */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
             <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-4 h-4 text-gray-600" />
+              <FileText className="w-4 h-4 text-brand-gray-dark" />
               <h4 className="text-xs font-bold text-black uppercase tracking-wide">
                 Submissions ({submissions.length})
               </h4>
@@ -453,12 +453,12 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 {submissions.map((submission) => (
                   <div
                     key={submission.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-brand-gray-lightest hover:border-gray-300 transition-colors"
                   >
                     <div className="flex-1 min-w-0 mr-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm text-black truncate">{submission.title}</span>
-                        <span className="px-2 py-0.5 bg-text-brand-gray-lightest rounded text-xs text-gray-600 capitalize shrink-0">
+                        <span className="px-2 py-0.5 bg-text-brand-gray-lightest rounded text-xs text-brand-gray-dark capitalize shrink-0">
                           {submission.submission_type}
                         </span>
                         {submission.previous_recording_url && (
@@ -514,7 +514,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
 
           {/* Save Button */}
           {isEditing && (
-            <div className="flex justify-center sm:justify-end pt-4 border-t border-gray-200">
+            <div className="flex justify-center sm:justify-end pt-4 border-t border-brand-gray-lightest">
               <button
                 onClick={handleSave}
                 disabled={isSaving}

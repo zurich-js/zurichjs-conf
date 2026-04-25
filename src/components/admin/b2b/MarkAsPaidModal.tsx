@@ -79,13 +79,13 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
 
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-6">
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-gray-600">Tickets Created:</div>
+                <div className="text-brand-gray-dark">Tickets Created:</div>
                 <div className="font-medium text-black">{result.ticketsCreated}</div>
-                <div className="text-gray-600">Emails Sent:</div>
+                <div className="text-brand-gray-dark">Emails Sent:</div>
                 <div className="font-medium text-black">{result.emailsSent}</div>
                 {result.emailsFailed > 0 && (
                   <>
-                    <div className="text-gray-600">Emails Failed:</div>
+                    <div className="text-brand-gray-dark">Emails Failed:</div>
                     <div className="font-medium text-red-600">{result.emailsFailed}</div>
                   </>
                 )}
@@ -99,7 +99,7 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
                   {result.tickets.map((ticket) => (
                     <div key={ticket.ticketId} className="text-xs bg-green-50 p-2 rounded flex justify-between items-center">
                       <span className="text-black">{ticket.attendeeName}</span>
-                      <span className="text-gray-600 font-mono">{ticket.ticketId.slice(0, 8)}...</span>
+                      <span className="text-brand-gray-dark font-mono">{ticket.ticketId.slice(0, 8)}...</span>
                     </div>
                   ))}
                 </div>
@@ -118,7 +118,7 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
                     </div>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-brand-gray-dark">
                   Tickets were still created. You can resend emails later from the attendees list.
                 </p>
               </div>
@@ -139,10 +139,10 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-brand-gray-lightest">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-black">Mark Invoice as Paid</h3>
-            <button onClick={onClose} className="text-gray-600 hover:text-black cursor-pointer">
+            <button onClick={onClose} className="text-brand-gray-dark hover:text-black cursor-pointer">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -161,15 +161,15 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="font-medium text-black mb-3">Invoice Summary</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-gray-600">Invoice:</div>
+              <div className="text-brand-gray-dark">Invoice:</div>
               <div className="font-medium text-black">{invoice.invoice_number}</div>
-              <div className="text-gray-600">Company:</div>
+              <div className="text-brand-gray-dark">Company:</div>
               <div className="font-medium text-black">{invoice.company_name}</div>
-              <div className="text-gray-600">Total Amount:</div>
+              <div className="text-brand-gray-dark">Total Amount:</div>
               <div className="font-medium text-black">{formatAmount(invoice.total_amount, invoice.currency)}</div>
-              <div className="text-gray-600">Tickets:</div>
+              <div className="text-brand-gray-dark">Tickets:</div>
               <div className="font-medium text-black">{invoice.ticket_quantity}x {invoice.ticket_category}</div>
-              <div className="text-gray-600">Attendees:</div>
+              <div className="text-brand-gray-dark">Attendees:</div>
               <div className="font-medium text-black">{invoice.attendees.length} registered</div>
             </div>
           </div>
@@ -187,7 +187,7 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               placeholder="e.g., PAYMENT-12345 or transaction ID"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black placeholder:text-brand-gray-medium"
             />
-            <p className="mt-1 text-xs text-gray-600">
+            <p className="mt-1 text-xs text-brand-gray-dark">
               Enter the bank transfer reference or transaction ID for audit purposes.
             </p>
           </div>
@@ -203,7 +203,7 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
             />
             <label htmlFor="sendEmails" className="text-sm text-black cursor-pointer">
               <span className="font-medium">Send confirmation emails</span>
-              <p className="text-gray-600 mt-0.5">
+              <p className="text-brand-gray-dark mt-0.5">
                 Each attendee will receive their ticket with a QR code via email.
               </p>
             </label>
@@ -244,12 +244,12 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-brand-gray-lightest">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:bgbrand-gray-lightest transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>

@@ -209,7 +209,7 @@ export default function ReportIssuePage() {
 
   // Light-themed input styles
   const inputBaseStyles =
-    'w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-200';
+    'w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-black placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-200';
   const inputErrorStyles = 'border-red-500 focus:ring-red-500';
 
   return (
@@ -254,10 +254,10 @@ export default function ReportIssuePage() {
                   <CheckCircle className="w-16 h-16 text-green-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-black mb-3">Thank You!</h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-brand-gray-dark mb-6">
                   Your report has been submitted successfully.
                 </p>
-                <p className="text-gray-600 mb-8">
+                <p className="text-brand-gray-dark mb-8">
                   If it&apos;s valid, we&apos;ll email you a discount code or workshop
                   voucher as a thank you for helping us improve.
                 </p>
@@ -359,7 +359,7 @@ export default function ReportIssuePage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-gray-medium pointer-events-none" />
                   </div>
                 </div>
 
@@ -370,7 +370,7 @@ export default function ReportIssuePage() {
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
                     Page URL{' '}
-                    <span className="text-gray-400 font-normal">(optional)</span>
+                    <span className="text-brand-gray-medium font-normal">(optional)</span>
                   </label>
                   <input
                     id="pageUrl"
@@ -426,7 +426,7 @@ export default function ReportIssuePage() {
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
                     Screenshot URL{' '}
-                    <span className="text-gray-400 font-normal">(optional)</span>
+                    <span className="text-brand-gray-medium font-normal">(optional)</span>
                   </label>
                   <input
                     id="screenshotUrl"

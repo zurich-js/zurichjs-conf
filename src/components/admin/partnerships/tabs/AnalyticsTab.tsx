@@ -23,8 +23,8 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-20 mb-2" />
-              <div className="h-8 bg-gray-200 rounded w-16" />
+              <div className="h-4 bgbrand-gray-lightest rounded w-20 mb-2" />
+              <div className="h-8 bgbrand-gray-lightest rounded w-16" />
             </div>
           ))}
         </div>
@@ -82,7 +82,7 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
       {coupons.byCode.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-black mb-3">Coupon Performance</h4>
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="bg-white border border-brand-gray-lightest rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
@@ -141,7 +141,7 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
       {tickets.recent.length > 0 && (
         <div>
           <h4 className="text-sm font-medium text-black mb-3">Recent Purchases ({tickets.total} total)</h4>
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="bg-white border border-brand-gray-lightest rounded-lg overflow-hidden">
             <div className="divide-y divide-text-brand-gray-lightest">
               {tickets.recent.slice(0, 5).map((ticket) => (
                 <div key={ticket.id} className="px-4 py-3 flex items-center justify-between">

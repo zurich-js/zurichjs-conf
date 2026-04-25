@@ -188,7 +188,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest">
             Cancel
           </button>
           <button
@@ -224,7 +224,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                   className={`rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
                     mode === value
                       ? 'bg-brand-primary text-black'
-                      : 'text-gray-600 hover:bg-text-brand-gray-lightest hover:text-black'
+                      : 'text-brand-gray-dark hover:bg-text-brand-gray-lightest hover:text-black'
                   }`}
                 >
                   {label}
@@ -284,7 +284,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                 onClick={() => fileInputRef.current?.click()}
                 className="w-16 h-16 rounded-full bg-text-brand-gray-lightest border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50"
               >
-                <Plus className="w-6 h-6 text-gray-400" />
+                <Plus className="w-6 h-6 text-brand-gray-medium" />
               </div>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />

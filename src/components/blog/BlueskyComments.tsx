@@ -85,12 +85,12 @@ function BlueskyReply({
           >
             {post.author.displayName ?? post.author.handle}
           </a>
-          <span className="text-gray-400 text-xs">@{post.author.handle}</span>
+          <span className="text-brand-gray-medium text-xs">@{post.author.handle}</span>
           <a
             href={webUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-400 text-xs hover:text-gray-600 transition-colors ml-auto"
+            className="text-brand-gray-medium text-xs hover:text-brand-gray-dark transition-colors ml-auto"
           >
             {formatRelativeTime(post.record.createdAt)}
           </a>
@@ -102,13 +102,13 @@ function BlueskyReply({
 
         <div className="flex items-center gap-4 mt-2">
           {typeof post.likeCount === 'number' && (
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-brand-gray-medium">
               <Heart className="w-3.5 h-3.5" />
               {post.likeCount}
             </span>
           )}
           {typeof post.replyCount === 'number' && (
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-brand-gray-medium">
               <MessageCircle className="w-3.5 h-3.5" />
               {post.replyCount}
             </span>
@@ -156,7 +156,7 @@ export function BlueskyComments({ postUri }: { postUri?: string }) {
       <h2 className="text-lg font-bold text-black mb-1">
         Join the conversation
         {!isLoading && replies.length > 0 && (
-          <span className="ml-2 text-sm font-normal text-gray-400">
+          <span className="ml-2 text-sm font-normal text-brand-gray-medium">
             ({replies.length} {replies.length === 1 ? 'reply' : 'replies'})
           </span>
         )}
@@ -179,11 +179,11 @@ export function BlueskyComments({ postUri }: { postUri?: string }) {
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex gap-3 animate-pulse">
-              <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
+              <div className="w-9 h-9 rounded-full bgbrand-gray-lightest shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 bg-gray-200 rounded w-32" />
-                <div className="h-3 bg-gray-200 rounded w-full" />
-                <div className="h-3 bg-gray-200 rounded w-3/4" />
+                <div className="h-3 bgbrand-gray-lightest rounded w-32" />
+                <div className="h-3 bgbrand-gray-lightest rounded w-full" />
+                <div className="h-3 bgbrand-gray-lightest rounded w-3/4" />
               </div>
             </div>
           ))}

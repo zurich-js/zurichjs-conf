@@ -18,7 +18,7 @@ interface AdminEmptyStateProps {
 export function AdminEmptyState({ icon, title, description, action }: AdminEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-14 h-14 rounded-full bg-text-brand-gray-lightest flex items-center justify-center mb-4 text-gray-400">
+      <div className="w-14 h-14 rounded-full bg-text-brand-gray-lightest flex items-center justify-center mb-4 text-brand-gray-medium">
         {icon}
       </div>
       <h3 className="text-lg font-semibold text-black mb-1">{title}</h3>

@@ -122,7 +122,7 @@ const SuccessPage: React.FC = () => {
                   </p>
                   <div className="bg-black rounded-2xl p-6 text-left mb-8">
                     <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
-                    <ul className="text-gray-200 space-y-2">
+                    <ul className="textbrand-gray-lightest space-y-2">
                       <li className="flex items-start gap-2">
                         <span className="text-brand-primary mt-1">•</span>
                         <span>Check your email for the confirmation message with your order details</span>
@@ -172,31 +172,31 @@ const SuccessPage: React.FC = () => {
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
-                    <span className="text-gray-400">Order Number</span>
+                    <span className="text-brand-gray-medium">Order Number</span>
                     <span className="text-brand-white font-semibold font-mono">
                       {getOrderNumber(sessionDetails.session_id)}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
-                    <span className="text-gray-400">Customer Name</span>
+                    <span className="text-brand-gray-medium">Customer Name</span>
                     <span className="text-brand-white">{sessionDetails.customer_name || 'N/A'}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
-                    <span className="text-gray-400">Email</span>
+                    <span className="text-brand-gray-medium">Email</span>
                     <span className="text-brand-white">{sessionDetails.customer_email || 'N/A'}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-gray-800">
-                    <span className="text-gray-400">Amount Paid</span>
+                    <span className="text-brand-gray-medium">Amount Paid</span>
                     <span className="text-brand-white font-semibold">
                       {formatAmount(sessionDetails.amount_total, sessionDetails.currency)}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center py-3">
-                    <span className="text-gray-400">Payment Status</span>
+                    <span className="text-brand-gray-medium">Payment Status</span>
                     <span className="text-success-light font-semibold">
                       {sessionDetails.payment_status === 'paid' ? '✓ Paid' : sessionDetails.payment_status}
                     </span>
@@ -208,14 +208,14 @@ const SuccessPage: React.FC = () => {
               <div className="bg-black rounded-2xl p-8 mb-8">
                 <h2 className="text-xl font-bold text-brand-primary mb-6">What&apos;s Next?</h2>
 
-                <div className="space-y-4 text-gray-200">
+                <div className="space-y-4 textbrand-gray-lightest">
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center text-black font-bold">
                       1
                     </div>
                     <div>
                       <h3 className="text-brand-white font-semibold mb-1">Check Your Email</h3>
-                      <p className="text-gray-400">
+                      <p className="text-brand-gray-medium">
                         We&apos;ve sent a confirmation email with your ticket details and invoice to{' '}
                         <span className="text-brand-white">{sessionDetails.customer_email}</span>
                       </p>
@@ -228,7 +228,7 @@ const SuccessPage: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-brand-white font-semibold mb-1">Save the Date</h3>
-                      <p className="text-gray-400">
+                      <p className="text-brand-gray-medium">
                         ZurichJS Conference 2026 will be held in Zurich. Mark your calendar and make your travel arrangements.
                       </p>
                     </div>
@@ -240,7 +240,7 @@ const SuccessPage: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-brand-white font-semibold mb-1">Stay Updated</h3>
-                      <p className="text-gray-400">
+                      <p className="text-brand-gray-medium">
                         Keep an eye on your email for speaker announcements, schedule updates, and important event information.
                       </p>
                     </div>
@@ -252,7 +252,7 @@ const SuccessPage: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-brand-white font-semibold mb-1">Join Our Community</h3>
-                      <p className="text-gray-400">
+                      <p className="text-brand-gray-medium">
                         Connect with other attendees and speakers. Follow us on social media for the latest updates.
                       </p>
                     </div>
@@ -263,7 +263,7 @@ const SuccessPage: React.FC = () => {
               {/* Important Information */}
               <div className="bg-black rounded-2xl p-8 mb-8">
                 <h2 className="text-xl font-bold text-brand-primary mb-4">Important Information</h2>
-                <ul className="space-y-2 text-gray-200">
+                <ul className="space-y-2 textbrand-gray-lightest">
                   <li className="flex items-start gap-2">
                     <span className="text-brand-primary mt-1">•</span>
                     <span>Your ticket is non-transferable without prior authorization</span>

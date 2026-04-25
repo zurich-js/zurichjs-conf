@@ -40,7 +40,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-white">
+        <div className="p-4 sm:p-6 border-b border-brand-gray-lightest bg-gradient-to-r from-teal-50 to-white">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
@@ -48,7 +48,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
               </div>
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-black">Ticket Invoice</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Generate an invoice for this ticket purchase</p>
+                <p className="text-xs sm:text-sm text-brand-gray-dark mt-0.5">Generate an invoice for this ticket purchase</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg transition-colors cursor-pointer">
@@ -63,7 +63,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
           {isLoading && (
             <div className="flex items-center justify-center gap-3 py-8">
               <Loader2 className="w-5 h-5 text-teal-600 animate-spin" />
-              <span className="text-sm text-gray-600">Loading order context...</span>
+              <span className="text-sm text-brand-gray-dark">Loading order context...</span>
             </div>
           )}
 
@@ -90,7 +90,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
               )}
 
               {/* Order Summary */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">Order Summary</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -100,7 +100,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
                         Group · {orderContext.ticketCount} tickets
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-700">
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bgbrand-gray-lightest text-gray-700">
                         Individual
                       </span>
                     )}
@@ -129,7 +129,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
               </div>
 
               {/* Billing Details */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">Billing Details</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -156,14 +156,14 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
               </div>
 
               {/* Line Items */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                 <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">Line Items</h4>
                 <div className="space-y-2">
                   {orderContext.lineItems.map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <span className="text-sm text-gray-700">
                         {item.quantity > 1 && (
-                          <span className="text-gray-400 mr-1">{item.quantity}×</span>
+                          <span className="text-brand-gray-medium mr-1">{item.quantity}×</span>
                         )}
                         {item.description}
                       </span>
@@ -213,7 +213,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
                         <button
                           onClick={() => setConfirmDelete(false)}
                           disabled={deleteMutation.isPending}
-                          className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition-colors cursor-pointer"
+                          className="px-3 py-1.5 bgbrand-gray-lightest text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition-colors cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -289,7 +289,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 sm:p-6 border-t border-brand-gray-lightest bg-gray-50">
           <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
             {orderContext?.canGenerateInvoice && (
               <button
@@ -312,7 +312,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
             )}
             <button
               onClick={onClose}
-              className="px-5 py-2.5 bg-gray-200 text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer"
+              className="px-5 py-2.5 bgbrand-gray-lightest text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer"
             >
               Close
             </button>

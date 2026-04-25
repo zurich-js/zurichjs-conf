@@ -285,7 +285,7 @@ export function ProgramSessionModal({
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest">
             Cancel
           </button>
           <button
@@ -395,7 +395,7 @@ export function ProgramSessionModal({
                     </button>
                   ))}
                   <ComboboxInput
-                    className="min-w-[160px] flex-1 bg-transparent text-sm text-black placeholder:text-gray-400 outline-none"
+                    className="min-w-[160px] flex-1 bg-transparent text-sm text-black placeholder:text-brand-gray-medium outline-none"
                     displayValue={() => ''}
                     onChange={(event) => setTagInput(event.target.value)}
                     onKeyDown={(event) => {
@@ -412,7 +412,7 @@ export function ProgramSessionModal({
                 <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-gray-medium">
                   <ChevronDown className="size-4" />
                 </ComboboxButton>
-                <ComboboxOptions className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg outline-none">
+                <ComboboxOptions className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-md border border-brand-gray-lightest bg-white py-1 shadow-lg outline-none">
                   {isLoadingTags ? (
                     <div className="px-3 py-2 text-sm text-brand-gray-medium">Loading tags...</div>
                   ) : selectableTags.length === 0 && !tagInput.trim() ? (
@@ -517,8 +517,8 @@ export function ProgramSessionModal({
             </div>
           ) : null}
 
-          <div className="rounded-md border border-gray-200">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <div className="rounded-md border border-brand-gray-lightest">
+            <div className="flex items-center justify-between border-b border-brand-gray-lightest px-4 py-3">
               <p className="text-sm font-semibold text-black">Speakers</p>
               <button
                 type="button"

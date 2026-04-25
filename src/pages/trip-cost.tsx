@@ -267,7 +267,7 @@ export default function TripCostPage() {
           <div className="max-w-3xl mb-8 md:mb-16">
             <Kicker variant="light">Trip Cost Calculator</Kicker>
             <Heading level="h1" className="mt-3 mb-3 md:mb-4">How much does ZurichJS Conf cost in total?</Heading>
-            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+            <p className="text-base md:text-lg text-brand-gray-dark leading-relaxed">
               Estimate ticket + travel + hotel in under 30 seconds. All prices are estimates — your actual costs may vary.
             </p>
             <div className="text-sm text-brand-gray-medium mt-3 space-y-2">

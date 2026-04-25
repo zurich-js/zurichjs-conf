@@ -44,7 +44,7 @@ export const mdxComponents: MDXComponents = {
   li: (props) => <li className="leading-relaxed" {...props} />,
   blockquote: (props) => (
     <blockquote
-      className="border-l-4 border-brand-gray-light pl-4 italic text-gray-600 my-4"
+      className="border-l-4 border-brand-gray-light pl-4 italic text-brand-gray-dark my-4"
       {...props}
     />
   ),
@@ -75,7 +75,7 @@ export const mdxComponents: MDXComponents = {
       </span>
     );
   },
-  hr: () => <hr className="border-gray-200 my-8" />,
+  hr: () => <hr className="border-brand-gray-lightest my-8" />,
   strong: (props) => (
     <strong className="font-semibold" {...props} />
   ),

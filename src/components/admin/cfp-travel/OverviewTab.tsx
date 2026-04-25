@@ -34,8 +34,8 @@ export function OverviewTab({
     return (
       <div className="grid gap-4 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm animate-pulse">
-            <div className="mb-4 h-5 w-32 rounded bg-gray-200" />
+          <div key={i} className="rounded-lg border border-brand-gray-lightest bg-white p-6 shadow-sm animate-pulse">
+            <div className="mb-4 h-5 w-32 rounded bgbrand-gray-lightest" />
             <div className="space-y-3">
               {[...Array(3)].map((__, j) => (
                 <div key={j} className="h-14 rounded bg-text-brand-gray-lightest" />
@@ -98,7 +98,7 @@ function ActionCard({
   emptyLabel: string;
 }) {
   return (
-    <div className="@container rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+    <div className="@container rounded-lg border border-brand-gray-lightest bg-white p-4 shadow-sm sm:p-5">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-black">{title}</h2>
       </div>
@@ -114,12 +114,12 @@ function ActionCard({
               key={item.id}
               type="button"
               onClick={item.onClick}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-left transition-colors hover:border-gray-300 hover:bg-white"
+              className="w-full rounded-lg border border-brand-gray-lightest bg-gray-50 px-3 py-3 text-left transition-colors hover:border-gray-300 hover:bg-white"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="truncate font-medium text-black">{item.primary}</div>
-                  <div className="mt-1 truncate text-sm text-gray-600">{item.secondary}</div>
+                  <div className="mt-1 truncate text-sm text-brand-gray-dark">{item.secondary}</div>
                 </div>
                 {item.emphasis ? (
                   <div className="shrink-0 text-right text-xs font-semibold text-black">

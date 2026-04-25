@@ -123,7 +123,7 @@ export function AdminModal({
             </div>
           </div>
         ) : (
-          <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between border-b border-brand-gray-lightest px-4 py-3">
             <h3 id="modal-title" className="text-base font-bold text-black sm:text-lg">
               {title}
             </h3>
@@ -143,7 +143,7 @@ export function AdminModal({
         </div>
 
         {footer ? (
-          <div className="shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-3 sm:rounded-b-xl sm:px-6">
+          <div className="shrink-0 border-t border-brand-gray-lightest bg-gray-50 px-4 py-3 sm:rounded-b-xl sm:px-6">
             <div className="flex justify-end gap-3">{footer}</div>
           </div>
         ) : null}

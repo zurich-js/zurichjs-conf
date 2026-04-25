@@ -7,7 +7,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Filter, RefreshCw } from 'lucide-react';
-import { Pagination } from '@/components/atoms';
 import { StatsCards } from './StatsCards';
 import { SponsorshipsList } from './SponsorshipsList';
 import { SponsorDetailModal } from './SponsorDetailModal';
@@ -175,13 +174,6 @@ export function SponsorshipsTab() {
     },
   });
 
-  // Pagination
-  const totalPages = Math.ceil(deals.length / ITEMS_PER_PAGE);
-  const paginatedDeals = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return deals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [deals, currentPage]);
-
   // Reset page when filters change
   const handleFilterChange = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
@@ -235,14 +227,14 @@ export function SponsorshipsTab() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-semibold text-black">Sponsorships</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-brand-gray-dark mt-1">
             Manage sponsor companies, deals, and invoices
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleRefresh}
-            className="p-2 text-gray-600 hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
+            className="p-2 text-brand-gray-dark hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
             title="Refresh data"
           >
             <RefreshCw className="h-5 w-5" />
@@ -261,11 +253,11 @@ export function SponsorshipsTab() {
       <StatsCards stats={stats || null} isLoading={isLoadingStats} />
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-brand-gray-lightest p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-gray-medium" />
             <input
               type="text"
               placeholder="Search by company name or deal number..."
@@ -277,7 +269,7 @@ export function SponsorshipsTab() {
 
           {/* Filter dropdowns */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-brand-gray-dark">
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline">Filter:</span>
             </div>
@@ -325,7 +317,7 @@ export function SponsorshipsTab() {
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="px-3 py-2 text-sm text-gray-600 hover:text-black hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
+                className="px-3 py-2 text-sm text-brand-gray-dark hover:text-black hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
               >
                 Clear
               </button>
@@ -343,22 +335,13 @@ export function SponsorshipsTab() {
 
       {/* Deals List */}
       <SponsorshipsList
-        deals={paginatedDeals}
+        deals={deals}
         isLoading={isLoadingDeals}
         onSelectDeal={handleSelectDeal}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        pageSize={ITEMS_PER_PAGE}
       />
-
-      {/* Pagination */}
-      {!isLoadingDeals && deals.length > ITEMS_PER_PAGE && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          pageSize={ITEMS_PER_PAGE}
-          totalItems={deals.length}
-          variant="light"
-        />
-      )}
 
       {/* Add Sponsor Modal */}
       <AddSponsorModal

@@ -77,7 +77,7 @@ export function Select({
                 : 'bg-white border border-gray-300 text-black hover:bg-gray-50'
             }`}
           >
-            <span className={`block truncate ${!selectedOption?.label ? 'text-gray-400' : ''}`}>
+            <span className={`block truncate ${!selectedOption?.label ? 'text-brand-gray-medium' : ''}`}>
               {selectedOption?.label || placeholder}
             </span>
             <ChevronDown
@@ -91,7 +91,7 @@ export function Select({
             className={`absolute z-50 w-full max-h-60 overflow-auto rounded-lg py-1 shadow-lg focus:outline-none ${
               anchor === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
             } ${
-              isDark ? 'bg-brand-gray-dark border border-brand-gray-medium' : 'bg-white border border-gray-200'
+              isDark ? 'bg-brand-gray-dark border border-brand-gray-medium' : 'bg-white border border-brand-gray-lightest'
             }`}
           >
             {options.map((option) => (
@@ -104,7 +104,7 @@ export function Select({
                 } ${
                   isDark
                     ? 'text-white ui-active:bg-brand-gray-medium ui-selected:bg-brand-primary/20 ui-disabled:text-brand-gray-medium ui-disabled:cursor-not-allowed'
-                    : 'text-black ui-active:bg-text-brand-gray-lightest ui-selected:bg-brand-primary/10 ui-disabled:text-gray-400 ui-disabled:cursor-not-allowed'
+                    : 'text-black ui-active:bg-text-brand-gray-lightest ui-selected:bg-brand-primary/10 ui-disabled:text-brand-gray-medium ui-disabled:cursor-not-allowed'
                 }`}
               >
                 {({ selected }) => (

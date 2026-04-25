@@ -41,7 +41,7 @@ export function Disclosure({
       {({ open }) => (
         <div
           className={`rounded-xl overflow-hidden ${
-            isDark ? 'bg-brand-gray-darkest' : 'bg-gray-50 border border-gray-200'
+            isDark ? 'bg-brand-gray-darkest' : 'bg-gray-50 border border-brand-gray-lightest'
           } ${className}`}
         >
           <DisclosureButton
@@ -126,7 +126,7 @@ export function ControlledDisclosure({
   return (
     <div
       className={`rounded-xl overflow-hidden ${
-        isDark ? 'bg-brand-gray-darkest' : 'bg-gray-50 border border-gray-200'
+        isDark ? 'bg-brand-gray-darkest' : 'bg-gray-50 border border-brand-gray-lightest'
       } ${className}`}
     >
       <button

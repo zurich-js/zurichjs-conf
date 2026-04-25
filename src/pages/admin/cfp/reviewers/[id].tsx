@@ -25,10 +25,10 @@ type DateRange = '7d' | '30d' | 'all';
 function ActivityNoteCell(props: { text: string | null }): ReactNode {
   const { text } = props;
   if (!text?.trim()) {
-    return <span className="text-sm text-gray-400">-</span>;
+    return <span className="text-sm text-brand-gray-medium">-</span>;
   }
   return (
-    <div className="text-sm text-gray-600 max-w-[10rem] xl:max-w-xs truncate" title={text}>
+    <div className="text-sm text-brand-gray-dark max-w-[10rem] xl:max-w-xs truncate" title={text}>
       {text}
     </div>
   );
@@ -101,21 +101,21 @@ export default function ReviewerDetailPage() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Back link */}
           <Link
-            href="/admin/cfp"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black mb-6 transition-colors"
+            href="/admin/cfp/reviewers"
+            className="inline-flex items-center gap-2 text-sm text-brand-gray-dark hover:text-black mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to CFP Admin
           </Link>
 
           {/* Reviewer Header Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-brand-gray-lightest p-6 mb-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-black mb-1">
                   {reviewerInfo.name || 'Unknown Reviewer'}
                 </h1>
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-brand-gray-dark">
                   <Mail className="w-4 h-4" />
                   <span className="text-sm">{reviewerInfo.email}</span>
                 </div>
@@ -157,11 +157,11 @@ export default function ReviewerDetailPage() {
           </div>
 
           {/* Reviewer Scoring Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-brand-gray-lightest p-6 mb-6">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div>
                 <h2 className="text-lg font-semibold text-black mb-1">Reviewer Scoring</h2>
-                <p className="text-sm text-gray-600 max-w-2xl">
+                <p className="text-sm text-brand-gray-dark max-w-2xl">
                   Contribution rating is a 100-point score: 45 points for review volume, 35 points for written internal or speaker feedback, 15 points for useful overall score range, and 5 points for category score range.
                 </p>
               </div>
@@ -175,26 +175,26 @@ export default function ReviewerDetailPage() {
               <div className="rounded-lg bg-gray-50 px-4 py-3">
                 <div className="text-xs text-brand-gray-medium">Review Volume</div>
                 <div className="text-xl font-bold text-black">{formatScore(reviewerInfo.contribution_volume_score)}</div>
-                <div className="mt-1 text-xs text-gray-600">{reviewerInfo.total_reviews} reviews</div>
+                <div className="mt-1 text-xs text-brand-gray-dark">{reviewerInfo.total_reviews} reviews</div>
               </div>
               <div className="rounded-lg bg-gray-50 px-4 py-3">
                 <div className="text-xs text-brand-gray-medium">Written Feedback</div>
                 <div className="text-xl font-bold text-black">{formatScore(reviewerInfo.contribution_feedback_score)}</div>
-                <div className="mt-1 text-xs text-gray-600">
+                <div className="mt-1 text-xs text-brand-gray-dark">
                   {Math.round(reviewerInfo.feedback_written_percent)}% ({reviewerInfo.feedback_written_count} reviews)
                 </div>
               </div>
               <div className="rounded-lg bg-gray-50 px-4 py-3">
                 <div className="text-xs text-brand-gray-medium">Score Range</div>
                 <div className="text-xl font-bold text-black">{formatRatingSpreadLabel(reviewerInfo.rating_spread)}</div>
-                <div className="mt-1 text-xs text-gray-600">
+                <div className="mt-1 text-xs text-brand-gray-dark">
                   {formatScore(reviewerInfo.contribution_rating_spread_score)} contribution points
                 </div>
               </div>
               <div className="rounded-lg bg-gray-50 px-4 py-3">
                 <div className="text-xs text-brand-gray-medium">Category Range</div>
                 <div className="text-xl font-bold text-black">{formatScore(reviewerInfo.contribution_category_rating_spread_score)}</div>
-                <div className="mt-1 text-xs text-gray-600">
+                <div className="mt-1 text-xs text-brand-gray-dark">
                   Avg range: {formatScore(reviewerInfo.category_rating_spread)}
                 </div>
               </div>
@@ -202,9 +202,9 @@ export default function ReviewerDetailPage() {
           </div>
 
           {/* Activity Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm border border-brand-gray-lightest">
             {/* Filter Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="px-6 py-4 border-b border-brand-gray-lightest flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h2 className="text-lg font-semibold text-black">Review Activity</h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-brand-gray-medium">Date range:</span>
@@ -238,7 +238,7 @@ export default function ReviewerDetailPage() {
                   {/* Mobile Card View */}
                   <div className="lg:hidden space-y-4">
                     {paginatedActivities.map((activity: CfpReviewerActivity) => (
-                      <div key={activity.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div key={activity.id} className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="font-medium text-black text-sm line-clamp-2 min-w-0">
                             {activity.submission_title}
@@ -253,7 +253,7 @@ export default function ReviewerDetailPage() {
                             <ExternalLink className="w-4 h-4" aria-hidden="true" />
                           </Link>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-600 mb-2">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-brand-gray-dark mb-2">
                           <div>
                             <span className="text-brand-gray-medium">{SCORE_LABELS.score_overall}:</span>{' '}
                             <span className="font-medium text-black">{formatScore(activity.score_overall)}</span>
@@ -286,15 +286,15 @@ export default function ReviewerDetailPage() {
                         {(activity.private_notes?.trim() || activity.feedback_to_speaker?.trim()) && (
                           <div className="space-y-2 text-xs">
                             {activity.private_notes?.trim() ? (
-                              <div className="rounded-lg bg-white p-2 border border-gray-200">
+                              <div className="rounded-lg bg-white p-2 border border-brand-gray-lightest">
                                 <div className="font-semibold text-gray-700 mb-0.5">Internal notes</div>
-                                <div className="text-gray-600 line-clamp-3">{activity.private_notes}</div>
+                                <div className="text-brand-gray-dark line-clamp-3">{activity.private_notes}</div>
                               </div>
                             ) : null}
                             {activity.feedback_to_speaker?.trim() ? (
-                              <div className="rounded-lg bg-white p-2 border border-gray-200">
+                              <div className="rounded-lg bg-white p-2 border border-brand-gray-lightest">
                                 <div className="font-semibold text-gray-700 mb-0.5">Speaker feedback</div>
-                                <div className="text-gray-600 line-clamp-3">{activity.feedback_to_speaker}</div>
+                                <div className="text-brand-gray-dark line-clamp-3">{activity.feedback_to_speaker}</div>
                               </div>
                             ) : null}
                           </div>
@@ -322,7 +322,7 @@ export default function ReviewerDetailPage() {
                           <th className="px-3 py-3">Speaker feedback</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y dividebrand-gray-lightest">
                         {paginatedActivities.map((activity: CfpReviewerActivity) => (
                           <tr key={activity.id} className="hover:bg-gray-50">
                             <td className="px-3 py-3">

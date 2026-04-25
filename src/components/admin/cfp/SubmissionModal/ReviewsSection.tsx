@@ -23,7 +23,7 @@ interface ReviewsSectionProps {
 function ScoreDisplay({ value, label }: { value: number | null; label: string }) {
   const colorClass =
     value === null
-      ? 'text-gray-400'
+      ? 'text-brand-gray-medium'
       : value >= 4
         ? 'text-green-600'
         : value >= 3
@@ -40,7 +40,7 @@ function ScoreDisplay({ value, label }: { value: number | null; label: string })
 
 export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsSectionProps) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+    <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
       <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Committee Reviews</h4>
 
       {isLoading ? (
@@ -53,7 +53,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
         <div className="space-y-4">
           {/* Aggregate Scores */}
           {aggregateScores && (
-            <div className="bg-white rounded-lg p-3 border border-gray-200 mb-4">
+            <div className="bg-white rounded-lg p-3 border border-brand-gray-lightest mb-4">
               <p className="text-xs text-black font-semibold mb-2">Aggregate Scores ({reviews.length} reviews)</p>
               {/* Mobile: Overall prominent, others in 2x2 grid */}
               <div className="sm:hidden">
@@ -96,7 +96,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
 
           {/* Individual Reviews */}
           {reviews.map((review) => (
-            <div key={review.id} className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
+            <div key={review.id} className="bg-white rounded-lg p-3 sm:p-4 border border-brand-gray-lightest">
               {/* Reviewer Header */}
               <div className="flex items-start sm:items-center justify-between mb-3 gap-2">
                 <div className="min-w-0">
@@ -127,7 +127,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
                   <p
                     className={`text-xl font-bold ${
                       review.score_overall === null
-                        ? 'text-gray-400'
+                        ? 'text-brand-gray-medium'
                         : review.score_overall >= 4
                           ? 'text-green-600'
                           : review.score_overall >= 3

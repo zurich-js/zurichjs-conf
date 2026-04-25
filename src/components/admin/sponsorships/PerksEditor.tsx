@@ -233,7 +233,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
           type="button"
           onClick={cancelEditing}
           disabled={isSubmitting}
-          className="px-3 py-1.5 text-sm text-gray-600 hover:bg-text-brand-gray-lightest rounded transition-colors"
+          className="px-3 py-1.5 text-sm text-brand-gray-dark hover:bg-text-brand-gray-lightest rounded transition-colors"
         >
           Cancel
         </button>
@@ -278,7 +278,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                     className={`p-1 rounded-full transition-colors flex-shrink-0 mt-0.5 ${
                       perk.status === 'completed'
                         ? 'bg-green-100 text-green-600'
-                        : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                        : 'bgbrand-gray-lightest text-brand-gray-medium hover:bg-gray-300'
                     } ${isSubmitting ? 'opacity-50' : ''}`}
                   >
                     <CheckCircle className="h-5 w-5" />
@@ -287,7 +287,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                   <div className="flex-1 min-w-0">
                     <p
                       className={`text-sm font-medium ${
-                        perk.status === 'completed' ? 'line-through text-gray-400' : ''
+                        perk.status === 'completed' ? 'line-through text-brand-gray-medium' : ''
                       }`}
                     >
                       {perk.name}
@@ -319,14 +319,14 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                       <button
                         onClick={() => startEditing(perk)}
                         disabled={isSubmitting}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                        className="p-1.5 text-brand-gray-medium hover:text-brand-gray-dark hover:bgbrand-gray-lightest rounded transition-colors"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDeletePerk(perk.id)}
                         disabled={isSubmitting}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        className="p-1.5 text-brand-gray-medium hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -356,14 +356,14 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                     <button
                       onClick={() => startEditing(perk)}
                       disabled={isSubmitting}
-                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                      className="p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:bgbrand-gray-lightest rounded transition-colors"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDeletePerk(perk.id)}
                       disabled={isSubmitting}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      className="p-1 text-brand-gray-medium hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -376,9 +376,9 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
 
         {perks.length === 0 && !isAdding && (
           <div className="bg-gray-50 rounded-lg p-8 text-center">
-            <CheckCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            <CheckCircle className="h-8 w-8 text-brand-gray-medium mx-auto mb-2" />
             <p className="text-brand-gray-medium">No perks added yet</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-brand-gray-medium mt-1">
               Add perks to track deliverables for this sponsorship
             </p>
           </div>
@@ -392,7 +392,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
       {!isAdding && !editingId && (
         <button
           onClick={startAdding}
-          className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-brand-gray-dark hover:border-brand-gray-medium hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Add Perk
@@ -401,14 +401,14 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
 
       {/* Progress Summary */}
       {perks.length > 0 && (
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-brand-gray-lightest pt-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Progress</span>
+            <span className="text-brand-gray-dark">Progress</span>
             <span className="font-medium">
               {perks.filter((p) => p.status === 'completed').length} / {perks.length} completed
             </span>
           </div>
-          <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="mt-2 h-2 bgbrand-gray-lightest rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 rounded-full transition-all"
               style={{

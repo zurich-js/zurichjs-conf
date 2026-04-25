@@ -19,7 +19,7 @@ export function TicketQRCard({ qrCodeUrl }: TicketQRCardProps) {
             <div className="bg-white p-6 rounded-xl mb-4">
               <Image src={qrCodeUrl} alt="Ticket QR Code" width={300} height={300} className="w-64 h-64" />
             </div>
-            <p className="text-gray-400 text-sm text-center max-w-md">
+            <p className="text-brand-gray-medium text-sm text-center max-w-md">
               Present this QR code at the venue entrance for check-in. You can also show this from your email or download
               the PDF ticket.
             </p>
@@ -27,13 +27,13 @@ export function TicketQRCard({ qrCodeUrl }: TicketQRCardProps) {
         ) : (
           <div className="text-center">
             <div className="bg-gray-800 p-8 rounded-xl mb-4">
-              <p className="text-gray-400 text-lg mb-2">QR Code Generating...</p>
+              <p className="text-brand-gray-medium text-lg mb-2">QR Code Generating...</p>
               <p className="text-brand-gray-medium text-sm">
                 Your QR code is being generated. Please check your email for the full ticket with QR code, or refresh this
                 page in a few moments.
               </p>
             </div>
-            <p className="text-gray-400 text-sm max-w-md">
+            <p className="text-brand-gray-medium text-sm max-w-md">
               If you continue to see this message, please contact us at hello@zurichjs.com
             </p>
           </div>

@@ -48,14 +48,14 @@ export function ConfirmationModal({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-black mb-1">{title}</h3>
-            <p className="text-sm text-gray-600">{message}</p>
+            <p className="text-sm text-brand-gray-dark">{message}</p>
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-text-brand-gray-lightest hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
           >
             Cancel
           </button>

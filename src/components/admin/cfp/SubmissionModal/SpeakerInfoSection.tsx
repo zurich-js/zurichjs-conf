@@ -41,7 +41,7 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
     speaker.mastodon_handle;
 
   return (
-    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+    <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
       <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Speaker Information</h4>
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Profile Image */}
@@ -50,10 +50,10 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
             <img
               src={speaker.profile_image_url}
               alt={`${speaker.first_name} ${speaker.last_name}`}
-              className="w-24 h-24 rounded-xl object-cover border-2 border-gray-200"
+              className="w-24 h-24 rounded-xl object-cover border-2 border-brand-gray-lightest"
             />
           ) : (
-            <div className="w-24 h-24 rounded-xl bg-brand-primary flex items-center justify-center border-2 border-gray-200">
+            <div className="w-24 h-24 rounded-xl bg-brand-primary flex items-center justify-center border-2 border-brand-gray-lightest">
               <span className="text-3xl font-bold text-black">
                 {speaker.first_name?.[0]}
                 {speaker.last_name?.[0]}
@@ -70,7 +70,7 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
               {speaker.first_name} {speaker.last_name}
             </p>
             {(speaker.job_title || speaker.company) && (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-brand-gray-dark">
                 {speaker.job_title}
                 {speaker.job_title && speaker.company && ' at '}
                 {speaker.company}
@@ -157,7 +157,7 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
 
           {/* Location & Travel Info */}
           {(speaker.city || speaker.country || speaker.travel_assistance_required !== null) && (
-            <div className="pt-2 border-t border-gray-200">
+            <div className="pt-2 border-t border-brand-gray-lightest">
               <p className="text-xs text-brand-gray-medium font-semibold mb-2">Location & Travel</p>
               <div className="flex flex-wrap gap-3">
                 {/* Location */}
@@ -194,7 +194,7 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
           )}
 
           {/* T-Shirt Size & Sponsorship Interest */}
-          <div className="flex flex-wrap gap-4 pt-2 border-t border-gray-200">
+          <div className="flex flex-wrap gap-4 pt-2 border-t border-brand-gray-lightest">
             {speaker.tshirt_size && (
               <div>
                 <p className="text-xs text-brand-gray-medium">T-Shirt Size</p>
@@ -211,7 +211,7 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
 
           {/* Special Requirements */}
           {speaker.special_requirements && (
-            <div className="pt-2 border-t border-gray-200">
+            <div className="pt-2 border-t border-brand-gray-lightest">
               <p className="text-xs text-brand-gray-medium font-semibold mb-1">Special Requirements</p>
               <p className="text-sm text-black whitespace-pre-wrap">{speaker.special_requirements}</p>
             </div>

@@ -56,7 +56,7 @@ function formatPercent(value: number | null): string {
 }
 
 function scoreColor(value: number | null): string {
-  if (value === null) return 'text-gray-400';
+  if (value === null) return 'text-brand-gray-medium';
   if (value >= 4) return 'text-green-600';
   if (value >= 3) return 'text-yellow-600';
   return 'text-red-600';
@@ -129,7 +129,7 @@ function HelpToggle() {
         {open ? 'Hide help' : 'How to read'}
       </button>
       {open && (
-        <div className="mt-2 space-y-1.5 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700 sm:absolute sm:right-0 sm:z-10 sm:mt-1 sm:w-80 sm:shadow-lg">
+        <div className="mt-2 space-y-1.5 rounded-lg border border-brand-gray-lightest bg-white p-3 text-xs text-gray-700 sm:absolute sm:right-0 sm:z-10 sm:mt-1 sm:w-80 sm:shadow-lg">
           <p>
             <strong className="text-black">Percentile</strong> — rank vs. other reviewed talks.
             80% = better than 80% of them. Green ≥75, yellow ≥50, red below.
@@ -163,7 +163,7 @@ function AnalyticsRow({ analytics, reviewCount }: { analytics: SpeakerFeedbackSu
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       <div
-        className="rounded-lg border border-gray-200 bg-white p-2 text-center"
+        className="rounded-lg border border-brand-gray-lightest bg-white p-2 text-center"
         title={`Ranks above ${formatPercent(analytics.percentile)} of ${analytics.cohort_size} reviewed talks.`}
       >
         <p className="text-[10px] uppercase tracking-wide text-brand-gray-medium">Percentile</p>
@@ -172,7 +172,7 @@ function AnalyticsRow({ analytics, reviewCount }: { analytics: SpeakerFeedbackSu
         </p>
       </div>
       <div
-        className="rounded-lg border border-gray-200 bg-white p-2 text-center"
+        className="rounded-lg border border-brand-gray-lightest bg-white p-2 text-center"
         title="Aligned = reviewers agreed within ~0.5. Polarising = big split, read individual reviews."
       >
         <p className="text-[10px] uppercase tracking-wide text-brand-gray-medium">Agreement</p>
@@ -180,7 +180,7 @@ function AnalyticsRow({ analytics, reviewCount }: { analytics: SpeakerFeedbackSu
         <p className="text-[10px] text-brand-gray-medium">scores {range}</p>
       </div>
       <div
-        className="col-span-2 rounded-lg border border-gray-200 bg-white p-2 text-center sm:col-span-1"
+        className="col-span-2 rounded-lg border border-brand-gray-lightest bg-white p-2 text-center sm:col-span-1"
         title={`${analytics.feedback_written_count} of ${reviewCount} reviewer${reviewCount === 1 ? '' : 's'} left written notes.`}
       >
         <p className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide text-brand-gray-medium">
@@ -208,8 +208,8 @@ function SubmissionCard({
   const isLoading = loadingSubmissionId === submission.id;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="flex flex-col gap-3 border-b border-gray-200 p-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="rounded-xl border border-brand-gray-lightest bg-white">
+      <div className="flex flex-col gap-3 border-b border-brand-gray-lightest p-4 sm:flex-row sm:items-start sm:justify-between">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -285,7 +285,7 @@ function MediaAndTags({ submission }: { submission: SpeakerFeedbackSubmission })
             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
               competitive
                 ? 'border-orange-200 bg-orange-50 text-orange-800'
-                : 'border-gray-200 bg-gray-50 text-gray-700'
+                : 'border-brand-gray-lightest bg-gray-50 text-gray-700'
             }`}
             title={others === 0 ? 'No other talks use this tag' : `${others} other talk${others === 1 ? '' : 's'} share this topic`}
           >
@@ -309,7 +309,7 @@ function MediaLink({ href, icon: Icon, label }: { href: string; icon: typeof Vid
     >
       <Icon className="h-3.5 w-3.5" />
       {label}
-      <ExternalLink className="h-3 w-3 text-gray-400" />
+      <ExternalLink className="h-3 w-3 text-brand-gray-medium" />
     </a>
   );
 }
@@ -330,7 +330,7 @@ function AggregateScores({ submission }: { submission: SpeakerFeedbackSubmission
     { label: 'Originality', value: submission.aggregate.diversity },
   ];
   return (
-    <div className="grid grid-cols-5 gap-1.5 rounded-lg border border-gray-200 bg-white p-2 sm:gap-2 sm:p-3">
+    <div className="grid grid-cols-5 gap-1.5 rounded-lg border border-brand-gray-lightest bg-white p-2 sm:gap-2 sm:p-3">
       {cells.map(({ label, value }) => (
         <div key={label} className="text-center">
           <p className="text-[10px] uppercase tracking-wide text-brand-gray-medium">{label}</p>
@@ -345,18 +345,18 @@ function ExpandedDetails({ submission }: { submission: SpeakerFeedbackSubmission
   const hasNotes = Boolean(submission.outline || submission.additional_notes);
 
   return (
-    <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4">
+    <div className="space-y-4 border-t border-brand-gray-lightest bg-gray-50 p-4">
       {hasNotes && (
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-gray-medium">Speaker-provided context</p>
           {submission.outline && (
-            <div className="rounded-lg border border-gray-200 bg-white p-3">
+            <div className="rounded-lg border border-brand-gray-lightest bg-white p-3">
               <p className="mb-1 text-xs font-semibold text-black">Outline</p>
               <p className="whitespace-pre-wrap text-sm text-gray-700">{submission.outline}</p>
             </div>
           )}
           {submission.additional_notes && (
-            <div className="rounded-lg border border-gray-200 bg-white p-3">
+            <div className="rounded-lg border border-brand-gray-lightest bg-white p-3">
               <p className="mb-1 text-xs font-semibold text-black">Additional notes</p>
               <p className="whitespace-pre-wrap text-sm text-gray-700">{submission.additional_notes}</p>
             </div>
@@ -372,7 +372,7 @@ function ExpandedDetails({ submission }: { submission: SpeakerFeedbackSubmission
             Individual reviews ({submission.reviews.length})
           </p>
           {submission.reviews.map((review) => (
-            <div key={review.id} className="rounded-lg border border-gray-200 bg-white p-3">
+            <div key={review.id} className="rounded-lg border border-brand-gray-lightest bg-white p-3">
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-black">
@@ -462,8 +462,8 @@ export function SpeakerFeedbackPanel({
 
   if (submissions.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">
-        <FileText className="mx-auto mb-2 h-8 w-8 text-gray-400" />
+      <div className="rounded-xl border border-brand-gray-lightest bg-gray-50 p-8 text-center">
+        <FileText className="mx-auto mb-2 h-8 w-8 text-brand-gray-medium" />
         <p className="text-sm font-medium text-black">No submissions from this speaker</p>
         <p className="mt-1 text-xs text-brand-gray-medium">There is no committee feedback to show yet.</p>
       </div>
@@ -476,14 +476,14 @@ export function SpeakerFeedbackPanel({
   return (
     <div className="space-y-4">
       {/* Slim summary + primary actions */}
-      <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-white p-4">
+      <div className="rounded-xl border border-brand-gray-lightest bg-gradient-to-r from-gray-50 to-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h4 className="flex items-center gap-2 text-sm font-semibold text-black">
-              <MessageSquare className="h-4 w-4 text-gray-600" />
+              <MessageSquare className="h-4 w-4 text-brand-gray-dark" />
               Feedback for {speakerName}
             </h4>
-            <p className="mt-1 text-xs text-gray-600">
+            <p className="mt-1 text-xs text-brand-gray-dark">
               <span className="font-semibold text-black">{overall.total_submissions}</span> {subWord} ·{' '}
               <span className="font-semibold text-black">{overall.total_reviews}</span> {revWord} · avg{' '}
               <span className={`font-semibold ${scoreColor(overall.avg_overall)}`}>

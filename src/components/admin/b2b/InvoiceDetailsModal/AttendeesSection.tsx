@@ -102,7 +102,7 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
 
       {/* Add Attendee Form */}
       {showAddAttendee && (
-        <form onSubmit={handleAddAttendee} className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <form onSubmit={handleAddAttendee} className="mb-4 p-4 bg-gray-50 rounded-lg border border-brand-gray-lightest">
           <h5 className="font-medium text-black mb-3">Add New Attendee</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

@@ -106,10 +106,10 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-brand-gray-lightest">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-black">Create B2B Invoice</h3>
-            <button onClick={onClose} className="text-gray-600 hover:text-black cursor-pointer">
+            <button onClick={onClose} className="text-brand-gray-dark hover:text-black cursor-pointer">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -246,11 +246,11 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-brand-gray-lightest">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:bgbrand-gray-lightest transition-colors cursor-pointer"
             >
               Cancel
             </button>

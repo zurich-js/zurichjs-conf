@@ -212,7 +212,7 @@ export function UpgradeToVipModal({
                   className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
                     upgradeMode === mode.value
                       ? 'border-brand-primary bg-yellow-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-brand-gray-lightest hover:border-gray-300'
                   }`}
                 >
                   <input
@@ -223,7 +223,7 @@ export function UpgradeToVipModal({
                     onChange={(e) => setUpgradeMode(e.target.value as UpgradeMode)}
                     className="sr-only"
                   />
-                  <div className={`${upgradeMode === mode.value ? 'text-amber-600' : 'text-gray-400'}`}>
+                  <div className={`${upgradeMode === mode.value ? 'text-amber-600' : 'text-brand-gray-medium'}`}>
                     {mode.icon}
                   </div>
                   <div>

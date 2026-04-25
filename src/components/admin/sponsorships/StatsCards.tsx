@@ -19,11 +19,11 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse"
+            className="bg-white rounded-xl border border-brand-gray-lightest p-4 animate-pulse"
           >
-            <div className="h-10 w-10 bg-gray-200 rounded-lg mb-3" />
-            <div className="h-3 bg-gray-200 rounded w-16 mb-2" />
-            <div className="h-7 bg-gray-200 rounded w-10" />
+            <div className="h-10 w-10 bgbrand-gray-lightest rounded-lg mb-3" />
+            <div className="h-3 bgbrand-gray-lightest rounded w-16 mb-2" />
+            <div className="h-7 bgbrand-gray-lightest rounded w-10" />
           </div>
         ))}
       </div>

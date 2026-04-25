@@ -110,7 +110,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                   />
                 ))}
             </div>
-            <div className="w-px h-6 bg-gray-600" />
+            <div className="w-px h-6 bg-brand-gray-dark" />
             <Button
               variant="primary"
               size="sm"

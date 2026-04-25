@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 // Base skeleton with shimmer animation
 export function Skeleton({ className = '' }: { className?: string }) {
   return (
-    <div className={`relative overflow-hidden bg-gray-200 rounded ${className}`}>
+    <div className={`relative overflow-hidden bgbrand-gray-lightest rounded ${className}`}>
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
         animate={{ x: ['-100%', '100%'] }}
@@ -23,7 +23,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
 // Skeleton for submission cards
 export function SubmissionCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+    <div className="bg-white rounded-xl border border-brand-gray-lightest p-4 space-y-3">
       <div className="flex items-start justify-between">
         <div className="space-y-2 flex-1">
           <Skeleton className="h-5 w-3/4" />
@@ -82,7 +82,7 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
 // Skeleton for stats cards
 export function StatCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
+    <div className="bg-white rounded-xl border border-brand-gray-lightest p-4 space-y-2">
       <Skeleton className="h-4 w-24" />
       <Skeleton className="h-8 w-16" />
     </div>
@@ -185,7 +185,7 @@ export function ReviewScoresSkeleton() {
 // Mobile card skeleton
 export function MobileCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+    <div className="bg-white rounded-xl border border-brand-gray-lightest p-4 space-y-4">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />

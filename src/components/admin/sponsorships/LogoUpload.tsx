@@ -118,7 +118,7 @@ export function LogoUpload({ sponsorId, title, endpoint, currentLogoUrl, onUpdat
             />
           ) : (
             <div className="h-20 w-20 sm:h-24 sm:w-24 flex items-center justify-center">
-              <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+              <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-brand-gray-medium" />
             </div>
           )}
         </div>

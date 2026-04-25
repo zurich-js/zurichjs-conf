@@ -87,7 +87,7 @@ function HotelOptionButton({
       } ${
         isSelected
           ? 'border-black bg-gray-50'
-          : 'border-gray-200 bg-white hover:border-gray-400'
+          : 'border-brand-gray-lightest bg-white hover:border-brand-gray-medium'
       }`}
       aria-pressed={isSelected}
     >
@@ -140,7 +140,7 @@ export function HotelSection({
                 className={`cursor-pointer w-full text-left px-3.5 py-2.5 rounded-lg border transition-colors ${
                   attendanceDays === opt.id
                     ? 'border-black bg-gray-50'
-                    : 'border-gray-200 bg-white hover:border-gray-400'
+                    : 'border-brand-gray-lightest bg-white hover:border-brand-gray-medium'
                 }`}
                 aria-pressed={attendanceDays === opt.id}
               >
@@ -168,7 +168,7 @@ export function HotelSection({
             <button
               onClick={() => onUpdate({ nights: Math.max(MIN_NIGHTS, nights - 1) })}
               disabled={nights <= MIN_NIGHTS}
-              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-text-brand-gray-lightest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-brand-gray-dark hover:bg-text-brand-gray-lightest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               aria-label="Decrease nights"
             >
               <Minus className="w-4 h-4" />
@@ -179,7 +179,7 @@ export function HotelSection({
             <button
               onClick={() => onUpdate({ nights: Math.min(MAX_NIGHTS, nights + 1) })}
               disabled={nights >= MAX_NIGHTS}
-              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-text-brand-gray-lightest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-brand-gray-dark hover:bg-text-brand-gray-lightest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               aria-label="Increase nights"
             >
               <Plus className="w-4 h-4" />
@@ -188,7 +188,7 @@ export function HotelSection({
               night{nights !== 1 ? 's' : ''}
             </span>
           </div>
-          <p className="text-xs text-gray-400 mt-1.5">
+          <p className="text-xs text-brand-gray-medium mt-1.5">
             We recommend {currentAttendance.nights} nights for {currentAttendance.label.toLowerCase()} ({currentAttendance.dates})
           </p>
         </div>
@@ -203,8 +203,8 @@ export function HotelSection({
               // Grouped MEININGER pair
               if (Array.isArray(item)) {
                 return (
-                  <div key={`group-${idx}`} className="rounded-lg overflow-hidden border border-gray-200">
-                    <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-200">
+                  <div key={`group-${idx}`} className="rounded-lg overflow-hidden border border-brand-gray-lightest">
+                    <div className="px-4 py-1.5 bg-gray-50 border-b border-brand-gray-lightest">
                       <span className="text-xs font-semibold text-brand-gray-medium uppercase tracking-wide">MEININGER Zurich</span>
                     </div>
                     {item.map((hotel, hIdx) => (
@@ -219,8 +219,8 @@ export function HotelSection({
                       />
                     ))}
                     {isAnyMeiningerSelected && item[0]?.url && (
-                      <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-                        <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                      <div className="px-4 py-2 bg-gray-50 border-t border-brand-gray-lightest flex items-center justify-between">
+                        <span className="flex items-center gap-1 text-[11px] text-brand-gray-medium">
                           <MapPin className="w-3 h-3" />
                           {item[0].distanceFromVenue} from venue
                         </span>
@@ -252,9 +252,9 @@ export function HotelSection({
                     rounded={isSelected && (item.distanceFromVenue || item.url) ? 'rounded-none' : undefined}
                   />
                   {isSelected && (item.distanceFromVenue || item.url) && (
-                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                    <div className="px-4 py-2 bg-gray-50 border-t border-brand-gray-lightest flex items-center justify-between">
                       {item.distanceFromVenue && (
-                        <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                        <span className="flex items-center gap-1 text-[11px] text-brand-gray-medium">
                           <MapPin className="w-3 h-3" />
                           {item.distanceFromVenue} from venue
                         </span>
@@ -302,7 +302,7 @@ export function HotelSection({
           </div>
         )}
 
-        <p className="flex items-start gap-1.5 text-xs text-gray-400">
+        <p className="flex items-start gap-1.5 text-xs text-brand-gray-medium">
           <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           Hotel prices are estimates and may vary by dates and availability.
         </p>

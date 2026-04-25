@@ -46,7 +46,7 @@ export function ReassignModal({ ticket, onClose, onSuccess, showToast }: Reassig
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-4 sm:p-6 border-b border-gray-200">
+        <div className="p-4 sm:p-6 border-b border-brand-gray-lightest">
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-full flex items-center justify-center">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,15 +55,15 @@ export function ReassignModal({ ticket, onClose, onSuccess, showToast }: Reassig
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-black">Reassign Ticket</h3>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">Transfer this ticket to a new owner</p>
+              <p className="text-xs sm:text-sm text-brand-gray-dark mt-1">Transfer this ticket to a new owner</p>
             </div>
           </div>
         </div>
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5">
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="bg-gray-50 rounded-lg p-4 border border-brand-gray-lightest">
             <p className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-2">Current Owner</p>
             <p className="text-sm font-semibold text-black">{ticket.first_name} {ticket.last_name}</p>
-            <p className="text-sm text-gray-600">{ticket.email}</p>
+            <p className="text-sm text-brand-gray-dark">{ticket.email}</p>
           </div>
 
           <div>
@@ -73,7 +73,7 @@ export function ReassignModal({ ticket, onClose, onSuccess, showToast }: Reassig
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+              className="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
               placeholder="email@example.com"
             />
           </div>
@@ -84,7 +84,7 @@ export function ReassignModal({ ticket, onClose, onSuccess, showToast }: Reassig
               required
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+              className="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
               placeholder="John"
             />
           </div>
@@ -95,7 +95,7 @@ export function ReassignModal({ ticket, onClose, onSuccess, showToast }: Reassig
               required
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+              className="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
               placeholder="Doe"
             />
           </div>
@@ -117,7 +117,7 @@ export function ReassignModal({ ticket, onClose, onSuccess, showToast }: Reassig
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-white border border-gray-300 text-black px-4 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-all cursor-pointer"
+              className="flex-1 bg-white border border-gray-300 text-black px-4 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-gray-medium transition-all cursor-pointer"
             >
               Cancel
             </button>

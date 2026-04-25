@@ -121,14 +121,14 @@ export function WorkshopsDashboard() {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate text-lg font-semibold text-black">Offerings</h2>
-          <p className="hidden text-sm text-gray-600 sm:block">
+          <p className="hidden text-sm text-brand-gray-dark sm:block">
             Accepted CFP workshop submissions. Link a Stripe product + price lookup key and set a schedule to publish.
           </p>
         </div>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ringbrand-gray-lightest hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className={`size-4 ${isFetching ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">Refresh</span>
@@ -144,7 +144,7 @@ export function WorkshopsDashboard() {
       />
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-brand-gray-dark">
           <Loader2 className="size-4 animate-spin" /> Loading workshops…
         </div>
       )}

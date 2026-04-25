@@ -27,7 +27,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
         {[...Array(8)].map((_, i) => (
           <div
             key={i}
-            className={`bg-white rounded-lg border border-gray-200 p-3 animate-pulse ${i < 2 ? 'col-span-2' : ''}`}
+            className={`bg-white rounded-lg border border-brand-gray-lightest p-3 animate-pulse ${i < 2 ? 'col-span-2' : ''}`}
           >
             <div className="h-3 bg-text-brand-gray-lightest rounded w-16 mb-2" />
             <div className="h-6 bg-text-brand-gray-lightest rounded w-12" />
@@ -91,7 +91,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       {/* Secondary Row: Partner Breakdown + Top Performers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Partner Type Breakdown */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-brand-gray-lightest p-4">
           <h3 className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-3">By Type</h3>
           <div className="grid grid-cols-4 gap-3">
             <MiniStat
@@ -122,7 +122,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
         </div>
 
         {/* Active Codes */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-brand-gray-lightest p-4">
           <h3 className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-3">Active Codes</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
@@ -147,7 +147,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
         </div>
 
         {/* Top Performers */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-brand-gray-lightest p-4">
           <div className="flex items-center gap-2 mb-3">
             <Trophy className="h-3.5 w-3.5 text-amber-500" />
             <h3 className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide">Top Performers</h3>
@@ -160,7 +160,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
                   className="flex items-center justify-between text-sm"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`font-medium ${index === 0 ? 'text-amber-500' : 'text-gray-400'}`}>
+                    <span className={`font-medium ${index === 0 ? 'text-amber-500' : 'text-brand-gray-medium'}`}>
                       {index + 1}.
                     </span>
                     <span className="text-black truncate">{partner.name}</span>
@@ -173,7 +173,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 text-center py-2">No sales yet</p>
+            <p className="text-sm text-brand-gray-medium text-center py-2">No sales yet</p>
           )}
         </div>
       </div>
@@ -203,9 +203,9 @@ function StatCard({
   };
 
   return (
-    <div className={`rounded-lg border border-gray-200 p-3 ${variants[variant]} ${className}`}>
+    <div className={`rounded-lg border border-brand-gray-lightest p-3 ${variants[variant]} ${className}`}>
       <div className="flex items-center gap-1.5 mb-1">
-        {Icon && <Icon className="h-3.5 w-3.5 text-gray-400" />}
+        {Icon && <Icon className="h-3.5 w-3.5 text-brand-gray-medium" />}
         <span className="text-xs font-medium text-brand-gray-medium">{label}</span>
       </div>
       <div className={`text-2xl font-semibold ${variant === 'success' ? 'text-emerald-600' : variant === 'warning' ? 'text-amber-600' : 'text-black'}`}>

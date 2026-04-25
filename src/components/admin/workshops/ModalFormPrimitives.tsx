@@ -22,7 +22,7 @@ export function Section({
   const collapsible = typeof onToggle === 'function';
 
   return (
-    <section className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white first:mt-0">
+    <section className="mt-3 overflow-hidden rounded-lg border border-brand-gray-lightest bg-white first:mt-0">
       <button
         type="button"
         onClick={onToggle}
@@ -94,7 +94,7 @@ export function IconButton({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-md border border-gray-300 bg-white p-2 text-gray-600 hover:bg-gray-50 cursor-pointer"
+      className="shrink-0 rounded-md border border-gray-300 bg-white p-2 text-brand-gray-dark hover:bg-gray-50 cursor-pointer"
       aria-label={label}
       title={label}
     >
