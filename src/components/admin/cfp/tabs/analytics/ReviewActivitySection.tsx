@@ -21,32 +21,32 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
   return (
     <section>
       <div className="flex items-center gap-2 mb-4">
-        <BarChart3 className="w-5 h-5 text-gray-600" />
+        <BarChart3 className="w-5 h-5 text-brand-gray-dark" />
         <h3 className="text-lg font-semibold text-black">Review Activity</h3>
         <Tooltip content="How active reviewers are — score distribution, reviews per day, and coverage metrics.">
-          <Info className="w-4 h-4 text-gray-400 cursor-help" />
+          <Info className="w-4 h-4 text-brand-gray-medium cursor-help" />
         </Tooltip>
       </div>
 
       {/* Summary metrics */}
       <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-brand-gray-lightest bg-white p-4">
           <div className="text-2xl font-bold text-black">{totalReviews}</div>
-          <div className="text-xs text-gray-500">Total reviews</div>
+          <div className="text-xs text-brand-gray-medium">Total reviews</div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-brand-gray-lightest bg-white p-4">
           <div className="text-2xl font-bold text-black">{avgScore !== null ? avgScore.toFixed(2) : '-'}</div>
-          <div className="text-xs text-gray-500">Avg score</div>
+          <div className="text-xs text-brand-gray-medium">Avg score</div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-brand-gray-lightest bg-white p-4">
           <div className="text-2xl font-bold text-black">{avgReviewsPerSubmission.toFixed(1)}</div>
-          <div className="text-xs text-gray-500">Avg reviews / submission</div>
+          <div className="text-xs text-brand-gray-medium">Avg reviews / submission</div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-brand-gray-lightest bg-white p-4">
           <div className={`text-2xl font-bold ${unreviewed > 0 ? 'text-amber-600' : 'text-green-600'}`}>
             {unreviewed}
           </div>
-          <div className="text-xs text-gray-500">Unreviewed submissions</div>
+          <div className="text-xs text-brand-gray-medium">Unreviewed submissions</div>
         </div>
       </div>
 
@@ -57,8 +57,8 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
           <div className="space-y-1.5">
             {scoreDistribution.map(({ range, count }) => (
               <div key={range} className="flex items-center gap-3">
-                <span className="text-xs text-gray-500 w-12 text-right font-mono">{range}</span>
-                <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                <span className="text-xs text-brand-gray-medium w-12 text-right font-mono">{range}</span>
+                <div className="flex-1 bg-text-brand-gray-lightest rounded-full h-5 overflow-hidden">
                   <div
                     className="h-full bg-brand-primary rounded-full flex items-center justify-end pr-2 transition-all"
                     style={{ width: `${maxScoreCount > 0 ? (count / maxScoreCount) * 100 : 0}%` }}
@@ -74,7 +74,7 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
         {/* Reviews per day (last 30 days) - sparkline style */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4 text-gray-500" />
+            <Clock className="w-4 h-4 text-brand-gray-medium" />
             <h4 className="text-sm font-semibold text-black">Reviews / Day (Last 30 Days)</h4>
           </div>
           <div className="flex items-end gap-px h-16 sm:h-24 overflow-hidden">
@@ -87,7 +87,7 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
               />
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <div className="flex justify-between text-xs text-brand-gray-medium mt-1">
             <span>{reviewsPerDay[0]?.date?.slice(5) || ''}</span>
             <span>{reviewsPerDay[reviewsPerDay.length - 1]?.date?.slice(5) || ''}</span>
           </div>
@@ -100,7 +100,7 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
           <div className="flex items-center gap-1.5 mb-3">
             <h4 className="text-sm font-semibold text-black">Submission Timeline (Cumulative)</h4>
             <Tooltip content="Each bar shows the total number of submissions received up to that date. Rising bars indicate new submissions; flat sections mean quiet periods.">
-              <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+              <Info className="w-3.5 h-3.5 text-brand-gray-medium cursor-help" />
             </Tooltip>
           </div>
           <div className="flex items-end gap-px h-16 sm:h-20 overflow-hidden">
@@ -116,7 +116,7 @@ export function ReviewActivitySection({ reviewActivity, timeline }: ReviewActivi
               );
             })}
           </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <div className="flex justify-between text-xs text-brand-gray-medium mt-1">
             <span>{timeline[0]?.date?.slice(5) || ''}</span>
             <span>{timeline[timeline.length - 1]?.date?.slice(5) || ''} ({timeline[timeline.length - 1]?.cumulative || 0})</span>
           </div>

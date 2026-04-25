@@ -38,10 +38,10 @@ export function BreakdownSection({ byType, byLevel }: BreakdownSectionProps) {
       {/* By Type */}
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <Mic className="w-5 h-5 text-gray-600" />
+          <Mic className="w-5 h-5 text-brand-gray-dark" />
           <h3 className="text-lg font-semibold text-black">By Talk Type</h3>
           <Tooltip content="Breakdown of submissions and acceptance rates by talk format (lightning, standard, workshop).">
-            <Info className="w-4 h-4 text-gray-400 cursor-help" />
+            <Info className="w-4 h-4 text-brand-gray-medium cursor-help" />
           </Tooltip>
         </div>
         <div className="space-y-3">
@@ -51,7 +51,7 @@ export function BreakdownSection({ byType, byLevel }: BreakdownSectionProps) {
               const pct = totalByType > 0 ? ((data.total / totalByType) * 100).toFixed(0) : '0';
               const acceptRate = data.total > 0 ? ((data.accepted / data.total) * 100).toFixed(0) : '0';
               return (
-                <div key={key} className="rounded-xl border border-gray-200 p-4 bg-white">
+                <div key={key} className="rounded-xl border border-brand-gray-lightest p-4 bg-white">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{config.emoji}</span>
@@ -59,13 +59,13 @@ export function BreakdownSection({ byType, byLevel }: BreakdownSectionProps) {
                     </div>
                     <span className="text-2xl font-bold text-black">{data.total}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-brand-gray-medium">
                     <span>{pct}% of total</span>
                     <span className="text-green-600">{data.accepted} accepted ({acceptRate}%)</span>
                     <span>Avg score: {formatScore(data.avgScore)}</span>
                   </div>
                   {/* Mini bar */}
-                  <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="mt-2 h-1.5 bg-text-brand-gray-lightest rounded-full overflow-hidden">
                     <div
                       className="h-full bg-brand-primary rounded-full"
                       style={{ width: `${pct}%` }}
@@ -81,10 +81,10 @@ export function BreakdownSection({ byType, byLevel }: BreakdownSectionProps) {
       {/* By Level */}
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <GraduationCap className="w-5 h-5 text-gray-600" />
+          <GraduationCap className="w-5 h-5 text-brand-gray-dark" />
           <h3 className="text-lg font-semibold text-black">By Talk Level</h3>
           <Tooltip content="Breakdown by audience level — shows acceptance rate and average review score per level.">
-            <Info className="w-4 h-4 text-gray-400 cursor-help" />
+            <Info className="w-4 h-4 text-brand-gray-medium cursor-help" />
           </Tooltip>
         </div>
         <div className="space-y-3">
@@ -94,12 +94,12 @@ export function BreakdownSection({ byType, byLevel }: BreakdownSectionProps) {
               const pct = totalByLevel > 0 ? ((data.total / totalByLevel) * 100).toFixed(0) : '0';
               const acceptRate = data.total > 0 ? ((data.accepted / data.total) * 100).toFixed(0) : '0';
               return (
-                <div key={key} className={`rounded-xl border border-gray-200 p-4 ${config.bgColor}`}>
+                <div key={key} className={`rounded-xl border border-brand-gray-lightest p-4 ${config.bgColor}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className={`font-medium ${config.color}`}>{config.label}</span>
                     <span className="text-2xl font-bold text-black">{data.total}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-brand-gray-medium">
                     <span>{pct}% of total</span>
                     <span className="text-green-600">{data.accepted} accepted ({acceptRate}%)</span>
                     <span>Avg score: {formatScore(data.avgScore)}</span>

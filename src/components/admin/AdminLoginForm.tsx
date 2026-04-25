@@ -34,7 +34,7 @@ export function AdminLoginForm({ title = 'Admin Dashboard' }: AdminLoginFormProp
       <Head>
         <title>{title} Login - ZurichJS Conference</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
             <div className="text-center">
@@ -42,7 +42,7 @@ export function AdminLoginForm({ title = 'Admin Dashboard' }: AdminLoginFormProp
                 <Lock className="w-8 h-8 text-black" />
               </div>
               <h2 className="text-3xl font-bold text-black">{title}</h2>
-              <p className="mt-2 text-sm text-gray-600">ZurichJS Conference 2026</p>
+              <p className="mt-2 text-sm text-brand-gray-dark">ZurichJS Conference 2026</p>
             </div>
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
@@ -55,7 +55,7 @@ export function AdminLoginForm({ title = 'Admin Dashboard' }: AdminLoginFormProp
                   type="password"
                   required
                   autoFocus
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
                   placeholder="Enter admin password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

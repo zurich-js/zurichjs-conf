@@ -176,7 +176,7 @@ export const CartItem: React.FC<CartItemProps> = ({
                 {formatPrice(totalPrice, item.currency)}
               </p>
               {item.quantity > 1 && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-brand-gray-medium">
                   {item.quantity} × {formatPrice(item.price, item.currency)}
                 </p>
               )}

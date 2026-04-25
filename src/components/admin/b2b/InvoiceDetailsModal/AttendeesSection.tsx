@@ -87,7 +87,7 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h4 className="font-medium text-gray-900">
+        <h4 className="font-medium text-black">
           Attendees ({invoice.attendees.length}/{invoice.ticket_quantity})
         </h4>
         {canAddAttendees && (
@@ -102,55 +102,55 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
 
       {/* Add Attendee Form */}
       {showAddAttendee && (
-        <form onSubmit={handleAddAttendee} className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h5 className="font-medium text-gray-900 mb-3">Add New Attendee</h5>
+        <form onSubmit={handleAddAttendee} className="mb-4 p-4 bg-gray-50 rounded-lg border border-brand-gray-lightest">
+          <h5 className="font-medium text-black mb-3">Add New Attendee</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">First Name *</label>
+              <label className="block text-sm font-medium text-black mb-1">First Name *</label>
               <input
                 type="text"
                 required
                 value={attendeeForm.firstName}
                 onChange={(e) => setAttendeeForm({ ...attendeeForm, firstName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Last Name *</label>
+              <label className="block text-sm font-medium text-black mb-1">Last Name *</label>
               <input
                 type="text"
                 required
                 value={attendeeForm.lastName}
                 onChange={(e) => setAttendeeForm({ ...attendeeForm, lastName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">Email *</label>
+              <label className="block text-sm font-medium text-black mb-1">Email *</label>
               <input
                 type="email"
                 required
                 value={attendeeForm.email}
                 onChange={(e) => setAttendeeForm({ ...attendeeForm, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Company</label>
+              <label className="block text-sm font-medium text-black mb-1">Company</label>
               <input
                 type="text"
                 value={attendeeForm.company}
                 onChange={(e) => setAttendeeForm({ ...attendeeForm, company: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Job Title</label>
+              <label className="block text-sm font-medium text-black mb-1">Job Title</label>
               <input
                 type="text"
                 value={attendeeForm.jobTitle}
                 onChange={(e) => setAttendeeForm({ ...attendeeForm, jobTitle: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black"
               />
             </div>
           </div>
@@ -189,12 +189,12 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
               className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
             >
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-black">
                   {attendee.first_name} {attendee.last_name}
                 </p>
                 <p className="text-sm text-gray-700">{attendee.email}</p>
                 {(attendee.company || attendee.job_title) && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-brand-gray-medium">
                     {[attendee.job_title, attendee.company].filter(Boolean).join(' at ')}
                   </p>
                 )}

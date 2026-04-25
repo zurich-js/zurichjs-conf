@@ -2,10 +2,10 @@
  * CFP Travel Admin Component Types
  */
 
-import type { CfpReimbursementStatus, CfpFlightStatus } from '@/lib/types/cfp';
+import type { CfpReimbursementStatus, CfpTransportStatus, CfpTransportMode } from '@/lib/types/cfp';
 
-export type { CfpReimbursementStatus, CfpFlightStatus };
-export type TabType = 'overview' | 'speakers' | 'flights' | 'reimbursements';
+export type { CfpReimbursementStatus, CfpTransportStatus, CfpTransportMode };
+export type TabType = 'overview' | 'speakers' | 'transportation' | 'reimbursements';
 
 export const STATUS_COLORS: Record<CfpReimbursementStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -14,13 +14,23 @@ export const STATUS_COLORS: Record<CfpReimbursementStatus, string> = {
   paid: 'bg-blue-100 text-blue-800',
 };
 
-export const FLIGHT_STATUS_COLORS: Record<CfpFlightStatus, string> = {
-  pending: 'bg-gray-100 text-gray-700',
-  confirmed: 'bg-green-100 text-green-700',
-  checked_in: 'bg-blue-100 text-blue-700',
-  boarding: 'bg-purple-100 text-purple-700',
-  departed: 'bg-indigo-100 text-indigo-700',
-  arrived: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-700',
+export const TRANSPORT_STATUS_COLORS: Record<CfpTransportStatus, string> = {
+  scheduled: 'bg-text-brand-gray-lightest text-gray-700',
   delayed: 'bg-orange-100 text-orange-700',
+  canceled: 'bg-red-100 text-red-700',
+  complete: 'bg-green-100 text-green-700',
 };
+
+export type AttendanceValue = boolean | null | undefined;
+
+export function attendanceValueToSelect(value: AttendanceValue): 'unknown' | 'yes' | 'no' {
+  if (value === true) return 'yes';
+  if (value === false) return 'no';
+  return 'unknown';
+}
+
+export function selectToAttendanceValue(value: string): boolean | null {
+  if (value === 'yes') return true;
+  if (value === 'no') return false;
+  return null;
+}

@@ -7,6 +7,7 @@ For phase-specific testing, use the npm scripts:
 - `npm run db:seed:cfp-first-stage` — reviewer dashboard/load-test phase.
 - `npm run db:seed:cfp-admission` — accepted/rejected speaker selection phase, no schedule.
 - `npm run db:seed:cfp-schedule` — schedule slots and a few linked submissions, no commerce.
+- `npm run db:seed:cfp-travel-ready` — schedule plus travel confirmations, transportation, and reimbursements.
 - `npm run db:seed:workshop-commerce` — full local seed with workshop commerce fixtures.
 
 ## Expected state by phase
@@ -64,6 +65,28 @@ overlay to shape the dataset for a specific admin workflow.
   - CFP-linked accepted speakers remain visible/admin-managed.
   - At least one invited/admin-managed speaker remains without a session so you
     can test adding talks/workshops during scheduling.
+
+### `cfp-travel-ready`
+
+- Purpose: travel operations after selection and scheduling.
+- Expected:
+  - Scheduling state from `cfp-schedule` is preserved.
+  - No workshop commerce data.
+  - Multiple managed speakers have confirmed travel rows.
+  - Travel and transportation timings are relative to the seed run date/time:
+    - some legs already arrived or departed
+    - some legs are within the next few hours
+    - some legs are later today
+    - some legs are on future days
+  - Transportation data exists for inbound and outbound legs:
+    - Flights with tracker links
+    - Train itineraries
+    - Link-only transport references
+    - A local/no-travel example
+  - Several reimbursement requests exist with mixed statuses and `receipt_url`
+    attachments so the admin reimbursement queue is populated.
+  - Travel metadata includes dinner / after-party / post-conf attendance so
+    speaker travel planning screens are populated.
 
 ### `workshop-commerce`
 

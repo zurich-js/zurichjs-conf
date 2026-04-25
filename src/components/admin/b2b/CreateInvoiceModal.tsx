@@ -106,10 +106,10 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-brand-gray-lightest">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Create B2B Invoice</h3>
-            <button onClick={onClose} className="text-gray-600 hover:text-gray-900 cursor-pointer">
+            <h3 className="text-lg font-semibold text-black">Create B2B Invoice</h3>
+            <button onClick={onClose} className="text-brand-gray-dark hover:text-black cursor-pointer">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -188,7 +188,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
                 required
               />
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Unit Price (CHF) *</label>
+                <label className="block text-sm font-medium text-black mb-1">Unit Price (CHF) *</label>
                 <input
                   type="number"
                   required
@@ -196,7 +196,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
                   step={0.01}
                   value={formData.unitPrice / 100}
                   onChange={(e) => updateField('unitPrice', Math.round(parseFloat(e.target.value) * 100) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black"
                 />
               </div>
             </div>
@@ -238,19 +238,19 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
 
           {/* Total Preview */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">Invoice Total</h4>
-            <div className="flex justify-between font-bold text-lg text-gray-900">
+            <h4 className="font-medium text-black mb-2">Invoice Total</h4>
+            <div className="flex justify-between font-bold text-lg text-black">
               <span>Total ({formData.ticketQuantity} tickets)</span>
               <span>{formatAmount(total)}</span>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-brand-gray-lightest">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:bgbrand-gray-lightest transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -272,7 +272,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="font-medium text-gray-900 mb-3">{title}</h4>
+      <h4 className="font-medium text-black mb-3">{title}</h4>
       {children}
     </div>
   );
@@ -297,7 +297,7 @@ function FormInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-900 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-black mb-1">{label}</label>
       <input
         type={type}
         value={value}
@@ -305,7 +305,7 @@ function FormInput({
         placeholder={placeholder}
         required={required}
         min={min}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900 placeholder:text-gray-500"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black placeholder:text-brand-gray-medium"
       />
     </div>
   );
@@ -324,11 +324,11 @@ function FormSelect({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-900 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-black mb-1">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900 cursor-pointer"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black cursor-pointer"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -353,16 +353,16 @@ function FormTextarea({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-900 mb-1">
+      <label className="block text-sm font-medium text-black mb-1">
         {label}
-        {hint && <span className="text-gray-500 font-normal ml-1">{hint}</span>}
+        {hint && <span className="text-brand-gray-medium font-normal ml-1">{hint}</span>}
       </label>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
         placeholder={placeholder}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900 placeholder:text-gray-500"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black placeholder:text-brand-gray-medium"
       />
     </div>
   );

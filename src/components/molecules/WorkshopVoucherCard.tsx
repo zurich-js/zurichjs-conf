@@ -107,7 +107,7 @@ export const WorkshopVoucherCard: React.FC<WorkshopVoucherCardProps> = ({
             <span className="text-lg font-bold text-brand-white">
               {amount} {currency}
             </span>
-            <span className="text-sm text-gray-400">→</span>
+            <span className="text-sm text-brand-gray-medium">→</span>
             <span className="text-lg font-bold text-brand-primary">
               {totalValue} {currency}
             </span>

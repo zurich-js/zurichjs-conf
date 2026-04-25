@@ -19,11 +19,11 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse"
+            className="bg-white rounded-xl border border-brand-gray-lightest p-4 animate-pulse"
           >
-            <div className="h-10 w-10 bg-gray-200 rounded-lg mb-3" />
-            <div className="h-3 bg-gray-200 rounded w-16 mb-2" />
-            <div className="h-7 bg-gray-200 rounded w-10" />
+            <div className="h-10 w-10 bgbrand-gray-lightest rounded-lg mb-3" />
+            <div className="h-3 bgbrand-gray-lightest rounded w-16 mb-2" />
+            <div className="h-7 bgbrand-gray-lightest rounded w-10" />
           </div>
         ))}
       </div>
@@ -45,15 +45,12 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       icon: Building2,
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-600',
-      borderColor: 'border-blue-100',
     },
     {
       label: 'Total Deals',
       value: stats.totalDeals,
       icon: Handshake,
       iconBg: 'bg-purple-50',
-      iconColor: 'text-purple-600',
-      borderColor: 'border-purple-100',
     },
     {
       label: 'Paid Deals',
@@ -61,7 +58,6 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       icon: CheckCircle,
       iconBg: 'bg-green-50',
       iconColor: 'text-green-600',
-      borderColor: 'border-green-100',
     },
     {
       label: 'Pending',
@@ -69,7 +65,6 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       icon: Clock,
       iconBg: 'bg-orange-50',
       iconColor: 'text-orange-600',
-      borderColor: 'border-orange-100',
     },
     {
       label: 'Revenue CHF',
@@ -80,7 +75,6 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       icon: DollarSign,
       iconBg: 'bg-brand-primary/20',
       iconColor: 'text-[#B8A830]',
-      borderColor: 'border-brand-primary/30',
     },
     {
       label: 'Public Logos',
@@ -88,7 +82,6 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       icon: Image,
       iconBg: 'bg-pink-50',
       iconColor: 'text-pink-600',
-      borderColor: 'border-pink-100',
     },
   ];
 
@@ -97,7 +90,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`bg-white rounded-xl border ${card.borderColor} p-4 hover:shadow-sm transition-shadow`}
+          className={`bg-white rounded-xl shadow-sm border border-brand-gray-lightest p-4`}
         >
           <div className={`inline-flex p-2.5 rounded-lg ${card.iconBg} mb-3`}>
             <card.icon className={`h-5 w-5 ${card.iconColor}`} />
@@ -107,7 +100,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           </p>
           <p className="text-2xl sm:text-3xl font-bold text-black">{card.value}</p>
           {'subValue' in card && card.subValue && (
-            <p className="text-xs text-gray-500 mt-1">{card.subValue}</p>
+            <p className="text-xs text-brand-gray-medium mt-1">{card.subValue}</p>
           )}
         </div>
       ))}

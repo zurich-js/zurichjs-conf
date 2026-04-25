@@ -86,7 +86,7 @@ export function ReassignModal({ isOpen, onClose, reassignData, setReassignData, 
           <button
             onClick={handleClose}
             disabled={mutation.isPending}
-            className="flex-1 bg-gray-200 text-black font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bgbrand-gray-lightest text-black font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>

@@ -1,10 +1,10 @@
 /**
  * Admin Travel Speakers API
- * GET /api/admin/cfp/travel/speakers - Get accepted speakers with travel details
+ * GET /api/admin/cfp/travel/speakers - Get managed program speakers with travel details
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAcceptedSpeakersWithTravel } from '@/lib/cfp/admin-travel';
+import { getManagedSpeakersWithTravel } from '@/lib/cfp/admin-travel';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
-      const speakers = await getAcceptedSpeakersWithTravel();
+      const speakers = await getManagedSpeakersWithTravel();
       return res.status(200).json({ speakers });
     } catch (error) {
       log.error('Error fetching speakers with travel', error);

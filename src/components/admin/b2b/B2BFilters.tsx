@@ -18,7 +18,7 @@ export function B2BFilters({
   onStatusChange,
 }: B2BFiltersProps) {
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+    <div className="bg-white rounded-lg p-4 shadow-sm border border-brand-gray-lightest">
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <input
@@ -26,13 +26,13 @@ export function B2BFilters({
             placeholder="Search by company name or invoice number..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900 placeholder:text-gray-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black placeholder:text-brand-gray-medium"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value as B2BInvoiceStatus | '')}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-gray-900 cursor-pointer"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-black cursor-pointer"
         >
           <option value="">All Statuses</option>
           <option value="draft">Draft</option>

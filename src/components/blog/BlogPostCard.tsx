@@ -11,7 +11,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
   return (
     <Link
       href={`/blog/${slug}`}
-      className="group block py-5 border-b border-gray-200"
+      className="group block py-5 border-b border-brand-gray-lightest"
     >
       <h2 className="text-sm font-bold text-gray-700">
         {frontmatter.title}
@@ -19,7 +19,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
       <p className="mt-1 text-sm text-gray-700 line-clamp-2">
         {frontmatter.excerpt}
       </p>
-      <p className="mt-2 text-sm text-gray-500">
+      <p className="mt-2 text-sm text-brand-gray-medium">
         {new Date(frontmatter.date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',

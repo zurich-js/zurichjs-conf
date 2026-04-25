@@ -337,7 +337,7 @@ export function LineItemsEditor({
             type="button"
             onClick={cancelEditing}
             disabled={isSubmitting}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="px-3 py-1.5 text-sm text-brand-gray-dark hover:bg-text-brand-gray-lightest rounded transition-colors"
           >
             Cancel
           </button>
@@ -385,7 +385,7 @@ export function LineItemsEditor({
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {item.quantity > 1 && (
-                        <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                        <span className="text-xs text-brand-gray-medium">Qty: {item.quantity}</span>
                       )}
                       {item.type === 'addon' && item.uses_credit && (
                         <span className="text-xs text-green-600">(credit eligible)</span>
@@ -400,7 +400,7 @@ export function LineItemsEditor({
                       <button
                         onClick={() => startEditing(item)}
                         disabled={isSubmitting}
-                        className="p-1.5 sm:p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                        className="p-1.5 sm:p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:bgbrand-gray-lightest rounded transition-colors"
                         title={item.type === 'tier_base' ? 'Edit negotiated price' : 'Edit item'}
                       >
                         <Edit2 className="h-4 w-4" />
@@ -409,7 +409,7 @@ export function LineItemsEditor({
                         <button
                           onClick={() => handleDeleteItem(item.id)}
                           disabled={isSubmitting}
-                          className="p-1.5 sm:p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          className="p-1.5 sm:p-1 text-brand-gray-medium hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -430,7 +430,7 @@ export function LineItemsEditor({
       {!isAdding && !editingId && (
         <button
           onClick={startAdding}
-          className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-brand-gray-dark hover:border-brand-gray-medium hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Add Line Item
@@ -438,9 +438,9 @@ export function LineItemsEditor({
       )}
 
       {/* Totals Summary */}
-      <div className="border-t border-gray-200 pt-4 space-y-2">
+      <div className="border-t border-brand-gray-lightest pt-4 space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Subtotal</span>
+          <span className="text-brand-gray-dark">Subtotal</span>
           <span>{formatAmount(subtotal)}</span>
         </div>
         {creditApplied > 0 && (
@@ -451,11 +451,11 @@ export function LineItemsEditor({
         )}
         {adjustments !== 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Adjustments</span>
+            <span className="text-brand-gray-dark">Adjustments</span>
             <span className={adjustments < 0 ? 'text-red-600' : ''}>{formatAmount(adjustments)}</span>
           </div>
         )}
-        <div className="flex justify-between font-bold text-base sm:text-lg pt-2 border-t border-gray-200">
+        <div className="flex justify-between font-bold text-base sm:text-lg pt-2 border-t border-brand-gray-lightest">
           <span>Total</span>
           <span>{formatAmount(total)}</span>
         </div>

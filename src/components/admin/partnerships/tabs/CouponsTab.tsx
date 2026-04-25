@@ -156,7 +156,7 @@ export function CouponsTab({
                 value={formData.code}
                 onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
                 placeholder="ZURICHJS20"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-brand-gray-medium"
               />
               {/* Suggested codes */}
               <div className="mt-2">
@@ -170,7 +170,7 @@ export function CouponsTab({
                       className={`px-2 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
                         formData.code === suggestion
                           ? 'bg-brand-primary border-brand-primary text-black font-medium'
-                          : 'bg-white border-gray-200 text-black/70 hover:border-brand-primary hover:bg-brand-primary/10'
+                          : 'bg-white border-brand-gray-lightest text-black/70 hover:border-brand-primary hover:bg-brand-primary/10'
                       }`}
                     >
                       {suggestion}
@@ -270,7 +270,7 @@ export function CouponsTab({
                   }))
                 }
                 placeholder="Unlimited"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder-brand-gray-medium"
               />
             </div>
             <div>
@@ -290,7 +290,7 @@ export function CouponsTab({
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setShowForm(false)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-black hover:bg-gray-100 cursor-pointer"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-black hover:bg-text-brand-gray-lightest cursor-pointer"
             >
               Cancel
             </button>
@@ -316,7 +316,7 @@ export function CouponsTab({
             <div
               key={coupon.id}
               className={`p-3 sm:p-4 border rounded-lg ${
-                coupon.is_active ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200'
+                coupon.is_active ? 'bg-white border-brand-gray-lightest' : 'bg-gray-50 border-brand-gray-lightest'
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
@@ -335,7 +335,7 @@ export function CouponsTab({
                   </button>
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${
-                      coupon.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      coupon.is_active ? 'bg-green-100 text-green-800' : 'bg-text-brand-gray-lightest text-brand-gray-dark'
                     }`}
                   >
                     {coupon.is_active ? 'Active' : 'Inactive'}

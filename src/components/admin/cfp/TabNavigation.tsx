@@ -27,7 +27,7 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
         <select
           value={activeTab}
           onChange={(e) => setActiveTab(e.target.value as CfpTab)}
-          className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-black"
+          className="block w-full rounded-lg border border-brand-gray-lightest bg-white px-4 py-3 text-sm font-medium text-black"
         >
           {TABS.map((tab) => (
             <option key={tab.key} value={tab.key}>{tab.label}</option>
@@ -37,7 +37,7 @@ export function TabNavigation({ activeTab, setActiveTab }: TabNavigationProps) {
 
       {/* Desktop tabs */}
       <div className="hidden sm:block">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 inline-flex space-x-1">
+        <div className="bg-white rounded-lg shadow-sm border border-brand-gray-lightest p-1 inline-flex space-x-1">
           {TABS.map((tab) => (
             <button
               key={tab.key}

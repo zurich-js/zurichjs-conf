@@ -69,7 +69,7 @@ function BlueskyReply({
             height={36}
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold ring-2 ring-white">
+          <div className="w-9 h-9 rounded-full bg-text-brand-gray-lightest flex items-center justify-center text-brand-gray-medium text-xs font-bold ring-2 ring-white">
             {(post.author.displayName ?? post.author.handle).charAt(0).toUpperCase()}
           </div>
         )}
@@ -81,16 +81,16 @@ function BlueskyReply({
             href={`https://bsky.app/profile/${post.author.handle}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-sm text-gray-900 hover:text-brand-blue transition-colors"
+            className="font-semibold text-sm text-black hover:text-brand-blue transition-colors"
           >
             {post.author.displayName ?? post.author.handle}
           </a>
-          <span className="text-gray-400 text-xs">@{post.author.handle}</span>
+          <span className="text-brand-gray-medium text-xs">@{post.author.handle}</span>
           <a
             href={webUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-400 text-xs hover:text-gray-600 transition-colors ml-auto"
+            className="text-brand-gray-medium text-xs hover:text-brand-gray-dark transition-colors ml-auto"
           >
             {formatRelativeTime(post.record.createdAt)}
           </a>
@@ -102,13 +102,13 @@ function BlueskyReply({
 
         <div className="flex items-center gap-4 mt-2">
           {typeof post.likeCount === 'number' && (
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-brand-gray-medium">
               <Heart className="w-3.5 h-3.5" />
               {post.likeCount}
             </span>
           )}
           {typeof post.replyCount === 'number' && (
-            <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1 text-xs text-brand-gray-medium">
               <MessageCircle className="w-3.5 h-3.5" />
               {post.replyCount}
             </span>
@@ -116,7 +116,7 @@ function BlueskyReply({
         </div>
 
         {replies && replies.length > 0 && (
-          <div className="mt-2 border-l-2 border-gray-100 pl-0">
+          <div className="mt-2 border-l-2 border-text-brand-gray-lightest pl-0">
             {replies.map((reply) => (
               <BlueskyReply key={reply.post.uri} thread={reply} depth={depth + 1} />
             ))}
@@ -151,17 +151,17 @@ export function BlueskyComments({ postUri }: { postUri?: string }) {
   const replies = data?.replies ?? [];
 
   return (
-    <section className="mt-16 pt-12 border-t border-gray-100">
+    <section className="mt-16 pt-12 border-t border-text-brand-gray-lightest">
       {/* Heading */}
-      <h2 className="text-lg font-bold text-gray-900 mb-1">
+      <h2 className="text-lg font-bold text-black mb-1">
         Join the conversation
         {!isLoading && replies.length > 0 && (
-          <span className="ml-2 text-sm font-normal text-gray-400">
+          <span className="ml-2 text-sm font-normal text-brand-gray-medium">
             ({replies.length} {replies.length === 1 ? 'reply' : 'replies'})
           </span>
         )}
       </h2>
-      <p className="text-gray-500 text-sm mb-6">
+      <p className="text-brand-gray-medium text-sm mb-6">
         The conversation is happening on{' '}
         <a
           href={webUrl}
@@ -179,11 +179,11 @@ export function BlueskyComments({ postUri }: { postUri?: string }) {
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex gap-3 animate-pulse">
-              <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
+              <div className="w-9 h-9 rounded-full bgbrand-gray-lightest shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 bg-gray-200 rounded w-32" />
-                <div className="h-3 bg-gray-200 rounded w-full" />
-                <div className="h-3 bg-gray-200 rounded w-3/4" />
+                <div className="h-3 bgbrand-gray-lightest rounded w-32" />
+                <div className="h-3 bgbrand-gray-lightest rounded w-full" />
+                <div className="h-3 bgbrand-gray-lightest rounded w-3/4" />
               </div>
             </div>
           ))}
@@ -192,7 +192,7 @@ export function BlueskyComments({ postUri }: { postUri?: string }) {
 
       {/* Error state */}
       {isError && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-brand-gray-medium">
           Could not load comments.{' '}
           <a href={webUrl} target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline">
             View them directly on Bluesky.
@@ -202,14 +202,14 @@ export function BlueskyComments({ postUri }: { postUri?: string }) {
 
       {/* Empty state */}
       {!isLoading && !isError && replies.length === 0 && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-brand-gray-medium">
           No replies yet — be the first to start the conversation!
         </p>
       )}
 
       {/* Comments list */}
       {!isLoading && !isError && replies.length > 0 && (
-        <div className="space-y-5 divide-y divide-gray-100">
+        <div className="space-y-5 divide-y divide-text-brand-gray-lightest">
           {replies.map((reply) => (
             <div key={reply.post.uri} className="pt-5 first:pt-0">
               <BlueskyReply thread={reply} />

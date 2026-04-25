@@ -30,24 +30,24 @@ export function RegistrantsPanel({ workshopId, onClose }: { workshopId: string; 
   });
 
   return (
-    <div className="rounded border border-gray-200 bg-white">
-      <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+    <div className="rounded border border-brand-gray-lightest bg-white">
+      <div className="flex items-center justify-between border-b border-text-brand-gray-lightest px-3 py-2">
         <div className="text-sm font-semibold">Registrants</div>
-        <button onClick={onClose} className="text-xs text-gray-500 hover:text-gray-800 cursor-pointer">
+        <button onClick={onClose} className="text-xs text-brand-gray-medium hover:text-gray-800 cursor-pointer">
           Close
         </button>
       </div>
       <div className="max-h-96 overflow-y-auto">
-        {isLoading && <div className="p-3 text-xs text-gray-500">Loading…</div>}
+        {isLoading && <div className="p-3 text-xs text-brand-gray-medium">Loading…</div>}
         {isError && (
           <div className="p-3 text-xs text-red-700">Error: {(error as Error)?.message}</div>
         )}
         {data && data.length === 0 && (
-          <div className="p-3 text-xs text-gray-500">No registrations yet.</div>
+          <div className="p-3 text-xs text-brand-gray-medium">No registrations yet.</div>
         )}
         {data && data.length > 0 && (
-          <table className="min-w-full divide-y divide-gray-100 text-left text-xs">
-            <thead className="bg-gray-50 text-gray-600">
+          <table className="min-w-full divide-y divide-text-brand-gray-lightest text-left text-xs">
+            <thead className="bg-gray-50 text-brand-gray-dark">
               <tr>
                 <th className="px-3 py-2 font-medium">Name</th>
                 <th className="px-3 py-2 font-medium">Email</th>
@@ -57,7 +57,7 @@ export function RegistrantsPanel({ workshopId, onClose }: { workshopId: string; 
                 <th className="px-3 py-2 font-medium">Registered</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-text-brand-gray-lightest">
               {data.map((row) => {
                 const name =
                   `${row.first_name ?? row.profile_first_name ?? ''} ${row.last_name ?? row.profile_last_name ?? ''}`.trim() ||
@@ -72,11 +72,11 @@ export function RegistrantsPanel({ workshopId, onClose }: { workshopId: string; 
                     <td className="px-3 py-2 tabular-nums">
                       {(row.amount_paid / 100).toFixed(2)} {row.currency?.toUpperCase()}
                     </td>
-                    <td className="px-3 py-2 tabular-nums text-gray-500">
+                    <td className="px-3 py-2 tabular-nums text-brand-gray-medium">
                       {row.discount_amount ? `-${(row.discount_amount / 100).toFixed(2)}` : '—'}
                     </td>
                     <td className="px-3 py-2 font-mono">{couponCode}</td>
-                    <td className="px-3 py-2 text-gray-500">
+                    <td className="px-3 py-2 text-brand-gray-medium">
                       {new Date(row.created_at).toLocaleString()}
                     </td>
                   </tr>
@@ -97,26 +97,26 @@ export function RevenuePanel({ workshopId, onClose }: { workshopId: string; onCl
   });
 
   return (
-    <div className="rounded border border-gray-200 bg-white">
-      <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+    <div className="rounded border border-brand-gray-lightest bg-white">
+      <div className="flex items-center justify-between border-b border-text-brand-gray-lightest px-3 py-2">
         <div className="text-sm font-semibold">Revenue</div>
-        <button onClick={onClose} className="text-xs text-gray-500 hover:text-gray-800 cursor-pointer">
+        <button onClick={onClose} className="text-xs text-brand-gray-medium hover:text-gray-800 cursor-pointer">
           Close
         </button>
       </div>
       <div className="p-3">
-        {isLoading && <div className="text-xs text-gray-500">Loading…</div>}
+        {isLoading && <div className="text-xs text-brand-gray-medium">Loading…</div>}
         {isError && <div className="text-xs text-red-700">Error: {(error as Error)?.message}</div>}
         {data && (
           <div className="space-y-2">
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-brand-gray-dark">
               Total registrations: <span className="font-semibold">{data.totalRegistrations}</span>
             </div>
             {data.byCurrency.length === 0 ? (
-              <div className="text-xs text-gray-500">No confirmed revenue yet.</div>
+              <div className="text-xs text-brand-gray-medium">No confirmed revenue yet.</div>
             ) : (
               <table className="min-w-full text-xs">
-                <thead className="text-gray-600">
+                <thead className="text-brand-gray-dark">
                   <tr>
                     <th className="px-2 py-1 text-left font-medium">Currency</th>
                     <th className="px-2 py-1 text-right font-medium">Gross</th>
@@ -125,14 +125,14 @@ export function RevenuePanel({ workshopId, onClose }: { workshopId: string; onCl
                     <th className="px-2 py-1 text-right font-medium"># Seats</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-text-brand-gray-lightest">
                   {data.byCurrency.map((b) => (
                     <tr key={b.currency}>
                       <td className="px-2 py-1">{b.currency}</td>
                       <td className="px-2 py-1 text-right tabular-nums">
                         {(b.grossCents / 100).toFixed(2)}
                       </td>
-                      <td className="px-2 py-1 text-right tabular-nums text-gray-500">
+                      <td className="px-2 py-1 text-right tabular-nums text-brand-gray-medium">
                         {(b.discountCents / 100).toFixed(2)}
                       </td>
                       <td className="px-2 py-1 text-right tabular-nums">

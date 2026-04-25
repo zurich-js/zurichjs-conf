@@ -131,38 +131,38 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
-            <p className="text-sm text-gray-500">Invoice Number</p>
+            <p className="text-sm text-brand-gray-medium">Invoice Number</p>
             <p className="text-base sm:text-lg font-bold font-mono">{invoice.invoice_number}</p>
           </div>
           <div className="sm:text-right">
             {invoice.payable_currency === 'EUR' && invoice.converted_amount_eur ? (
               <>
-                <p className="text-sm text-gray-500">Amount Payable</p>
+                <p className="text-sm text-brand-gray-medium">Amount Payable</p>
                 <p className="text-base sm:text-lg font-bold text-blue-600">{formatAmount(invoice.converted_amount_eur, 'EUR')}</p>
-                <p className="text-xs text-gray-500">Base: {formatAmount(invoice.total_amount, invoice.currency)}</p>
+                <p className="text-xs text-brand-gray-medium">Base: {formatAmount(invoice.total_amount, invoice.currency)}</p>
               </>
             ) : (
               <>
-                <p className="text-sm text-gray-500">Total Amount</p>
+                <p className="text-sm text-brand-gray-medium">Total Amount</p>
                 <p className="text-base sm:text-lg font-bold">{formatAmount(invoice.total_amount, invoice.currency)}</p>
               </>
             )}
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
-          <div><span className="text-gray-500">Issue Date:</span> <span>{invoice.issue_date}</span></div>
+          <div><span className="text-brand-gray-medium">Issue Date:</span> <span>{invoice.issue_date}</span></div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-500">Due Date:</span>
+            <span className="text-brand-gray-medium">Due Date:</span>
             {isEditingDueDate ? (
               <div className="flex items-center gap-2">
                 <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-brand-primary focus:border-transparent" />
                 <button onClick={handleUpdateDueDate} disabled={isUpdating || !editDueDate} className="p-1 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"><Check className="h-4 w-4" /></button>
-                <button onClick={() => setIsEditingDueDate(false)} className="p-1 text-gray-500 hover:bg-gray-100 rounded"><X className="h-4 w-4" /></button>
+                <button onClick={() => setIsEditingDueDate(false)} className="p-1 text-brand-gray-medium hover:bg-text-brand-gray-lightest rounded"><X className="h-4 w-4" /></button>
               </div>
             ) : (
               <>
                 <span>{invoice.due_date}</span>
-                <button onClick={() => { setEditDueDate(invoice.due_date); setIsEditingDueDate(true); }} className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded" title="Edit due date"><Edit2 className="h-3.5 w-3.5" /></button>
+                <button onClick={() => { setEditDueDate(invoice.due_date); setIsEditingDueDate(true); }} className="p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:bg-text-brand-gray-lightest rounded" title="Edit due date"><Edit2 className="h-3.5 w-3.5" /></button>
               </>
             )}
           </div>
@@ -200,7 +200,7 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
           )}
         </div>
         {invoice.invoice_pdf_url && (
-          <p className="text-xs text-gray-500">PDF Source: {invoice.invoice_pdf_source} • Last updated: {invoice.invoice_pdf_uploaded_at ? new Date(invoice.invoice_pdf_uploaded_at).toLocaleDateString() : 'N/A'}</p>
+          <p className="text-xs text-brand-gray-medium">PDF Source: {invoice.invoice_pdf_source} • Last updated: {invoice.invoice_pdf_uploaded_at ? new Date(invoice.invoice_pdf_uploaded_at).toLocaleDateString() : 'N/A'}</p>
         )}
       </div>
     </div>
@@ -228,7 +228,7 @@ function NoInvoiceView({ deal, dueDate, setDueDate, conversion, setConversion, t
     );
   }
   if (deal.status === 'cancelled') {
-    return <div className="bg-gray-50 border border-gray-200 rounded-lg p-4"><p className="text-sm text-gray-600">This deal has been cancelled. No invoice can be created.</p></div>;
+    return <div className="bg-gray-50 border border-brand-gray-lightest rounded-lg p-4"><p className="text-sm text-brand-gray-dark">This deal has been cancelled. No invoice can be created.</p></div>;
   }
 
   return (
@@ -271,7 +271,7 @@ function ConversionToggle({ conversion, setConversion, total, handleRateChange, 
             payInEur: newPayInEur,
             convertedAmount: newPayInEur ? calculateConvertedAmount(prev.conversionRate, total) : '',
           }));
-        }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bg-gray-200'}`}>
+        }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bgbrand-gray-lightest'}`}>
           <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${conversion.payInEur ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
       </div>
@@ -294,12 +294,12 @@ function ConversionFields({ conversion, setConversion, total, handleRateChange, 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">CHF → EUR Rate</label>
           <input type="number" step="0.0001" min="0.1" max="10" value={conversion.conversionRate} onChange={(e) => handleRateChange(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          <p className="text-xs text-gray-500 mt-1">1 CHF = {conversion.conversionRate} EUR</p>
+          <p className="text-xs text-brand-gray-medium mt-1">1 CHF = {conversion.conversionRate} EUR</p>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Converted Amount (EUR)</label>
           <input type="number" step="0.01" min="0" value={conversion.convertedAmount} onChange={(e) => handleAmountChange(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          <p className="text-xs text-gray-500 mt-1">Edit to adjust rate</p>
+          <p className="text-xs text-brand-gray-medium mt-1">Edit to adjust rate</p>
         </div>
       </div>
       <div>
@@ -356,7 +356,7 @@ function ConversionSection({ invoice, conversion, setConversion, isEditing, setI
           <button onClick={() => setIsEditing(true)} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"><Edit2 className="h-3.5 w-3.5" />Edit</button>
         ) : (
           <div className="flex items-center gap-2">
-            <button onClick={resetConversion} className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1 rounded">Cancel</button>
+            <button onClick={resetConversion} className="text-sm text-brand-gray-dark hover:text-black px-2 py-1 rounded">Cancel</button>
             <button onClick={onSave} disabled={isUpdating || (conversion.payInEur && !isConversionValid(conversion))} className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded flex items-center gap-1 disabled:opacity-50"><Check className="h-3.5 w-3.5" />Save</button>
           </div>
         )}
@@ -373,7 +373,7 @@ function ConversionSection({ invoice, conversion, setConversion, isEditing, setI
                 payInEur: newPayInEur,
                 convertedAmount: newPayInEur ? calculateConvertedAmount(prev.conversionRate, baseAmount) : prev.convertedAmount,
               }));
-            }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bg-gray-200'}`}>
+            }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bgbrand-gray-lightest'}`}>
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${conversion.payInEur ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
@@ -381,11 +381,11 @@ function ConversionSection({ invoice, conversion, setConversion, isEditing, setI
         </div>
       ) : invoice.payable_currency === 'EUR' && invoice.conversion_rate_chf_to_eur ? (
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-gray-600">Base Amount (CHF):</span><span className="font-medium">{formatAmount(invoice.base_amount_chf ?? invoice.total_amount, 'CHF')}</span></div>
-          <div className="flex justify-between"><span className="text-gray-600">Conversion Rate:</span><span className="font-medium">1 CHF = {invoice.conversion_rate_chf_to_eur} EUR</span></div>
+          <div className="flex justify-between"><span className="text-brand-gray-dark">Base Amount (CHF):</span><span className="font-medium">{formatAmount(invoice.base_amount_chf ?? invoice.total_amount, 'CHF')}</span></div>
+          <div className="flex justify-between"><span className="text-brand-gray-dark">Conversion Rate:</span><span className="font-medium">1 CHF = {invoice.conversion_rate_chf_to_eur} EUR</span></div>
           <div className="flex justify-between text-blue-700"><span>Payable Amount (EUR):</span><span className="font-bold">{formatAmount(invoice.converted_amount_eur!, 'EUR')}</span></div>
-          {invoice.conversion_justification && <div className="pt-2 border-t border-blue-200"><span className="text-gray-600">Justification: </span><span className="text-gray-800">{invoice.conversion_justification}</span></div>}
-          {invoice.conversion_rate_source && <div className="text-xs text-gray-500">Source: {invoice.conversion_rate_source.toUpperCase()}{invoice.conversion_updated_at && ` • Updated: ${new Date(invoice.conversion_updated_at).toLocaleDateString()}`}</div>}
+          {invoice.conversion_justification && <div className="pt-2 border-t border-blue-200"><span className="text-brand-gray-dark">Justification: </span><span className="text-gray-800">{invoice.conversion_justification}</span></div>}
+          {invoice.conversion_rate_source && <div className="text-xs text-brand-gray-medium">Source: {invoice.conversion_rate_source.toUpperCase()}{invoice.conversion_updated_at && ` • Updated: ${new Date(invoice.conversion_updated_at).toLocaleDateString()}`}</div>}
         </div>
       ) : (
         <p className="text-sm text-blue-700">EUR payment not enabled. Click Edit to allow the sponsor to pay in EUR.</p>

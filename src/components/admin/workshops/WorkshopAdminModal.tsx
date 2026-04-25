@@ -240,9 +240,9 @@ function getStoredStripeValidation(offering: Workshop): FullStripeValidation | n
 
 function PlacementLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{label}</div>
-      <div className="mt-0.5 font-medium text-gray-900">{value}</div>
+    <div className="rounded-md border border-brand-gray-lightest bg-gray-50 px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-brand-gray-medium">{label}</div>
+      <div className="mt-0.5 font-medium text-black">{value}</div>
     </div>
   );
 }
@@ -601,16 +601,16 @@ export function WorkshopAdminModal({
       <DialogBackdrop className="fixed inset-0 bg-gray-900/40 backdrop-blur-[2px] transition-opacity" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
-          <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <header className="flex items-center justify-between border-b border-brand-gray-lightest px-4 py-3">
             <div className="min-w-0">
-              <DialogTitle className="truncate text-base font-semibold text-gray-900">
+              <DialogTitle className="truncate text-base font-semibold text-black">
                 {displayOffering.title}
               </DialogTitle>
-              <div className="mt-0.5 text-xs text-gray-500">Workshop admin</div>
+              <div className="mt-0.5 text-xs text-brand-gray-medium">Workshop admin</div>
             </div>
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+              className="rounded-lg p-2 text-brand-gray-medium hover:bg-text-brand-gray-lightest hover:text-black cursor-pointer"
               aria-label="Close"
             >
               <X className="size-5" />
@@ -855,7 +855,7 @@ export function WorkshopAdminModal({
           ) : null}
         </div>
 
-        <footer className="border-t border-gray-200 bg-white px-4 py-3">
+        <footer className="border-t border-brand-gray-lightest bg-white px-4 py-3">
           {saveMutation.isError && (
             <div className="mb-2 rounded bg-red-50 p-2 text-xs text-red-700">
               {(saveMutation.error as Error)?.message}
@@ -864,7 +864,7 @@ export function WorkshopAdminModal({
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
             <button
               onClick={onClose}
-              className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 cursor-pointer"
+              className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-text-brand-gray-lightest cursor-pointer"
             >
               Close
             </button>

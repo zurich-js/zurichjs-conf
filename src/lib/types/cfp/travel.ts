@@ -6,6 +6,8 @@
 import type {
   CfpFlightDirection,
   CfpFlightStatus,
+  CfpTransportMode,
+  CfpTransportStatus,
   CfpReimbursementType,
   CfpReimbursementStatus,
 } from './base';
@@ -38,6 +40,14 @@ export interface CfpSpeakerFlight {
   id: string;
   speaker_id: string;
   direction: CfpFlightDirection;
+  transport_mode?: CfpTransportMode | null;
+  transport_status?: CfpTransportStatus | null;
+  provider?: string | null;
+  reference_code?: string | null;
+  departure_label?: string | null;
+  arrival_label?: string | null;
+  transport_link_url?: string | null;
+  admin_notes?: string | null;
   airline: string | null;
   flight_number: string | null;
   departure_airport: string | null;

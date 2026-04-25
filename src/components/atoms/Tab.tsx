@@ -55,7 +55,7 @@ export const Tab: React.FC<TabProps> = ({
       className={`
         relative px-4 py-3 text-sm md:text-base font-medium transition-colors duration-200
         focus:outline-none focus:ring-2 focus:ring-blue-primary focus:ring-offset-2 focus:ring-offset-gray-0
-        ${isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}
+        ${isActive ? 'text-black' : 'text-brand-gray-medium hover:text-gray-700'}
       `}
     >
       <span className="relative z-10">{label}</span>

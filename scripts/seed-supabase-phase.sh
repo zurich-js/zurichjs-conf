@@ -13,6 +13,7 @@ Phases:
   cfp-first-stage  Reviewer workload: submissions, reviewers, reviews, no decisions/schedule.
   cfp-admission    Admission workload: accepted/rejected/pending submissions, no schedule.
   cfp-schedule     Scheduling workload: schedule slots, a few linked submissions, no commerce.
+  cfp-travel-ready Scheduling plus confirmed travel/transport and reimbursements.
   workshop-commerce Full local seed including workshop commerce and registrations.
 
 Environment overrides:
@@ -22,7 +23,7 @@ USAGE
 }
 
 case "$phase" in
-  cfp-first-stage|cfp-admission|cfp-schedule|workshop-commerce)
+  cfp-first-stage|cfp-admission|cfp-schedule|cfp-travel-ready|workshop-commerce)
     ;;
   ""|-h|--help)
     usage
@@ -57,6 +58,10 @@ case "$phase" in
     ;;
   cfp-schedule)
     run_sql_file "supabase/seeds/30-cfp-schedule.sql"
+    ;;
+  cfp-travel-ready)
+    run_sql_file "supabase/seeds/30-cfp-schedule.sql"
+    run_sql_file "supabase/seeds/35-cfp-travel-ready.sql"
     ;;
   workshop-commerce)
     run_sql_file "supabase/seeds/40-workshop-commerce.sql"

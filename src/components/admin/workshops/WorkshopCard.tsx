@@ -17,11 +17,11 @@ interface WorkshopCardProps {
 }
 
 const STATUS_STYLES: Record<WorkshopStatus, string> = {
-  draft: 'bg-gray-100 text-gray-700 ring-gray-200',
+  draft: 'bg-text-brand-gray-lightest text-gray-700 ringbrand-gray-lightest',
   published: 'bg-green-100 text-green-700 ring-green-200',
   cancelled: 'bg-red-100 text-red-700 ring-red-200',
   completed: 'bg-blue-100 text-blue-700 ring-blue-200',
-  archived: 'bg-gray-100 text-gray-500 ring-gray-200 line-through',
+  archived: 'bg-text-brand-gray-lightest text-brand-gray-medium ringbrand-gray-lightest line-through',
 };
 
 function formatTimeRange(start: string | null, end: string | null): string | null {
@@ -43,8 +43,8 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
             <div className="text-xs font-medium uppercase tracking-wide text-amber-700">
               Not configured
             </div>
-            <div className="mt-1 truncate font-semibold text-gray-900">{item.submissionTitle}</div>
-            <div className="text-xs text-gray-600">{speakerName}</div>
+            <div className="mt-1 truncate font-semibold text-black">{item.submissionTitle}</div>
+            <div className="text-xs text-brand-gray-dark">{speakerName}</div>
           </div>
           <button
             onClick={onCreateOffering}
@@ -67,7 +67,7 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
   const publicPageSlug = item.sessionSlug;
 
   return (
-    <div className="group rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <div className="group rounded-xl border border-brand-gray-lightest bg-white shadow-sm transition-shadow hover:shadow-md">
       <button
         onClick={onOpen}
         className="block w-full text-left cursor-pointer"
@@ -77,14 +77,14 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="truncate text-xs font-medium text-gray-600">{speakerName}</span>
+                <span className="truncate text-xs font-medium text-brand-gray-dark">{speakerName}</span>
                 <span
                   className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold uppercase ring-1 ${STATUS_STYLES[offering.status]}`}
                 >
                   {offering.status}
                 </span>
               </div>
-              <div className="mt-1 font-semibold text-gray-900 line-clamp-2">
+              <div className="mt-1 font-semibold text-black line-clamp-2">
                 {item.submissionTitle}
               </div>
             </div>
@@ -92,7 +92,7 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
             <ReadinessBadge openItems={openStaticItems} />
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-brand-gray-dark">
             <MetaField
               icon={<CalendarDays className="size-3.5" />}
               label={offering.date ?? 'No date'}
@@ -116,7 +116,7 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
 
           {capacity > 0 && (
             <div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-text-brand-gray-lightest">
                 <div
                   className={`h-full rounded-full transition-all ${
                     capacityPct >= 100
@@ -132,7 +132,7 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
           )}
 
           {item.revenueByCurrency.length > 0 && (
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-brand-gray-dark">
               <span className="font-medium text-gray-700">Revenue:</span>
               {item.revenueByCurrency.map((rev) => (
                 <span key={rev.currency} className="tabular-nums">
@@ -145,13 +145,13 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
       </button>
 
       {publicPageSlug && offering.status === 'published' && (
-        <div className="flex items-center justify-between border-t border-gray-100 px-4 py-2 text-xs">
+        <div className="flex items-center justify-between border-t border-text-brand-gray-lightest px-4 py-2 text-xs">
           <a
             href={`/workshops/${publicPageSlug}`}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-900"
+            className="inline-flex items-center gap-1 text-brand-gray-medium hover:text-black"
           >
             <ExternalLink className="size-3" /> View public page
           </a>
@@ -187,7 +187,7 @@ function MetaField({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 ${missing ? 'text-amber-700' : 'text-gray-600'}`}
+      className={`inline-flex items-center gap-1 ${missing ? 'text-amber-700' : 'text-brand-gray-dark'}`}
     >
       {icon}
       <span className="truncate">{label}</span>

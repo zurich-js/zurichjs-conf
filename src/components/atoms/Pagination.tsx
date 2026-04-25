@@ -65,8 +65,8 @@ export function Pagination({
   // Variant-based styles
   const styles = {
     light: {
-      text: 'text-gray-600',
-      textMuted: 'text-gray-400',
+      text: 'text-brand-gray-dark',
+      textMuted: 'text-brand-gray-medium',
       button: 'border border-gray-300 hover:bg-gray-50 text-gray-700',
       buttonActive: 'bg-brand-primary text-black border-transparent',
       buttonDisabled: 'opacity-50 cursor-not-allowed',
@@ -82,7 +82,7 @@ export function Pagination({
 
   const s = styles[variant];
 
-  const borderClass = variant === 'dark' ? 'border-brand-gray-dark' : 'border-gray-200';
+  const borderClass = variant === 'dark' ? 'border-brand-gray-dark' : 'border-brand-gray-lightest';
 
   return (
     <div className={`mt-6 pt-6 border-t ${borderClass} flex flex-col sm:flex-row items-center justify-between gap-4`}>

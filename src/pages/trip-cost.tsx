@@ -267,10 +267,10 @@ export default function TripCostPage() {
           <div className="max-w-3xl mb-8 md:mb-16">
             <Kicker variant="light">Trip Cost Calculator</Kicker>
             <Heading level="h1" className="mt-3 mb-3 md:mb-4">How much does ZurichJS Conf cost in total?</Heading>
-            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+            <p className="text-base md:text-lg text-brand-gray-dark leading-relaxed">
               Estimate ticket + travel + hotel in under 30 seconds. All prices are estimates — your actual costs may vary.
             </p>
-            <div className="text-sm text-gray-500 mt-3 space-y-2">
+            <div className="text-sm text-brand-gray-medium mt-3 space-y-2">
               <p>We know that travelling to Switzerland can seem costly at first, but with early booking, attending ZurichJS can be more accessible than you might think.</p>
               <p>Our goal is to make the conference open to everyone who wants to be part of it, and financial barriers shouldn&apos;t prevent anyone from joining the community.</p>
               <p>If you need support or have questions while planning your trip, don&apos;t hesitate to{' '}

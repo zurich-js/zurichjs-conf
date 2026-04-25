@@ -158,9 +158,9 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-6 border-b border-brand-gray-lightest flex items-center justify-between">
           <h3 className="text-xl font-bold text-black">Add Session</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+          <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer">
             <X className="w-5 h-5 text-black" />
           </button>
         </div>
@@ -170,18 +170,18 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
           )}
 
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1">
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-text-brand-gray-lightest p-1">
             <button
               type="button"
               onClick={() => setMode('existing')}
-              className={`cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold ${mode === 'existing' ? 'bg-white text-black shadow-sm' : 'text-gray-600'}`}
+              className={`cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold ${mode === 'existing' ? 'bg-white text-black shadow-sm' : 'text-brand-gray-dark'}`}
             >
               Attach panel
             </button>
             <button
               type="button"
               onClick={() => setMode('create')}
-              className={`cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold ${mode === 'create' ? 'bg-white text-black shadow-sm' : 'text-gray-600'}`}
+              className={`cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold ${mode === 'create' ? 'bg-white text-black shadow-sm' : 'text-brand-gray-dark'}`}
             >
               Create new
             </button>
@@ -204,11 +204,11 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
                   ))}
                 </select>
                 {attachablePanelSessions.length === 0 ? (
-                  <p className="mt-2 text-sm text-gray-500">No existing panels are available for this speaker yet.</p>
+                  <p className="mt-2 text-sm text-brand-gray-medium">No existing panels are available for this speaker yet.</p>
                 ) : null}
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              <div className="rounded-xl border border-brand-gray-lightest bg-gray-50 px-4 py-3 text-sm text-brand-gray-dark">
                 This adds the speaker as an additional panelist while keeping the original CFP submission owner.
               </div>
             </>
@@ -274,7 +274,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
                     key={tag}
                     type="button"
                     onClick={() => setFormData({ ...formData, tags: formData.tags.filter((entry) => entry !== tag) })}
-                    className="cursor-pointer rounded-full bg-gray-100 px-3 py-1 text-sm text-black hover:bg-gray-200"
+                    className="cursor-pointer rounded-full bg-text-brand-gray-lightest px-3 py-1 text-sm text-black hover:bgbrand-gray-lightest"
                   >
                     {tag} x
                   </button>
@@ -294,14 +294,14 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
               }}
               placeholder="Type a tag and press Enter"
               disabled={formData.tags.length >= 5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none disabled:bg-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none disabled:bg-text-brand-gray-lightest"
             />
-            <p className="mt-1 text-xs text-gray-500">{formData.tags.length}/5 tags</p>
+            <p className="mt-1 text-xs text-brand-gray-medium">{formData.tags.length}/5 tags</p>
           </div>
 
           {/* Workshop-specific fields */}
           {formData.submission_type === 'workshop' && (
-            <div className="border-t border-gray-200 pt-4 mt-4 space-y-4">
+            <div className="border-t border-brand-gray-lightest pt-4 mt-4 space-y-4">
               <p className="text-sm font-medium text-black">Workshop Details</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -334,9 +334,9 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
           )}
 
           {formData.submission_type === 'panel' ? (
-            <div className="border-t border-gray-200 pt-4 mt-4 space-y-3">
+            <div className="border-t border-brand-gray-lightest pt-4 mt-4 space-y-3">
               <p className="text-sm font-medium text-black">Panel speakers</p>
-              <div className="grid max-h-44 gap-2 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <div className="grid max-h-44 gap-2 overflow-y-auto rounded-xl border border-brand-gray-lightest bg-gray-50 p-3">
                 {speakers.filter((speaker) => speaker.id !== speakerId).map((speaker) => {
                   const checked = formData.participant_speaker_ids.includes(speaker.id);
                   return (
@@ -359,14 +359,14 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
             </div>
           ) : null}
 
-          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          <div className="rounded-xl border border-brand-gray-lightest bg-gray-50 px-4 py-3 text-sm text-brand-gray-dark">
             Scheduling now happens from the schedule tab so the public program has one source of truth.
           </div>
             </>
           )}
 
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black cursor-pointer">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-brand-gray-dark hover:text-black cursor-pointer">
               Cancel
             </button>
             <button

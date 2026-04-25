@@ -16,6 +16,8 @@ export type {
   CfpReviewerRole,
   CfpFlightDirection,
   CfpFlightStatus,
+  CfpTransportMode,
+  CfpTransportStatus,
   CfpReimbursementStatus,
   CfpReimbursementType,
   CfpTshirtSize,

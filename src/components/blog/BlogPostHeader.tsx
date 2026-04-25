@@ -35,7 +35,7 @@ export function BlogPostHeader({ frontmatter }: BlogPostHeaderProps) {
       <p className="text-lg text-gray-700 leading-relaxed">
         {frontmatter.excerpt}
       </p>
-      <div className="flex items-center gap-2 mt-4 text-sm text-gray-500">
+      <div className="flex items-center gap-2 mt-4 text-sm text-brand-gray-medium">
         <span>{author.name}</span>
         {(author.bluesky || author.github || author.linkedin || author.x) && (
           <span className="flex items-center gap-1.5 text-brand-blue">

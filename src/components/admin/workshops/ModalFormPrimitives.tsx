@@ -22,7 +22,7 @@ export function Section({
   const collapsible = typeof onToggle === 'function';
 
   return (
-    <section className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white first:mt-0">
+    <section className="mt-3 overflow-hidden rounded-lg border border-brand-gray-lightest bg-white first:mt-0">
       <button
         type="button"
         onClick={onToggle}
@@ -33,7 +33,7 @@ export function Section({
       >
         <span className="min-w-0">
           <span className="block text-sm font-semibold uppercase tracking-wide text-gray-800">{title}</span>
-          {description && <span className="mt-0.5 block text-xs text-gray-500">{description}</span>}
+          {description && <span className="mt-0.5 block text-xs text-brand-gray-medium">{description}</span>}
         </span>
         {collapsible && (
           <span
@@ -44,7 +44,7 @@ export function Section({
           </span>
         )}
       </button>
-      {(!collapsible || !collapsed) && <div className="border-t border-gray-100 px-4 py-4">{children}</div>}
+      {(!collapsible || !collapsed) && <div className="border-t border-text-brand-gray-lightest px-4 py-4">{children}</div>}
     </section>
   );
 }
@@ -71,7 +71,7 @@ export function LabeledField({
       {hint && (
         <span
           className={`mt-1 block text-[11px] ${
-            hintTone === 'error' ? 'text-red-600' : 'text-gray-500'
+            hintTone === 'error' ? 'text-red-600' : 'text-brand-gray-medium'
           }`}
         >
           {hint}
@@ -94,7 +94,7 @@ export function IconButton({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-md border border-gray-300 bg-white p-2 text-gray-600 hover:bg-gray-50 cursor-pointer"
+      className="shrink-0 rounded-md border border-gray-300 bg-white p-2 text-brand-gray-dark hover:bg-gray-50 cursor-pointer"
       aria-label={label}
       title={label}
     >

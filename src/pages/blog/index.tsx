@@ -90,7 +90,7 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
               </div>
             ) : (
               <div className="py-16">
-                <p className="text-gray-500">
+                <p className="text-brand-gray-medium">
                   No posts found{activeTag ? ` tagged "${activeTag}"` : ""}.
                 </p>
               </div>

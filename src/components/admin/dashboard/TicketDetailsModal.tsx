@@ -113,7 +113,7 @@ export function TicketDetailsModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+        <div className="p-4 sm:p-6 border-b border-brand-gray-lightest bg-gradient-to-r from-gray-50 to-white">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -123,13 +123,13 @@ export function TicketDetailsModal({
               </div>
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-black">Ticket Details</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                <p className="text-xs sm:text-sm text-brand-gray-dark mt-0.5">
                   {ticket.first_name} {ticket.last_name}
                 </p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg transition-colors cursor-pointer">
+              <svg className="w-5 h-5 text-brand-gray-medium" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -147,7 +147,7 @@ export function TicketDetailsModal({
                   : ticket.status === 'refunded'
                   ? 'bg-red-100 text-red-800'
                   : ticket.status === 'cancelled'
-                  ? 'bg-gray-100 text-gray-800'
+                  ? 'bg-text-brand-gray-lightest text-gray-800'
                   : 'bg-yellow-100 text-yellow-800'
               }`}
             >
@@ -188,8 +188,8 @@ export function TicketDetailsModal({
               {ticket.company && <InfoField label="Company">{ticket.company}</InfoField>}
               {ticket.job_title && <InfoField label="Job Title">{ticket.job_title}</InfoField>}
               <div className="sm:col-span-2">
-                <p className="text-xs text-gray-500 mb-0.5">Country</p>
-                <p className="text-xs text-gray-400 mb-1">Billing country from checkout</p>
+                <p className="text-xs text-brand-gray-medium mb-0.5">Country</p>
+                <p className="text-xs text-brand-gray-medium mb-1">Billing country from checkout</p>
                 {isEditingCountry ? (
                   <div className="space-y-2">
                     <div className="relative">
@@ -203,12 +203,12 @@ export function TicketDetailsModal({
                         autoFocus
                       />
                       {showDropdown && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-brand-gray-lightest rounded-lg shadow-lg max-h-48 overflow-y-auto">
                           {filteredCountries.map((country) => (
                             <button
                               key={country}
                               onClick={() => { setSelectedCountry(country); setCountrySearch(country); setShowDropdown(false); }}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer ${
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-text-brand-gray-lightest cursor-pointer ${
                                 selectedCountry === country ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
                               }`}
                             >
@@ -216,7 +216,7 @@ export function TicketDetailsModal({
                             </button>
                           ))}
                           {filteredCountries.length === 0 && (
-                            <div className="px-3 py-2 text-sm text-gray-500">No countries found</div>
+                            <div className="px-3 py-2 text-sm text-brand-gray-medium">No countries found</div>
                           )}
                         </div>
                       )}
@@ -234,7 +234,7 @@ export function TicketDetailsModal({
                       </button>
                       <button
                         onClick={() => { setIsEditingCountry(false); setCountrySearch(''); setSelectedCountry(ticket.metadata?.session_metadata?.country || ''); setShowDropdown(false); }}
-                        className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 cursor-pointer"
+                        className="px-3 py-1.5 bgbrand-gray-lightest text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -244,11 +244,11 @@ export function TicketDetailsModal({
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-black font-medium">{ticket.metadata?.session_metadata?.country || 'Not set'}</span>
                     {ticket.metadata?.session_metadata?.city && (
-                      <span className="text-sm text-gray-500">({ticket.metadata.session_metadata.city})</span>
+                      <span className="text-sm text-brand-gray-medium">({ticket.metadata.session_metadata.city})</span>
                     )}
                     <button
                       onClick={() => { setIsEditingCountry(true); setCountrySearch(''); setShowDropdown(true); }}
-                      className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      className="p-1 text-brand-gray-medium hover:text-brand-gray-dark cursor-pointer"
                       title="Edit country"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,15 +326,15 @@ export function TicketDetailsModal({
           {ticket.qr_code_url && (
             <InfoSection title="QR Code">
               <div className="flex justify-center">
-                <img src={ticket.qr_code_url} alt="Ticket QR Code" className="w-32 h-32 border border-gray-200 rounded-lg" />
+                <img src={ticket.qr_code_url} alt="Ticket QR Code" className="w-32 h-32 border border-brand-gray-lightest rounded-lg" />
               </div>
             </InfoSection>
           )}
         </div>
 
         {/* Actions Footer */}
-        <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
-          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Actions</h4>
+        <div className="p-4 sm:p-6 border-t border-brand-gray-lightest bg-gray-50">
+          <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">Actions</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {ticket.stripe_payment_intent_id && (
               <ActionLink href={`https://dashboard.stripe.com/payments/${ticket.stripe_payment_intent_id}`} color="blue" icon="external">
@@ -355,8 +355,8 @@ export function TicketDetailsModal({
             )}
             <ActionButton onClick={onDelete} color="red" icon="delete">Delete</ActionButton>
           </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <button onClick={onClose} className="w-full px-6 py-2.5 bg-gray-200 text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer">
+          <div className="mt-4 pt-4 border-t border-brand-gray-lightest">
+            <button onClick={onClose} className="w-full px-6 py-2.5 bgbrand-gray-lightest text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer">
               Close
             </button>
           </div>
@@ -376,8 +376,8 @@ export function TicketDetailsModal({
 // Helper components for cleaner JSX
 function InfoSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">{title}</h4>
+    <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
+      <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">{title}</h4>
       {children}
     </div>
   );
@@ -390,8 +390,8 @@ function InfoGrid({ children }: { children: React.ReactNode }) {
 function InfoField({ label, description, className, children }: { label: string; description?: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
-      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-      {description && <p className="text-xs text-gray-400 mb-1">{description}</p>}
+      <p className="text-xs text-brand-gray-medium mb-0.5">{label}</p>
+      {description && <p className="text-xs text-brand-gray-medium mb-1">{description}</p>}
       <p className="text-sm text-black">{children}</p>
     </div>
   );
@@ -414,7 +414,7 @@ const colorClasses: Record<string, string> = {
   purple: 'border-purple-300 text-purple-700 bg-purple-50 hover:bg-purple-100',
   amber: 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100',
   orange: 'border-orange-300 text-orange-700 bg-orange-50 hover:bg-orange-100',
-  gray: 'border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200',
+  gray: 'border-gray-300 text-gray-700 bg-text-brand-gray-lightest hover:bgbrand-gray-lightest',
   red: 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100',
   teal: 'border-teal-300 text-teal-700 bg-teal-50 hover:bg-teal-100',
 };

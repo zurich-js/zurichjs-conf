@@ -61,7 +61,7 @@ export function TravelSection({
               className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 travelRegion === region
                   ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-text-brand-gray-lightest text-gray-700 hover:bgbrand-gray-lightest'
               }`}
               aria-pressed={travelRegion === region}
             >
@@ -72,7 +72,7 @@ export function TravelSection({
 
         {/* Travel cost step */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">
+          <label className="block text-xs font-medium text-brand-gray-medium mb-2">
             Estimated round-trip cost
           </label>
           <div className="flex gap-1.5 sm:gap-2">
@@ -88,7 +88,7 @@ export function TravelSection({
                   className={`cursor-pointer flex-1 px-2 sm:px-3 py-3 rounded-lg text-center transition-colors border ${
                     travelStep === idx
                       ? 'border-black bg-black text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                      : 'border-brand-gray-lightest bg-white text-gray-700 hover:border-brand-gray-medium'
                   }`}
                   aria-pressed={travelStep === idx}
                 >
@@ -106,7 +106,7 @@ export function TravelSection({
 
         {/* Airport input */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+          <label className="block text-xs font-medium text-brand-gray-medium mb-1.5">
             Your departure airport (optional)
           </label>
           <AirportInput
@@ -132,7 +132,7 @@ export function TravelSection({
           </div>
         )}
 
-        <p className="flex items-start gap-1.5 text-xs text-gray-400">
+        <p className="flex items-start gap-1.5 text-xs text-brand-gray-medium">
           <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           Travel by train or plane — prices vary by season, route, and booking time.
         </p>

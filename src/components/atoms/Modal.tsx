@@ -85,7 +85,7 @@ export function Modal({
             {(title || headerContent || showCloseButton) && (
               <div
                 className={`flex items-start justify-between p-4 sm:p-6 border-b shrink-0 ${
-                  isDark ? 'border-brand-gray-medium' : 'border-gray-200'
+                  isDark ? 'border-brand-gray-medium' : 'border-brand-gray-lightest'
                 }`}
               >
                 {headerContent || (
@@ -100,7 +100,7 @@ export function Modal({
                     {subtitle && (
                       <p
                         className={`text-sm mt-1 ${
-                          isDark ? 'text-brand-gray-light' : 'text-gray-600'
+                          isDark ? 'text-brand-gray-light' : 'text-brand-gray-dark'
                         }`}
                       >
                         {subtitle}
@@ -114,7 +114,7 @@ export function Modal({
                     className={`p-2 rounded-lg transition-colors cursor-pointer shrink-0 ml-4 ${
                       isDark
                         ? 'text-brand-gray-light hover:text-white hover:bg-brand-gray-medium'
-                        : 'text-gray-500 hover:text-black hover:bg-gray-100'
+                        : 'text-brand-gray-medium hover:text-black hover:bg-text-brand-gray-lightest'
                     }`}
                     aria-label="Close modal"
                   >
@@ -163,7 +163,7 @@ export function ModalFooter({
   return (
     <div
       className={`p-4 sm:p-6 border-t shrink-0 ${
-        isDark ? 'border-brand-gray-medium bg-brand-gray-darkest/50' : 'border-gray-200 bg-gray-50'
+        isDark ? 'border-brand-gray-medium bg-brand-gray-darkest/50' : 'border-brand-gray-lightest bg-gray-50'
       } ${className}`}
     >
       {children}

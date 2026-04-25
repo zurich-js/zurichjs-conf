@@ -9,14 +9,14 @@ export function EventInfoCard() {
   return (
     <div className="bg-black rounded-2xl p-8 mb-8">
       <h2 className="text-xl font-bold text-brand-primary mb-6">Event Information</h2>
-      <div className="space-y-4 text-gray-200">
+      <div className="space-y-4 textbrand-gray-lightest">
         <div>
           <h3 className="text-brand-white font-semibold mb-1">📅 Date & Time</h3>
-          <p className="text-gray-400">September 11, 2026</p>
+          <p className="text-brand-gray-medium">September 11, 2026</p>
         </div>
         <div>
           <h3 className="text-brand-white font-semibold mb-1">📍 Venue</h3>
-          <p className="text-gray-400">
+          <p className="text-brand-gray-medium">
             Technopark Zürich
             <br />
             Technoparkstrasse 1
@@ -65,7 +65,7 @@ export function TransferSection({ onTransferClick }: TransferSectionProps) {
   return (
     <div className="bg-black rounded-2xl p-8 mb-8">
       <h2 className="text-xl font-bold text-brand-primary mb-6">Transfer Ticket</h2>
-      <p className="text-gray-200 mb-6">
+      <p className="textbrand-gray-lightest mb-6">
         Can&apos;t attend? You can transfer your ticket to someone else. Once transferred, you will no longer have access
         to this ticket and the action cannot be undone.
       </p>
@@ -83,7 +83,7 @@ export function ImportantInfoCard() {
   return (
     <div className="bg-black rounded-2xl p-8 mb-8">
       <h2 className="text-xl font-bold text-brand-primary mb-4">Important Information</h2>
-      <ul className="space-y-2 text-gray-200">
+      <ul className="space-y-2 textbrand-gray-lightest">
         <li className="flex items-start gap-2">
           <span className="text-brand-primary mt-1">•</span>
           <span>Bring this QR code (digital or printed) to the venue for check-in</span>

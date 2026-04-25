@@ -188,7 +188,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-brand-gray-dark hover:bg-text-brand-gray-lightest">
             Cancel
           </button>
           <button
@@ -224,7 +224,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                   className={`rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
                     mode === value
                       ? 'bg-brand-primary text-black'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-black'
+                      : 'text-brand-gray-dark hover:bg-text-brand-gray-lightest hover:text-black'
                   }`}
                 >
                   {label}
@@ -252,10 +252,10 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                   ))}
                 </select>
                 {!isLoadingSpeakers && speakerOptions.length === 0 ? (
-                  <p className="mt-2 text-sm text-gray-500">No available CFP speakers to include.</p>
+                  <p className="mt-2 text-sm text-brand-gray-medium">No available CFP speakers to include.</p>
                 ) : null}
                 {selectedSpeaker ? (
-                  <p className="mt-2 text-sm text-gray-500">
+                  <p className="mt-2 text-sm text-brand-gray-medium">
                     This keeps {selectedSpeaker.first_name}&apos;s CFP account, submissions, profile, and travel data attached.
                   </p>
                 ) : null}
@@ -282,9 +282,9 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="w-16 h-16 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50"
+                className="w-16 h-16 rounded-full bg-text-brand-gray-lightest border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50"
               >
-                <Plus className="w-6 h-6 text-gray-400" />
+                <Plus className="w-6 h-6 text-brand-gray-medium" />
               </div>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
@@ -292,7 +292,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
               <button type="button" onClick={() => fileInputRef.current?.click()} className="text-sm text-[#b8a820] hover:underline cursor-pointer">
                 {imagePreview ? 'Change photo' : 'Upload photo'}
               </button>
-              <p className="text-xs text-gray-500">JPG, PNG. Max 5MB</p>
+              <p className="text-xs text-brand-gray-medium">JPG, PNG. Max 5MB</p>
             </div>
           </div>
 
