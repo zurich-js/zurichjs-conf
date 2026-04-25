@@ -112,6 +112,7 @@ export function ReimbursementsTab({
   const totalPages = Math.ceil(filteredReimbursements.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedReimbursements = filteredReimbursements.slice(startIndex, startIndex + pageSize);
+  const hasActiveFilters = Boolean(searchQuery || filter !== 'all');
 
   useEffect(() => {
     if (!highlightedReimbursementId) return;
@@ -162,6 +163,19 @@ export function ReimbursementsTab({
         rowClassName={(reimbursement) => reimbursement.id === highlightedReimbursementId ? 'bg-brand-primary/10' : ''}
         toolbar={(
           <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilter('all');
+                  onPageChange(1);
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
             right={(
               <>
                 <input

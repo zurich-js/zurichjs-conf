@@ -276,6 +276,20 @@ export function SpeakersTab({
         emptyState={hasActiveFilters ? 'No speakers match your filters' : 'No speakers found'}
         toolbar={(
           <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setProfileFilter('all');
+                  setVisibilityFilter('all');
+                  setFeaturedFilter('all');
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
             right={(
               <>
                 <div className="relative min-w-[280px] max-w-full flex-1 lg:flex-none">

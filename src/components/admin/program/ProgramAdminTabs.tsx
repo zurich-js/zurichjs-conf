@@ -180,6 +180,7 @@ export function ProgramSessionsTab({
     }),
     [archiveMutation, offeringsBySessionId, scheduleItems, speakers]
   );
+  const hasActiveFilters = Boolean(search || kind !== 'all' || filter !== 'all');
 
   return (
     <div className="space-y-4">
@@ -192,6 +193,19 @@ export function ProgramSessionsTab({
         emptyState="No sessions match the current filters"
         toolbar={(
           <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setKind('all');
+                  setFilter('all');
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
             right={(
               <>
                 <div className="relative min-w-[280px] max-w-full flex-1 lg:flex-none">
@@ -221,7 +235,7 @@ export function ProgramSessionsTab({
                 </select>
                 <button
                   onClick={() => setShowPromote(true)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-brand-gray-light bg-white px-3 py-2 text-sm font-medium text-brand-gray-medium"
                 >
                   <Eye className="size-4" />
                   Promote from CFP
@@ -1063,6 +1077,9 @@ export function ProgramSpeakersTab({
       togglingVisibilityId,
     ]
   );
+  const hasActiveFilters = Boolean(
+    search || visibilityFilter !== 'all' || featuredFilter !== 'all' || profileFilter !== 'all' || sessionFilter !== 'all'
+  );
 
   return (
     <div className="space-y-4">
@@ -1075,6 +1092,21 @@ export function ProgramSpeakersTab({
         emptyState="No speakers match the current filters"
         toolbar={(
           <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setVisibilityFilter('all');
+                  setFeaturedFilter('all');
+                  setProfileFilter('all');
+                  setSessionFilter('all');
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
             right={(
               <>
                 <div className="relative min-w-[260px] max-w-full flex-1 lg:flex-none">

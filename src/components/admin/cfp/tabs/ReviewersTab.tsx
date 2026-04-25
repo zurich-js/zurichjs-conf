@@ -262,6 +262,8 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
     setContributorSort((prev) => cycleMultiSort(prev, key));
   };
 
+  const hasActiveFilters = Boolean(roleFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim());
+
   return (
     <div>
       <AdminDataTable
@@ -280,6 +282,19 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
         emptyState={roleFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim() ? 'No reviewers match your filters' : 'No reviewers found'}
         toolbar={(
           <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setRoleFilter('all');
+                  setStatusFilter('all');
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
             right={(
               <>
                 <input
@@ -361,7 +376,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                     Resend
                   </button>
                 ) : null}
-                <button onClick={() => setSelectedReviewer(r)} className="rounded-lg bgbrand-gray-lightest px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-gray-300">
+                <button onClick={() => setSelectedReviewer(r)} className="rounded-lg bg-brand-gray-lightest px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-gray-300">
                   Manage
                 </button>
               </div>
@@ -417,7 +432,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                       <th className="px-3 py-3">Score Breakdown</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y dividebrand-gray-lightest text-sm">
+                  <tbody className="divide-y divide-brand-gray-lightest text-sm">
                     <tr className="bg-white">
                       <td colSpan={6} className="px-3 py-3 text-xs text-brand-gray-dark">
                         Rating is a 100-point reviewer contribution score: 45 points for review volume, 35 points for written internal or speaker feedback, 15 points for useful overall score range, and 5 points for category score range.
@@ -634,7 +649,7 @@ function getReviewerColumns({
               event.stopPropagation();
               setSelectedReviewer(row.original);
             }}
-            className="rounded bg-text-brand-gray-lightest px-2 py-1 text-xs font-medium text-black transition-colors hover:bgbrand-gray-lightest"
+            className="rounded bg-text-brand-gray-lightest px-2 py-1 text-xs font-medium text-black transition-colors hover:bg-brand-gray-lightest"
             title="Manage Reviewer"
           >
             Manage

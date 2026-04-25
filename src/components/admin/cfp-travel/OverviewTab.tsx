@@ -35,7 +35,7 @@ export function OverviewTab({
       <div className="grid gap-4 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="rounded-lg border border-brand-gray-lightest bg-white p-6 shadow-sm animate-pulse">
-            <div className="mb-4 h-5 w-32 rounded bgbrand-gray-lightest" />
+            <div className="mb-4 h-5 w-32 rounded bg-brand-gray-lightest" />
             <div className="space-y-3">
               {[...Array(3)].map((__, j) => (
                 <div key={j} className="h-14 rounded bg-text-brand-gray-lightest" />

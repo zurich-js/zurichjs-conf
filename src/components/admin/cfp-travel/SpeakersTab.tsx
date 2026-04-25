@@ -44,6 +44,7 @@ export function SpeakersTab({
   const [searchQuery, setSearchQuery] = useState('');
   const [travelFilter, setTravelFilter] = useState<'all' | 'confirmed' | 'pending'>('all');
   const [sorting, setSorting] = useState<SortingState>([]);
+  const hasActiveFilters = Boolean(searchQuery || travelFilter !== 'all');
 
   const filteredSpeakers = useMemo(() => {
     let next = speakers.filter((speaker) => {
@@ -197,6 +198,19 @@ export function SpeakersTab({
       emptyState="No managed speakers found"
       toolbar={(
         <AdminTableToolbar
+          left={hasActiveFilters ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setTravelFilter('all');
+                onPageChange(1);
+              }}
+              className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+            >
+              Reset filters
+            </button>
+          ) : undefined}
           right={(
             <>
               <div className="relative min-w-[280px] max-w-full flex-1 lg:flex-none">

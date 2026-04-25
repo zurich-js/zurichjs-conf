@@ -44,6 +44,7 @@ export function TicketsTab() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [filterNonSwiss, setFilterNonSwiss] = useState(false);
+  const hasActiveFilters = Boolean(searchQuery || filterNonSwiss);
 
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
@@ -260,6 +261,18 @@ export function TicketsTab() {
         }}
         toolbar={(
           <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterNonSwiss(false);
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
             right={(
               <>
                 <div className="relative min-w-[280px] max-w-full flex-1 lg:flex-none">

@@ -322,7 +322,7 @@ export default function ReviewerDetailPage() {
                           <th className="px-3 py-3">Speaker feedback</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y dividebrand-gray-lightest">
+                      <tbody className="divide-y divide-brand-gray-lightest">
                         {paginatedActivities.map((activity: CfpReviewerActivity) => (
                           <tr key={activity.id} className="hover:bg-gray-50">
                             <td className="px-3 py-3">

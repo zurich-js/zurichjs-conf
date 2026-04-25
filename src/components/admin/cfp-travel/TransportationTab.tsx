@@ -183,6 +183,7 @@ export function TransportationTab({
   const totalPages = Math.ceil(rows.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedRows = rows.slice(startIndex, startIndex + pageSize);
+  const hasActiveFilters = Boolean(searchQuery || modeFilter !== 'all' || statusFilter !== 'all');
 
   const handleSortClick = (key: TransportationSortKey) => setSort(cycleMultiSort(sort, key));
 
@@ -196,6 +197,20 @@ export function TransportationTab({
         onRowClick={(row) => setSelectedRow(row)}
         toolbar={(
           <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setModeFilter('all');
+                  setStatusFilter('all');
+                  onPageChange(1);
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
             right={(
               <>
                 <input
