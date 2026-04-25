@@ -36,7 +36,7 @@ export const TICKET_FEATURES: Record<string, Feature[]> = {
   ],
   vip: [
     { label: 'Everything in Standard', kind: 'extra' as const },
-    { label: 'Invite to speaker city tour', kind: 'included' as const },
+    { label: 'Exclusive after party access', kind: 'included' as const },
     { label: 'Limited edition goodies', kind: 'included' as const },
     { label: '20% discount to all workshops', kind: 'included' as const },
   ],

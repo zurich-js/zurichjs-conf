@@ -430,7 +430,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                                 </h2>
                                 <div className="mt-6 text-sm leading-7 text-brand-gray-darkest">
                                     <p>
-                                        VIP ticket holders get exclusive goodies, and get to join speaker city tour and after-party.
+                                        VIP ticket holders get exclusive goodies and exclusive access to the after-party.
                                         There are still VIP tickets available, <b>get yours</b>!
                                     </p>
                                 </div>
