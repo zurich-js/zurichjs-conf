@@ -151,7 +151,7 @@ export function InviteReviewerForm({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-black hover:bg-gray-100 rounded-lg cursor-pointer"
+              className="px-4 py-2 text-black hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer"
             >
               Cancel
             </button>

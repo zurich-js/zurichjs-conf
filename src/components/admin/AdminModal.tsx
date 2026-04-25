@@ -130,7 +130,7 @@ export function AdminModal({
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer rounded-lg p-1.5 hover:bg-gray-100"
+              className="cursor-pointer rounded-lg p-1.5 hover:bg-text-brand-gray-lightest"
               aria-label="Close modal"
             >
               <X className="size-5" />
@@ -172,7 +172,7 @@ export function AdminModalFooter({
         type="button"
         onClick={onCancel}
         disabled={isLoading}
-        className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-black hover:bg-gray-100 disabled:opacity-50"
+        className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-black hover:bg-text-brand-gray-lightest disabled:opacity-50"
       >
         {cancelText}
       </button>

@@ -60,7 +60,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
 
   if (!insights) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-brand-gray-medium">
         No insights data available
       </div>
     );
@@ -120,7 +120,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-black">{totalAnalyzed}</div>
-            <div className="text-sm text-gray-500">Total analyzed</div>
+            <div className="text-sm text-brand-gray-medium">Total analyzed</div>
           </div>
           <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-green-700">{readyToDecide}</div>
@@ -133,7 +133,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
         </div>
         {/* Readiness bar */}
         {totalAnalyzed > 0 && (
-          <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex">
+          <div className="h-4 bg-text-brand-gray-lightest rounded-full overflow-hidden flex">
             {Object.entries(insights.byStatus).map(([status, count]) => {
               const pct = (count / totalAnalyzed) * 100;
               const colors = STATUS_COLORS[status];
@@ -149,7 +149,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
             })}
           </div>
         )}
-        <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 text-xs text-gray-500">
+        <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 text-xs text-brand-gray-medium">
           {Object.entries(STATUS_COLORS).map(([status, colors]) => (
             <div key={status} className="flex items-center gap-1.5">
               <div className={`w-3 h-3 rounded-full ${colors.barColor}`} />
@@ -206,7 +206,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
                 <div className="text-sm font-medium text-gray-600 mb-2">
                   {SCORE_BUCKET_LABELS[bucket] || bucket}
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-text-brand-gray-lightest rounded-full overflow-hidden">
                   <div
                     className={`h-full ${barColor} rounded-full transition-all`}
                     style={{ width: `${(count / maxBucket) * 100}%` }}
@@ -237,7 +237,7 @@ export function InsightsTab({ insights, stats, isLoading }: InsightsTabProps) {
                 <div className="text-sm font-medium text-gray-600 mb-2">
                   {COVERAGE_BUCKET_LABELS[bucket] || bucket}
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-text-brand-gray-lightest rounded-full overflow-hidden">
                   <div
                     className={`h-full ${barColor} rounded-full transition-all`}
                     style={{ width: `${(count / maxBucket) * 100}%` }}

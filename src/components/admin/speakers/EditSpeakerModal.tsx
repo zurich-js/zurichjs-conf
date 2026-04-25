@@ -169,7 +169,7 @@ export function EditSpeakerModal({
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-xl font-bold text-black">Edit Speaker</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+          <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer">
             <X className="w-5 h-5 text-black" />
           </button>
         </div>
@@ -218,7 +218,7 @@ export function EditSpeakerModal({
                 <p className="text-xs font-medium text-gray-600">Portrait foreground</p>
                 <div className="flex items-center gap-3">
                   {portraitForegroundUrl ? (
-                    <img src={portraitForegroundUrl} alt="Portrait foreground" className="w-16 h-16 rounded-lg object-cover bg-gray-100" />
+                    <img src={portraitForegroundUrl} alt="Portrait foreground" className="w-16 h-16 rounded-lg object-cover bg-text-brand-gray-lightest" />
                   ) : (
                     <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
                       <User className="w-8 h-8 text-gray-400" />
@@ -251,7 +251,7 @@ export function EditSpeakerModal({
                     <img src={portraitBackgroundUrl} alt="Portrait background" className="w-16 h-16 rounded-lg object-cover" />
                   ) : (
                     <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs text-gray-500">None</span>
+                      <span className="text-xs text-brand-gray-medium">None</span>
                     </div>
                   )}
                   <div>

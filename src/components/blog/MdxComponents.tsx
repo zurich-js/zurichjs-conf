@@ -50,13 +50,13 @@ export const mdxComponents: MDXComponents = {
   ),
   code: (props) => (
     <code
-      className="bg-gray-100 text-brand-orange rounded px-1.5 py-0.5 text-sm font-mono"
+      className="bg-text-brand-gray-lightest text-brand-orange rounded px-1.5 py-0.5 text-sm font-mono"
       {...props}
     />
   ),
   pre: (props) => (
     <pre
-      className="bg-gray-900 text-gray-100 rounded-xl p-4 overflow-x-auto mb-4 text-sm font-mono"
+      className="bg-gray-900 text-text-brand-gray-lightest rounded-xl p-4 overflow-x-auto mb-4 text-sm font-mono"
       {...props}
     />
   ),

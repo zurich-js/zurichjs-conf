@@ -144,7 +144,7 @@ export function ScheduleEmailModal({
             <span>Sending to:</span>
           </div>
           <p className="font-medium text-black">{speakerName}</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-brand-gray-medium">
             {submission.speaker?.email || 'No email available'}
           </p>
         </div>
@@ -168,7 +168,7 @@ export function ScheduleEmailModal({
                 : "Thank you for your submission. We had many strong proposals this year..."
             }
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-brand-gray-medium mt-1">
             This message will be included in the email to add a personal touch.
           </p>
         </div>
@@ -186,7 +186,7 @@ export function ScheduleEmailModal({
                     onChange={(e) => setGenerateCoupon(e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <Gift className="w-4 h-4 text-gray-500" />
+                  <Gift className="w-4 h-4 text-brand-gray-medium" />
                   <span className="text-sm font-medium text-gray-700">
                     Include discount coupon
                   </span>
@@ -210,11 +210,11 @@ export function ScheduleEmailModal({
                         onChange={(e) => setCouponDiscount(Number(e.target.value))}
                         className="flex-1"
                       />
-                      <span className="w-12 text-center font-medium text-gray-900">
+                      <span className="w-12 text-center font-medium text-black">
                         {couponDiscount}%
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-brand-gray-medium mt-1">
                       Max {REJECTION_COUPON.MAX_DISCOUNT_PERCENT}% discount
                     </p>
                   </div>
@@ -234,11 +234,11 @@ export function ScheduleEmailModal({
                         onChange={(e) => setCouponValidityDays(Number(e.target.value))}
                         className="flex-1"
                       />
-                      <span className="w-20 text-center font-medium text-gray-900">
+                      <span className="w-20 text-center font-medium text-black">
                         {couponValidityDays} {couponValidityDays === 1 ? 'day' : 'days'}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-brand-gray-medium mt-1">
                       {REJECTION_COUPON.MIN_VALIDITY_DAYS}-{REJECTION_COUPON.MAX_VALIDITY_DAYS} days validity
                     </p>
                   </div>
@@ -257,7 +257,7 @@ export function ScheduleEmailModal({
                       onChange={(e) => setIncludeFeedback(e.target.checked)}
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <MessageSquare className="w-4 h-4 text-gray-500" />
+                    <MessageSquare className="w-4 h-4 text-brand-gray-medium" />
                     <span className="text-sm font-medium text-gray-700">
                       Include committee feedback
                     </span>
@@ -276,7 +276,7 @@ export function ScheduleEmailModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Committee feedback..."
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-brand-gray-medium mt-1">
                       This feedback will be shown in the email to help the speaker improve.
                     </p>
                   </div>
@@ -310,7 +310,7 @@ export function ScheduledEmailBadge({
 }) {
   if (!scheduledEmail) {
     return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+      <span className="px-2 py-0.5 text-xs rounded-full bg-text-brand-gray-lightest text-gray-600">
         Not sent
       </span>
     );
@@ -339,7 +339,7 @@ export function ScheduledEmailBadge({
 
   if (scheduledEmail.status === 'cancelled') {
     return (
-      <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+      <span className="px-2 py-0.5 text-xs rounded-full bg-text-brand-gray-lightest text-gray-600">
         Cancelled
       </span>
     );

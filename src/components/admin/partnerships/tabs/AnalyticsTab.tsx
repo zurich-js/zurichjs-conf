@@ -92,7 +92,7 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
                   <th className="px-4 py-2 text-right text-xs font-medium text-black/60 uppercase">Value</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-text-brand-gray-lightest">
                 {coupons.byCode.map((coupon) => (
                   <tr key={coupon.id}>
                     <td className="px-4 py-3 font-mono text-sm">{coupon.code}</td>
@@ -142,7 +142,7 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
         <div>
           <h4 className="text-sm font-medium text-black mb-3">Recent Purchases ({tickets.total} total)</h4>
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-text-brand-gray-lightest">
               {tickets.recent.slice(0, 5).map((ticket) => (
                 <div key={ticket.id} className="px-4 py-3 flex items-center justify-between">
                   <div>

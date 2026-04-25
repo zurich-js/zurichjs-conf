@@ -107,7 +107,7 @@ export function LogoUpload({ sponsorId, title, endpoint, currentLogoUrl, onUpdat
 
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
         {/* Logo Preview */}
-        <div className="relative h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+        <div className="relative h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0 rounded-lg bg-text-brand-gray-lightest overflow-hidden">
           {currentLogoUrl ? (
             <Image
               src={currentLogoUrl}
@@ -173,11 +173,11 @@ export function LogoUpload({ sponsorId, title, endpoint, currentLogoUrl, onUpdat
             )}
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-brand-gray-medium">
             Accepted formats: JPEG, PNG, WebP, SVG. Max size: 5MB.
           </p>
           {endpoint === 'logo-color' && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-brand-gray-medium">
               Optional: this logo is shown on sponsor card hover.
             </p>
           )}

@@ -220,7 +220,7 @@ export function DecisionBadge({
   }
 
   return (
-    <span className={`${baseClasses} inline-flex items-center rounded-full bg-gray-100 text-gray-600 font-medium`}>
+    <span className={`${baseClasses} inline-flex items-center rounded-full bg-text-brand-gray-lightest text-gray-600 font-medium`}>
       Undecided
     </span>
   );

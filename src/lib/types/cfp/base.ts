@@ -69,6 +69,16 @@ export type CfpFlightStatus =
   | 'delayed';
 
 /**
+ * Transportation mode for admin travel planning
+ */
+export type CfpTransportMode = 'flight' | 'train' | 'link_only' | 'none';
+
+/**
+ * Simplified transportation tracking status for admin ops
+ */
+export type CfpTransportStatus = 'scheduled' | 'delayed' | 'canceled' | 'complete';
+
+/**
  * Reimbursement request status
  */
 export type CfpReimbursementStatus = 'pending' | 'approved' | 'rejected' | 'paid';

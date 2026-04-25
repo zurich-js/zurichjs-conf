@@ -126,8 +126,7 @@ export function ProgramSessionsTab({
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-950">Sessions</h2>
-            <p className="text-sm text-gray-600">Program sessions are the source of truth for talks, panels, workshops, and keynotes.</p>
+            <h2 className="text-lg font-semibold text-black">Sessions</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -152,9 +151,9 @@ export function ProgramSessionsTab({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search sessions or speakers"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
           />
-          <select value={kind} onChange={(event) => setKind(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+          <select value={kind} onChange={(event) => setKind(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
             <option value="all">All kinds</option>
             <option value="talk">Talks</option>
             <option value="workshop">Workshops</option>
@@ -162,7 +161,7 @@ export function ProgramSessionsTab({
             <option value="keynote">Keynotes</option>
             <option value="event">Events</option>
           </select>
-          <select value={filter} onChange={(event) => setFilter(event.target.value as ProgramSessionFilter)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+          <select value={filter} onChange={(event) => setFilter(event.target.value as ProgramSessionFilter)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
             <option value="all">All sessions</option>
             <option value="scheduled">Scheduled</option>
             <option value="unscheduled">Unscheduled</option>
@@ -175,7 +174,7 @@ export function ProgramSessionsTab({
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
         <table className="w-full min-w-[900px]">
-          <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-brand-gray-medium">
             <tr>
               <th className="px-3 py-3">Session</th>
               <th className="px-3 py-3">Kind</th>
@@ -194,7 +193,7 @@ export function ProgramSessionsTab({
               return (
                   <tr key={session.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3">
-                      <p className="font-medium text-gray-950">{session.title}</p>
+                      <p className="font-medium text-black">{session.title}</p>
                       {session.cfp_submission_id ? <p className="text-xs text-brand-blue">Promoted from CFP</p> : null}
                     </td>
                     <td className="px-3 py-3 text-sm capitalize text-brand-gray-medium">{session.kind}</td>
@@ -293,7 +292,7 @@ function PromoteSubmissionModal({
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">Cancel</button>
           <button type="button" onClick={handlePromote} disabled={!selectedId || promoteMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">
             {promoteMutation.isPending ? 'Promoting...' : 'Promote'}
           </button>
@@ -301,9 +300,9 @@ function PromoteSubmissionModal({
       )}
     >
       <div className="space-y-4">
-        {isLoading ? <p className="text-sm text-gray-500">Loading submissions...</p> : null}
+        {isLoading ? <p className="text-sm text-brand-gray-medium">Loading submissions...</p> : null}
         {error ? <p className="text-sm text-brand-red">{(error as Error).message}</p> : null}
-        <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+        <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
           <option value="">Choose accepted CFP submission</option>
           {options.map((submission) => (
             <option key={submission.id} value={submission.id}>
@@ -311,7 +310,7 @@ function PromoteSubmissionModal({
             </option>
           ))}
         </select>
-        {options.length === 0 && !isLoading ? <p className="text-sm text-gray-500">All accepted submissions have already been promoted.</p> : null}
+        {options.length === 0 && !isLoading ? <p className="text-sm text-brand-gray-medium">All accepted submissions have already been promoted.</p> : null}
       </div>
     </AdminModal>
   );
@@ -396,11 +395,11 @@ export function ProgramScheduleTab({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-950">Schedule</h2>
+          <h2 className="text-lg font-semibold text-black">Schedule</h2>
           <p className="text-sm text-gray-600">Place program sessions and create non-session events without touching CFP records.</p>
         </div>
         <div className="flex gap-2">
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search schedule" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search schedule" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
           <button onClick={() => setScheduleModal({ mode: 'create', draft: getInsertionDraftAfter(null, null, fallbackDate) })} className="inline-flex items-center gap-2 rounded-md bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f]">
             <Plus className="size-4" />
             Add Slot
@@ -414,7 +413,7 @@ export function ProgramScheduleTab({
             <div className="sticky top-20 z-30 flex items-start justify-between gap-3 border-b-2 border-brand-gray-lightest bg-[#f7f8fa] pb-2 pt-2">
               <div>
                 <h3 className="text-base font-semibold text-black">{group.label}</h3>
-                <p className="text-sm text-gray-500">{group.items.length} scheduled {group.items.length === 1 ? 'slot' : 'slots'}</p>
+                <p className="text-sm text-brand-gray-medium">{group.items.length} scheduled {group.items.length === 1 ? 'slot' : 'slots'}</p>
               </div>
               <button
                 type="button"
@@ -556,7 +555,7 @@ function InsertionButton({
       className="group relative block h-5 w-full opacity-0 transition-opacity duration-150 hover:opacity-100 focus:opacity-100 group-hover/insert:opacity-100"
     >
       <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 rounded-xl bg-brand-blue transition-[height] border border-transparent duration-150 delay-500 group-hover:bg-transparent group-hover:border-brand-blue group-hover:h-full group-focus:h-full" />
-      <span className="absolute left-1/2 top-1/2 inline-flex -translate-y-1/2 -translate-x-1/2 items-center gap-1 whitespace-nowrap text-xs font-medium text-gray-500 opacity-0 transition-opacity group-hover:opacity-100 delay-500 group-focus:opacity-100">
+      <span className="absolute left-1/2 top-1/2 inline-flex -translate-y-1/2 -translate-x-1/2 items-center gap-1 whitespace-nowrap text-xs font-medium text-brand-gray-medium opacity-0 transition-opacity group-hover:opacity-100 delay-500 group-focus:opacity-100">
         <Plus className="size-3" aria-hidden="true" />
         {label}
       </span>
@@ -595,14 +594,14 @@ function ScheduleGridCard({
     <div className="@container h-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <div className="sticky top-40 grid gap-3 [grid-template-areas:'time''title''visibility''actions'] @xs:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @xs:[grid-template-areas:'time_title''visibility_visibility''actions_actions'] @sm:grid-cols-[120px_minmax(0,1fr)_auto] @sm:[grid-template-areas:'time_title_actions''visibility_visibility_visibility'] @lg:grid-cols-[120px_minmax(0,1fr)_130px_120px] @lg:[grid-template-areas:'time_title_visibility_actions'] @lg:items-center">
         <div className="[grid-area:time] text-sm text-brand-gray-medium">
-          <p className="font-semibold text-gray-950">{startTime} - {endTime}</p>
+          <p className="font-semibold text-black">{startTime} - {endTime}</p>
           <p>{formatScheduleDuration(item.duration_minutes)}{item.room ? ` · ${item.room}` : ''}</p>
             {neighbors.overlaps.length > 0 ? (
                 <p className="mt-1 text-xxs font-medium text-brand-red">Overlaps {neighbors.overlaps.length} slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
             ) : null}
         </div>
         <div className="[grid-area:title]">
-          <p className="font-medium text-gray-950">{session?.title ?? item.program_session?.title ?? item.title}</p>
+          <p className="font-medium text-black">{session?.title ?? item.program_session?.title ?? item.title}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <TypeChip type={displayType} />
             {session ? <span>· {getSessionSpeakers(session, speakers).map((speaker) => speaker.first_name).join(', ')}</span> : null}
@@ -669,11 +668,11 @@ function TypeChip({ type }: { type: ProgramScheduleItemRecord['type'] | 'placeho
     session: { icon: MicVocal, label: 'Session', className: 'border-blue-200 bg-blue-50 text-brand-blue' },
     event: { icon: CalendarRange, label: 'Event', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
     break: { icon: Coffee, label: 'Break', className: 'border-amber-200 bg-amber-50 text-amber-700' },
-    placeholder: { icon: null, label: 'Placeholder', className: 'border-transparent bg-transparent text-gray-500' },
+    placeholder: { icon: null, label: 'Placeholder', className: 'border-transparent bg-transparent text-brand-gray-medium' },
   }[type];
 
   if (!config.icon) {
-    return <span className="text-xs font-medium text-gray-500">{config.label}</span>;
+    return <span className="text-xs font-medium text-brand-gray-medium">{config.label}</span>;
   }
 
   const Icon = config.icon;
@@ -764,7 +763,7 @@ function ProgramScheduleModal({
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">Cancel</button>
           <button type="submit" form="program-schedule-form" disabled={createMutation.isPending || updateMutation.isPending} className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50">Save Slot</button>
         </>
       )}
@@ -775,25 +774,25 @@ function ProgramScheduleModal({
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Date
-              <input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+              <input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Start
-              <input type="time" value={form.start_time} onChange={(event) => setForm({ ...form, start_time: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+              <input type="time" value={form.start_time} onChange={(event) => setForm({ ...form, start_time: event.target.value })} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
-                <span>Duration <span className="text-xs font-normal text-gray-500">(End time {derivedEndTime ?? '--:--'})</span></span>
+                <span>Duration <span className="text-xs font-normal text-brand-gray-medium">(End time {derivedEndTime ?? '--:--'})</span></span>
               <input
                 type="text"
                 value={form.duration_minutes}
                 onChange={(event) => setForm({ ...form, duration_minutes: event.target.value })}
                 placeholder="30 or 1:30"
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
               />
             </label>
             <label className="grid gap-1 text-sm font-medium text-gray-800">
               Room
-              <input value={form.room} onChange={(event) => setForm({ ...form, room: event.target.value })} placeholder="Room" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+              <input value={form.room} onChange={(event) => setForm({ ...form, room: event.target.value })} placeholder="Room" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
             </label>
           </div>
 
@@ -811,7 +810,7 @@ function ProgramScheduleModal({
                     is_visible: nextType === 'session' ? false : form.is_visible,
                   });
                 }}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
               >
                 <option value="session">Session</option>
                 <option value="event">Event</option>
@@ -833,7 +832,7 @@ function ProgramScheduleModal({
                       is_visible: event.target.value ? form.is_visible : false,
                     });
                   }}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                 >
                   <option value="">Keep as planning slot</option>
                   {sessions.map((session) => <option key={session.id} value={session.id}>{session.title}</option>)}
@@ -848,10 +847,10 @@ function ProgramScheduleModal({
                 value={form.title}
                 onChange={(event) => setForm({ ...form, title: event.target.value })}
                 placeholder={isSessionPlaceholder ? 'Planning title, e.g. Lightning slot' : 'Title'}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
               />
               {form.type !== 'session' ? (
-                <textarea rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+                <textarea rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Description" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
               ) : null}
             </>
           ) : null}
@@ -893,7 +892,7 @@ function SchedulePreviewModal({
       maxWidth="4xl"
       showHeader={false}
       onClose={onClose}
-      footer={<button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">Close</button>}
+      footer={<button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">Close</button>}
     >
       <div
         className="grid gap-2"
@@ -918,11 +917,11 @@ function SchedulePreviewModal({
               className="flex h-full min-h-0 flex-col"
             >
               <div className="flex-1 flex flex-wrap gap-4 items-center rounded-lg border border-gray-200 bg-white p-2 text-sm text-brand-gray-medium">
-                <div className="font-medium text-gray-950">
+                <div className="font-medium text-black">
                   {startTime} - {endTime} ({formatScheduleDuration(item.duration_minutes)})
                 </div>
                 <TypeChip type={displayType} />
-                <div className="font-medium text-gray-950">{item.program_session?.title ?? item.title}</div>
+                <div className="font-medium text-black">{item.program_session?.title ?? item.title}</div>
               </div>
             </div>
           );
@@ -969,25 +968,25 @@ export function ProgramSpeakersTab({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="text-lg font-semibold text-gray-950">Speakers</h2>
+          <h2 className="text-lg font-semibold text-black">Speakers</h2>
         <div className="flex flex-wrap gap-2">
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search speakers" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
-          <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search speakers" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black" />
+          <select value={visibilityFilter} onChange={(event) => setVisibilityFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
             <option value="all">All visibility</option>
             <option value="public">Public</option>
             <option value="hidden">Hidden</option>
           </select>
-          <select value={featuredFilter} onChange={(event) => setFeaturedFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+          <select value={featuredFilter} onChange={(event) => setFeaturedFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
             <option value="all">All featured</option>
             <option value="featured">Featured</option>
             <option value="not-featured">Not featured</option>
           </select>
-          <select value={profileFilter} onChange={(event) => setProfileFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+          <select value={profileFilter} onChange={(event) => setProfileFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
             <option value="all">All profiles</option>
             <option value="complete">Profile complete</option>
             <option value="incomplete">Profile incomplete</option>
           </select>
-          <select value={sessionFilter} onChange={(event) => setSessionFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950">
+          <select value={sessionFilter} onChange={(event) => setSessionFilter(event.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black">
             <option value="all">All assignments</option>
             <option value="has-session">Has session</option>
             <option value="no-session">No session</option>
@@ -1010,9 +1009,9 @@ export function ProgramSpeakersTab({
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 items-start gap-3">
-                {speaker.profile_image_url ? <img src={speaker.profile_image_url} alt="" className="size-12 rounded-full object-cover" /> : <div className="flex size-12 items-center justify-center rounded-full bg-gray-100"><Users className="size-5 text-gray-400" /></div>}
+                {speaker.profile_image_url ? <img src={speaker.profile_image_url} alt="" className="size-12 rounded-full object-cover" /> : <div className="flex size-12 items-center justify-center rounded-full bg-text-brand-gray-lightest"><Users className="size-5 text-gray-400" /></div>}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-gray-950">{speaker.first_name} {speaker.last_name}</p>
+                  <p className="truncate font-semibold text-black">{speaker.first_name} {speaker.last_name}</p>
                   <p className="truncate text-sm text-gray-600">{[speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || speaker.email}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {speaker.speaker_role === 'mc' ? <Pill tone="blue">MC</Pill> : null}
@@ -1042,10 +1041,10 @@ export function ProgramSpeakersTab({
               <div className="mt-4 space-y-2">
                 {speakerSessions.length > 0 ? speakerSessions.map((session) => (
                   <div key={session.id} className="rounded-md bg-gray-50 px-3 py-2 text-sm">
-                    <p className="font-medium text-gray-900">{session.title}</p>
-                    <p className="text-gray-500">{session.kind} · {getSessionScheduleCount(session, scheduleItems) ? 'scheduled' : 'unscheduled'}</p>
+                    <p className="font-medium text-black">{session.title}</p>
+                    <p className="text-brand-gray-medium">{session.kind} · {getSessionScheduleCount(session, scheduleItems) ? 'scheduled' : 'unscheduled'}</p>
                   </div>
-                )) : <p className="text-sm text-gray-500">No program sessions assigned.</p>}
+                )) : <p className="text-sm text-brand-gray-medium">No program sessions assigned.</p>}
               </div>
               <div className="mt-4 flex gap-2">
                 <button onClick={() => setModal({ mode: 'create', speakerId: speaker.id })} className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-brand-gray-medium hover:bg-gray-50">Add session</button>
@@ -1106,7 +1105,7 @@ function ToggleButton({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[11px] font-medium text-gray-500">{label}</span>
+      <span className="text-[11px] font-medium text-brand-gray-medium">{label}</span>
       <button
         type="button"
         onClick={onClick}

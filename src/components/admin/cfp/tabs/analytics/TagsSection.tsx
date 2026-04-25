@@ -37,7 +37,7 @@ export function TagsSection({ topTags }: TagsSectionProps) {
               }}
             >
               <span className="font-medium text-black">{name}</span>
-              <span className="text-xs text-gray-500">{count}</span>
+              <span className="text-xs text-brand-gray-medium">{count}</span>
             </span>
           );
         })}

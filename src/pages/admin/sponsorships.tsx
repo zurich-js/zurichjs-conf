@@ -11,13 +11,13 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { SponsorshipsTab } from '@/components/admin/sponsorships';
 
 export default function SponsorshipsDashboard() {
-  const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
 
   if (isAuthLoading) return <AdminLoadingScreen />;
   if (!isAuthenticated) return <AdminLoginForm title="Sponsorships" />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest text-black">
       <Head>
         <title>Sponsorships | ZurichJS Admin</title>
       </Head>
@@ -25,7 +25,6 @@ export default function SponsorshipsDashboard() {
       <AdminHeader
         title="Sponsorships"
         subtitle="Manage sponsors, deals, and invoices"
-        onLogout={logout}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">

@@ -285,7 +285,7 @@ export function ProgramSessionModal({
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-text-brand-gray-lightest">
             Cancel
           </button>
           <button
@@ -313,7 +313,7 @@ export function ProgramSessionModal({
                   setForm((current) => ({ ...current, kind }));
                   setAssignments((current) => current.map((assignment) => ({ ...assignment, role: defaultRole(kind) })));
                 }}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
               >
                 {KIND_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
@@ -324,7 +324,7 @@ export function ProgramSessionModal({
               <select
                 value={form.status}
                 onChange={(event) => setForm({ ...form, status: event.target.value as ProgramSessionStatus })}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
               >
                 <option value="draft">Draft</option>
                 <option value="confirmed">Confirmed</option>
@@ -339,7 +339,7 @@ export function ProgramSessionModal({
                 <select
                   value={form.level}
                   onChange={(event) => setForm({ ...form, level: event.target.value as ProgramSessionLevel })}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                 >
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
@@ -354,7 +354,7 @@ export function ProgramSessionModal({
             <input
               value={form.title}
               onChange={(event) => setForm({ ...form, title: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
             />
           </label>
 
@@ -364,7 +364,7 @@ export function ProgramSessionModal({
               rows={5}
               value={form.abstract}
               onChange={(event) => setForm({ ...form, abstract: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
             />
           </label>
 
@@ -379,7 +379,7 @@ export function ProgramSessionModal({
               multiple
             >
               <div className="relative">
-                <div className="flex min-h-11 w-full flex-wrap items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-950 focus-within:ring-2 focus-within:ring-brand-primary">
+                <div className="flex min-h-11 w-full flex-wrap items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-black focus-within:ring-2 focus-within:ring-brand-primary">
                   {selectedTags.map((tag) => (
                     <button
                       key={tag}
@@ -395,7 +395,7 @@ export function ProgramSessionModal({
                     </button>
                   ))}
                   <ComboboxInput
-                    className="min-w-[160px] flex-1 bg-transparent text-sm text-gray-950 placeholder:text-gray-400 outline-none"
+                    className="min-w-[160px] flex-1 bg-transparent text-sm text-black placeholder:text-gray-400 outline-none"
                     displayValue={() => ''}
                     onChange={(event) => setTagInput(event.target.value)}
                     onKeyDown={(event) => {
@@ -409,14 +409,14 @@ export function ProgramSessionModal({
                     aria-label="Session tags"
                   />
                 </div>
-                <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-gray-medium">
                   <ChevronDown className="size-4" />
                 </ComboboxButton>
                 <ComboboxOptions className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg outline-none">
                   {isLoadingTags ? (
-                    <div className="px-3 py-2 text-sm text-gray-500">Loading tags...</div>
+                    <div className="px-3 py-2 text-sm text-brand-gray-medium">Loading tags...</div>
                   ) : selectableTags.length === 0 && !tagInput.trim() ? (
-                    <div className="px-3 py-2 text-sm text-gray-500">No tags available</div>
+                    <div className="px-3 py-2 text-sm text-brand-gray-medium">No tags available</div>
                   ) : (
                     <>
                       {selectableTags
@@ -427,7 +427,7 @@ export function ProgramSessionModal({
                             <ComboboxOption
                               key={tag.id}
                               value={tag.name}
-                              className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm text-gray-800 transition-colors data-[focus]:bg-gray-100"
+                              className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm text-gray-800 transition-colors data-[focus]:bg-text-brand-gray-lightest"
                             >
                               <span className={isSelected ? 'font-semibold' : ''}>{tag.name}</span>
                               {isSelected ? <Check className="size-4 text-brand-blue" /> : null}
@@ -440,7 +440,7 @@ export function ProgramSessionModal({
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={handleCreateTag}
                           disabled={createTagMutation.isPending}
-                          className="flex w-full cursor-pointer items-center px-3 py-2 text-left text-sm font-medium text-brand-blue hover:bg-gray-100 disabled:opacity-50"
+                          className="flex w-full cursor-pointer items-center px-3 py-2 text-left text-sm font-medium text-brand-blue hover:bg-text-brand-gray-lightest disabled:opacity-50"
                         >
                           Create &#34;{tagInput.trim()}&#34;
                         </button>
@@ -461,7 +461,7 @@ export function ProgramSessionModal({
                   min="1"
                   value={form.workshop_duration_minutes}
                   onChange={(event) => setForm({ ...form, workshop_duration_minutes: event.target.value })}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                 />
               </label>
               <label className="grid gap-1 text-sm font-medium text-gray-800">
@@ -471,7 +471,7 @@ export function ProgramSessionModal({
                   min="1"
                   value={form.workshop_capacity}
                   onChange={(event) => setForm({ ...form, workshop_capacity: event.target.value })}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                 />
               </label>
               <label className="grid gap-1 text-sm font-medium text-gray-800">
@@ -479,7 +479,7 @@ export function ProgramSessionModal({
                 <select
                   value={form.workshop_status}
                   onChange={(event) => setForm({ ...form, workshop_status: event.target.value as Workshop['status'] })}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                 >
                   <option value="draft">Draft</option>
                   <option value="published">Published</option>
@@ -493,7 +493,7 @@ export function ProgramSessionModal({
                 <input
                   value={form.stripe_product_id}
                   onChange={(event) => setForm({ ...form, stripe_product_id: event.target.value })}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                 />
               </label>
               <label className="grid gap-1 text-sm font-medium text-gray-800 sm:col-span-2">
@@ -502,7 +502,7 @@ export function ProgramSessionModal({
                   <input
                     value={form.stripe_price_lookup_key}
                     onChange={(event) => setForm({ ...form, stripe_price_lookup_key: event.target.value })}
-                    className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                    className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                   />
                   <button
                     type="button"
@@ -519,7 +519,7 @@ export function ProgramSessionModal({
 
           <div className="rounded-md border border-gray-200">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <p className="text-sm font-semibold text-gray-900">Speakers</p>
+              <p className="text-sm font-semibold text-black">Speakers</p>
               <button
                 type="button"
                 onClick={addSpeaker}
@@ -531,7 +531,7 @@ export function ProgramSessionModal({
             </div>
             <div className="grid gap-3 p-4">
               {assignments.length === 0 ? (
-                <p className="text-sm text-gray-500">No speakers assigned yet.</p>
+                <p className="text-sm text-brand-gray-medium">No speakers assigned yet.</p>
               ) : assignments.map((assignment, index) => {
                 const selectedIds = new Set(assignments
                   .filter((_, entryIndex) => entryIndex !== index)
@@ -548,7 +548,7 @@ export function ProgramSessionModal({
                       onChange={(event) => setAssignments((current) => current.map((entry, entryIndex) =>
                         entryIndex === index ? { ...entry, speaker_id: event.target.value } : entry
                       ))}
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                     >
                       <option value="">Choose speaker</option>
                       {rowSpeakerOptions.map((speaker) => (
@@ -565,7 +565,7 @@ export function ProgramSessionModal({
                       onChange={(event) => setAssignments((current) => current.map((entry, entryIndex) =>
                         entryIndex === index ? { ...entry, role: event.target.value as ProgramSessionSpeakerRole } : entry
                       ))}
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                     >
                       {ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>

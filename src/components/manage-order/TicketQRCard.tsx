@@ -28,7 +28,7 @@ export function TicketQRCard({ qrCodeUrl }: TicketQRCardProps) {
           <div className="text-center">
             <div className="bg-gray-800 p-8 rounded-xl mb-4">
               <p className="text-gray-400 text-lg mb-2">QR Code Generating...</p>
-              <p className="text-gray-500 text-sm">
+              <p className="text-brand-gray-medium text-sm">
                 Your QR code is being generated. Please check your email for the full ticket with QR code, or refresh this
                 page in a few moments.
               </p>

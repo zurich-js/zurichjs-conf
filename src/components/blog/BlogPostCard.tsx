@@ -19,7 +19,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
       <p className="mt-1 text-sm text-gray-700 line-clamp-2">
         {frontmatter.excerpt}
       </p>
-      <p className="mt-2 text-sm text-gray-500">
+      <p className="mt-2 text-sm text-brand-gray-medium">
         {new Date(frontmatter.date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',

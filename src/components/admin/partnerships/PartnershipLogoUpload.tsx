@@ -105,7 +105,7 @@ export function PartnershipLogoUpload({
 
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
         {/* Logo Preview */}
-        <div className="relative h-20 w-20 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
+        <div className="relative h-20 w-20 flex-shrink-0 rounded-lg bg-text-brand-gray-lightest overflow-hidden">
           {currentLogoUrl ? (
             <Image
               src={currentLogoUrl}
@@ -171,7 +171,7 @@ export function PartnershipLogoUpload({
             )}
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-brand-gray-medium">
             JPEG, PNG, WebP, or SVG. Max 5MB.
           </p>
         </div>

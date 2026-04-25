@@ -31,7 +31,7 @@ export function LogisticsSection({ logistics, totalSpeakers }: LogisticsSectionP
         <div className="lg:col-span-1 space-y-4">
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <div className="text-2xl sm:text-3xl font-bold text-black">{travelAssistanceNeeded}</div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-brand-gray-medium">
               speakers need travel assistance ({travelPct}%)
             </div>
           </div>
@@ -76,7 +76,7 @@ export function LogisticsSection({ logistics, totalSpeakers }: LogisticsSectionP
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {topAirports.map(({ airport, count }) => (
-                <div key={airport} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5">
+                <div key={airport} className="flex items-center gap-3 rounded-lg border border-text-brand-gray-lightest bg-gray-50 px-3 py-2.5">
                   <span className="inline-flex items-center rounded-md bg-blue-100 px-2.5 py-0.5 text-xs font-mono font-bold text-blue-800 border border-blue-200 flex-shrink-0">
                     {airportCode(airport)}
                   </span>

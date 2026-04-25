@@ -66,7 +66,7 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-200 p-6">
           <h3 className="text-xl font-bold text-black">Edit Session</h3>
-          <button onClick={onClose} className="rounded-lg p-2 hover:bg-gray-100 cursor-pointer">
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-text-brand-gray-lightest cursor-pointer">
             <X className="h-5 w-5 text-black" />
           </button>
         </div>

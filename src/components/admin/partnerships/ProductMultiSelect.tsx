@@ -132,7 +132,7 @@ function ProductListItem({
       onClick={onToggle}
       onMouseEnter={onHover}
       className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left cursor-pointer ${
-        isHighlighted ? 'bg-gray-100' : 'hover:bg-gray-50'
+        isHighlighted ? 'bg-text-brand-gray-lightest' : 'hover:bg-gray-50'
       }`}
     >
       <div
@@ -148,7 +148,7 @@ function ProductListItem({
       <div className="flex-1 min-w-0">
         <div className="font-medium text-black truncate">{product.name}</div>
         {product.description && (
-          <div className="text-xs text-gray-500 truncate">{product.description}</div>
+          <div className="text-xs text-brand-gray-medium truncate">{product.description}</div>
         )}
       </div>
     </button>
@@ -259,7 +259,7 @@ export function ProductMultiSelect({
       {isOpen && !disabled && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
           {results.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
+            <div className="px-4 py-3 text-sm text-brand-gray-medium">
               {query.length > 0 ? `No products found for "${query}"` : 'No products available'}
             </div>
           ) : (

@@ -34,7 +34,7 @@ export function AdminLoginForm({ title = 'Admin Dashboard' }: AdminLoginFormProp
       <Head>
         <title>{title} Login - ZurichJS Conference</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
             <div className="text-center">

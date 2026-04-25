@@ -199,7 +199,7 @@ function PaymentTypeSelector({ paymentType, setPaymentType }: { paymentType: str
           <button key={t.id} type="button" onClick={() => setPaymentType(t.id)}
             className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${paymentType === t.id ? 'border-brand-primary bg-brand-primary/10' : 'border-gray-200 hover:border-gray-300'}`}>
             <div className="flex items-center space-x-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${paymentType === t.id ? 'bg-brand-primary' : 'bg-gray-100'}`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${paymentType === t.id ? 'bg-brand-primary' : 'bg-text-brand-gray-lightest'}`}>
                 <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={t.icon} />
                 </svg>
@@ -231,7 +231,7 @@ function StripePaymentLookup({ stripePaymentId, setStripePaymentId, stripePaymen
       {lookupError && <p className="mt-2 text-sm text-red-600">{lookupError}</p>}
       {stripePayment && (
         <div className="mt-3 p-3 bg-white rounded-lg border border-blue-200">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Payment Found</p>
+          <p className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-2">Payment Found</p>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div><span className="text-gray-600">Amount:</span><span className="ml-1 font-bold text-black">{(stripePayment.amount / 100).toFixed(2)} {stripePayment.currency}</span></div>
             <div><span className="text-gray-600">Status:</span><span className={`ml-1 font-bold ${stripePayment.status === 'succeeded' || stripePayment.status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>{stripePayment.status}</span></div>
@@ -271,7 +271,7 @@ function BankTransferDetails({ amount, setAmount, currency, setCurrency, referen
       </div>
       {amount && (
         <div className="mt-3 p-3 bg-white rounded-lg border border-emerald-200">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Payment Summary</p>
+          <p className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-1">Payment Summary</p>
           <p className="text-lg font-bold text-black">{parseFloat(amount).toFixed(2)} {currency}</p>
         </div>
       )}
@@ -391,8 +391,8 @@ function SubmitButton({ isSubmitting, paymentType, stripePayment, bankTransferAm
         className="w-full sm:w-auto px-8 py-3 bg-brand-primary text-black rounded-lg text-base font-medium hover:bg-[#e8d95e] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer">
         {isSubmitting ? 'Issuing Ticket...' : 'Issue Ticket'}
       </button>
-      {paymentType === 'stripe' && !stripePayment && <p className="mt-2 text-xs text-gray-500">Please lookup the Stripe payment first</p>}
-      {paymentType === 'bank_transfer' && (!bankTransferAmount || parseFloat(bankTransferAmount) <= 0) && <p className="mt-2 text-xs text-gray-500">Please enter the bank transfer amount</p>}
+      {paymentType === 'stripe' && !stripePayment && <p className="mt-2 text-xs text-brand-gray-medium">Please lookup the Stripe payment first</p>}
+      {paymentType === 'bank_transfer' && (!bankTransferAmount || parseFloat(bankTransferAmount) <= 0) && <p className="mt-2 text-xs text-brand-gray-medium">Please enter the bank transfer amount</p>}
     </div>
   );
 }

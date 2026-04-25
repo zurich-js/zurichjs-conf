@@ -135,7 +135,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
     <div className="space-y-6">
       {(invoice.status === 'draft' || invoice.status === 'sent') && (
         <div className="flex justify-end">
-          <button onClick={startEditing} className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer text-gray-900">
+          <button onClick={startEditing} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bg-gray-200 rounded-lg transition-colors cursor-pointer text-black">
             Edit Details
           </button>
         </div>
@@ -144,8 +144,8 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
       {/* Invoice Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
-          <h4 className="font-medium text-gray-900 mb-2">Bill To</h4>
-          <div className="text-sm text-gray-900 space-y-1">
+          <h4 className="font-medium text-black mb-2">Bill To</h4>
+          <div className="text-sm text-black space-y-1">
             <p className="font-medium">{invoice.company_name}</p>
             <p>{invoice.contact_name}</p>
             <p className="text-gray-700">{invoice.contact_email}</p>
@@ -156,8 +156,8 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
           </div>
         </div>
         <div>
-          <h4 className="font-medium text-gray-900 mb-2">Invoice Details</h4>
-          <div className="text-sm space-y-1 text-gray-900">
+          <h4 className="font-medium text-black mb-2">Invoice Details</h4>
+          <div className="text-sm space-y-1 text-black">
             <div className="flex justify-between"><span>Issue Date</span><span>{formatDate(invoice.issue_date)}</span></div>
             <div className="flex justify-between"><span>Due Date</span><span>{formatDate(invoice.due_date)}</span></div>
             <div className="flex justify-between"><span>Tickets</span><span>{invoice.ticket_quantity}x {invoice.ticket_category}</span></div>
@@ -169,14 +169,14 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
       {/* Stripe Payment Link */}
       {invoice.payment_method === 'stripe' && (
         <div>
-          <h4 className="font-medium text-gray-900 mb-2">Stripe Payment Link</h4>
+          <h4 className="font-medium text-black mb-2">Stripe Payment Link</h4>
           {invoice.stripe_payment_link_url ? (
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm text-gray-700">Payment link ready</span>
               <a href={invoice.stripe_payment_link_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm bg-[#635BFF] text-white rounded-lg font-medium hover:bg-[#5046e5] transition-colors cursor-pointer">
                 Open Payment Link
               </a>
-              <button onClick={() => { navigator.clipboard.writeText(invoice.stripe_payment_link_url || ''); alert('Payment link copied!'); }} className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer text-gray-900">
+              <button onClick={() => { navigator.clipboard.writeText(invoice.stripe_payment_link_url || ''); alert('Payment link copied!'); }} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bg-gray-200 rounded-lg transition-colors cursor-pointer text-black">
                 Copy Link
               </button>
             </div>
@@ -193,14 +193,14 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
         <div className="space-y-4">
           {invoice.notes && (
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Internal Notes <span className="text-gray-500 font-normal ml-1 text-sm">(admin only)</span></h4>
-              <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{invoice.notes}</p>
+              <h4 className="font-medium text-black mb-2">Internal Notes <span className="text-brand-gray-medium font-normal ml-1 text-sm">(admin only)</span></h4>
+              <p className="text-sm text-black bg-gray-50 p-3 rounded-lg">{invoice.notes}</p>
             </div>
           )}
           {invoice.invoice_notes && (
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Invoice Notes <span className="text-gray-500 font-normal ml-1 text-sm">(on PDF)</span></h4>
-              <p className="text-sm text-gray-900 bg-amber-50 p-3 rounded-lg border border-amber-200">{invoice.invoice_notes}</p>
+              <h4 className="font-medium text-black mb-2">Invoice Notes <span className="text-brand-gray-medium font-normal ml-1 text-sm">(on PDF)</span></h4>
+              <p className="text-sm text-black bg-amber-50 p-3 rounded-lg border border-amber-200">{invoice.invoice_notes}</p>
             </div>
           )}
         </div>
@@ -208,7 +208,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
 
       {/* Totals */}
       <div className="bg-gray-50 rounded-lg p-4">
-        <div className="space-y-2 text-sm text-gray-900">
+        <div className="space-y-2 text-sm text-black">
           <div className="flex justify-between"><span>Subtotal</span><span>{formatAmount(invoice.subtotal, invoice.currency)}</span></div>
           {invoice.vat_rate > 0 && <div className="flex justify-between"><span>VAT ({invoice.vat_rate}%)</span><span>{formatAmount(invoice.vat_amount, invoice.currency)}</span></div>}
           <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-300"><span>Total</span><span>{formatAmount(invoice.total_amount, invoice.currency)}</span></div>
@@ -217,14 +217,14 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
 
       {/* PDF Section */}
       <div>
-        <h4 className="font-medium text-gray-900 mb-2">Invoice PDF</h4>
+        <h4 className="font-medium text-black mb-2">Invoice PDF</h4>
         {invoice.invoice_pdf_url ? (
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm text-gray-700">PDF attached ({invoice.invoice_pdf_source})</span>
             <a href={invoice.invoice_pdf_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm bg-brand-primary text-black rounded-lg font-medium hover:bg-[#e6d766] transition-colors cursor-pointer">
               Download PDF
             </a>
-            <button onClick={handleRegeneratePDF} disabled={actionLoading === 'pdf'} className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 cursor-pointer text-gray-900">
+            <button onClick={handleRegeneratePDF} disabled={actionLoading === 'pdf'} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 cursor-pointer text-black">
               {actionLoading === 'pdf' ? 'Regenerating...' : 'Regenerate PDF'}
             </button>
           </div>
@@ -252,61 +252,61 @@ function EditForm({ formData, setFormData, onSave, onCancel, loading }: {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="col-span-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-900 mb-1">Company Name</label>
-          <input type="text" value={formData.companyName} onChange={(e) => update('companyName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Company Name</label>
+          <input type="text" value={formData.companyName} onChange={(e) => update('companyName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Contact Name</label>
-          <input type="text" value={formData.contactName} onChange={(e) => update('contactName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Contact Name</label>
+          <input type="text" value={formData.contactName} onChange={(e) => update('contactName', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Contact Email</label>
-          <input type="email" value={formData.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Contact Email</label>
+          <input type="email" value={formData.contactEmail} onChange={(e) => update('contactEmail', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">VAT ID</label>
-          <input type="text" value={formData.vatId} onChange={(e) => update('vatId', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">VAT ID</label>
+          <input type="text" value={formData.vatId} onChange={(e) => update('vatId', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Due Date</label>
-          <input type="date" value={formData.dueDate} onChange={(e) => update('dueDate', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Due Date</label>
+          <input type="date" value={formData.dueDate} onChange={(e) => update('dueDate', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div className="col-span-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-900 mb-1">Street</label>
-          <input type="text" value={formData.billingAddressStreet} onChange={(e) => update('billingAddressStreet', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Street</label>
+          <input type="text" value={formData.billingAddressStreet} onChange={(e) => update('billingAddressStreet', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">City</label>
-          <input type="text" value={formData.billingAddressCity} onChange={(e) => update('billingAddressCity', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">City</label>
+          <input type="text" value={formData.billingAddressCity} onChange={(e) => update('billingAddressCity', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Postal Code</label>
-          <input type="text" value={formData.billingAddressPostalCode} onChange={(e) => update('billingAddressPostalCode', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Postal Code</label>
+          <input type="text" value={formData.billingAddressPostalCode} onChange={(e) => update('billingAddressPostalCode', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Country</label>
-          <input type="text" value={formData.billingAddressCountry} onChange={(e) => update('billingAddressCountry', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Country</label>
+          <input type="text" value={formData.billingAddressCountry} onChange={(e) => update('billingAddressCountry', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Ticket Quantity</label>
-          <input type="number" min={1} value={formData.ticketQuantity} onChange={(e) => update('ticketQuantity', parseInt(e.target.value) || 1)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Ticket Quantity</label>
+          <input type="number" min={1} value={formData.ticketQuantity} onChange={(e) => update('ticketQuantity', parseInt(e.target.value) || 1)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Unit Price (CHF)</label>
-          <input type="number" min={0} step={0.01} value={formData.unitPrice / 100} onChange={(e) => update('unitPrice', Math.round(parseFloat(e.target.value) * 100) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <label className="block text-sm font-medium text-black mb-1">Unit Price (CHF)</label>
+          <input type="number" min={0} step={0.01} value={formData.unitPrice / 100} onChange={(e) => update('unitPrice', Math.round(parseFloat(e.target.value) * 100) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black" />
           <p className="mt-1 text-xs text-gray-600">Total: {formatAmount(formData.unitPrice * formData.ticketQuantity)}</p>
         </div>
         <div className="col-span-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-900 mb-1">Internal Notes <span className="text-gray-500 font-normal ml-1">(admin only)</span></label>
-          <textarea value={formData.notes} onChange={(e) => update('notes', e.target.value)} rows={2} placeholder="Private notes..." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900 placeholder:text-gray-500" />
+          <label className="block text-sm font-medium text-black mb-1">Internal Notes <span className="text-brand-gray-medium font-normal ml-1">(admin only)</span></label>
+          <textarea value={formData.notes} onChange={(e) => update('notes', e.target.value)} rows={2} placeholder="Private notes..." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black placeholder:text-brand-gray-medium" />
         </div>
         <div className="col-span-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-900 mb-1">Invoice Notes <span className="text-gray-500 font-normal ml-1">(on PDF)</span></label>
-          <textarea value={formData.invoiceNotes} onChange={(e) => update('invoiceNotes', e.target.value)} rows={2} placeholder="Payment terms..." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900 placeholder:text-gray-500" />
+          <label className="block text-sm font-medium text-black mb-1">Invoice Notes <span className="text-brand-gray-medium font-normal ml-1">(on PDF)</span></label>
+          <textarea value={formData.invoiceNotes} onChange={(e) => update('invoiceNotes', e.target.value)} rows={2} placeholder="Payment terms..." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-black placeholder:text-brand-gray-medium" />
         </div>
       </div>
       <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-900 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">Cancel</button>
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-black bg-text-brand-gray-lightest rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">Cancel</button>
         <button onClick={onSave} disabled={loading} className="px-4 py-2 bg-brand-primary text-black rounded-lg font-medium hover:bg-[#e6d766] transition-colors disabled:opacity-50 cursor-pointer">
           {loading ? 'Saving...' : 'Save Changes'}
         </button>

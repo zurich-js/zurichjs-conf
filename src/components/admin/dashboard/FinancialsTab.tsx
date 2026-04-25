@@ -85,7 +85,7 @@ function TotalRevenueSummary({ summary, sponsorshipSummary, workshopSummary }: {
           {grand.totalPending > 0 && (
             <p className="text-xs text-amber-400 mt-3">+ {formatCHF(grand.totalPending)} pending sponsorship revenue</p>
           )}
-          <p className="text-xs text-gray-500 mt-2">Mixed-currency sum ({byCurrency.map(c => c.currency).join(' + ')})</p>
+          <p className="text-xs text-brand-gray-medium mt-2">Mixed-currency sum ({byCurrency.map(c => c.currency).join(' + ')})</p>
         </div>
       )}
 
@@ -103,13 +103,13 @@ function TotalRevenueSummary({ summary, sponsorshipSummary, workshopSummary }: {
         return (
           <div key={cur}>
             {multiCurrency && (
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">{cur}</h3>
+              <h3 className="text-sm font-bold text-brand-gray-medium uppercase tracking-wide mb-2">{cur}</h3>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {cards.map((c) => (
                 <div key={c.title} className="bg-white shadow-lg rounded-xl p-4 sm:p-6 border border-gray-200">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wide">{c.title}</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-brand-gray-medium uppercase tracking-wide">{c.title}</h3>
                     <div className={`w-8 h-8 sm:w-10 sm:h-10 ${c.bg} rounded-lg flex items-center justify-center`}>
                       <c.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${c.iconColor}`} />
                     </div>
@@ -141,7 +141,7 @@ function RevenueBreakdown({ summary, sponsorshipSummary, workshopSummary }: { su
         {byCurrency.map(({ currency: cur, ticketGross, workshopGross, sponsorPaid: sPaid, fees, combinedNet }) => (
           <div key={cur}>
             {byCurrency.length > 1 && (
-              <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">{cur}</h4>
+              <h4 className="text-sm font-bold text-brand-gray-medium uppercase tracking-wide mb-3">{cur}</h4>
             )}
             <div className="space-y-3">
               {ticketGross > 0 && (
@@ -184,8 +184,8 @@ function BreakdownRow({ icon: Icon, label, value, detail, color }: { icon: typeo
       <div className="flex items-center gap-3">
         <Icon className={`w-5 h-5 ${color}`} />
         <div>
-          <p className="font-semibold text-gray-900 text-sm sm:text-base">{label}</p>
-          {detail && <p className="text-xs text-gray-500">{detail}</p>}
+          <p className="font-semibold text-black text-sm sm:text-base">{label}</p>
+          {detail && <p className="text-xs text-brand-gray-medium">{detail}</p>}
         </div>
       </div>
       <p className={`font-bold text-base sm:text-lg ${color}`}>{value}</p>
@@ -210,10 +210,10 @@ function TicketRevenueByChannel({ financials }: { financials: FinancialData }) {
           <ChannelCard title="B2B Sales" icon={Building2} color="green" amount={revenueBreakdown.b2b.total.revenue} count={revenueBreakdown.b2b.total.count} fees={revenueBreakdown.b2b.total.fees}
             details={[{ label: 'via Bank Transfer', count: revenueBreakdown.b2b.bank_transfer.count, amount: revenueBreakdown.b2b.bank_transfer.revenue },
               ...(revenueBreakdown.b2b.stripe.count > 0 ? [{ label: 'via Stripe', count: revenueBreakdown.b2b.stripe.count, amount: revenueBreakdown.b2b.stripe.revenue }] : [])]} />
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-5 border border-gray-200">
+          <div className="bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest rounded-lg p-5 border border-gray-200">
             <div className="flex items-center gap-2 mb-3">
-              <Gift className="w-5 h-5 text-gray-500" />
-              <h4 className="font-bold text-gray-900">Complimentary</h4>
+              <Gift className="w-5 h-5 text-brand-gray-medium" />
+              <h4 className="font-bold text-black">Complimentary</h4>
             </div>
             <p className="text-2xl font-bold text-gray-700">{revenueBreakdown.complimentary.count} tickets</p>
             <p className="text-sm text-gray-600 mt-1">Free tickets (no payment)</p>
@@ -236,17 +236,17 @@ function ChannelCard({ title, icon: Icon, color, amount, count, fees, details }:
     <div className={`bg-gradient-to-br ${c.bg} rounded-lg p-5 ${c.border} border`}>
       <div className="flex items-center gap-2 mb-3">
         <Icon className={`w-5 h-5 ${c.dot}`} />
-        <h4 className="font-bold text-gray-900">{title}</h4>
+        <h4 className="font-bold text-black">{title}</h4>
       </div>
       <p className={`text-2xl font-bold ${c.text}`}>{formatCHF(amount)} CHF</p>
       <p className="text-sm text-gray-600 mt-1">{count.toLocaleString('de-CH')} tickets</p>
-      {fees > 0 && <p className="text-xs text-gray-500 mt-1">Stripe fees: {formatCHF(fees)} CHF</p>}
+      {fees > 0 && <p className="text-xs text-brand-gray-medium mt-1">Stripe fees: {formatCHF(fees)} CHF</p>}
       {details.length > 0 && (
         <div className={`mt-4 pt-3 border-t ${c.divider} space-y-2 text-sm`}>
           {details.map((d) => (
             <div key={d.label} className="flex justify-between">
               <span className="text-gray-600">{d.label}</span>
-              <span className="font-medium text-gray-900">{d.count.toLocaleString('de-CH')} · {formatCHF(d.amount)} CHF</span>
+              <span className="font-medium text-black">{d.count.toLocaleString('de-CH')} · {formatCHF(d.amount)} CHF</span>
             </div>
           ))}
         </div>
@@ -258,17 +258,17 @@ function ChannelCard({ title, icon: Icon, color, amount, count, fees, details }:
 function B2BPipeline({ summary }: { summary: NonNullable<FinancialData['b2bSummary']> }) {
   return (
     <div className="mt-6 pt-6 border-t border-gray-200">
-      <h4 className="font-semibold text-gray-900 mb-3">B2B Invoice Pipeline</h4>
+      <h4 className="font-semibold text-black mb-3">B2B Invoice Pipeline</h4>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div className="p-3 bg-green-50 rounded-lg border border-green-200">
           <p className="text-gray-600 text-xs font-medium uppercase">Paid</p>
           <p className="font-bold text-green-700 text-lg">{summary.paidInvoices}</p>
-          <p className="text-xs text-gray-500">{formatCHF(summary.paidRevenue)} CHF</p>
+          <p className="text-xs text-brand-gray-medium">{formatCHF(summary.paidRevenue)} CHF</p>
         </div>
         <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
           <p className="text-gray-600 text-xs font-medium uppercase">Pending</p>
           <p className="font-bold text-amber-600 text-lg">{summary.pendingInvoices}</p>
-          <p className="text-xs text-gray-500">{formatCHF(summary.pendingRevenue)} CHF</p>
+          <p className="text-xs text-brand-gray-medium">{formatCHF(summary.pendingRevenue)} CHF</p>
         </div>
         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
           <p className="text-gray-600 text-xs font-medium uppercase">Draft</p>
@@ -276,7 +276,7 @@ function B2BPipeline({ summary }: { summary: NonNullable<FinancialData['b2bSumma
         </div>
         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
           <p className="text-gray-600 text-xs font-medium uppercase">Total</p>
-          <p className="font-bold text-gray-900 text-lg">{summary.totalInvoices}</p>
+          <p className="font-bold text-black text-lg">{summary.totalInvoices}</p>
         </div>
       </div>
     </div>
@@ -298,7 +298,7 @@ function WorkshopRevenueCard({ summary }: { summary: NonNullable<FinancialData['
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {currencies.map((currency) => (
             <div key={currency} className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-              <p className="text-xs font-medium uppercase text-gray-500 mb-1">Gross ({currency})</p>
+              <p className="text-xs font-medium uppercase text-brand-gray-medium mb-1">Gross ({currency})</p>
               <p className="text-2xl font-bold text-emerald-700">{formatCHF(summary.revenueByCurrency[currency])} {currency}</p>
               {(summary.stripeFeesByCurrency[currency] || 0) > 0 && (
                 <p className="text-xs text-gray-600 mt-1">Stripe fees: {formatCHF(summary.stripeFeesByCurrency[currency])} {currency}</p>
@@ -328,7 +328,7 @@ function SponsorshipRevenueCard({ summary }: { summary: NonNullable<FinancialDat
         {/* Revenue by currency */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <p className="text-xs font-medium uppercase text-gray-500 mb-1">Paid (CHF)</p>
+            <p className="text-xs font-medium uppercase text-brand-gray-medium mb-1">Paid (CHF)</p>
             <p className="text-2xl font-bold text-green-700">{formatCHF(summary.revenueByCurrency.CHF.paid)} CHF</p>
             {summary.revenueByCurrency.CHF.pending > 0 && (
               <p className="text-xs text-amber-600 mt-1">+ {formatCHF(summary.revenueByCurrency.CHF.pending)} CHF pending</p>
@@ -336,7 +336,7 @@ function SponsorshipRevenueCard({ summary }: { summary: NonNullable<FinancialDat
           </div>
           {(summary.revenueByCurrency.EUR.paid > 0 || summary.revenueByCurrency.EUR.pending > 0) && (
             <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <p className="text-xs font-medium uppercase text-gray-500 mb-1">Paid (EUR)</p>
+              <p className="text-xs font-medium uppercase text-brand-gray-medium mb-1">Paid (EUR)</p>
               <p className="text-2xl font-bold text-green-700">{formatCHF(summary.revenueByCurrency.EUR.paid)} EUR</p>
               {summary.revenueByCurrency.EUR.pending > 0 && (
                 <p className="text-xs text-amber-600 mt-1">+ {formatCHF(summary.revenueByCurrency.EUR.pending)} EUR pending</p>
@@ -348,14 +348,14 @@ function SponsorshipRevenueCard({ summary }: { summary: NonNullable<FinancialDat
         {/* By tier */}
         {hasTiers && (
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3 text-sm">By Tier</h4>
+            <h4 className="font-semibold text-black mb-3 text-sm">By Tier</h4>
             <div className="space-y-2">
               {Object.entries(summary.byTier).map(([tier, data]) => (
                 <div key={tier} className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center gap-2">
                     <Handshake className="w-4 h-4 text-gray-400" />
-                    <span className="font-semibold text-gray-900 text-sm capitalize">{tier}</span>
-                    <span className="text-xs text-gray-500">({data.count} {data.count === 1 ? 'deal' : 'deals'})</span>
+                    <span className="font-semibold text-black text-sm capitalize">{tier}</span>
+                    <span className="text-xs text-brand-gray-medium">({data.count} {data.count === 1 ? 'deal' : 'deals'})</span>
                   </div>
                   <div className="flex gap-3 text-sm">
                     {data.revenueCHF > 0 && <span className="font-bold text-green-700">{formatCHF(data.revenueCHF)} CHF</span>}

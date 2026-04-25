@@ -15,7 +15,7 @@ export function getScoreColor(score: number | null): string {
 }
 
 export function getScoreBgColor(score: number | null): string {
-  if (score === null) return 'bg-gray-100';
+  if (score === null) return 'bg-text-brand-gray-lightest';
   if (score >= 3.5) return 'bg-green-50';
   if (score >= 2.5) return 'bg-amber-50';
   if (score >= 1.5) return 'bg-orange-50';
@@ -129,7 +129,7 @@ export function ActiveFiltersBar({
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
       {/* Summary */}
       <div className="flex items-center gap-2 text-sm">
-        <Filter className="w-4 h-4 text-gray-500" />
+        <Filter className="w-4 h-4 text-brand-gray-medium" />
         <span className="text-gray-700">
           Showing{' '}
           <span className="font-semibold text-black">{total}</span>

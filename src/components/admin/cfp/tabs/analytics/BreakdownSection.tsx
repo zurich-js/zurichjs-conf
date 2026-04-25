@@ -59,13 +59,13 @@ export function BreakdownSection({ byType, byLevel }: BreakdownSectionProps) {
                     </div>
                     <span className="text-2xl font-bold text-black">{data.total}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-brand-gray-medium">
                     <span>{pct}% of total</span>
                     <span className="text-green-600">{data.accepted} accepted ({acceptRate}%)</span>
                     <span>Avg score: {formatScore(data.avgScore)}</span>
                   </div>
                   {/* Mini bar */}
-                  <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="mt-2 h-1.5 bg-text-brand-gray-lightest rounded-full overflow-hidden">
                     <div
                       className="h-full bg-brand-primary rounded-full"
                       style={{ width: `${pct}%` }}
@@ -99,7 +99,7 @@ export function BreakdownSection({ byType, byLevel }: BreakdownSectionProps) {
                     <span className={`font-medium ${config.color}`}>{config.label}</span>
                     <span className="text-2xl font-bold text-black">{data.total}</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-brand-gray-medium">
                     <span>{pct}% of total</span>
                     <span className="text-green-600">{data.accepted} accepted ({acceptRate}%)</span>
                     <span>Avg score: {formatScore(data.avgScore)}</span>

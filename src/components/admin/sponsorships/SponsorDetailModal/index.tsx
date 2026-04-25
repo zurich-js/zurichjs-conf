@@ -59,7 +59,7 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+              <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-text-brand-gray-lightest overflow-hidden flex-shrink-0">
                 {sponsor.logo_url ? (
                   <Image src={sponsor.logo_url} alt={sponsor.company_name} fill className="object-contain p-1" unoptimized={sponsor.logo_url.endsWith('.svg') || sponsor.logo_url.endsWith('.gif')} />
                 ) : (
@@ -67,13 +67,13 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
                 )}
               </div>
               <div className="min-w-0">
-                <h2 className="text-base sm:text-xl font-bold text-gray-900 truncate">{sponsor.company_name}</h2>
-                <p className="text-xs sm:text-sm text-gray-500 font-mono">{deal.deal_number}</p>
+                <h2 className="text-base sm:text-xl font-bold text-black truncate">{sponsor.company_name}</h2>
+                <p className="text-xs sm:text-sm text-brand-gray-medium font-mono">{deal.deal_number}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <StatusBadge status={deal.status} size="sm" />
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><X className="h-5 w-5 text-gray-500" /></button>
+              <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg transition-colors"><X className="h-5 w-5 text-brand-gray-medium" /></button>
             </div>
           </div>
         </div>
@@ -84,9 +84,9 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
         {/* Tabs */}
         <div className="px-4 sm:px-6 py-2 sm:py-0 border-b border-gray-200">
           {/* Mobile: Segmented control */}
-          <nav className="flex sm:hidden bg-gray-100 rounded-lg p-1">
+          <nav className="flex sm:hidden bg-text-brand-gray-lightest rounded-lg p-1">
             {tabs.map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-md text-xs font-medium transition-all ${activeTab === tab.id ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-md text-xs font-medium transition-all ${activeTab === tab.id ? 'bg-white text-black shadow-sm' : 'text-brand-gray-medium hover:text-gray-700'}`}>
                 <tab.icon className="h-4 w-4" /><span>{tab.label}</span>
               </button>
             ))}
@@ -95,7 +95,7 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
           {/* Desktop: Underline tabs */}
           <nav className="hidden sm:flex gap-6">
             {tabs.map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'border-brand-primary text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'border-brand-primary text-black' : 'border-transparent text-brand-gray-medium hover:text-gray-700'}`}>
                 <tab.icon className="h-4 w-4" /><span>{tab.label}</span>
               </button>
             ))}
@@ -112,7 +112,7 @@ export function SponsorDetailModal({ deal, onClose, onUpdate }: SponsorDetailMod
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
                 <h3 className="text-sm font-medium text-gray-700">Line Items</h3>
-                <div className="text-xs sm:text-sm text-gray-500">Tier Credit: {formatAmount(creditAvailable, deal.currency)}</div>
+                <div className="text-xs sm:text-sm text-brand-gray-medium">Tier Credit: {formatAmount(creditAvailable, deal.currency)}</div>
               </div>
               <LineItemsEditor dealId={deal.id} lineItems={line_items} currency={deal.currency as SponsorshipCurrency} tierCreditAvailable={creditAvailable} onUpdate={onUpdate} />
             </div>

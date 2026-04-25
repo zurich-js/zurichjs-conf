@@ -35,10 +35,10 @@ export function CurrencySelector({ value, onChange, detectedCountryCode }: Curre
       <Listbox value={value} onChange={onChange}>
         <div className="relative">
           <ListboxButton className="cursor-pointer flex items-center gap-1.5 rounded-full border border-gray-300 bg-white pl-3.5 pr-2.5 py-1.5 shadow-sm hover:border-gray-400 transition-colors">
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="text-sm font-semibold text-black">
               {value} ({CURRENCY_META[value].symbol})
             </span>
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-brand-gray-medium" />
           </ListboxButton>
 
           <ListboxOptions className="absolute z-50 mt-1 w-56 overflow-auto rounded-xl bg-white border border-gray-200 shadow-lg py-1 focus:outline-none left-1/2 -translate-x-1/2">
@@ -54,7 +54,7 @@ export function CurrencySelector({ value, onChange, detectedCountryCode }: Curre
             )}
             {CONVERTED_CURRENCIES.length > 0 && (
               <>
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-1 border-t border-gray-100 pt-2">
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-1 border-t border-text-brand-gray-lightest pt-2">
                   Converted (~approximate)
                 </div>
                 {CONVERTED_CURRENCIES.map((c) => (
@@ -81,15 +81,15 @@ function CurrencyOption({ currency }: { currency: DisplayCurrency }) {
   return (
     <ListboxOption
       value={currency}
-      className="cursor-pointer flex items-center justify-between gap-2 px-3 py-2 text-sm select-none data-[focus]:bg-gray-100"
+      className="cursor-pointer flex items-center justify-between gap-2 px-3 py-2 text-sm select-none data-[focus]:bg-text-brand-gray-lightest"
     >
       {({ selected }) => (
         <>
           <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900">{currency}</span>
-            <span className="text-gray-500">{meta.label}</span>
+            <span className="font-medium text-black">{currency}</span>
+            <span className="text-brand-gray-medium">{meta.label}</span>
           </div>
-          {selected && <Check className="w-4 h-4 text-gray-900" />}
+          {selected && <Check className="w-4 h-4 text-black" />}
         </>
       )}
     </ListboxOption>

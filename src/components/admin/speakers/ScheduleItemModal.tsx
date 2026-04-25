@@ -278,7 +278,7 @@ export function ScheduleItemModal({
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-200 p-6">
           <h3 className="text-xl font-bold text-black">{modalTitle}</h3>
-          <button onClick={onClose} className="rounded-lg p-2 hover:bg-gray-100 cursor-pointer">
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-text-brand-gray-lightest cursor-pointer">
             <X className="h-5 w-5 text-black" />
           </button>
         </div>
@@ -324,7 +324,7 @@ export function ScheduleItemModal({
                     setMode('custom');
                     setFormData({ ...formData, type: 'session', submission_id: '', speaker_id: '' });
                   }}
-                  className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-black hover:bg-gray-100"
+                  className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-black hover:bg-text-brand-gray-lightest"
                 >
                   Custom submission
                 </button>

@@ -234,7 +234,7 @@ export function SponsorshipsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Sponsorships</h2>
+          <h2 className="text-xl font-semibold text-black">Sponsorships</h2>
           <p className="text-sm text-gray-600 mt-1">
             Manage sponsor companies, deals, and invoices
           </p>
@@ -242,7 +242,7 @@ export function SponsorshipsTab() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleRefresh}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
             title="Refresh data"
           >
             <RefreshCw className="h-5 w-5" />
@@ -271,7 +271,7 @@ export function SponsorshipsTab() {
               placeholder="Search by company name or deal number..."
               value={searchQuery}
               onChange={(e) => handleFilterChange(setSearchQuery)(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-gray-900 placeholder:text-gray-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-black placeholder:text-brand-gray-medium"
             />
           </div>
 
@@ -286,7 +286,7 @@ export function SponsorshipsTab() {
             <select
               value={statusFilter}
               onChange={(e) => handleFilterChange(setStatusFilter)(e.target.value as SponsorshipDealStatus | 'all')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-gray-900 text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-black text-sm"
             >
               <option value="all">All Statuses</option>
               {Object.entries(DEAL_STATUS_CONFIG).map(([status, config]) => (
@@ -300,7 +300,7 @@ export function SponsorshipsTab() {
             <select
               value={tierFilter}
               onChange={(e) => handleFilterChange(setTierFilter)(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-gray-900 text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-black text-sm"
             >
               <option value="all">All Tiers</option>
               {tiers.map((tier) => (
@@ -314,7 +314,7 @@ export function SponsorshipsTab() {
             <select
               value={currencyFilter}
               onChange={(e) => handleFilterChange(setCurrencyFilter)(e.target.value as SponsorshipCurrency | 'all')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-gray-900 text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-black text-sm"
             >
               <option value="all">All Currencies</option>
               <option value="CHF">CHF</option>
@@ -325,7 +325,7 @@ export function SponsorshipsTab() {
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-3 py-2 text-sm text-gray-600 hover:text-black hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
               >
                 Clear
               </button>

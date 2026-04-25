@@ -40,7 +40,7 @@ export default function ReviewerDetailPage() {
   const [dateRange, setDateRange] = useState<DateRange>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
-  const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
 
   // Fetch reviewer info
   const { data: reviewerInfo, isLoading: isLoadingReviewer } = useQuery<CfpAdminReviewerWithActivity>({
@@ -78,8 +78,8 @@ export default function ReviewerDetailPage() {
         <Head>
           <title>Reviewer Activity | ZurichJS</title>
         </Head>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-          <AdminHeader title="Reviewer Activity" subtitle="ZurichJS Conference 2026" onLogout={logout} />
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest">
+          <AdminHeader title="Reviewer Activity" />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
@@ -95,8 +95,8 @@ export default function ReviewerDetailPage() {
       <Head>
         <title>{reviewerInfo.name || reviewerInfo.email} - Reviewer Activity | ZurichJS</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <AdminHeader title="Reviewer Activity" subtitle="ZurichJS Conference 2026" onLogout={logout} />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest">
+        <AdminHeader title="Reviewer Activity" />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Back link */}
@@ -124,28 +124,28 @@ export default function ReviewerDetailPage() {
               {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
-                  <div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
+                  <div className="flex items-center justify-center gap-1 text-brand-gray-medium mb-1">
                     <FileText className="w-4 h-4" />
                     <span className="text-xs">Total</span>
                   </div>
                   <div className="text-2xl font-bold text-black">{reviewerInfo.total_reviews}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
-                  <div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
+                  <div className="flex items-center justify-center gap-1 text-brand-gray-medium mb-1">
                     <Calendar className="w-4 h-4" />
                     <span className="text-xs">Last 7d</span>
                   </div>
                   <div className="text-2xl font-bold text-black">{reviewerInfo.reviews_last_7_days}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
-                  <div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
+                  <div className="flex items-center justify-center gap-1 text-brand-gray-medium mb-1">
                     <Star className="w-4 h-4" />
                     <span className="text-xs">Avg Score</span>
                   </div>
                   <div className="text-2xl font-bold text-black">{formatScore(reviewerInfo.avg_score_given)}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
-                  <div className="text-xs text-gray-500 mb-1">Last Active</div>
+                  <div className="text-xs text-brand-gray-medium mb-1">Last Active</div>
                   <div className="text-sm font-medium text-black">
                     {reviewerInfo.last_activity_at
                       ? new Date(reviewerInfo.last_activity_at).toLocaleDateString()
@@ -173,26 +173,26 @@ export default function ReviewerDetailPage() {
 
             <div className="mt-6 grid gap-3 md:grid-cols-4">
               <div className="rounded-lg bg-gray-50 px-4 py-3">
-                <div className="text-xs text-gray-500">Review Volume</div>
+                <div className="text-xs text-brand-gray-medium">Review Volume</div>
                 <div className="text-xl font-bold text-black">{formatScore(reviewerInfo.contribution_volume_score)}</div>
                 <div className="mt-1 text-xs text-gray-600">{reviewerInfo.total_reviews} reviews</div>
               </div>
               <div className="rounded-lg bg-gray-50 px-4 py-3">
-                <div className="text-xs text-gray-500">Written Feedback</div>
+                <div className="text-xs text-brand-gray-medium">Written Feedback</div>
                 <div className="text-xl font-bold text-black">{formatScore(reviewerInfo.contribution_feedback_score)}</div>
                 <div className="mt-1 text-xs text-gray-600">
                   {Math.round(reviewerInfo.feedback_written_percent)}% ({reviewerInfo.feedback_written_count} reviews)
                 </div>
               </div>
               <div className="rounded-lg bg-gray-50 px-4 py-3">
-                <div className="text-xs text-gray-500">Score Range</div>
+                <div className="text-xs text-brand-gray-medium">Score Range</div>
                 <div className="text-xl font-bold text-black">{formatRatingSpreadLabel(reviewerInfo.rating_spread)}</div>
                 <div className="mt-1 text-xs text-gray-600">
                   {formatScore(reviewerInfo.contribution_rating_spread_score)} contribution points
                 </div>
               </div>
               <div className="rounded-lg bg-gray-50 px-4 py-3">
-                <div className="text-xs text-gray-500">Category Range</div>
+                <div className="text-xs text-brand-gray-medium">Category Range</div>
                 <div className="text-xl font-bold text-black">{formatScore(reviewerInfo.contribution_category_rating_spread_score)}</div>
                 <div className="mt-1 text-xs text-gray-600">
                   Avg range: {formatScore(reviewerInfo.category_rating_spread)}
@@ -207,7 +207,7 @@ export default function ReviewerDetailPage() {
             <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h2 className="text-lg font-semibold text-black">Review Activity</h2>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Date range:</span>
+                <span className="text-sm text-brand-gray-medium">Date range:</span>
                 <select
                   value={dateRange}
                   onChange={(e) => {
@@ -230,7 +230,7 @@ export default function ReviewerDetailPage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
                 </div>
               ) : activities.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-brand-gray-medium">
                   No review activity found for this period
                 </div>
               ) : (
@@ -247,7 +247,7 @@ export default function ReviewerDetailPage() {
                             href={`/cfp/reviewer/submissions/${activity.submission_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                            className="shrink-0 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-text-brand-gray-lightest hover:text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
                             aria-label={`Open ${activity.submission_title} in reviewer view (opens in new tab)`}
                           >
                             <ExternalLink className="w-4 h-4" aria-hidden="true" />
@@ -255,31 +255,31 @@ export default function ReviewerDetailPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-600 mb-2">
                           <div>
-                            <span className="text-gray-500">{SCORE_LABELS.score_overall}:</span>{' '}
+                            <span className="text-brand-gray-medium">{SCORE_LABELS.score_overall}:</span>{' '}
                             <span className="font-medium text-black">{formatScore(activity.score_overall)}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500">Date:</span>{' '}
+                            <span className="text-brand-gray-medium">Date:</span>{' '}
                             <span className="font-medium text-black">
                               {new Date(activity.created_at).toLocaleDateString()}
                             </span>
                           </div>
                           <div>
-                            <span className="text-gray-500">{SCORE_LABELS.score_relevance}:</span>{' '}
+                            <span className="text-brand-gray-medium">{SCORE_LABELS.score_relevance}:</span>{' '}
                             <span className="font-medium text-black">{formatScore(activity.score_relevance)}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500">{SCORE_LABELS.score_technical_depth}:</span>{' '}
+                            <span className="text-brand-gray-medium">{SCORE_LABELS.score_technical_depth}:</span>{' '}
                             <span className="font-medium text-black">
                               {formatScore(activity.score_technical_depth)}
                             </span>
                           </div>
                           <div>
-                            <span className="text-gray-500">{SCORE_LABELS.score_clarity}:</span>{' '}
+                            <span className="text-brand-gray-medium">{SCORE_LABELS.score_clarity}:</span>{' '}
                             <span className="font-medium text-black">{formatScore(activity.score_clarity)}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500">{SCORE_LABELS.score_diversity}:</span>{' '}
+                            <span className="text-brand-gray-medium">{SCORE_LABELS.score_diversity}:</span>{' '}
                             <span className="font-medium text-black">{formatScore(activity.score_diversity)}</span>
                           </div>
                         </div>
@@ -330,7 +330,7 @@ export default function ReviewerDetailPage() {
                                 href={`/cfp/reviewer/submissions/${activity.submission_id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-1.5 text-gray-700 hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                                className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-1.5 text-gray-700 hover:bg-text-brand-gray-lightest hover:text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
                                 aria-label={`Open ${activity.submission_title} in reviewer view (opens in new tab)`}
                               >
                                 <ExternalLink className="w-4 h-4" aria-hidden="true" />
@@ -342,7 +342,7 @@ export default function ReviewerDetailPage() {
                               </div>
                             </td>
                             <td className="px-3 py-3 text-center">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-medium text-black">
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-text-brand-gray-lightest text-sm font-medium text-black">
                                 {formatScore(activity.score_overall)}
                               </span>
                             </td>

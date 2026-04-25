@@ -183,7 +183,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 <p className="text-sm text-black">{speaker.email}</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+            <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg transition-colors cursor-pointer">
               <X className="w-5 h-5 text-black" />
             </button>
           </div>
@@ -198,7 +198,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               className={`flex items-center gap-1.5 border-b-2 px-1 py-3 text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === 'profile'
                   ? 'border-black text-black'
-                  : 'border-transparent text-gray-500 hover:text-black'
+                  : 'border-transparent text-brand-gray-medium hover:text-black'
               }`}
             >
               <IdCard className="h-4 w-4" />
@@ -210,7 +210,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
               className={`flex items-center gap-1.5 border-b-2 px-1 py-3 text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === 'feedback'
                   ? 'border-black text-black'
-                  : 'border-transparent text-gray-500 hover:text-black'
+                  : 'border-transparent text-brand-gray-medium hover:text-black'
               }`}
             >
               <MessageSquare className="h-4 w-4" />
@@ -283,11 +283,11 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Account Info</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold mb-1">Joined</p>
+                    <p className="text-xs text-brand-gray-medium font-semibold mb-1">Joined</p>
                     <p className="text-sm text-black">{new Date(speaker.created_at).toLocaleDateString()}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold mb-1">Last Updated</p>
+                    <p className="text-xs text-brand-gray-medium font-semibold mb-1">Last Updated</p>
                     <p className="text-sm text-black">{new Date(speaker.updated_at).toLocaleDateString()}</p>
                   </div>
                 </div>
@@ -306,7 +306,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                     <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
-                      <User className="w-8 h-8 text-gray-500" />
+                      <User className="w-8 h-8 text-brand-gray-medium" />
                     </div>
                   )}
                   <div>
@@ -325,7 +325,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                     >
                       {isUploading ? 'Uploading...' : 'Upload New Photo'}
                     </button>
-                    <p className="text-xs text-gray-500 mt-1">JPG, PNG, WebP or GIF. Max 5MB.</p>
+                    <p className="text-xs text-brand-gray-medium mt-1">JPG, PNG, WebP or GIF. Max 5MB.</p>
                   </div>
                 </div>
               </div>
@@ -447,7 +447,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
               </div>
             ) : submissions.length === 0 ? (
-              <p className="text-sm text-gray-500">No submissions from this speaker</p>
+              <p className="text-sm text-brand-gray-medium">No submissions from this speaker</p>
             ) : (
               <div className="space-y-2">
                 {submissions.map((submission) => (
@@ -458,7 +458,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                     <div className="flex-1 min-w-0 mr-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm text-black truncate">{submission.title}</span>
-                        <span className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600 capitalize shrink-0">
+                        <span className="px-2 py-0.5 bg-text-brand-gray-lightest rounded text-xs text-gray-600 capitalize shrink-0">
                           {submission.submission_type}
                         </span>
                         {submission.previous_recording_url && (
@@ -495,7 +495,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                         <button
                           onClick={() => handleViewSubmission(submission.id)}
                           disabled={loadingSubmissionId === submission.id}
-                          className="p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded transition-colors cursor-pointer disabled:opacity-50"
+                          className="p-1.5 text-brand-gray-medium hover:text-black hover:bg-text-brand-gray-lightest rounded transition-colors cursor-pointer disabled:opacity-50"
                           title="View submission"
                         >
                           {loadingSubmissionId === submission.id ? (

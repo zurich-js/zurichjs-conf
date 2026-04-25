@@ -51,7 +51,7 @@ export const AboutCTASection: React.FC<AboutCTASectionProps> = ({ data }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
               <div className="space-y-6">
                 <p
-                  className="text-gray-900 leading-relaxed text-base"
+                  className="text-black leading-relaxed text-base"
                   dangerouslySetInnerHTML={{ __html: data[currentSlide].leftColumn }}
                 />
                 <div className="flex flex-col gap-3">
@@ -72,7 +72,7 @@ export const AboutCTASection: React.FC<AboutCTASectionProps> = ({ data }) => {
                 {data[currentSlide].rightColumn.map((text, index) => (
                   <p
                     key={index}
-                    className="text-gray-900 leading-relaxed text-base"
+                    className="text-black leading-relaxed text-base"
                     dangerouslySetInnerHTML={{ __html: text }}
                   />
                 ))}

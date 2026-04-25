@@ -37,7 +37,7 @@ export default function ProgramAdminPage() {
   const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
-  const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
 
   const speakersQuery = useQuery({
     queryKey: ['speakers', 'list'],
@@ -135,7 +135,6 @@ export default function ProgramAdminPage() {
       <div className="min-h-screen bg-gray-50">
         <AdminHeader
           title="Program Admin"
-          onLogout={logout}
         />
 
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -149,7 +148,6 @@ export default function ProgramAdminPage() {
           <div className="mb-6 overflow-x-auto">
             <div className="inline-flex min-w-max rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
               {TABS.map((tab) => {
-                const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
@@ -160,7 +158,6 @@ export default function ProgramAdminPage() {
                         : 'text-gray-700 hover:bg-gray-50 hover:text-black'
                     }`}
                   >
-                    <Icon className="size-4" />
                     {tab.label}
                   </button>
                 );
@@ -250,8 +247,8 @@ export default function ProgramAdminPage() {
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-gray-950">{value}</p>
+      <p className="text-sm text-brand-gray-medium">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-black">{value}</p>
     </div>
   );
 }

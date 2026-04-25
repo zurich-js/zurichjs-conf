@@ -209,7 +209,7 @@ export default function ReportIssuePage() {
 
   // Light-themed input styles
   const inputBaseStyles =
-    'w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-200';
+    'w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-200';
   const inputErrorStyles = 'border-red-500 focus:ring-red-500';
 
   return (
@@ -253,7 +253,7 @@ export default function ReportIssuePage() {
                 <div className="flex justify-center mb-4">
                   <CheckCircle className="w-16 h-16 text-green-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">Thank You!</h2>
+                <h2 className="text-2xl font-bold text-black mb-3">Thank You!</h2>
                 <p className="text-gray-600 mb-6">
                   Your report has been submitted successfully.
                 </p>
@@ -331,7 +331,7 @@ export default function ReportIssuePage() {
                       {errors.email}
                     </p>
                   ) : (
-                    <p id="email-hint" className="text-gray-500 text-sm mt-1">
+                    <p id="email-hint" className="text-brand-gray-medium text-sm mt-1">
                       We&apos;ll use this to send you a reward if your report is valid.
                     </p>
                   )}
@@ -387,7 +387,7 @@ export default function ReportIssuePage() {
                       {errors.pageUrl}
                     </p>
                   ) : (
-                    <p id="pageUrl-hint" className="text-gray-500 text-sm mt-1">
+                    <p id="pageUrl-hint" className="text-brand-gray-medium text-sm mt-1">
                       The URL of the page where you found the issue (if you remember).
                     </p>
                   )}
@@ -449,7 +449,7 @@ export default function ReportIssuePage() {
                       {errors.screenshotUrl}
                     </p>
                   ) : (
-                    <p id="screenshotUrl-hint" className="text-gray-500 text-sm mt-1">
+                    <p id="screenshotUrl-hint" className="text-brand-gray-medium text-sm mt-1">
                       Upload to Dropbox, Google Drive, or any image sharing service and
                       paste the link here.
                     </p>

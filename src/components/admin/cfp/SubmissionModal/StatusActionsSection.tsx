@@ -75,7 +75,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
                   <Icon className="w-5 h-5 mb-1" />
                   {action?.action || status}
                 </button>
-                <p className="text-xs text-gray-500 mt-1.5 text-center">{action?.description}</p>
+                <p className="text-xs text-brand-gray-medium mt-1.5 text-center">{action?.description}</p>
               </div>
             );
           })}
@@ -95,7 +95,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
               >
                 Revert to Draft
               </button>
-              <p className="text-xs text-gray-500 mt-1 max-w-[200px]">{STATUS_ACTIONS.draft?.description}</p>
+              <p className="text-xs text-brand-gray-medium mt-1 max-w-[200px]">{STATUS_ACTIONS.draft?.description}</p>
             </div>
           )}
           {currentStatus !== 'withdrawn' && (
@@ -107,7 +107,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
               >
                 Mark as Withdrawn
               </button>
-              <p className="text-xs text-gray-500 mt-1 max-w-[200px]">{STATUS_ACTIONS.withdrawn?.description}</p>
+              <p className="text-xs text-brand-gray-medium mt-1 max-w-[200px]">{STATUS_ACTIONS.withdrawn?.description}</p>
             </div>
           )}
         </div>

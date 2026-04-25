@@ -243,7 +243,7 @@ export function SubmissionModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="p-2 hover:bg-text-brand-gray-lightest rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-5 h-5 text-black" />
             </button>
@@ -256,10 +256,10 @@ export function SubmissionModal({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={submission.status} />
-              <span className="px-2 py-1 bg-gray-100 rounded text-xs text-black font-medium capitalize">
+              <span className="px-2 py-1 bg-text-brand-gray-lightest rounded text-xs text-black font-medium capitalize">
                 {submission.submission_type}
               </span>
-              <span className="px-2 py-1 bg-gray-100 rounded text-xs text-black font-medium capitalize">
+              <span className="px-2 py-1 bg-text-brand-gray-lightest rounded text-xs text-black font-medium capitalize">
                 {submission.talk_level}
               </span>
             </div>
@@ -332,19 +332,19 @@ export function SubmissionModal({
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {submission.workshop_duration_hours && (
                         <div>
-                          <p className="text-xs text-gray-500">Duration</p>
+                          <p className="text-xs text-brand-gray-medium">Duration</p>
                           <p className="text-sm font-medium text-black">{submission.workshop_duration_hours} hours</p>
                         </div>
                       )}
                       {submission.workshop_max_participants && (
                         <div>
-                          <p className="text-xs text-gray-500">Max Participants</p>
+                          <p className="text-xs text-brand-gray-medium">Max Participants</p>
                           <p className="text-sm font-medium text-black">{submission.workshop_max_participants}</p>
                         </div>
                       )}
                       {submission.workshop_expected_compensation && (
                         <div>
-                          <p className="text-xs text-gray-500">Compensation</p>
+                          <p className="text-xs text-brand-gray-medium">Compensation</p>
                           <p className="text-sm font-medium text-black capitalize">
                             {submission.workshop_expected_compensation.replace('_', ' ')}
                           </p>
@@ -352,14 +352,14 @@ export function SubmissionModal({
                       )}
                       {submission.workshop_compensation_amount != null && (
                         <div>
-                          <p className="text-xs text-gray-500">Amount</p>
+                          <p className="text-xs text-brand-gray-medium">Amount</p>
                           <p className="text-sm font-medium text-black">CHF {submission.workshop_compensation_amount}</p>
                         </div>
                       )}
                     </div>
                     {submission.workshop_special_requirements && (
                       <div className="mt-3">
-                        <p className="text-xs text-gray-500">Special Requirements</p>
+                        <p className="text-xs text-brand-gray-medium">Special Requirements</p>
                         <p className="text-sm text-black whitespace-pre-wrap">{submission.workshop_special_requirements}</p>
                       </div>
                     )}
@@ -430,10 +430,10 @@ export function SubmissionModal({
           <details className="group rounded-xl border border-gray-200 bg-white">
             <summary className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-black hover:bg-gray-50">
               <span className="flex items-center gap-2 font-medium">
-                <Settings className="h-4 w-4 text-gray-500" />
+                <Settings className="h-4 w-4 text-brand-gray-medium" />
                 Internal pipeline status
               </span>
-              <span className="text-xs text-gray-500">Speaker is <strong>not</strong> notified · click to expand</span>
+              <span className="text-xs text-brand-gray-medium">Speaker is <strong>not</strong> notified · click to expand</span>
             </summary>
             <div className="border-t border-gray-200 p-4">
               <StatusActionsSection

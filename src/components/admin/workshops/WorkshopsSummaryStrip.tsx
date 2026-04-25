@@ -29,7 +29,7 @@ export function WorkshopsSummaryStrip({ items }: WorkshopsSummaryStripProps) {
       <SummaryCard
         label="Offerings"
         value={totalOfferings.toString()}
-        icon={<GraduationCap className="size-4 text-gray-500" />}
+        icon={<GraduationCap className="size-4 text-brand-gray-medium" />}
         sublabel={`${items.length - totalOfferings} unlinked`}
       />
       <SummaryCard
@@ -75,17 +75,17 @@ function SummaryCard({
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-gray-medium">
           {label}
         </span>
         {icon}
       </div>
       <div
-        className={`mt-2 font-bold text-gray-900 tabular-nums ${compact ? 'text-sm sm:text-base' : 'text-2xl'}`}
+        className={`mt-2 font-bold text-black tabular-nums ${compact ? 'text-sm sm:text-base' : 'text-2xl'}`}
       >
         {value}
       </div>
-      {sublabel && <div className="mt-1 text-xs text-gray-500">{sublabel}</div>}
+      {sublabel && <div className="mt-1 text-xs text-brand-gray-medium">{sublabel}</div>}
     </div>
   );
 }

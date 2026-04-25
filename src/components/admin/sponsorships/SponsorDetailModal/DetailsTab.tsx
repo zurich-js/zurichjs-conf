@@ -113,12 +113,12 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700">Sponsor Information</h3>
           {!isEditing ? (
-            <button onClick={() => setIsEditing(true)} className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
+            <button onClick={() => setIsEditing(true)} className="text-sm text-gray-600 hover:text-black flex items-center gap-1">
               <Edit2 className="h-4 w-4" /> Edit
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <button onClick={() => setIsEditing(false)} disabled={isUpdating} className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded">Cancel</button>
+              <button onClick={() => setIsEditing(false)} disabled={isUpdating} className="text-sm text-gray-600 hover:text-black px-3 py-1 rounded">Cancel</button>
               <button onClick={handleSaveSponsorDetails} disabled={isUpdating} className="text-sm font-medium text-black bg-brand-primary hover:bg-[#e6d766] px-3 py-1 rounded flex items-center gap-1 disabled:opacity-50">
                 <Check className="h-4 w-4" /> Save
               </button>
@@ -140,9 +140,9 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
           <div className="flex items-center justify-between mb-4">
             <div>
               <span className="text-2xl font-bold capitalize">{tier.name}</span>
-              <span className="ml-2 text-gray-500">Tier</span>
+              <span className="ml-2 text-brand-gray-medium">Tier</span>
             </div>
-            <span className="text-sm text-gray-500">{deal.currency}</span>
+            <span className="text-sm text-brand-gray-medium">{deal.currency}</span>
           </div>
 
           <div className="space-y-2 border-t border-gray-200 pt-4">
@@ -180,7 +180,7 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
           <label className="flex items-center justify-between cursor-pointer">
             <div>
               <p className="text-sm font-medium">Show logo on website</p>
-              <p className="text-xs text-gray-500">Display sponsor logo on the public homepage</p>
+              <p className="text-xs text-brand-gray-medium">Display sponsor logo on the public homepage</p>
             </div>
             <button
               onClick={handleToggleLogoPublic}
@@ -201,19 +201,19 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
                 <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.logo_url ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
                   {sponsor.logo_url ? '✓' : '○'}
                 </span>
-                <span className={sponsor.logo_url ? 'text-gray-700' : 'text-gray-500'}>Logo uploaded</span>
+                <span className={sponsor.logo_url ? 'text-gray-700' : 'text-brand-gray-medium'}>Logo uploaded</span>
               </li>
               <li className="flex items-center gap-2 text-xs">
                 <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.is_logo_public ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
                   {sponsor.is_logo_public ? '✓' : '○'}
                 </span>
-                <span className={sponsor.is_logo_public ? 'text-gray-700' : 'text-gray-500'}>Public visibility enabled</span>
+                <span className={sponsor.is_logo_public ? 'text-gray-700' : 'text-brand-gray-medium'}>Public visibility enabled</span>
               </li>
               <li className="flex items-center gap-2 text-xs">
                 <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${deal.status === 'paid' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
                   {deal.status === 'paid' ? '✓' : '○'}
                 </span>
-                <span className={deal.status === 'paid' ? 'text-gray-700' : 'text-gray-500'}>
+                <span className={deal.status === 'paid' ? 'text-gray-700' : 'text-brand-gray-medium'}>
                   Deal status is &quot;Paid&quot; {deal.status !== 'paid' && <span className="text-gray-400">(currently: {deal.status.replace(/_/g, ' ')})</span>}
                 </span>
               </li>
@@ -270,7 +270,7 @@ function EditForm({ form, onChange }: { form: EditFormData; onChange: (field: ke
       </FormSection>
 
       <div className="space-y-4">
-        <h4 className="text-xs font-medium text-gray-500 uppercase">Internal Notes</h4>
+        <h4 className="text-xs font-medium text-brand-gray-medium uppercase">Internal Notes</h4>
         <textarea value={form.internalNotes} onChange={(e) => onChange('internalNotes', e.target.value)} rows={3} className={`${inputClass} resize-none`} placeholder="Add any internal notes (not visible on invoices)" />
       </div>
     </div>
@@ -280,7 +280,7 @@ function EditForm({ form, onChange }: { form: EditFormData; onChange: (field: ke
 function FormSection({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2"><Icon className="h-3.5 w-3.5" />{title}</h4>
+      <h4 className="text-xs font-medium text-brand-gray-medium uppercase flex items-center gap-2"><Icon className="h-3.5 w-3.5" />{title}</h4>
       {children}
     </div>
   );
@@ -290,13 +290,13 @@ function ReadOnlyView({ sponsor }: { sponsor: SponsorshipDealWithRelations['spon
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-4">
-        <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2"><Building2 className="h-3.5 w-3.5" />Company</h4>
+        <h4 className="text-xs font-medium text-brand-gray-medium uppercase flex items-center gap-2"><Building2 className="h-3.5 w-3.5" />Company</h4>
         <div className="bg-gray-50 rounded-lg p-4 space-y-2">
           <p className="text-sm font-medium">{sponsor.company_name}</p>
           {sponsor.company_website && <a href={sponsor.company_website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1"><Globe className="h-3.5 w-3.5" />{sponsor.company_website}</a>}
           {sponsor.vat_id && <p className="text-sm text-gray-600">VAT: {sponsor.vat_id}</p>}
         </div>
-        <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2 pt-2"><User className="h-3.5 w-3.5" />Contact</h4>
+        <h4 className="text-xs font-medium text-brand-gray-medium uppercase flex items-center gap-2 pt-2"><User className="h-3.5 w-3.5" />Contact</h4>
         <div className="bg-gray-50 rounded-lg p-4 space-y-2">
           <p className="text-sm font-medium">{sponsor.contact_name}</p>
           <p className="text-sm text-gray-600">{sponsor.contact_email}</p>
@@ -305,7 +305,7 @@ function ReadOnlyView({ sponsor }: { sponsor: SponsorshipDealWithRelations['spon
       </div>
 
       <div className="space-y-4">
-        <h4 className="text-xs font-medium text-gray-500 uppercase flex items-center gap-2"><MapPin className="h-3.5 w-3.5" />Billing Address</h4>
+        <h4 className="text-xs font-medium text-brand-gray-medium uppercase flex items-center gap-2"><MapPin className="h-3.5 w-3.5" />Billing Address</h4>
         <div className="bg-gray-50 rounded-lg p-4 space-y-1">
           <p className="text-sm">{sponsor.billing_address_street}</p>
           <p className="text-sm">{sponsor.billing_address_postal_code} {sponsor.billing_address_city}</p>
@@ -313,7 +313,7 @@ function ReadOnlyView({ sponsor }: { sponsor: SponsorshipDealWithRelations['spon
         </div>
         {sponsor.internal_notes && (
           <>
-            <h4 className="text-xs font-medium text-gray-500 uppercase pt-2">Internal Notes</h4>
+            <h4 className="text-xs font-medium text-brand-gray-medium uppercase pt-2">Internal Notes</h4>
             <div className="bg-gray-50 rounded-lg p-4"><p className="text-sm text-gray-600 whitespace-pre-wrap">{sponsor.internal_notes}</p></div>
           </>
         )}

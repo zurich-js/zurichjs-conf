@@ -8,11 +8,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { BarChart3, FileText, Plane, Users, LogOut, Menu, X, Handshake, Building2, type LucideIcon } from 'lucide-react';
 import {Button} from '@/components/atoms';
+import {useAdminAuth} from "@/hooks/useAdminAuth";
 
 interface AdminHeaderProps {
   title: string;
   subtitle?: string;
-  onLogout: () => void;
 }
 
 interface NavLink {
@@ -21,10 +21,11 @@ interface NavLink {
   icon: LucideIcon;
 }
 
-export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderProps) {
+export default function AdminHeader({ title }: AdminHeaderProps) {
   const router = useRouter();
   const currentPath = router.pathname;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { logout: onLogout } = useAdminAuth();
 
   const navLinks: NavLink[] = [
     { href: '/admin', label: 'Dashboard', icon: BarChart3 },
@@ -45,18 +46,13 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <div className="container 2xl:max-w-7xl mx-auto p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-brand-primary flex items-center justify-center shadow-sm">
               <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-black">{title}</h1>
-              {subtitle && (
-                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">{subtitle}</p>
-              )}
-            </div>
+            <h1 className="text-lg font-bold text-black">{title}</h1>
           </div>
 
           {/* Mobile burger menu button */}
@@ -118,7 +114,7 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
                     className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                       isActive
                         ? 'bg-brand-primary text-black'
-                        : 'text-black bg-gray-50 hover:bg-gray-100'
+                        : 'text-black bg-gray-50 hover:bg-text-brand-gray-lightest'
                     } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary`}
                   >
                     <Icon className="w-5 h-5 mr-3" />
@@ -131,7 +127,7 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
                   closeMobileMenu();
                   onLogout();
                 }}
-                className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-black bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all cursor-pointer"
+                className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-black bg-gray-50 hover:bg-text-brand-gray-lightest focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-all cursor-pointer"
               >
                 <LogOut className="w-5 h-5 mr-3" />
                 <span>Logout</span>

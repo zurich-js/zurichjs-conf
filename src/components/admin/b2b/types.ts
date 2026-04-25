@@ -5,7 +5,7 @@
 import type { B2BInvoiceStatus } from '@/lib/types/b2b';
 
 export const statusColors: Record<B2BInvoiceStatus, string> = {
-  draft: 'bg-gray-200 text-gray-900',
+  draft: 'bg-gray-200 text-black',
   sent: 'bg-blue-200 text-blue-900',
   paid: 'bg-green-200 text-green-900',
   cancelled: 'bg-red-200 text-red-900',

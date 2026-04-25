@@ -115,7 +115,7 @@ function MultiSelectFilterPopover({
             {selected.length}
           </span>
         )}
-        <ChevronDown className="w-4 h-4 text-gray-500" />
+        <ChevronDown className="w-4 h-4 text-brand-gray-medium" />
       </PopoverButton>
       <PopoverPanel
         anchor="bottom end"
@@ -129,7 +129,7 @@ function MultiSelectFilterPopover({
                 key={option}
                 type="button"
                 onClick={() => toggleValue(option)}
-                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-black hover:bg-gray-100 cursor-pointer capitalize"
+                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-black hover:bg-text-brand-gray-lightest cursor-pointer capitalize"
               >
                 <span>{formatOption(option)}</span>
                 {checked ? <Check className="w-4 h-4 text-black" /> : <span className="w-4 h-4" />}
@@ -189,7 +189,7 @@ export function SubmissionsTab({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col">
             <div className="flex items-center gap-2 text-sm text-gray-700">
-              <Filter className="w-4 h-4 text-gray-500" />
+              <Filter className="w-4 h-4 text-brand-gray-medium" />
               <span>
                 Showing <span className="font-semibold text-black">{total}</span>
                 {total !== totalUnfiltered && (
@@ -272,7 +272,7 @@ export function SubmissionsTab({
                     1
                   </span>
                 )}
-                <ChevronDown className="w-4 h-4 text-gray-500" />
+                <ChevronDown className="w-4 h-4 text-brand-gray-medium" />
               </PopoverButton>
               <PopoverPanel
                 anchor="bottom end"
@@ -290,7 +290,7 @@ export function SubmissionsTab({
                       placeholder="Min"
                       className="w-20 px-2 py-1.5 rounded-md border border-gray-300 text-sm text-black focus:ring-2 focus:ring-brand-primary focus:outline-none"
                     />
-                    <span className="text-gray-500 text-sm">to</span>
+                    <span className="text-brand-gray-medium text-sm">to</span>
                     <input
                       type="number"
                       min={0}
@@ -412,7 +412,7 @@ function MobileSubmissionsList({
   return (
     <div className="lg:hidden space-y-3">
       {submissions.length > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg">
+        <div className="flex items-center gap-2 p-3 bg-text-brand-gray-lightest rounded-lg">
           <input
             type="checkbox"
             checked={selectedIds.size === submissions.length && submissions.length > 0}
@@ -456,17 +456,17 @@ function MobileSubmissionsList({
                   <p className="text-sm font-medium text-black truncate">
                     {s.speaker?.first_name} {s.speaker?.last_name}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{s.speaker?.email}</p>
+                  <p className="text-xs text-brand-gray-medium truncate">{s.speaker?.email}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <p className="text-xs text-gray-500 line-clamp-2 mb-3 ml-7">{s.abstract}</p>
+          <p className="text-xs text-brand-gray-medium line-clamp-2 mb-3 ml-7">{s.abstract}</p>
 
-          <div className="flex flex-col gap-3 ml-7 pt-3 border-t border-gray-100">
+          <div className="flex flex-col gap-3 ml-7 pt-3 border-t border-text-brand-gray-lightest">
             <div className="flex items-center gap-2 text-xs flex-wrap">
-              <span className="px-2 py-1 bg-gray-100 rounded-full capitalize font-medium text-black">{s.submission_type}</span>
+              <span className="px-2 py-1 bg-text-brand-gray-lightest rounded-full capitalize font-medium text-black">{s.submission_type}</span>
               <span className="text-gray-400">•</span>
               <span className="text-gray-600">{s.stats?.review_count || 0} reviews</span>
               <span className="text-gray-400">•</span>
@@ -475,7 +475,7 @@ function MobileSubmissionsList({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Coverage:</span>
+              <span className="text-xs text-brand-gray-medium">Coverage:</span>
               <div className="flex-1 max-w-[120px]">
                 <CoverageBar
                   percent={s.stats?.coverage_percent || 0}
@@ -499,7 +499,7 @@ function MobileSubmissionsList({
         </div>
       ))}
       {submissions.length === 0 && (
-        <div className="text-center py-12 text-gray-500">No submissions found</div>
+        <div className="text-center py-12 text-brand-gray-medium">No submissions found</div>
       )}
     </div>
   );
@@ -614,7 +614,7 @@ function DesktopSubmissionsTable({
               </td>
               <td className="px-2 py-3">
                 <div className="font-medium text-black truncate max-w-xs" title={s.title}>{s.title}</div>
-                <div className="text-xs text-gray-500 truncate max-w-xs" title={s.abstract}>{s.abstract}</div>
+                <div className="text-xs text-brand-gray-medium truncate max-w-xs" title={s.abstract}>{s.abstract}</div>
               </td>
               <td className="px-2 py-3">
                 <div className="flex items-center gap-2 min-w-0">
@@ -623,14 +623,14 @@ function DesktopSubmissionsTable({
                     <div className="text-sm font-medium text-black truncate" title={`${s.speaker?.first_name || ''} ${s.speaker?.last_name || ''}`}>
                       {s.speaker?.first_name} {s.speaker?.last_name}
                     </div>
-                    <div className="text-xs text-gray-500 truncate" title={s.speaker?.email}>
+                    <div className="text-xs text-brand-gray-medium truncate" title={s.speaker?.email}>
                       {s.speaker?.email}
                     </div>
                   </div>
                 </div>
               </td>
               <td className="px-2 py-3">
-                <span className="inline-flex px-2 py-0.5 bg-gray-100 rounded-full text-xs text-black capitalize font-medium whitespace-nowrap">
+                <span className="inline-flex px-2 py-0.5 bg-text-brand-gray-lightest rounded-full text-xs text-black capitalize font-medium whitespace-nowrap">
                   {s.submission_type}
                 </span>
               </td>
@@ -678,7 +678,7 @@ function DesktopSubmissionsTable({
           ))}
           {submissions.length === 0 && (
             <tr>
-              <td colSpan={10} className="px-4 py-12 text-center text-gray-500">
+              <td colSpan={10} className="px-4 py-12 text-center text-brand-gray-medium">
                 No submissions found
               </td>
             </tr>

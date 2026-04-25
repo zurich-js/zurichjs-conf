@@ -114,7 +114,7 @@ export function Modal({
                     className={`p-2 rounded-lg transition-colors cursor-pointer shrink-0 ml-4 ${
                       isDark
                         ? 'text-brand-gray-light hover:text-white hover:bg-brand-gray-medium'
-                        : 'text-gray-500 hover:text-black hover:bg-gray-100'
+                        : 'text-brand-gray-medium hover:text-black hover:bg-text-brand-gray-lightest'
                     }`}
                     aria-label="Close modal"
                   >

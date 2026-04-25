@@ -22,7 +22,7 @@ export function ConfirmModal({
   onCancel,
 }: ConfirmModalProps) {
   const iconColor = confirmColor === 'red' ? 'text-red-700' : 'text-gray-700';
-  const iconBg = confirmColor === 'red' ? 'bg-red-100' : 'bg-gray-100';
+  const iconBg = confirmColor === 'red' ? 'bg-red-100' : 'bg-text-brand-gray-lightest';
   const buttonBg = confirmColor === 'red' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700';
 
   return (

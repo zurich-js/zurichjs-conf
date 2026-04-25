@@ -61,7 +61,7 @@ export function TravelSection({
               className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 travelRegion === region
                   ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-text-brand-gray-lightest text-gray-700 hover:bg-gray-200'
               }`}
               aria-pressed={travelRegion === region}
             >
@@ -72,7 +72,7 @@ export function TravelSection({
 
         {/* Travel cost step */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">
+          <label className="block text-xs font-medium text-brand-gray-medium mb-2">
             Estimated round-trip cost
           </label>
           <div className="flex gap-1.5 sm:gap-2">
@@ -106,7 +106,7 @@ export function TravelSection({
 
         {/* Airport input */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+          <label className="block text-xs font-medium text-brand-gray-medium mb-1.5">
             Your departure airport (optional)
           </label>
           <AirportInput

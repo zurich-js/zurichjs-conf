@@ -285,7 +285,7 @@ export function SpeakersTab({
                       {s.first_name || s.last_name ? `${s.first_name} ${s.last_name}` : 'No name'}
                     </div>
                     {s.job_title && (
-                      <div className="text-xs text-gray-500">{s.job_title}</div>
+                      <div className="text-xs text-brand-gray-medium">{s.job_title}</div>
                     )}
                     <div className="text-xs text-gray-600 truncate mt-0.5">{s.email}</div>
                   </div>
@@ -339,7 +339,7 @@ export function SpeakersTab({
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs text-gray-500 min-w-0 truncate">
+                  <div className="text-xs text-brand-gray-medium min-w-0 truncate">
                     {s.company && <span className="mr-2">{s.company}</span>}
                     <span>Joined {new Date(s.created_at).toLocaleDateString()}</span>
                   </div>
@@ -353,7 +353,7 @@ export function SpeakersTab({
               </div>
             ))}
             {paginatedSpeakers.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-brand-gray-medium">
                 {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
               </div>
             )}
@@ -398,7 +398,7 @@ export function SpeakersTab({
                             {s.first_name || s.last_name ? `${s.first_name} ${s.last_name}` : 'No name'}
                           </div>
                           {s.job_title && (
-                            <div className="text-xs text-gray-500 truncate">{s.job_title}</div>
+                            <div className="text-xs text-brand-gray-medium truncate">{s.job_title}</div>
                           )}
                         </div>
                       </div>

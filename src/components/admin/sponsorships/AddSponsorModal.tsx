@@ -99,12 +99,12 @@ export function AddSponsorModal({
       <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Add New Sponsor</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-black">Add New Sponsor</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-5 w-5 text-brand-gray-medium" />
           </button>
         </div>
 
@@ -355,7 +355,7 @@ export function AddSponsorModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 hover:bg-text-brand-gray-lightest rounded-lg transition-colors"
             >
               Cancel
             </button>

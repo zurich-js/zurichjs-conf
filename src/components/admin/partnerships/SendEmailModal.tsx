@@ -168,7 +168,7 @@ export function SendEmailModal({
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t flex-shrink-0">
               <button
                 onClick={onClose}
-                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-black bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-black bg-text-brand-gray-lightest rounded-lg hover:bg-gray-200 cursor-pointer"
               >
                 Cancel
               </button>

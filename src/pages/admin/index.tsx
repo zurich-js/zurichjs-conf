@@ -5,7 +5,6 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, Building2 } from 'lucide-react';
 import { B2BOrdersTab } from '@/components/admin/B2BOrdersTab';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
@@ -15,15 +14,15 @@ import { TicketsTab, IssueTicketTab, FinancialsTab, type Tab } from '@/component
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const TABS: AdminTab<Tab>[] = [
-  { id: 'tickets', label: 'Tickets', icon: Ticket },
-  { id: 'issue', label: 'Issue', icon: PlusCircle },
-  { id: 'financials', label: 'Financials', icon: DollarSign },
-  { id: 'b2b', label: 'B2B Orders', icon: Building2 },
+  { id: 'tickets', label: 'Tickets' },
+  { id: 'issue', label: 'Issue' },
+  { id: 'financials', label: 'Financials' },
+  { id: 'b2b', label: 'B2B Orders' },
 ];
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('tickets');
-  const { isAuthenticated, isLoading, logout } = useAdminAuth();
+  const { isAuthenticated, isLoading } = useAdminAuth();
 
   if (isLoading) return <AdminLoadingScreen />;
   if (!isAuthenticated) return <AdminLoginForm />;
@@ -31,8 +30,8 @@ export default function AdminDashboard() {
   return (
     <>
       <Head><title>Admin Dashboard - ZurichJS Conference</title></Head>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <AdminHeader title="Admin Dashboard" subtitle="ZurichJS Conference 2026" onLogout={logout} />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest">
+        <AdminHeader title="Admin Dashboard" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
           <AdminTabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
           <div className="pb-12">

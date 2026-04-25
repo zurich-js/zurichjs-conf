@@ -61,7 +61,7 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
         {/* Countries */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <MapPin className="w-4 h-4 text-gray-500" />
+            <MapPin className="w-4 h-4 text-brand-gray-medium" />
             <h4 className="text-sm font-semibold text-black">Top Countries</h4>
           </div>
           {topCountries.length === 0 ? (
@@ -74,7 +74,7 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
                   <div key={country} className="flex items-center gap-3">
                     <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
                     <span className="text-sm text-black flex-1 truncate">{country}</span>
-                    <div className="hidden sm:block w-16 sm:w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="hidden sm:block w-16 sm:w-24 bg-text-brand-gray-lightest rounded-full h-2 overflow-hidden">
                       <div
                         className="h-full bg-blue-300 rounded-full"
                         style={{ width: `${(count / maxCount) * 100}%` }}
@@ -91,7 +91,7 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
         {/* Companies */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Building2 className="w-4 h-4 text-gray-500" />
+            <Building2 className="w-4 h-4 text-brand-gray-medium" />
             <h4 className="text-sm font-semibold text-black">Top Companies</h4>
           </div>
           {topCompanies.length === 0 ? (
@@ -104,7 +104,7 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
                   <div key={company} className="flex items-center gap-3">
                     <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
                     <span className="text-sm text-black flex-1 truncate">{company}</span>
-                    <div className="hidden sm:block w-16 sm:w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="hidden sm:block w-16 sm:w-24 bg-text-brand-gray-lightest rounded-full h-2 overflow-hidden">
                       <div
                         className="h-full bg-purple-300 rounded-full"
                         style={{ width: `${(count / maxCount) * 100}%` }}
@@ -120,12 +120,12 @@ export function DemographicsSection({ demographics }: DemographicsSectionProps) 
       </div>
 
       {/* Profile completeness bar */}
-      <div className="mt-6 pt-4 border-t border-gray-100">
+      <div className="mt-6 pt-4 border-t border-text-brand-gray-lightest">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
           <span className="text-sm text-gray-600">Profile Completeness</span>
           <span className="text-sm font-medium text-black">{profileComplete} complete / {profileIncomplete} incomplete</span>
         </div>
-        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-3 bg-text-brand-gray-lightest rounded-full overflow-hidden">
           <div
             className="h-full bg-green-400 rounded-full transition-all"
             style={{ width: `${completionPct}%` }}
@@ -153,7 +153,7 @@ function MetricCard({
     <div className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex items-center gap-2 mb-1">
         {icon}
-        <span className="text-xs text-gray-500">{label}</span>
+        <span className="text-xs text-brand-gray-medium">{label}</span>
       </div>
       <div className={`text-xl sm:text-2xl font-bold ${valueColor} break-words`}>{value}</div>
       {subtitle && <div className="text-xs text-gray-400 mt-0.5">{subtitle}</div>}

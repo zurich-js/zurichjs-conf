@@ -21,7 +21,7 @@ function MetricBar({ label, count, total }: { label: string; count: number; tota
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       <span className="text-xs sm:text-sm text-gray-600 w-24 sm:w-40 shrink-0">{label}</span>
-      <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-5 overflow-hidden">
+      <div className="flex-1 min-w-0 bg-text-brand-gray-lightest rounded-full h-5 overflow-hidden">
         <div
           className="h-full bg-yellow-300 rounded-full transition-all"
           style={{ width: `${percentage}%` }}
@@ -62,7 +62,7 @@ export function ContentInsightsSection({ contentInsights }: ContentInsightsSecti
 
           <div className="mb-4 flex flex-wrap items-baseline gap-2 sm:gap-3">
             <span className="text-3xl font-bold text-black">{pct(aiTopicCount, totalAnalyzed)}</span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-brand-gray-medium">
               {aiTopicCount} of {totalAnalyzed} submissions mention AI topics
             </span>
           </div>
@@ -82,7 +82,7 @@ export function ContentInsightsSection({ contentInsights }: ContentInsightsSecti
           )}
 
           {aiKeywords.length === 0 && (
-            <p className="text-sm text-gray-500">No AI-related keywords detected in submissions.</p>
+            <p className="text-sm text-brand-gray-medium">No AI-related keywords detected in submissions.</p>
           )}
         </div>
 

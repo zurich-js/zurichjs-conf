@@ -337,7 +337,7 @@ export function LineItemsEditor({
             type="button"
             onClick={cancelEditing}
             disabled={isSubmitting}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-text-brand-gray-lightest rounded transition-colors"
           >
             Cancel
           </button>
@@ -385,7 +385,7 @@ export function LineItemsEditor({
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {item.quantity > 1 && (
-                        <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                        <span className="text-xs text-brand-gray-medium">Qty: {item.quantity}</span>
                       )}
                       {item.type === 'addon' && item.uses_credit && (
                         <span className="text-xs text-green-600">(credit eligible)</span>

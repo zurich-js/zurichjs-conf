@@ -38,7 +38,7 @@ export const DEAL_STATUS_CONFIG: Record<
   SponsorshipDealStatus,
   { label: string; color: string; bgColor: string }
 > = {
-  draft: { label: 'Draft', color: 'text-gray-700', bgColor: 'bg-gray-100' },
+  draft: { label: 'Draft', color: 'text-gray-700', bgColor: 'bg-text-brand-gray-lightest' },
   offer_sent: { label: 'Offer Sent', color: 'text-blue-700', bgColor: 'bg-blue-100' },
   invoiced: { label: 'Invoiced', color: 'text-purple-700', bgColor: 'bg-purple-100' },
   invoice_sent: { label: 'Invoice Sent', color: 'text-orange-700', bgColor: 'bg-orange-100' },
@@ -53,8 +53,8 @@ export const PERK_STATUS_CONFIG: Record<
   SponsorshipPerkStatus,
   { label: string; color: string; bgColor: string }
 > = {
-  pending: { label: 'Pending', color: 'text-gray-700', bgColor: 'bg-gray-100' },
+  pending: { label: 'Pending', color: 'text-gray-700', bgColor: 'bg-text-brand-gray-lightest' },
   in_progress: { label: 'In Progress', color: 'text-blue-700', bgColor: 'bg-blue-100' },
   completed: { label: 'Completed', color: 'text-green-700', bgColor: 'bg-green-100' },
-  not_applicable: { label: 'N/A', color: 'text-gray-500', bgColor: 'bg-gray-50' },
+  not_applicable: { label: 'N/A', color: 'text-brand-gray-medium', bgColor: 'bg-gray-50' },
 };

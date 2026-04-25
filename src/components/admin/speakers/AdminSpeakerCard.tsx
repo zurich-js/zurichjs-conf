@@ -61,7 +61,7 @@ function ToggleButton({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[11px] font-medium text-gray-500">{label}</span>
+      <span className="text-[11px] font-medium text-brand-gray-medium">{label}</span>
       <button
         type="button"
         onClick={onClick}
@@ -118,7 +118,7 @@ export function AdminSpeakerCard({
                 {speaker.first_name} {speaker.last_name}
               </h3>
               {speaker.job_title && (
-                <p className="text-sm text-gray-500 truncate">{speaker.job_title}</p>
+                <p className="text-sm text-brand-gray-medium truncate">{speaker.job_title}</p>
               )}
               {speaker.company && (
                 <p className="text-sm text-gray-400 truncate">{speaker.company}</p>
@@ -165,7 +165,7 @@ export function AdminSpeakerCard({
       {/* Sessions */}
       <div className="p-4 border-t-2 border-brand-gray-lightest">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase">Sessions</h4>
+          <h4 className="text-xs font-semibold text-brand-gray-medium uppercase">Sessions</h4>
           <button
             onClick={() => onAddSession(speaker.id)}
             className="text-xs text-green-600 hover:text-green-700 font-medium cursor-pointer flex items-center gap-1"

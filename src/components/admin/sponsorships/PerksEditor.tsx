@@ -233,7 +233,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
           type="button"
           onClick={cancelEditing}
           disabled={isSubmitting}
-          className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+          className="px-3 py-1.5 text-sm text-gray-600 hover:bg-text-brand-gray-lightest rounded transition-colors"
         >
           Cancel
         </button>
@@ -293,7 +293,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                       {perk.name}
                     </p>
                     {perk.description && (
-                      <p className="text-xs text-gray-500 mt-0.5">{perk.description}</p>
+                      <p className="text-xs text-brand-gray-medium mt-0.5">{perk.description}</p>
                     )}
 
                     {/* Mobile: Actions row */}
@@ -305,7 +305,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                         }
                         disabled={isSubmitting}
                         className={`text-xs px-2 py-1 rounded border-0 ${
-                          PERK_STATUS_CONFIG[perk.status as SponsorshipPerkStatus]?.bgColor || 'bg-gray-100'
+                          PERK_STATUS_CONFIG[perk.status as SponsorshipPerkStatus]?.bgColor || 'bg-text-brand-gray-lightest'
                         } ${
                           PERK_STATUS_CONFIG[perk.status as SponsorshipPerkStatus]?.color || 'text-gray-700'
                         } ${isSubmitting ? 'opacity-50' : ''}`}
@@ -342,7 +342,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                       }
                       disabled={isSubmitting}
                       className={`text-xs px-2 py-1 rounded border-0 ${
-                        PERK_STATUS_CONFIG[perk.status as SponsorshipPerkStatus]?.bgColor || 'bg-gray-100'
+                        PERK_STATUS_CONFIG[perk.status as SponsorshipPerkStatus]?.bgColor || 'bg-text-brand-gray-lightest'
                       } ${
                         PERK_STATUS_CONFIG[perk.status as SponsorshipPerkStatus]?.color || 'text-gray-700'
                       } ${isSubmitting ? 'opacity-50' : ''}`}
@@ -377,7 +377,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
         {perks.length === 0 && !isAdding && (
           <div className="bg-gray-50 rounded-lg p-8 text-center">
             <CheckCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500">No perks added yet</p>
+            <p className="text-brand-gray-medium">No perks added yet</p>
             <p className="text-xs text-gray-400 mt-1">
               Add perks to track deliverables for this sponsorship
             </p>

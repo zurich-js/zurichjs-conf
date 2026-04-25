@@ -105,13 +105,13 @@ function TicketButton({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {icon}
-            <span className="text-sm font-medium text-gray-900">{label}</span>
+            <span className="text-sm font-medium text-black">{label}</span>
           </div>
           {sublabel && <span className="block text-xs text-gray-400 mt-0.5 pl-6">{sublabel}</span>}
         </div>
         {price !== undefined && (
           <div className="text-right shrink-0">
-            <span className="text-sm font-bold text-gray-900">
+            <span className="text-sm font-bold text-black">
               {isLoading ? '...' : price}
             </span>
             {comparePrice && !isLoading && (
@@ -187,7 +187,7 @@ export function TicketSection({
         >
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-brand-green" />
-            <span className="text-sm font-medium text-gray-900">I already have a ticket</span>
+            <span className="text-sm font-medium text-black">I already have a ticket</span>
           </div>
         </button>
       </div>

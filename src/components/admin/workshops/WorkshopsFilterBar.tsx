@@ -55,7 +55,7 @@ export function WorkshopsFilterBar({
               {filter.label}
               <span
                 className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                  active ? 'bg-white/20' : 'bg-gray-100 text-gray-500'
+                  active ? 'bg-white/20' : 'bg-text-brand-gray-lightest text-brand-gray-medium'
                 }`}
               >
                 {count}

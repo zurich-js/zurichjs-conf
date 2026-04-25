@@ -13,7 +13,7 @@ export function B2BSummaryCards({ stats }: B2BSummaryCardsProps) {
     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
         <p className="text-sm text-gray-700">Total Invoices</p>
-        <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        <p className="text-2xl font-bold text-black">{stats.total}</p>
       </div>
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
         <p className="text-sm text-gray-700">Draft</p>
@@ -29,7 +29,7 @@ export function B2BSummaryCards({ stats }: B2BSummaryCardsProps) {
       </div>
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
         <p className="text-sm text-gray-700">Total Revenue</p>
-        <p className="text-2xl font-bold text-gray-900">{formatAmount(stats.totalValue)}</p>
+        <p className="text-2xl font-bold text-black">{formatAmount(stats.totalValue)}</p>
       </div>
     </div>
   );

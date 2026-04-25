@@ -242,7 +242,7 @@ function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, fil
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input type="text" placeholder="Search by name, email, ID, status..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent" />
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-black placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent" />
           {searchQuery && (
             <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -275,26 +275,26 @@ function SortIcon({ field, sortField, sortDirection }: { field: SortField; sortF
 }
 
 function DesktopTable({ tickets, sortField, sortDirection, onSort, onViewTicket }: { tickets: Ticket[]; sortField: SortField; sortDirection: SortDirection; onSort: (f: SortField) => void; onViewTicket: (t: Ticket) => void }) {
-  const statusClass = (s: string) => s === 'confirmed' ? 'bg-green-100 text-green-800' : s === 'refunded' ? 'bg-red-100 text-red-800' : s === 'cancelled' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800';
+  const statusClass = (s: string) => s === 'confirmed' ? 'bg-green-100 text-green-800' : s === 'refunded' ? 'bg-red-100 text-red-800' : s === 'cancelled' ? 'bg-text-brand-gray-lightest text-gray-800' : 'bg-yellow-100 text-yellow-800';
   return (
     <div className="hidden md:block overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
             <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">ID</th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => onSort('first_name')}>
+            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('first_name')}>
               <div className="flex items-center gap-1">Name<SortIcon field="first_name" sortField={sortField} sortDirection={sortDirection} /></div>
             </th>
-            <th className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => onSort('email')}>
+            <th className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('email')}>
               <div className="flex items-center gap-1">Email<SortIcon field="email" sortField={sortField} sortDirection={sortDirection} /></div>
             </th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => onSort('ticket_category')}>
+            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('ticket_category')}>
               <div className="flex items-center gap-1">Type<SortIcon field="ticket_category" sortField={sortField} sortDirection={sortDirection} /></div>
             </th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => onSort('amount_paid')}>
+            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('amount_paid')}>
               <div className="flex items-center gap-1">Amount<SortIcon field="amount_paid" sortField={sortField} sortDirection={sortDirection} /></div>
             </th>
-            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => onSort('status')}>
+            <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-text-brand-gray-lightest" onClick={() => onSort('status')}>
               <div className="flex items-center gap-1">Status<SortIcon field="status" sortField={sortField} sortDirection={sortDirection} /></div>
             </th>
             <th className="px-4 lg:px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider whitespace-nowrap">Actions</th>
@@ -307,7 +307,7 @@ function DesktopTable({ tickets, sortField, sortDirection, onSort, onViewTicket 
               <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-black font-medium">{t.first_name} {t.last_name}</td>
               <td className="hidden lg:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-700">{t.email}</td>
               <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                <div className="flex flex-col space-y-1"><span className="font-medium text-black capitalize">{t.ticket_category}</span><span className="text-xs text-gray-500 capitalize">{t.ticket_stage.replace('_', ' ')}</span></div>
+                <div className="flex flex-col space-y-1"><span className="font-medium text-black capitalize">{t.ticket_category}</span><span className="text-xs text-brand-gray-medium capitalize">{t.ticket_stage.replace('_', ' ')}</span></div>
               </td>
               <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-black font-semibold">{(t.amount_paid / 100).toFixed(2)} {t.currency}</td>
               <td className="px-4 lg:px-6 py-4 whitespace-nowrap"><span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${statusClass(t.status)}`}>{t.status}</span></td>
@@ -325,7 +325,7 @@ function DesktopTable({ tickets, sortField, sortDirection, onSort, onViewTicket 
 }
 
 function MobileCards({ tickets, onViewTicket }: { tickets: Ticket[]; onViewTicket: (t: Ticket) => void }) {
-  const statusClass = (s: string) => s === 'confirmed' ? 'bg-green-100 text-green-800' : s === 'refunded' ? 'bg-red-100 text-red-800' : s === 'cancelled' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800';
+  const statusClass = (s: string) => s === 'confirmed' ? 'bg-green-100 text-green-800' : s === 'refunded' ? 'bg-red-100 text-red-800' : s === 'cancelled' ? 'bg-text-brand-gray-lightest text-gray-800' : 'bg-yellow-100 text-yellow-800';
   return (
     <div className="md:hidden space-y-4 p-4">
       {tickets.map((t) => (
@@ -338,10 +338,10 @@ function MobileCards({ tickets, onViewTicket }: { tickets: Ticket[]; onViewTicke
           </div>
           <div className="px-4 py-3 space-y-2.5">
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Ticket ID</p><p className="text-black font-mono text-xs">{t.id.substring(0, 12)}...</p></div>
-              <div><p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Amount</p><p className="text-black font-bold">{(t.amount_paid / 100).toFixed(2)} {t.currency}</p></div>
+              <div><p className="text-xs text-brand-gray-medium uppercase tracking-wide font-semibold mb-0.5">Ticket ID</p><p className="text-black font-mono text-xs">{t.id.substring(0, 12)}...</p></div>
+              <div><p className="text-xs text-brand-gray-medium uppercase tracking-wide font-semibold mb-0.5">Amount</p><p className="text-black font-bold">{(t.amount_paid / 100).toFixed(2)} {t.currency}</p></div>
             </div>
-            <div><p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Ticket Type</p><div className="flex items-center gap-2"><span className="text-sm font-medium text-black capitalize">{t.ticket_category}</span><span className="text-xs text-gray-500">•</span><span className="text-xs text-gray-600 capitalize">{t.ticket_stage.replace('_', ' ')}</span></div></div>
+            <div><p className="text-xs text-brand-gray-medium uppercase tracking-wide font-semibold mb-0.5">Ticket Type</p><div className="flex items-center gap-2"><span className="text-sm font-medium text-black capitalize">{t.ticket_category}</span><span className="text-xs text-brand-gray-medium">•</span><span className="text-xs text-gray-600 capitalize">{t.ticket_stage.replace('_', ' ')}</span></div></div>
           </div>
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
             <button onClick={() => onViewTicket(t)} className="w-full flex items-center justify-center px-3 py-2.5 border border-brand-primary rounded-lg text-sm font-medium text-black bg-brand-primary active:bg-[#e8d95e] transition-colors">

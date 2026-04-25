@@ -33,7 +33,7 @@ export function Section({
       >
         <span className="min-w-0">
           <span className="block text-sm font-semibold uppercase tracking-wide text-gray-800">{title}</span>
-          {description && <span className="mt-0.5 block text-xs text-gray-500">{description}</span>}
+          {description && <span className="mt-0.5 block text-xs text-brand-gray-medium">{description}</span>}
         </span>
         {collapsible && (
           <span
@@ -44,7 +44,7 @@ export function Section({
           </span>
         )}
       </button>
-      {(!collapsible || !collapsed) && <div className="border-t border-gray-100 px-4 py-4">{children}</div>}
+      {(!collapsible || !collapsed) && <div className="border-t border-text-brand-gray-lightest px-4 py-4">{children}</div>}
     </section>
   );
 }
@@ -71,7 +71,7 @@ export function LabeledField({
       {hint && (
         <span
           className={`mt-1 block text-[11px] ${
-            hintTone === 'error' ? 'text-red-600' : 'text-gray-500'
+            hintTone === 'error' ? 'text-red-600' : 'text-brand-gray-medium'
           }`}
         >
           {hint}

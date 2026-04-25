@@ -71,7 +71,7 @@ export function B2BInvoiceList({
           >
             <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="font-medium text-gray-900">{invoice.invoice_number}</p>
+                <p className="font-medium text-black">{invoice.invoice_number}</p>
                 <p className="text-sm text-gray-700">{invoice.company_name}</p>
               </div>
               <span
@@ -80,7 +80,7 @@ export function B2BInvoiceList({
                 {invoice.status}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-sm mb-3 text-gray-900">
+            <div className="grid grid-cols-2 gap-2 text-sm mb-3 text-black">
               <div>
                 <span className="font-medium">Tickets:</span>
                 <span className="ml-1">{invoice.ticket_quantity}x {invoice.ticket_category}</span>
@@ -90,8 +90,8 @@ export function B2BInvoiceList({
                 <span className="ml-1">{formatDate(invoice.due_date)}</span>
               </div>
             </div>
-            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-              <span className="font-bold text-gray-900">
+            <div className="flex justify-between items-center pt-3 border-t border-text-brand-gray-lightest">
+              <span className="font-bold text-black">
                 {formatAmount(invoice.total_amount, invoice.currency)}
               </span>
               <button
@@ -123,17 +123,17 @@ export function B2BInvoiceList({
             <tbody className="divide-y divide-gray-200">
               {paginatedInvoices.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 text-sm font-medium text-black">
                     {invoice.invoice_number}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                  <td className="px-4 py-3 text-sm text-black">
                     <div>{invoice.company_name}</div>
                     <div className="text-gray-700 text-xs">{invoice.contact_email}</div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                  <td className="px-4 py-3 text-sm text-black">
                     {invoice.ticket_quantity}x {invoice.ticket_category}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 text-sm font-medium text-black">
                     {formatAmount(invoice.total_amount, invoice.currency)}
                   </td>
                   <td className="px-4 py-3">
@@ -143,7 +143,7 @@ export function B2BInvoiceList({
                       {invoice.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                  <td className="px-4 py-3 text-sm text-black">
                     {formatDate(invoice.due_date)}
                   </td>
                   <td className="px-4 py-3">

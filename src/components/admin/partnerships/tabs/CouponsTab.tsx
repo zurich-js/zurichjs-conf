@@ -290,7 +290,7 @@ export function CouponsTab({
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setShowForm(false)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-black hover:bg-gray-100 cursor-pointer"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-black hover:bg-text-brand-gray-lightest cursor-pointer"
             >
               Cancel
             </button>
@@ -335,7 +335,7 @@ export function CouponsTab({
                   </button>
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${
-                      coupon.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      coupon.is_active ? 'bg-green-100 text-green-800' : 'bg-text-brand-gray-lightest text-gray-600'
                     }`}
                   >
                     {coupon.is_active ? 'Active' : 'Inactive'}

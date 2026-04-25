@@ -49,8 +49,8 @@ export function SponsorshipsList({ deals, isLoading, onSelectDeal }: Sponsorship
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
         <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No sponsorships found</h3>
-        <p className="text-gray-500">Create your first sponsorship deal to get started.</p>
+        <h3 className="text-lg font-medium text-black mb-2">No sponsorships found</h3>
+        <p className="text-brand-gray-medium">Create your first sponsorship deal to get started.</p>
       </div>
     );
   }
@@ -62,22 +62,22 @@ export function SponsorshipsList({ deals, isLoading, onSelectDeal }: Sponsorship
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-brand-gray-medium uppercase tracking-wider">
                 Sponsor
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-brand-gray-medium uppercase tracking-wider">
                 Deal #
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-brand-gray-medium uppercase tracking-wider">
                 Tier
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-brand-gray-medium uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-brand-gray-medium uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-brand-gray-medium uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -97,33 +97,33 @@ export function SponsorshipsList({ deals, isLoading, onSelectDeal }: Sponsorship
                           src={deal.sponsor.logo_url}
                           alt={deal.sponsor.company_name}
                           fill
-                          className="rounded-lg object-contain bg-gray-100"
+                          className="rounded-lg object-contain bg-text-brand-gray-lightest"
                           unoptimized={deal.sponsor.logo_url.endsWith('.svg') || deal.sponsor.logo_url.endsWith('.gif')}
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-lg bg-text-brand-gray-lightest flex items-center justify-center">
                           <Building2 className="h-5 w-5 text-gray-400" />
                         </div>
                       )}
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-black">
                         {deal.sponsor?.company_name || 'Unknown'}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-brand-gray-medium">
                         {deal.sponsor?.contact_email || ''}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-mono text-gray-900">{deal.deal_number}</span>
+                  <span className="text-sm font-mono text-black">{deal.deal_number}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-900 capitalize">{deal.tier?.name || deal.tier_id}</span>
+                  <span className="text-sm text-black capitalize">{deal.tier?.name || deal.tier_id}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-black">
                     {deal.invoice
                       ? formatAmount(deal.invoice.total_amount, deal.currency)
                       : `${deal.currency}`}
@@ -166,26 +166,26 @@ export function SponsorshipsList({ deals, isLoading, onSelectDeal }: Sponsorship
                       src={deal.sponsor.logo_url}
                       alt={deal.sponsor.company_name}
                       fill
-                      className="rounded-lg object-contain bg-gray-100"
+                      className="rounded-lg object-contain bg-text-brand-gray-lightest"
                     />
                   ) : (
-                    <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-lg bg-text-brand-gray-lightest flex items-center justify-center">
                       <Building2 className="h-5 w-5 text-gray-400" />
                     </div>
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-black">
                     {deal.sponsor?.company_name || 'Unknown'}
                   </p>
-                  <p className="text-xs text-gray-500 font-mono">{deal.deal_number}</p>
+                  <p className="text-xs text-brand-gray-medium font-mono">{deal.deal_number}</p>
                 </div>
               </div>
               <StatusBadge status={deal.status} size="sm" />
             </div>
             <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="text-gray-500 capitalize">{deal.tier?.name || deal.tier_id}</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-brand-gray-medium capitalize">{deal.tier?.name || deal.tier_id}</span>
+              <span className="font-medium text-black">
                 {deal.invoice
                   ? formatAmount(deal.invoice.total_amount, deal.currency)
                   : deal.currency}

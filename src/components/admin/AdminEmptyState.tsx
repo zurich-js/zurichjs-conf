@@ -18,11 +18,11 @@ interface AdminEmptyStateProps {
 export function AdminEmptyState({ icon, title, description, action }: AdminEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4 text-gray-400">
+      <div className="w-14 h-14 rounded-full bg-text-brand-gray-lightest flex items-center justify-center mb-4 text-gray-400">
         {icon}
       </div>
       <h3 className="text-lg font-semibold text-black mb-1">{title}</h3>
-      {description && <p className="text-sm text-gray-500 max-w-sm">{description}</p>}
+      {description && <p className="text-sm text-brand-gray-medium max-w-sm">{description}</p>}
       {action && (
         <button
           onClick={action.onClick}

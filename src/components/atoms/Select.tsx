@@ -82,7 +82,7 @@ export function Select({
             </span>
             <ChevronDown
               className={`w-4 h-4 shrink-0 transition-transform ui-open:rotate-180 ${
-                isDark ? 'text-brand-gray-light' : 'text-gray-500'
+                isDark ? 'text-brand-gray-light' : 'text-brand-gray-medium'
               }`}
             />
           </ListboxButton>
@@ -104,7 +104,7 @@ export function Select({
                 } ${
                   isDark
                     ? 'text-white ui-active:bg-brand-gray-medium ui-selected:bg-brand-primary/20 ui-disabled:text-brand-gray-medium ui-disabled:cursor-not-allowed'
-                    : 'text-black ui-active:bg-gray-100 ui-selected:bg-brand-primary/10 ui-disabled:text-gray-400 ui-disabled:cursor-not-allowed'
+                    : 'text-black ui-active:bg-text-brand-gray-lightest ui-selected:bg-brand-primary/10 ui-disabled:text-gray-400 ui-disabled:cursor-not-allowed'
                 }`}
               >
                 {({ selected }) => (
@@ -115,7 +115,7 @@ export function Select({
                     {option.description && (
                       <span
                         className={`block truncate text-xs mt-0.5 ${
-                          isDark ? 'text-brand-gray-light' : 'text-gray-500'
+                          isDark ? 'text-brand-gray-light' : 'text-brand-gray-medium'
                         }`}
                       >
                         {option.description}

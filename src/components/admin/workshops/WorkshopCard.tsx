@@ -17,11 +17,11 @@ interface WorkshopCardProps {
 }
 
 const STATUS_STYLES: Record<WorkshopStatus, string> = {
-  draft: 'bg-gray-100 text-gray-700 ring-gray-200',
+  draft: 'bg-text-brand-gray-lightest text-gray-700 ring-gray-200',
   published: 'bg-green-100 text-green-700 ring-green-200',
   cancelled: 'bg-red-100 text-red-700 ring-red-200',
   completed: 'bg-blue-100 text-blue-700 ring-blue-200',
-  archived: 'bg-gray-100 text-gray-500 ring-gray-200 line-through',
+  archived: 'bg-text-brand-gray-lightest text-brand-gray-medium ring-gray-200 line-through',
 };
 
 function formatTimeRange(start: string | null, end: string | null): string | null {
@@ -43,7 +43,7 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
             <div className="text-xs font-medium uppercase tracking-wide text-amber-700">
               Not configured
             </div>
-            <div className="mt-1 truncate font-semibold text-gray-900">{item.submissionTitle}</div>
+            <div className="mt-1 truncate font-semibold text-black">{item.submissionTitle}</div>
             <div className="text-xs text-gray-600">{speakerName}</div>
           </div>
           <button
@@ -84,7 +84,7 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
                   {offering.status}
                 </span>
               </div>
-              <div className="mt-1 font-semibold text-gray-900 line-clamp-2">
+              <div className="mt-1 font-semibold text-black line-clamp-2">
                 {item.submissionTitle}
               </div>
             </div>
@@ -116,7 +116,7 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
 
           {capacity > 0 && (
             <div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-text-brand-gray-lightest">
                 <div
                   className={`h-full rounded-full transition-all ${
                     capacityPct >= 100
@@ -145,13 +145,13 @@ export function WorkshopCard({ item, onOpen, onCreateOffering, creatingOffering 
       </button>
 
       {publicPageSlug && offering.status === 'published' && (
-        <div className="flex items-center justify-between border-t border-gray-100 px-4 py-2 text-xs">
+        <div className="flex items-center justify-between border-t border-text-brand-gray-lightest px-4 py-2 text-xs">
           <a
             href={`/workshops/${publicPageSlug}`}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-900"
+            className="inline-flex items-center gap-1 text-brand-gray-medium hover:text-black"
           >
             <ExternalLink className="size-3" /> View public page
           </a>

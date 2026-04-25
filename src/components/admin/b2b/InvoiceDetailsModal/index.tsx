@@ -29,7 +29,7 @@ export function InvoiceDetailsModal({ invoice, onClose, onUpdate }: InvoiceDetai
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{invoice.invoice_number}</h3>
+              <h3 className="text-lg font-semibold text-black">{invoice.invoice_number}</h3>
               <p className="text-sm text-gray-700">{invoice.company_name}</p>
             </div>
             <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export function InvoiceDetailsModal({ invoice, onClose, onUpdate }: InvoiceDetai
               >
                 {invoice.status}
               </span>
-              <button onClick={onClose} className="text-gray-600 hover:text-gray-900 cursor-pointer">
+              <button onClick={onClose} className="text-gray-600 hover:text-black cursor-pointer">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -55,7 +55,7 @@ export function InvoiceDetailsModal({ invoice, onClose, onUpdate }: InvoiceDetai
                 className={`px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer whitespace-nowrap flex-shrink-0 ${
                   activeSection === section
                     ? 'bg-brand-primary text-black'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-700 hover:bg-text-brand-gray-lightest'
                 }`}
               >
                 {section.charAt(0).toUpperCase() + section.slice(1)}

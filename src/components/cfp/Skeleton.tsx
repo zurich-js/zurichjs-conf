@@ -45,7 +45,7 @@ export function SubmissionCardSkeleton() {
 // Skeleton for table rows
 export function TableRowSkeleton({ columns = 5 }: { columns?: number }) {
   return (
-    <tr className="border-b border-gray-100">
+    <tr className="border-b border-text-brand-gray-lightest">
       {Array.from({ length: columns }).map((_, i) => (
         <td key={i} className="px-4 py-4">
           <Skeleton className="h-4 w-full" />
@@ -173,7 +173,7 @@ export function ReviewScoresSkeleton() {
   return (
     <div className="grid grid-cols-5 gap-2">
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="bg-gray-100 rounded p-2 space-y-1">
+        <div key={i} className="bg-text-brand-gray-lightest rounded p-2 space-y-1">
           <Skeleton className="h-3 w-12 mx-auto" />
           <Skeleton className="h-6 w-8 mx-auto" />
         </div>

@@ -160,7 +160,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-xl font-bold text-black">Add Session</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+          <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer">
             <X className="w-5 h-5 text-black" />
           </button>
         </div>
@@ -170,7 +170,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
           )}
 
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1">
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-text-brand-gray-lightest p-1">
             <button
               type="button"
               onClick={() => setMode('existing')}
@@ -204,7 +204,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
                   ))}
                 </select>
                 {attachablePanelSessions.length === 0 ? (
-                  <p className="mt-2 text-sm text-gray-500">No existing panels are available for this speaker yet.</p>
+                  <p className="mt-2 text-sm text-brand-gray-medium">No existing panels are available for this speaker yet.</p>
                 ) : null}
               </div>
 
@@ -274,7 +274,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
                     key={tag}
                     type="button"
                     onClick={() => setFormData({ ...formData, tags: formData.tags.filter((entry) => entry !== tag) })}
-                    className="cursor-pointer rounded-full bg-gray-100 px-3 py-1 text-sm text-black hover:bg-gray-200"
+                    className="cursor-pointer rounded-full bg-text-brand-gray-lightest px-3 py-1 text-sm text-black hover:bg-gray-200"
                   >
                     {tag} x
                   </button>
@@ -294,9 +294,9 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
               }}
               placeholder="Type a tag and press Enter"
               disabled={formData.tags.length >= 5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none disabled:bg-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none disabled:bg-text-brand-gray-lightest"
             />
-            <p className="mt-1 text-xs text-gray-500">{formData.tags.length}/5 tags</p>
+            <p className="mt-1 text-xs text-brand-gray-medium">{formData.tags.length}/5 tags</p>
           </div>
 
           {/* Workshop-specific fields */}

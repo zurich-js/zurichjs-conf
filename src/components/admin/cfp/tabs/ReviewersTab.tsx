@@ -124,7 +124,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
       case CFP_REVIEWER_ROLES.REVIEWER:
         return 'bg-blue-100 text-blue-800';
       default:
-        return 'bg-gray-100 text-black';
+        return 'bg-text-brand-gray-lightest text-black';
     }
   };
 
@@ -321,28 +321,28 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeStyle(r.role)}`}>
                     {getRoleLabel(r.role)}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-brand-gray-medium">
                     Invited {new Date(r.created_at).toLocaleDateString()}
                   </span>
                 </div>
                 {showActivityColumns && hasActivityData(r) && (
                   <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
                     <div className="bg-white rounded px-2 py-1">
-                      <span className="text-gray-500">Reviews:</span>{' '}
+                      <span className="text-brand-gray-medium">Reviews:</span>{' '}
                       <span className="font-medium text-black">{r.total_reviews}</span>
                     </div>
                     <div className="bg-white rounded px-2 py-1">
-                      <span className="text-gray-500">Last 7d:</span>{' '}
+                      <span className="text-brand-gray-medium">Last 7d:</span>{' '}
                       <span className="font-medium text-black">{r.reviews_last_7_days}</span>
                     </div>
                     <div className="bg-white rounded px-2 py-1">
-                      <span className="text-gray-500">Last Active:</span>{' '}
+                      <span className="text-brand-gray-medium">Last Active:</span>{' '}
                       <span className="font-medium text-black">
                         {r.last_activity_at ? new Date(r.last_activity_at).toLocaleDateString() : '-'}
                       </span>
                     </div>
                     <div className="bg-white rounded px-2 py-1">
-                      <span className="text-gray-500">Avg Score:</span>{' '}
+                      <span className="text-brand-gray-medium">Avg Score:</span>{' '}
                       <span className="font-medium text-black">{formatScore(r.avg_score_given)}</span>
                     </div>
                   </div>
@@ -375,7 +375,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
               </div>
             ))}
             {paginatedReviewers.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-brand-gray-medium">
                 {roleFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim() ? 'No reviewers match your filters' : 'No reviewers found'}
               </div>
             )}
@@ -483,7 +483,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                         )}
                         <button
                           onClick={() => setSelectedReviewer(r)}
-                          className="px-2 py-1 text-xs font-medium text-black bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                          className="px-2 py-1 text-xs font-medium text-black bg-text-brand-gray-lightest hover:bg-gray-200 rounded transition-colors cursor-pointer"
                           title="Manage Reviewer"
                         >
                           Manage
@@ -569,7 +569,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
                         <td className="px-3 py-3 text-center text-black">{r.total_reviews}</td>
                         <td className="px-3 py-3 text-center text-black">
                           {Math.round(r.feedback_written_percent)}%
-                          <span className="ml-1 text-xs text-gray-500">({r.feedback_written_count})</span>
+                          <span className="ml-1 text-xs text-brand-gray-medium">({r.feedback_written_count})</span>
                         </td>
                         <td className="px-3 py-3 text-center text-black" title={`Overall score range: ${formatScore(r.rating_spread)}`}>
                           {formatRatingSpreadLabel(r.rating_spread)}
@@ -607,7 +607,7 @@ export function ReviewersTab({ reviewers, isLoading }: ReviewersTabProps) {
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-xl font-bold text-black">Invite Reviewer</h3>
-              <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+              <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer">
                 <X className="w-5 h-5 text-black" />
               </button>
             </div>

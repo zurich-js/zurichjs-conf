@@ -48,7 +48,7 @@ export function Disclosure({
             className={`w-full px-4 py-3 flex items-center justify-between text-left cursor-pointer transition-colors ${
               isDark
                 ? 'hover:bg-brand-gray-medium/30'
-                : 'hover:bg-gray-100'
+                : 'hover:bg-text-brand-gray-lightest'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -59,7 +59,7 @@ export function Disclosure({
             </div>
             <ChevronDown
               className={`w-5 h-5 transition-transform ${open ? 'rotate-180' : ''} ${
-                isDark ? 'text-brand-gray-light' : 'text-gray-500'
+                isDark ? 'text-brand-gray-light' : 'text-brand-gray-medium'
               }`}
             />
           </DisclosureButton>
@@ -135,7 +135,7 @@ export function ControlledDisclosure({
         className={`w-full px-4 py-3 flex items-center justify-between text-left cursor-pointer transition-colors ${
           isDark
             ? 'hover:bg-brand-gray-medium/30'
-            : 'hover:bg-gray-100'
+            : 'hover:bg-text-brand-gray-lightest'
         }`}
       >
         <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export function ControlledDisclosure({
         </div>
         <ChevronDown
           className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''} ${
-            isDark ? 'text-brand-gray-light' : 'text-gray-500'
+            isDark ? 'text-brand-gray-light' : 'text-brand-gray-medium'
           }`}
         />
       </button>

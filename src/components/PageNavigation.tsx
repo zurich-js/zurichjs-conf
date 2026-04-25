@@ -56,7 +56,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
       aria-label="Page navigation"
     >
       <div className="bg-white  p-4">
-        {/* <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+        {/* <p className="text-xs font-semibold text-brand-gray-medium uppercase tracking-wider mb-4">
           On this page
         </p> */}
         <ul className="relative space-y-3">
@@ -90,8 +90,8 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
                       text-sm transition-colors duration-200 leading-snug
                       ${
                         isActive
-                          ? 'text-gray-900 font-semibold'
-                          : 'text-gray-600 group-hover:text-gray-900'
+                          ? 'text-black font-semibold'
+                          : 'text-gray-600 group-hover:text-black'
                       }
                     `}
                   >

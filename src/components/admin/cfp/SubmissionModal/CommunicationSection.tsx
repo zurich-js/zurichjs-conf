@@ -122,7 +122,7 @@ export function CommunicationSection({
           <Gavel className="h-4 w-4 text-gray-600" />
           Decision &amp; Speaker Communication
         </h4>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-brand-gray-medium">
           Actions here are <strong>speaker-facing</strong>. Internal pipeline status is separate below.
         </p>
       </div>
@@ -210,7 +210,7 @@ export function CommunicationSection({
                     <button
                       type="button"
                       onClick={() => setConfirmSendNowId(null)}
-                      className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 cursor-pointer"
+                      className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-text-brand-gray-lightest cursor-pointer"
                     >
                       No
                     </button>
@@ -234,7 +234,7 @@ export function CommunicationSection({
                     <button
                       type="button"
                       onClick={() => setConfirmCancelId(null)}
-                      className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 cursor-pointer"
+                      className="rounded px-2 py-1 text-xs font-medium text-gray-600 hover:bg-text-brand-gray-lightest cursor-pointer"
                     >
                       Keep it
                     </button>
@@ -289,14 +289,14 @@ export function CommunicationSection({
             <Mail className="h-3.5 w-3.5" />
             Activity timeline
           </p>
-          <p className="text-[11px] text-gray-500">{timeline.length} event{timeline.length === 1 ? '' : 's'}</p>
+          <p className="text-[11px] text-brand-gray-medium">{timeline.length} event{timeline.length === 1 ? '' : 's'}</p>
         </div>
         {timeline.length === 0 ? (
-          <p className="px-3 py-4 text-center text-xs text-gray-500">
+          <p className="px-3 py-4 text-center text-xs text-brand-gray-medium">
             No decision or email activity yet.
           </p>
         ) : (
-          <ol className="divide-y divide-gray-100">
+          <ol className="divide-y divide-text-brand-gray-lightest">
             {timeline.map((event) => (
               <li key={event.id} className="flex items-start gap-3 px-3 py-2.5">
                 <span className="mt-0.5 shrink-0">{event.icon}</span>
@@ -305,7 +305,7 @@ export function CommunicationSection({
                   {event.detail && <p className="text-xs text-gray-600">{event.detail}</p>}
                 </div>
                 <time
-                  className="shrink-0 whitespace-nowrap text-[11px] text-gray-500"
+                  className="shrink-0 whitespace-nowrap text-[11px] text-brand-gray-medium"
                   dateTime={event.at}
                 >
                   {new Date(event.at).toLocaleString()}
@@ -425,7 +425,7 @@ function buildTimeline(
         id: `e-cancel-${e.id}`,
         at: e.cancelled_at,
         title: `${capitalize(e.email_type)} email cancelled`,
-        icon: <MailX className="h-4 w-4 text-gray-500" />,
+        icon: <MailX className="h-4 w-4 text-brand-gray-medium" />,
       });
     }
     if (e.status === 'failed' && e.failed_at) {

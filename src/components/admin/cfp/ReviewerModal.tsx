@@ -122,11 +122,11 @@ export function ReviewerModal({
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-500 font-medium mb-1">Name</p>
+                <p className="text-xs text-brand-gray-medium font-medium mb-1">Name</p>
                 <p className="text-sm text-black font-medium">{reviewer.name || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium mb-1">Status</p>
+                <p className="text-xs text-brand-gray-medium font-medium mb-1">Status</p>
                 <p className="text-sm">
                   {reviewer.accepted_at ? (
                     <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium">
@@ -140,13 +140,13 @@ export function ReviewerModal({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium mb-1">Current Role</p>
+                <p className="text-xs text-brand-gray-medium font-medium mb-1">Current Role</p>
                 <p className="text-sm text-black font-medium capitalize">
                   {getRoleLabel(reviewer.role)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium mb-1">Invited</p>
+                <p className="text-xs text-brand-gray-medium font-medium mb-1">Invited</p>
                 <p className="text-sm text-black">
                   {new Date(reviewer.created_at).toLocaleDateString()}
                 </p>
@@ -156,7 +156,7 @@ export function ReviewerModal({
 
           {/* Change Access Level */}
           <div>
-            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">
+            <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">
               Change Access Level
             </h4>
             <div className="space-y-3">
@@ -193,7 +193,7 @@ export function ReviewerModal({
               <Ban className="w-4 h-4" />
               {isRevoking ? 'Revoking...' : 'Revoke Access'}
             </button>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-brand-gray-medium mt-2">
               This will remove the reviewer&apos;s access to the CFP system. They will no longer be
               able to review submissions.
             </p>

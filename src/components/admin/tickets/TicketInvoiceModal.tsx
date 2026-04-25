@@ -51,8 +51,8 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
                 <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Generate an invoice for this ticket purchase</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
-              <X className="w-5 h-5 text-gray-500" />
+            <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg transition-colors cursor-pointer">
+              <X className="w-5 h-5 text-brand-gray-medium" />
             </button>
           </div>
         </div>
@@ -91,10 +91,10 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
 
               {/* Order Summary */}
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Order Summary</h4>
+                <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">Order Summary</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Purchase Type</span>
+                    <span className="text-xs text-brand-gray-medium">Purchase Type</span>
                     {orderContext.isGroupPurchase ? (
                       <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                         Group · {orderContext.ticketCount} tickets
@@ -106,21 +106,21 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
                     )}
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Total Paid</span>
+                    <span className="text-xs text-brand-gray-medium">Total Paid</span>
                     <span className="text-sm font-bold text-black">
                       {formatAmount(orderContext.totalAmount, orderContext.currency)}
                     </span>
                   </div>
                   {orderContext.discountAmount > 0 && (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">Discount Applied</span>
+                      <span className="text-xs text-brand-gray-medium">Discount Applied</span>
                       <span className="text-sm font-medium text-green-600">
                         -{formatAmount(orderContext.discountAmount, orderContext.currency)}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Session ID</span>
+                    <span className="text-xs text-brand-gray-medium">Session ID</span>
                     <span className="text-xs font-mono text-gray-700">
                       {orderContext.stripeSessionId.slice(0, 20)}...
                     </span>
@@ -130,25 +130,25 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
 
               {/* Billing Details */}
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Billing Details</h4>
+                <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">Billing Details</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Purchaser Name</span>
+                    <span className="text-xs text-brand-gray-medium">Purchaser Name</span>
                     <span className="text-sm text-black">{orderContext.purchaserInfo.name}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Billing Email</span>
+                    <span className="text-xs text-brand-gray-medium">Billing Email</span>
                     <span className="text-sm text-black break-all">{orderContext.purchaserInfo.email}</span>
                   </div>
                   {orderContext.purchaserInfo.company && (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">Company</span>
+                      <span className="text-xs text-brand-gray-medium">Company</span>
                       <span className="text-sm text-black">{orderContext.purchaserInfo.company}</span>
                     </div>
                   )}
                   {orderContext.purchaserInfo.country && (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">Country</span>
+                      <span className="text-xs text-brand-gray-medium">Country</span>
                       <span className="text-sm text-black">{orderContext.purchaserInfo.country}</span>
                     </div>
                   )}
@@ -157,7 +157,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
 
               {/* Line Items */}
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Line Items</h4>
+                <h4 className="text-xs font-bold text-brand-gray-medium uppercase tracking-wide mb-3">Line Items</h4>
                 <div className="space-y-2">
                   {orderContext.lineItems.map((item, index) => (
                     <div key={index} className="flex items-center justify-between">

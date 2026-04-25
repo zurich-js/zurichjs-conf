@@ -56,10 +56,10 @@ export function CalculatorSection({
   return (
     <section className="border border-gray-200 rounded-2xl p-5 sm:p-6">
       <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-700">
+        <div className="w-8 h-8 rounded-lg bg-text-brand-gray-lightest flex items-center justify-center text-gray-700">
           {icon}
         </div>
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-base font-semibold text-black">{title}</h2>
       </div>
       {children}
     </section>
@@ -80,7 +80,7 @@ export function SpendLessTips() {
     <div className="mt-6 bg-gray-50 rounded-2xl p-6">
       <div className="flex items-center gap-2 mb-3">
         <Lightbulb className="w-4 h-4 text-brand-yellow-main" />
-        <h3 className="text-sm font-semibold text-gray-900">Ways to spend less</h3>
+        <h3 className="text-sm font-semibold text-black">Ways to spend less</h3>
       </div>
       <ul className="space-y-2 text-sm text-gray-600">
         {SPENDING_TIPS.map((tip) => (

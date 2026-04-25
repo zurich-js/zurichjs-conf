@@ -88,7 +88,7 @@ export default function CfpAdminDashboard() {
   const [bulkActionStatus, setBulkActionStatus] = useState<string>('');
   const queryClient = useQueryClient();
   const toast = useToast();
-  const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
 
   // Submission filter state (lifted from SubmissionsTab for server-side pagination)
   const [statuses, setStatuses] = useState<string[]>([]);
@@ -377,8 +377,8 @@ export default function CfpAdminDashboard() {
       <Head>
         <title>CFP Admin | ZurichJS</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <AdminHeader title="CFP Management" subtitle="ZurichJS Conference 2026" onLogout={logout} />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest">
+        <AdminHeader title="CFP Management" />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <StatsCards stats={stats} />

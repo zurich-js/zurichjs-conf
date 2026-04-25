@@ -120,7 +120,7 @@ export function WorkshopsDashboard() {
 
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-semibold text-gray-900">Offerings</h2>
+          <h2 className="truncate text-lg font-semibold text-black">Offerings</h2>
           <p className="hidden text-sm text-gray-600 sm:block">
             Accepted CFP workshop submissions. Link a Stripe product + price lookup key and set a schedule to publish.
           </p>
@@ -156,7 +156,7 @@ export function WorkshopsDashboard() {
 
       {filteredItems.length === 0 && !isLoading && (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-brand-gray-medium">
             {items.length === 0
               ? 'No accepted workshop submissions yet.'
               : 'No workshops match the current filters.'}

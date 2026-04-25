@@ -93,12 +93,12 @@ function HotelOptionButton({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <span className="text-sm font-medium text-gray-900">{hotel.label}</span>
-          <span className="hidden sm:inline text-xs text-gray-500 ml-2">{hotel.sublabel}</span>
-          <span className="block sm:hidden text-xs text-gray-500">{hotel.sublabel}</span>
+          <span className="text-sm font-medium text-black">{hotel.label}</span>
+          <span className="hidden sm:inline text-xs text-brand-gray-medium ml-2">{hotel.sublabel}</span>
+          <span className="block sm:hidden text-xs text-brand-gray-medium">{hotel.sublabel}</span>
         </div>
         {priceDisplay && (
-          <span className="text-xs text-gray-500 shrink-0">{isConverted ? '~' : ''}{priceDisplay}/night</span>
+          <span className="text-xs text-brand-gray-medium shrink-0">{isConverted ? '~' : ''}{priceDisplay}/night</span>
         )}
       </div>
     </button>
@@ -128,7 +128,7 @@ export function HotelSection({
       <div className="space-y-4">
         {/* Attendance selector */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">
+          <label className="block text-xs font-medium text-brand-gray-medium mb-2">
             <Calendar className="w-3.5 h-3.5 inline mr-1" />
             Which days are you attending?
           </label>
@@ -145,11 +145,11 @@ export function HotelSection({
                 aria-pressed={attendanceDays === opt.id}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-2">
-                  <span className="text-sm font-medium text-gray-900">{opt.label}</span>
-                  <span className="text-xs text-gray-500 shrink-0">{opt.dates} · {opt.nights} nights</span>
+                  <span className="text-sm font-medium text-black">{opt.label}</span>
+                  <span className="text-xs text-brand-gray-medium shrink-0">{opt.dates} · {opt.nights} nights</span>
                 </div>
                 {attendanceDays === opt.id && (
-                  <p className="text-[11px] text-gray-500 mt-1">{opt.sublabel}</p>
+                  <p className="text-[11px] text-brand-gray-medium mt-1">{opt.sublabel}</p>
                 )}
                 {opt.hint && attendanceDays === opt.id && (
                   <p className="text-[11px] text-amber-600 mt-0.5">{opt.hint}</p>
@@ -161,14 +161,14 @@ export function HotelSection({
 
         {/* Nights stepper */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">
+          <label className="block text-xs font-medium text-brand-gray-medium mb-2">
             Number of nights
           </label>
           <div className="flex items-center gap-3">
             <button
               onClick={() => onUpdate({ nights: Math.max(MIN_NIGHTS, nights - 1) })}
               disabled={nights <= MIN_NIGHTS}
-              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-text-brand-gray-lightest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               aria-label="Decrease nights"
             >
               <Minus className="w-4 h-4" />
@@ -179,12 +179,12 @@ export function HotelSection({
             <button
               onClick={() => onUpdate({ nights: Math.min(MAX_NIGHTS, nights + 1) })}
               disabled={nights >= MAX_NIGHTS}
-              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="cursor-pointer w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-text-brand-gray-lightest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               aria-label="Increase nights"
             >
               <Plus className="w-4 h-4" />
             </button>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-brand-gray-medium">
               night{nights !== 1 ? 's' : ''}
             </span>
           </div>
@@ -195,7 +195,7 @@ export function HotelSection({
 
         {/* Hotel type selector */}
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">
+          <label className="block text-xs font-medium text-brand-gray-medium mb-2">
             Where to stay
           </label>
           <div className="space-y-2">
@@ -205,7 +205,7 @@ export function HotelSection({
                 return (
                   <div key={`group-${idx}`} className="rounded-lg overflow-hidden border border-gray-200">
                     <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-200">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">MEININGER Zurich</span>
+                      <span className="text-xs font-semibold text-brand-gray-medium uppercase tracking-wide">MEININGER Zurich</span>
                     </div>
                     {item.map((hotel, hIdx) => (
                       <HotelOptionButton
@@ -283,7 +283,7 @@ export function HotelSection({
           <div>
             <label
               htmlFor="custom-hotel"
-              className="block text-xs font-medium text-gray-500 mb-1.5"
+              className="block text-xs font-medium text-brand-gray-medium mb-1.5"
             >
               Price per night (CHF)
             </label>

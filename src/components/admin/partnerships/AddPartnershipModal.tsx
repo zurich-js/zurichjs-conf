@@ -134,7 +134,7 @@ export function AddPartnershipModal({
               <label className="block text-sm font-medium text-black mb-1">
                 Partnership Type
               </label>
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-brand-gray-medium mb-2">
                 Select the type that best describes this partnership
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -161,7 +161,7 @@ export function AddPartnershipModal({
                         {type.label}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-1">{type.description}</p>
+                    <p className="text-xs text-brand-gray-medium mt-1 line-clamp-1">{type.description}</p>
                   </button>
                 ))}
               </div>
@@ -184,13 +184,13 @@ export function AddPartnershipModal({
               {errors.name ? (
                 <p className="text-red-500 text-xs mt-1">{errors.name}</p>
               ) : (
-                <p className="text-xs text-gray-500 mt-1">Name of the organization or community</p>
+                <p className="text-xs text-brand-gray-medium mt-1">Name of the organization or community</p>
               )}
             </div>
 
             {/* Contact Info Section */}
-            <div className="pt-2 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Contact Information</p>
+            <div className="pt-2 border-t border-text-brand-gray-lightest">
+              <p className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-3">Contact Information</p>
 
               {/* Contact Name */}
               <div className="mb-3">
@@ -209,7 +209,7 @@ export function AddPartnershipModal({
                 {errors.contact_name ? (
                   <p className="text-red-500 text-xs mt-1">{errors.contact_name}</p>
                 ) : (
-                  <p className="text-xs text-gray-500 mt-1">Primary contact for this partnership</p>
+                  <p className="text-xs text-brand-gray-medium mt-1">Primary contact for this partnership</p>
                 )}
               </div>
 
@@ -230,7 +230,7 @@ export function AddPartnershipModal({
                 {errors.contact_email ? (
                   <p className="text-red-500 text-xs mt-1">{errors.contact_email}</p>
                 ) : (
-                  <p className="text-xs text-gray-500 mt-1">Partnership details will be sent here</p>
+                  <p className="text-xs text-brand-gray-medium mt-1">Partnership details will be sent here</p>
                 )}
               </div>
 
@@ -252,8 +252,8 @@ export function AddPartnershipModal({
 
             {/* Company Information (for company/sponsor types) */}
             {(formData.type === 'company' || formData.type === 'sponsor') && (
-              <div className="pt-2 border-t border-gray-100">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Company Details</p>
+              <div className="pt-2 border-t border-text-brand-gray-lightest">
+                <p className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-3">Company Details</p>
 
                 <div className="space-y-3">
                   <div>
@@ -286,7 +286,7 @@ export function AddPartnershipModal({
                     {errors.company_website ? (
                       <p className="text-red-500 text-xs mt-1">{errors.company_website}</p>
                     ) : (
-                      <p className="text-xs text-gray-500 mt-1">Include https:// or http://</p>
+                      <p className="text-xs text-brand-gray-medium mt-1">Include https:// or http://</p>
                     )}
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export function AddPartnershipModal({
             )}
 
             {/* Notes */}
-            <div className="pt-2 border-t border-gray-100">
+            <div className="pt-2 border-t border-text-brand-gray-lightest">
               <label className="block text-sm font-medium text-black mb-1">
                 Notes
                 <span className="text-gray-400 font-normal ml-1">(optional)</span>
@@ -306,7 +306,7 @@ export function AddPartnershipModal({
                 rows={3}
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-base resize-none"
               />
-              <p className="text-xs text-gray-500 mt-1">Internal notes about this partnership</p>
+              <p className="text-xs text-brand-gray-medium mt-1">Internal notes about this partnership</p>
             </div>
           </div>
         </div>

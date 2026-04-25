@@ -17,14 +17,14 @@ const FUNNEL_STAGES: Array<{
   color: string;
   bgColor: string;
 }> = [
-  { key: 'draft', label: 'Draft', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  { key: 'draft', label: 'Draft', color: 'text-gray-600', bgColor: 'bg-text-brand-gray-lightest' },
   { key: 'submitted', label: 'Submitted', color: 'text-blue-600', bgColor: 'bg-blue-50' },
   { key: 'under_review', label: 'Under Review', color: 'text-purple-600', bgColor: 'bg-purple-50' },
   { key: 'shortlisted', label: 'Shortlisted', color: 'text-amber-600', bgColor: 'bg-amber-50' },
   { key: 'accepted', label: 'Accepted', color: 'text-green-600', bgColor: 'bg-green-50' },
   { key: 'rejected', label: 'Rejected', color: 'text-red-600', bgColor: 'bg-red-50' },
   { key: 'waitlisted', label: 'Waitlisted', color: 'text-orange-600', bgColor: 'bg-orange-50' },
-  { key: 'withdrawn', label: 'Withdrawn', color: 'text-gray-500', bgColor: 'bg-gray-50' },
+  { key: 'withdrawn', label: 'Withdrawn', color: 'text-brand-gray-medium', bgColor: 'bg-gray-50' },
 ];
 
 export function FunnelSection({ funnel }: FunnelSectionProps) {
@@ -78,7 +78,7 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
               <div className={`text-xs font-medium ${stage.color} w-20 sm:w-24 text-right shrink-0`}>
                 {stage.label}
               </div>
-              <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+              <div className="flex-1 bg-text-brand-gray-lightest rounded-full h-6 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${stage.bgColor} border border-gray-200 flex items-center justify-end pr-2 transition-all`}
                   style={{ width: `${barWidth}%` }}
@@ -95,19 +95,19 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
       </div>
 
       {/* Summary row */}
-      <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 sm:gap-6 text-sm">
+      <div className="mt-4 pt-4 border-t border-text-brand-gray-lightest flex flex-wrap gap-x-4 gap-y-1 sm:gap-6 text-sm">
         <div>
-          <span className="text-gray-500">Total:</span>{' '}
+          <span className="text-brand-gray-medium">Total:</span>{' '}
           <span className="font-semibold text-black">{total}</span>
         </div>
         <div>
-          <span className="text-gray-500">Acceptance rate:</span>{' '}
+          <span className="text-brand-gray-medium">Acceptance rate:</span>{' '}
           <span className="font-semibold text-green-600">
             {total > 0 ? ((funnel.accepted / total) * 100).toFixed(1) : '0'}%
           </span>
         </div>
         <div>
-          <span className="text-gray-500">Active (non-draft):</span>{' '}
+          <span className="text-brand-gray-medium">Active (non-draft):</span>{' '}
           <span className="font-semibold text-black">{total - funnel.draft}</span>
         </div>
       </div>

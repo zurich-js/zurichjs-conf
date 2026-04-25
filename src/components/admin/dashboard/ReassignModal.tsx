@@ -61,7 +61,7 @@ export function ReassignModal({ ticket, onClose, onSuccess, showToast }: Reassig
         </div>
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5">
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Current Owner</p>
+            <p className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-2">Current Owner</p>
             <p className="text-sm font-semibold text-black">{ticket.first_name} {ticket.last_name}</p>
             <p className="text-sm text-gray-600">{ticket.email}</p>
           </div>

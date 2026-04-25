@@ -36,7 +36,7 @@ import {
 } from '@/components/admin/partnerships';
 
 export default function PartnershipsDashboard() {
-  const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,12 +95,12 @@ export default function PartnershipsDashboard() {
   if (!isAuthenticated) return <AdminLoginForm title="Partnerships" />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-text-brand-gray-lightest text-black">
       <Head><title>Partnerships | ZurichJS Admin</title></Head>
 
-      <AdminHeader title="Partnerships" subtitle="Manage partners, coupons, and tracking" onLogout={logout} />
+      <AdminHeader title="Partnerships" />
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <main className="container 2xl:max-w-7xl mx-auto p-4 space-y-4 sm:space-y-6">
         <StatsCards
           stats={stats || { total: 0, byType: {}, byStatus: {}, activeCoupons: 0, activeVouchers: 0, totalCouponRedemptions: 0, totalVoucherRedemptions: 0, totalDiscountGiven: 0, totalTicketsSold: 0, totalRevenue: 0, topPartnerships: [] }}
           isLoading={isLoadingStats}

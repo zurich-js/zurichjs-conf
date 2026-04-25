@@ -29,8 +29,8 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
             key={i}
             className={`bg-white rounded-lg border border-gray-200 p-3 animate-pulse ${i < 2 ? 'col-span-2' : ''}`}
           >
-            <div className="h-3 bg-gray-100 rounded w-16 mb-2" />
-            <div className="h-6 bg-gray-100 rounded w-12" />
+            <div className="h-3 bg-text-brand-gray-lightest rounded w-16 mb-2" />
+            <div className="h-6 bg-text-brand-gray-lightest rounded w-12" />
           </div>
         ))}
       </div>
@@ -92,7 +92,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Partner Type Breakdown */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">By Type</h3>
+          <h3 className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-3">By Type</h3>
           <div className="grid grid-cols-4 gap-3">
             <MiniStat
               icon={Users}
@@ -123,15 +123,15 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
 
         {/* Active Codes */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Active Codes</h3>
+          <h3 className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide mb-3">Active Codes</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-amber-50">
                 <Ticket className="h-4 w-4 text-amber-600" />
               </div>
               <div>
-                <div className="text-xl font-semibold text-gray-900">{stats.activeCoupons}</div>
-                <div className="text-xs text-gray-500">Coupons</div>
+                <div className="text-xl font-semibold text-black">{stats.activeCoupons}</div>
+                <div className="text-xs text-brand-gray-medium">Coupons</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -139,8 +139,8 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
                 <Gift className="h-4 w-4 text-pink-600" />
               </div>
               <div>
-                <div className="text-xl font-semibold text-gray-900">{stats.activeVouchers}</div>
-                <div className="text-xs text-gray-500">Vouchers</div>
+                <div className="text-xl font-semibold text-black">{stats.activeVouchers}</div>
+                <div className="text-xs text-brand-gray-medium">Vouchers</div>
               </div>
             </div>
           </div>
@@ -150,7 +150,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center gap-2 mb-3">
             <Trophy className="h-3.5 w-3.5 text-amber-500" />
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Top Performers</h3>
+            <h3 className="text-xs font-medium text-brand-gray-medium uppercase tracking-wide">Top Performers</h3>
           </div>
           {hasTopPartners ? (
             <div className="space-y-2">
@@ -163,10 +163,10 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
                     <span className={`font-medium ${index === 0 ? 'text-amber-500' : 'text-gray-400'}`}>
                       {index + 1}.
                     </span>
-                    <span className="text-gray-900 truncate">{partner.name}</span>
+                    <span className="text-black truncate">{partner.name}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs shrink-0 ml-2">
-                    <span className="text-gray-500">{partner.ticketsSold}</span>
+                    <span className="text-brand-gray-medium">{partner.ticketsSold}</span>
                     <span className="font-medium text-emerald-600">{formatCurrency(partner.revenue)}</span>
                   </div>
                 </div>
@@ -196,8 +196,8 @@ function StatCard({
   className?: string;
 }) {
   const variants = {
-    default: 'bg-white text-gray-900',
-    primary: 'bg-white text-gray-900',
+    default: 'bg-white text-black',
+    primary: 'bg-white text-black',
     success: 'bg-white text-emerald-600',
     warning: 'bg-white text-amber-600',
   };
@@ -206,9 +206,9 @@ function StatCard({
     <div className={`rounded-lg border border-gray-200 p-3 ${variants[variant]} ${className}`}>
       <div className="flex items-center gap-1.5 mb-1">
         {Icon && <Icon className="h-3.5 w-3.5 text-gray-400" />}
-        <span className="text-xs font-medium text-gray-500">{label}</span>
+        <span className="text-xs font-medium text-brand-gray-medium">{label}</span>
       </div>
-      <div className={`text-2xl font-semibold ${variant === 'success' ? 'text-emerald-600' : variant === 'warning' ? 'text-amber-600' : 'text-gray-900'}`}>
+      <div className={`text-2xl font-semibold ${variant === 'success' ? 'text-emerald-600' : variant === 'warning' ? 'text-amber-600' : 'text-black'}`}>
         {value}
       </div>
     </div>
@@ -239,8 +239,8 @@ function MiniStat({
       <div className={`inline-flex p-1.5 rounded-md ${colors[color]} mb-1`}>
         <Icon className="h-3.5 w-3.5" />
       </div>
-      <div className="text-lg font-semibold text-gray-900">{value}</div>
-      <div className="text-[10px] text-gray-500 truncate">{label}</div>
+      <div className="text-lg font-semibold text-black">{value}</div>
+      <div className="text-[10px] text-brand-gray-medium truncate">{label}</div>
     </div>
   );
 }

@@ -156,7 +156,7 @@ export function PartnershipDetailModal({
               >
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className="ml-1 sm:ml-2 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-full text-xs">
+                  <span className="ml-1 sm:ml-2 bg-text-brand-gray-lightest px-1.5 sm:px-2 py-0.5 rounded-full text-xs">
                     {tab.count}
                   </span>
                 )}
@@ -406,13 +406,13 @@ function OverviewTab({
               <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.company_logo_url ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
                 {partnership.company_logo_url ? '✓' : '○'}
               </span>
-              <span className={partnership.company_logo_url ? 'text-gray-700' : 'text-gray-500'}>Logo uploaded</span>
+              <span className={partnership.company_logo_url ? 'text-gray-700' : 'text-brand-gray-medium'}>Logo uploaded</span>
             </li>
             <li className="flex items-center gap-2 text-sm">
               <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-400'}`}>
                 {partnership.status === 'active' ? '✓' : '○'}
               </span>
-              <span className={partnership.status === 'active' ? 'text-gray-700' : 'text-gray-500'}>
+              <span className={partnership.status === 'active' ? 'text-gray-700' : 'text-brand-gray-medium'}>
                 Status is &quot;Active&quot; {partnership.status !== 'active' && <span className="text-gray-400">(currently: {partnership.status})</span>}
               </span>
             </li>

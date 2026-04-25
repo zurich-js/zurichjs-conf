@@ -20,11 +20,11 @@ export function AdminErrorState({
         <AlertTriangle className="w-7 h-7 text-red-500" />
       </div>
       <h3 className="text-lg font-semibold text-black mb-1">Error</h3>
-      <p className="text-sm text-gray-500 max-w-sm">{message}</p>
+      <p className="text-sm text-brand-gray-medium max-w-sm">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-4 px-4 py-2 text-sm font-medium rounded-lg text-black bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer"
+          className="mt-4 px-4 py-2 text-sm font-medium rounded-lg text-black bg-text-brand-gray-lightest hover:bg-gray-200 transition-all cursor-pointer"
         >
           Try again
         </button>
