@@ -62,7 +62,7 @@ export function ReviewStep({
                   Want an extra special experience?
                 </h3>
                 <p className="text-sm text-brand-gray-light mb-4">
-                  Get an <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">invite to the speaker city tour</strong>, <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">limited edition goodies</strong>, and <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">20% discount to all workshops</strong>. Only 15 VIP seats available!
+                  Get <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">exclusive after party access</strong>, <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">limited edition goodies</strong>, and <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">20% discount to all workshops</strong>. Only 15 VIP seats available!
                 </p>
                 <Button variant="primary" size="sm" onClick={onUpgradeToVip}>
                   Upgrade to VIP
