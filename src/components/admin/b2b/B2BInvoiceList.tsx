@@ -2,8 +2,11 @@
  * B2B Invoice List - Mobile cards and desktop table for invoices
  */
 
+import { useMemo, useState } from 'react';
 import type { B2BInvoice, B2BInvoiceWithAttendees } from '@/lib/types/b2b';
+import { createColumnHelper, type ColumnDef, type SortingState, type Updater } from '@tanstack/react-table';
 import { Pagination } from '@/components/atoms';
+import { AdminDataTable, AdminMobileCard } from '@/components/admin/common';
 import { statusColors, formatAmount, formatDate, ITEMS_PER_PAGE } from './types';
 
 interface B2BInvoiceListProps {
@@ -14,6 +17,8 @@ interface B2BInvoiceListProps {
   onCreateClick: () => void;
 }
 
+const columnHelper = createColumnHelper<B2BInvoice>();
+
 export function B2BInvoiceList({
   invoices,
   currentPage,
@@ -21,9 +26,26 @@ export function B2BInvoiceList({
   onSelectInvoice,
   onCreateClick,
 }: B2BInvoiceListProps) {
-  const totalPages = Math.ceil(invoices.length / ITEMS_PER_PAGE);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'invoice_number', desc: true }]);
+  const sortedInvoices = useMemo(() => {
+    const [rule] = sorting;
+    const next = [...invoices];
+
+    if (!rule) return next;
+    const direction = rule.desc ? -1 : 1;
+    next.sort((a, b) => {
+      if (rule.id === 'company_name') return a.company_name.localeCompare(b.company_name) * direction;
+      if (rule.id === 'status') return a.status.localeCompare(b.status) * direction;
+      if (rule.id === 'total_amount') return (a.total_amount - b.total_amount) * direction;
+      if (rule.id === 'due_date') return (new Date(a.due_date).getTime() - new Date(b.due_date).getTime()) * direction;
+      return a.invoice_number.localeCompare(b.invoice_number) * direction;
+    });
+    return next;
+  }, [invoices, sorting]);
+
+  const totalPages = Math.ceil(sortedInvoices.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedInvoices = invoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedInvoices = sortedInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleViewDetails = async (invoiceId: string) => {
     const response = await fetch(`/api/admin/b2b-invoices/${invoiceId}`);
@@ -35,9 +57,9 @@ export function B2BInvoiceList({
 
   if (invoices.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-brand-gray-lightest">
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-brand-gray-medium"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -60,27 +82,100 @@ export function B2BInvoiceList({
     );
   }
 
+  const handleSortingChange = (updater: Updater<SortingState>) => {
+    setSorting((previous) => {
+      const next = typeof updater === 'function' ? updater(previous) : updater;
+      return next.slice(0, 1);
+    });
+  };
+
+  const columns = [
+    columnHelper.accessor('invoice_number', {
+      header: 'Invoice #',
+      enableSorting: true,
+      size: 150,
+      cell: ({ getValue }) => <span className="font-medium text-black">{getValue()}</span>,
+    }),
+    columnHelper.accessor('company_name', {
+      header: 'Company',
+      enableSorting: true,
+      size: 260,
+      cell: ({ row }) => (
+        <div>
+          <div className="text-sm text-black">{row.original.company_name}</div>
+          <div className="text-xs text-brand-gray-dark">{row.original.contact_email}</div>
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'tickets',
+      header: 'Tickets',
+      enableSorting: false,
+      size: 180,
+      cell: ({ row }) => <span className="text-sm text-black">{row.original.ticket_quantity}x {row.original.ticket_category}</span>,
+    }),
+    columnHelper.accessor('total_amount', {
+      header: 'Total',
+      enableSorting: true,
+      size: 140,
+      cell: ({ row, getValue }) => <span className="font-medium text-black">{formatAmount(getValue(), row.original.currency)}</span>,
+    }),
+    columnHelper.accessor('status', {
+      header: 'Status',
+      enableSorting: true,
+      size: 120,
+      cell: ({ getValue }) => (
+        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusColors[getValue()]}`}>
+          {getValue()}
+        </span>
+      ),
+    }),
+    columnHelper.accessor('due_date', {
+      header: 'Due Date',
+      enableSorting: true,
+      size: 140,
+      cell: ({ getValue }) => <span className="text-sm text-black">{formatDate(getValue())}</span>,
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      size: 120,
+      cell: ({ row }) => (
+        <button
+          onClick={(event) => {
+            event.stopPropagation();
+            handleViewDetails(row.original.id);
+          }}
+          className="inline-flex items-center rounded-lg border border-brand-primary bg-brand-primary px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-[#e8d95e]"
+          title="View invoice details"
+        >
+          View
+        </button>
+      ),
+    }),
+  ] as Array<ColumnDef<B2BInvoice, unknown>>;
+
   return (
-    <>
-      {/* Mobile Card View */}
-      <div className="block md:hidden space-y-4">
-        {paginatedInvoices.map((invoice) => (
-          <div
-            key={invoice.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
-          >
-            <div className="flex justify-between items-start mb-3">
+    <AdminDataTable
+      data={paginatedInvoices}
+      columns={columns}
+      sorting={sorting}
+      onSortingChange={handleSortingChange}
+      onRowClick={(invoice) => handleViewDetails(invoice.id)}
+      mobileList={{
+        renderCard: (invoice) => (
+          <AdminMobileCard key={invoice.id}>
+            <div className="mb-3 flex items-start justify-between">
               <div>
-                <p className="font-medium text-gray-900">{invoice.invoice_number}</p>
+                <p className="font-medium text-black">{invoice.invoice_number}</p>
                 <p className="text-sm text-gray-700">{invoice.company_name}</p>
               </div>
-              <span
-                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[invoice.status]}`}
-              >
+              <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusColors[invoice.status]}`}>
                 {invoice.status}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-sm mb-3 text-gray-900">
+            <div className="mb-3 grid grid-cols-2 gap-2 text-sm text-black">
               <div>
                 <span className="font-medium">Tickets:</span>
                 <span className="ml-1">{invoice.ticket_quantity}x {invoice.ticket_category}</span>
@@ -90,91 +185,28 @@ export function B2BInvoiceList({
                 <span className="ml-1">{formatDate(invoice.due_date)}</span>
               </div>
             </div>
-            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-              <span className="font-bold text-gray-900">
-                {formatAmount(invoice.total_amount, invoice.currency)}
-              </span>
+            <div className="flex items-center justify-between border-t border-text-brand-gray-lightest pt-3">
+              <span className="font-bold text-black">{formatAmount(invoice.total_amount, invoice.currency)}</span>
               <button
                 onClick={() => handleViewDetails(invoice.id)}
-                className="px-3 py-1.5 bg-brand-primary text-black rounded-lg text-sm font-medium cursor-pointer"
+                className="rounded-lg bg-brand-primary px-3 py-1.5 text-sm font-medium text-black"
               >
                 View Details
               </button>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Desktop Table View */}
-      <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Invoice #</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Company</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Tickets</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Total</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Due Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    {invoice.invoice_number}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    <div>{invoice.company_name}</div>
-                    <div className="text-gray-700 text-xs">{invoice.contact_email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    {invoice.ticket_quantity}x {invoice.ticket_category}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    {formatAmount(invoice.total_amount, invoice.currency)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[invoice.status]}`}
-                    >
-                      {invoice.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    {formatDate(invoice.due_date)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleViewDetails(invoice.id)}
-                      className="inline-flex items-center px-3 py-1.5 border border-brand-primary rounded-md text-xs font-medium text-black bg-brand-primary hover:bg-[#e8d95e] cursor-pointer transition-colors"
-                      title="View invoice details"
-                    >
-                      <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
-        pageSize={ITEMS_PER_PAGE}
-        totalItems={invoices.length}
-        variant="light"
-      />
-    </>
+          </AdminMobileCard>
+        ),
+      }}
+      pagination={(
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          pageSize={ITEMS_PER_PAGE}
+          totalItems={sortedInvoices.length}
+          variant="light"
+        />
+      )}
+    />
   );
 }

@@ -64,9 +64,9 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 p-6">
+        <div className="flex items-center justify-between border-b border-brand-gray-lightest p-6">
           <h3 className="text-xl font-bold text-black">Edit Session</h3>
-          <button onClick={onClose} className="rounded-lg p-2 hover:bg-gray-100 cursor-pointer">
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-text-brand-gray-lightest cursor-pointer">
             <X className="h-5 w-5 text-black" />
           </button>
         </div>
@@ -142,7 +142,7 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
           </div>
 
           {formData.submission_type === 'workshop' ? (
-            <div className="grid grid-cols-2 gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="grid grid-cols-2 gap-4 rounded-xl border border-brand-gray-lightest bg-gray-50 p-4">
               <div>
                 <label className="mb-1 block text-sm font-medium text-black">Duration (hours)</label>
                 <input
@@ -169,7 +169,7 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
           ) : null}
 
           {formData.submission_type === 'panel' ? (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-xl border border-brand-gray-lightest bg-gray-50 p-4">
               <p className="mb-3 text-sm font-medium text-black">Additional panel speakers</p>
               <div className="grid max-h-44 gap-2 overflow-y-auto">
                 {speakers.map((speaker) => {
@@ -195,7 +195,7 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
           ) : null}
 
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-gray-600 hover:text-black">
+            <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-brand-gray-dark hover:text-black">
               Cancel
             </button>
             <button

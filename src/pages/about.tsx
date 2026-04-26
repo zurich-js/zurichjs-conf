@@ -100,7 +100,7 @@ export default function AboutUs() {
           ))}
         </div>
         <div className="mt-16">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <h3 className="text-xl font-bold text-black mb-4">
             {aboutPageData.team.volunteersTitle}
           </h3>
           <p className="text-base text-gray-700 leading-relaxed mb-8 max-w-3xl">
@@ -139,7 +139,7 @@ export default function AboutUs() {
               ))}
             </div>
             <div>
-              <div className="mb-6 w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
+              <div className="mb-6 w-full h-64 b[a-z]-brand-gray-lightest rounded-lg overflow-hidden">
                 <iframe
                   src={aboutPageData.venue.mapUrl}
                   width="100%"

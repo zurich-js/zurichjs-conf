@@ -5,33 +5,70 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Building2 } from 'lucide-react';
+import { createColumnHelper, type ColumnDef, type SortingState, type Updater } from '@tanstack/react-table';
+import { Building2, Plus, Search } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { cfpQueryKeys, type CfpAdminSpeaker, type CfpAdminSubmission } from '@/lib/types/cfp-admin';
-import { BusyArea, Pagination } from '@/components/atoms';
+import { Pagination } from '@/components/atoms';
+import { AdminDataTable, AdminMobileCard, AdminTableToolbar } from '@/components/admin/common';
 import { SpeakerModal } from './SpeakerModal';
 import { AddSpeakerModal } from './AddSpeakerModal';
-import { cycleSingleSort, SortIndicator, type SingleSort } from '../tableSort';
 
-// Avatar component with initials fallback
 function SpeakerAvatar({ speaker, size = 'md' }: { speaker: CfpAdminSpeaker; size?: 'sm' | 'md' }) {
   const initials = `${speaker.first_name?.[0] || ''}${speaker.last_name?.[0] || ''}`.toUpperCase() || '?';
-  const sizeClasses = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
+  const sizeClasses = size === 'sm' ? 'h-8 w-8 text-xs' : 'h-10 w-10 text-sm';
 
   if (speaker.profile_image_url) {
     return (
       <img
         src={speaker.profile_image_url}
         alt={`${speaker.first_name} ${speaker.last_name}`}
-        className={`${sizeClasses} rounded-full object-cover shrink-0`}
+        className={`${sizeClasses} shrink-0 rounded-full object-cover`}
       />
     );
   }
 
   return (
-    <div className={`${sizeClasses} rounded-full bg-brand-primary flex items-center justify-center shrink-0`}>
+    <div className={`${sizeClasses} flex shrink-0 items-center justify-center rounded-full bg-brand-primary`}>
       <span className="font-medium text-black">{initials}</span>
     </div>
+  );
+}
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+  activeClassName,
+  inactiveClassName = 'bg-gray-300',
+  title,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+  activeClassName: string;
+  inactiveClassName?: string;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onChange();
+      }}
+      disabled={disabled}
+      title={title}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+        checked ? activeClassName : inactiveClassName
+      } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+    >
+      <span
+        className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
   );
 }
 
@@ -44,7 +81,8 @@ interface SpeakersTabProps {
   initialSpeakerTab?: 'profile' | 'feedback';
 }
 
-type SpeakerSortKey = 'speaker' | 'company' | 'joined';
+const ITEMS_PER_PAGE = 10;
+const columnHelper = createColumnHelper<CfpAdminSpeaker>();
 
 export function SpeakersTab({
   speakers,
@@ -55,27 +93,26 @@ export function SpeakersTab({
   initialSpeakerTab,
 }: SpeakersTabProps) {
   const [internalSelectedSpeaker, setInternalSelectedSpeaker] = useState<CfpAdminSpeaker | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [profileFilter, setProfileFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden'>('all');
+  const [featuredFilter, setFeaturedFilter] = useState<'all' | 'featured' | 'not_featured'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showAddSpeaker, setShowAddSpeaker] = useState(false);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'joined', desc: true }]);
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
   const selectedSpeaker = controlledSpeaker !== undefined ? controlledSpeaker : internalSelectedSpeaker;
   const setSelectedSpeaker = (speaker: CfpAdminSpeaker | null) => {
     if (onSelectSpeaker) {
       onSelectSpeaker(speaker);
-    } else {
-      setInternalSelectedSpeaker(speaker);
+      return;
     }
+    setInternalSelectedSpeaker(speaker);
   };
-  const [searchQuery, setSearchQuery] = useState('');
-  const [profileFilter, setProfileFilter] = useState<'all' | 'complete' | 'incomplete'>('all');
-  const [visibilityFilter, setVisibilityFilter] = useState<string>('all');
-  const [featuredFilter, setFeaturedFilter] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [showAddSpeaker, setShowAddSpeaker] = useState(false);
-  const [sort, setSort] = useState<SingleSort<SpeakerSortKey>>({ key: 'joined', direction: 'desc' });
-  const ITEMS_PER_PAGE = 10;
-  const queryClient = useQueryClient();
-  const toast = useToast();
 
-  // Toggle visibility mutation
   const toggleVisibilityMutation = useMutation({
     mutationFn: async ({ id, isVisible }: { id: string; isVisible: boolean }) => {
       const res = await fetch(`/api/admin/cfp/speakers/${id}`, {
@@ -94,7 +131,6 @@ export function SpeakersTab({
     },
   });
 
-  // Toggle featured mutation
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, isFeatured }: { id: string; isFeatured: boolean }) => {
       const res = await fetch(`/api/admin/cfp/speakers/${id}`, {
@@ -113,93 +149,86 @@ export function SpeakersTab({
     },
   });
 
-  // Filter speakers
   const filteredSpeakers = useMemo(() => {
     let result = [...speakers];
 
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        (s) =>
-          s.first_name?.toLowerCase().includes(query) ||
-          s.last_name?.toLowerCase().includes(query) ||
-          s.email.toLowerCase().includes(query) ||
-          s.company?.toLowerCase().includes(query)
+        (speaker) =>
+          speaker.first_name?.toLowerCase().includes(query) ||
+          speaker.last_name?.toLowerCase().includes(query) ||
+          speaker.email.toLowerCase().includes(query) ||
+          speaker.company?.toLowerCase().includes(query)
       );
     }
 
-    // Profile status filter
     if (profileFilter === 'complete') {
-      result = result.filter((s) => Boolean(s.bio));
+      result = result.filter((speaker) => Boolean(speaker.bio));
     } else if (profileFilter === 'incomplete') {
-      result = result.filter((s) => !s.bio);
+      result = result.filter((speaker) => !speaker.bio);
     }
 
-    // Visibility filter
     if (visibilityFilter === 'visible') {
-      result = result.filter((s) => s.is_visible);
+      result = result.filter((speaker) => speaker.is_visible);
     } else if (visibilityFilter === 'hidden') {
-      result = result.filter((s) => !s.is_visible);
+      result = result.filter((speaker) => !speaker.is_visible);
     }
 
-    // Featured filter
     if (featuredFilter === 'featured') {
-      result = result.filter((s) => s.is_featured);
+      result = result.filter((speaker) => speaker.is_featured);
     } else if (featuredFilter === 'not_featured') {
-      result = result.filter((s) => !s.is_featured);
+      result = result.filter((speaker) => !speaker.is_featured);
     }
 
-    result.sort((a, b) => {
-      const directionFactor = sort.direction === 'asc' ? 1 : -1;
+    if (sorting.length > 0) {
+      result = [...result].sort((a, b) => {
+        for (const rule of sorting) {
+          const direction = rule.desc ? -1 : 1;
+          let comparison = 0;
 
-      const compareText = (aValue: string | null | undefined, bValue: string | null | undefined) =>
-        (aValue || '').localeCompare(bValue || '', undefined, { sensitivity: 'base' }) * directionFactor;
+          if (rule.id === 'speaker') {
+            comparison = getSpeakerName(a).localeCompare(getSpeakerName(b), undefined, { sensitivity: 'base' });
+          } else if (rule.id === 'company') {
+            comparison = (a.company || '').localeCompare(b.company || '', undefined, { sensitivity: 'base' });
+          } else if (rule.id === 'joined') {
+            comparison = new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          }
 
-      const compareDate = (aValue: string | null | undefined, bValue: string | null | undefined) =>
-        ((new Date(aValue || 0).getTime() || 0) - (new Date(bValue || 0).getTime() || 0)) * directionFactor;
-
-      switch (sort.key) {
-        case 'speaker': {
-          const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim();
-          const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim();
-          return compareText(aName, bName);
+          if (comparison !== 0) {
+            return comparison * direction;
+          }
         }
-        case 'company':
-          return compareText(a.company, b.company);
-        case 'joined':
-        default:
-          return compareDate(a.created_at, b.created_at);
-      }
-    });
+
+        return 0;
+      });
+    }
 
     return result;
-  }, [speakers, searchQuery, profileFilter, visibilityFilter, featuredFilter, sort]);
+  }, [featuredFilter, profileFilter, searchQuery, sorting, speakers, visibilityFilter]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredSpeakers.length / ITEMS_PER_PAGE);
   const paginatedSpeakers = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredSpeakers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredSpeakers, currentPage]);
+  }, [currentPage, filteredSpeakers]);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, profileFilter, visibilityFilter, featuredFilter, sort]);
+  }, [featuredFilter, profileFilter, searchQuery, sorting, visibilityFilter]);
 
-  const toggleSort = (key: SpeakerSortKey) => {
-    setSort((prev) => cycleSingleSort(prev, key));
+  const handleSortingChange = (updater: Updater<SortingState>) => {
+    setSorting((previous) => {
+      const next = typeof updater === 'function' ? updater(previous) : updater;
+      return next.slice(0, 1);
+    });
   };
-
-  const sortIndicator = (key: SpeakerSortKey) => (sort.key === key ? sort.direction : null);
 
   const handleSpeakerUpdated = () => {
     queryClient.invalidateQueries({ queryKey: cfpQueryKeys.speakers });
     setSelectedSpeaker(null);
   };
 
-  // Delete speaker mutation
   const deleteSpeakerMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/admin/cfp/speakers/${id}`, {
@@ -221,264 +250,152 @@ export function SpeakersTab({
     },
   });
 
+  const columns: Array<ColumnDef<CfpAdminSpeaker>> = getSpeakerColumns({
+      onToggleVisibility: (speaker) =>
+        toggleVisibilityMutation.mutate({ id: speaker.id, isVisible: !speaker.is_visible }),
+      onToggleFeatured: (speaker) =>
+        toggleFeaturedMutation.mutate({ id: speaker.id, isFeatured: !speaker.is_featured }),
+      onSelectSpeaker: setSelectedSpeaker,
+      visibilityPending: toggleVisibilityMutation.isPending,
+      featuredPending: toggleFeaturedMutation.isPending,
+    });
+
+  const hasActiveFilters = Boolean(
+    searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all'
+  );
+
   return (
     <div>
-      {/* Search and Filters */}
-      <div className="mb-6 flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search speakers by name, email, or company..."
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-brand-primary focus:outline-none"
-          />
-          <select
-            value={profileFilter}
-            onChange={(e) => setProfileFilter(e.target.value as 'all' | 'complete' | 'incomplete')}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-brand-primary focus:outline-none"
-          >
-            <option value="all">All Profiles</option>
-            <option value="complete">Complete</option>
-            <option value="incomplete">Incomplete</option>
-          </select>
-          <select
-            value={visibilityFilter}
-            onChange={(e) => setVisibilityFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-brand-primary focus:outline-none"
-          >
-            <option value="all">All Visibility</option>
-            <option value="visible">Visible</option>
-            <option value="hidden">Hidden</option>
-          </select>
-          <select
-            value={featuredFilter}
-            onChange={(e) => setFeaturedFilter(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-black focus:ring-2 focus:ring-brand-primary focus:outline-none"
-          >
-            <option value="all">All Featured</option>
-            <option value="featured">Featured</option>
-            <option value="not_featured">Not Featured</option>
-          </select>
-          <button
-            onClick={() => setShowAddSpeaker(true)}
-            className="px-4 py-2 bg-brand-primary hover:bg-[#e8d95e] text-black font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            Add Speaker
-          </button>
-        </div>
-      </div>
-
-      <BusyArea busy={isLoading}>
-        <>
-          {/* Mobile Card View */}
-          <div className="lg:hidden space-y-4">
-            {paginatedSpeakers.map((s) => (
-              <div key={s.id} className="bg-white rounded-xl p-4 border border-gray-200">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-12 h-12 shrink-0">
-                    <SpeakerAvatar speaker={s} size="md" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-black text-sm">
-                      {s.first_name || s.last_name ? `${s.first_name} ${s.last_name}` : 'No name'}
-                    </div>
-                    {s.job_title && (
-                      <div className="text-xs text-gray-500">{s.job_title}</div>
-                    )}
-                    <div className="text-xs text-gray-600 truncate mt-0.5">{s.email}</div>
-                  </div>
-                  <div className="flex flex-col gap-1 shrink-0">
-                    {s.bio ? (
-                      <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium">Complete</span>
-                    ) : (
-                      <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Incomplete</span>
-                    )}
-                    {s.company_interested_in_sponsoring && (
-                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-medium flex items-center gap-1">
-                        <Building2 className="w-3 h-3" />
-                        Sponsor
-                      </span>
-                    )}
-                  </div>
+      <AdminDataTable
+        data={paginatedSpeakers}
+        columns={columns}
+        sorting={sorting}
+        onSortingChange={handleSortingChange}
+        getRowId={(speaker) => speaker.id}
+        isLoading={isLoading}
+        emptyState={hasActiveFilters ? 'No speakers match your filters' : 'No speakers found'}
+        toolbar={(
+          <AdminTableToolbar
+            left={hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setProfileFilter('all');
+                  setVisibilityFilter('all');
+                  setFeaturedFilter('all');
+                }}
+                className="ml-2 inline-flex text-xs text-brand-gray-dark underline hover:text-black cursor-pointer"
+              >
+                Reset filters
+              </button>
+            ) : undefined}
+            right={(
+              <>
+                <div className="relative min-w-[280px] max-w-full flex-1 lg:flex-none">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-gray-medium" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search speakers by name, email, or company..."
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm text-black placeholder-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                  />
                 </div>
-                {/* Visibility and Featured Toggles */}
-                <div className="flex items-center gap-4 mb-3 py-2 border-t border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">Visible</span>
-                    <button
-                      onClick={() => toggleVisibilityMutation.mutate({ id: s.id, isVisible: !s.is_visible })}
-                      disabled={toggleVisibilityMutation.isPending}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                        s.is_visible ? 'bg-green-500' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          s.is_visible ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">Featured</span>
-                    <button
-                      onClick={() => toggleFeaturedMutation.mutate({ id: s.id, isFeatured: !s.is_featured })}
-                      disabled={toggleFeaturedMutation.isPending}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                        s.is_featured ? 'bg-brand-primary' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          s.is_featured ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs text-gray-500 min-w-0 truncate">
-                    {s.company && <span className="mr-2">{s.company}</span>}
-                    <span>Joined {new Date(s.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedSpeaker(s)}
-                    className="px-3 py-1.5 bg-brand-primary hover:bg-[#e8d95e] text-black font-medium text-xs rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap"
-                  >
-                    View / Edit
-                  </button>
-                </div>
-              </div>
-            ))}
-            {paginatedSpeakers.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
-              </div>
+                <select
+                  value={profileFilter}
+                  onChange={(event) => setProfileFilter(event.target.value as typeof profileFilter)}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  <option value="all">All profiles</option>
+                  <option value="complete">Complete</option>
+                  <option value="incomplete">Incomplete</option>
+                </select>
+                <select
+                  value={visibilityFilter}
+                  onChange={(event) => setVisibilityFilter(event.target.value as typeof visibilityFilter)}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  <option value="all">All visibility</option>
+                  <option value="visible">Visible</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+                <select
+                  value={featuredFilter}
+                  onChange={(event) => setFeaturedFilter(event.target.value as typeof featuredFilter)}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                >
+                  <option value="all">All featured</option>
+                  <option value="featured">Featured</option>
+                  <option value="not_featured">Not featured</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowAddSpeaker(true)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 font-semibold text-black transition-all hover:bg-[#e8d95e] cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Speaker</span>
+                </button>
+              </>
             )}
-          </div>
+          />
+        )}
+        mobileList={{
+          renderCard: (speaker) => (
+            <AdminMobileCard key={speaker.id}>
+              <div className="flex items-start gap-3">
+                <SpeakerAvatar speaker={speaker} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-black">{getSpeakerName(speaker)}</div>
+                  {speaker.job_title ? <div className="text-sm text-brand-gray-medium">{speaker.job_title}</div> : null}
+                  <div className="mt-0.5 truncate text-xs text-brand-gray-dark">{speaker.email}</div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <ProfileBadge speaker={speaker} />
+                  {speaker.company_interested_in_sponsoring ? <SponsorBadge compact /> : null}
+                </div>
+              </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full table-fixed">
-              <thead className="bg-gray-50 text-left text-sm text-black font-semibold">
-                <tr>
-                  <th className="px-4 py-3 w-[200px]">
-                    <button type="button" onClick={() => toggleSort('speaker')} className="inline-flex items-center gap-1 cursor-pointer">
-                      <span>Speaker</span><SortIndicator direction={sortIndicator('speaker')} />
-                    </button>
-                  </th>
-                  <th className="px-4 py-3 w-[180px]">Email</th>
-                  <th className="px-4 py-3 w-[120px]">
-                    <button type="button" onClick={() => toggleSort('company')} className="inline-flex items-center gap-1 cursor-pointer">
-                      <span>Company</span><SortIndicator direction={sortIndicator('company')} />
-                    </button>
-                  </th>
-                  <th className="px-4 py-3 w-[90px]">Profile</th>
-                  <th className="px-4 py-3 w-[80px]">Sponsor</th>
-                  <th className="px-4 py-3 w-[70px]">Visible</th>
-                  <th className="px-4 py-3 w-[70px]">Featured</th>
-                  <th className="px-4 py-3 w-[90px]">
-                    <button type="button" onClick={() => toggleSort('joined')} className="inline-flex items-center gap-1 cursor-pointer">
-                      <span>Joined</span><SortIndicator direction={sortIndicator('joined')} />
-                    </button>
-                  </th>
-                  <th className="px-4 py-3 w-[100px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {paginatedSpeakers.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <SpeakerAvatar speaker={s} size="md" />
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium text-black truncate">
-                            {s.first_name || s.last_name ? `${s.first_name} ${s.last_name}` : 'No name'}
-                          </div>
-                          {s.job_title && (
-                            <div className="text-xs text-gray-500 truncate">{s.job_title}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-black truncate" title={s.email}>{s.email}</td>
-                    <td className="px-4 py-4 text-sm text-black truncate" title={s.company || undefined}>{s.company || '-'}</td>
-                    <td className="px-4 py-4">
-                      {s.bio ? (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Complete</span>
-                      ) : (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Incomplete</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      {s.company_interested_in_sponsoring ? (
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium inline-flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          Yes
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      <button
-                        onClick={() => toggleVisibilityMutation.mutate({ id: s.id, isVisible: !s.is_visible })}
-                        disabled={toggleVisibilityMutation.isPending}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                          s.is_visible ? 'bg-green-500' : 'bg-gray-300'
-                        }`}
-                        title={s.is_visible ? 'Visible on lineup' : 'Hidden from lineup'}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            s.is_visible ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </td>
-                    <td className="px-4 py-4">
-                      <button
-                        onClick={() => toggleFeaturedMutation.mutate({ id: s.id, isFeatured: !s.is_featured })}
-                        disabled={toggleFeaturedMutation.isPending}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                          s.is_featured ? 'bg-brand-primary' : 'bg-gray-300'
-                        }`}
-                        title={s.is_featured ? 'Featured speaker' : 'Not featured'}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            s.is_featured ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-black">
-                      {new Date(s.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-4">
-                      <button
-                        onClick={() => setSelectedSpeaker(s)}
-                        className="px-3 py-1.5 bg-brand-primary hover:bg-[#e8d95e] text-black font-medium text-sm rounded-lg transition-all cursor-pointer"
-                      >
-                        View / Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {paginatedSpeakers.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-black">
-                      {searchQuery || profileFilter !== 'all' || visibilityFilter !== 'all' || featuredFilter !== 'all' ? 'No speakers match your filters' : 'No speakers found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-brand-gray-lightest pt-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-brand-gray-dark">Visible</span>
+                  <ToggleSwitch
+                    checked={speaker.is_visible}
+                    onChange={() => toggleVisibilityMutation.mutate({ id: speaker.id, isVisible: !speaker.is_visible })}
+                    disabled={toggleVisibilityMutation.isPending}
+                    activeClassName="bg-green-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-brand-gray-dark">Featured</span>
+                  <ToggleSwitch
+                    checked={speaker.is_featured}
+                    onChange={() => toggleFeaturedMutation.mutate({ id: speaker.id, isFeatured: !speaker.is_featured })}
+                    disabled={toggleFeaturedMutation.isPending}
+                    activeClassName="bg-brand-primary"
+                  />
+                </div>
+              </div>
 
-          {/* Pagination */}
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="min-w-0 text-xs text-brand-gray-medium">
+                  {speaker.company ? <span className="mr-2 truncate">{speaker.company}</span> : null}
+                  <span>Joined {formatDate(speaker.created_at)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSpeaker(speaker)}
+                  className="shrink-0 rounded-lg bg-brand-primary px-3 py-1.5 text-xs font-medium text-black transition-all hover:bg-[#e8d95e] cursor-pointer"
+                >
+                  View / Edit
+                </button>
+              </div>
+            </AdminMobileCard>
+          ),
+          emptyState: hasActiveFilters ? 'No speakers match your filters' : 'No speakers found',
+        }}
+        pagination={(
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -487,28 +404,27 @@ export function SpeakersTab({
             totalItems={filteredSpeakers.length}
             variant="light"
           />
-        </>
-      </BusyArea>
+        )}
+      />
 
-      {/* Delete Error Alert */}
-      {deleteError && (
-        <div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg z-50 max-w-md">
+      {deleteError ? (
+        <div className="fixed bottom-4 right-4 z-50 max-w-md rounded-lg border border-red-200 bg-red-50 p-4 shadow-lg">
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <p className="text-sm font-medium text-red-800">{deleteError}</p>
             </div>
             <button
+              type="button"
               onClick={() => setDeleteError(null)}
-              className="text-red-600 hover:text-red-800 cursor-pointer"
+              className="cursor-pointer text-red-600 hover:text-red-800"
             >
               &times;
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Speaker Modal */}
-      {selectedSpeaker && (
+      {selectedSpeaker ? (
         <SpeakerModal
           speaker={selectedSpeaker}
           onClose={() => setSelectedSpeaker(null)}
@@ -524,10 +440,9 @@ export function SpeakersTab({
           }
           initialTab={initialSpeakerTab}
         />
-      )}
+      ) : null}
 
-      {/* Add Speaker Modal */}
-      {showAddSpeaker && (
+      {showAddSpeaker ? (
         <AddSpeakerModal
           onClose={() => setShowAddSpeaker(false)}
           onCreated={() => {
@@ -537,7 +452,154 @@ export function SpeakersTab({
             toast.success('Speaker Added', 'New speaker has been created successfully');
           }}
         />
-      )}
+      ) : null}
     </div>
+  );
+}
+
+function getSpeakerColumns({
+  onToggleVisibility,
+  onToggleFeatured,
+  onSelectSpeaker,
+  visibilityPending,
+  featuredPending,
+}: {
+  onToggleVisibility: (speaker: CfpAdminSpeaker) => void;
+  onToggleFeatured: (speaker: CfpAdminSpeaker) => void;
+  onSelectSpeaker: (speaker: CfpAdminSpeaker) => void;
+  visibilityPending: boolean;
+  featuredPending: boolean;
+}): Array<ColumnDef<CfpAdminSpeaker>> {
+  return [
+    columnHelper.display({
+      id: 'speaker',
+      header: 'Speaker',
+      enableSorting: true,
+      size: 220,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <SpeakerAvatar speaker={row.original} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium text-black">{getSpeakerName(row.original)}</div>
+            {row.original.job_title ? (
+              <div className="truncate text-xs text-brand-gray-medium">{row.original.job_title}</div>
+            ) : null}
+          </div>
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'email',
+      header: 'Email',
+      enableSorting: false,
+      size: 220,
+      cell: ({ row }) => <span title={row.original.email} className="block truncate">{row.original.email}</span>,
+    }),
+    columnHelper.display({
+      id: 'company',
+      header: 'Company',
+      enableSorting: true,
+      size: 140,
+      cell: ({ row }) => (
+        <span title={row.original.company || undefined} className="block truncate">
+          {row.original.company || '-'}
+        </span>
+      ),
+    }),
+    columnHelper.display({
+      id: 'profile',
+      header: 'Profile',
+      enableSorting: false,
+      size: 100,
+      cell: ({ row }) => <ProfileBadge speaker={row.original} />,
+    }),
+    columnHelper.display({
+      id: 'sponsor',
+      header: 'Sponsor',
+      enableSorting: false,
+      size: 110,
+      cell: ({ row }) => (row.original.company_interested_in_sponsoring ? <SponsorBadge /> : <span className="text-sm text-brand-gray-medium">-</span>),
+    }),
+    columnHelper.display({
+      id: 'visible',
+      header: 'Visible',
+      enableSorting: false,
+      size: 90,
+      cell: ({ row }) => (
+        <ToggleSwitch
+          checked={row.original.is_visible}
+          onChange={() => onToggleVisibility(row.original)}
+          disabled={visibilityPending}
+          activeClassName="bg-green-500"
+          title={row.original.is_visible ? 'Visible on lineup' : 'Hidden from lineup'}
+        />
+      ),
+    }),
+    columnHelper.display({
+      id: 'featured',
+      header: 'Featured',
+      enableSorting: false,
+      size: 90,
+      cell: ({ row }) => (
+        <ToggleSwitch
+          checked={row.original.is_featured}
+          onChange={() => onToggleFeatured(row.original)}
+          disabled={featuredPending}
+          activeClassName="bg-brand-primary"
+          title={row.original.is_featured ? 'Featured speaker' : 'Not featured'}
+        />
+      ),
+    }),
+    columnHelper.display({
+      id: 'joined',
+      header: 'Joined',
+      enableSorting: true,
+      size: 110,
+      cell: ({ row }) => formatDate(row.original.created_at),
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      size: 120,
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelectSpeaker(row.original);
+          }}
+          className="rounded-lg bg-brand-primary px-3 py-1.5 text-sm font-medium text-black transition-all hover:bg-[#e8d95e] cursor-pointer"
+        >
+          View / Edit
+        </button>
+      ),
+    }),
+  ];
+}
+
+function getSpeakerName(speaker: CfpAdminSpeaker) {
+  const fullName = `${speaker.first_name || ''} ${speaker.last_name || ''}`.trim();
+  return fullName || 'No name';
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString();
+}
+
+function ProfileBadge({ speaker }: { speaker: CfpAdminSpeaker }) {
+  if (speaker.bio) {
+    return <span className="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">Complete</span>;
+  }
+
+  return <span className="rounded bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">Incomplete</span>;
+}
+
+function SponsorBadge({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800">
+      <Building2 className="h-3 w-3" />
+      <span>{compact ? 'Sponsor' : 'Yes'}</span>
+    </span>
   );
 }

@@ -52,7 +52,7 @@ export function DecisionStatusBadges({
       icon={<FileX className={iconClass} />}
       label="No decision"
       tooltip="No decision record yet — status was changed without creating a decision"
-      className="bg-gray-100 text-gray-600"
+      className="bg-text-brand-gray-lightest text-brand-gray-dark"
     />
   );
 
@@ -90,7 +90,7 @@ export function DecisionStatusBadges({
         icon={<MailX className={iconClass} />}
         label="Not emailed"
         tooltip="Speaker has not been notified yet"
-        className="bg-gray-100 text-gray-600"
+        className="bg-text-brand-gray-lightest text-brand-gray-dark"
       />
     );
   }

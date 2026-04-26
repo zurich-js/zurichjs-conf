@@ -43,11 +43,11 @@ export function ReadinessChecklist({
               {item.ok ? <Check className="size-3" /> : <AlertTriangle className="size-2.5" />}
             </span>
             <div>
-              <span className={item.ok ? 'text-gray-700' : 'text-gray-900 font-medium'}>
+              <span className={item.ok ? 'text-gray-700' : 'text-black font-medium'}>
                 {item.label}
               </span>
               {!item.ok && item.hint && (
-                <span className="block text-gray-500">{item.hint}</span>
+                <span className="block text-brand-gray-medium">{item.hint}</span>
               )}
             </div>
           </li>

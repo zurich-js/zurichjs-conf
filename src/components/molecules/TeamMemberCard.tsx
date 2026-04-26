@@ -27,8 +27,8 @@ export const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
           className="object-cover size-full rounded-lg"
         />
       </div>
-      <h3 className="text-lg font-bold text-gray-900 mb-1">{name}</h3>
-      <p className="text-xs text-gray-600">{role}</p>
+      <h3 className="text-lg font-bold text-black mb-1">{name}</h3>
+      <p className="text-xs text-brand-gray-dark">{role}</p>
     </div>
   );
 };

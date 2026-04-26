@@ -24,7 +24,7 @@ export function VipPerksCard({ isVip }: VipPerksCardProps) {
         {VIP_PERKS.map((perk, index) => (
           <li key={index} className="flex items-start gap-3">
             <span className="text-amber-400 mt-0.5">✨</span>
-            <span className="text-gray-200">{perk}</span>
+            <span className="tex[a-z]-brand-gray-lightest">{perk}</span>
           </li>
         ))}
       </ul>
@@ -47,7 +47,7 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
         )}
         <h2 className="text-xl font-bold text-blue-400">VIP Upgrade Pending</h2>
       </div>
-      <p className="text-gray-200 mb-6">
+      <p className="tex[a-z]-brand-gray-lightest mb-6">
         Complete your payment to unlock VIP benefits and enhance your conference experience.
       </p>
 
@@ -71,7 +71,7 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
       {upgrade.amount != null && upgrade.currency && (
         <div className="bg-black/30 rounded-lg p-4 mb-6">
           <div className="flex justify-between items-center">
-            <span className="text-gray-400">Upgrade Amount</span>
+            <span className="text-brand-gray-medium">Upgrade Amount</span>
             <span className="text-brand-white font-bold text-lg">
               {upgrade.currency} {(upgrade.amount / 100).toFixed(2)}
             </span>
@@ -108,7 +108,7 @@ function BankTransferDetails({ upgrade }: { upgrade: PendingUpgrade }) {
           <TransferRow label="IBAN" value={BANK_TRANSFER_DETAILS.iban} mono />
           {upgrade.bankTransferReference && (
             <div className="flex justify-between pt-2 border-t border-gray-700">
-              <span className="text-gray-400">Reference</span>
+              <span className="text-brand-gray-medium">Reference</span>
               <span className="text-amber-400 font-mono font-bold">{upgrade.bankTransferReference}</span>
             </div>
           )}
@@ -134,7 +134,7 @@ function BankTransferDetails({ upgrade }: { upgrade: PendingUpgrade }) {
 function TransferRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex justify-between">
-      <span className="text-gray-400">{label}</span>
+      <span className="text-brand-gray-medium">{label}</span>
       <span className={`text-brand-white ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
     </div>
   );
@@ -156,7 +156,7 @@ export function UpgradeCta({ ticketId, firstName, lastName, email }: UpgradeCtaP
         <span className="text-2xl">✨</span>
         <div>
           <h3 className="text-brand-primary font-semibold mb-2">Want to upgrade to VIP?</h3>
-          <p className="text-gray-200 text-sm mb-3">
+          <p className="tex[a-z]-brand-gray-lightest text-sm mb-3">
             Get 20% off all workshops, an exclusive speaker tour invitation, and limited edition goodies. Email us to
             upgrade your ticket.
           </p>

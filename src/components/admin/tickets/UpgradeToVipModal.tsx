@@ -163,25 +163,25 @@ export function UpgradeToVipModal({
         <div className="space-y-6">
           {/* Attendee Summary */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">Attendee Details</h4>
+            <h4 className="font-medium text-black mb-2">Attendee Details</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <span className="text-gray-500">Name:</span>{' '}
-                <span className="text-gray-900">{ticket.firstName} {ticket.lastName}</span>
+                <span className="text-brand-gray-medium">Name:</span>{' '}
+                <span className="text-black">{ticket.firstName} {ticket.lastName}</span>
               </div>
               <div>
-                <span className="text-gray-500">Email:</span>{' '}
-                <span className="text-gray-900">{ticket.email}</span>
+                <span className="text-brand-gray-medium">Email:</span>{' '}
+                <span className="text-black">{ticket.email}</span>
               </div>
               {ticket.company && (
                 <div>
-                  <span className="text-gray-500">Company:</span>{' '}
-                  <span className="text-gray-900">{ticket.company}</span>
+                  <span className="text-brand-gray-medium">Company:</span>{' '}
+                  <span className="text-black">{ticket.company}</span>
                 </div>
               )}
               <div>
-                <span className="text-gray-500">Current Tier:</span>{' '}
-                <span className="text-gray-900 capitalize">{ticket.ticketCategory}</span>
+                <span className="text-brand-gray-medium">Current Tier:</span>{' '}
+                <span className="text-black capitalize">{ticket.ticketCategory}</span>
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ export function UpgradeToVipModal({
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-5 h-5 text-amber-600" />
-              <h4 className="font-medium text-gray-900">VIP Benefits</h4>
+              <h4 className="font-medium text-black">VIP Benefits</h4>
             </div>
             <ul className="space-y-1 text-sm text-gray-700">
               {VIP_PERKS.map((perk, index) => (
@@ -204,7 +204,7 @@ export function UpgradeToVipModal({
 
           {/* Upgrade Mode Selector */}
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">Upgrade Mode</h4>
+            <h4 className="font-medium text-black mb-3">Upgrade Mode</h4>
             <div className="space-y-2">
               {UPGRADE_MODES.map((mode) => (
                 <label
@@ -212,7 +212,7 @@ export function UpgradeToVipModal({
                   className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
                     upgradeMode === mode.value
                       ? 'border-brand-primary bg-yellow-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-brand-gray-lightest hover:border-gray-300'
                   }`}
                 >
                   <input
@@ -223,12 +223,12 @@ export function UpgradeToVipModal({
                     onChange={(e) => setUpgradeMode(e.target.value as UpgradeMode)}
                     className="sr-only"
                   />
-                  <div className={`${upgradeMode === mode.value ? 'text-amber-600' : 'text-gray-400'}`}>
+                  <div className={`${upgradeMode === mode.value ? 'text-amber-600' : 'text-brand-gray-medium'}`}>
                     {mode.icon}
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">{mode.label}</div>
-                    <div className="text-sm text-gray-500">{mode.description}</div>
+                    <div className="font-medium text-black">{mode.label}</div>
+                    <div className="text-sm text-brand-gray-medium">{mode.description}</div>
                   </div>
                 </label>
               ))}
@@ -301,7 +301,7 @@ export function UpgradeToVipModal({
               maxLength={500}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent resize-none"
             />
-            <p className="text-xs text-gray-500 mt-1">{adminNote.length}/500 characters</p>
+            <p className="text-xs text-brand-gray-medium mt-1">{adminNote.length}/500 characters</p>
           </div>
 
           {/* Warning/Info Box */}

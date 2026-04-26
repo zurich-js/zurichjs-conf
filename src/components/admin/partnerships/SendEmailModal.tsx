@@ -54,7 +54,7 @@ export function SendEmailModal({
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4">
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75" />
+          <div className="fixed inset-0 bg-brand-gray-medium bg-opacity-75" />
           <div className="relative bg-white rounded-lg p-6 sm:p-8 text-center max-w-sm w-full mx-4">
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
@@ -72,7 +72,7 @@ export function SendEmailModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-2 sm:px-4 pt-4 pb-20 text-center sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose} />
+        <div className="fixed inset-0 bg-brand-gray-medium bg-opacity-75" onClick={onClose} />
 
         <div className="relative inline-block w-full max-w-lg mx-0 sm:mx-4 bg-white rounded-lg text-left overflow-hidden shadow-xl transform my-2 sm:my-8 text-black max-h-[95vh] sm:max-h-[90vh] flex flex-col">
           {/* Header */}
@@ -160,7 +160,7 @@ export function SendEmailModal({
                 }
                 placeholder="Add a personalized message..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:border-brand-primary text-sm"
               />
             </div>
 
@@ -168,7 +168,7 @@ export function SendEmailModal({
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t flex-shrink-0">
               <button
                 onClick={onClose}
-                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-black bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-black bg-text-brand-gray-lightest rounded-lg hover:b[a-z]-brand-gray-lightest cursor-pointer"
               >
                 Cancel
               </button>

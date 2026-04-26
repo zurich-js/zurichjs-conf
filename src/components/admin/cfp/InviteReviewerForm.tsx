@@ -101,7 +101,7 @@ export function InviteReviewerForm({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="reviewer@example.com"
               required
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-brand-primary focus:outline-none"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:outline-none"
             />
           </div>
           <div className={variant === 'modal' ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'contents'}>
@@ -112,7 +112,7 @@ export function InviteReviewerForm({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-brand-primary focus:outline-none"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:outline-none"
               />
             </div>
             <div>
@@ -133,7 +133,7 @@ export function InviteReviewerForm({
         </div>
 
         {selectedRole && (
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
+          <div className="bg-white rounded-lg p-3 border border-brand-gray-lightest">
             <div className="flex items-start gap-2">
               <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
@@ -147,11 +147,11 @@ export function InviteReviewerForm({
         {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
 
         {variant === 'modal' ? (
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t border-brand-gray-lightest mt-4">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-black hover:bg-gray-100 rounded-lg cursor-pointer"
+              className="px-4 py-2 text-black hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer"
             >
               Cancel
             </button>

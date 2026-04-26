@@ -51,7 +51,7 @@ export function AddTagForm() {
           onChange={(e) => setName(e.target.value)}
           placeholder="New Tag"
           required
-          className="px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-brand-primary focus:outline-none"
+          className="px-3 py-2 rounded-lg border border-gray-300 text-black placeholder-brand-gray-medium focus:ring-2 focus:ring-brand-primary focus:outline-none"
         />
       </div>
       <label className="flex items-center gap-2">

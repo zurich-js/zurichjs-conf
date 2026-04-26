@@ -24,7 +24,7 @@ export function TicketDetailsCard({ ticket }: TicketDetailsCardProps) {
         {ticket.job_title && <DetailRow label="Job Title" value={ticket.job_title} />}
 
         <div className="flex justify-between items-center py-3 border-b border-gray-800">
-          <span className="text-gray-400">Ticket Type</span>
+          <span className="text-brand-gray-medium">Ticket Type</span>
           <span className="text-brand-white capitalize flex items-center gap-2">
             {ticket.ticket_category === 'vip' && (
               <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -40,7 +40,7 @@ export function TicketDetailsCard({ ticket }: TicketDetailsCardProps) {
         <DetailRow label="Purchase Date" value={formatDate(ticket.created_at)} />
 
         <div className="flex justify-between items-center py-3">
-          <span className="text-gray-400">Status</span>
+          <span className="text-brand-gray-medium">Status</span>
           <span className={`font-semibold ${getStatusColor(ticket.status)}`}>{getStatusLabel(ticket.status)}</span>
         </div>
       </div>
@@ -51,7 +51,7 @@ export function TicketDetailsCard({ ticket }: TicketDetailsCardProps) {
 function DetailRow({ label, value, mono, bold }: { label: string; value: string; mono?: boolean; bold?: boolean }) {
   return (
     <div className="flex justify-between items-center py-3 border-b border-gray-800">
-      <span className="text-gray-400">{label}</span>
+      <span className="text-brand-gray-medium">{label}</span>
       <span className={`text-brand-white ${mono ? 'font-mono text-sm' : ''} ${bold ? 'font-semibold' : ''}`}>
         {value}
       </span>

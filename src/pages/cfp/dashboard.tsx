@@ -30,12 +30,12 @@ interface DashboardProps {
 
 const StatusBadge = ({ status, cfpClosed }: { status: SpeakerVisibleStatus; cfpClosed: boolean }) => {
   const styles: Record<SpeakerVisibleStatus, string> = {
-    draft: cfpClosed ? 'bg-orange-500/20 text-orange-300' : 'bg-gray-500/20 text-gray-300',
+    draft: cfpClosed ? 'bg-orange-500/20 text-orange-300' : 'bg-brand-gray-medium/20 text-gray-300',
     submitted: 'bg-blue-500/20 text-blue-300',
     under_review: 'bg-purple-500/20 text-purple-300',
     accepted: 'bg-green-500/20 text-green-300',
     rejected: 'bg-red-500/20 text-red-300',
-    withdrawn: 'bg-gray-500/20 text-gray-400',
+    withdrawn: 'bg-brand-gray-medium/20 text-brand-gray-medium',
   };
 
   const labels: Record<SpeakerVisibleStatus, string> = {
@@ -209,7 +209,7 @@ export default function CfpDashboard({ speaker, submissions, isProfileComplete, 
               <div className="text-brand-gray-light text-sm">Submitted</div>
             </div>
             <div className="bg-brand-gray-dark rounded-xl p-4 text-center">
-              <div className="text-3xl font-bold text-gray-400 mb-1">{draftSubmissions.length}</div>
+              <div className="text-3xl font-bold text-brand-gray-medium mb-1">{draftSubmissions.length}</div>
               <div className="text-brand-gray-light text-sm">Drafts</div>
             </div>
             <div className="bg-brand-gray-dark rounded-xl p-4 text-center">

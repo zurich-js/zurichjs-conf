@@ -167,9 +167,9 @@ export function EditSpeakerModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-6 border-b border-brand-gray-lightest flex items-center justify-between">
           <h3 className="text-xl font-bold text-black">Edit Speaker</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+          <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer">
             <X className="w-5 h-5 text-black" />
           </button>
         </div>
@@ -179,19 +179,19 @@ export function EditSpeakerModal({
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
           )}
 
-          <div className="border-b border-gray-200 pb-4">
+          <div className="border-b border-brand-gray-lightest pb-4">
             <h4 className="text-sm font-semibold text-black mb-3">Speaker Images</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <p className={`text-xs font-medium ${missingFields.profile_image_url ? 'text-red-700' : 'text-gray-600'}`}>Profile photo</p>
+                <p className={`text-xs font-medium ${missingFields.profile_image_url ? 'text-red-700' : 'text-brand-gray-dark'}`}>Profile photo</p>
                 <div className="flex items-center gap-3">
                   {profileImageUrl ? (
                     <img src={profileImageUrl} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
                   ) : (
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      missingFields.profile_image_url ? 'bg-red-50 ring-2 ring-red-300' : 'bg-gray-200'
+                      missingFields.profile_image_url ? 'bg-red-50 ring-2 ring-red-300' : 'b[a-z]-brand-gray-lightest'
                     }`}>
-                      <User className={`w-8 h-8 ${missingFields.profile_image_url ? 'text-red-400' : 'text-gray-400'}`} />
+                      <User className={`w-8 h-8 ${missingFields.profile_image_url ? 'text-red-400' : 'text-brand-gray-medium'}`} />
                     </div>
                   )}
                   <div>
@@ -215,13 +215,13 @@ export function EditSpeakerModal({
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-gray-600">Portrait foreground</p>
+                <p className="text-xs font-medium text-brand-gray-dark">Portrait foreground</p>
                 <div className="flex items-center gap-3">
                   {portraitForegroundUrl ? (
-                    <img src={portraitForegroundUrl} alt="Portrait foreground" className="w-16 h-16 rounded-lg object-cover bg-gray-100" />
+                    <img src={portraitForegroundUrl} alt="Portrait foreground" className="w-16 h-16 rounded-lg object-cover bg-text-brand-gray-lightest" />
                   ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
-                      <User className="w-8 h-8 text-gray-400" />
+                    <div className="w-16 h-16 rounded-lg b[a-z]-brand-gray-lightest flex items-center justify-center">
+                      <User className="w-8 h-8 text-brand-gray-medium" />
                     </div>
                   )}
                   <div>
@@ -245,13 +245,13 @@ export function EditSpeakerModal({
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-gray-600">Portrait background</p>
+                <p className="text-xs font-medium text-brand-gray-dark">Portrait background</p>
                 <div className="flex items-center gap-3">
                   {portraitBackgroundUrl ? (
                     <img src={portraitBackgroundUrl} alt="Portrait background" className="w-16 h-16 rounded-lg object-cover" />
                   ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs text-gray-500">None</span>
+                    <div className="w-16 h-16 rounded-lg b[a-z]-brand-gray-lightest flex items-center justify-center">
+                      <span className="text-xs text-brand-gray-medium">None</span>
                     </div>
                   )}
                   <div>
@@ -346,11 +346,11 @@ export function EditSpeakerModal({
             </div>
           ) : null}
 
-          <div className="border-t border-gray-200 pt-4">
+          <div className="border-t border-brand-gray-lightest pt-4">
             <h4 className="text-sm font-semibold text-black mb-3">Social Links</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">LinkedIn URL</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">LinkedIn URL</label>
                 <input
                   type="url"
                   value={formData.linkedin_url}
@@ -359,7 +359,7 @@ export function EditSpeakerModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">GitHub URL</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">GitHub URL</label>
                 <input
                   type="url"
                   value={formData.github_url}
@@ -368,7 +368,7 @@ export function EditSpeakerModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Twitter Handle</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">Twitter Handle</label>
                 <input
                   type="text"
                   value={formData.twitter_handle}
@@ -377,7 +377,7 @@ export function EditSpeakerModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Bluesky Handle</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">Bluesky Handle</label>
                 <input
                   type="text"
                   value={formData.bluesky_handle}
@@ -386,7 +386,7 @@ export function EditSpeakerModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Mastodon Handle</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">Mastodon Handle</label>
                 <input
                   type="text"
                   value={formData.mastodon_handle}
@@ -397,7 +397,7 @@ export function EditSpeakerModal({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-brand-gray-lightest pt-4 sm:flex-row sm:items-center sm:justify-between">
             {canRemoveFromList ? (
               <button
                 type="button"
@@ -411,7 +411,7 @@ export function EditSpeakerModal({
               <span />
             )}
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black cursor-pointer">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-brand-gray-dark hover:text-black cursor-pointer">
                 Cancel
               </button>
               <button

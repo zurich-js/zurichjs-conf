@@ -44,7 +44,7 @@ export function ActionsSection({ invoice, onUpdate, setError }: ActionsSectionPr
 
   return (
     <div className="space-y-4">
-      <h4 className="font-medium text-gray-900">Status Actions</h4>
+      <h4 className="font-medium text-black">Status Actions</h4>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {invoice.status === 'draft' && (
@@ -86,7 +86,7 @@ export function ActionsSection({ invoice, onUpdate, setError }: ActionsSectionPr
         )}
 
         {(invoice.status === 'paid' || invoice.status === 'cancelled') && (
-          <p className="col-span-1 sm:col-span-2 text-gray-900 text-center py-4">
+          <p className="col-span-1 sm:col-span-2 text-black text-center py-4">
             No actions available for {invoice.status} invoices.
           </p>
         )}

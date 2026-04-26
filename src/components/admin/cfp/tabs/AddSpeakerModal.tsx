@@ -113,9 +113,9 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-6 border-b border-brand-gray-lightest flex items-center justify-between">
           <h3 className="text-xl font-bold text-black">Add New Speaker</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+          <button onClick={onClose} className="p-2 hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer">
             <X className="w-5 h-5 text-black" />
           </button>
         </div>
@@ -135,7 +135,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-brand-gray-lightest"
                   />
                   <button
                     type="button"
@@ -148,9 +148,9 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
               ) : (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                  className="w-20 h-20 rounded-full bg-text-brand-gray-lightest border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-brand-gray-medium transition-colors"
                 >
-                  <Plus className="w-8 h-8 text-gray-400" />
+                  <Plus className="w-8 h-8 text-brand-gray-medium" />
                 </div>
               )}
               <input
@@ -163,7 +163,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-black mb-1">Profile Photo</p>
-              <p className="text-xs text-gray-500 mb-2">JPG, PNG, WebP or GIF. Max 5MB.</p>
+              <p className="text-xs text-brand-gray-medium mb-2">JPG, PNG, WebP or GIF. Max 5MB.</p>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -257,11 +257,11 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
             />
           </div>
 
-          <div className="border-t border-gray-200 pt-4 mt-4">
+          <div className="border-t border-brand-gray-lightest pt-4 mt-4">
             <h4 className="text-sm font-semibold text-black mb-3">Social Links (Optional)</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">LinkedIn URL</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">LinkedIn URL</label>
                 <input
                   type="url"
                   value={formData.linkedin_url}
@@ -271,7 +271,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">GitHub URL</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">GitHub URL</label>
                 <input
                   type="url"
                   value={formData.github_url}
@@ -281,7 +281,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Twitter Handle</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">Twitter Handle</label>
                 <input
                   type="text"
                   value={formData.twitter_handle}
@@ -291,7 +291,7 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Bluesky Handle</label>
+                <label className="block text-xs font-medium text-brand-gray-dark mb-1">Bluesky Handle</label>
                 <input
                   type="text"
                   value={formData.bluesky_handle}
@@ -303,11 +303,11 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t border-brand-gray-lightest mt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-black hover:bg-gray-100 rounded-lg cursor-pointer"
+              className="px-4 py-2 text-black hover:bg-text-brand-gray-lightest rounded-lg cursor-pointer"
             >
               Cancel
             </button>

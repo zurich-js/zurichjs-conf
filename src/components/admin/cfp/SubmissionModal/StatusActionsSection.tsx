@@ -49,7 +49,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
   return (
     <>
       {/* Primary Status Actions */}
-      <div className="border-t border-gray-200 pt-6">
+      <div className="border-t border-brand-gray-lightest pt-6">
         <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-2">Internal Status</h4>
         <div className="flex items-start gap-2 p-3 mb-4 bg-blue-50 border border-blue-200 rounded-lg">
           <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -75,7 +75,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
                   <Icon className="w-5 h-5 mb-1" />
                   {action?.action || status}
                 </button>
-                <p className="text-xs text-gray-500 mt-1.5 text-center">{action?.description}</p>
+                <p className="text-xs text-brand-gray-medium mt-1.5 text-center">{action?.description}</p>
               </div>
             );
           })}
@@ -83,7 +83,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
       </div>
 
       {/* Secondary Actions */}
-      <div className="border-t border-gray-200 pt-6">
+      <div className="border-t border-brand-gray-lightest pt-6">
         <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-4">Other Actions</h4>
         <div className="flex flex-wrap gap-4">
           {currentStatus !== 'draft' && (
@@ -95,7 +95,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
               >
                 Revert to Draft
               </button>
-              <p className="text-xs text-gray-500 mt-1 max-w-[200px]">{STATUS_ACTIONS.draft?.description}</p>
+              <p className="text-xs text-brand-gray-medium mt-1 max-w-[200px]">{STATUS_ACTIONS.draft?.description}</p>
             </div>
           )}
           {currentStatus !== 'withdrawn' && (
@@ -107,7 +107,7 @@ export function StatusActionsSection({ currentStatus, onUpdateStatus, isUpdating
               >
                 Mark as Withdrawn
               </button>
-              <p className="text-xs text-gray-500 mt-1 max-w-[200px]">{STATUS_ACTIONS.withdrawn?.description}</p>
+              <p className="text-xs text-brand-gray-medium mt-1 max-w-[200px]">{STATUS_ACTIONS.withdrawn?.description}</p>
             </div>
           )}
         </div>

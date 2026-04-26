@@ -5,7 +5,16 @@
 
 export { OverviewTab } from './OverviewTab';
 export { SpeakersTab } from './SpeakersTab';
-export { FlightsTab } from './FlightsTab';
+export { TransportationTab } from './TransportationTab';
 export { ReimbursementsTab } from './ReimbursementsTab';
-export { travelQueryKeys, fetchTravelStats, fetchSpeakers, fetchFlights, fetchReimbursements } from './api';
-export { STATUS_COLORS, FLIGHT_STATUS_COLORS, type TabType, type CfpReimbursementStatus, type CfpFlightStatus } from './types';
+export { travelQueryKeys, fetchTravelStats, fetchSpeakers, fetchTransportation, fetchReimbursements } from './api';
+export {
+  STATUS_COLORS,
+  TRANSPORT_STATUS_COLORS,
+  attendanceValueToSelect,
+  selectToAttendanceValue,
+  type TabType,
+  type CfpReimbursementStatus,
+  type CfpTransportStatus,
+  type CfpTransportMode,
+} from './types';

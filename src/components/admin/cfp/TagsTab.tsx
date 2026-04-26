@@ -31,7 +31,7 @@ export function TagsTab({ tags, isLoading, onDelete, isDeleting }: TagsTabProps)
             <span
               key={tag.id}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
-                tag.is_suggested ? 'bg-brand-primary text-black' : 'bg-gray-100 text-black'
+                tag.is_suggested ? 'bg-brand-primary text-black' : 'bg-text-brand-gray-lightest text-black'
               }`}
             >
               {tag.name}

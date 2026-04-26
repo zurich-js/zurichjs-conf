@@ -53,7 +53,7 @@ export const InfoContentLayout: React.FC<InfoContentLayoutProps> = ({
                   <p className="text-lg text-gray-700 leading-relaxed print:hidden">
                     {page.description}
                   </p>
-                  <p className="text-sm text-gray-500 mt-4 print:hidden">
+                  <p className="text-sm text-brand-gray-medium mt-4 print:hidden">
                     Last updated: {page.lastUpdated}
                   </p>
                 </div>

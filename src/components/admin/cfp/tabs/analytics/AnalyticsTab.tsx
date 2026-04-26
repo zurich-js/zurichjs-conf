@@ -28,7 +28,7 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
 
   if (!analytics) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-brand-gray-medium">
         No analytics data available
       </div>
     );
@@ -38,22 +38,22 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
     <div className="space-y-6 sm:space-y-10 overflow-hidden">
       <FunnelSection funnel={analytics.funnel} />
 
-      <div className="border-t border-gray-100" />
+      <div className="border-t border-text-brand-gray-lightest" />
 
       <BreakdownSection byType={analytics.byType} byLevel={analytics.byLevel} />
 
-      <div className="border-t border-gray-100" />
+      <div className="border-t border-text-brand-gray-lightest" />
 
       <DemographicsSection demographics={analytics.demographics} />
 
-      <div className="border-t border-gray-100" />
+      <div className="border-t border-text-brand-gray-lightest" />
 
       <LogisticsSection
         logistics={analytics.logistics}
         totalSpeakers={analytics.demographics.totalSpeakers}
       />
 
-      <div className="border-t border-gray-100" />
+      <div className="border-t border-text-brand-gray-lightest" />
 
       <ReviewActivitySection
         reviewActivity={analytics.reviewActivity}
@@ -62,12 +62,12 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
 
       {analytics.topTags.length > 0 && (
         <>
-          <div className="border-t border-gray-100" />
+          <div className="border-t border-text-brand-gray-lightest" />
           <TagsSection topTags={analytics.topTags} />
         </>
       )}
 
-      <div className="border-t border-gray-100" />
+      <div className="border-t border-text-brand-gray-lightest" />
       <ContentInsightsSection contentInsights={analytics.contentInsights} />
     </div>
   );

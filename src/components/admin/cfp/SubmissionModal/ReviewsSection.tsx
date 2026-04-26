@@ -23,7 +23,7 @@ interface ReviewsSectionProps {
 function ScoreDisplay({ value, label }: { value: number | null; label: string }) {
   const colorClass =
     value === null
-      ? 'text-gray-400'
+      ? 'text-brand-gray-medium'
       : value >= 4
         ? 'text-green-600'
         : value >= 3
@@ -32,7 +32,7 @@ function ScoreDisplay({ value, label }: { value: number | null; label: string })
 
   return (
     <div className="bg-gray-50 rounded p-2 text-center">
-      <p className="text-[10px] text-gray-500 uppercase">{label}</p>
+      <p className="text-[10px] text-brand-gray-medium uppercase">{label}</p>
       <p className={`text-base font-bold ${colorClass}`}>{value !== null ? (Number.isInteger(value) ? value : value.toFixed(2)) : '-'}</p>
     </div>
   );
@@ -40,7 +40,7 @@ function ScoreDisplay({ value, label }: { value: number | null; label: string })
 
 export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsSectionProps) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+    <div className="bg-gray-50 rounded-xl p-4 border border-brand-gray-lightest">
       <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Committee Reviews</h4>
 
       {isLoading ? (
@@ -48,17 +48,17 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
           <Loader2 className="h-6 w-6 animate-spin text-black" />
         </div>
       ) : reviews.length === 0 ? (
-        <p className="text-sm text-gray-500 py-4 text-center">No reviews yet</p>
+        <p className="text-sm text-brand-gray-medium py-4 text-center">No reviews yet</p>
       ) : (
         <div className="space-y-4">
           {/* Aggregate Scores */}
           {aggregateScores && (
-            <div className="bg-white rounded-lg p-3 border border-gray-200 mb-4">
+            <div className="bg-white rounded-lg p-3 border border-brand-gray-lightest mb-4">
               <p className="text-xs text-black font-semibold mb-2">Aggregate Scores ({reviews.length} reviews)</p>
               {/* Mobile: Overall prominent, others in 2x2 grid */}
               <div className="sm:hidden">
-                <div className="bg-gray-100 rounded-lg p-3 mb-2 text-center">
-                  <p className="text-xs text-gray-500">Overall</p>
+                <div className="bg-text-brand-gray-lightest rounded-lg p-3 mb-2 text-center">
+                  <p className="text-xs text-brand-gray-medium">Overall</p>
                   <p className="text-2xl font-bold text-black">{aggregateScores.overall?.toFixed(2) || '-'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center">
@@ -71,23 +71,23 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
               {/* Desktop: 5 columns */}
               <div className="hidden sm:grid grid-cols-5 gap-2 text-center">
                 <div>
-                  <p className="text-xs text-gray-500">Overall</p>
+                  <p className="text-xs text-brand-gray-medium">Overall</p>
                   <p className="text-lg font-bold text-black">{aggregateScores.overall?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Relevance</p>
+                  <p className="text-xs text-brand-gray-medium">Relevance</p>
                   <p className="text-lg font-bold text-black">{aggregateScores.relevance?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Depth</p>
+                  <p className="text-xs text-brand-gray-medium">Depth</p>
                   <p className="text-lg font-bold text-black">{aggregateScores.technical_depth?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Clarity</p>
+                  <p className="text-xs text-brand-gray-medium">Clarity</p>
                   <p className="text-lg font-bold text-black">{aggregateScores.clarity?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Originality</p>
+                  <p className="text-xs text-brand-gray-medium">Originality</p>
                   <p className="text-lg font-bold text-black">{aggregateScores.diversity?.toFixed(2) || '-'}</p>
                 </div>
               </div>
@@ -96,16 +96,16 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
 
           {/* Individual Reviews */}
           {reviews.map((review) => (
-            <div key={review.id} className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
+            <div key={review.id} className="bg-white rounded-lg p-3 sm:p-4 border border-brand-gray-lightest">
               {/* Reviewer Header */}
               <div className="flex items-start sm:items-center justify-between mb-3 gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-black truncate">
                     {review.reviewer.name || review.reviewer.email}
                   </p>
-                  {review.reviewer.name && <p className="text-xs text-gray-500 truncate">{review.reviewer.email}</p>}
+                  {review.reviewer.name && <p className="text-xs text-brand-gray-medium truncate">{review.reviewer.email}</p>}
                 </div>
-                <p className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
+                <p className="text-xs text-brand-gray-medium whitespace-nowrap flex-shrink-0">
                   {new Date(review.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -113,7 +113,7 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
               {/* Mobile Scores */}
               <div className="sm:hidden mb-3">
                 <div
-                  className={`bg-gray-100 rounded-lg p-2 mb-2 text-center ${
+                  className={`bg-text-brand-gray-lightest rounded-lg p-2 mb-2 text-center ${
                     review.score_overall === null
                       ? ''
                       : review.score_overall >= 4
@@ -123,11 +123,11 @@ export function ReviewsSection({ reviews, isLoading, aggregateScores }: ReviewsS
                           : 'bg-red-50 border border-red-200'
                   }`}
                 >
-                  <p className="text-[10px] text-gray-500 uppercase">Overall</p>
+                  <p className="text-[10px] text-brand-gray-medium uppercase">Overall</p>
                   <p
                     className={`text-xl font-bold ${
                       review.score_overall === null
-                        ? 'text-gray-400'
+                        ? 'text-brand-gray-medium'
                         : review.score_overall >= 4
                           ? 'text-green-600'
                           : review.score_overall >= 3

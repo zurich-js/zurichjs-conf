@@ -171,7 +171,7 @@ function ErrorState({ orderToken, error }: { orderToken: string; error: Error | 
           </p>
           <div className="bg-black rounded-2xl p-6 text-left mb-8">
             <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
-            <ul className="text-gray-200 space-y-2">
+            <ul className="tex[a-z]-brand-gray-lightest space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-brand-primary mt-1">•</span>
                 <span>Check your email for the ticket management link</span>

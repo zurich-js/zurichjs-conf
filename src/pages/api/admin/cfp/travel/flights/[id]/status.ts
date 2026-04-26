@@ -6,7 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateFlightStatus } from '@/lib/cfp/admin-travel';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import type { CfpFlightStatus } from '@/lib/types/cfp';
+import type { CfpTransportStatus } from '@/lib/types/cfp';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Admin Flight Status API');
@@ -32,10 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Status is required' });
       }
 
-      const validStatuses: CfpFlightStatus[] = [
-        'pending', 'confirmed', 'checked_in', 'boarding',
-        'departed', 'arrived', 'cancelled', 'delayed'
-      ];
+      const validStatuses: CfpTransportStatus[] = ['scheduled', 'delayed', 'canceled', 'complete'];
 
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });

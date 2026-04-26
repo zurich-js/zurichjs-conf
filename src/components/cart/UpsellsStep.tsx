@@ -78,7 +78,7 @@ export function UpsellsStep({
           </button>
           <button
             onClick={onBack}
-            className="text-gray-500 hover:text-gray-300 transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
+            className="text-brand-gray-medium hover:text-gray-300 transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

@@ -74,7 +74,7 @@ export function B2BOrdersTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">B2B Orders</h2>
+          <h2 className="text-xl font-semibold text-black">B2B Orders</h2>
           <p className="text-sm text-gray-700 mt-1">
             Manage invoice-based bulk ticket orders for companies
           </p>

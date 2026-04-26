@@ -27,9 +27,9 @@ export function getStatusColor(status: string): string {
     case 'cancelled':
       return 'text-red-400';
     case 'refunded':
-      return 'text-gray-400';
+      return 'text-brand-gray-medium';
     default:
-      return 'text-gray-400';
+      return 'text-brand-gray-medium';
   }
 }
 

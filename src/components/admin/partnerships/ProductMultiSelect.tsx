@@ -132,7 +132,7 @@ function ProductListItem({
       onClick={onToggle}
       onMouseEnter={onHover}
       className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left cursor-pointer ${
-        isHighlighted ? 'bg-gray-100' : 'hover:bg-gray-50'
+        isHighlighted ? 'bg-text-brand-gray-lightest' : 'hover:bg-gray-50'
       }`}
     >
       <div
@@ -144,11 +144,11 @@ function ProductListItem({
       >
         {isSelected && <Check className="w-3 h-3 text-black" />}
       </div>
-      <Package className="w-4 h-4 text-gray-400 flex-shrink-0" />
+      <Package className="w-4 h-4 text-brand-gray-medium flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="font-medium text-black truncate">{product.name}</div>
         {product.description && (
-          <div className="text-xs text-gray-500 truncate">{product.description}</div>
+          <div className="text-xs text-brand-gray-medium truncate">{product.description}</div>
         )}
       </div>
     </button>
@@ -236,7 +236,7 @@ export function ProductMultiSelect({
 
       {/* Search input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gray-medium pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -247,7 +247,7 @@ export function ProductMultiSelect({
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
-          className={`w-full bg-white text-black placeholder-gray-500 border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 transition-all ${
+          className={`w-full bg-white text-black placeholder-brand-gray-medium border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 transition-all ${
             error
               ? 'border-red-500 focus:ring-red-500'
               : 'border-gray-300 focus:ring-brand-primary focus:border-brand-primary'
@@ -257,9 +257,9 @@ export function ProductMultiSelect({
 
       {/* Dropdown */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-brand-gray-lightest rounded-lg shadow-lg overflow-hidden">
           {results.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
+            <div className="px-4 py-3 text-sm text-brand-gray-medium">
               {query.length > 0 ? `No products found for "${query}"` : 'No products available'}
             </div>
           ) : (

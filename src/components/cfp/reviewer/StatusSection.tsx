@@ -27,7 +27,7 @@ export function StatusSection({
     waitlisted: 'bg-orange-500/20 text-orange-300',
     accepted: 'bg-green-500/20 text-green-300',
     rejected: 'bg-red-500/20 text-red-300',
-  }[status] || 'bg-gray-500/20 text-gray-300';
+  }[status] || 'bg-brand-gray-medium/20 text-gray-300';
 
   const actionColorClass = (actionStatus: string) => {
     return {

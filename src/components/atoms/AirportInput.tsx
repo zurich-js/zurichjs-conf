@@ -92,11 +92,11 @@ interface AirportBadgeProps {
 
 function AirportBadge({ iata, variant = 'list', theme = 'dark' }: AirportBadgeProps) {
   const bg = variant === 'selected'
-    ? (theme === 'light' ? 'bg-gray-100' : 'bg-brand-primary/20')
-    : (theme === 'light' ? 'bg-gray-100' : 'bg-brand-gray-medium');
+    ? (theme === 'light' ? 'bg-text-brand-gray-lightest' : 'bg-brand-primary/20')
+    : (theme === 'light' ? 'bg-text-brand-gray-lightest' : 'bg-brand-gray-medium');
   return (
     <div className={`flex items-center justify-center w-10 h-10 ${bg} rounded-lg flex-shrink-0`}>
-      <span className={`font-bold text-sm ${theme === 'light' ? 'text-gray-900' : 'text-brand-primary'}`}>{iata}</span>
+      <span className={`font-bold text-sm ${theme === 'light' ? 'text-black' : 'text-brand-primary'}`}>{iata}</span>
     </div>
   );
 }
@@ -116,27 +116,27 @@ function SelectedAirport({ airport, error, disabled, theme = 'dark', onEdit, onC
     <div
       className={`w-full rounded-lg px-4 py-3 pr-10 flex items-center gap-3 ${
         isLight
-          ? 'bg-gray-50 text-gray-900 border border-gray-300'
+          ? 'bg-gray-50 text-black border border-gray-300'
           : 'bg-brand-gray-darkest text-white'
       } ${error ? 'ring-2 ring-red-500' : ''} ${
-        disabled ? 'opacity-50' : `cursor-pointer ${isLight ? 'hover:bg-gray-100' : 'hover:bg-brand-gray-dark'}`
+        disabled ? 'opacity-50' : `cursor-pointer ${isLight ? 'hover:bg-text-brand-gray-lightest' : 'hover:bg-brand-gray-dark'}`
       }`}
       onClick={() => !disabled && onEdit()}
     >
       <AirportBadge iata={airport.iata} variant="selected" theme={theme} />
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{airport.city}</div>
-        <div className={`text-xs truncate ${isLight ? 'text-gray-500' : 'text-brand-gray-medium'}`}>{airport.name}</div>
+        <div className={`text-xs truncate ${isLight ? 'text-brand-gray-medium' : 'text-brand-gray-medium'}`}>{airport.name}</div>
       </div>
       {!disabled && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onClear(); }}
           className={`absolute right-3 p-1.5 rounded transition-colors cursor-pointer ${
-            isLight ? 'hover:bg-gray-200' : 'hover:bg-brand-gray-darkest'
+            isLight ? 'hover:b[a-z]-brand-gray-lightest' : 'hover:bg-brand-gray-darkest'
           }`}
         >
-          <X className={`w-4 h-4 ${isLight ? 'text-gray-400 hover:text-gray-700' : 'text-brand-gray-medium hover:text-white'}`} />
+          <X className={`w-4 h-4 ${isLight ? 'text-brand-gray-medium hover:text-gray-700' : 'text-brand-gray-medium hover:text-white'}`} />
         </button>
       )}
     </div>
@@ -162,16 +162,16 @@ function AirportListItem({ airport, index, isHighlighted, theme = 'dark', onSele
       onMouseEnter={onHover}
       className={`w-full px-3 py-2 flex items-center gap-3 transition-colors text-left cursor-pointer ${
         isLight
-          ? (isHighlighted ? 'bg-gray-100' : 'hover:bg-gray-100')
+          ? (isHighlighted ? 'bg-text-brand-gray-lightest' : 'hover:bg-text-brand-gray-lightest')
           : (isHighlighted ? 'bg-brand-gray-darkest' : 'hover:bg-brand-gray-darkest')
       }`}
     >
       <AirportBadge iata={airport.iata} theme={theme} />
       <div className="flex-1 min-w-0">
-        <div className={`font-medium truncate ${isLight ? 'text-gray-900' : 'text-white'}`}>{airport.city}, {airport.country}</div>
-        <div className={`text-xs truncate ${isLight ? 'text-gray-500' : 'text-brand-gray-medium'}`}>{airport.name}</div>
+        <div className={`font-medium truncate ${isLight ? 'text-black' : 'text-white'}`}>{airport.city}, {airport.country}</div>
+        <div className={`text-xs truncate ${isLight ? 'text-brand-gray-medium' : 'text-brand-gray-medium'}`}>{airport.name}</div>
       </div>
-      <Plane className={`w-4 h-4 flex-shrink-0 ${isLight ? 'text-gray-400' : 'text-brand-gray-medium'}`} />
+      <Plane className={`w-4 h-4 flex-shrink-0 ${isLight ? 'text-brand-gray-medium' : 'text-brand-gray-medium'}`} />
     </button>
   );
 }
@@ -256,7 +256,7 @@ export function AirportInput({
         />
       ) : (
         <div className="relative">
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none ${isLight ? 'text-gray-400' : 'text-brand-gray-medium'}`} />
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none ${isLight ? 'text-brand-gray-medium' : 'text-brand-gray-medium'}`} />
           <input
             ref={inputRef}
             id={id}
@@ -270,7 +270,7 @@ export function AirportInput({
             autoComplete="off"
             className={`w-full rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 transition-all ${
               isLight
-                ? 'bg-white text-gray-900 placeholder:text-gray-400 border border-gray-300'
+                ? 'bg-white text-black placeholder:text-brand-gray-medium border border-gray-300'
                 : 'bg-brand-gray-darkest text-white placeholder:text-brand-gray-medium'
             } ${
               error ? 'ring-2 ring-red-500 focus:ring-red-500' : 'focus:ring-brand-primary'
@@ -283,22 +283,22 @@ export function AirportInput({
       {isOpen && (
         <div className={`absolute z-50 mt-1 w-full rounded-lg shadow-lg overflow-hidden ${
           isLight
-            ? 'bg-white border border-gray-200'
+            ? 'bg-white border border-brand-gray-lightest'
             : 'bg-brand-gray-dark border border-brand-gray-medium'
         }`}>
           {query.length > 0 && query.length < 2 ? (
-            <div className={`px-4 py-3 text-sm ${isLight ? 'text-gray-400' : 'text-brand-gray-medium'}`}>
+            <div className={`px-4 py-3 text-sm ${isLight ? 'text-brand-gray-medium' : 'text-brand-gray-medium'}`}>
               Type at least 2 characters to search...
             </div>
           ) : results.length === 0 && query.length >= 2 ? (
-            <div className={`px-4 py-3 text-sm ${isLight ? 'text-gray-400' : 'text-brand-gray-medium'}`}>
+            <div className={`px-4 py-3 text-sm ${isLight ? 'text-brand-gray-medium' : 'text-brand-gray-medium'}`}>
               No airports found for &quot;{query}&quot;
             </div>
           ) : (
             <>
               {query.length === 0 && (
                 <div className={`px-3 py-2 text-xs uppercase tracking-wide ${
-                  isLight ? 'text-gray-400 bg-gray-50' : 'text-brand-gray-medium bg-brand-gray-darkest'
+                  isLight ? 'text-brand-gray-medium bg-gray-50' : 'text-brand-gray-medium bg-brand-gray-darkest'
                 }`}>
                   Popular Airports
                 </div>

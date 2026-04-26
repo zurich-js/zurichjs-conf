@@ -96,7 +96,7 @@ export default function BlogPostPage({
           <div className="pt-28 pb-16 md:pt-36 md:pb-24">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-orange transition-colors mb-8"
+              className="inline-flex items-center gap-1.5 text-sm text-brand-gray-medium hover:text-brand-orange transition-colors mb-8"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to all posts

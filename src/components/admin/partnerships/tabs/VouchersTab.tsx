@@ -196,7 +196,7 @@ export function VouchersTab({
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setShowForm(false)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-black hover:bg-gray-100 cursor-pointer"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-black hover:bg-text-brand-gray-lightest cursor-pointer"
             >
               Cancel
             </button>
@@ -228,7 +228,7 @@ export function VouchersTab({
                   <div
                     key={voucher.id}
                     className={`p-3 border rounded-lg ${
-                      voucher.is_redeemed ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200'
+                      voucher.is_redeemed ? 'bg-gray-50 border-brand-gray-lightest' : 'bg-white border-brand-gray-lightest'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -247,7 +247,7 @@ export function VouchersTab({
                         </button>
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            voucher.is_redeemed ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-800'
+                            voucher.is_redeemed ? 'bg-text-brand-gray-lightest text-brand-gray-dark' : 'bg-green-100 text-green-800'
                           }`}
                         >
                           {voucher.is_redeemed ? 'Redeemed' : 'Available'}

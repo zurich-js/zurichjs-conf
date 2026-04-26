@@ -56,11 +56,11 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
       aria-label="Page navigation"
     >
       <div className="bg-white  p-4">
-        {/* <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+        {/* <p className="text-xs font-semibold text-brand-gray-medium uppercase tracking-wider mb-4">
           On this page
         </p> */}
         <ul className="relative space-y-3">
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
+          <div className="absolute left-[7px] top-2 bottom-2 w-px b[a-z]-brand-gray-lightest" />
 
           {items.map((item) => {
             const isActive = activeId === item.id;
@@ -81,7 +81,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
                       ${
                         isActive
                           ? 'bg-brand-yellow-main border-brand-yellow-main scale-110'
-                          : 'bg-white border-gray-300 group-hover:border-gray-500'
+                          : 'bg-white border-gray-300 group-hover:border-brand-gray-medium'
                       }
                     `}
                   />
@@ -90,8 +90,8 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
                       text-sm transition-colors duration-200 leading-snug
                       ${
                         isActive
-                          ? 'text-gray-900 font-semibold'
-                          : 'text-gray-600 group-hover:text-gray-900'
+                          ? 'text-black font-semibold'
+                          : 'text-brand-gray-dark group-hover:text-black'
                       }
                     `}
                   >

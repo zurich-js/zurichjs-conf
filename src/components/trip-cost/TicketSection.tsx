@@ -97,7 +97,7 @@ function TicketButton({
       className={`cursor-pointer w-full text-left px-4 py-3 rounded-lg border transition-colors ${
         isSelected
           ? 'border-black bg-gray-50'
-          : 'border-gray-200 bg-white hover:border-gray-400'
+          : 'border-brand-gray-lightest bg-white hover:border-brand-gray-medium'
       }`}
       aria-pressed={isSelected}
     >
@@ -105,17 +105,17 @@ function TicketButton({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {icon}
-            <span className="text-sm font-medium text-gray-900">{label}</span>
+            <span className="text-sm font-medium text-black">{label}</span>
           </div>
-          {sublabel && <span className="block text-xs text-gray-400 mt-0.5 pl-6">{sublabel}</span>}
+          {sublabel && <span className="block text-xs text-brand-gray-medium mt-0.5 pl-6">{sublabel}</span>}
         </div>
         {price !== undefined && (
           <div className="text-right shrink-0">
-            <span className="text-sm font-bold text-gray-900">
+            <span className="text-sm font-bold text-black">
               {isLoading ? '...' : price}
             </span>
             {comparePrice && !isLoading && (
-              <span className="block text-[11px] text-gray-400 line-through">
+              <span className="block text-[11px] text-brand-gray-medium line-through">
                 {comparePrice} at Late Bird
               </span>
             )}
@@ -146,7 +146,7 @@ export function TicketSection({
     <CalculatorSection icon={<Ticket className="w-5 h-5" />} title="Ticket">
       <div className="space-y-2">
         <TicketButton
-          icon={<Ticket className="w-4 h-4 text-gray-600" />}
+          icon={<Ticket className="w-4 h-4 text-brand-gray-dark" />}
           label="Standard"
           sublabel={stageDisplayName ?? undefined}
           price={stdPrice}
@@ -181,13 +181,13 @@ export function TicketSection({
           className={`cursor-pointer w-full text-left px-4 py-3 rounded-lg border transition-colors ${
             ticketType === 'have_ticket'
               ? 'border-black bg-gray-50'
-              : 'border-gray-200 bg-white hover:border-gray-400'
+              : 'border-brand-gray-lightest bg-white hover:border-brand-gray-medium'
           }`}
           aria-pressed={ticketType === 'have_ticket'}
         >
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-brand-green" />
-            <span className="text-sm font-medium text-gray-900">I already have a ticket</span>
+            <span className="text-sm font-medium text-black">I already have a ticket</span>
           </div>
         </button>
       </div>
