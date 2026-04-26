@@ -403,13 +403,13 @@ function OverviewTab({
           <h4 className="text-sm font-medium text-gray-700">Homepage Display Requirements</h4>
           <ul className="space-y-2">
             <li className="flex items-center gap-2 text-sm">
-              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.company_logo_url ? 'bg-green-100 text-green-600' : 'bgbrand-gray-lightest text-brand-gray-medium'}`}>
+              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.company_logo_url ? 'bg-green-100 text-green-600' : 'b[a-z]-brand-gray-lightest text-brand-gray-medium'}`}>
                 {partnership.company_logo_url ? '✓' : '○'}
               </span>
               <span className={partnership.company_logo_url ? 'text-gray-700' : 'text-brand-gray-medium'}>Logo uploaded</span>
             </li>
             <li className="flex items-center gap-2 text-sm">
-              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.status === 'active' ? 'bg-green-100 text-green-600' : 'bgbrand-gray-lightest text-brand-gray-medium'}`}>
+              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${partnership.status === 'active' ? 'bg-green-100 text-green-600' : 'b[a-z]-brand-gray-lightest text-brand-gray-medium'}`}>
                 {partnership.status === 'active' ? '✓' : '○'}
               </span>
               <span className={partnership.status === 'active' ? 'text-gray-700' : 'text-brand-gray-medium'}>

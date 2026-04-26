@@ -55,7 +55,7 @@ export function ConfirmationModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-text-brand-gray-lightest hover:b[a-z]-brand-gray-lightest rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
           >
             Cancel
           </button>

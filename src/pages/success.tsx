@@ -122,7 +122,7 @@ const SuccessPage: React.FC = () => {
                   </p>
                   <div className="bg-black rounded-2xl p-6 text-left mb-8">
                     <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
-                    <ul className="textbrand-gray-lightest space-y-2">
+                    <ul className="tex[a-z]-brand-gray-lightest space-y-2">
                       <li className="flex items-start gap-2">
                         <span className="text-brand-primary mt-1">•</span>
                         <span>Check your email for the confirmation message with your order details</span>
@@ -208,7 +208,7 @@ const SuccessPage: React.FC = () => {
               <div className="bg-black rounded-2xl p-8 mb-8">
                 <h2 className="text-xl font-bold text-brand-primary mb-6">What&apos;s Next?</h2>
 
-                <div className="space-y-4 textbrand-gray-lightest">
+                <div className="space-y-4 tex[a-z]-brand-gray-lightest">
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center text-black font-bold">
                       1
@@ -263,7 +263,7 @@ const SuccessPage: React.FC = () => {
               {/* Important Information */}
               <div className="bg-black rounded-2xl p-8 mb-8">
                 <h2 className="text-xl font-bold text-brand-primary mb-4">Important Information</h2>
-                <ul className="space-y-2 textbrand-gray-lightest">
+                <ul className="space-y-2 tex[a-z]-brand-gray-lightest">
                   <li className="flex items-start gap-2">
                     <span className="text-brand-primary mt-1">•</span>
                     <span>Your ticket is non-transferable without prior authorization</span>

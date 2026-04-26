@@ -76,7 +76,7 @@ export function AdminDataTable<TData>({
       <div className="overflow-hidden rounded-xl border border-brand-gray-lightest bg-white shadow-sm">
         <div className="hidden md:block">
           <div className="overflow-x-auto">
-            <table className={cn('min-w-full divide-y dividebrand-gray-lightest', tableClassName)}>
+            <table className={cn('min-w-full divide-y divide-brand-gray-lightest', tableClassName)}>
               <thead className="bg-gray-50">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
@@ -108,7 +108,7 @@ export function AdminDataTable<TData>({
                   </tr>
                 ))}
               </thead>
-              <tbody className="divide-y dividebrand-gray-lightest bg-white">
+              <tbody className="divide-y divide-brand-gray-lightest bg-white">
                 {isLoading ? (
                   <tr>
                     <td colSpan={desktopColSpan} className="px-4 py-12 text-center text-sm text-brand-gray-medium">

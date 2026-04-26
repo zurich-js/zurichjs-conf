@@ -105,7 +105,7 @@ export function DecisionModal({
               {submission.submission_type}
             </span>
             {submission.stats?.avg_overall && (
-              <span className="px-2 py-0.5 bgbrand-gray-lightest text-gray-700 text-xs rounded-full">
+              <span className="px-2 py-0.5 b[a-z]-brand-gray-lightest text-gray-700 text-xs rounded-full">
                 Score: {submission.stats.avg_overall.toFixed(2)}
               </span>
             )}

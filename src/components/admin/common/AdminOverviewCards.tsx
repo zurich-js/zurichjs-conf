@@ -27,7 +27,7 @@ export function AdminOverviewCards({
       <div className={cn('AdminOverviewCards mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4', columnsClassName)}>
         {items.map((item) => (
           <div key={item.label} className={cn('min-h-32 rounded-xl border border-brand-gray-lightest bg-white p-5 shadow-sm animate-pulse', cardClassName)}>
-            <div className="mb-4 h-4 w-24 rounded bgbrand-gray-lightest" />
+            <div className="mb-4 h-4 w-24 rounded b[a-z]-brand-gray-lightest" />
             <div className="h-8 w-20 rounded bg-text-brand-gray-lightest" />
             <div className="mt-3 h-3 w-28 rounded bg-brand-gray-lightest" />
           </div>

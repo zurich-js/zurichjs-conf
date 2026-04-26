@@ -21,9 +21,9 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
             key={i}
             className="bg-white rounded-xl border border-brand-gray-lightest p-4 animate-pulse"
           >
-            <div className="h-10 w-10 bgbrand-gray-lightest rounded-lg mb-3" />
-            <div className="h-3 bgbrand-gray-lightest rounded w-16 mb-2" />
-            <div className="h-7 bgbrand-gray-lightest rounded w-10" />
+            <div className="h-10 w-10 b[a-z]-brand-gray-lightest rounded-lg mb-3" />
+            <div className="h-3 b[a-z]-brand-gray-lightest rounded w-16 mb-2" />
+            <div className="h-7 b[a-z]-brand-gray-lightest rounded w-10" />
           </div>
         ))}
       </div>

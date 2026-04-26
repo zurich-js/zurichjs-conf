@@ -100,7 +100,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
                         Group · {orderContext.ticketCount} tickets
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bgbrand-gray-lightest text-gray-700">
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full b[a-z]-brand-gray-lightest text-gray-700">
                         Individual
                       </span>
                     )}
@@ -213,7 +213,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
                         <button
                           onClick={() => setConfirmDelete(false)}
                           disabled={deleteMutation.isPending}
-                          className="px-3 py-1.5 bgbrand-gray-lightest text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition-colors cursor-pointer"
+                          className="px-3 py-1.5 b[a-z]-brand-gray-lightest text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition-colors cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -312,7 +312,7 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
             )}
             <button
               onClick={onClose}
-              className="px-5 py-2.5 bgbrand-gray-lightest text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer"
+              className="px-5 py-2.5 b[a-z]-brand-gray-lightest text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer"
             >
               Close
             </button>

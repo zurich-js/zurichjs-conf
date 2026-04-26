@@ -60,7 +60,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
           On this page
         </p> */}
         <ul className="relative space-y-3">
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bgbrand-gray-lightest" />
+          <div className="absolute left-[7px] top-2 bottom-2 w-px b[a-z]-brand-gray-lightest" />
 
           {items.map((item) => {
             const isActive = activeId === item.id;

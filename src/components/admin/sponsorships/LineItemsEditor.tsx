@@ -400,7 +400,7 @@ export function LineItemsEditor({
                       <button
                         onClick={() => startEditing(item)}
                         disabled={isSubmitting}
-                        className="p-1.5 sm:p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:bgbrand-gray-lightest rounded transition-colors"
+                        className="p-1.5 sm:p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:b[a-z]-brand-gray-lightest rounded transition-colors"
                         title={item.type === 'tier_base' ? 'Edit negotiated price' : 'Edit item'}
                       >
                         <Edit2 className="h-4 w-4" />

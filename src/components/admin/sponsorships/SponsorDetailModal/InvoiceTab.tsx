@@ -271,7 +271,7 @@ function ConversionToggle({ conversion, setConversion, total, handleRateChange, 
             payInEur: newPayInEur,
             convertedAmount: newPayInEur ? calculateConvertedAmount(prev.conversionRate, total) : '',
           }));
-        }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bgbrand-gray-lightest'}`}>
+        }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'b[a-z]-brand-gray-lightest'}`}>
           <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${conversion.payInEur ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
       </div>
@@ -373,7 +373,7 @@ function ConversionSection({ invoice, conversion, setConversion, isEditing, setI
                 payInEur: newPayInEur,
                 convertedAmount: newPayInEur ? calculateConvertedAmount(prev.conversionRate, baseAmount) : prev.convertedAmount,
               }));
-            }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'bgbrand-gray-lightest'}`}>
+            }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${conversion.payInEur ? 'bg-blue-600' : 'b[a-z]-brand-gray-lightest'}`}>
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${conversion.payInEur ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>

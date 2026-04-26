@@ -249,7 +249,7 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:bgbrand-gray-lightest transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:b[a-z]-brand-gray-lightest transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>

@@ -61,7 +61,7 @@ export function TravelSection({
               className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 travelRegion === region
                   ? 'bg-black text-white'
-                  : 'bg-text-brand-gray-lightest text-gray-700 hover:bgbrand-gray-lightest'
+                  : 'bg-text-brand-gray-lightest text-gray-700 hover:b[a-z]-brand-gray-lightest'
               }`}
               aria-pressed={travelRegion === region}
             >

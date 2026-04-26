@@ -274,7 +274,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
                     key={tag}
                     type="button"
                     onClick={() => setFormData({ ...formData, tags: formData.tags.filter((entry) => entry !== tag) })}
-                    className="cursor-pointer rounded-full bg-text-brand-gray-lightest px-3 py-1 text-sm text-black hover:bgbrand-gray-lightest"
+                    className="cursor-pointer rounded-full bg-text-brand-gray-lightest px-3 py-1 text-sm text-black hover:b[a-z]-brand-gray-lightest"
                   >
                     {tag} x
                   </button>

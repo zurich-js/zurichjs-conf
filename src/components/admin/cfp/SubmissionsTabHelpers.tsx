@@ -33,7 +33,7 @@ export function CoverageBar({ percent, reviewCount, totalReviewers }: { percent:
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bgbrand-gray-lightest rounded-full overflow-hidden min-w-[60px]">
+      <div className="flex-1 h-2 b[a-z]-brand-gray-lightest rounded-full overflow-hidden min-w-[60px]">
         <div
           className={`h-full ${getBarColor()} transition-all`}
           style={{ width: `${Math.min(percent, 100)}%` }}

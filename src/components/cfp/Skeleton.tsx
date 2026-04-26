@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 // Base skeleton with shimmer animation
 export function Skeleton({ className = '' }: { className?: string }) {
   return (
-    <div className={`relative overflow-hidden bgbrand-gray-lightest rounded ${className}`}>
+    <div className={`relative overflow-hidden b[a-z]-brand-gray-lightest rounded ${className}`}>
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
         animate={{ x: ['-100%', '100%'] }}

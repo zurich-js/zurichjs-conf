@@ -179,11 +179,11 @@ export function BlueskyComments({ postUri }: { postUri?: string }) {
         <div className="space-y-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex gap-3 animate-pulse">
-              <div className="w-9 h-9 rounded-full bgbrand-gray-lightest shrink-0" />
+              <div className="w-9 h-9 rounded-full b[a-z]-brand-gray-lightest shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 bgbrand-gray-lightest rounded w-32" />
-                <div className="h-3 bgbrand-gray-lightest rounded w-full" />
-                <div className="h-3 bgbrand-gray-lightest rounded w-3/4" />
+                <div className="h-3 b[a-z]-brand-gray-lightest rounded w-32" />
+                <div className="h-3 b[a-z]-brand-gray-lightest rounded w-full" />
+                <div className="h-3 b[a-z]-brand-gray-lightest rounded w-3/4" />
               </div>
             </div>
           ))}

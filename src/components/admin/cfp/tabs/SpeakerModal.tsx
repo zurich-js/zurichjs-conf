@@ -266,7 +266,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
             <button
               onClick={() => setIsEditing(!isEditing)}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
-                isEditing ? 'bgbrand-gray-lightest text-black' : 'bg-brand-primary hover:bg-[#e8d95e] text-black'
+                isEditing ? 'b[a-z]-brand-gray-lightest text-black' : 'bg-brand-primary hover:bg-[#e8d95e] text-black'
               }`}
             >
               {isEditing ? 'Cancel Edit' : 'Edit Profile'}
@@ -305,7 +305,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                   {profileImageUrl ? (
                     <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
                   ) : (
-                    <div className="w-20 h-20 rounded-full bgbrand-gray-lightest flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-full b[a-z]-brand-gray-lightest flex items-center justify-center">
                       <User className="w-8 h-8 text-brand-gray-medium" />
                     </div>
                   )}

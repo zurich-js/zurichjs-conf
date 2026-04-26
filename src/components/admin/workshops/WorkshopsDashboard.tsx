@@ -128,7 +128,7 @@ export function WorkshopsDashboard() {
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ringbrand-gray-lightest hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 rin[a-z]-brand-gray-lightest hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className={`size-4 ${isFetching ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">Refresh</span>

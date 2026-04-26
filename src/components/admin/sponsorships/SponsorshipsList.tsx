@@ -69,12 +69,12 @@ export function SponsorshipsList({
         <div className="animate-pulse p-4 space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center space-x-4">
-              <div className="h-12 w-12 bgbrand-gray-lightest rounded-lg" />
+              <div className="h-12 w-12 b[a-z]-brand-gray-lightest rounded-lg" />
               <div className="flex-1">
-                <div className="h-4 bgbrand-gray-lightest rounded w-1/3 mb-2" />
-                <div className="h-3 bgbrand-gray-lightest rounded w-1/4" />
+                <div className="h-4 b[a-z]-brand-gray-lightest rounded w-1/3 mb-2" />
+                <div className="h-3 b[a-z]-brand-gray-lightest rounded w-1/4" />
               </div>
-              <div className="h-6 w-20 bgbrand-gray-lightest rounded-full" />
+              <div className="h-6 w-20 b[a-z]-brand-gray-lightest rounded-full" />
             </div>
           ))}
         </div>

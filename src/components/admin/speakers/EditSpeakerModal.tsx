@@ -189,7 +189,7 @@ export function EditSpeakerModal({
                     <img src={profileImageUrl} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
                   ) : (
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      missingFields.profile_image_url ? 'bg-red-50 ring-2 ring-red-300' : 'bgbrand-gray-lightest'
+                      missingFields.profile_image_url ? 'bg-red-50 ring-2 ring-red-300' : 'b[a-z]-brand-gray-lightest'
                     }`}>
                       <User className={`w-8 h-8 ${missingFields.profile_image_url ? 'text-red-400' : 'text-brand-gray-medium'}`} />
                     </div>
@@ -220,7 +220,7 @@ export function EditSpeakerModal({
                   {portraitForegroundUrl ? (
                     <img src={portraitForegroundUrl} alt="Portrait foreground" className="w-16 h-16 rounded-lg object-cover bg-text-brand-gray-lightest" />
                   ) : (
-                    <div className="w-16 h-16 rounded-lg bgbrand-gray-lightest flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-lg b[a-z]-brand-gray-lightest flex items-center justify-center">
                       <User className="w-8 h-8 text-brand-gray-medium" />
                     </div>
                   )}
@@ -250,7 +250,7 @@ export function EditSpeakerModal({
                   {portraitBackgroundUrl ? (
                     <img src={portraitBackgroundUrl} alt="Portrait background" className="w-16 h-16 rounded-lg object-cover" />
                   ) : (
-                    <div className="w-16 h-16 rounded-lg bgbrand-gray-lightest flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-lg b[a-z]-brand-gray-lightest flex items-center justify-center">
                       <span className="text-xs text-brand-gray-medium">None</span>
                     </div>
                   )}

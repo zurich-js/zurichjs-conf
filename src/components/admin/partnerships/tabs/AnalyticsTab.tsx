@@ -23,8 +23,8 @@ export function AnalyticsTab({ analytics, isLoading }: AnalyticsTabProps) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
-              <div className="h-4 bgbrand-gray-lightest rounded w-20 mb-2" />
-              <div className="h-8 bgbrand-gray-lightest rounded w-16" />
+              <div className="h-4 b[a-z]-brand-gray-lightest rounded w-20 mb-2" />
+              <div className="h-8 b[a-z]-brand-gray-lightest rounded w-16" />
             </div>
           ))}
         </div>

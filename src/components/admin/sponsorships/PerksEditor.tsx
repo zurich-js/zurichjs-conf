@@ -278,7 +278,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                     className={`p-1 rounded-full transition-colors flex-shrink-0 mt-0.5 ${
                       perk.status === 'completed'
                         ? 'bg-green-100 text-green-600'
-                        : 'bgbrand-gray-lightest text-brand-gray-medium hover:bg-gray-300'
+                        : 'b[a-z]-brand-gray-lightest text-brand-gray-medium hover:bg-gray-300'
                     } ${isSubmitting ? 'opacity-50' : ''}`}
                   >
                     <CheckCircle className="h-5 w-5" />
@@ -319,7 +319,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                       <button
                         onClick={() => startEditing(perk)}
                         disabled={isSubmitting}
-                        className="p-1.5 text-brand-gray-medium hover:text-brand-gray-dark hover:bgbrand-gray-lightest rounded transition-colors"
+                        className="p-1.5 text-brand-gray-medium hover:text-brand-gray-dark hover:b[a-z]-brand-gray-lightest rounded transition-colors"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
@@ -356,7 +356,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
                     <button
                       onClick={() => startEditing(perk)}
                       disabled={isSubmitting}
-                      className="p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:bgbrand-gray-lightest rounded transition-colors"
+                      className="p-1 text-brand-gray-medium hover:text-brand-gray-dark hover:b[a-z]-brand-gray-lightest rounded transition-colors"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
@@ -408,7 +408,7 @@ export function PerksEditor({ dealId, perks, onUpdate }: PerksEditorProps) {
               {perks.filter((p) => p.status === 'completed').length} / {perks.length} completed
             </span>
           </div>
-          <div className="mt-2 h-2 bgbrand-gray-lightest rounded-full overflow-hidden">
+          <div className="mt-2 h-2 b[a-z]-brand-gray-lightest rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 rounded-full transition-all"
               style={{

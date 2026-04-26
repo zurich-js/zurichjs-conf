@@ -24,7 +24,7 @@ export function AdminErrorState({
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-4 px-4 py-2 text-sm font-medium rounded-lg text-black bg-text-brand-gray-lightest hover:bgbrand-gray-lightest transition-all cursor-pointer"
+          className="mt-4 px-4 py-2 text-sm font-medium rounded-lg text-black bg-text-brand-gray-lightest hover:b[a-z]-brand-gray-lightest transition-all cursor-pointer"
         >
           Try again
         </button>

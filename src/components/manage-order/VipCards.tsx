@@ -24,7 +24,7 @@ export function VipPerksCard({ isVip }: VipPerksCardProps) {
         {VIP_PERKS.map((perk, index) => (
           <li key={index} className="flex items-start gap-3">
             <span className="text-amber-400 mt-0.5">✨</span>
-            <span className="textbrand-gray-lightest">{perk}</span>
+            <span className="tex[a-z]-brand-gray-lightest">{perk}</span>
           </li>
         ))}
       </ul>
@@ -47,7 +47,7 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
         )}
         <h2 className="text-xl font-bold text-blue-400">VIP Upgrade Pending</h2>
       </div>
-      <p className="textbrand-gray-lightest mb-6">
+      <p className="tex[a-z]-brand-gray-lightest mb-6">
         Complete your payment to unlock VIP benefits and enhance your conference experience.
       </p>
 
@@ -156,7 +156,7 @@ export function UpgradeCta({ ticketId, firstName, lastName, email }: UpgradeCtaP
         <span className="text-2xl">✨</span>
         <div>
           <h3 className="text-brand-primary font-semibold mb-2">Want to upgrade to VIP?</h3>
-          <p className="textbrand-gray-lightest text-sm mb-3">
+          <p className="tex[a-z]-brand-gray-lightest text-sm mb-3">
             Get 20% off all workshops, an exclusive speaker tour invitation, and limited edition goodies. Email us to
             upgrade your ticket.
           </p>

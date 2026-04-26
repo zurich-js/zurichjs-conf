@@ -109,7 +109,7 @@ export function AdminSpeakerCard({
                 className="w-16 h-16 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <div className="w-16 h-16 shrink-0 rounded-full bgbrand-gray-lightest flex items-center justify-center">
+              <div className="w-16 h-16 shrink-0 rounded-full b[a-z]-brand-gray-lightest flex items-center justify-center">
                 <User className="w-8 h-8 text-brand-gray-medium" />
               </div>
             )}

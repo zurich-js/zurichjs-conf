@@ -17,11 +17,11 @@ interface WorkshopCardProps {
 }
 
 const STATUS_STYLES: Record<WorkshopStatus, string> = {
-  draft: 'bg-text-brand-gray-lightest text-gray-700 ringbrand-gray-lightest',
+  draft: 'bg-text-brand-gray-lightest text-gray-700 rin[a-z]-brand-gray-lightest',
   published: 'bg-green-100 text-green-700 ring-green-200',
   cancelled: 'bg-red-100 text-red-700 ring-red-200',
   completed: 'bg-blue-100 text-blue-700 ring-blue-200',
-  archived: 'bg-text-brand-gray-lightest text-brand-gray-medium ringbrand-gray-lightest line-through',
+  archived: 'bg-text-brand-gray-lightest text-brand-gray-medium rin[a-z]-brand-gray-lightest line-through',
 };
 
 function formatTimeRange(start: string | null, end: string | null): string | null {

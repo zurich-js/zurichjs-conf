@@ -133,7 +133,7 @@ function SelectedAirport({ airport, error, disabled, theme = 'dark', onEdit, onC
           type="button"
           onClick={(e) => { e.stopPropagation(); onClear(); }}
           className={`absolute right-3 p-1.5 rounded transition-colors cursor-pointer ${
-            isLight ? 'hover:bgbrand-gray-lightest' : 'hover:bg-brand-gray-darkest'
+            isLight ? 'hover:b[a-z]-brand-gray-lightest' : 'hover:bg-brand-gray-darkest'
           }`}
         >
           <X className={`w-4 h-4 ${isLight ? 'text-brand-gray-medium hover:text-gray-700' : 'text-brand-gray-medium hover:text-white'}`} />

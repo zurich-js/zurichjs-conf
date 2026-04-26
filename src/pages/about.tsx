@@ -139,7 +139,7 @@ export default function AboutUs() {
               ))}
             </div>
             <div>
-              <div className="mb-6 w-full h-64 bgbrand-gray-lightest rounded-lg overflow-hidden">
+              <div className="mb-6 w-full h-64 b[a-z]-brand-gray-lightest rounded-lg overflow-hidden">
                 <iframe
                   src={aboutPageData.venue.mapUrl}
                   width="100%"

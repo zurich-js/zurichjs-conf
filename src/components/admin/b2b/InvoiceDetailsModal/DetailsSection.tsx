@@ -135,7 +135,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
     <div className="space-y-6">
       {(invoice.status === 'draft' || invoice.status === 'sent') && (
         <div className="flex justify-end">
-          <button onClick={startEditing} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors cursor-pointer text-black">
+          <button onClick={startEditing} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:b[a-z]-brand-gray-lightest rounded-lg transition-colors cursor-pointer text-black">
             Edit Details
           </button>
         </div>
@@ -176,7 +176,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
               <a href={invoice.stripe_payment_link_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm bg-[#635BFF] text-white rounded-lg font-medium hover:bg-[#5046e5] transition-colors cursor-pointer">
                 Open Payment Link
               </a>
-              <button onClick={() => { navigator.clipboard.writeText(invoice.stripe_payment_link_url || ''); alert('Payment link copied!'); }} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors cursor-pointer text-black">
+              <button onClick={() => { navigator.clipboard.writeText(invoice.stripe_payment_link_url || ''); alert('Payment link copied!'); }} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:b[a-z]-brand-gray-lightest rounded-lg transition-colors cursor-pointer text-black">
                 Copy Link
               </button>
             </div>
@@ -224,7 +224,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
             <a href={invoice.invoice_pdf_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-sm bg-brand-primary text-black rounded-lg font-medium hover:bg-[#e6d766] transition-colors cursor-pointer">
               Download PDF
             </a>
-            <button onClick={handleRegeneratePDF} disabled={actionLoading === 'pdf'} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:bgbrand-gray-lightest rounded-lg transition-colors disabled:opacity-50 cursor-pointer text-black">
+            <button onClick={handleRegeneratePDF} disabled={actionLoading === 'pdf'} className="px-3 py-1.5 text-sm bg-text-brand-gray-lightest hover:b[a-z]-brand-gray-lightest rounded-lg transition-colors disabled:opacity-50 cursor-pointer text-black">
               {actionLoading === 'pdf' ? 'Regenerating...' : 'Regenerate PDF'}
             </button>
           </div>
@@ -306,7 +306,7 @@ function EditForm({ formData, setFormData, onSave, onCancel, loading }: {
         </div>
       </div>
       <div className="flex justify-end gap-3 pt-4 border-t border-brand-gray-lightest">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-black bg-text-brand-gray-lightest rounded-lg hover:bgbrand-gray-lightest transition-colors cursor-pointer">Cancel</button>
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-black bg-text-brand-gray-lightest rounded-lg hover:b[a-z]-brand-gray-lightest transition-colors cursor-pointer">Cancel</button>
         <button onClick={onSave} disabled={loading} className="px-4 py-2 bg-brand-primary text-black rounded-lg font-medium hover:bg-[#e6d766] transition-colors disabled:opacity-50 cursor-pointer">
           {loading ? 'Saving...' : 'Save Changes'}
         </button>

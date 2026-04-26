@@ -234,7 +234,7 @@ export function TicketDetailsModal({
                       </button>
                       <button
                         onClick={() => { setIsEditingCountry(false); setCountrySearch(''); setSelectedCountry(ticket.metadata?.session_metadata?.country || ''); setShowDropdown(false); }}
-                        className="px-3 py-1.5 bgbrand-gray-lightest text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 cursor-pointer"
+                        className="px-3 py-1.5 b[a-z]-brand-gray-lightest text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -356,7 +356,7 @@ export function TicketDetailsModal({
             <ActionButton onClick={onDelete} color="red" icon="delete">Delete</ActionButton>
           </div>
           <div className="mt-4 pt-4 border-t border-brand-gray-lightest">
-            <button onClick={onClose} className="w-full px-6 py-2.5 bgbrand-gray-lightest text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer">
+            <button onClick={onClose} className="w-full px-6 py-2.5 b[a-z]-brand-gray-lightest text-black rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors cursor-pointer">
               Close
             </button>
           </div>
@@ -414,7 +414,7 @@ const colorClasses: Record<string, string> = {
   purple: 'border-purple-300 text-purple-700 bg-purple-50 hover:bg-purple-100',
   amber: 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100',
   orange: 'border-orange-300 text-orange-700 bg-orange-50 hover:bg-orange-100',
-  gray: 'border-gray-300 text-gray-700 bg-text-brand-gray-lightest hover:bgbrand-gray-lightest',
+  gray: 'border-gray-300 text-gray-700 bg-text-brand-gray-lightest hover:b[a-z]-brand-gray-lightest',
   red: 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100',
   teal: 'border-teal-300 text-teal-700 bg-teal-50 hover:bg-teal-100',
 };

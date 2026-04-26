@@ -186,7 +186,7 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
               onClick={handleToggleLogoPublic}
               disabled={!sponsor.logo_url || isUpdating}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                sponsor.is_logo_public ? 'bg-brand-primary' : 'bgbrand-gray-lightest'
+                sponsor.is_logo_public ? 'bg-brand-primary' : 'b[a-z]-brand-gray-lightest'
               } ${!sponsor.logo_url || isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${sponsor.is_logo_public ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -198,19 +198,19 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
             <p className="text-xs font-medium text-brand-gray-dark mb-2">Homepage display requirements:</p>
             <ul className="space-y-1.5">
               <li className="flex items-center gap-2 text-xs">
-                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.logo_url ? 'bg-green-100 text-green-600' : 'bgbrand-gray-lightest text-brand-gray-medium'}`}>
+                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.logo_url ? 'bg-green-100 text-green-600' : 'b[a-z]-brand-gray-lightest text-brand-gray-medium'}`}>
                   {sponsor.logo_url ? '✓' : '○'}
                 </span>
                 <span className={sponsor.logo_url ? 'text-gray-700' : 'text-brand-gray-medium'}>Logo uploaded</span>
               </li>
               <li className="flex items-center gap-2 text-xs">
-                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.is_logo_public ? 'bg-green-100 text-green-600' : 'bgbrand-gray-lightest text-brand-gray-medium'}`}>
+                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${sponsor.is_logo_public ? 'bg-green-100 text-green-600' : 'b[a-z]-brand-gray-lightest text-brand-gray-medium'}`}>
                   {sponsor.is_logo_public ? '✓' : '○'}
                 </span>
                 <span className={sponsor.is_logo_public ? 'text-gray-700' : 'text-brand-gray-medium'}>Public visibility enabled</span>
               </li>
               <li className="flex items-center gap-2 text-xs">
-                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${deal.status === 'paid' ? 'bg-green-100 text-green-600' : 'bgbrand-gray-lightest text-brand-gray-medium'}`}>
+                <span className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${deal.status === 'paid' ? 'bg-green-100 text-green-600' : 'b[a-z]-brand-gray-lightest text-brand-gray-medium'}`}>
                   {deal.status === 'paid' ? '✓' : '○'}
                 </span>
                 <span className={deal.status === 'paid' ? 'text-gray-700' : 'text-brand-gray-medium'}>

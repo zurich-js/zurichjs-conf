@@ -250,7 +250,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:bgbrand-gray-lightest transition-colors cursor-pointer"
+              className="px-4 py-2 text-gray-700 bg-text-brand-gray-lightest rounded-lg hover:b[a-z]-brand-gray-lightest transition-colors cursor-pointer"
             >
               Cancel
             </button>
