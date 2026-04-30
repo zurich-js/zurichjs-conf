@@ -29,9 +29,9 @@ export function SpeakerInfo({ speaker, showEmail = true }: SpeakerInfoProps) {
           </div>
           {(speaker.job_title || speaker.company) && (
             <div className="text-sm text-brand-gray-light mt-0.5">
-              {speaker.job_title && speaker.job_title}
+              {!!speaker.job_title && speaker.job_title}
               {speaker.job_title && speaker.company && ' at '}
-              {speaker.company && speaker.company}
+              {!!speaker.company && speaker.company}
             </div>
           )}
           {showEmail && speaker.email && (

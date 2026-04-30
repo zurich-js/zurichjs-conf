@@ -51,10 +51,10 @@ export function getCombinedByCurrency(
     ...(summary.stripeFeesByCurrency || { CHF: summary.totalStripeFees }),
   };
   const workshopRevenue: Record<string, number> = {
-    ...(workshopSummary?.revenueByCurrency || {}),
+    ...workshopSummary?.revenueByCurrency,
   };
   const workshopFees: Record<string, number> = {
-    ...(workshopSummary?.stripeFeesByCurrency || {}),
+    ...workshopSummary?.stripeFeesByCurrency,
   };
   const sponsorPaid: Record<string, number> = {};
   const sponsorPending: Record<string, number> = {};

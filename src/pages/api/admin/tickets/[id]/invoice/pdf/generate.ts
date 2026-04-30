@@ -46,7 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     //    auto-created with only one ticket before other tickets in the session existed).
     const supabase = createServiceRoleClient();
     if (orderContext.allTickets.length > 1 || invoice.ticket_ids.length < orderContext.allTickets.length) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any)
         .from('ticket_invoices')
         .update({

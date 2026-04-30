@@ -189,7 +189,7 @@ export function ProgramSessionModal({
         level: form.kind === 'event' ? null : form.level,
         status: form.status,
         metadata: {
-          ...(session?.metadata ?? {}),
+          ...session?.metadata,
           tags: selectedTags,
         },
         workshop_duration_minutes: form.kind === 'workshop' && form.workshop_duration_minutes

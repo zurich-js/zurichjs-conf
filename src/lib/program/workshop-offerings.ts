@@ -111,7 +111,7 @@ export async function updateWorkshopOfferingForSession(
   if (input.end_time !== undefined) updates.end_time = input.end_time;
   if (input.stripe_validation !== undefined) {
     updates.metadata = {
-      ...(current.metadata ?? {}),
+      ...current.metadata,
       stripeValidation: input.stripe_validation,
     };
   }

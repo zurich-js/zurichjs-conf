@@ -63,6 +63,5 @@ export function useCartUrlSync(cart: Cart) {
     return () => {
       setEncodedCart(null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

@@ -19,13 +19,10 @@ const mocks = vi.hoisted(() => {
     const terminal = vi.fn().mockResolvedValue({ data: null, error: null });
     chain.select = vi.fn().mockReturnValue(chain);
     chain.eq = vi.fn().mockReturnValue(chain);
-    chain.order = vi.fn().mockReturnValue(chain);
+    chain.order = terminal;
     chain.insert = vi.fn().mockReturnValue(chain);
     chain.update = vi.fn().mockReturnValue(chain);
     chain.single = terminal;
-    // Make the chain itself thenable so `await supabase.from(...).select().eq()` works
-    // when tests don't end with .single()
-    (chain as Record<string, unknown>).then = terminal;
     return { chain, terminal };
   };
 
@@ -151,33 +148,33 @@ function makeInvoice(overrides: Partial<TicketInvoice> = {}): TicketInvoice {
 function buildSupabaseMock(resolvedValues: Array<{ data: unknown; error: unknown }>) {
   let callIndex = 0;
 
-  const single = vi.fn().mockImplementation(() => {
+  const getNextResult = () => {
     const result = resolvedValues[callIndex] ?? { data: null, error: null };
     callIndex++;
-    return Promise.resolve(result);
+    return result;
+  };
+
+  const single = vi.fn().mockImplementation(() => {
+    return Promise.resolve(getNextResult());
   });
 
-  // For multi-row results (no .single()) – the chain itself needs to be thenable
-  const chainThen = vi.fn().mockImplementation((resolve: (v: unknown) => unknown) => {
-    const result = resolvedValues[callIndex] ?? { data: null, error: null };
-    callIndex++;
-    return Promise.resolve(resolve(result));
+  // Multi-row queries in invoices.ts terminate at `.order(...)`.
+  const order = vi.fn().mockImplementation(() => {
+    return Promise.resolve(getNextResult());
   });
 
   const chain: Record<string, unknown> = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
+    order,
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     single,
-    then: chainThen,
   };
 
   // Make chain return itself for all builder methods
   (chain.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
   (chain.eq as ReturnType<typeof vi.fn>).mockReturnValue(chain);
-  (chain.order as ReturnType<typeof vi.fn>).mockReturnValue(chain);
   (chain.insert as ReturnType<typeof vi.fn>).mockReturnValue(chain);
   (chain.update as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
@@ -186,7 +183,7 @@ function buildSupabaseMock(resolvedValues: Array<{ data: unknown; error: unknown
 
   mocks.mockCreateServiceRoleClient.mockReturnValue(client);
 
-  return { client, from, chain, single, chainThen };
+  return { client, from, chain, single, order };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -543,22 +540,18 @@ describe('createTicketInvoice', () => {
     const chain: Record<string, unknown> = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
       insert: vi.fn().mockImplementation((payload: unknown) => {
         capturedInsertPayload = payload;
         return chain;
       }),
       update: vi.fn().mockReturnThis(),
       single,
-      then: vi.fn().mockImplementation((resolve: (v: unknown) => unknown) =>
-        Promise.resolve(resolve({ data: null, error: { code: 'PGRST116' } }))
-      ),
     };
 
     // Make builder methods chainable
     (chain.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
     (chain.eq as ReturnType<typeof vi.fn>).mockReturnValue(chain);
-    (chain.order as ReturnType<typeof vi.fn>).mockReturnValue(chain);
     (chain.update as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
     mocks.mockCreateServiceRoleClient.mockReturnValue({ from: vi.fn().mockReturnValue(chain) });

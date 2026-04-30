@@ -60,7 +60,6 @@ function BlueskyReply({
         className="shrink-0"
       >
         {post.author.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={post.author.avatar}
             alt={post.author.displayName ?? post.author.handle}

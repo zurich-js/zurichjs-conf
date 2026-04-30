@@ -87,7 +87,7 @@ export async function handleVipUpgradePayment(
       .update({
         ticket_category: 'vip',
         metadata: {
-          ...(ticket.metadata as Record<string, unknown> || {}),
+          ...(ticket.metadata as Record<string, unknown>),
           upgraded_from: ticket.ticket_category,
           upgraded_at: new Date().toISOString(),
           upgrade_id: upgradeId,
