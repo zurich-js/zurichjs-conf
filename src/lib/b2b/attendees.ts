@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   B2BInvoiceAttendee,
   AttendeeInput,
@@ -151,7 +152,7 @@ export async function updateAttendee(
   }
 
   // Build update object
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'b2b_invoice_attendees'> = {};
   if (data.firstName !== undefined) updateData.first_name = data.firstName;
   if (data.lastName !== undefined) updateData.last_name = data.lastName;
   if (data.email !== undefined) updateData.email = data.email;

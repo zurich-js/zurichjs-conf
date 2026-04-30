@@ -5,6 +5,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   Partnership,
   PartnershipType,
@@ -182,7 +183,7 @@ export async function updatePartnership(
   const supabase = createServiceRoleClient();
 
   // Build update object, only including defined fields
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'partnerships'> = {};
 
   if (data.name !== undefined) updateData.name = data.name;
   if (data.type !== undefined) updateData.type = data.type;

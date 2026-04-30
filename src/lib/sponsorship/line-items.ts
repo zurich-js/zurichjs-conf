@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   SponsorshipLineItem,
   AddLineItemRequest,
@@ -73,7 +74,7 @@ export async function updateLineItem(
   const supabase = createServiceRoleClient();
 
   // Build update object with only provided fields
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'sponsorship_line_items'> = {};
 
   if (data.description !== undefined) updateData.description = data.description;
   if (data.quantity !== undefined) updateData.quantity = data.quantity;

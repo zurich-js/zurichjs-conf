@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import type { MDXComponents } from 'mdx/types';
+import { MDXComponents } from 'mdx/types';
 
 export const mdxComponents: MDXComponents = {
   h1: (props) => (

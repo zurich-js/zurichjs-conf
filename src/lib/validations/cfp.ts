@@ -108,9 +108,7 @@ export const speakerProfileSchema = z.object({
   twitter_handle: z.string().transform(normalizeHandle).optional(),
   bluesky_handle: z.string().transform(normalizeHandle).optional(),
   mastodon_handle: z.string().transform(normalizeHandle).optional(),
-  tshirt_size: z.enum(TSHIRT_SIZES).nullable().refine((val) => val !== null, {
-    message: 'T-shirt size is required',
-  }),
+  tshirt_size: z.enum(TSHIRT_SIZES).nullable(),
   travel_option: z.enum(TRAVEL_OPTIONS).optional().nullable(),
   travel_assistance_required: z.boolean().optional().nullable(),
   assistance_type: z.enum(ASSISTANCE_TYPES).optional().nullable(),

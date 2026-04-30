@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   SponsorshipPerk,
   SponsorshipPerkStatus,
@@ -157,7 +158,7 @@ export async function updatePerk(
   const supabase = createServiceRoleClient();
 
   // Build update object with only provided fields
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'sponsorship_perks'> = {};
 
   if (data.status !== undefined) {
     updateData.status = data.status;

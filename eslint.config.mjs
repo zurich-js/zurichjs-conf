@@ -31,7 +31,6 @@ const eslintConfig = [
   // Exclude generated types, test files, and data files from max-lines rule
   {
     files: [
-      "**/types/supabase.ts",
       "**/types/database.generated.ts",
       "**/supabase/database.types.ts",
       "**/*.test.ts",
