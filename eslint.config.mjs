@@ -32,7 +32,6 @@ const eslintConfig = [
   {
     files: [
       "**/types/database.generated.ts",
-      "**/supabase/database.types.ts",
       "**/*.test.ts",
       "**/*.test.tsx",
       "**/__tests__/**/*",
