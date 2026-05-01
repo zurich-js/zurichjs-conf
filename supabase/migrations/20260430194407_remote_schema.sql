@@ -64,8 +64,6 @@ END;
 $function$
 ;
 
-CREATE TRIGGER protect_buckets_delete BEFORE DELETE ON storage.buckets FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete();
-
-CREATE TRIGGER protect_objects_delete BEFORE DELETE ON storage.objects FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete();
-
-
+-- Intentionally do not recreate Supabase-managed storage triggers here.
+-- This file came from a remote schema sync, and fresh migration runs can fail
+-- if provider-managed triggers such as `storage.protect_delete()` are replayed.

@@ -2,6 +2,11 @@
 	"name": "zurichjs-conf",
 	"version": "0.1.0",
 	"private": true,
+	"packageManager": "pnpm@10.30.3",
+	"engines": {
+		"node": ">=20 <25",
+		"pnpm": "10.x"
+	},
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
