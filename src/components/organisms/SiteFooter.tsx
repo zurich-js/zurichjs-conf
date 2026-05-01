@@ -5,8 +5,7 @@ import { LinkGroup, NewsletterForm } from '@/components/molecules';
 import { Logo, Button, SocialIcon } from '@/components/atoms';
 import { SectionSplitView } from '@/components/organisms';
 import { subscribeToNewsletter } from '@/lib/api/newsletter';
-import { queryKeys } from '@/lib/query-keys';
-import type { PublicSpeakersResponse } from '@/lib/queries/speakers';
+import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 
 export interface SiteFooterProps {
   showContactLinks?: boolean;
@@ -71,19 +70,7 @@ const socials = [
 export const SiteFooter: React.FC<SiteFooterProps> = ({
   showContactLinks = false,
 }) => {
-  const { data } = useQuery({
-    queryKey: queryKeys.speakers.public(),
-    queryFn: async () => {
-      const response = await fetch('/api/speakers');
-
-      if (!response.ok) {
-        throw new Error('Failed to load public speaker availability');
-      }
-
-      return response.json() as Promise<PublicSpeakersResponse>;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data } = useQuery(publicSpeakersQueryOptions());
   const publicSessions = data?.speakers.flatMap((speaker) => speaker.sessions) ?? [];
   const hasTalks = publicSessions.some((session) => session.type === 'standard' || session.type === 'lightning');
   const hasWorkshops = publicSessions.some((session) => session.type === 'workshop');
