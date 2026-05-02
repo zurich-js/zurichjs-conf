@@ -37,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createServiceRoleClient() as any;
 
     // Fetch all confirmed tickets — one representative per stripe_session_id

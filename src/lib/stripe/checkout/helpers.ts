@@ -164,7 +164,7 @@ export async function extractPartnershipDiscountInfo(
 
   // First, try to find it as a partnership coupon
   const { data: coupon } = await supabase
-    .from('partnership_coupons' as 'tickets')
+    .from('partnership_coupons')
     .select('id, partnership_id')
     .eq('code', couponCode.toUpperCase())
     .single();
@@ -178,25 +178,24 @@ export async function extractPartnershipDiscountInfo(
 
   // If not found as coupon, try as a voucher
   const { data: voucher } = await supabase
-    .from('partnership_vouchers' as 'tickets')
+    .from('partnership_vouchers')
     .select('id, partnership_id')
     .eq('code', couponCode.toUpperCase())
     .single();
 
-  const voucherData = voucher as unknown as { id: string; partnership_id: string } | null;
-  if (voucherData) {
-    result.partnershipVoucherId = voucherData.id;
-    result.partnershipId = voucherData.partnership_id;
+  if (voucher) {
+    result.partnershipVoucherId = voucher.id;
+    result.partnershipId = voucher.partnership_id;
 
     // Mark voucher as redeemed
     await supabase
-      .from('partnership_vouchers' as 'tickets')
+      .from('partnership_vouchers')
       .update({
         is_redeemed: true,
         redeemed_at: new Date().toISOString(),
         redeemed_by_email: session.customer_details?.email || null,
-      } as unknown as Record<string, unknown>)
-      .eq('id', voucherData.id);
+      })
+      .eq('id', voucher.id);
   }
 
   return result;

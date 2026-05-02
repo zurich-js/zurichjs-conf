@@ -10,7 +10,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cfpClientInstance: SupabaseClient<any> | null = null;
 
 /**
@@ -20,7 +19,6 @@ let cfpClientInstance: SupabaseClient<any> | null = null;
  * Note: Returns untyped client since CFP tables aren't in generated types.
  * Use type assertions when accessing data.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createCfpServiceClient(): SupabaseClient<any> {
   if (cfpClientInstance) {
     return cfpClientInstance;

@@ -209,7 +209,6 @@ export default function ReviewerSubmission() {
     if (submission && !submitReviewMutation.isPending && !form.success) {
       handleSubmit({ preventDefault: () => {} } as React.FormEvent);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submission, submitReviewMutation.isPending, form]);
 
   useSubmitShortcut(handleKeyboardSubmit, !!submission && !form.success);

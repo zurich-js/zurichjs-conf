@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   SponsorshipInvoice,
   CreateInvoiceRequest,
@@ -267,7 +268,7 @@ export async function updateInvoice(
 ): Promise<SponsorshipInvoice> {
   const supabase = createServiceRoleClient();
 
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'sponsorship_invoices'> = {};
   if (data.dueDate !== undefined) updateData.due_date = data.dueDate;
   if (data.invoiceNotes !== undefined) updateData.invoice_notes = data.invoiceNotes;
   if (data.issueDate !== undefined) updateData.issue_date = data.issueDate;
@@ -319,7 +320,7 @@ export async function updateInvoiceConversion(
     throw new Error('Currency conversion is only available for CHF-based deals');
   }
 
-  let updateData: Record<string, unknown>;
+  let updateData: TablesUpdate<'sponsorship_invoices'>;
 
   if (data.payInEur) {
     // Validate conversion fields
@@ -416,7 +417,7 @@ export async function recalculateInvoiceTotals(
     deal.currency as SponsorshipCurrency
   );
 
-  const updateData: Record<string, unknown> = {
+  const updateData: TablesUpdate<'sponsorship_invoices'> = {
     subtotal: totals.subtotal,
     credit_applied: totals.creditApplied,
     adjustments_total: totals.adjustmentsTotal,

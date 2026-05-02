@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   Sponsor,
   CreateSponsorRequest,
@@ -90,7 +91,7 @@ export async function updateSponsor(
   const supabase = createServiceRoleClient();
 
   // Build update object with only provided fields
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'sponsors'> = {};
 
   if (data.companyName !== undefined) updateData.company_name = data.companyName;
   if (data.companyWebsite !== undefined) updateData.company_website = data.companyWebsite;

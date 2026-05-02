@@ -19,7 +19,6 @@ import { logger } from '@/lib/logger';
  * untyped query builder by casting through `unknown` so that all other type checks
  * in this file remain strict.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
 
 const log = logger.scope('TicketInvoices');

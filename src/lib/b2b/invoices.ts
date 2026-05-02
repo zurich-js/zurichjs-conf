@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   B2BInvoice,
   B2BInvoiceWithAttendees,
@@ -220,7 +221,7 @@ export async function updateInvoice(
   }
 
   // Build update object
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'b2b_invoices'> = {};
 
   if (data.companyName !== undefined) updateData.company_name = data.companyName;
   if (data.vatId !== undefined) updateData.vat_id = data.vatId || null;

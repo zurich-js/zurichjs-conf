@@ -15,7 +15,7 @@ const BLOCKED_BOT_PATHS = [
   '/api/admin/logout',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only apply to admin API routes

@@ -2,13 +2,13 @@
 "$(dirname "$0")/check-env-vars.sh"
 
 # Run lint-staged to lint staged files and run related tests
-npx lint-staged
+pnpx lint-staged
 
 # Run full test suite
-npm run test:run
+pnpm run test:run
 
 # Run typecheck on entire project
-npm run typecheck
+pnpm run typecheck
 
 # Run build to ensure project builds successfully
-npm run build
+pnpm run build

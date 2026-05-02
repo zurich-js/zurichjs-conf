@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { env } from '@/config/env';
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { Json, TablesUpdate } from '@/lib/types/database.generated';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
 import { logger } from '@/lib/logger';
 import { validateSchedule } from '@/lib/workshops/scheduleHelpers';
@@ -111,7 +112,7 @@ async function handlePatch(
   const scheduleProvided =
     body.date !== undefined || body.startTime !== undefined || body.endTime !== undefined;
 
-  const updates: Record<string, unknown> = {};
+  const updates: TablesUpdate<'workshops'> = {};
   if (body.room !== undefined) updates.room = body.room;
   if (body.capacity !== undefined) updates.capacity = body.capacity;
   if (body.stripeProductId !== undefined) updates.stripe_product_id = body.stripeProductId;
@@ -121,12 +122,12 @@ async function handlePatch(
   if (body.stripeValidation !== undefined) {
     const currentMetadata =
       current.metadata && typeof current.metadata === 'object' && !Array.isArray(current.metadata)
-        ? current.metadata
+        ? current.metadata as Record<string, Json | undefined>
         : {};
     updates.metadata = {
       ...currentMetadata,
       stripeValidation: body.stripeValidation,
-    };
+    } as Json;
   }
   if (body.status !== undefined) updates.status = body.status;
   if (body.title !== undefined) updates.title = body.title;
