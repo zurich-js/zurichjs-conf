@@ -20,6 +20,16 @@ interface WorkshopOption {
   capacity: number | null;
 }
 
+interface AdminWorkshopListItem {
+  offering?: {
+    id?: string | null;
+    title?: string | null;
+    enrolled_count?: number | null;
+    capacity?: number | null;
+  } | null;
+  registrantCount?: number | null;
+}
+
 type SortField = 'created_at' | 'name' | 'email' | 'amount_paid' | 'status';
 type SortDirection = 'asc' | 'desc';
 type ModalAction = 'refund' | 'cancel' | 'reassign' | 'edit' | null;
@@ -32,12 +42,22 @@ async function fetchWorkshops(): Promise<WorkshopOption[]> {
   const res = await fetch('/api/admin/workshops');
   if (!res.ok) throw new Error('Failed to load workshops');
   const data = await res.json();
-  return (data.workshops ?? data).map((w: Record<string, unknown>) => ({
-    id: w.id as string,
-    title: w.title as string,
-    enrolled_count: (w.enrolled_count as number) ?? 0,
-    capacity: (w.capacity as number) ?? null,
-  }));
+  const rows = (data.items ?? data.workshops ?? data) as Array<AdminWorkshopListItem | Record<string, unknown>>;
+
+  return rows
+    .map((row) => {
+      const item = row as AdminWorkshopListItem;
+      const offering = item.offering ?? (row as Record<string, unknown>);
+      if (!offering?.id) return null;
+
+      return {
+        id: offering.id,
+        title: offering.title ?? 'Untitled workshop',
+        enrolled_count: item.registrantCount ?? offering.enrolled_count ?? 0,
+        capacity: offering.capacity ?? null,
+      };
+    })
+    .filter((workshop): workshop is WorkshopOption => workshop !== null);
 }
 
 async function fetchRegistrants(workshopId: string): Promise<WorkshopRegistrantRow[]> {
