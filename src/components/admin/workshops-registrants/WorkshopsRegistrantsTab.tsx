@@ -3,7 +3,7 @@
  * Admin tab for managing workshop registrations with search, sort, pagination, and actions.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/dashboard/ConfirmModal';
@@ -492,19 +492,36 @@ function ActionMenu({
   onResend: (row: WorkshopRegistrantRow) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const toggleMenu = () => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!open && rect) {
+      setPosition({
+        top: rect.bottom + 4,
+        left: Math.max(8, rect.right - 160),
+      });
+    }
+    setOpen((value) => !value);
+  };
 
   return (
     <div className="relative inline-block text-left">
       <button
-        onClick={() => setOpen(!open)}
+        ref={buttonRef}
+        onClick={toggleMenu}
         className="text-gray-500 hover:text-black px-2 py-1 rounded cursor-pointer text-xs font-medium"
       >
         Actions <ChevronDown className="inline size-3" />
       </button>
-      {open && (
+      {open && position && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-50 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+          <div
+            className="fixed z-50 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+            style={{ top: position.top, left: position.left }}
+          >
             <button onClick={() => { setOpen(false); onResend(row); }} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
               Resend Email
             </button>
