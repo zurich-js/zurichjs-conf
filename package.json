@@ -76,6 +76,11 @@
 		"usehooks-ts": "^3.1.1",
 		"zod": "^4.4.1"
 	},
+	"pnpm": {
+		"overrides": {
+			"resend>svix": "1.92.2"
+		}
+	},
 	"devDependencies": {
 		"@react-email/preview-server": "^5.2.10",
 		"@tailwindcss/postcss": "^4.2.4",
