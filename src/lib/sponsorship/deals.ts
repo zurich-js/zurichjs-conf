@@ -4,6 +4,7 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   SponsorshipDeal,
   SponsorshipDealWithRelations,
@@ -159,7 +160,7 @@ export async function updateDeal(
   const supabase = createServiceRoleClient();
 
   // Build update object with only provided fields
-  const updateData: Record<string, unknown> = {};
+  const updateData: TablesUpdate<'sponsorship_deals'> = {};
 
   if (data.tierId !== undefined) updateData.tier_id = data.tierId;
   if (data.currency !== undefined) updateData.currency = data.currency;
@@ -216,7 +217,7 @@ export async function updateDealStatus(
   }
 
   // Build update with appropriate timestamp
-  const updateData: Record<string, unknown> = { status: newStatus };
+  const updateData: TablesUpdate<'sponsorship_deals'> = { status: newStatus };
   const now = new Date().toISOString();
 
   switch (newStatus) {

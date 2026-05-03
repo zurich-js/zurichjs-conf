@@ -63,9 +63,9 @@ export interface PhotoSwiperProps {
 export const PhotoSwiper: React.FC<PhotoSwiperProps> = ({ photos, className = '' }) => {
   const { shouldAnimate } = useMotion();
   const [isMounted, setIsMounted] = useState(false);
-  const [SwiperComponent, setSwiperComponent] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const [SwiperSlideComponent, setSwiperSlideComponent] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const [swiperModules, setSwiperModules] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [SwiperComponent, setSwiperComponent] = useState<any>(null);
+  const [SwiperSlideComponent, setSwiperSlideComponent] = useState<any>(null);
+  const [swiperModules, setSwiperModules] = useState<any>(null);
 
   // Load Swiper client-side only to avoid hydration issues
   useEffect(() => {

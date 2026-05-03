@@ -53,7 +53,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Don't allow email changes through this endpoint
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { email: _email, ...updates } = result.data;
 
       const { submissions } = await getSubmissionsBySpeakerId(speaker.id);

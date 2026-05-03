@@ -580,14 +580,17 @@ export type Database = {
       }
       cfp_speaker_flights: {
         Row: {
+          admin_notes: string | null
           airline: string | null
           arrival_airport: string | null
+          arrival_label: string | null
           arrival_time: string | null
           booking_reference: string | null
           cost_amount: number | null
           cost_currency: string | null
           created_at: string
           departure_airport: string | null
+          departure_label: string | null
           departure_time: string | null
           direction: Database["public"]["Enums"]["cfp_flight_direction"]
           flight_number: string | null
@@ -595,19 +598,27 @@ export type Database = {
           id: string
           last_status_update: string | null
           metadata: Json | null
+          provider: string | null
+          reference_code: string | null
           speaker_id: string
           tracking_url: string | null
+          transport_link_url: string | null
+          transport_mode: Database["public"]["Enums"]["cfp_transport_mode"]
+          transport_status: Database["public"]["Enums"]["cfp_transport_status"]
           updated_at: string
         }
         Insert: {
+          admin_notes?: string | null
           airline?: string | null
           arrival_airport?: string | null
+          arrival_label?: string | null
           arrival_time?: string | null
           booking_reference?: string | null
           cost_amount?: number | null
           cost_currency?: string | null
           created_at?: string
           departure_airport?: string | null
+          departure_label?: string | null
           departure_time?: string | null
           direction: Database["public"]["Enums"]["cfp_flight_direction"]
           flight_number?: string | null
@@ -617,19 +628,27 @@ export type Database = {
           id?: string
           last_status_update?: string | null
           metadata?: Json | null
+          provider?: string | null
+          reference_code?: string | null
           speaker_id: string
           tracking_url?: string | null
+          transport_link_url?: string | null
+          transport_mode?: Database["public"]["Enums"]["cfp_transport_mode"]
+          transport_status?: Database["public"]["Enums"]["cfp_transport_status"]
           updated_at?: string
         }
         Update: {
+          admin_notes?: string | null
           airline?: string | null
           arrival_airport?: string | null
+          arrival_label?: string | null
           arrival_time?: string | null
           booking_reference?: string | null
           cost_amount?: number | null
           cost_currency?: string | null
           created_at?: string
           departure_airport?: string | null
+          departure_label?: string | null
           departure_time?: string | null
           direction?: Database["public"]["Enums"]["cfp_flight_direction"]
           flight_number?: string | null
@@ -639,8 +658,13 @@ export type Database = {
           id?: string
           last_status_update?: string | null
           metadata?: Json | null
+          provider?: string | null
+          reference_code?: string | null
           speaker_id?: string
           tracking_url?: string | null
+          transport_link_url?: string | null
+          transport_mode?: Database["public"]["Enums"]["cfp_transport_mode"]
+          transport_status?: Database["public"]["Enums"]["cfp_transport_status"]
           updated_at?: string
         }
         Relationships: [
@@ -2568,6 +2592,8 @@ export type Database = {
         | "withdrawn"
       cfp_submission_type: "lightning" | "standard" | "workshop" | "panel"
       cfp_talk_level: "beginner" | "intermediate" | "advanced"
+      cfp_transport_mode: "flight" | "train" | "link_only" | "none"
+      cfp_transport_status: "scheduled" | "delayed" | "canceled" | "complete"
       coupon_type: "percentage" | "fixed_amount"
       partnership_status: "active" | "inactive" | "pending" | "expired"
       partnership_type: "community" | "individual" | "company" | "sponsor"
@@ -2786,6 +2812,8 @@ export const Constants = {
       ],
       cfp_submission_type: ["lightning", "standard", "workshop", "panel"],
       cfp_talk_level: ["beginner", "intermediate", "advanced"],
+      cfp_transport_mode: ["flight", "train", "link_only", "none"],
+      cfp_transport_status: ["scheduled", "delayed", "canceled", "complete"],
       coupon_type: ["percentage", "fixed_amount"],
       partnership_status: ["active", "inactive", "pending", "expired"],
       partnership_type: ["community", "individual", "company", "sponsor"],

@@ -445,7 +445,6 @@ export function WorkshopAdminModal({
     }
     // We only clear when the user types — not when the offering prop itself
     // changes (that's handled by the reset-on-open effect above).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.stripePriceLookupKey, form.stripeProductId]);
 
   const scheduleDate = scheduleItem?.date ?? displayOffering.date ?? createDraft?.date ?? null;

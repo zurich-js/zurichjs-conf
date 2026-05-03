@@ -84,7 +84,7 @@ export function generateCalendarEvent(data: ConferenceEventData): {
 
     return {
       success: true,
-      icsContent: value,
+      icsContent: value || undefined,
     };
   } catch (error) {
     console.error('[Calendar] Error generating calendar event:', error);

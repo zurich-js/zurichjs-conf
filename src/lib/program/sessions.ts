@@ -338,7 +338,7 @@ export async function promoteCfpSubmissionToProgramSession(
       : null,
     workshop_capacity: source.workshop_max_participants,
     metadata: {
-      ...(source.metadata ?? {}),
+      ...source.metadata,
       tags: normalizeTagNames([
         ...(Array.isArray(source.metadata?.tags)
           ? source.metadata.tags.filter((tag): tag is string => typeof tag === 'string')

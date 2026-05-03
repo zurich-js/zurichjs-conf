@@ -160,7 +160,7 @@ function packItems(
 
   function ensureRows(count: number) {
     while (grid.length < count) {
-      grid.push(new Array(columns).fill(false));
+      grid.push(Array.from({ length: columns }, () => false));
     }
   }
 
