@@ -264,19 +264,29 @@ export function WorkshopsRegistrantsTab() {
         </div>
 
         {/* Workshop selector + search */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <select
-            value={selectedWorkshopId}
-            onChange={(e) => setSelectedWorkshopId(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary sm:max-w-xs"
-          >
-            {workshopsLoading && <option>Loading...</option>}
-            {workshops?.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.title} ({w.enrolled_count}{w.capacity ? `/${w.capacity}` : ''})
-              </option>
-            ))}
-          </select>
+        <div className="mt-4 flex min-w-0 flex-col gap-3 sm:flex-row">
+          <div className="min-w-0 flex-1 sm:max-w-md">
+            <select
+              value={selectedWorkshopId}
+              onChange={(e) => setSelectedWorkshopId(e.target.value)}
+              className="w-full min-w-0 truncate border border-gray-300 rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              aria-label="Select workshop"
+            >
+              {workshopsLoading && <option>Loading...</option>}
+              {workshops?.map((w, index) => (
+                <option key={w.id} value={w.id}>
+                  {index + 1}. {w.title} ({w.enrolled_count}{w.capacity ? `/${w.capacity}` : ''})
+                </option>
+              ))}
+            </select>
+            {selectedWorkshop && (
+              <p className="mt-2 text-xs leading-5 text-gray-600 break-words sm:hidden">
+                <span className="font-semibold text-black">{selectedWorkshop.title}</span>
+                {' '}
+                ({selectedWorkshop.enrolled_count}{selectedWorkshop.capacity ? `/${selectedWorkshop.capacity}` : ''})
+              </p>
+            )}
+          </div>
           <div className="relative flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
             <input
