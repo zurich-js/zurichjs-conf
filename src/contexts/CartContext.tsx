@@ -34,7 +34,7 @@ type CartAction =
   | { type: 'ADD_ITEM'; item: Omit<CartItem, 'quantity'>; quantity: number }
   | { type: 'REMOVE_ITEM'; itemId: string }
   | { type: 'UPDATE_QUANTITY'; itemId: string; quantity: number }
-  | { type: 'APPLY_VOUCHER'; code: string; discountType: 'percentage' | 'fixed'; discountValue: number; applicablePriceIds?: string[] }
+  | { type: 'APPLY_VOUCHER'; code: string; discountType: 'percentage' | 'fixed'; discountValue: number; applicablePriceIds?: string[]; promotionCodeId?: string }
   | { type: 'REMOVE_VOUCHER' }
   | { type: 'CLEAR_CART' }
   | { type: 'REPLACE_CART'; cart: Cart };
@@ -52,7 +52,7 @@ function cartReducer(state: Cart, action: CartAction): Cart {
     case 'UPDATE_QUANTITY':
       return updateQuantity(state, action.itemId, action.quantity);
     case 'APPLY_VOUCHER':
-      return applyVoucherToCart(state, action.code, action.discountType, action.discountValue, action.applicablePriceIds);
+      return applyVoucherToCart(state, action.code, action.discountType, action.discountValue, action.applicablePriceIds, action.promotionCodeId);
     case 'REMOVE_VOUCHER':
       return removeVoucherFromCart(state);
     case 'CLEAR_CART':
@@ -152,6 +152,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
         cartTotal: currentCart.totalPrice,
         currency: currentCart.currency,
         priceIds,
+        items: currentCart.items.map((item) => ({
+          priceId: item.priceId,
+          kind: item.kind === 'workshop' ? 'workshop' : 'ticket',
+          quantity: item.quantity,
+        })),
       });
 
       if (!result.valid) {
@@ -174,6 +179,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
         discountType,
         discountValue,
         applicablePriceIds: result.applicablePriceIds,
+        promotionCodeId: result.promotionCodeId,
       });
 
       trackVoucherEvent({

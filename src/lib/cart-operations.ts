@@ -152,7 +152,8 @@ export function applyVoucher(
   couponCode: string,
   discountType: 'percentage' | 'fixed',
   discountValue: number,
-  applicablePriceIds?: string[]
+  applicablePriceIds?: string[],
+  promotionCodeId?: string
 ): Cart {
   // Calculate discount based only on applicable items
   const discountableAmount = getDiscountableSubtotal(cart.items, applicablePriceIds);
@@ -165,6 +166,7 @@ export function applyVoucher(
     discountType,
     discountValue,
     applicablePriceIds,
+    promotionCodeId,
   };
 }
 
@@ -179,6 +181,7 @@ export function removeVoucher(cart: Cart): Cart {
     discountType: undefined,
     discountValue: undefined,
     applicablePriceIds: undefined,
+    promotionCodeId: undefined,
   };
 }
 
@@ -221,4 +224,3 @@ export function formatPrice(price: number, currency: string): string {
     maximumFractionDigits: 2,
   }).format(price);
 }
-

@@ -30,6 +30,7 @@ type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
 
 interface CartItem {
   title: string;
+  kind?: 'ticket' | 'workshop';
   variant?: string;
   quantity: number;
   price: number;
@@ -54,6 +55,12 @@ interface UseCartAbandonmentOptions {
     items: CartItem[];
     total: number;
     currency: string;
+    discount?: number;
+    couponCode?: string;
+    ticketCount?: number;
+    workshopCount?: number;
+    seatCount?: number;
+    purchaseType?: 'ticket' | 'workshop' | 'mixed';
   };
 
   /**
@@ -134,6 +141,13 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
       cart_currency: cartData.currency,
       currency: cartData.currency,
       cart_items: formattedItems,
+      ticket_count: cartData.ticketCount,
+      workshop_count: cartData.workshopCount,
+      seat_count: cartData.seatCount,
+      has_discount: (cartData.discount ?? 0) > 0,
+      coupon_code: cartData.couponCode,
+      purchase_type: cartData.purchaseType,
+      payment_ui: 'embedded_checkout',
       email: userEmail || undefined,
       first_name: userFirstName || undefined,
       ...fieldTrackingStats,
@@ -225,4 +239,3 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
     resetAbandonment,
   };
 };
-

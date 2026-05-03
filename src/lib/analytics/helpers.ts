@@ -51,12 +51,17 @@ export function mapVariantToCategory(variant: UIVariant | string | undefined): T
  */
 export function mapCartItemsToAnalytics(items: Array<{
   title: string;
+  kind?: 'ticket' | 'workshop';
   variant?: string;
   quantity: number;
   price: number;
 }>) {
   return items.map((item) => ({
-    type: item.title.includes('Workshop') ? ('workshop_voucher' as const) : ('ticket' as const),
+    type: item.kind === 'workshop'
+      ? ('workshop' as const)
+      : item.title.includes('Workshop')
+        ? ('workshop_voucher' as const)
+        : ('ticket' as const),
     category: mapVariantToCategory(item.variant),
     stage: 'general_admission' as TicketStage,
     quantity: item.quantity,
@@ -96,7 +101,7 @@ export function trackCheckoutStarted(params: {
   cartTotalAmount: number
   cartCurrency: string
   cartItems: Array<{
-    type: 'ticket' | 'workshop_voucher'
+    type: 'ticket' | 'workshop' | 'workshop_voucher'
     category?: TicketCategory
     stage?: TicketStage
     quantity: number
@@ -419,4 +424,3 @@ export function trackCfpReviewError(params: {
     },
   })
 }
-

@@ -93,6 +93,8 @@ export function useCartAnalytics({ cart, orderSummary }: UseCartAnalyticsOptions
       step,
       cart_item_count: items.length,
       cart_total_amount: summary.total,
+      cart_currency: summary.currency,
+      cart_items: mapCartItemsToAnalytics(items),
     } as EventProperties<'cart_step_viewed'>);
   }, []);
 

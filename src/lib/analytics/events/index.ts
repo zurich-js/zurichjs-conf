@@ -64,6 +64,8 @@ export type {
   VoucherRemovedEvent,
   PaymentSucceededEvent,
   PaymentFailedEvent,
+  PaymentStepViewedEvent,
+  PaymentSubmittedEvent,
 } from './checkout-events';
 
 // User engagement events
@@ -168,6 +170,8 @@ import type {
   VoucherRemovedEvent,
   PaymentSucceededEvent,
   PaymentFailedEvent,
+  PaymentStepViewedEvent,
+  PaymentSubmittedEvent,
 } from './checkout-events';
 import type {
   ButtonClickedEvent,
@@ -254,6 +258,8 @@ export type AnalyticsEvent =
   | VoucherRemovedEvent
   | PaymentSucceededEvent
   | PaymentFailedEvent
+  | PaymentStepViewedEvent
+  | PaymentSubmittedEvent
   | ButtonClickedEvent
   | FormSubmittedEvent
   | FormErrorEvent

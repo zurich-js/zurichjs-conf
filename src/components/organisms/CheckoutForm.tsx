@@ -39,7 +39,7 @@ export interface CheckoutFormProps {
     cart_total_amount: number;
     cart_currency: string;
     cart_items: Array<{
-      type: 'ticket' | 'workshop_voucher';
+      type: 'ticket' | 'workshop' | 'workshop_voucher';
       category?: string;
       stage?: string;
       quantity: number;

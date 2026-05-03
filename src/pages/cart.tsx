@@ -37,7 +37,7 @@ import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
 
 import { ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm } from '@/components/molecules';
-import { PageHeader, SectionContainer } from '@/components/organisms';
+import { SectionContainer } from '@/components/organisms';
 import {
   EmptyCartState,
   CartProgressSteps,
@@ -69,8 +69,9 @@ export default function CartPage() {
   const [capturedFirstName, setCapturedFirstName] = useState<string | null>(null);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
   const { mutate: scheduleAbandonmentEmail } = useCartAbandonmentEmail();
-  const [checkoutCompleted, setCheckoutCompleted] = useState(false);
+  const [checkoutFinalizing, setCheckoutFinalizing] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
   const [savedBillingData, saveBillingData] = useLocalStorage('zurichjs_billing_data');
   const [, saveCartForRecovery] = useLocalStorage('zurichjs_cart_recovery');
   const { toasts, showToast } = useToast();
@@ -101,6 +102,12 @@ export default function CartPage() {
   // Gather per-seat attendee info whenever there's more than one seat (across
   // tickets + workshop seats), mirroring how tickets work today.
   const needsAttendeeInfo = totalSeatCount > 1;
+  const purchaseType = ticketCount > 0 && workshopSeatCount > 0
+    ? 'mixed'
+    : workshopSeatCount > 0
+      ? 'workshop'
+      : 'ticket';
+  const hasDiscount = orderSummary.discount > 0;
 
   // VIP upsell logic
   const standardTicketItem = cart.items.find(item => item.variant === 'standard' && !item.title.includes('Workshop'));
@@ -185,7 +192,36 @@ export default function CartPage() {
     setCurrentStep('checkout');
   };
 
+  const hasRequiredAttendeeInfo = () => {
+    if (!needsAttendeeInfo) return true;
+
+    const hasDetails = (attendee: AttendeeInfo | undefined) =>
+      !!attendee?.firstName?.trim() &&
+      !!attendee.lastName?.trim() &&
+      !!attendee.email?.trim();
+
+    if (attendees.length < ticketCount || attendees.slice(0, ticketCount).some((attendee) => !hasDetails(attendee))) {
+      return false;
+    }
+
+    return workshopItems.every((item) => {
+      if (!item.workshopId) return false;
+      const itemAttendees = workshopAttendees[item.workshopId] ?? [];
+      return itemAttendees.length >= item.quantity &&
+        itemAttendees.slice(0, item.quantity).every((attendee) => hasDetails(attendee));
+    });
+  };
+
+  const requireAttendeeInfoBeforeCheckout = () => {
+    if (hasRequiredAttendeeInfo()) return true;
+    showToast('Please add attendee details for every seat before checkout.', 'error');
+    setCurrentStep('attendees');
+    return false;
+  };
+
   const handleCheckoutSubmit = (data: CheckoutFormData) => {
+    if (!requireAttendeeInfoBeforeCheckout()) return;
+
     // Persist billing data so it survives back-navigation from payment step
     saveBillingData({
       email: data.email, phone: data.phone, firstName: data.firstName,
@@ -216,14 +252,21 @@ export default function CartPage() {
       last_name: data.lastName,
       company: data.company,
       job_title: data.jobTitle,
+      ticket_count: ticketCount,
+      workshop_count: workshopSeatCount,
+      seat_count: totalSeatCount,
+      has_discount: hasDiscount,
+      coupon_code: cart.couponCode,
+      purchase_type: purchaseType,
+      payment_ui: 'embedded_checkout',
     } as EventProperties<'checkout_started'>);
 
     createCheckout(
       { cart, customerInfo: { ...data, attendees, workshopAttendees } },
       {
         onSuccess: (response) => {
-          setCheckoutCompleted(true);
           setClientSecret(response.clientSecret);
+          setCheckoutSessionId(response.sessionId);
           saveCartForRecovery(encodeCartState(cart));
           setCurrentStep('payment');
         },
@@ -250,12 +293,18 @@ export default function CartPage() {
 
   // Cart abandonment tracking
   useCartAbandonment({
-    enabled: !isEmpty && !checkoutCompleted,
+    enabled: !isEmpty && !checkoutFinalizing,
     currentStep,
     cartData: {
       items: cart.items,
       total: orderSummary.total,
       currency: orderSummary.currency,
+      discount: orderSummary.discount,
+      couponCode: cart.couponCode,
+      ticketCount,
+      workshopCount: workshopSeatCount,
+      seatCount: totalSeatCount,
+      purchaseType,
     },
     userEmail: capturedEmail,
     userFirstName: capturedFirstName,
@@ -280,8 +329,17 @@ export default function CartPage() {
       step: currentStep,
       cart_item_count: cart.items.length,
       cart_total_amount: orderSummary.total,
+      cart_currency: orderSummary.currency,
+      cart_items: mapCartItemsToAnalytics(cart.items),
+      ticket_count: ticketCount,
+      workshop_count: workshopSeatCount,
+      seat_count: totalSeatCount,
+      has_attendee_step: needsAttendeeInfo,
+      has_discount: hasDiscount,
+      coupon_code: cart.couponCode,
+      purchase_type: purchaseType,
     } as EventProperties<'cart_step_viewed'>);
-  }, [currentStep, cart.items.length, orderSummary.total]);
+  }, [currentStep, cart.items, orderSummary.total, orderSummary.currency, ticketCount, workshopSeatCount, totalSeatCount, needsAttendeeInfo, hasDiscount, cart.couponCode, purchaseType]);
 
   // Track cart recovery visits
   useEffect(() => {
@@ -311,16 +369,8 @@ export default function CartPage() {
       </Head>
 
       <div className="min-h-screen bg-brand-black">
-        <PageHeader
-          rightContent={
-            <span className="text-sm text-brand-gray-light">
-              {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
-            </span>
-          }
-        />
-
         {/* Progress Steps */}
-        <div className="bg-brand-darkest">
+        <div className="bg-brand-darkest pt-20 md:pt-24">
           <SectionContainer>
             <CartProgressSteps
               currentStep={currentStep}
@@ -330,6 +380,7 @@ export default function CartPage() {
               onStepClick={(step) => {
                 // Prevent clicking directly to payment — must complete billing first
                 if (step === 'payment') return;
+                if (step === 'checkout' && !requireAttendeeInfoBeforeCheckout()) return;
                 setCurrentStep(step);
               }}
             />
@@ -394,9 +445,19 @@ export default function CartPage() {
             {currentStep === 'payment' && clientSecret && (
               <PaymentStep
                 clientSecret={clientSecret}
+                sessionId={checkoutSessionId ?? undefined}
+                cart={cart}
+                orderSummary={orderSummary}
                 totalAmount={orderSummary.total.toFixed(2)}
                 currency={orderSummary.currency}
-                onBack={() => { setClientSecret(null); setCurrentStep('checkout'); }}
+                onBack={() => {
+                  setClientSecret(null);
+                  setCheckoutSessionId(null);
+                  setCheckoutFinalizing(false);
+                  setCurrentStep('checkout');
+                }}
+                onPaymentSubmitting={() => setCheckoutFinalizing(true)}
+                onPaymentFailed={() => setCheckoutFinalizing(false)}
               />
             )}
           </AnimatePresence>

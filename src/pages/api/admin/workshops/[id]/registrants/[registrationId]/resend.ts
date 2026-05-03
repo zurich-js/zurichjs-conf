@@ -8,6 +8,8 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendWorkshopConfirmationEmail } from '@/lib/email';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
+import { generateWorkshopPDF, imageUrlToDataUrl } from '@/lib/pdf';
+import { generateAndStoreWorkshopQRCode, generateTicketQRCode } from '@/lib/qrcode';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -65,6 +67,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    let qrCodeUrl = registration.qr_code_url;
+    if (!qrCodeUrl) {
+      const qrResult = await generateAndStoreWorkshopQRCode(registration.id);
+      if (qrResult.success && qrResult.url) {
+        qrCodeUrl = qrResult.url;
+        await supabase
+          .from('workshop_registrations')
+          .update({ qr_code_url: qrCodeUrl })
+          .eq('id', registrationId);
+      }
+    }
+
+    const timeRange = workshop.start_time && workshop.end_time
+      ? `${workshop.start_time.slice(0, 5)} – ${workshop.end_time.slice(0, 5)}`
+      : workshop.start_time?.slice(0, 5) ?? null;
+
+    let pdfAttachment: Buffer | undefined;
+    if (qrCodeUrl) {
+      try {
+        const qrDataUrl = qrCodeUrl.startsWith('data:')
+          ? qrCodeUrl
+          : await imageUrlToDataUrl(qrCodeUrl).catch(() => generateTicketQRCode(registration.id));
+
+        pdfAttachment = await generateWorkshopPDF({
+          registrationId: registration.id,
+          attendeeName: `${registration.first_name ?? ''} ${registration.last_name ?? ''}`.trim(),
+          attendeeEmail: registration.email,
+          workshopTitle: workshop.title,
+          instructorName,
+          workshopDate: workshop.date ?? 'September 10, 2026',
+          workshopTime: timeRange,
+          room: workshop.room,
+          amountPaid: registration.amount_paid,
+          currency: registration.currency,
+          qrCodeDataUrl: qrDataUrl,
+        });
+      } catch (pdfError) {
+        console.warn('Failed to generate resent workshop PDF:', pdfError);
+      }
+    }
+
     const emailResult = await sendWorkshopConfirmationEmail({
       to: registration.email,
       firstName: registration.first_name || 'there',
@@ -80,6 +123,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       seatIndex: registration.seat_index ?? 0,
       totalSeats: 1,
       workshopSlug: null,
+      qrCodeUrl,
+      pdfAttachment,
     });
 
     if (!emailResult.success) {

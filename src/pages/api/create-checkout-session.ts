@@ -9,6 +9,7 @@ import type { Cart, CheckoutFormData } from '@/types/cart';
 import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
+import { isTicketProduct, isWorkshopPrice, isWorkshopVoucher, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Json } from '@/lib/types/database';
@@ -88,6 +89,184 @@ const getCountryCode = (countryName: string): string => {
   return countryMap[normalized] || 'CH'; // Default to Switzerland if not found
 };
 
+const sanitizeSupabaseOrValue = (value: string | undefined): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return /^[A-Za-z0-9_-]+$/.test(trimmed) ? trimmed : null;
+};
+
+type TicketCategory = 'standard' | 'vip' | 'student' | 'unemployed';
+
+function normalizeTicketCategory(value: unknown): TicketCategory | 'all' | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (['standard', 'standard_ticket', 'standard_tickets'].includes(normalized)) return 'standard';
+  if (['vip', 'vip_ticket', 'vip_tickets'].includes(normalized)) return 'vip';
+  if (['student', 'student_ticket', 'student_tickets'].includes(normalized)) return 'student';
+  if (['unemployed', 'unemployed_ticket', 'unemployed_tickets'].includes(normalized)) return 'unemployed';
+  if (['all', 'any', 'both'].includes(normalized)) return 'all';
+  return undefined;
+}
+
+function normalizeTicketCategories(value: unknown): Set<TicketCategory> | 'all' | undefined {
+  if (Array.isArray(value)) {
+    const categories = value
+      .map(normalizeTicketCategory)
+      .filter((category): category is TicketCategory | 'all' => Boolean(category));
+    if (categories.includes('all')) return 'all';
+    const ticketCategories = categories.filter((category): category is TicketCategory => category !== 'all');
+    return ticketCategories.length > 0 ? new Set(ticketCategories) : undefined;
+  }
+
+  if (typeof value === 'string' && value.includes(',')) {
+    return normalizeTicketCategories(value.split(','));
+  }
+
+  const category = normalizeTicketCategory(value);
+  if (category === 'all') return 'all';
+  return category ? new Set([category]) : undefined;
+}
+
+function inferAllowedTicketCategoriesFromMetadata(
+  coupon: Stripe.Coupon,
+  promotionCode: Stripe.PromotionCode | null
+): Set<TicketCategory> | 'all' | null {
+  const metadata = {
+    ...coupon.metadata,
+    ...promotionCode?.metadata,
+  };
+
+  return normalizeTicketCategories(metadata.ticket_category)
+    ?? normalizeTicketCategories(metadata.ticket_categories)
+    ?? normalizeTicketCategories(metadata.allowed_ticket_category)
+    ?? normalizeTicketCategories(metadata.allowed_ticket_categories)
+    ?? normalizeTicketCategories(metadata.applies_to_ticket_category)
+    ?? normalizeTicketCategories(metadata.applies_to_ticket_categories)
+    ?? null;
+}
+
+async function validateDiscountProductsForCheckout(
+  stripe: Stripe,
+  cart: Cart,
+  priceIds: string[]
+): Promise<{ valid: boolean; error?: string }> {
+  if (!cart.couponCode && !cart.promotionCodeId) {
+    return { valid: true };
+  }
+
+  let coupon: Stripe.Coupon | null = null;
+  let promotionCode: Stripe.PromotionCode | null = null;
+
+  if (cart.promotionCodeId) {
+    promotionCode = await stripe.promotionCodes.retrieve(cart.promotionCodeId);
+    const couponRef = (promotionCode as { promotion?: { coupon?: string | Stripe.Coupon }; coupon?: string | Stripe.Coupon }).promotion?.coupon
+      ?? (promotionCode as { coupon?: string | Stripe.Coupon }).coupon;
+
+    if (!promotionCode.active || !couponRef) {
+      return { valid: false, error: 'This promo code is no longer active' };
+    }
+
+    coupon = typeof couponRef === 'string'
+      ? await stripe.coupons.retrieve(couponRef)
+      : couponRef;
+  } else if (cart.couponCode) {
+    coupon = await stripe.coupons.retrieve(cart.couponCode);
+  }
+
+  if (!coupon?.valid) {
+    return { valid: false, error: 'This promo code is no longer valid' };
+  }
+
+  const prices = await Promise.all(
+    Array.from(new Set(priceIds)).map((priceId) =>
+      stripe.prices.retrieve(priceId, { expand: ['product'] })
+    )
+  );
+  const priceProductIds = new Map<string, string>();
+  const priceTicketCategories = new Map<string, TicketCategory>();
+  let hasWorkshopPrice = false;
+
+  for (const price of prices) {
+    const product = price.product;
+    const productId = typeof product === 'string' ? product : product.id;
+    priceProductIds.set(price.id, productId);
+    hasWorkshopPrice = hasWorkshopPrice || isWorkshopPrice(price) || isWorkshopVoucher(price);
+    if (isTicketProduct(price) && price.lookup_key) {
+      priceTicketCategories.set(price.id, parseTicketInfo(price.lookup_key).category as TicketCategory);
+    }
+  }
+
+  let restrictedProductIds = coupon.applies_to?.products ?? [];
+  if (restrictedProductIds.length === 0) {
+    const supabase = createServiceRoleClient();
+    const sanitizedCouponId = sanitizeSupabaseOrValue(coupon.id);
+    const sanitizedCouponCode = sanitizeSupabaseOrValue(cart.couponCode);
+    const sanitizedPromotionCodeId = sanitizeSupabaseOrValue(cart.promotionCodeId);
+    const filters = [
+      sanitizedCouponId ? `stripe_coupon_id.eq.${sanitizedCouponId}` : null,
+      sanitizedCouponCode ? `code.eq.${sanitizedCouponCode}` : null,
+      sanitizedPromotionCodeId ? `stripe_promotion_code_id.eq.${sanitizedPromotionCodeId}` : null,
+    ].filter(Boolean).join(',');
+    const { data: dbCoupon } = filters
+      ? await supabase
+        .from('partnership_coupons')
+        .select('restricted_product_ids')
+        .or(filters)
+        .maybeSingle()
+      : { data: null };
+    restrictedProductIds = dbCoupon?.restricted_product_ids ?? [];
+  }
+
+  if (restrictedProductIds.length > 0) {
+    const disallowedPriceIds = Array.from(priceProductIds.entries())
+      .filter(([, productId]) => !restrictedProductIds.includes(productId))
+      .map(([priceId]) => priceId);
+    if (disallowedPriceIds.length > 0) {
+      return { valid: false, error: 'This promo code is not applicable to the product type in your cart' };
+    }
+
+    const allowedTicketCategories = inferAllowedTicketCategoriesFromMetadata(coupon, promotionCode);
+    if (allowedTicketCategories && allowedTicketCategories !== 'all') {
+      const disallowedEligibleTicket = Array.from(priceProductIds.keys()).some((priceId) => {
+        const category = priceTicketCategories.get(priceId);
+        return category && !allowedTicketCategories.has(category);
+      });
+      if (disallowedEligibleTicket) {
+        return {
+          valid: false,
+          error: `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`,
+        };
+      }
+    }
+    return { valid: true };
+  }
+
+  const allowedTicketCategories = inferAllowedTicketCategoriesFromMetadata(coupon, promotionCode);
+  if (allowedTicketCategories && allowedTicketCategories !== 'all') {
+    const disallowedTicket = Array.from(priceTicketCategories.values()).some((category) =>
+      !allowedTicketCategories.has(category)
+    );
+    if (disallowedTicket) {
+      return {
+        valid: false,
+        error: `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`,
+      };
+    }
+  }
+
+  // Unrestricted Stripe coupons apply to the whole Checkout Session. Do not
+  // allow them through when workshops are present, because ticket promos would
+  // otherwise discount workshop seats too.
+  if (hasWorkshopPrice) {
+    return {
+      valid: false,
+      error: 'This promo code is only valid for conference tickets. Remove workshop seats before applying it.',
+    };
+  }
+
+  return { valid: true };
+}
+
 /**
  * API Handler
  */
@@ -141,6 +320,17 @@ export default async function handler(
         error: workshopValidation.error,
       });
       res.status(400).json({ error: workshopValidation.error ?? 'Invalid workshop in cart' });
+      return;
+    }
+
+    const discountValidation = await validateDiscountProductsForCheckout(stripe, cart, priceIds);
+    if (!discountValidation.valid) {
+      log.warn('Checkout blocked: discount product validation failed', {
+        error: discountValidation.error,
+        couponCode: cart.couponCode,
+        promotionCodeId: cart.promotionCodeId,
+      });
+      res.status(400).json({ error: discountValidation.error ?? 'Invalid promo code for cart' });
       return;
     }
 
@@ -245,10 +435,14 @@ export default async function handler(
       log.info('Created new customer', { customerId: customer.id });
     }
 
-    // Prepare discounts array if coupon was applied
-    const discounts = cart.couponCode
-      ? [{ coupon: cart.couponCode }]
-      : undefined;
+    // Prepare discounts array if coupon/promotion code was applied.
+    // Promotion codes must be sent by ID so Stripe enforces active state,
+    // expiry, redemption limits, and minimum amount restrictions at checkout.
+    const discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined = cart.promotionCodeId
+      ? [{ promotion_code: cart.promotionCodeId }]
+      : cart.couponCode
+        ? [{ coupon: cart.couponCode }]
+        : undefined;
 
     // Create Checkout Session in embedded mode.
     // This returns a client_secret for use with Custom Checkout Elements
@@ -272,7 +466,10 @@ export default async function handler(
 
     if (discounts && discounts.length > 0) {
       sessionParams.discounts = discounts;
-      log.info('Applying coupon to checkout session', { couponCode: cart.couponCode });
+      log.info('Applying discount to checkout session', {
+        couponCode: cart.couponCode,
+        promotionCodeId: cart.promotionCodeId,
+      });
     }
 
     log.info('Creating checkout session', { customerId: customer.id, totalItems: cart.totalItems });
@@ -328,4 +525,3 @@ export default async function handler(
     });
   }
 }
-

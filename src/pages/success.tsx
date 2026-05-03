@@ -76,11 +76,23 @@ const SuccessPage: React.FC = () => {
 
     // Track checkout completion on client-side
     // This complements the server-side webhook tracking and enables client-side funnel analysis
+    const lineItems = sessionDetails.line_items ?? [];
+    const ticketCount = lineItems
+      .filter((item) => item.type === 'ticket')
+      .reduce((sum, item) => sum + item.quantity, 0);
+    const workshopCount = lineItems
+      .filter((item) => item.type === 'workshop')
+      .reduce((sum, item) => sum + item.quantity, 0);
+
     analytics.track('checkout_completed', {
-      cart_item_count: 1, // We don't have line items here, default to 1
+      cart_item_count: lineItems.reduce((sum, item) => sum + item.quantity, 0) || 1,
       cart_total_amount: sessionDetails.amount_total || 0,
       cart_currency: sessionDetails.currency?.toUpperCase() || 'CHF',
-      cart_items: [], // Line items not available on success page
+      cart_items: lineItems.map((item) => ({
+        type: item.type === 'workshop' ? 'workshop' : 'ticket',
+        quantity: item.quantity,
+        price: item.amount,
+      })),
       stripe_session_id: sessionDetails.session_id,
       payment_status: 'succeeded',
       revenue_amount: sessionDetails.amount_total || 0,
@@ -88,6 +100,9 @@ const SuccessPage: React.FC = () => {
       revenue_type: sessionDetails.purchase_type || 'ticket',
       transaction_id: sessionDetails.session_id,
       email: sessionDetails.customer_email,
+      ticket_count: ticketCount,
+      workshop_count: workshopCount,
+      seat_count: ticketCount + workshopCount,
     } as EventProperties<'checkout_completed'>);
 
     // Also track as a page view with purchase context
