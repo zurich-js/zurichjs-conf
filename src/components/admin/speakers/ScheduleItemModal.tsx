@@ -89,7 +89,7 @@ function VisibilityToggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
+      className={`cursor-pointer flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
         checked
           ? 'border-green-300 bg-green-50 text-green-900'
           : 'border-gray-300 bg-gray-50 text-gray-700'
@@ -381,7 +381,7 @@ export function ScheduleItemModal({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="mb-1 block text-sm font-medium text-black">Type</label>
                       <select
@@ -421,7 +421,7 @@ export function ScheduleItemModal({
                   </div>
 
                   {formData.custom_submission_type === 'workshop' ? (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="mb-1 block text-sm font-medium text-black">Workshop duration (hours)</label>
                         <input
@@ -488,7 +488,7 @@ export function ScheduleItemModal({
               ) : null}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-sm font-medium text-black">Type</label>
                 <select
@@ -514,7 +514,7 @@ export function ScheduleItemModal({
 
           {shouldShowScheduleFields ? (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-black">Date</label>
                   <input
@@ -535,7 +535,7 @@ export function ScheduleItemModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-black">Duration (min)</label>
                   <input

@@ -4,6 +4,7 @@
  */
 
 import { Plus, User } from 'lucide-react';
+import { ToggleButton } from '@/components/admin/shared';
 import type { SpeakerWithSessions, Session } from './types';
 
 interface AdminSpeakerCardProps {
@@ -40,43 +41,6 @@ function SessionItem({ session }: { session: Session }) {
         <SessionTypeBadge type={session.submission_type} />
         <span className="text-xs text-gray-400">Manage placement from schedule</span>
       </div>
-    </div>
-  );
-}
-
-function ToggleButton({
-  label,
-  checked,
-  onClick,
-  disabled,
-  activeClassName,
-  title,
-}: {
-  label: string;
-  checked: boolean;
-  onClick: () => void;
-  disabled: boolean;
-  activeClassName: string;
-  title: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[11px] font-medium text-gray-500">{label}</span>
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${
-          checked ? activeClassName : 'bg-gray-300'
-        }`}
-        title={title}
-      >
-        <span
-          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-5' : 'translate-x-1'
-          }`}
-        />
-      </button>
     </div>
   );
 }
@@ -186,10 +150,10 @@ export function AdminSpeakerCard({
       </div>
 
       {/* Footer Actions */}
-      <div className="px-4 py-3 border-t-2 border-brand-gray-lightest flex items-center justify-between">
+      <div className="px-4 py-3 border-t-2 border-brand-gray-lightest flex items-center justify-between gap-2">
         <a
           href={`mailto:${speaker.email}`}
-          className="text-sm text-gray-600 hover:text-black transition-colors"
+          className="text-sm text-gray-600 hover:text-black transition-colors truncate min-w-0"
         >
           {speaker.email}
         </a>
