@@ -12,7 +12,7 @@ import { TICKET_CATEGORIES, LOOKUP_KEY_STAGES, STAGE_LOOKUP_MAP } from '@/lib/ty
  * Handles patterns like "standard_blind_bird_eur" -> "standard_blind_bird"
  */
 export function stripCurrencySuffix(lookupKey: string): string {
-  if (lookupKey.endsWith('_eur') || lookupKey.endsWith('_gbp') || lookupKey.endsWith('_chf')) {
+  if (lookupKey.endsWith('_eur') || lookupKey.endsWith('_gbp') || lookupKey.endsWith('_usd') || lookupKey.endsWith('_chf')) {
     return lookupKey.slice(0, -4);
   }
   return lookupKey;

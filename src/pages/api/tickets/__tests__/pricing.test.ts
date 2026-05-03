@@ -77,6 +77,7 @@ vi.mock('@/config/currency', () => ({
   parseCurrencyParam: vi.fn((param) => {
     if (param === 'EUR') return 'EUR';
     if (param === 'GBP') return 'GBP';
+    if (param === 'USD') return 'USD';
     return 'CHF';
   }),
 }));
@@ -458,6 +459,78 @@ describe('Ticket Pricing API Handler', () => {
       const json = res._json as { plans: Array<{ currency: string }> };
       expect(json.plans.length).toBeGreaterThan(0);
       expect(json.plans.every((p) => p.currency === 'GBP')).toBe(true);
+      expect(mocks.mockServerAnalyticsError).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==========================================================================
+  // USD Pricing with Fallback
+  // ==========================================================================
+
+  describe('USD pricing with fallback', () => {
+    it('should fall back to CHF when USD prices not available', async () => {
+      const req = createMockRequest({ query: { currency: 'USD' } });
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._status).toBe(200);
+      const json = res._json as { plans: Array<{ currency: string }> };
+
+      // Should have plans (fell back to CHF)
+      expect(json.plans.length).toBeGreaterThan(0);
+      // Should be CHF prices
+      expect(json.plans.every((p) => p.currency === 'CHF')).toBe(true);
+    });
+
+    it('should log error when falling back from USD to CHF', async () => {
+      const req = createMockRequest({ query: { currency: 'USD' } });
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(mocks.mockServerAnalyticsError).toHaveBeenCalledWith(
+        'pricing-api',
+        expect.stringContaining('No pricing plans found for USD'),
+        expect.objectContaining({
+          type: 'system',
+          severity: 'medium',
+          code: 'CURRENCY_FALLBACK',
+        })
+      );
+    });
+
+    it('should return USD prices when available', async () => {
+      // Mock USD prices as available
+      mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
+        const key = lookup_keys[0];
+        if (key === 'standard_student_unemployed_usd') {
+          return { data: [createMockStripePrice(key, 5000, 'USD')] };
+        }
+        if (key === 'standard_early_bird_usd') {
+          return { data: [createMockStripePrice(key, 15000, 'USD')] };
+        }
+        if (key === 'vip_early_bird_usd') {
+          return { data: [createMockStripePrice(key, 30000, 'USD')] };
+        }
+        if (key === 'standard_late_bird_usd') {
+          return { data: [createMockStripePrice(key, 22000, 'USD')] };
+        }
+        if (key === 'vip_late_bird_usd') {
+          return { data: [createMockStripePrice(key, 40000, 'USD')] };
+        }
+        return { data: [] };
+      });
+
+      const req = createMockRequest({ query: { currency: 'USD' } });
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._status).toBe(200);
+      const json = res._json as { plans: Array<{ currency: string }> };
+      expect(json.plans.length).toBeGreaterThan(0);
+      expect(json.plans.every((p) => p.currency === 'USD')).toBe(true);
       expect(mocks.mockServerAnalyticsError).not.toHaveBeenCalled();
     });
   });
@@ -848,6 +921,24 @@ describe('buildLookupKey (integration)', () => {
     expect(calledKeys).toContain('standard_early_bird_gbp');
     expect(calledKeys).toContain('vip_early_bird_gbp');
     expect(calledKeys).toContain('standard_student_unemployed_gbp');
+  });
+
+  it('should build USD lookup key with _usd suffix', async () => {
+    const calledKeys: string[] = [];
+    mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
+      calledKeys.push(...lookup_keys);
+      return { data: [] };
+    });
+
+    const req = createMockRequest({ query: { currency: 'USD' } });
+    const res = createMockResponse();
+
+    await callHandler(req, res);
+
+    // First attempt should be USD keys
+    expect(calledKeys).toContain('standard_early_bird_usd');
+    expect(calledKeys).toContain('vip_early_bird_usd');
+    expect(calledKeys).toContain('standard_student_unemployed_usd');
   });
 
   it('should use stage in lookup key for standard/vip but not student', async () => {

@@ -27,7 +27,7 @@ export const CURRENCY_META: Record<DisplayCurrency, CurrencyMeta> = {
   CHF: { hasNativePricing: true, label: 'Swiss Franc', symbol: 'CHF' },
   EUR: { hasNativePricing: true, label: 'Euro', symbol: '€' },
   GBP: { hasNativePricing: true, label: 'British Pound', symbol: '£' },
-  USD: { hasNativePricing: false, label: 'US Dollar', symbol: '$' },
+  USD: { hasNativePricing: true, label: 'US Dollar', symbol: '$' },
 };
 
 /** Ordered list of display currencies for the dropdown */
