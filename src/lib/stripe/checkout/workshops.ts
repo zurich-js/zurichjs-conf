@@ -10,19 +10,21 @@
  * For each seat in a multi-seat purchase we create one registration row with
  * a distinct `seat_index`, mirroring the ticket flow.
  *
- * On capacity oversell (race condition at the last seat): we issue a Stripe
- * refund for the specific seat's amount, log the incident, and continue
- * processing the remaining seats.
+ * Capacity is validated at the cart level before checkout session creation
+ * (see `validateWorkshopCartItems`). If a race condition causes an oversell,
+ * the seat is skipped and logged for manual resolution.
  */
 
 import type Stripe from 'stripe';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { createWorkshopRegistration } from '@/lib/workshops';
 import { getOfferingByLookupKey } from '@/lib/workshops/getOfferings';
-import { getStripeClient } from '../client';
 import { stripCurrencySuffix } from '../ticket-utils';
 import { extractPartnershipDiscountInfo } from './helpers';
-import { sendWorkshopConfirmationEmail } from '@/lib/email';
+import { addNewsletterContact, sendWorkshopConfirmationEmail } from '@/lib/email';
+import { notifyWorkshopRegistered } from '@/lib/platform-notifications';
+import { generateWorkshopPDF, imageUrlToDataUrl } from '@/lib/pdf';
+import { generateTicketQRCode } from '@/lib/qrcode';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { logger } from '@/lib/logger';
 import type { Workshop } from '@/lib/types/database';
@@ -108,68 +110,11 @@ async function loadWorkshopAttendees(
   return raw ?? {};
 }
 
-async function refundSeat({
-  session,
-  amount,
-  reason,
-  workshopId,
-  seatIndex,
-  log,
-}: {
-  session: Stripe.Checkout.Session;
-  amount: number;
-  reason: string;
-  workshopId: string;
-  seatIndex: number;
-  log: ReturnType<typeof logger.scope>;
-}) {
-  const paymentIntentId =
-    typeof session.payment_intent === 'string'
-      ? session.payment_intent
-      : session.payment_intent?.id;
-
-  if (!paymentIntentId) {
-    log.error(
-      'Cannot refund oversold seat — session has no payment_intent',
-      new Error('Missing payment_intent'),
-      { workshopId, seatIndex, sessionId: session.id }
-    );
-    return;
-  }
-
-  try {
-    const stripe = getStripeClient();
-    const refund = await stripe.refunds.create({
-      payment_intent: paymentIntentId,
-      amount,
-      reason: 'requested_by_customer',
-      metadata: {
-        reason,
-        workshop_id: workshopId,
-        seat_index: String(seatIndex),
-        stripe_session_id: session.id,
-      },
-    });
-    log.warn('Issued refund for oversold workshop seat', {
-      refundId: refund.id,
-      workshopId,
-      seatIndex,
-      amount,
-    });
-  } catch (error) {
-    log.error(
-      'Failed to issue refund for oversold workshop seat — manual intervention required',
-      error instanceof Error ? error : new Error(String(error)),
-      { workshopId, seatIndex, sessionId: session.id, amount }
-    );
-  }
-}
-
 /**
  * Process workshop line items from a completed checkout session.
  * Creates `workshop_registrations` rows idempotently (keyed by
- * (session, workshop, seat_index)) and refunds any seat that races past
- * capacity.
+ * (session, workshop, seat_index)). Capacity is enforced at the cart level;
+ * any oversold seat is logged for manual resolution.
  */
 export async function processWorkshops(
   workshopLineItems: Stripe.LineItem[],
@@ -232,25 +177,30 @@ export async function processWorkshops(
         partnershipVoucherId: partnershipDiscountInfo.partnershipVoucherId,
         discountAmount: discountPerSeat,
         seatIndex,
+        company: attendee?.company ?? session.metadata?.company ?? null,
+        jobTitle: attendee?.jobTitle ?? session.metadata?.jobTitle ?? null,
         metadata: {
           stripe_line_item_id: lineItem.id,
           lookup_key: price?.lookup_key ?? null,
-          company: attendee?.company ?? null,
-          job_title: attendee?.jobTitle ?? null,
           total_seats: quantity,
           is_primary: seatIndex === 0,
         },
       });
 
       if (result.oversold) {
-        await refundSeat({
-          session,
-          amount: amountPaidPerSeat,
-          reason: 'workshop_oversold',
-          workshopId,
-          seatIndex,
-          log,
-        });
+        log.error(
+          'Workshop oversold — seat skipped, manual resolution required',
+          new Error('Workshop capacity exceeded'),
+          {
+            type: 'system',
+            severity: 'high',
+            code: 'WORKSHOP_OVERSOLD',
+            workshopId,
+            sessionId: session.id,
+            seatIndex,
+            amountPaid: amountPaidPerSeat,
+          }
+        );
         continue;
       }
 
@@ -293,16 +243,51 @@ export async function processWorkshops(
       // registration when Stripe retries.
       if (seatEmail) {
         try {
+          const resolvedInstructor = speakerContext
+            ? [speakerContext.speaker.first_name, speakerContext.speaker.last_name]
+                .filter(Boolean)
+                .join(' ')
+            : null;
+
+          const timeRange = workshop.start_time && workshop.end_time
+            ? `${workshop.start_time.slice(0, 5)} – ${workshop.end_time.slice(0, 5)}`
+            : workshop.start_time?.slice(0, 5) ?? null;
+
+          // Generate PDF attachment
+          let pdfBuffer: Buffer | undefined;
+          const qrUrl = result.registration?.qr_code_url;
+          if (qrUrl && result.registration) {
+            try {
+              const qrDataUrl = qrUrl.startsWith('data:')
+                ? qrUrl
+                : await imageUrlToDataUrl(qrUrl).catch(() => generateTicketQRCode(result.registration!.id));
+              pdfBuffer = await generateWorkshopPDF({
+                registrationId: result.registration.id,
+                attendeeName: `${seatFirstName} ${seatLastName}`.trim(),
+                attendeeEmail: seatEmail,
+                workshopTitle: workshop.title,
+                instructorName: resolvedInstructor,
+                workshopDate: workshop.date ?? 'September 10, 2026',
+                workshopTime: timeRange,
+                room: workshop.room,
+                amountPaid: amountPaidPerSeat,
+                currency,
+                qrCodeDataUrl: qrDataUrl,
+              });
+            } catch (pdfError) {
+              log.warn('Failed to generate workshop PDF', {
+                registrationId: result.registration.id,
+                error: pdfError instanceof Error ? pdfError.message : 'Unknown',
+              });
+            }
+          }
+
           await sendWorkshopConfirmationEmail({
             to: seatEmail,
             firstName: seatFirstName || 'there',
             workshopTitle: workshop.title,
             workshopDescription: workshop.description,
-            instructorName: speakerContext
-              ? [speakerContext.speaker.first_name, speakerContext.speaker.last_name]
-                  .filter(Boolean)
-                  .join(' ')
-              : null,
+            instructorName: resolvedInstructor,
             date: workshop.date,
             startTime: workshop.start_time,
             endTime: workshop.end_time,
@@ -312,6 +297,8 @@ export async function processWorkshops(
             seatIndex,
             totalSeats: quantity,
             workshopSlug: speakerContext?.session.slug ?? null,
+            qrCodeUrl: result.registration?.qr_code_url ?? null,
+            pdfAttachment: pdfBuffer,
           });
         } catch (error) {
           log.warn('Failed to send workshop confirmation email', {
@@ -321,8 +308,37 @@ export async function processWorkshops(
             error: error instanceof Error ? error.message : 'Unknown',
           });
         }
+
+        try {
+          await addNewsletterContact(seatEmail, 'checkout');
+        } catch (error) {
+          log.warn('Failed to add workshop attendee to newsletter', {
+            to: seatEmail,
+            workshopId,
+            seatIndex,
+            error: error instanceof Error ? error.message : 'Unknown',
+          });
+        }
       }
     }
+
+    const instructorName = speakerContext
+      ? [speakerContext.speaker.first_name, speakerContext.speaker.last_name]
+          .filter(Boolean)
+          .join(' ')
+      : null;
+
+    notifyWorkshopRegistered({
+      workshopTitle: workshop.title,
+      quantity,
+      currency,
+      amount: lineItem.amount_total || 0,
+      buyerName: `${firstName} ${lastName}`.trim(),
+      buyerEmail: customerEmail,
+      instructorName,
+      couponCode: partnershipDiscountInfo.couponCode,
+      discountAmount: lineItem.amount_discount || 0,
+    });
   }
 
   log.info('Workshop registrations processed', { count: workshopLineItems.length });

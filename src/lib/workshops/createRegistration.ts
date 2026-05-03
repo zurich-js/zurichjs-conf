@@ -8,6 +8,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { generateAndStoreWorkshopQRCode } from '@/lib/qrcode';
 import type { Database, WorkshopRegistration, PaymentStatus, Json } from '@/lib/types/database';
 
 const log = logger.scope('Workshop Registration');
@@ -31,6 +32,8 @@ export interface CreateRegistrationParams {
   /** 0-based index for multi-seat purchases (same session + workshop). Defaults to 0. */
   seatIndex?: number;
   metadata?: Record<string, unknown>;
+  company?: string | null;
+  jobTitle?: string | null;
 }
 
 export interface CreateRegistrationResult {
@@ -136,6 +139,36 @@ export async function createWorkshopRegistration(
 
     if (!row.registration) {
       return { success: false, error: 'Atomic insert returned no registration' };
+    }
+
+    // Post-insert updates for columns not handled by the RPC
+    if (!row.was_duplicate) {
+      const postUpdates: { company?: string; job_title?: string; qr_code_url?: string } = {};
+      if (params.company) postUpdates.company = params.company;
+      if (params.jobTitle) postUpdates.job_title = params.jobTitle;
+
+      // Generate QR code for new registrations
+      try {
+        const qrResult = await generateAndStoreWorkshopQRCode(row.registration.id);
+        if (qrResult.success && qrResult.url) {
+          postUpdates.qr_code_url = qrResult.url;
+          row.registration.qr_code_url = qrResult.url;
+        }
+      } catch (e) {
+        log.warn('QR generation failed for workshop registration', {
+          registrationId: row.registration.id,
+          error: e instanceof Error ? e.message : 'Unknown',
+        });
+      }
+
+      if (Object.keys(postUpdates).length > 0) {
+        await supabase
+          .from('workshop_registrations')
+          .update(postUpdates)
+          .eq('id', row.registration.id);
+        if (params.company) row.registration.company = params.company;
+        if (params.jobTitle) row.registration.job_title = params.jobTitle;
+      }
     }
 
     return {

@@ -1,113 +1,100 @@
 /**
- * Ticket Validation API Endpoint
- * Validates tickets by scanning QR codes and marks them as checked in
+ * Ticket & Workshop Registration Validation API Endpoint
+ * Validates tickets or workshop registrations by scanning QR codes
+ * and marks them as checked in.
+ *
+ * The shared route first checks the tickets table, then falls back
+ * to workshop_registrations.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { validateTicket, checkInTicket } from '@/lib/qrcode';
+import { validateTicket, checkInTicket, validateWorkshopRegistration, checkInWorkshopRegistration } from '@/lib/qrcode';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
-const log = logger.scope('Ticket Validation API');
+const log = logger.scope('Validation API');
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ): Promise<void> {
-  const { ticketId } = req.query;
+  const { ticketId: id } = req.query;
 
-  if (!ticketId || typeof ticketId !== 'string') {
-    res.status(400).json({ error: 'Invalid ticket ID' });
+  if (!id || typeof id !== 'string') {
+    res.status(400).json({ error: 'Invalid ID' });
     return;
   }
 
-  // GET: Validate ticket (read-only check)
+  // GET: Validate ticket or workshop registration (read-only check)
   if (req.method === 'GET') {
     try {
-      const result = await validateTicket(ticketId);
-
-      if (!result.valid) {
-        res.status(404).json({
-          valid: false,
-          error: result.error || 'Ticket not found or invalid',
-        });
+      // Try ticket first
+      const ticketResult = await validateTicket(id);
+      if (ticketResult.valid) {
+        res.status(200).json({ valid: true, type: 'ticket', ticket: ticketResult.ticket });
         return;
       }
 
-      res.status(200).json({
-        valid: true,
-        ticket: result.ticket,
-      });
+      // Fall back to workshop registration
+      const workshopResult = await validateWorkshopRegistration(id);
+      if (workshopResult.valid) {
+        res.status(200).json({ valid: true, type: 'workshop', registration: workshopResult.registration });
+        return;
+      }
+
+      res.status(404).json({ valid: false, error: 'Ticket or registration not found' });
     } catch (error) {
-      log.error('Error validating ticket', error);
-      res.status(500).json({
-        valid: false,
-        error: 'Failed to validate ticket',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      log.error('Error validating', error);
+      res.status(500).json({ valid: false, error: 'Failed to validate' });
     }
     return;
   }
 
-  // POST: Check in ticket (mark as checked in)
+  // POST: Check in ticket or workshop registration
   if (req.method === 'POST') {
-    // Require admin authentication for check-in
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      res.status(401).json({
-        success: false,
-        error: 'Unauthorized - Admin access required',
-      });
+      res.status(401).json({ success: false, error: 'Unauthorized - Admin access required' });
       return;
     }
 
     try {
-      // First validate the ticket
-      const validationResult = await validateTicket(ticketId);
-
-      if (!validationResult.valid) {
-        res.status(404).json({
-          success: false,
-          error: validationResult.error || 'Ticket not found or invalid',
-        });
+      // Try ticket first
+      const ticketResult = await validateTicket(id);
+      if (ticketResult.valid) {
+        if (ticketResult.ticket?.checkedIn) {
+          res.status(200).json({ success: true, alreadyCheckedIn: true, type: 'ticket', ticket: ticketResult.ticket, message: 'Already checked in' });
+          return;
+        }
+        const checkIn = await checkInTicket(id);
+        if (!checkIn.success) {
+          res.status(500).json({ success: false, error: checkIn.error || 'Failed to check in' });
+          return;
+        }
+        res.status(200).json({ success: true, alreadyCheckedIn: false, type: 'ticket', ticket: ticketResult.ticket, message: 'Checked in successfully' });
         return;
       }
 
-      // Check if already checked in
-      if (validationResult.ticket?.checkedIn) {
-        res.status(200).json({
-          success: true,
-          alreadyCheckedIn: true,
-          ticket: validationResult.ticket,
-          message: 'Ticket was already checked in',
-        });
+      // Fall back to workshop registration
+      const workshopResult = await validateWorkshopRegistration(id);
+      if (workshopResult.valid) {
+        if (workshopResult.registration?.checkedIn) {
+          res.status(200).json({ success: true, alreadyCheckedIn: true, type: 'workshop', registration: workshopResult.registration, message: 'Already checked in' });
+          return;
+        }
+        const checkIn = await checkInWorkshopRegistration(id);
+        if (!checkIn.success) {
+          res.status(500).json({ success: false, error: checkIn.error || 'Failed to check in' });
+          return;
+        }
+        res.status(200).json({ success: true, alreadyCheckedIn: false, type: 'workshop', registration: workshopResult.registration, message: 'Checked in successfully' });
         return;
       }
 
-      // Mark as checked in
-      const checkInResult = await checkInTicket(ticketId);
-
-      if (!checkInResult.success) {
-        res.status(500).json({
-          success: false,
-          error: checkInResult.error || 'Failed to check in ticket',
-        });
-        return;
-      }
-
-      res.status(200).json({
-        success: true,
-        alreadyCheckedIn: false,
-        ticket: validationResult.ticket,
-        message: 'Ticket checked in successfully',
-      });
+      res.status(404).json({ success: false, error: 'Ticket or registration not found' });
     } catch (error) {
-      log.error('Error checking in ticket', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to check in ticket',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      log.error('Error checking in', error);
+      res.status(500).json({ success: false, error: 'Failed to check in' });
     }
     return;
   }
