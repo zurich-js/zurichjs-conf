@@ -8,7 +8,7 @@ import type { AttendeeInfo } from '@/lib/validations/checkout';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
 import type { WorkshopVoucher } from '@/lib/queries/workshops';
 
-export type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
+export type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
 
 export interface CartStepProps {
   onNext: () => void;
@@ -59,6 +59,7 @@ export interface CheckoutStepProps extends CartStepProps {
   onSubmit: (data: CheckoutFormData) => void;
   onEmailCaptured: (email: string) => void;
   onFieldCaptured?: (fieldName: string, value: string) => void;
+  savedBillingData?: Partial<CheckoutFormData>;
 }
 
 // Re-export for convenience

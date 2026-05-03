@@ -21,6 +21,7 @@ import { useCartUrlSync } from '@/hooks/useCartUrlState';
 import { useTeamRequest } from '@/hooks/useTeamRequest';
 import { useCartAbandonment } from '@/hooks/useCartAbandonment';
 import { useCartAbandonmentEmail } from '@/hooks/useCartAbandonmentEmail';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 import { encodeCartState } from '@/lib/cart-url-state';
 import { analytics } from '@/lib/analytics/client';
@@ -41,8 +42,8 @@ import {
   EmptyCartState,
   CartProgressSteps,
   ReviewStep,
-  UpsellsStep,
   CheckoutStep,
+  PaymentStep,
   type CartStep,
   type CheckoutFormData,
   type AttendeeInfo,
@@ -69,6 +70,9 @@ export default function CartPage() {
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
   const { mutate: scheduleAbandonmentEmail } = useCartAbandonmentEmail();
   const [checkoutCompleted, setCheckoutCompleted] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [savedBillingData, saveBillingData] = useLocalStorage('zurichjs_billing_data');
+  const [, saveCartForRecovery] = useLocalStorage('zurichjs_cart_recovery');
   const { toasts, showToast } = useToast();
   const router = useRouter();
   const hasTrackedRecovery = useRef(false);
@@ -178,10 +182,19 @@ export default function CartPage() {
   }) => {
     setAttendees(result.attendees);
     setWorkshopAttendees(result.workshopAttendees);
-    setCurrentStep(showWorkshopUpsells ? 'upsells' : 'checkout');
+    setCurrentStep('checkout');
   };
 
   const handleCheckoutSubmit = (data: CheckoutFormData) => {
+    // Persist billing data so it survives back-navigation from payment step
+    saveBillingData({
+      email: data.email, phone: data.phone, firstName: data.firstName,
+      lastName: data.lastName, company: data.company, jobTitle: data.jobTitle,
+      addressLine1: data.addressLine1, addressLine2: data.addressLine2,
+      city: data.city, state: data.state, postalCode: data.postalCode,
+      country: data.country, subscribeNewsletter: data.subscribeNewsletter,
+    });
+
     analytics.identify(data.email, {
       email: data.email,
       first_name: data.firstName,
@@ -205,11 +218,17 @@ export default function CartPage() {
       job_title: data.jobTitle,
     } as EventProperties<'checkout_started'>);
 
-    setCheckoutCompleted(true);
-    createCheckout({
-      cart,
-      customerInfo: { ...data, attendees, workshopAttendees },
-    });
+    createCheckout(
+      { cart, customerInfo: { ...data, attendees, workshopAttendees } },
+      {
+        onSuccess: (response) => {
+          setCheckoutCompleted(true);
+          setClientSecret(response.clientSecret);
+          saveCartForRecovery(encodeCartState(cart));
+          setCurrentStep('payment');
+        },
+      }
+    );
   };
 
   const handleContinueFromReview = () => {
@@ -221,13 +240,11 @@ export default function CartPage() {
     } as EventProperties<'cart_reviewed'>);
 
     if (needsAttendeeInfo) setCurrentStep('attendees');
-    else if (showWorkshopUpsells) setCurrentStep('upsells');
     else setCurrentStep('checkout');
   };
 
   const handleCheckoutBack = () => {
-    if (showWorkshopUpsells) setCurrentStep('upsells');
-    else if (needsAttendeeInfo) setCurrentStep('attendees');
+    if (needsAttendeeInfo) setCurrentStep('attendees');
     else setCurrentStep('review');
   };
 
@@ -264,15 +281,7 @@ export default function CartPage() {
       cart_item_count: cart.items.length,
       cart_total_amount: orderSummary.total,
     } as EventProperties<'cart_step_viewed'>);
-
-    if (currentStep === 'upsells' && showWorkshopUpsells) {
-      analytics.track('workshop_upsell_viewed', {
-        bonus_percent: bonusPercent,
-        available_vouchers: workshopVouchers.length,
-        current_stage: currentStage || 'unknown',
-      } as EventProperties<'workshop_upsell_viewed'>);
-    }
-  }, [currentStep, cart.items.length, orderSummary.total, showWorkshopUpsells, bonusPercent, workshopVouchers.length, currentStage]);
+  }, [currentStep, cart.items.length, orderSummary.total]);
 
   // Track cart recovery visits
   useEffect(() => {
@@ -316,15 +325,19 @@ export default function CartPage() {
             <CartProgressSteps
               currentStep={currentStep}
               needsAttendeeInfo={needsAttendeeInfo}
-              showWorkshopUpsells={showWorkshopUpsells}
+              showWorkshopUpsells={false}
               isPricingLoading={isPricingLoading}
-              onStepClick={setCurrentStep}
+              onStepClick={(step) => {
+                // Prevent clicking directly to payment — must complete billing first
+                if (step === 'payment') return;
+                setCurrentStep(step);
+              }}
             />
           </SectionContainer>
         </div>
 
         {/* Main Content */}
-        <SectionContainer className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <SectionContainer className="py-6 md:py-12">
           <AnimatePresence mode="wait">
             {currentStep === 'review' && (
               <ReviewStep
@@ -355,28 +368,17 @@ export default function CartPage() {
               />
             )}
 
-            {currentStep === 'upsells' && showWorkshopUpsells && (
-              <UpsellsStep
-                workshopVouchers={workshopVouchers}
-                bonusPercent={bonusPercent}
-                needsAttendeeInfo={needsAttendeeInfo}
-                onNext={() => setCurrentStep('checkout')}
-                onBack={() => setCurrentStep(needsAttendeeInfo ? 'attendees' : 'review')}
-                onAddVoucher={handleAddWorkshopVoucher}
-                onSkip={() => setCurrentStep('checkout')}
-              />
-            )}
-
             {currentStep === 'checkout' && (
               <CheckoutStep
                 cart={cart}
                 orderSummary={orderSummary}
                 attendees={attendees}
                 isPartialDiscount={isPartialDiscount}
-                showWorkshopUpsells={showWorkshopUpsells}
+                showWorkshopUpsells={false}
                 needsAttendeeInfo={needsAttendeeInfo}
                 isSubmitting={isSubmitting}
                 error={error}
+                savedBillingData={savedBillingData}
                 onNext={() => {}}
                 onBack={handleCheckoutBack}
                 onRemove={removeFromCart}
@@ -386,6 +388,15 @@ export default function CartPage() {
                 onFieldCaptured={(fieldName, value) => {
                   if (fieldName === 'firstName') setCapturedFirstName(value);
                 }}
+              />
+            )}
+
+            {currentStep === 'payment' && clientSecret && (
+              <PaymentStep
+                clientSecret={clientSecret}
+                totalAmount={orderSummary.total.toFixed(2)}
+                currency={orderSummary.currency}
+                onBack={() => { setClientSecret(null); setCurrentStep('checkout'); }}
               />
             )}
           </AnimatePresence>

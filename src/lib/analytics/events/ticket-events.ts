@@ -54,7 +54,7 @@ export interface CartReviewedEvent {
 export interface CartStepViewedEvent {
   event: 'cart_step_viewed';
   properties: BaseEventProperties & {
-    step: 'review' | 'attendees' | 'upsells' | 'checkout';
+    step: 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
     cart_item_count: number;
     cart_total_amount: number;
   };

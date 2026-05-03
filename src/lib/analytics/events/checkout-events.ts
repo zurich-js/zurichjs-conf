@@ -36,7 +36,7 @@ export interface CheckoutAbandonedEvent {
   properties: BaseEventProperties &
     CartProperties &
     UserProperties & {
-      abandonment_stage: 'review' | 'attendees' | 'upsells' | 'checkout';
+      abandonment_stage: 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
       time_spent_seconds?: number;
       fields_completed?: string[];
       fields_touched?: string[];

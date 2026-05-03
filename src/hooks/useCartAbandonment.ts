@@ -26,7 +26,7 @@ import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
 import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
 
-type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout';
+type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
 
 interface CartItem {
   title: string;

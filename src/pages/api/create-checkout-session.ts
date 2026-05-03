@@ -6,8 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import type { Cart, CheckoutFormData } from '@/types/cart';
-import { getStripeRedirectUrls } from '@/lib/url';
-import { encodeCartState } from '@/lib/cart-url-state';
+import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
@@ -28,7 +27,7 @@ interface CheckoutSessionRequest {
  * API response
  */
 interface CheckoutSessionResponse {
-  url?: string;
+  clientSecret?: string;
   sessionId?: string;
   error?: string;
 }
@@ -185,22 +184,9 @@ export default async function handler(
       metadata.has_workshops = 'true';
     }
 
-    // Encode cart state for cancel URL (so user can resume checkout)
-    const encodedCart = encodeCartState(cart);
-
-    // Get Stripe redirect URLs using centralized utility
-    const { successUrl, cancelUrl } = getStripeRedirectUrls(req, encodedCart);
-
-    // Prepare discounts array if coupon was applied
-    // Use coupon code for direct coupon application
-    const discounts = cart.couponCode
-      ? [{ coupon: cart.couponCode }]
-      : undefined;
-
     log.info('Cart coupon info', {
       couponCode: cart.couponCode,
       discountAmount: cart.discountAmount,
-      hasDiscounts: !!discounts,
     });
 
     // Get or create Stripe Customer to avoid duplicates
@@ -259,29 +245,31 @@ export default async function handler(
       log.info('Created new customer', { customerId: customer.id });
     }
 
-    // Create Stripe Checkout Session
-    // Note: Prices already include 8.1% Swiss VAT - no additional tax calculation
-    // By passing a customer with address, Stripe will prefill the billing address in checkout
+    // Prepare discounts array if coupon was applied
+    const discounts = cart.couponCode
+      ? [{ coupon: cart.couponCode }]
+      : undefined;
+
+    // Create Checkout Session in embedded mode.
+    // This returns a client_secret for use with Custom Checkout Elements
+    // (PaymentElement, BillingAddressElement, etc.) while preserving the
+    // checkout.session.completed webhook flow.
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
-      payment_method_types: ['card'],
+      ui_mode: 'custom',
       line_items: lineItems,
-      customer: customer.id, // Use the customer we just created with prefilled address
+      customer: customer.id,
       customer_update: {
-        // Allow Stripe to update customer with any changes made in checkout
         address: 'auto',
         name: 'auto',
       },
-      metadata, // Stored for retrieval in webhook
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      billing_address_collection: 'auto', // Use customer's saved address, prefilling the checkout form
+      metadata,
+      return_url: `${getBaseUrl(req)}/success?session_id={CHECKOUT_SESSION_ID}`,
       phone_number_collection: {
         enabled: true,
       },
     };
 
-    // Apply pre-validated coupon if available
     if (discounts && discounts.length > 0) {
       sessionParams.discounts = discounts;
       log.info('Applying coupon to checkout session', { couponCode: cart.couponCode });
@@ -293,9 +281,7 @@ export default async function handler(
 
     log.info('Checkout session created', { sessionId: session.id });
 
-    // Persist a cart snapshot so the Stripe webhook can hydrate workshop
-    // attendee info without relying on Stripe metadata (which is capped at
-    // 500 chars per value).
+    // Persist cart snapshot so the webhook can hydrate workshop attendee info.
     if (workshopCartItems.length > 0) {
       try {
         const supabase = createServiceRoleClient();
@@ -328,9 +314,8 @@ export default async function handler(
       }
     }
 
-    // Return the checkout URL
     res.status(200).json({
-      url: session.url || undefined,
+      clientSecret: session.client_secret || undefined,
       sessionId: session.id,
     });
   } catch (error) {
