@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
@@ -102,7 +102,20 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
   );
 }
 
-export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = async ({ params }) => {
+export const getStaticPaths: GetStaticPaths = async () => {
+  const { speakers } = await fetchPublicSpeakers();
+  const paths: { params: { slug: string } }[] = [];
+  for (const speaker of speakers) {
+    for (const session of speaker.sessions) {
+      if (session.type === 'workshop' && session.slug) {
+        paths.push({ params: { slug: session.slug } });
+      }
+    }
+  }
+  return { paths, fallback: 'blocking' };
+};
+
+export const getStaticProps: GetStaticProps<WorkshopDetailPageProps> = async ({ params }) => {
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const { speakers } = await fetchPublicSpeakers();
   const speaker = speakers.find((entry) =>
@@ -111,7 +124,7 @@ export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = a
   const session = speaker?.sessions.find((entry) => entry.type === 'workshop' && entry.slug === slug);
 
   if (!session || !speaker) {
-    return { notFound: true };
+    return { notFound: true, revalidate: 60 };
   }
 
   return {
@@ -124,5 +137,6 @@ export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = a
         role: [speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || null,
       },
     },
+    revalidate: 300,
   };
 };

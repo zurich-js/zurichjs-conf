@@ -4,6 +4,7 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { memoryCache } from '@/lib/cache/memory-cache';
 import { getPublicScheduleRows } from '@/lib/program/schedule';
 import type {
   CfpSpeaker,
@@ -123,7 +124,15 @@ export async function getAcceptedSpeakers(): Promise<CfpSpeaker[]> {
   return (data || []) as CfpSpeaker[];
 }
 
-export async function getProgramSpeakerCount(): Promise<number> {
+export function getProgramSpeakerCount(): Promise<number> {
+  return memoryCache.deduplicatedFetch(
+    'program-speaker-count',
+    fetchProgramSpeakerCount,
+    SPEAKER_COUNT_CACHE_TTL,
+  );
+}
+
+async function fetchProgramSpeakerCount(): Promise<number> {
   const supabase = createCfpServiceClient();
   const [speakersResult, submissionsResult] = await Promise.all([
     supabase
@@ -227,12 +236,23 @@ export async function uploadSpeakerImage(
   return { url: cacheBustedUrl };
 }
 
+const SPEAKERS_CACHE_TTL = 60_000; // 60 seconds
+const SPEAKER_COUNT_CACHE_TTL = 60_000; // 60 seconds
+
 /**
- * Get visible speakers for public display
- * Returns speakers with is_visible=true and their accepted sessions
- * Featured speakers are ordered first in the result
+ * Get visible speakers for public display (cached, with request deduplication).
+ * Returns speakers with is_visible=true and their accepted sessions.
+ * Featured speakers are ordered first in the result.
  */
-export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
+export function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
+  return memoryCache.deduplicatedFetch(
+    'visible-speakers-with-sessions',
+    fetchVisibleSpeakersWithSessions,
+    SPEAKERS_CACHE_TTL,
+  );
+}
+
+async function fetchVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
   const supabase = createCfpServiceClient();
   const sessionSlugCounts = new Map<string, number>();
   const scheduleRows = await getPublicScheduleRows();
@@ -248,31 +268,63 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     }
   }
 
-  // Fetch visible speakers with their submissions and tags
-  const { data, error } = await supabase
-    .from('cfp_speakers')
-    .select(`
-      *,
-      cfp_submissions!cfp_submissions_speaker_id_fkey (
+  // Fetch all three independent queries in parallel
+  const [speakerResult, sessionResult, participantResult] = await Promise.all([
+    supabase
+      .from('cfp_speakers')
+      .select(`
+        *,
+        cfp_submissions!cfp_submissions_speaker_id_fkey (
+          id,
+          title,
+          abstract,
+          submission_type,
+          talk_level,
+          status,
+          scheduled_date,
+          scheduled_start_time,
+          scheduled_duration_minutes,
+          room,
+          tags:cfp_submission_tags(
+            tag:cfp_tags(name)
+          )
+        )
+      `)
+      .eq('is_visible', true)
+      .order('is_featured', { ascending: false })
+      .order('first_name', { ascending: true }),
+    supabase
+      .from('program_sessions')
+      .select(`
         id,
+        cfp_submission_id,
+        kind,
         title,
         abstract,
-        submission_type,
-        talk_level,
+        level,
         status,
-        scheduled_date,
-        scheduled_start_time,
-        scheduled_duration_minutes,
-        room,
-        tags:cfp_submission_tags(
-          tag:cfp_tags(name)
+        metadata,
+        cfp_submission:cfp_submissions(
+          id,
+          submission_type,
+          tags:cfp_submission_tags(
+            tag:cfp_tags(name)
+          )
+        ),
+        speakers:program_session_speakers(
+          session_id,
+          speaker_id,
+          role,
+          sort_order
         )
-      )
-    `)
-    .eq('is_visible', true)
-    .order('is_featured', { ascending: false })
-    .order('first_name', { ascending: true });
+      `)
+      .neq('status', 'archived'),
+    supabase
+      .from('cfp_submission_speakers')
+      .select('submission_id, speaker_id, role'),
+  ]);
 
+  const { data, error } = speakerResult;
   if (error) {
     console.error('[CFP Speakers] Error fetching visible speakers:', error.message);
     return [];
@@ -314,41 +366,13 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
 
   const visibleSpeakerRows = data || [];
   const visibleSpeakerIdSet = new Set(visibleSpeakerRows.map((speaker) => speaker.id));
-  const { data: programSessionRows, error: programSessionError } = await supabase
-    .from('program_sessions')
-    .select(`
-      id,
-      cfp_submission_id,
-      kind,
-      title,
-      abstract,
-      level,
-      status,
-      metadata,
-      cfp_submission:cfp_submissions(
-        id,
-        submission_type,
-        tags:cfp_submission_tags(
-          tag:cfp_tags(name)
-        )
-      ),
-      speakers:program_session_speakers(
-        session_id,
-        speaker_id,
-        role,
-        sort_order
-      )
-    `)
-    .neq('status', 'archived');
 
+  const { data: programSessionRows, error: programSessionError } = sessionResult;
   if (programSessionError) {
     console.error('[CFP Speakers] Error fetching program sessions:', programSessionError.message);
   }
 
-  const { data: participantRows, error: participantError } = await supabase
-    .from('cfp_submission_speakers')
-    .select('submission_id, speaker_id, role');
-
+  const { data: participantRows, error: participantError } = participantResult;
   if (participantError) {
     console.error('[CFP Speakers] Error fetching submission speakers:', participantError.message);
   }

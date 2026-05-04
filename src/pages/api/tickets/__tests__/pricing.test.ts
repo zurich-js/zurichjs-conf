@@ -116,6 +116,7 @@ interface MockResponse {
   _json: unknown;
   status: (code: number) => MockResponse;
   json: (data: unknown) => MockResponse;
+  setHeader: (name: string, value: string) => MockResponse;
 }
 
 function createMockRequest(overrides: Partial<MockRequest> = {}): MockRequest {
@@ -136,6 +137,9 @@ function createMockResponse(): MockResponse {
     },
     json(data: unknown) {
       res._json = data;
+      return res;
+    },
+    setHeader() {
       return res;
     },
   };

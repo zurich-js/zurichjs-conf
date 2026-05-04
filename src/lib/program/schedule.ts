@@ -1,4 +1,5 @@
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { memoryCache } from '@/lib/cache/memory-cache';
 import type { PublicSession, PublicSessionSpeaker, PublicSpeaker } from '@/lib/types/cfp';
 import type {
   ProgramScheduleItemInput,
@@ -84,7 +85,9 @@ function buildPublicSpeakerSessionMap(speakers: PublicSpeaker[]) {
   return sessionMap;
 }
 
-export async function getPublicScheduleRows() {
+const SCHEDULE_CACHE_TTL = 60_000; // 60 seconds
+
+async function fetchPublicScheduleRows(): Promise<ProgramScheduleItemRecord[]> {
   const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_schedule_items')
@@ -124,6 +127,14 @@ export async function getPublicScheduleRows() {
   }
 
   return (data || []) as ProgramScheduleItemRecord[];
+}
+
+export function getPublicScheduleRows(): Promise<ProgramScheduleItemRecord[]> {
+  return memoryCache.deduplicatedFetch(
+    'public-schedule-rows',
+    fetchPublicScheduleRows,
+    SCHEDULE_CACHE_TTL,
+  );
 }
 
 export async function getAdminScheduleRows() {

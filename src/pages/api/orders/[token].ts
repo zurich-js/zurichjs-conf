@@ -55,14 +55,25 @@ export default async function handler(
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    // Fetch ticket details
+    // Fetch ticket and pending upgrade in parallel (independent queries)
     const supabase = createServiceRoleClient();
-    const { data, error: fetchError } = await supabase
-      .from('tickets')
-      .select('*')
-      .eq('id', ticketId)
-      .single();
+    const [ticketResult, upgradeResult] = await Promise.all([
+      supabase
+        .from('tickets')
+        .select('*')
+        .eq('id', ticketId)
+        .single(),
+      supabase
+        .from('ticket_upgrades')
+        .select('*')
+        .eq('ticket_id', ticketId)
+        .in('status', ['pending_payment', 'pending_bank_transfer'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
+    const { data, error: fetchError } = ticketResult;
     if (fetchError || !data) {
       log.error('Error fetching ticket', fetchError);
       return res.status(404).json({ error: 'Order not found' });
@@ -85,15 +96,7 @@ export default async function handler(
       };
     }
 
-    // Check for pending VIP upgrade
-    const { data: pendingUpgrade } = await supabase
-      .from('ticket_upgrades')
-      .select('*')
-      .eq('ticket_id', ticketId)
-      .in('status', ['pending_payment', 'pending_bank_transfer'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data: pendingUpgrade } = upgradeResult;
 
     if (pendingUpgrade) {
       response.pendingUpgrade = {

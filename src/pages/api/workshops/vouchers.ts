@@ -107,6 +107,7 @@ export default async function handler(
     const vouchers = await fetchWorkshopVouchers();
 
     // Return successful response
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     res.status(200).json({
       vouchers,
     });

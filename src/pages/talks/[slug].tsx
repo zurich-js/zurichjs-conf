@@ -1,4 +1,4 @@
-import type { GetServerSideProps } from 'next';
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
@@ -101,7 +101,20 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
   );
 }
 
-export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async ({ params }) => {
+export const getStaticPaths: GetStaticPaths = async () => {
+  const { speakers } = await fetchPublicSpeakers();
+  const paths: { params: { slug: string } }[] = [];
+  for (const speaker of speakers) {
+    for (const session of speaker.sessions) {
+      if ((session.type === 'standard' || session.type === 'lightning') && session.slug) {
+        paths.push({ params: { slug: session.slug } });
+      }
+    }
+  }
+  return { paths, fallback: 'blocking' };
+};
+
+export const getStaticProps: GetStaticProps<TalkDetailPageProps> = async ({ params }) => {
   const slug = typeof params?.slug === 'string' ? params.slug : '';
   const { speakers } = await fetchPublicSpeakers();
   const speaker = speakers.find((entry) =>
@@ -110,7 +123,7 @@ export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async
   const session = speaker?.sessions.find((entry) => (entry.type === 'standard' || entry.type === 'lightning') && entry.slug === slug);
 
   if (!session || !speaker) {
-    return { notFound: true };
+    return { notFound: true, revalidate: 60 };
   }
 
   return {
@@ -123,5 +136,6 @@ export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async
         role: [speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || null,
       },
     },
+    revalidate: 300,
   };
 };

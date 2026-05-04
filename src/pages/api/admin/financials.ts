@@ -22,30 +22,27 @@ async function getStripeFees(paymentIntentIds: string[]): Promise<Map<string, nu
   // Filter out empty/null IDs
   const validIds = paymentIntentIds.filter((id) => id && id.trim() !== '');
 
-  // Process in batches to avoid rate limits
-  const batchSize = 10;
+  // Process in batches of 25 (Stripe rate limit is 100/sec in live mode)
+  const batchSize = 25;
   for (let i = 0; i < validIds.length; i += batchSize) {
     const batch = validIds.slice(i, i + batchSize);
 
     await Promise.all(
       batch.map(async (paymentIntentId) => {
         try {
-          // Fetch the payment intent to get the latest charge
+          // Fetch the payment intent with nested expand to get fee in a single call
           const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-            expand: ['latest_charge'],
+            expand: ['latest_charge.balance_transaction'],
           });
 
           const charge = paymentIntent.latest_charge;
           if (charge && typeof charge !== 'string' && charge.balance_transaction) {
-            // Fetch the balance transaction to get the fee
-            const balanceTransactionId =
-              typeof charge.balance_transaction === 'string'
-                ? charge.balance_transaction
-                : charge.balance_transaction.id;
-
-            const balanceTransaction =
-              await stripe.balanceTransactions.retrieve(balanceTransactionId);
-            feeMap.set(paymentIntentId, balanceTransaction.fee);
+            const balanceTransaction = typeof charge.balance_transaction === 'string'
+              ? null
+              : charge.balance_transaction;
+            if (balanceTransaction) {
+              feeMap.set(paymentIntentId, balanceTransaction.fee);
+            }
           }
         } catch (err) {
           // Log but don't fail - some payments might not have fees (e.g., complimentary)
@@ -396,6 +393,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         []
       );
 
+    res.setHeader('Cache-Control', 'private, max-age=300');
     return res.status(200).json({
       summary: {
         totalTickets: tickets.length,

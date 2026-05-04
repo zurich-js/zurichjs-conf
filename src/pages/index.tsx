@@ -20,7 +20,7 @@ import { publicSponsorsQueryOptions, communityPartnersQueryOptions } from '@/lib
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticProps } from 'next';
 import React from "react";
 import {Button} from "@/components/atoms";
 import { trackButtonClick } from '@/lib/analytics';
@@ -192,7 +192,7 @@ export default function Home() {
  *
  * Failures are reported to PostHog via serverAnalytics.
  */
-export const getServerSideProps: GetServerSideProps<HomePageProps> = async () => {
+export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
   const queryClient = getQueryClient();
   const { optionalQuery, dehydrate } = createPrefetch(queryClient);
 
@@ -220,5 +220,6 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     props: {
       dehydratedState: dehydrate(),
     },
+    revalidate: 120,
   };
 };

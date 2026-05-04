@@ -1,4 +1,4 @@
-import type { GetServerSideProps } from 'next';
+import type { GetStaticProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ProgramScheduleItemCard } from '@/components/scheduling';
@@ -87,7 +87,7 @@ export default function TalksPage({ items }: TalksPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<TalksPageProps> = async () => {
+export const getStaticProps: GetStaticProps<TalksPageProps> = async () => {
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);
@@ -95,10 +95,8 @@ export const getServerSideProps: GetServerSideProps<TalksPageProps> = async () =
 
   if (!hasTalks) {
     return {
-      redirect: {
-        destination: '/speakers',
-        permanent: false,
-      },
+      notFound: true,
+      revalidate: 120,
     };
   }
 
@@ -106,5 +104,6 @@ export const getServerSideProps: GetServerSideProps<TalksPageProps> = async () =
     props: {
       items,
     },
+    revalidate: 120,
   };
 };
