@@ -6,15 +6,16 @@ import type {
   TravelDashboardStats,
   SpeakerWithTravel,
   FlightWithSpeaker,
-  ReimbursementWithSpeaker,
+  InvoiceWithSpeaker,
 } from '@/lib/cfp/admin-travel';
 
 export const travelQueryKeys = {
   all: ['admin', 'travel'] as const,
   stats: ['admin', 'travel', 'stats'] as const,
   speakers: ['admin', 'travel', 'speakers'] as const,
+  speaker: (id: string) => ['admin', 'travel', 'speaker', id] as const,
   flights: ['admin', 'travel', 'flights'] as const,
-  reimbursements: ['admin', 'travel', 'reimbursements'] as const,
+  invoices: ['admin', 'travel', 'invoices'] as const,
 };
 
 export async function fetchTravelStats(): Promise<TravelDashboardStats> {
@@ -30,6 +31,13 @@ export async function fetchSpeakers(): Promise<SpeakerWithTravel[]> {
   return data.speakers;
 }
 
+export async function fetchSpeakerDetails(speakerId: string): Promise<SpeakerWithTravel> {
+  const res = await fetch(`/api/admin/cfp/travel/speakers/${speakerId}`);
+  if (!res.ok) throw new Error('Failed to fetch speaker details');
+  const data = await res.json();
+  return data.speaker;
+}
+
 export async function fetchFlights(): Promise<FlightWithSpeaker[]> {
   const res = await fetch('/api/admin/cfp/travel/flights');
   if (!res.ok) throw new Error('Failed to fetch flights');
@@ -37,9 +45,9 @@ export async function fetchFlights(): Promise<FlightWithSpeaker[]> {
   return data.flights;
 }
 
-export async function fetchReimbursements(): Promise<ReimbursementWithSpeaker[]> {
-  const res = await fetch('/api/admin/cfp/travel/reimbursements');
-  if (!res.ok) throw new Error('Failed to fetch reimbursements');
+export async function fetchInvoices(): Promise<InvoiceWithSpeaker[]> {
+  const res = await fetch('/api/admin/cfp/travel/invoices');
+  if (!res.ok) throw new Error('Failed to fetch invoices');
   const data = await res.json();
-  return data.reimbursements;
+  return data.invoices;
 }

@@ -1,6 +1,6 @@
 /**
  * Admin Travel Management Operations
- * Functions for managing speaker travel, flights, and reimbursements from the admin side
+ * Functions for managing speaker travel, flights, invoices, and accommodation from the admin side
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
@@ -11,7 +11,9 @@ import type {
   CfpSpeakerAccommodation,
   CfpSpeakerReimbursement,
   CfpReimbursementStatus,
+  CfpReimbursementType,
   CfpFlightStatus,
+  CfpFlightDirection,
 } from '@/lib/types/cfp';
 
 // ============================================================================
@@ -31,10 +33,13 @@ export interface TravelDashboardStats {
   travel_confirmed: number;
   attending_dinner: number;
   attending_activities: number;
-  pending_reimbursements: number;
-  total_reimbursement_amount: number;
+  pending_invoices: number;
+  total_invoice_amount: number;
   flights_arriving_today: number;
   flights_departing_today: number;
+  hotels_booked: number;
+  hotels_pending: number;
+  total_hotel_nights: number;
 }
 
 export interface FlightWithSpeaker extends CfpSpeakerFlight {
@@ -46,7 +51,8 @@ export interface FlightWithSpeaker extends CfpSpeakerFlight {
   };
 }
 
-export interface ReimbursementWithSpeaker extends CfpSpeakerReimbursement {
+/** Invoice data stored in cfp_speaker_reimbursements, managed admin-side */
+export interface InvoiceWithSpeaker extends CfpSpeakerReimbursement {
   speaker: {
     id: string;
     first_name: string;
@@ -54,6 +60,9 @@ export interface ReimbursementWithSpeaker extends CfpSpeakerReimbursement {
     email: string;
   };
 }
+
+// Keep alias for backward compat
+export type ReimbursementWithSpeaker = InvoiceWithSpeaker;
 
 // ============================================================================
 // Dashboard Stats
@@ -84,14 +93,14 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
   const attendingDinner = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_dinner).length;
   const attendingActivities = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_activities).length;
 
-  // Get pending reimbursements
-  const { data: pendingReimbursements } = await supabase
+  // Get pending invoices
+  const { data: pendingInvoices } = await supabase
     .from('cfp_speaker_reimbursements')
     .select('amount')
     .eq('status', 'pending');
 
-  const pendingCount = (pendingReimbursements || []).length;
-  const totalPendingAmount = (pendingReimbursements || []).reduce((sum: number, r: { amount: number }) => sum + r.amount, 0);
+  const pendingCount = (pendingInvoices || []).length;
+  const totalPendingAmount = (pendingInvoices || []).reduce((sum: number, r: { amount: number }) => sum + r.amount, 0);
 
   // Get flights arriving/departing today
   const { data: todayFlights } = await supabase
@@ -110,15 +119,35 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
     return f.departure_time.startsWith(today);
   }).length;
 
+  // Get accommodation stats
+  const { data: accommodationData } = await supabase
+    .from('cfp_speaker_accommodation')
+    .select('speaker_id, hotel_name, check_in_date, check_out_date')
+    .in('speaker_id', uniqueSpeakerIds);
+
+  type AccommodationRecord = { speaker_id: string; hotel_name: string | null; check_in_date: string | null; check_out_date: string | null };
+  const bookedAccommodations = (accommodationData || []).filter((a: AccommodationRecord) => a.hotel_name);
+  const hotelsBooked = bookedAccommodations.length;
+  const hotelsPending = uniqueSpeakerIds.length - hotelsBooked;
+
+  const totalHotelNights = bookedAccommodations.reduce((sum: number, a: AccommodationRecord) => {
+    if (!a.check_in_date || !a.check_out_date) return sum;
+    const nights = Math.round((new Date(a.check_out_date).getTime() - new Date(a.check_in_date).getTime()) / 86400000);
+    return sum + Math.max(0, nights);
+  }, 0);
+
   return {
     total_accepted_speakers: uniqueSpeakerIds.length,
     travel_confirmed: travelConfirmed,
     attending_dinner: attendingDinner,
     attending_activities: attendingActivities,
-    pending_reimbursements: pendingCount,
-    total_reimbursement_amount: totalPendingAmount,
+    pending_invoices: pendingCount,
+    total_invoice_amount: totalPendingAmount,
     flights_arriving_today: arrivingToday,
     flights_departing_today: departingToday,
+    hotels_booked: hotelsBooked,
+    hotels_pending: hotelsPending,
+    total_hotel_nights: totalHotelNights,
   };
 }
 
@@ -405,16 +434,129 @@ export async function updateFlightStatus(
   return { success: true, error: null };
 }
 
+
+/**
+ * Create a flight for a speaker (admin)
+ */
+export async function createFlightAdmin(
+  speakerId: string,
+  data: {
+    direction: CfpFlightDirection;
+    airline?: string;
+    flight_number?: string;
+    departure_airport?: string;
+    arrival_airport?: string;
+    departure_time?: string;
+    arrival_time?: string;
+    booking_reference?: string;
+    cost_amount?: number;
+    cost_currency?: string;
+    tracking_url?: string;
+    flight_status?: CfpFlightStatus;
+  }
+): Promise<{ flight: CfpSpeakerFlight | null; error: string | null }> {
+  const supabase = createCfpServiceClient();
+
+  const { data: flight, error } = await supabase
+    .from('cfp_speaker_flights')
+    .insert({
+      speaker_id: speakerId,
+      direction: data.direction,
+      airline: data.airline || null,
+      flight_number: data.flight_number || null,
+      departure_airport: data.departure_airport || null,
+      arrival_airport: data.arrival_airport || null,
+      departure_time: data.departure_time || null,
+      arrival_time: data.arrival_time || null,
+      booking_reference: data.booking_reference || null,
+      cost_amount: data.cost_amount ?? null,
+      cost_currency: data.cost_currency || 'CHF',
+      tracking_url: data.tracking_url || null,
+      flight_status: data.flight_status || 'pending',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Admin Travel] Create flight error:', error);
+    return { flight: null, error: 'Failed to create flight' };
+  }
+
+  return { flight: flight as CfpSpeakerFlight, error: null };
+}
+
+/**
+ * Update a flight (admin - no speaker_id constraint)
+ */
+export async function updateFlightAdmin(
+  flightId: string,
+  updates: {
+    direction?: CfpFlightDirection;
+    airline?: string;
+    flight_number?: string;
+    departure_airport?: string;
+    arrival_airport?: string;
+    departure_time?: string;
+    arrival_time?: string;
+    booking_reference?: string;
+    cost_amount?: number;
+    cost_currency?: string;
+    tracking_url?: string;
+    flight_status?: CfpFlightStatus;
+  }
+): Promise<{ flight: CfpSpeakerFlight | null; error: string | null }> {
+  const supabase = createCfpServiceClient();
+
+  const { data: flight, error } = await supabase
+    .from('cfp_speaker_flights')
+    .update({
+      ...updates,
+      last_status_update: updates.flight_status ? new Date().toISOString() : undefined,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', flightId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Admin Travel] Update flight error:', error);
+    return { flight: null, error: 'Failed to update flight' };
+  }
+
+  return { flight: flight as CfpSpeakerFlight, error: null };
+}
+
+/**
+ * Delete a flight (admin)
+ */
+export async function deleteFlightAdmin(
+  flightId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = createCfpServiceClient();
+
+  const { error } = await supabase
+    .from('cfp_speaker_flights')
+    .delete()
+    .eq('id', flightId);
+
+  if (error) {
+    console.error('[Admin Travel] Delete flight error:', error);
+    return { success: false, error: 'Failed to delete flight' };
+  }
+
+  return { success: true, error: null };
+}
+
 // ============================================================================
-// Reimbursement Management
+// Invoice Management (uses cfp_speaker_reimbursements table)
 // ============================================================================
 
 /**
- * Get all reimbursements with speaker info
+ * Get all invoices with speaker info
  */
-export async function getAllReimbursements(options?: {
+export async function getAllInvoices(options?: {
   status?: CfpReimbursementStatus;
-}): Promise<ReimbursementWithSpeaker[]> {
+}): Promise<InvoiceWithSpeaker[]> {
   const supabase = createCfpServiceClient();
 
   let query = supabase
@@ -426,16 +568,15 @@ export async function getAllReimbursements(options?: {
     query = query.eq('status', options.status);
   }
 
-  const { data: reimbursements } = await query;
+  const { data: invoices } = await query;
 
-  if (!reimbursements || reimbursements.length === 0) {
+  if (!invoices || invoices.length === 0) {
     return [];
   }
 
-  // Get speaker info
-  type ReimbursementRecord = { speaker_id: string; [key: string]: unknown };
+  type InvoiceRecord = { speaker_id: string; [key: string]: unknown };
   type SpeakerInfo = { id: string; first_name: string; last_name: string; email: string };
-  const speakerIds = [...new Set(reimbursements.map((r: ReimbursementRecord) => r.speaker_id))];
+  const speakerIds = [...new Set(invoices.map((r: InvoiceRecord) => r.speaker_id))];
   const { data: speakers } = await supabase
     .from('cfp_speakers')
     .select('id, first_name, last_name, email')
@@ -443,52 +584,174 @@ export async function getAllReimbursements(options?: {
 
   const speakerMap = new Map((speakers || []).map((s: SpeakerInfo) => [s.id, s]));
 
-  return reimbursements.map((reimbursement: ReimbursementRecord) => ({
-    ...reimbursement,
-    speaker: speakerMap.get(reimbursement.speaker_id) || {
-      id: reimbursement.speaker_id,
+  return invoices.map((invoice: InvoiceRecord) => ({
+    ...invoice,
+    speaker: speakerMap.get(invoice.speaker_id) || {
+      id: invoice.speaker_id,
       first_name: 'Unknown',
       last_name: 'Speaker',
       email: '',
     },
-  })) as ReimbursementWithSpeaker[];
+  })) as InvoiceWithSpeaker[];
 }
 
 /**
- * Update reimbursement status (admin)
+ * Create an invoice for a speaker (admin)
  */
-export async function updateReimbursementStatus(
-  reimbursementId: string,
-  reviewerId: string,
-  status: CfpReimbursementStatus,
-  adminNotes?: string
-): Promise<{ success: boolean; error: string | null }> {
+export async function createInvoiceAdmin(
+  speakerId: string,
+  data: {
+    expense_type: CfpReimbursementType;
+    description: string;
+    amount: number;
+    currency?: string;
+    admin_notes?: string;
+    invoice_number?: string;
+    invoice_date?: string;
+  }
+): Promise<{ invoice: CfpSpeakerReimbursement | null; error: string | null }> {
   const supabase = createCfpServiceClient();
 
-  const updates: Record<string, unknown> = {
-    status,
-    reviewed_by: reviewerId,
-    reviewed_at: new Date().toISOString(),
+  const metadata: Record<string, unknown> = {};
+  if (data.invoice_number) metadata.invoice_number = data.invoice_number;
+  if (data.invoice_date) metadata.invoice_date = data.invoice_date;
+
+  const { data: invoice, error } = await supabase
+    .from('cfp_speaker_reimbursements')
+    .insert({
+      speaker_id: speakerId,
+      expense_type: data.expense_type,
+      description: data.description,
+      amount: data.amount,
+      currency: data.currency || 'CHF',
+      admin_notes: data.admin_notes || null,
+      status: 'pending',
+      metadata,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Admin Travel] Create invoice error:', error);
+    return { invoice: null, error: 'Failed to create invoice' };
+  }
+
+  return { invoice: invoice as CfpSpeakerReimbursement, error: null };
+}
+
+/**
+ * Update an invoice (admin)
+ */
+export async function updateInvoiceAdmin(
+  invoiceId: string,
+  updates: {
+    expense_type?: CfpReimbursementType;
+    description?: string;
+    amount?: number;
+    currency?: string;
+    admin_notes?: string;
+    status?: CfpReimbursementStatus;
+    invoice_number?: string;
+    invoice_date?: string;
+  }
+): Promise<{ invoice: CfpSpeakerReimbursement | null; error: string | null }> {
+  const supabase = createCfpServiceClient();
+
+  // Build metadata updates
+  const { invoice_number, invoice_date, ...dbUpdates } = updates;
+  const updatePayload: Record<string, unknown> = {
+    ...dbUpdates,
     updated_at: new Date().toISOString(),
   };
 
-  if (adminNotes !== undefined) {
-    updates.admin_notes = adminNotes;
+  if (updates.status === 'paid') {
+    updatePayload.paid_at = new Date().toISOString();
   }
 
-  if (status === 'paid') {
-    updates.paid_at = new Date().toISOString();
+  // Handle metadata fields
+  if (invoice_number !== undefined || invoice_date !== undefined) {
+    // Fetch current metadata first
+    const { data: current } = await supabase
+      .from('cfp_speaker_reimbursements')
+      .select('metadata')
+      .eq('id', invoiceId)
+      .single();
+
+    const currentMetadata = (current?.metadata as Record<string, unknown>) || {};
+    if (invoice_number !== undefined) currentMetadata.invoice_number = invoice_number;
+    if (invoice_date !== undefined) currentMetadata.invoice_date = invoice_date;
+    updatePayload.metadata = currentMetadata;
   }
+
+  const { data: invoice, error } = await supabase
+    .from('cfp_speaker_reimbursements')
+    .update(updatePayload)
+    .eq('id', invoiceId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Admin Travel] Update invoice error:', error);
+    return { invoice: null, error: 'Failed to update invoice' };
+  }
+
+  return { invoice: invoice as CfpSpeakerReimbursement, error: null };
+}
+
+/**
+ * Delete an invoice (admin)
+ */
+export async function deleteInvoiceAdmin(
+  invoiceId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = createCfpServiceClient();
 
   const { error } = await supabase
     .from('cfp_speaker_reimbursements')
-    .update(updates)
-    .eq('id', reimbursementId);
+    .delete()
+    .eq('id', invoiceId);
 
   if (error) {
-    console.error('[Admin Travel] Reimbursement status update error:', error);
-    return { success: false, error: 'Failed to update reimbursement status' };
+    console.error('[Admin Travel] Delete invoice error:', error);
+    return { success: false, error: 'Failed to delete invoice' };
   }
 
   return { success: true, error: null };
+}
+
+/**
+ * Update invoice PDF URL after file upload
+ */
+export async function updateInvoicePdfUrl(
+  invoiceId: string,
+  pdfUrl: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = createCfpServiceClient();
+
+  const { error } = await supabase
+    .from('cfp_speaker_reimbursements')
+    .update({
+      receipt_url: pdfUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', invoiceId);
+
+  if (error) {
+    console.error('[Admin Travel] Update invoice PDF error:', error);
+    return { success: false, error: 'Failed to update invoice PDF' };
+  }
+
+  return { success: true, error: null };
+}
+
+// Keep old function names for backward compatibility
+export const getAllReimbursements = getAllInvoices;
+export async function updateReimbursementStatus(
+  reimbursementId: string,
+  _reviewerId: string,
+  status: CfpReimbursementStatus,
+  adminNotes?: string
+): Promise<{ success: boolean; error: string | null }> {
+  const result = await updateInvoiceAdmin(reimbursementId, { status, admin_notes: adminNotes });
+  return { success: !result.error, error: result.error };
 }

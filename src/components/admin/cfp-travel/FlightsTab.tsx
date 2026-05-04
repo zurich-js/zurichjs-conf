@@ -1,12 +1,13 @@
 /**
  * Flights Tab Component
- * Flight tracker with status updates
+ * Flight tracker with status updates and tracking links
  */
 
+import { ExternalLink } from 'lucide-react';
 import { Pagination } from '@/components/atoms';
 import type { FlightWithSpeaker } from '@/lib/cfp/admin-travel';
 import type { CfpFlightStatus } from '@/lib/types/cfp';
-import { FLIGHT_STATUS_COLORS } from './types';
+import { FLIGHT_STATUS_COLORS, getFlightTrackingUrl } from './types';
 
 interface FlightsTabProps {
   flights: FlightWithSpeaker[];
@@ -19,6 +20,7 @@ interface FlightsTabProps {
   pageSize: number;
   onUpdateStatus: (id: string, status: CfpFlightStatus) => void;
   isUpdating: boolean;
+  onSelectSpeaker?: (speakerId: string) => void;
 }
 
 export function FlightsTab({
@@ -31,6 +33,7 @@ export function FlightsTab({
   pageSize,
   onUpdateStatus,
   isUpdating,
+  onSelectSpeaker,
 }: FlightsTabProps) {
   const totalPages = Math.ceil(filteredFlights.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -45,7 +48,7 @@ export function FlightsTab({
             <button
               key={dir}
               onClick={() => setFlightDirection(dir)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors capitalize ${
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors capitalize cursor-pointer ${
                 flightDirection === dir ? 'bg-brand-primary text-black' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -70,64 +73,93 @@ export function FlightsTab({
                   <th className="px-4 py-3">Route</th>
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Track</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedFlights.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       No flights found
                     </td>
                   </tr>
                 ) : (
-                  paginatedFlights.map((flight) => (
-                    <tr key={flight.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 font-medium text-gray-900">
-                        {flight.speaker.first_name} {flight.speaker.last_name}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`px-2 py-1 text-xs rounded capitalize ${
-                            flight.direction === 'inbound' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                          }`}
-                        >
-                          {flight.direction}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-gray-600">
-                        {flight.airline} {flight.flight_number}
-                      </td>
-                      <td className="px-4 py-4 text-gray-600">
-                        {flight.departure_airport} → {flight.arrival_airport}
-                      </td>
-                      <td className="px-4 py-4 text-gray-600">
-                        {flight.departure_time ? new Date(flight.departure_time).toLocaleString() : '-'}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`px-2 py-1 text-xs rounded capitalize ${FLIGHT_STATUS_COLORS[flight.flight_status]}`}>
-                          {flight.flight_status.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <select
-                          value={flight.flight_status}
-                          onChange={(e) => onUpdateStatus(flight.id, e.target.value as CfpFlightStatus)}
-                          disabled={isUpdating}
-                          className="text-sm px-2 py-1 rounded border border-gray-300 focus:ring-2 focus:ring-yellow-400 focus:outline-none disabled:opacity-50"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="checked_in">Checked In</option>
-                          <option value="boarding">Boarding</option>
-                          <option value="departed">Departed</option>
-                          <option value="arrived">Arrived</option>
-                          <option value="delayed">Delayed</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))
+                  paginatedFlights.map((flight) => {
+                    const trackingUrl = getFlightTrackingUrl(flight.flight_number, flight.tracking_url);
+                    return (
+                      <tr key={flight.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4">
+                          {onSelectSpeaker ? (
+                            <button
+                              onClick={() => onSelectSpeaker(flight.speaker.id)}
+                              className="font-medium text-blue-600 hover:underline cursor-pointer text-left"
+                            >
+                              {flight.speaker.first_name} {flight.speaker.last_name}
+                            </button>
+                          ) : (
+                            <span className="font-medium text-gray-900">
+                              {flight.speaker.first_name} {flight.speaker.last_name}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`px-2 py-1 text-xs rounded capitalize ${
+                              flight.direction === 'inbound' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
+                            {flight.direction}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-gray-600">
+                          {flight.airline} {flight.flight_number}
+                        </td>
+                        <td className="px-4 py-4 text-gray-600">
+                          {flight.departure_airport} → {flight.arrival_airport}
+                        </td>
+                        <td className="px-4 py-4 text-gray-600">
+                          {flight.departure_time ? new Date(flight.departure_time).toLocaleString() : '-'}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2 py-1 text-xs rounded capitalize ${FLIGHT_STATUS_COLORS[flight.flight_status]}`}>
+                            {flight.flight_status.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          {trackingUrl ? (
+                            <a
+                              href={trackingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Track
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={flight.flight_status}
+                            onChange={(e) => onUpdateStatus(flight.id, e.target.value as CfpFlightStatus)}
+                            disabled={isUpdating}
+                            className="text-sm px-2 py-1 rounded border border-gray-300 focus:ring-2 focus:ring-yellow-400 focus:outline-none disabled:opacity-50"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="checked_in">Checked In</option>
+                            <option value="boarding">Boarding</option>
+                            <option value="departed">Departed</option>
+                            <option value="arrived">Arrived</option>
+                            <option value="delayed">Delayed</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
