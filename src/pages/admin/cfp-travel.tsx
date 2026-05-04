@@ -29,6 +29,11 @@ import {
   type CfpReimbursementStatus,
   type CfpFlightStatus,
 } from '@/components/admin/cfp-travel';
+import {
+  updateFlightStatus as apiUpdateFlightStatus,
+  updateInvoice as apiUpdateInvoice,
+  deleteInvoice as apiDeleteInvoice,
+} from '@/components/admin/cfp-travel/api';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -85,59 +90,35 @@ export default function AdminTravelPage() {
 
   // Invoice mutations
   const invoiceMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: 'approved' | 'rejected' | 'paid' }) => {
-      const response = await fetch(`/api/admin/cfp/travel/invoices/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: action }),
-      });
-      if (!response.ok) throw new Error('Failed to update invoice');
-      return response.json();
-    },
+    mutationFn: ({ id, action }: { id: string; action: 'approved' | 'rejected' | 'paid' }) =>
+      apiUpdateInvoice(id, { status: action }),
     onSuccess: (_data, { action }) => {
       queryClient.invalidateQueries({ queryKey: travelQueryKeys.invoices });
       queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
       toast.success('Invoice Updated', `Status changed to ${action}`);
     },
-    onError: () => {
-      toast.error('Update Failed', 'Failed to update invoice status');
-    },
+    onError: () => toast.error('Update Failed', 'Failed to update invoice status'),
   });
 
   const invoiceDeleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/admin/cfp/travel/invoices/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete invoice');
-      return response.json();
-    },
+    mutationFn: (id: string) => apiDeleteInvoice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: travelQueryKeys.invoices });
       queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
       toast.success('Invoice Deleted', 'Invoice has been removed');
     },
-    onError: () => {
-      toast.error('Delete Failed', 'Failed to delete invoice');
-    },
+    onError: () => toast.error('Delete Failed', 'Failed to delete invoice'),
   });
 
   const flightMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: CfpFlightStatus }) => {
-      const response = await fetch(`/api/admin/cfp/travel/flights/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) throw new Error('Failed to update flight status');
-      return response.json();
-    },
+    mutationFn: ({ id, status }: { id: string; status: CfpFlightStatus }) =>
+      apiUpdateFlightStatus(id, status),
     onSuccess: (_data, { status }) => {
       queryClient.invalidateQueries({ queryKey: travelQueryKeys.flights });
       queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
       toast.success('Flight Updated', `Status changed to ${status.replace('_', ' ')}`);
     },
-    onError: () => {
-      toast.error('Update Failed', 'Failed to update flight status');
-    },
+    onError: () => toast.error('Update Failed', 'Failed to update flight status'),
   });
 
   // Filtered data

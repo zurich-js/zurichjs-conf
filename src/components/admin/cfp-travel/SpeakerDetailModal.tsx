@@ -8,7 +8,18 @@ import { Check, X, Utensils, Calendar } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { useToast } from '@/contexts/ToastContext';
 import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
-import { travelQueryKeys, fetchSpeakerDetails } from './api';
+import {
+  travelQueryKeys,
+  fetchSpeakerDetails,
+  createFlight as apiCreateFlight,
+  updateFlight as apiUpdateFlight,
+  deleteFlight as apiDeleteFlight,
+  saveAccommodation as apiSaveAccommodation,
+  createInvoice as apiCreateInvoice,
+  updateInvoice as apiUpdateInvoice,
+  deleteInvoice as apiDeleteInvoice,
+  uploadInvoicePdf,
+} from './api';
 import { calculateNights } from './types';
 import { SpeakerFlightsSection } from './SpeakerFlightsSection';
 import { SpeakerAccommodationSection } from './SpeakerAccommodationSection';
@@ -38,81 +49,36 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
   };
 
-  // Flight mutations
   const createFlight = useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
-      const res = await fetch('/api/admin/cfp/travel/flights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ speaker_id: speaker.id, ...data }),
-      });
-      if (!res.ok) throw new Error('Failed to create flight');
-      return res.json();
-    },
+    mutationFn: (data: Record<string, unknown>) => apiCreateFlight(speaker.id, data),
     onSuccess: () => { invalidateAll(); toast.success('Flight Added', 'Flight has been added'); },
     onError: () => toast.error('Error', 'Failed to add flight'),
   });
 
   const updateFlight = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
-      const res = await fetch(`/api/admin/cfp/travel/flights/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to update flight');
-      return res.json();
-    },
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => apiUpdateFlight(id, data),
     onSuccess: () => { invalidateAll(); toast.success('Flight Updated', 'Flight details updated'); },
     onError: () => toast.error('Error', 'Failed to update flight'),
   });
 
   const deleteFlight = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/cfp/travel/flights/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete flight');
-      return res.json();
-    },
+    mutationFn: (id: string) => apiDeleteFlight(id),
     onSuccess: () => { invalidateAll(); toast.success('Flight Deleted', 'Flight has been removed'); },
     onError: () => toast.error('Error', 'Failed to delete flight'),
   });
 
-  // Accommodation mutation
   const saveAccommodation = useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
-      const res = await fetch(`/api/admin/cfp/travel/speakers/${speaker.id}/accommodation`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to save accommodation');
-      return res.json();
-    },
+    mutationFn: (data: Record<string, unknown>) => apiSaveAccommodation(speaker.id, data),
     onSuccess: () => { invalidateAll(); toast.success('Hotel Saved', 'Accommodation details updated'); },
     onError: () => toast.error('Error', 'Failed to save accommodation'),
   });
 
-  // Invoice mutations
   const createInvoice = useMutation({
     mutationFn: async ({ data, file }: { data: Record<string, unknown>; file?: File }) => {
-      const res = await fetch('/api/admin/cfp/travel/invoices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to create invoice');
-      const result = await res.json();
-
-      // If a file was provided, upload it immediately
+      const result = await apiCreateInvoice(data);
       if (file && result.invoice?.id) {
-        const formData = new FormData();
-        formData.append('file', file);
-        await fetch(`/api/admin/cfp/travel/invoices/${result.invoice.id}/upload`, {
-          method: 'POST',
-          body: formData,
-        });
+        await uploadInvoicePdf(result.invoice.id, file);
       }
-
       return result;
     },
     onSuccess: () => { invalidateAll(); toast.success('Invoice Added', 'Invoice has been tracked'); },
@@ -120,40 +86,19 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
   });
 
   const updateInvoice = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
-      const res = await fetch(`/api/admin/cfp/travel/invoices/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to update invoice');
-      return res.json();
-    },
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => apiUpdateInvoice(id, data),
     onSuccess: () => { invalidateAll(); toast.success('Invoice Updated', 'Invoice status updated'); },
     onError: () => toast.error('Error', 'Failed to update invoice'),
   });
 
   const deleteInvoice = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/cfp/travel/invoices/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete invoice');
-      return res.json();
-    },
+    mutationFn: (id: string) => apiDeleteInvoice(id),
     onSuccess: () => { invalidateAll(); toast.success('Invoice Deleted', 'Invoice has been removed'); },
     onError: () => toast.error('Error', 'Failed to delete invoice'),
   });
 
   const uploadPdf = useMutation({
-    mutationFn: async ({ id, file }: { id: string; file: File }) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch(`/api/admin/cfp/travel/invoices/${id}/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Failed to upload PDF');
-      return res.json();
-    },
+    mutationFn: ({ id, file }: { id: string; file: File }) => uploadInvoicePdf(id, file),
     onSuccess: () => { invalidateAll(); toast.success('PDF Uploaded', 'Invoice PDF has been attached'); },
     onError: () => toast.error('Error', 'Failed to upload PDF'),
   });
@@ -204,7 +149,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
       </div>
 
       <div className="space-y-6">
-        {/* Flights */}
         <SpeakerFlightsSection
           flights={speaker.flights}
           speakerId={speaker.id}
@@ -216,7 +160,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
 
         <hr className="border-gray-200" />
 
-        {/* Accommodation */}
         <SpeakerAccommodationSection
           accommodation={speaker.accommodation}
           speakerId={speaker.id}
@@ -226,7 +169,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
 
         <hr className="border-gray-200" />
 
-        {/* Invoices */}
         <SpeakerInvoicesSection
           invoices={speaker.reimbursements}
           speakerId={speaker.id}
@@ -237,7 +179,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
           isSubmitting={isSubmitting}
         />
 
-        {/* Travel Preferences (read-only) */}
         {speaker.travel && (
           <>
             <hr className="border-gray-200" />
