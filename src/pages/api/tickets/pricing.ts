@@ -1,7 +1,7 @@
 /**
  * Stripe Pricing API Handler
  * Fetches current ticket pricing from Stripe with stock availability
- * Supports multi-currency (CHF/EUR) via query parameter
+ * Supports multi-currency (CHF/EUR/GBP/USD) via query parameter
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -73,7 +73,7 @@ const buildLookupKey = (
   currency: SupportedCurrency
 ): string => {
   // Determine currency suffix
-  const currencySuffix = currency === 'EUR' ? '_eur' : currency === 'GBP' ? '_gbp' : '';
+  const currencySuffix = currency === 'EUR' ? '_eur' : currency === 'GBP' ? '_gbp' : currency === 'USD' ? '_usd' : '';
 
   // Student/Unemployed has fixed pricing (not stage-dependent)
   if (category === 'standard_student_unemployed') {

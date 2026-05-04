@@ -5,7 +5,7 @@
 /**
  * Supported currencies for ticket pricing
  */
-export type SupportedCurrency = 'CHF' | 'EUR' | 'GBP';
+export type SupportedCurrency = 'CHF' | 'EUR' | 'GBP' | 'USD';
 
 /**
  * ISO 3166-1 alpha-2 country codes for countries that should use EUR pricing
@@ -54,6 +54,21 @@ export const GBP_COUNTRIES = [
 export type GbpCountry = (typeof GBP_COUNTRIES)[number];
 
 /**
+ * ISO 3166-1 alpha-2 country codes for countries that should use USD pricing
+ * Includes US and US territories
+ */
+export const USD_COUNTRIES = [
+  'US', // United States
+  'PR', // Puerto Rico
+  'GU', // Guam
+  'VI', // US Virgin Islands
+  'AS', // American Samoa
+  'MP', // Northern Mariana Islands
+] as const;
+
+export type UsdCountry = (typeof USD_COUNTRIES)[number];
+
+/**
  * Default currency when country cannot be determined
  */
 export const DEFAULT_CURRENCY: SupportedCurrency = 'CHF';
@@ -80,6 +95,11 @@ export function getCurrencyFromCountry(countryCode: string | null | undefined): 
     return 'GBP';
   }
 
+  // Check if the country uses USD
+  if (USD_COUNTRIES.includes(upperCode as UsdCountry)) {
+    return 'USD';
+  }
+
   // Default to CHF for Switzerland and all other countries
   return 'CHF';
 }
@@ -88,7 +108,7 @@ export function getCurrencyFromCountry(countryCode: string | null | undefined): 
  * Validate if a string is a supported currency
  */
 export function isSupportedCurrency(value: unknown): value is SupportedCurrency {
-  return value === 'CHF' || value === 'EUR' || value === 'GBP';
+  return value === 'CHF' || value === 'EUR' || value === 'GBP' || value === 'USD';
 }
 
 /**

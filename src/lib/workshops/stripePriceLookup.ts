@@ -37,6 +37,7 @@ export const getStripeClient = (): Stripe => {
 export const applyCurrencySuffix = (baseKey: string, currency: SupportedCurrency): string => {
   if (currency === 'EUR') return `${baseKey}_eur`;
   if (currency === 'GBP') return `${baseKey}_gbp`;
+  if (currency === 'USD') return `${baseKey}_usd`;
   return baseKey;
 };
 

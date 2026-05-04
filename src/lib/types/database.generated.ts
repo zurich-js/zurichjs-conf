@@ -2630,7 +2630,7 @@ export type Database = {
         | "late_bird"
         | "vip"
       user_role: "attendee" | "speaker" | "admin"
-      voucher_currency: "EUR" | "CHF" | "GBP"
+      voucher_currency: "EUR" | "CHF" | "GBP" | "USD"
       voucher_purpose:
         | "community_discount"
         | "raffle"
@@ -2854,7 +2854,7 @@ export const Constants = {
         "vip",
       ],
       user_role: ["attendee", "speaker", "admin"],
-      voucher_currency: ["EUR", "CHF", "GBP"],
+      voucher_currency: ["EUR", "CHF", "GBP", "USD"],
       voucher_purpose: [
         "community_discount",
         "raffle",
