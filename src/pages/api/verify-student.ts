@@ -5,6 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sendVerificationRequestEmail } from '@/lib/email';
+import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { notifyStatusVerification } from '@/lib/platform-notifications';
 
@@ -88,38 +89,36 @@ const validateRequest = (body: VerificationRequest): string | null => {
 };
 
 /**
- * Store verification request (in production, this would save to a database)
- * For now, we'll just log it and send emails
+ * Store verification request in the database
  */
 const storeVerificationRequest = async (
   verificationId: string,
   data: VerificationRequest
 ): Promise<void> => {
-  // In production, you would:
-  // 1. Save to database with status 'pending'
-  // 2. Set up a review system for admins
-  // 3. Track verification expiry dates
+  const supabase = createServiceRoleClient();
 
-  log.info('Verification Request received', {
-    verificationId,
-    ...data,
-    timestamp: new Date().toISOString(),
-  });
+  const { error } = await supabase
+    .from('verification_requests')
+    .insert({
+      verification_id: verificationId,
+      name: data.name,
+      email: data.email,
+      verification_type: data.verificationType,
+      student_id: data.studentId || null,
+      university: data.university || null,
+      linkedin_url: data.linkedInUrl || null,
+      rav_registration_date: data.ravRegistrationDate || null,
+      additional_info: data.additionalInfo || null,
+      price_id: data.priceId,
+      status: 'pending',
+    });
 
-  // TODO: Save to database
-  // await db.verificationRequests.create({
-  //   id: verificationId,
-  //   name: data.name,
-  //   email: data.email,
-  //   verificationType: data.verificationType,
-  //   studentId: data.studentId,
-  //   university: data.university,
-  //   linkedInUrl: data.linkedInUrl,
-  //   additionalInfo: data.additionalInfo,
-  //   priceId: data.priceId,
-  //   status: 'pending',
-  //   createdAt: new Date(),
-  // });
+  if (error) {
+    log.error('Failed to store verification request', error);
+    throw new Error('Failed to store verification request');
+  }
+
+  log.info('Verification request stored', { verificationId, email: data.email });
 };
 
 /**

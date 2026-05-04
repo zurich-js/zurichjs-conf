@@ -740,7 +740,28 @@ describe('handleCheckoutSessionCompleted', () => {
       );
     });
 
-    it('should use "Valued Customer" when name is missing', async () => {
+    it('should use metadata customer_name when session name is missing', async () => {
+      const session = createMockSession({
+        customer_details: {
+          email: 'test@example.com',
+          name: null,
+        } as unknown as Stripe.Checkout.Session.CustomerDetails,
+        metadata: {
+          customer_name: 'Jane Smith',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockCreateTicket).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: 'Jane',
+          lastName: 'Smith',
+        })
+      );
+    });
+
+    it('should log error and use empty name when both session name and metadata are missing', async () => {
       const session = createMockSession({
         customer_details: {
           email: 'test@example.com',
@@ -750,10 +771,18 @@ describe('handleCheckoutSessionCompleted', () => {
 
       await handleCheckoutSessionCompleted(session);
 
+      expect(mocks.mockServerAnalyticsError).toHaveBeenCalledWith(
+        session.id,
+        'No customer name in checkout session or metadata',
+        expect.objectContaining({
+          code: 'MISSING_CUSTOMER_NAME',
+        })
+      );
+
       expect(mocks.mockCreateTicket).toHaveBeenCalledWith(
         expect.objectContaining({
-          firstName: 'Valued',
-          lastName: 'Customer',
+          firstName: '',
+          lastName: '',
         })
       );
     });
