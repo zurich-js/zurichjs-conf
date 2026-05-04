@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { AdminModal } from '@/components/admin/AdminModal';
 
 interface ExistingSessionOption {
   id: string;
@@ -156,16 +156,28 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-black">Add Session</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
-            <X className="w-5 h-5 text-black" />
+    <AdminModal
+      title="Add Session"
+      maxWidth="lg"
+      showHeader={false}
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black cursor-pointer">
+            Cancel
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <button
+            type="submit"
+            form="add-session-form"
+            disabled={isSubmitting || (mode === 'existing' && !existingSessionId)}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 cursor-pointer"
+          >
+            {isSubmitting ? 'Saving...' : mode === 'existing' ? 'Attach Panel' : 'Add Session'}
+          </button>
+        </>
+      )}
+    >
+        <form id="add-session-form" onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
           )}
@@ -237,7 +249,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-black mb-1">Type</label>
               <select
@@ -303,7 +315,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
           {formData.submission_type === 'workshop' && (
             <div className="border-t border-gray-200 pt-4 mt-4 space-y-4">
               <p className="text-sm font-medium text-black">Workshop Details</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">Duration (hours)</label>
                   <input
@@ -365,20 +377,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
             </>
           )}
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black cursor-pointer">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || (mode === 'existing' && !existingSessionId)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50 cursor-pointer"
-            >
-              {isSubmitting ? 'Saving...' : mode === 'existing' ? 'Attach Panel' : 'Add Session'}
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

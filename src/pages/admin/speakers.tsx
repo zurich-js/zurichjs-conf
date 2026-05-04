@@ -146,15 +146,15 @@ export default function ProgramAdminPage() {
             <StatCard label="Workshops" value={sessions.filter((session) => session.kind === 'workshop').length} />
           </div>
 
-          <div className="mb-6 overflow-x-auto">
-            <div className="inline-flex min-w-max rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+          <div className="mb-6">
+            <div className="grid grid-cols-3 gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm sm:inline-flex sm:grid-cols-none">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+                    className={`cursor-pointer inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
                       activeTab === tab.id
                         ? 'bg-brand-primary text-black'
                         : 'text-gray-700 hover:bg-gray-50 hover:text-black'

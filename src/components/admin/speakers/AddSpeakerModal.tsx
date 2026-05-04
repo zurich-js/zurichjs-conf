@@ -188,14 +188,14 @@ export function AddSpeakerModal({ onClose, onCreated }: AddSpeakerModalProps) {
       onClose={onClose}
       footer={(
         <>
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+          <button type="button" onClick={onClose} className="cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
             Cancel
           </button>
           <button
             type="submit"
             form="add-speaker-form"
             disabled={isSubmitting}
-            className="rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-brand-primary px-4 py-2 text-sm font-semibold text-black hover:bg-[#d9c51f] disabled:opacity-50"
           >
             {isSubmitting ? 'Including...' : mode === 'existing' ? 'Include Selected Speaker' : 'Create Speaker'}
           </button>

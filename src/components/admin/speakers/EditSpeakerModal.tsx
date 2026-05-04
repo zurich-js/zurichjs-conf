@@ -3,8 +3,9 @@
  * Update speaker profile and social links
  */
 
-import React, { useEffect, useState } from 'react';
-import { X, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { User } from 'lucide-react';
+import { AdminModal } from '@/components/admin/AdminModal';
 import type { SpeakerWithSessions } from './types';
 
 type SpeakerImageField = 'profile_image_url' | 'portrait_foreground_url' | 'portrait_background_url';
@@ -68,25 +69,6 @@ export function EditSpeakerModal({
 
   const labelClass = (isMissing: boolean, extra = 'text-sm') =>
     `block ${extra} font-medium mb-1 ${isMissing ? 'text-red-700' : 'text-black'}`;
-
-  const hasChanges = Object.entries(formData).some(([key, value]) => {
-    const originalValue = speaker[key as keyof typeof formData] ?? '';
-    return value !== originalValue;
-  }) ||
-    profileImageUrl !== speaker.profile_image_url ||
-    portraitForegroundUrl !== speaker.portrait_foreground_url ||
-    portraitBackgroundUrl !== speaker.portrait_background_url;
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !hasChanges && !isSubmitting && !isRemovingFromList) {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasChanges, isRemovingFromList, isSubmitting, onClose]);
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -165,16 +147,42 @@ export function EditSpeakerModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-black">Edit Speaker</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
-            <X className="w-5 h-5 text-black" />
-          </button>
+    <AdminModal
+      title="Edit Speaker"
+      maxWidth="2xl"
+      showHeader={false}
+      onClose={onClose}
+      footer={(
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {canRemoveFromList ? (
+            <button
+              type="button"
+              onClick={() => onRemoveFromList?.(speaker)}
+              disabled={isRemovingFromList || isSubmitting}
+              className="w-fit text-sm font-medium text-red-600 transition-colors hover:text-red-700 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
+            >
+              {isRemovingFromList ? 'Reverting...' : 'Revert include'}
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black cursor-pointer">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="edit-speaker-form"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-brand-primary hover:bg-[#e8d95e] text-black font-semibold rounded-lg disabled:opacity-50 cursor-pointer"
+            >
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      )}
+    >
+        <form id="edit-speaker-form" onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
           )}
@@ -397,34 +405,7 @@ export function EditSpeakerModal({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            {canRemoveFromList ? (
-              <button
-                type="button"
-                onClick={() => onRemoveFromList?.(speaker)}
-                disabled={isRemovingFromList || isSubmitting}
-                className="w-fit text-sm font-medium text-red-600 transition-colors hover:text-red-700 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
-              >
-                {isRemovingFromList ? 'Reverting...' : 'Revert include'}
-              </button>
-            ) : (
-              <span />
-            )}
-            <div className="flex justify-end gap-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black cursor-pointer">
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-brand-primary hover:bg-[#e8d95e] text-black font-semibold rounded-lg disabled:opacity-50 cursor-pointer"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
         </form>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

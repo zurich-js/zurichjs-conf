@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { AdminModal } from '@/components/admin/AdminModal';
 import type { Session } from './types';
 
 interface EditSessionModalProps {
@@ -62,152 +62,150 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 p-6">
-          <h3 className="text-xl font-bold text-black">Edit Session</h3>
-          <button onClick={onClose} className="rounded-lg p-2 hover:bg-gray-100 cursor-pointer">
-            <X className="h-5 w-5 text-black" />
+    <AdminModal
+      title="Edit Session"
+      maxWidth="lg"
+      showHeader={false}
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-gray-600 hover:text-black">
+            Cancel
           </button>
+          <button
+            type="submit"
+            form="edit-session-form"
+            disabled={isSubmitting}
+            className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Saving...' : 'Save session'}
+          </button>
+        </>
+      )}
+    >
+      <form id="edit-session-form" onSubmit={handleSubmit} className="space-y-4">
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        ) : null}
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-black">Title *</label>
+          <input
+            type="text"
+            required
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
-          {error ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
-          ) : null}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-black">Primary speaker</label>
+          <select
+            value={formData.speaker_id}
+            onChange={(e) => setFormData({ ...formData, speaker_id: e.target.value })}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          >
+            {speakers.map((speaker) => (
+              <option key={speaker.id} value={speaker.id}>
+                {speaker.first_name} {speaker.last_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-black">Title *</label>
-            <input
-              type="text"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            />
-          </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-black">Abstract *</label>
+          <textarea
+            required
+            rows={5}
+            value={formData.abstract}
+            onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          />
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-black">Primary speaker</label>
+            <label className="mb-1 block text-sm font-medium text-black">Type</label>
             <select
-              value={formData.speaker_id}
-              onChange={(e) => setFormData({ ...formData, speaker_id: e.target.value })}
+              value={formData.submission_type}
+              onChange={(e) => setFormData({ ...formData, submission_type: e.target.value })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
             >
-              {speakers.map((speaker) => (
-                <option key={speaker.id} value={speaker.id}>
-                  {speaker.first_name} {speaker.last_name}
-                </option>
-              ))}
+              <option value="lightning">Lightning Talk</option>
+              <option value="standard">Standard Talk</option>
+              <option value="panel">Panel</option>
+              <option value="workshop">Workshop</option>
             </select>
           </div>
-
           <div>
-            <label className="mb-1 block text-sm font-medium text-black">Abstract *</label>
-            <textarea
-              required
-              rows={5}
-              value={formData.abstract}
-              onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
+            <label className="mb-1 block text-sm font-medium text-black">Level</label>
+            <select
+              value={formData.talk_level}
+              onChange={(e) => setFormData({ ...formData, talk_level: e.target.value })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-black">Type</label>
-              <select
-                value={formData.submission_type}
-                onChange={(e) => setFormData({ ...formData, submission_type: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              >
-                <option value="lightning">Lightning Talk</option>
-                <option value="standard">Standard Talk</option>
-                <option value="panel">Panel</option>
-                <option value="workshop">Workshop</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-black">Level</label>
-              <select
-                value={formData.talk_level}
-                onChange={(e) => setFormData({ ...formData, talk_level: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </div>
-          </div>
-
-          {formData.submission_type === 'workshop' ? (
-            <div className="grid grid-cols-2 gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-black">Duration (hours)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="8"
-                  step="0.5"
-                  value={formData.workshop_duration_hours}
-                  onChange={(e) => setFormData({ ...formData, workshop_duration_hours: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-black">Max participants</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.workshop_max_participants}
-                  onChange={(e) => setFormData({ ...formData, workshop_max_participants: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                />
-              </div>
-            </div>
-          ) : null}
-
-          {formData.submission_type === 'panel' ? (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <p className="mb-3 text-sm font-medium text-black">Additional panel speakers</p>
-              <div className="grid max-h-44 gap-2 overflow-y-auto">
-                {speakers.map((speaker) => {
-                  const checked = formData.participant_speaker_ids.includes(speaker.id);
-                  return (
-                    <label key={speaker.id} className="flex cursor-pointer items-center gap-2 text-sm text-black">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => setFormData({
-                          ...formData,
-                          participant_speaker_ids: checked
-                            ? formData.participant_speaker_ids.filter((id) => id !== speaker.id)
-                            : [...formData.participant_speaker_ids, speaker.id],
-                        })}
-                      />
-                      {speaker.first_name} {speaker.last_name}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-gray-600 hover:text-black">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
             >
-              {isSubmitting ? 'Saving...' : 'Save session'}
-            </button>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        {formData.submission_type === 'workshop' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-black">Duration (hours)</label>
+              <input
+                type="number"
+                min="1"
+                max="8"
+                step="0.5"
+                value={formData.workshop_duration_hours}
+                onChange={(e) => setFormData({ ...formData, workshop_duration_hours: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-black">Max participants</label>
+              <input
+                type="number"
+                min="1"
+                value={formData.workshop_max_participants}
+                onChange={(e) => setFormData({ ...formData, workshop_max_participants: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {formData.submission_type === 'panel' ? (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <p className="mb-3 text-sm font-medium text-black">Additional panel speakers</p>
+            <div className="grid max-h-44 gap-2 overflow-y-auto">
+              {speakers.map((speaker) => {
+                const checked = formData.participant_speaker_ids.includes(speaker.id);
+                return (
+                  <label key={speaker.id} className="flex cursor-pointer items-center gap-2 text-sm text-black">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => setFormData({
+                        ...formData,
+                        participant_speaker_ids: checked
+                          ? formData.participant_speaker_ids.filter((id) => id !== speaker.id)
+                          : [...formData.participant_speaker_ids, speaker.id],
+                      })}
+                    />
+                    {speaker.first_name} {speaker.last_name}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </form>
+    </AdminModal>
   );
 }
