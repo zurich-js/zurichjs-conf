@@ -46,8 +46,8 @@ export interface VipPerkEmail {
   recipient_email: string;
   recipient_name: string;
   subject: string;
-  resend_message_id?: string;
-  custom_message?: string;
+  resend_message_id: string | null;
+  custom_message: string | null;
   status: string;
   sent_at: string;
   created_at: string;
@@ -60,9 +60,9 @@ export interface VipPerkConfig {
   id: string;
   discount_percent: number;
   restricted_product_ids: string[];
-  expires_at?: string;
+  expires_at: string | null;
   auto_send_email: boolean;
-  custom_email_message?: string;
+  custom_email_message: string | null;
   updated_at: string;
 }
 

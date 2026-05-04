@@ -68,6 +68,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     log.error('Failed to create VIP perk', error as Error);
     const message = error instanceof Error ? error.message : 'Internal server error';
-    return res.status(500).json({ error: message });
+    const domainErrorStatusMap: Record<string, number> = {
+      'Ticket not found': 404,
+      'Ticket is not a VIP ticket': 400,
+    };
+    const status = domainErrorStatusMap[message] || 500;
+    return res.status(status).json({ error: message });
   }
 }

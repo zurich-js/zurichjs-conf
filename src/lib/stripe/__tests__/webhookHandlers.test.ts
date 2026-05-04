@@ -51,6 +51,21 @@ const mocks = vi.hoisted(() => ({
   mockServerAnalyticsTrack: vi.fn().mockResolvedValue(undefined),
   mockServerAnalyticsError: vi.fn().mockResolvedValue(undefined),
   mockSupabaseEq: vi.fn().mockResolvedValue({ data: [], error: null }),
+  mockGetVipPerkConfig: vi.fn().mockResolvedValue({
+    id: 'config_1',
+    discount_percent: 20,
+    restricted_product_ids: ['prod_workshop_1'],
+    expires_at: null,
+    auto_send_email: false,
+    custom_email_message: null,
+    updated_at: '2026-01-01T00:00:00Z',
+  }),
+  mockCreateVipPerkCoupon: vi.fn().mockResolvedValue({
+    id: 'perk_1',
+    code: 'VIP-ABCD1234',
+    ticket_id: 'ticket_123',
+  }),
+  mockSendVipPerkEmail: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 // Mock all external dependencies
@@ -135,6 +150,12 @@ vi.mock('@/lib/supabase', () => ({
       })),
     })),
   })),
+}));
+
+vi.mock('@/lib/vip-perks', () => ({
+  getVipPerkConfig: mocks.mockGetVipPerkConfig,
+  createVipPerkCoupon: mocks.mockCreateVipPerkCoupon,
+  sendVipPerkEmail: mocks.mockSendVipPerkEmail,
 }));
 
 vi.mock('resend', () => ({
@@ -925,6 +946,66 @@ describe('handleCheckoutSessionCompleted', () => {
         expect.stringContaining('Failed to create'),
         expect.any(Object)
       );
+    });
+  });
+
+  describe('VIP perk auto-generation', () => {
+    beforeEach(() => {
+      mocks.mockListLineItems.mockResolvedValue({
+        data: [
+          {
+            price: {
+              lookup_key: 'vip_early_bird',
+              unit_amount: 50000,
+              currency: 'chf',
+              id: 'price_vip_123',
+            } as Stripe.Price,
+            quantity: 1,
+            description: 'VIP Conference Ticket',
+          },
+        ],
+      });
+    });
+
+    it('should auto-generate VIP perk for VIP ticket purchases', async () => {
+      const session = createMockSession();
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockGetVipPerkConfig).toHaveBeenCalled();
+      expect(mocks.mockCreateVipPerkCoupon).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticket_id: 'ticket_123',
+          restricted_product_ids: ['prod_workshop_1'],
+          discount_percent: 20,
+        })
+      );
+    });
+
+    it('should not fail ticket purchase when VIP perk generation fails', async () => {
+      mocks.mockCreateVipPerkCoupon.mockRejectedValue(new Error('Stripe error'));
+      const session = createMockSession();
+
+      // Should not throw — VIP perk failures are non-fatal
+      await expect(handleCheckoutSessionCompleted(session)).resolves.not.toThrow();
+      expect(mocks.mockCreateTicket).toHaveBeenCalled();
+    });
+
+    it('should skip VIP perk generation when no products configured', async () => {
+      mocks.mockGetVipPerkConfig.mockResolvedValue({
+        id: 'config_1',
+        discount_percent: 20,
+        restricted_product_ids: [],
+        expires_at: null,
+        auto_send_email: false,
+        custom_email_message: null,
+        updated_at: '2026-01-01T00:00:00Z',
+      });
+      const session = createMockSession();
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockCreateVipPerkCoupon).not.toHaveBeenCalled();
     });
   });
 

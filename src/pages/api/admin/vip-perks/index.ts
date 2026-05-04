@@ -38,6 +38,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select('id', { count: 'exact', head: true }),
     ]);
 
+    if (vipTicketsResult.error) {
+      throw vipTicketsResult.error;
+    }
+    if (emailsResult.error) {
+      throw emailsResult.error;
+    }
+
     const totalVipTickets = vipTicketsResult.count || 0;
     const totalEmailsSent = emailsResult.count || 0;
     const perksRedeemed = perks.filter(p => p.current_redemptions > 0).length;

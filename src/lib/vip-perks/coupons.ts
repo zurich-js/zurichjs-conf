@@ -129,7 +129,7 @@ export async function createVipPerkCoupon(data: CreateVipPerkRequest): Promise<V
     throw new Error('Ticket is not a VIP ticket');
   }
 
-  const discountPercent = data.discount_percent || 20;
+  const discountPercent = data.discount_percent ?? 20;
   const code = generateCouponCode();
 
   // Create Stripe coupon

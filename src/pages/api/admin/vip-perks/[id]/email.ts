@@ -42,7 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!result.success) {
-      return res.status(500).json({ error: result.error || 'Failed to send email' });
+      const status = result.error === 'VIP perk not found' ? 404 : 500;
+      return res.status(status).json({ error: result.error || 'Failed to send email' });
     }
 
     return res.status(200).json({ success: true, messageId: result.messageId });
