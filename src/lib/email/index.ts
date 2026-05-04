@@ -42,6 +42,9 @@ export { sendSponsorshipInquiryEmails } from './sponsorship-emails';
 // VIP emails
 export { sendVipUpgradeEmail } from './vip-emails';
 
+// Verification approval emails
+export { sendVerificationApprovalEmail } from './verification-approval-emails';
+
 // Newsletter
 export { addNewsletterContact } from './newsletter';
 
