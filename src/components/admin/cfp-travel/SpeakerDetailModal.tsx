@@ -94,14 +94,26 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
 
   // Invoice mutations
   const createInvoice = useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
+    mutationFn: async ({ data, file }: { data: Record<string, unknown>; file?: File }) => {
       const res = await fetch('/api/admin/cfp/travel/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error('Failed to create invoice');
-      return res.json();
+      const result = await res.json();
+
+      // If a file was provided, upload it immediately
+      if (file && result.invoice?.id) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await fetch(`/api/admin/cfp/travel/invoices/${result.invoice.id}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+      }
+
+      return result;
     },
     onSuccess: () => { invalidateAll(); toast.success('Invoice Added', 'Invoice has been tracked'); },
     onError: () => toast.error('Error', 'Failed to add invoice'),
@@ -218,7 +230,7 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
         <SpeakerInvoicesSection
           invoices={speaker.reimbursements}
           speakerId={speaker.id}
-          onCreateInvoice={(data) => createInvoice.mutate(data)}
+          onCreateInvoice={(data, file) => createInvoice.mutate({ data, file })}
           onUpdateInvoice={(id, data) => updateInvoice.mutate({ id, data })}
           onDeleteInvoice={(id) => deleteInvoice.mutate(id)}
           onUploadPdf={(id, file) => uploadPdf.mutate({ id, file })}

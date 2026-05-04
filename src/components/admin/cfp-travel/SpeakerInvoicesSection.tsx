@@ -11,7 +11,7 @@ import { STATUS_COLORS } from './types';
 interface SpeakerInvoicesSectionProps {
   invoices: CfpSpeakerReimbursement[];
   speakerId: string;
-  onCreateInvoice: (data: Record<string, unknown>) => void;
+  onCreateInvoice: (data: Record<string, unknown>, file?: File) => void;
   onUpdateInvoice: (invoiceId: string, data: Record<string, unknown>) => void;
   onDeleteInvoice: (invoiceId: string) => void;
   onUploadPdf: (invoiceId: string, file: File) => void;
@@ -56,24 +56,30 @@ export function SpeakerInvoicesSection({
 }: SpeakerInvoicesSectionProps) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<InvoiceFormData>(EMPTY_FORM);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const createFileRef = useRef<HTMLInputElement>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   const handleSubmit = () => {
     const amountCents = Math.round(parseFloat(form.amount) * 100);
     if (isNaN(amountCents) || amountCents <= 0) return;
 
-    onCreateInvoice({
-      speaker_id: speakerId,
-      expense_type: form.expense_type,
-      description: form.description,
-      amount: amountCents,
-      currency: form.currency,
-      invoice_number: form.invoice_number || undefined,
-      invoice_date: form.invoice_date || undefined,
-      admin_notes: form.admin_notes || undefined,
-    });
+    onCreateInvoice(
+      {
+        speaker_id: speakerId,
+        expense_type: form.expense_type,
+        description: form.description,
+        amount: amountCents,
+        currency: form.currency,
+        invoice_number: form.invoice_number || undefined,
+        invoice_date: form.invoice_date || undefined,
+        admin_notes: form.admin_notes || undefined,
+      },
+      pendingFile || undefined
+    );
     setForm(EMPTY_FORM);
+    setPendingFile(null);
     setShowForm(false);
   };
 
@@ -293,6 +299,21 @@ export function SpeakerInvoicesSection({
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Invoice PDF</label>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={createFileRef}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
+                  className="text-sm text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 file:cursor-pointer hover:file:bg-gray-200"
+                />
+                {pendingFile && (
+                  <span className="text-xs text-green-600">{pendingFile.name}</span>
+                )}
+              </div>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleSubmit}
@@ -302,7 +323,7 @@ export function SpeakerInvoicesSection({
                 Add Invoice
               </button>
               <button
-                onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
+                onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setPendingFile(null); }}
                 className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer"
               >
                 Cancel

@@ -3,7 +3,7 @@
  * Table view (desktop) / Card view (mobile) of speakers with travel status
  */
 
-import { Check, X, Eye } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { Pagination } from '@/components/atoms';
 import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
 import { calculateNights } from './types';
@@ -174,10 +174,9 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
                       <td className="px-4 py-4">
                         <button
                           onClick={(e) => { e.stopPropagation(); onSelectSpeaker(speaker); }}
-                          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 cursor-pointer"
-                          title="View details"
+                          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-primary text-black hover:bg-[#e8d95e] cursor-pointer"
                         >
-                          <Eye className="w-4 h-4" />
+                          View
                         </button>
                       </td>
                     </tr>
