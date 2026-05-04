@@ -5,9 +5,8 @@
  */
 
 import * as React from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { render } from '@react-email/render';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { logger } from '@/lib/logger';
 import { getResendClient, EMAIL_CONFIG } from '@/lib/email/config';
 import { CfpAcceptanceEmail } from '@/emails/templates/CfpAcceptanceEmail';
@@ -26,22 +25,6 @@ import type {
 import { notifyCfpEmailScheduled } from '@/lib/platform-notifications/send';
 
 const log = logger.scope('CfpScheduledEmails');
-
-/**
- * Create Supabase client for CFP operations
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 /**
  * Calculate scheduled send time (30 minutes from now)

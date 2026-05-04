@@ -27,19 +27,19 @@ let browserClientInstance: ReturnType<typeof createSSRBrowserClient<Database>> |
 export function createServiceRoleClient() {
   console.log('[Supabase] Creating service role client');
   console.log('[Supabase] URL:', env.supabase.url);
-  console.log('[Supabase] Service role key:', env.supabase.serviceRoleKey ? '(present)' : '❌ MISSING');
+  console.log('[Supabase] Secret key:', env.supabase.secretKey ? '(present)' : '❌ MISSING');
 
   if (!env.supabase.url) {
     throw new Error('[Supabase] ❌ SUPABASE_URL is missing');
   }
 
-  if (!env.supabase.serviceRoleKey) {
-    throw new Error('[Supabase] ❌ SUPABASE_SERVICE_ROLE_KEY is missing');
+  if (!env.supabase.secretKey) {
+    throw new Error('[Supabase] ❌ SUPABASE_SECRET_KEY is missing');
   }
 
   const client = createClient<Database>(
     env.supabase.url,
-    env.supabase.serviceRoleKey,
+    env.supabase.secretKey,
     {
       auth: {
         autoRefreshToken: false,
@@ -66,15 +66,15 @@ export function createBrowserClient() {
     throw new Error('[Supabase] ❌ SUPABASE_URL is missing');
   }
 
-  if (!clientEnv.supabase.anonKey) {
-    throw new Error('[Supabase] ❌ SUPABASE_ANON_KEY is missing');
+  if (!clientEnv.supabase.publishableKey) {
+    throw new Error('[Supabase] ❌ SUPABASE_PUBLISHABLE_KEY is missing');
   }
 
   // Use @supabase/ssr's createBrowserClient for proper cookie synchronization
   // This ensures session is available to API routes via cookies
   browserClientInstance = createSSRBrowserClient<Database>(
     clientEnv.supabase.url,
-    clientEnv.supabase.anonKey
+    clientEnv.supabase.publishableKey
   );
 
   return browserClientInstance;

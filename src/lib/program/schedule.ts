@@ -1,5 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { PublicSession, PublicSessionSpeaker, PublicSpeaker } from '@/lib/types/cfp';
 import type {
   ProgramScheduleItemInput,
@@ -7,19 +6,6 @@ import type {
   PublicProgramScheduleItem,
   PublicSpeakerSessionMapEntry,
 } from '@/lib/types/program-schedule';
-
-function createProgramServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 async function syncSubmissionScheduleFields(
   submissionId: string,
@@ -32,7 +18,7 @@ async function syncSubmissionScheduleFields(
       }
     | null
 ) {
-  const supabase = createProgramServiceClient();
+  const supabase = createCfpServiceClient();
   const { error } = await supabase
     .from('cfp_submissions')
     .update({
@@ -53,7 +39,7 @@ async function syncSubmissionScheduleFields(
 async function getSubmissionIdForSession(sessionId: string | null | undefined) {
   if (!sessionId) return null;
 
-  const supabase = createProgramServiceClient();
+  const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_sessions')
     .select('cfp_submission_id')
@@ -99,7 +85,7 @@ function buildPublicSpeakerSessionMap(speakers: PublicSpeaker[]) {
 }
 
 export async function getPublicScheduleRows() {
-  const supabase = createProgramServiceClient();
+  const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_schedule_items')
     .select(`
@@ -141,7 +127,7 @@ export async function getPublicScheduleRows() {
 }
 
 export async function getAdminScheduleRows() {
-  const supabase = createProgramServiceClient();
+  const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_schedule_items')
     .select(`
@@ -302,7 +288,7 @@ export async function createProgramScheduleItem(input: ProgramScheduleItemInput)
     return { item: null, error: 'Session placeholders cannot be publicly visible until a session is selected' };
   }
 
-  const supabase = createProgramServiceClient();
+  const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_schedule_items')
     .insert({
@@ -343,7 +329,7 @@ export async function createProgramScheduleItem(input: ProgramScheduleItemInput)
 }
 
 export async function updateProgramScheduleItem(id: string, input: Partial<ProgramScheduleItemInput>) {
-  const supabase = createProgramServiceClient();
+  const supabase = createCfpServiceClient();
   const { data: existingItem, error: existingItemError } = await supabase
     .from('program_schedule_items')
     .select('*')
@@ -426,7 +412,7 @@ export async function updateProgramScheduleItem(id: string, input: Partial<Progr
 }
 
 export async function deleteProgramScheduleItem(id: string) {
-  const supabase = createProgramServiceClient();
+  const supabase = createCfpServiceClient();
   const { data: existingItem, error: existingItemError } = await supabase
     .from('program_schedule_items')
     .select('submission_id, session_id')

@@ -6,8 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminSubmissionDetail } from '@/lib/cfp/admin';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { CfpSubmissionWithStats } from '@/lib/types/cfp';
 import { logger } from '@/lib/logger';
 
@@ -36,19 +35,6 @@ interface ReviewWithReviewer {
 interface SubmissionDetailResponse {
   submission: CfpSubmissionWithStats;
   reviews: ReviewWithReviewer[];
-}
-
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

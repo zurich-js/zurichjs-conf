@@ -3,31 +3,13 @@
  * Functions for managing CFP reviewers
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import {
   CFP_REVIEWER_ROLES,
   type CfpReviewer,
   type CfpReviewerRole,
   type InviteCfpReviewerRequest,
 } from '../types/cfp';
-
-/**
- * Create untyped Supabase client for CFP tables
- * (Types haven't been regenerated for the new CFP tables)
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 /**
  * Get a reviewer by ID

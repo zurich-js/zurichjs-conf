@@ -3,25 +3,8 @@
  * CRUD operations for submission tags
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { CfpTag } from '@/lib/types/cfp';
-
-/**
- * Create an untyped service role client for CFP tables
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 /**
  * Get all suggested tags

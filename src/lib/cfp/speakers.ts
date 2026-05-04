@@ -3,8 +3,7 @@
  * CRUD operations for speaker profiles
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { getPublicScheduleRows } from '@/lib/program/schedule';
 import type {
   CfpSpeaker,
@@ -22,23 +21,6 @@ export type SpeakerImageField =
   | 'header_image_url'
   | 'portrait_foreground_url'
   | 'portrait_background_url';
-
-/**
- * Create an untyped service role client for CFP tables
- * The CFP tables are not in the generated types yet
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 /**
  * Get speaker by ID

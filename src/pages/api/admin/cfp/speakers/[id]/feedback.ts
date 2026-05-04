@@ -12,9 +12,8 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { logger } from '@/lib/logger';
 import type {
   SpeakerFeedbackAggregate,
@@ -29,12 +28,6 @@ const log = logger.scope('CFP Admin Speaker Feedback API');
 // Submission statuses that represent "in the CFP pool" and should count toward
 // percentile/cohort analytics. Drafts and withdrawals do not reflect committee signal.
 const COHORT_STATUSES = ['submitted', 'under_review', 'shortlisted', 'accepted', 'rejected', 'waitlisted'];
-
-function createCfpServiceClient() {
-  return createClient(env.supabase.url, env.supabase.serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 function avg(values: Array<number | null>): number | null {
   const nums = values.filter((v): v is number => v !== null);
