@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
@@ -6,6 +7,7 @@ import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
 import { WorkshopPurchasePanel } from '@/components/workshops/WorkshopPurchasePanel';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
+import { trackWorkshopViewed } from '@/lib/analytics';
 import type { PublicSession } from '@/lib/types/cfp';
 import { ChevronLeft } from 'lucide-react';
 
@@ -15,6 +17,17 @@ interface WorkshopDetailPageProps {
 }
 
 export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailPageProps) {
+  const lastTrackedId = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastTrackedId.current === session.id) return;
+    lastTrackedId.current = session.id;
+    trackWorkshopViewed({
+      workshopId: session.id,
+      workshopTitle: session.title,
+      workshopInstructor: speaker.name,
+    });
+  }, [session.id, session.title, speaker.name]);
+
   return (
     <>
       <SEO
@@ -28,8 +41,8 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
       <main className="min-h-screen bg-brand-white">
         <SessionDetailHero session={session} kind="workshop" ctaHref="#purchase" ctaLabel="Buy workshop seat" />
 
-        <ShapedSection shape="straight" variant="light" dropTop dropBottom>
-          <div className="mx-auto max-w-screen-lg space-y-10">
+        <ShapedSection shape="straight" variant="light" dropTop dropBottom compact>
+          <div className="mx-auto max-w-screen-lg space-y-6">
             <Link
               href="/workshops"
               className="inline-flex items-center gap-1 text-xs font-medium text-brand-gray-medium transition-colors hover:text-brand-black"
@@ -59,18 +72,18 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="medium">
+        <ShapedSection shape="straight" variant="medium" compact>
           <div className="mx-auto max-w-screen-lg">
-            <Kicker variant="dark" className="mb-4">
+            <Kicker variant="dark" className="mb-3">
               Keep Exploring
             </Kicker>
             <Heading level="h2" variant="dark" className="text-lg sm:text-2xl font-bold leading-tight">
               Browse the rest of the program
             </Heading>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-brand-gray-light">
+            <p className="mt-4 max-w-2xl text-base leading-8 text-brand-gray-light">
               Want more hands-on sessions, or a lighter conference day? Browse the rest of the workshops and talks.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="blue" asChild href="/workshops">
                 See other workshops
               </Button>

@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useRouter } from 'next/router';
+import { analytics } from '@/lib/analytics';
 import { GraduationCap, MapPin, Timer, Users } from 'lucide-react';
 import { Button, Heading } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
@@ -61,6 +62,13 @@ export function WorkshopPurchasePanel({
         priceId: offering.priceId,
         workshopRoom: offering.room,
         workshopDurationMinutes: offering.durationMinutes,
+      });
+      analytics.track('workshop_voucher_added_to_cart', {
+        voucher_amount: offering.unitAmount / 100,
+        bonus_percent: 0,
+        total_value: offering.unitAmount / 100,
+        currency: offering.currency,
+        quantity: 1,
       });
     }
     navigateToCart();

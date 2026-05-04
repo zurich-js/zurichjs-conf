@@ -67,6 +67,7 @@
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
 		"react-hook-form": "^7.74.0",
+		"react-markdown": "^10.1.0",
 		"recharts": "^3.8.1",
 		"resend": "^6.12.2",
 		"stripe": "^19.3.0",
