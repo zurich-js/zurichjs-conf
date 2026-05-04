@@ -5,6 +5,7 @@ export { BreakCard } from './BreakCard';
 export { PlaceholderCard } from './PlaceholderCard';
 export { ProgramScheduleItemCard } from './ProgramScheduleItemCard';
 export { SessionDetailHero } from './SessionDetailHero';
+export { MarkdownAbstract } from './MarkdownAbstract';
 
 export type { ScheduleCardProps } from './ScheduleCard';
 export type { SessionCardProps } from './SessionCard';

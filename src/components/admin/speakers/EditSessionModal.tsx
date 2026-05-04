@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AdminModal } from '@/components/admin/AdminModal';
+import { MarkdownAbstract } from '@/components/scheduling';
 import type { Session } from './types';
 
 interface EditSessionModalProps {
@@ -22,6 +23,7 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showAbstractPreview, setShowAbstractPreview] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,14 +117,34 @@ export function EditSessionModal({ session, speakers, onClose, onUpdated }: Edit
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-black">Abstract *</label>
-          <textarea
-            required
-            rows={5}
-            value={formData.abstract}
-            onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
-          />
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-sm font-medium text-black">Abstract *</label>
+            <button
+              type="button"
+              onClick={() => setShowAbstractPreview(!showAbstractPreview)}
+              className="text-xs text-blue-600 hover:underline cursor-pointer"
+            >
+              {showAbstractPreview ? 'Edit' : 'Preview'}
+            </button>
+          </div>
+          {showAbstractPreview ? (
+            <div className="w-full min-h-[12rem] rounded-lg border border-gray-300 px-3 py-2 text-sm text-black leading-7">
+              <MarkdownAbstract content={formData.abstract} />
+            </div>
+          ) : (
+            <>
+              <textarea
+                required
+                rows={8}
+                value={formData.abstract}
+                onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Supports markdown: **bold**, *italic*, - bullet lists, blank lines for paragraphs
+              </p>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

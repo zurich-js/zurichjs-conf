@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
@@ -6,6 +7,7 @@ import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
 import { WorkshopPurchasePanel } from '@/components/workshops/WorkshopPurchasePanel';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
+import { trackWorkshopViewed } from '@/lib/analytics';
 import type { PublicSession } from '@/lib/types/cfp';
 import { ChevronLeft } from 'lucide-react';
 
@@ -15,6 +17,17 @@ interface WorkshopDetailPageProps {
 }
 
 export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailPageProps) {
+  const hasTrackedView = useRef(false);
+  useEffect(() => {
+    if (hasTrackedView.current) return;
+    hasTrackedView.current = true;
+    trackWorkshopViewed({
+      workshopId: session.id,
+      workshopTitle: session.title,
+      workshopInstructor: speaker.name,
+    });
+  }, [session.id, session.title, speaker.name]);
+
   return (
     <>
       <SEO

@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { AdminModal } from '@/components/admin/AdminModal';
+import { MarkdownAbstract } from '@/components/scheduling';
 
 interface ExistingSessionOption {
   id: string;
@@ -42,6 +43,7 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showAbstractPreview, setShowAbstractPreview] = useState(false);
   const attachablePanelSessions = sessions.filter((session) =>
     session.submission_type === 'panel' &&
     session.speaker.id !== speakerId &&
@@ -239,14 +241,34 @@ export function AddSessionModal({ speakerId, speakers, sessions, onClose, onCrea
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-black mb-1">Abstract *</label>
-            <textarea
-              required
-              rows={3}
-              value={formData.abstract}
-              onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none"
-            />
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-black">Abstract *</label>
+              <button
+                type="button"
+                onClick={() => setShowAbstractPreview(!showAbstractPreview)}
+                className="text-xs text-blue-600 hover:underline cursor-pointer"
+              >
+                {showAbstractPreview ? 'Edit' : 'Preview'}
+              </button>
+            </div>
+            {showAbstractPreview ? (
+              <div className="w-full min-h-[9rem] rounded-lg border border-gray-300 px-3 py-2 text-sm text-black leading-7">
+                <MarkdownAbstract content={formData.abstract} />
+              </div>
+            ) : (
+              <>
+                <textarea
+                  required
+                  rows={6}
+                  value={formData.abstract}
+                  onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-brand-primary focus:outline-none"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Supports markdown: **bold**, *italic*, - bullet lists, blank lines for paragraphs
+                </p>
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

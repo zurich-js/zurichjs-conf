@@ -6,6 +6,7 @@ import { Button } from '@/components/atoms';
 import type { PublicSession } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
+import { MarkdownAbstract } from './MarkdownAbstract';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 import {
   addConferenceReminder,
@@ -156,7 +157,7 @@ export function SessionCard({
 
   const panel = (
     <>
-      <p className={cn('text-brand-gray-darkest', compact ? 'text-sm leading-6' : 'text-sm leading-7')}>{session.abstract}</p>
+      <MarkdownAbstract content={session.abstract} className={cn('text-brand-gray-darkest', compact ? 'text-sm leading-6' : 'text-sm leading-7')} />
 
       {resolvedSpeakers.length > 0 ? (
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

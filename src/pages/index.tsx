@@ -23,6 +23,7 @@ import { serverAnalytics } from '@/lib/analytics/server';
 import type { GetServerSideProps } from 'next';
 import React from "react";
 import {Button} from "@/components/atoms";
+import { trackButtonClick } from '@/lib/analytics';
 
 /**
  * Page props passed through _app.tsx for hydration
@@ -108,8 +109,25 @@ export default function Home() {
           <SpeakersSection />
           <div className="flex flex-col items-center gap-3 px-4">
             <p className="text-brand-gray-medium text-md text-center mt-2">
-                <Button href="/speakers" size="xs" variant="black" asChild>
+                <Button href="/speakers" size="xs" variant="black" asChild onClick={() => {
+                  trackButtonClick({
+                    buttonText: 'Check out the full lineup',
+                    buttonLocation: 'homepage_speakers_section',
+                    buttonAction: 'navigate_to_speakers',
+                  });
+                }}>
                     Check out the full lineup
+                </Button>
+            </p>
+            <p className="text-brand-gray-medium text-md text-center">
+                <Button href="/workshops" size="xs" variant="blue" asChild onClick={() => {
+                  trackButtonClick({
+                    buttonText: 'Check out the workshops',
+                    buttonLocation: 'homepage_speakers_section',
+                    buttonAction: 'navigate_to_workshops',
+                  });
+                }}>
+                    Check out the workshops
                 </Button>
             </p>
           </div>
