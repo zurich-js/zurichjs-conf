@@ -17,10 +17,10 @@ interface WorkshopDetailPageProps {
 }
 
 export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailPageProps) {
-  const hasTrackedView = useRef(false);
+  const lastTrackedId = useRef<string | null>(null);
   useEffect(() => {
-    if (hasTrackedView.current) return;
-    hasTrackedView.current = true;
+    if (lastTrackedId.current === session.id) return;
+    lastTrackedId.current = session.id;
     trackWorkshopViewed({
       workshopId: session.id,
       workshopTitle: session.title,

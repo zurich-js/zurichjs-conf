@@ -85,10 +85,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild && href) {
       return (
         <a
-          href={href}
+          href={isDisabled ? undefined : href}
           className={combinedClassName}
           aria-disabled={isDisabled}
-          onClick={props.onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>}
+          onClick={(e) => {
+            if (isDisabled) {
+              e.preventDefault();
+              return;
+            }
+            (props.onClick as React.MouseEventHandler<HTMLElement> | undefined)?.(e);
+          }}
         >
           {content}
         </a>
