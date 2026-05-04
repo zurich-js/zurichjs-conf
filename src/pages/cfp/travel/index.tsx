@@ -1,6 +1,6 @@
 /**
  * CFP Speaker Travel Overview Page
- * Manage travel details, flights, and reimbursements
+ * Manage travel details and flights
  */
 
 import React, { useState } from 'react';
@@ -16,7 +16,6 @@ import type {
   CfpSpeakerTravel,
   CfpSpeakerFlight,
   CfpSpeakerAccommodation,
-  CfpSpeakerReimbursement,
 } from '@/lib/types/cfp';
 
 interface TravelPageProps {
@@ -24,22 +23,13 @@ interface TravelPageProps {
   travel: CfpSpeakerTravel | null;
   flights: CfpSpeakerFlight[];
   accommodation: CfpSpeakerAccommodation | null;
-  reimbursements: CfpSpeakerReimbursement[];
   hasAcceptedSubmission: boolean;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-500/20 text-yellow-300',
-  approved: 'bg-green-500/20 text-green-300',
-  rejected: 'bg-red-500/20 text-red-300',
-  paid: 'bg-blue-500/20 text-blue-300',
-};
 
 export default function TravelOverview({
   travel,
   flights,
   accommodation,
-  reimbursements,
   hasAcceptedSubmission,
 }: TravelPageProps) {
   const router = useRouter();
@@ -56,7 +46,6 @@ export default function TravelOverview({
 
   const inboundFlight = flights.find((f) => f.direction === 'inbound');
   const outboundFlight = flights.find((f) => f.direction === 'outbound');
-  const pendingReimbursements = reimbursements.filter((r) => r.status === 'pending');
 
   const handleSaveTravel = async () => {
     setIsSubmitting(true);
@@ -161,10 +150,6 @@ export default function TravelOverview({
             <div className="bg-brand-gray-dark rounded-xl p-4">
               <div className="text-sm text-brand-gray-light mb-1">Flights Added</div>
               <div className="text-lg font-semibold text-white">{flights.length}/2</div>
-            </div>
-            <div className="bg-brand-gray-dark rounded-xl p-4">
-              <div className="text-sm text-brand-gray-light mb-1">Pending Claims</div>
-              <div className="text-lg font-semibold text-white">{pendingReimbursements.length}</div>
             </div>
           </div>
 
@@ -339,71 +324,6 @@ export default function TravelOverview({
             </section>
           )}
 
-          {/* Reimbursements */}
-          <section className="bg-brand-gray-dark rounded-2xl p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-              <h2 className="text-base sm:text-lg font-bold text-white">Expense Reimbursements</h2>
-              <Link href="/cfp/travel/reimbursements">
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                  Submit Expense
-                </Button>
-              </Link>
-            </div>
-
-            {reimbursements.length === 0 ? (
-              <p className="text-brand-gray-light text-center py-4">
-                No reimbursement requests yet.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {reimbursements.slice(0, 5).map((r) => (
-                  <div
-                    key={r.id}
-                    className="bg-brand-gray-darkest rounded-xl p-4"
-                  >
-                    {/* Mobile: Stacked layout */}
-                    <div className="sm:hidden">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="text-white font-medium text-sm">{r.description}</div>
-                        <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ${STATUS_COLORS[r.status]}`}>
-                          {r.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-brand-gray-light capitalize">{r.expense_type}</div>
-                        <div className="text-white font-semibold text-sm">
-                          {r.currency} {(r.amount / 100).toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-                    {/* Desktop: Horizontal layout */}
-                    <div className="hidden sm:flex sm:items-center sm:justify-between">
-                      <div>
-                        <div className="text-white font-medium">{r.description}</div>
-                        <div className="text-sm text-brand-gray-light capitalize">{r.expense_type}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-semibold">
-                          {r.currency} {(r.amount / 100).toFixed(2)}
-                        </div>
-                        <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLORS[r.status]}`}>
-                          {r.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {reimbursements.length > 5 && (
-                  <Link
-                    href="/cfp/travel/reimbursements"
-                    className="block text-center text-brand-primary text-sm hover:underline"
-                  >
-                    View all {reimbursements.length} requests
-                  </Link>
-                )}
-              </div>
-            )}
-          </section>
         </main>
       </div>
     </>
@@ -507,7 +427,7 @@ export const getServerSideProps: GetServerSideProps<TravelPageProps> = async (ct
   const hasAcceptedSubmission = (acceptedSubmissions || []).length > 0;
 
   // Get travel info
-  const { travel, flights, accommodation, reimbursements } = await getCompleteTravelInfo(speaker.id);
+  const { travel, flights, accommodation } = await getCompleteTravelInfo(speaker.id);
 
   return {
     props: {
@@ -515,7 +435,6 @@ export const getServerSideProps: GetServerSideProps<TravelPageProps> = async (ct
       travel,
       flights,
       accommodation,
-      reimbursements,
       hasAcceptedSubmission,
     },
   };

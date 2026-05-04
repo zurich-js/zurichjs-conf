@@ -1,20 +1,19 @@
 /**
- * Admin Travel Flights API
- * GET /api/admin/cfp/travel/flights - Get all flights with speaker info
- * POST /api/admin/cfp/travel/flights - Create a flight for a speaker
+ * Admin Flight CRUD API
+ * PUT /api/admin/cfp/travel/flights/[id] - Update flight details
+ * DELETE /api/admin/cfp/travel/flights/[id] - Delete flight
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { getAllFlights, createFlightAdmin } from '@/lib/cfp/admin-travel';
+import { updateFlightAdmin, deleteFlightAdmin } from '@/lib/cfp/admin-travel';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 
-const log = logger.scope('Admin Travel Flights API');
+const log = logger.scope('Admin Flight CRUD API');
 
-const createSchema = z.object({
-  speaker_id: z.string().uuid(),
-  direction: z.enum(['inbound', 'outbound']),
+const updateSchema = z.object({
+  direction: z.enum(['inbound', 'outbound']).optional(),
   airline: z.string().optional(),
   flight_number: z.string().optional(),
   departure_airport: z.string().optional(),
@@ -37,36 +36,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  if (req.method === 'GET') {
-    try {
-      const direction = req.query.direction as 'inbound' | 'outbound' | undefined;
-      const date = req.query.date as string | undefined;
-
-      const flights = await getAllFlights({ direction, date });
-      return res.status(200).json({ flights });
-    } catch (error) {
-      log.error('Error fetching flights', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+  const { id } = req.query;
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ error: 'Flight ID is required' });
   }
 
-  if (req.method === 'POST') {
+  if (req.method === 'PUT') {
     try {
-      const parsed = createSchema.safeParse(req.body);
+      const parsed = updateSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const { speaker_id, ...data } = parsed.data;
-      const { flight, error } = await createFlightAdmin(speaker_id, data);
+      const { flight, error } = await updateFlightAdmin(id, parsed.data);
       if (error) {
         return res.status(400).json({ error });
       }
 
-      log.info('Flight created', { speakerId: speaker_id });
-      return res.status(201).json({ flight });
+      log.info('Flight updated', { flightId: id });
+      return res.status(200).json({ flight });
     } catch (error) {
-      log.error('Error creating flight', error);
+      log.error('Error updating flight', error, { flightId: id });
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    try {
+      const { success, error } = await deleteFlightAdmin(id);
+      if (error) {
+        return res.status(400).json({ error });
+      }
+
+      log.info('Flight deleted', { flightId: id });
+      return res.status(200).json({ success });
+    } catch (error) {
+      log.error('Error deleting flight', error, { flightId: id });
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -369,18 +369,20 @@ export async function updateReimbursementReceipt(
 /**
  * Get complete travel info for a speaker
  */
-export async function getCompleteTravelInfo(speakerId: string): Promise<{
+export async function getCompleteTravelInfo(speakerId: string, options?: { includeReimbursements?: boolean }): Promise<{
   travel: CfpSpeakerTravel | null;
   flights: CfpSpeakerFlight[];
   accommodation: CfpSpeakerAccommodation | null;
   reimbursements: CfpSpeakerReimbursement[];
 }> {
-  const [travel, flights, accommodation, reimbursements] = await Promise.all([
+  const promises = [
     getSpeakerTravel(speakerId),
     getSpeakerFlights(speakerId),
     getSpeakerAccommodation(speakerId),
-    getSpeakerReimbursements(speakerId),
-  ]);
+    options?.includeReimbursements ? getSpeakerReimbursements(speakerId) : Promise.resolve([]),
+  ] as const;
 
-  return { travel, flights, accommodation, reimbursements };
+  const [travel, flights, accommodation, reimbursements] = await Promise.all(promises);
+
+  return { travel, flights, accommodation, reimbursements: reimbursements as CfpSpeakerReimbursement[] };
 }
