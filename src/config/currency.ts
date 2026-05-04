@@ -74,6 +74,43 @@ export type UsdCountry = (typeof USD_COUNTRIES)[number];
 export const DEFAULT_CURRENCY: SupportedCurrency = 'CHF';
 
 /**
+ * The base currency whose Stripe lookup key has no suffix.
+ */
+export const BASE_CURRENCY: SupportedCurrency = 'CHF';
+
+/**
+ * Currencies that must have an active Stripe price for every workshop
+ * (and ticket) lookup key before it can be published.
+ * CHF is the base key (no suffix); the rest use _eur, _gbp, _usd.
+ */
+export const REQUIRED_STRIPE_CURRENCIES: readonly SupportedCurrency[] = [
+  'CHF',
+  'EUR',
+  'GBP',
+  'USD',
+] as const;
+
+/**
+ * Given a base Stripe lookup key, return all lookup keys that must
+ * exist for validation to pass (one per required currency).
+ */
+export function buildRequiredLookupKeys(baseKey: string): string[] {
+  return REQUIRED_STRIPE_CURRENCIES.map((currency) => {
+    if (currency === BASE_CURRENCY) return baseKey;
+    return `${baseKey}_${currency.toLowerCase()}`;
+  });
+}
+
+/** Human-readable label listing all required currencies, e.g. "CHF + EUR + GBP + USD". */
+export const REQUIRED_CURRENCIES_LABEL: string = REQUIRED_STRIPE_CURRENCIES.join(' + ');
+
+/** Human-readable list of non-base suffixes, e.g. "_eur / _gbp / _usd". */
+export const NON_BASE_SUFFIXES_LABEL: string = REQUIRED_STRIPE_CURRENCIES
+  .filter((c) => c !== BASE_CURRENCY)
+  .map((c) => `_${c.toLowerCase()}`)
+  .join(' / ');
+
+/**
  * Determine the appropriate currency based on country code
  * @param countryCode - ISO 3166-1 alpha-2 country code (e.g., 'DE', 'CH')
  * @returns The currency to use for the given country

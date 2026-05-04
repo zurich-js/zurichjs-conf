@@ -1,6 +1,6 @@
 /**
  * Validate a Stripe price lookup key for a workshop offering.
- * Ensures CHF + EUR + GBP prices all exist and are active under the same product id.
+ * Ensures prices for all required currencies exist and are active under the same product id.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -8,6 +8,7 @@ import Stripe from 'stripe';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
 import { ValidateStripeSchema } from '@/lib/admin/workshopValidation';
+import { buildRequiredLookupKeys } from '@/config/currency';
 
 const log = logger.scope('Validate Workshop Stripe');
 
@@ -36,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const body = parsed.data;
 
     const stripe = getStripe();
-    const keys = [body.lookupKey, `${body.lookupKey}_eur`, `${body.lookupKey}_gbp`];
+    const keys = buildRequiredLookupKeys(body.lookupKey);
 
     const results = await Promise.all(
       keys.map(async (key) => {

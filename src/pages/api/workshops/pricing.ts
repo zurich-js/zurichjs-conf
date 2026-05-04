@@ -2,7 +2,7 @@
  * Workshops Pricing API
  * Returns per-workshop Stripe pricing for the currently requested currency.
  * Mirrors the ticket pricing pattern: one Stripe product per workshop with
- * three active prices keyed by `workshop_{slug}` / `_eur` / `_gbp`.
+ * active prices keyed by `workshop_{slug}` / `_eur` / `_gbp` / `_usd`.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';

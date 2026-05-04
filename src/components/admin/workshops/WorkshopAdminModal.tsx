@@ -717,7 +717,7 @@ export function WorkshopAdminModal({
 
           <Section
             title="Pricing"
-            description="Link a Stripe product + CHF base lookup key. Validate to confirm all three currencies resolve."
+            description="Link a Stripe product + CHF base lookup key. Validate to confirm all currencies resolve."
             collapsed={!openSections.pricing}
             onToggle={() => toggleSection('pricing')}
           >
@@ -740,7 +740,7 @@ export function WorkshopAdminModal({
               </LabeledField>
               <LabeledField
                 label="Stripe price lookup key (CHF base)"
-                hint="Runtime appends _eur / _gbp. Example: workshop_react-patterns"
+                hint="Runtime appends _eur / _gbp / _usd. Example: workshop_react-patterns"
               >
                 <div className="flex gap-2">
                   <input

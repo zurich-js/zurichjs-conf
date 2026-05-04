@@ -106,6 +106,15 @@ describe('computeFullReadiness', () => {
     expect(result.openItems).toBe(0);
   });
 
+  it('includes all required currencies in the validation label', () => {
+    const result = computeFullReadiness({ offering: makeWorkshop() });
+    const stripeItem = result.items.find((i) => i.key === 'stripeValidated');
+    expect(stripeItem?.label).toContain('USD');
+    expect(stripeItem?.label).toContain('CHF');
+    expect(stripeItem?.label).toContain('EUR');
+    expect(stripeItem?.label).toContain('GBP');
+  });
+
   it('is not ready when validation has run but failed', () => {
     const result = computeFullReadiness({
       offering: makeWorkshop({
