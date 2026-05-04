@@ -41,13 +41,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalVipTickets = vipTicketsResult.count || 0;
     const totalEmailsSent = emailsResult.count || 0;
     const perksRedeemed = perks.filter(p => p.current_redemptions > 0).length;
+    // Only count perks for confirmed VIP tickets toward the pending calculation
+    const confirmedVipPerksCount = perks.filter(
+      p => p.ticket?.ticket_category === 'vip' && p.ticket?.status === 'confirmed'
+    ).length;
 
     const stats: VipPerksStats = {
       total_vip_tickets: totalVipTickets,
       perks_created: perks.length,
       perks_redeemed: perksRedeemed,
       emails_sent: totalEmailsSent,
-      pending: totalVipTickets - perks.length,
+      pending: totalVipTickets - confirmedVipPerksCount,
     };
 
     return res.status(200).json({ perks, stats });

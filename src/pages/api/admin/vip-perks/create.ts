@@ -7,6 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createVipPerkCoupon, getVipPerkConfig, sendVipPerkEmail } from '@/lib/vip-perks';
+import { createServiceRoleClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('VipPerksCreateAPI');
@@ -55,7 +56,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    return res.status(201).json({ perk, email: emailResult });
+    // Re-fetch with joined ticket data to match VipPerkWithTicket shape
+    const supabase = createServiceRoleClient();
+    const { data: perkWithTicket } = await supabase
+      .from('vip_perks')
+      .select('*, ticket:tickets!inner(id, first_name, last_name, email, ticket_category, status)')
+      .eq('id', perk.id)
+      .single();
+
+    return res.status(201).json({ perk: perkWithTicket || perk, email: emailResult });
   } catch (error) {
     log.error('Failed to create VIP perk', error as Error);
     const message = error instanceof Error ? error.message : 'Internal server error';

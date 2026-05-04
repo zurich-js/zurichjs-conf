@@ -39,8 +39,9 @@ export async function backfillVipPerks(
   }
 
   const allVipTickets = vipTickets || [];
+  const vipTicketIds = new Set(allVipTickets.map(t => t.id));
 
-  // Fetch existing perks to find which tickets already have one
+  // Fetch existing perks only for the confirmed VIP tickets we found
   const { data: existingPerks, error: perksError } = await supabase
     .from('vip_perks')
     .select('ticket_id');
@@ -50,7 +51,10 @@ export async function backfillVipPerks(
     throw new Error(`Failed to fetch existing perks: ${perksError.message}`);
   }
 
-  const existingTicketIds = new Set((existingPerks || []).map(p => p.ticket_id));
+  // Only count perks that belong to our confirmed VIP ticket set
+  const existingTicketIds = new Set(
+    (existingPerks || []).map(p => p.ticket_id).filter(id => vipTicketIds.has(id))
+  );
   const ticketsNeedingPerks = allVipTickets.filter(t => !existingTicketIds.has(t.id));
 
   const response: BackfillVipPerksResponse = {

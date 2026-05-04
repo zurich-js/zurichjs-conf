@@ -18,9 +18,8 @@ CREATE TABLE IF NOT EXISTS vip_perks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Indexes
+-- Indexes (code already has a unique index via UNIQUE constraint)
 CREATE INDEX idx_vip_perks_is_active ON vip_perks(is_active);
-CREATE INDEX idx_vip_perks_code ON vip_perks(code);
 
 -- Trigger for updated_at
 CREATE TRIGGER update_vip_perks_updated_at
@@ -52,6 +51,7 @@ CREATE INDEX idx_vip_perk_emails_ticket_id ON vip_perk_emails(ticket_id);
 COMMENT ON TABLE vip_perk_emails IS 'Tracks emails sent to VIP ticket holders about their workshop discount';
 
 -- Create vip_perk_config table (single-row configuration)
+-- Enforced singleton via CHECK constraint on the boolean column
 CREATE TABLE IF NOT EXISTS vip_perk_config (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   discount_percent INTEGER NOT NULL DEFAULT 20,
@@ -59,7 +59,9 @@ CREATE TABLE IF NOT EXISTS vip_perk_config (
   expires_at TIMESTAMPTZ,
   auto_send_email BOOLEAN NOT NULL DEFAULT FALSE,
   custom_email_message TEXT,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- Singleton enforcement: only one row can ever exist
+  singleton BOOLEAN NOT NULL DEFAULT TRUE UNIQUE CHECK (singleton = TRUE)
 );
 
 -- Trigger for updated_at
@@ -67,9 +69,10 @@ CREATE TRIGGER update_vip_perk_config_updated_at
   BEFORE UPDATE ON vip_perk_config
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Seed with one config row
+-- Seed with one config row (idempotent via unique singleton constraint)
 INSERT INTO vip_perk_config (discount_percent, restricted_product_ids)
-VALUES (20, '{}');
+VALUES (20, '{}')
+ON CONFLICT (singleton) DO NOTHING;
 
 COMMENT ON TABLE vip_perk_config IS 'Single-row configuration for VIP workshop discount perks';
 COMMENT ON COLUMN vip_perk_config.restricted_product_ids IS 'Stripe workshop product IDs that VIP discounts apply to';

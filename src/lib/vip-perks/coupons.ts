@@ -3,6 +3,7 @@
  * Handles Stripe coupon creation and management for VIP workshop discounts
  */
 
+import crypto from 'crypto';
 import { createServiceRoleClient } from '@/lib/supabase/client';
 import { getStripeClient } from '@/lib/stripe/client';
 import { logger } from '@/lib/logger';
@@ -12,12 +13,12 @@ import type Stripe from 'stripe';
 const log = logger.scope('VipPerks');
 
 /**
- * Generate a VIP coupon code from a ticket ID
- * Format: VIP-{first 8 chars of UUID, uppercase, no dashes}
+ * Generate a cryptographically random VIP coupon code
+ * Format: VIP-{8 random hex chars, uppercase}
  */
-function generateCouponCode(ticketId: string): string {
-  const short = ticketId.replace(/-/g, '').substring(0, 8).toUpperCase();
-  return `VIP-${short}`;
+function generateCouponCode(): string {
+  const random = crypto.randomBytes(4).toString('hex').toUpperCase();
+  return `VIP-${random}`;
 }
 
 /**
@@ -54,11 +55,14 @@ export async function updateVipPerkConfig(
 ): Promise<VipPerkConfig> {
   const supabase = createServiceRoleClient();
 
+  // Fetch the singleton config row to target the specific ID
+  const config = await getVipPerkConfig();
+
   const { data, error } = await supabase
     .from('vip_perk_config')
     .update(updates)
+    .eq('id', config.id)
     .select()
-    .limit(1)
     .single();
 
   if (error || !data) {
@@ -117,8 +121,16 @@ export async function createVipPerkCoupon(data: CreateVipPerkRequest): Promise<V
     throw new Error('Ticket not found');
   }
 
+  if (ticket.ticket_category !== 'vip') {
+    log.error('Ticket is not eligible for VIP perk creation', undefined, {
+      ticketId: data.ticket_id,
+      ticketCategory: ticket.ticket_category,
+    });
+    throw new Error('Ticket is not a VIP ticket');
+  }
+
   const discountPercent = data.discount_percent || 20;
-  const code = generateCouponCode(data.ticket_id);
+  const code = generateCouponCode();
 
   // Create Stripe coupon
   const stripeCouponParams: Stripe.CouponCreateParams = {

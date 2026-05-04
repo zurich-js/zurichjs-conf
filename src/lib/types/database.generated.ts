@@ -2201,6 +2201,7 @@ export type Database = {
           expires_at: string | null
           id: string
           restricted_product_ids: string[]
+          singleton: boolean
           updated_at: string
         }
         Insert: {
@@ -2210,6 +2211,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           restricted_product_ids?: string[]
+          singleton?: boolean
           updated_at?: string
         }
         Update: {
@@ -2219,6 +2221,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           restricted_product_ids?: string[]
+          singleton?: boolean
           updated_at?: string
         }
         Relationships: []
