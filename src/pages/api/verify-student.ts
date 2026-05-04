@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { sendVerificationRequestEmail } from '@/lib/email';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { getCurrencyFromCountry } from '@/config/currency';
 import { logger } from '@/lib/logger';
 import { notifyStatusVerification } from '@/lib/platform-notifications';
 
@@ -89,11 +90,74 @@ const validateRequest = (body: VerificationRequest): string | null => {
 };
 
 /**
+ * Get the client's real IP address from request headers
+ * (Same logic as src/pages/api/geo/detect.ts)
+ */
+function getClientIP(req: NextApiRequest): string | null {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (forwardedFor) {
+    const ip = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
+    return ip.trim();
+  }
+  const realIP = req.headers['x-real-ip'];
+  if (realIP) return Array.isArray(realIP) ? realIP[0] : realIP;
+  const vercelIP = req.headers['x-vercel-forwarded-for'];
+  if (vercelIP) {
+    const ip = Array.isArray(vercelIP) ? vercelIP[0] : vercelIP.split(',')[0];
+    return ip.trim();
+  }
+  return req.socket?.remoteAddress || null;
+}
+
+/**
+ * Detect country code from request (cookie first, then IP geolocation)
+ */
+async function detectCountry(req: NextApiRequest): Promise<string | null> {
+  // Check existing cookie (user already browsed the site)
+  const cookieCountry = req.cookies['detected-country'];
+  if (cookieCountry && /^[A-Z]{2}$/.test(cookieCountry)) {
+    log.debug('Country from cookie', { country: cookieCountry });
+    return cookieCountry;
+  }
+
+  const ip = getClientIP(req);
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    return null;
+  }
+
+  // Try ipapi.co
+  try {
+    const res = await fetch(`https://ipapi.co/${ip}/country/`, {
+      headers: { 'User-Agent': 'ZurichJS-Conference/1.0' },
+    });
+    if (res.ok) {
+      const country = (await res.text()).trim();
+      if (/^[A-Z]{2}$/.test(country)) return country;
+    }
+  } catch { /* fall through */ }
+
+  // Fallback: ip-api.com
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode`, {
+      headers: { 'User-Agent': 'ZurichJS-Conference/1.0' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.countryCode && /^[A-Z]{2}$/.test(data.countryCode)) return data.countryCode;
+    }
+  } catch { /* fall through */ }
+
+  return null;
+}
+
+/**
  * Store verification request in the database
  */
 const storeVerificationRequest = async (
   verificationId: string,
-  data: VerificationRequest
+  data: VerificationRequest,
+  countryCode: string | null,
+  currency: string | null
 ): Promise<void> => {
   const supabase = createServiceRoleClient();
 
@@ -111,6 +175,8 @@ const storeVerificationRequest = async (
       additional_info: data.additionalInfo || null,
       price_id: data.priceId,
       status: 'pending',
+      country_code: countryCode,
+      currency,
     });
 
   if (error) {
@@ -118,7 +184,7 @@ const storeVerificationRequest = async (
     throw new Error('Failed to store verification request');
   }
 
-  log.info('Verification request stored', { verificationId, email: data.email });
+  log.info('Verification request stored', { verificationId, email: data.email, countryCode, currency });
 };
 
 /**
@@ -187,8 +253,12 @@ export default async function handler(
     // Generate verification ID
     const verificationId = generateVerificationId();
 
+    // Detect country and currency from request
+    const countryCode = await detectCountry(req);
+    const currency = getCurrencyFromCountry(countryCode);
+
     // Store the verification request
-    await storeVerificationRequest(verificationId, body);
+    await storeVerificationRequest(verificationId, body, countryCode, currency);
 
     // Send notification emails
     await sendNotifications(verificationId, body);

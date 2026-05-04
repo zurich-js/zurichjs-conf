@@ -2429,7 +2429,9 @@ export type Database = {
       verification_requests: {
         Row: {
           additional_info: string | null
+          country_code: string | null
           created_at: string
+          currency: string | null
           email: string
           id: string
           linkedin_url: string | null
@@ -2450,7 +2452,9 @@ export type Database = {
         }
         Insert: {
           additional_info?: string | null
+          country_code?: string | null
           created_at?: string
+          currency?: string | null
           email: string
           id?: string
           linkedin_url?: string | null
@@ -2471,7 +2475,9 @@ export type Database = {
         }
         Update: {
           additional_info?: string | null
+          country_code?: string | null
           created_at?: string
+          currency?: string | null
           email?: string
           id?: string
           linkedin_url?: string | null

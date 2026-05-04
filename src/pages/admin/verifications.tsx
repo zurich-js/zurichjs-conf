@@ -37,12 +37,26 @@ interface VerificationRequest {
   rav_registration_date: string | null;
   additional_info: string | null;
   price_id: string;
+  country_code: string | null;
+  currency: string | null;
   status: 'pending' | 'approved' | 'rejected';
   stripe_payment_link_id: string | null;
   stripe_payment_link_url: string | null;
   stripe_session_id: string | null;
   reviewed_at: string | null;
   created_at: string;
+}
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  CH: '🇨🇭', DE: '🇩🇪', AT: '🇦🇹', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', NL: '🇳🇱', BE: '🇧🇪',
+  GB: '🇬🇧', US: '🇺🇸', IE: '🇮🇪', PT: '🇵🇹', GR: '🇬🇷', FI: '🇫🇮', SE: '🇸🇪', NO: '🇳🇴',
+  DK: '🇩🇰', PL: '🇵🇱', CZ: '🇨🇿', HR: '🇭🇷', SK: '🇸🇰', SI: '🇸🇮', LT: '🇱🇹', LV: '🇱🇻',
+  EE: '🇪🇪', LU: '🇱🇺', MT: '🇲🇹', CY: '🇨🇾', RO: '🇷🇴', BG: '🇧🇬', HU: '🇭🇺',
+};
+
+function countryFlag(code: string | null): string {
+  if (!code) return '';
+  return COUNTRY_FLAGS[code] || code;
 }
 
 type StatusFilter = '' | 'pending' | 'approved' | 'rejected';
@@ -233,6 +247,12 @@ export default function VerificationsDashboard() {
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <TypeIcon type={v.verification_type} />
                       <span className="capitalize">{v.verification_type}</span>
+                      {v.currency && (
+                        <>
+                          <span>&middot;</span>
+                          <span>{countryFlag(v.country_code)} {v.currency}</span>
+                        </>
+                      )}
                       <span>&middot;</span>
                       <span>{new Date(v.created_at).toLocaleDateString()}</span>
                     </div>
@@ -253,6 +273,9 @@ export default function VerificationsDashboard() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Currency
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Submitted
@@ -283,6 +306,15 @@ export default function VerificationsDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <StatusPill status={v.status} />
+                        </td>
+                        <td className="px-6 py-4 text-sm text-black">
+                          {v.currency ? (
+                            <span title={v.country_code || undefined}>
+                              {countryFlag(v.country_code)} {v.currency}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {new Date(v.created_at).toLocaleDateString('en-CH', {
@@ -466,6 +498,20 @@ function VerificationDetailModal({
             />
           )}
         </Section>
+
+        {/* Pricing info */}
+        {(v.country_code || v.currency) && (
+          <Section title="Pricing">
+            {v.country_code && (
+              <DetailRow label="Country" value={`${countryFlag(v.country_code)} ${v.country_code}`} />
+            )}
+            {v.currency && <DetailRow label="Currency" value={v.currency} />}
+            <DetailRow
+              label="Price ID"
+              value={<code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{v.price_id}</code>}
+            />
+          </Section>
+        )}
 
         {/* Additional info */}
         {v.additional_info && (
