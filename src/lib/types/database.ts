@@ -130,6 +130,11 @@ export interface WorkshopRegistration {
   discount_amount: number; // in cents
   seat_index: number; // 0-based within a multi-seat purchase (session + workshop scope)
   metadata: Record<string, unknown>;
+  qr_code_url: string | null;
+  checked_in: boolean;
+  checked_in_at: string | null;
+  company: string | null;
+  job_title: string | null;
   created_at: string;
   updated_at: string;
 }

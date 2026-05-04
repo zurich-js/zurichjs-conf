@@ -5,17 +5,19 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, Building2 } from 'lucide-react';
+import { Ticket, PlusCircle, DollarSign, Building2, GraduationCap } from 'lucide-react';
 import { B2BOrdersTab } from '@/components/admin/B2BOrdersTab';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
 import { TicketsTab, IssueTicketTab, FinancialsTab, type Tab } from '@/components/admin/dashboard';
+import { WorkshopsRegistrantsTab } from '@/components/admin/workshops-registrants';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const TABS: AdminTab<Tab>[] = [
   { id: 'tickets', label: 'Tickets', icon: Ticket },
+  { id: 'workshops', label: 'Workshops', icon: GraduationCap },
   { id: 'issue', label: 'Issue', icon: PlusCircle },
   { id: 'financials', label: 'Financials', icon: DollarSign },
   { id: 'b2b', label: 'B2B Orders', icon: Building2 },
@@ -37,6 +39,7 @@ export default function AdminDashboard() {
           <AdminTabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
           <div className="pb-12">
             {activeTab === 'tickets' && <TicketsTab />}
+            {activeTab === 'workshops' && <WorkshopsRegistrantsTab />}
             {activeTab === 'issue' && <IssueTicketTab />}
             {activeTab === 'financials' && <FinancialsTab />}
             {activeTab === 'b2b' && <B2BOrdersTab />}

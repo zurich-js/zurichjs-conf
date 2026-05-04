@@ -104,26 +104,26 @@ export function SessionCard({
       <h3 className={cn('mt-1 font-bold leading-tight text-brand-black', compact ? 'text-base md:text-lg' : 'text-lg')}>
         {session.title}
       </h3>
-      <div className={cn('mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-brand-black', compact ? 'text-xs md:text-sm' : 'text-sm')}>
+      <div className={cn('mt-3 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-y-1 sm:gap-x-3 text-brand-black', compact ? 'text-xs md:text-sm' : 'text-sm')}>
         {resolvedSpeakers.length > 0 ? (
           <span>
             <strong>{isWorkshop ? 'Instructor:' : isPanel ? 'Panel:' : 'Speaker:'}</strong>{' '}
             <span className="text-brand-gray-medium">{resolvedSpeakers.map((entry) => entry.name).join(', ')}</span>
           </span>
         ) : null}
-        {resolvedSpeakers.length > 0 ? <span className="text-brand-gray-medium">&bull;</span> : null}
+        {resolvedSpeakers.length > 0 ? <span className="hidden sm:inline text-brand-gray-medium">&bull;</span> : null}
         <span>
           <strong>Expertise:</strong>{' '}
           <span className="text-brand-gray-medium">{LEVEL_LABELS[session.level]}</span>
         </span>
-        {showDuration && durationLabel ? <span className="text-brand-gray-medium">&bull;</span> : null}
+        {showDuration && durationLabel ? <span className="hidden sm:inline text-brand-gray-medium">&bull;</span> : null}
         {showDuration && durationLabel ? (
           <span>
             <strong>Duration:</strong>{' '}
             <span className="text-brand-gray-medium">{durationLabel}</span>
           </span>
         ) : null}
-        {isWorkshop && availability ? <span className="text-brand-gray-medium">&bull;</span> : null}
+        {isWorkshop && availability ? <span className="hidden sm:inline text-brand-gray-medium">&bull;</span> : null}
         {isWorkshop && availability ? (
           <span className="inline-flex items-center gap-1">
             <Users className="size-3.5" />
@@ -204,7 +204,7 @@ export function SessionCard({
         </Button>
       </div>
 
-      <div className="flex flex-col items-end gap-3 md:flex-row md:items-center md:gap-4">
+      <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:gap-4">
         {href ? (
           <Button variant={isWorkshop ? 'blue' : 'primary'} size="sm" asChild href={href}>
             See details
@@ -226,7 +226,7 @@ export function SessionCard({
         </Button>
       </div>
 
-      <div className="flex flex-col gap-3 pt-6 md:flex-row md:items-center md:gap-4">
+      <div className="flex flex-col items-start gap-3 pt-6 md:flex-row md:items-center md:gap-4">
         {href ? (
           <Button variant="blue" asChild href={href}>
             See details

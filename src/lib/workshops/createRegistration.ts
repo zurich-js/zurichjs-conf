@@ -8,6 +8,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { generateAndStoreWorkshopQRCode } from '@/lib/qrcode';
 import type { Database, WorkshopRegistration, PaymentStatus, Json } from '@/lib/types/database';
 
 const log = logger.scope('Workshop Registration');
@@ -31,6 +32,8 @@ export interface CreateRegistrationParams {
   /** 0-based index for multi-seat purchases (same session + workshop). Defaults to 0. */
   seatIndex?: number;
   metadata?: Record<string, unknown>;
+  company?: string | null;
+  jobTitle?: string | null;
 }
 
 export interface CreateRegistrationResult {
@@ -136,6 +139,58 @@ export async function createWorkshopRegistration(
 
     if (!row.registration) {
       return { success: false, error: 'Atomic insert returned no registration' };
+    }
+
+    // Post-insert updates for columns not handled by the RPC. Idempotent retries
+    // also repair missing values if the first post-insert update failed.
+    const postUpdates: { company?: string; job_title?: string; qr_code_url?: string } = {};
+    if (params.company && (!row.was_duplicate || !row.registration.company)) {
+      postUpdates.company = params.company;
+    }
+    if (params.jobTitle && (!row.was_duplicate || !row.registration.job_title)) {
+      postUpdates.job_title = params.jobTitle;
+    }
+
+    if (!row.registration.qr_code_url) {
+      const qrResult = await generateAndStoreWorkshopQRCode(row.registration.id);
+      if (!qrResult.success || !qrResult.url) {
+        const message = qrResult.error || 'QR generation returned no URL';
+        log.error('QR generation failed for workshop registration', new Error(message), {
+          registrationId: row.registration.id,
+          workshopId: params.workshopId,
+          stripeSessionId: params.stripeSessionId,
+          seatIndex,
+        });
+        return { success: false, duplicate: row.was_duplicate, registration: row.registration, error: message };
+      }
+      postUpdates.qr_code_url = qrResult.url;
+    }
+
+    if (Object.keys(postUpdates).length > 0) {
+      const { data: updatedRegistration, error: postUpdateError } = await supabase
+        .from('workshop_registrations')
+        .update(postUpdates)
+        .eq('id', row.registration.id)
+        .select('*')
+        .single();
+
+      if (postUpdateError) {
+        log.error('Failed to persist workshop registration post-insert fields', postUpdateError, {
+          registrationId: row.registration.id,
+          workshopId: params.workshopId,
+          stripeSessionId: params.stripeSessionId,
+          seatIndex,
+          fields: Object.keys(postUpdates),
+        });
+        return {
+          success: false,
+          duplicate: row.was_duplicate,
+          registration: row.registration,
+          error: postUpdateError.message,
+        };
+      }
+
+      row.registration = updatedRegistration as WorkshopRegistration;
     }
 
     return {

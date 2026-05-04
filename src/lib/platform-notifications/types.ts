@@ -37,6 +37,34 @@ export interface TicketPurchasedData {
   buyerName: string
   buyerEmail: string
   orderAdminUrl?: string
+  couponCode?: string | null
+  discountAmount?: number
+}
+
+export interface WorkshopRegisteredData {
+  workshopTitle: string
+  quantity: number
+  currency: string
+  amount: number
+  buyerName: string
+  buyerEmail: string
+  instructorName?: string | null
+  couponCode?: string | null
+  discountAmount?: number
+}
+
+export interface WorkshopOversoldData {
+  workshopTitle: string
+  workshopId: string
+  sessionId: string
+  seatIndex: number
+  currency: string
+  amount: number
+  buyerName: string
+  buyerEmail: string
+  attendeeName: string
+  attendeeEmail: string
+  instructorName?: string | null
 }
 
 export interface CartAbandonmentData {

@@ -17,6 +17,13 @@ export interface CheckoutStartedEvent {
   properties: BaseEventProperties & CartProperties & UserProperties & {
     cart_total?: number;
     currency?: string;
+    ticket_count?: number;
+    workshop_count?: number;
+    seat_count?: number;
+    has_discount?: boolean;
+    coupon_code?: string;
+    purchase_type?: 'ticket' | 'workshop' | 'mixed';
+    payment_ui?: 'embedded_checkout' | 'hosted_checkout';
   };
 }
 
@@ -28,6 +35,9 @@ export interface CheckoutCompletedEvent {
     RevenueProperties &
     UserProperties & {
       checkout_duration_seconds?: number;
+      ticket_count?: number;
+      workshop_count?: number;
+      seat_count?: number;
     };
 }
 
@@ -36,7 +46,7 @@ export interface CheckoutAbandonedEvent {
   properties: BaseEventProperties &
     CartProperties &
     UserProperties & {
-      abandonment_stage: 'review' | 'attendees' | 'upsells' | 'checkout';
+      abandonment_stage: 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
       time_spent_seconds?: number;
       fields_completed?: string[];
       fields_touched?: string[];
@@ -46,6 +56,43 @@ export interface CheckoutAbandonedEvent {
       time_in_form_ms?: number;
       cart_total?: number;
       currency?: string;
+      ticket_count?: number;
+      workshop_count?: number;
+      seat_count?: number;
+      has_discount?: boolean;
+      coupon_code?: string;
+      purchase_type?: 'ticket' | 'workshop' | 'mixed';
+      payment_ui?: 'embedded_checkout' | 'hosted_checkout';
+    };
+}
+
+export interface PaymentStepViewedEvent {
+  event: 'payment_step_viewed';
+  properties: BaseEventProperties &
+    CartProperties & {
+      stripe_session_id?: string;
+      ticket_count?: number;
+      workshop_count?: number;
+      seat_count?: number;
+      has_discount?: boolean;
+      coupon_code?: string;
+      purchase_type?: 'ticket' | 'workshop' | 'mixed';
+      payment_ui: 'embedded_checkout' | 'hosted_checkout';
+    };
+}
+
+export interface PaymentSubmittedEvent {
+  event: 'payment_submitted';
+  properties: BaseEventProperties &
+    CartProperties & {
+      stripe_session_id?: string;
+      ticket_count?: number;
+      workshop_count?: number;
+      seat_count?: number;
+      has_discount?: boolean;
+      coupon_code?: string;
+      purchase_type?: 'ticket' | 'workshop' | 'mixed';
+      payment_ui: 'embedded_checkout' | 'hosted_checkout';
     };
 }
 

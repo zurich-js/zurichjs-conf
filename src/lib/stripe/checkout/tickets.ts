@@ -370,6 +370,8 @@ export async function processTickets(
     amount: session.amount_total || 0,
     buyerName: `${primaryAttendee.firstName} ${primaryAttendee.lastName}`,
     buyerEmail: primaryAttendee.email,
+    couponCode: partnershipDiscountInfo.couponCode,
+    discountAmount: partnershipDiscountInfo.discountAmount,
   });
 
   log.info('Tickets processed', { count: ticketLineItems.length });

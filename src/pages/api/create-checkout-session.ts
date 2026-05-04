@@ -6,10 +6,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import type { Cart, CheckoutFormData } from '@/types/cart';
-import { getStripeRedirectUrls } from '@/lib/url';
-import { encodeCartState } from '@/lib/cart-url-state';
+import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
+import { isTicketProduct, isWorkshopPrice, isWorkshopVoucher, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Json } from '@/lib/types/database';
@@ -28,7 +28,7 @@ interface CheckoutSessionRequest {
  * API response
  */
 interface CheckoutSessionResponse {
-  url?: string;
+  clientSecret?: string;
   sessionId?: string;
   error?: string;
 }
@@ -89,6 +89,236 @@ const getCountryCode = (countryName: string): string => {
   return countryMap[normalized] || 'CH'; // Default to Switzerland if not found
 };
 
+const sanitizeSupabaseOrValue = (value: string | undefined): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return /^[A-Za-z0-9_-]+$/.test(trimmed) ? trimmed : null;
+};
+
+type TicketCategory = 'standard' | 'vip' | 'student' | 'unemployed';
+type ProductKind = 'ticket' | 'workshop';
+
+function normalizeProductKind(value: unknown): ProductKind | 'all' | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (['ticket', 'tickets', 'conference_ticket', 'conference_tickets'].includes(normalized)) {
+    return 'ticket';
+  }
+  if (['workshop', 'workshops', 'workshop_seat', 'workshop_seats'].includes(normalized)) {
+    return 'workshop';
+  }
+  if (['all', 'any', 'both'].includes(normalized)) {
+    return 'all';
+  }
+  return undefined;
+}
+
+function normalizeTicketCategory(value: unknown): TicketCategory | 'all' | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (['standard', 'standard_ticket', 'standard_tickets'].includes(normalized)) return 'standard';
+  if (['vip', 'vip_ticket', 'vip_tickets'].includes(normalized)) return 'vip';
+  if (['student', 'student_ticket', 'student_tickets'].includes(normalized)) return 'student';
+  if (['unemployed', 'unemployed_ticket', 'unemployed_tickets'].includes(normalized)) return 'unemployed';
+  if (['all', 'any', 'both'].includes(normalized)) return 'all';
+  return undefined;
+}
+
+function normalizeTicketCategories(value: unknown): Set<TicketCategory> | 'all' | undefined {
+  if (Array.isArray(value)) {
+    const categories = value
+      .map(normalizeTicketCategory)
+      .filter((category): category is TicketCategory | 'all' => Boolean(category));
+    if (categories.includes('all')) return 'all';
+    const ticketCategories = categories.filter((category): category is TicketCategory => category !== 'all');
+    return ticketCategories.length > 0 ? new Set(ticketCategories) : undefined;
+  }
+
+  if (typeof value === 'string' && value.includes(',')) {
+    return normalizeTicketCategories(value.split(','));
+  }
+
+  const category = normalizeTicketCategory(value);
+  if (category === 'all') return 'all';
+  return category ? new Set([category]) : undefined;
+}
+
+function inferAllowedTicketCategoriesFromMetadata(
+  coupon: Stripe.Coupon,
+  promotionCode: Stripe.PromotionCode | null
+): Set<TicketCategory> | 'all' | null {
+  const metadata = {
+    ...coupon.metadata,
+    ...promotionCode?.metadata,
+  };
+
+  return normalizeTicketCategories(metadata.ticket_category)
+    ?? normalizeTicketCategories(metadata.ticket_categories)
+    ?? normalizeTicketCategories(metadata.allowed_ticket_category)
+    ?? normalizeTicketCategories(metadata.allowed_ticket_categories)
+    ?? normalizeTicketCategories(metadata.applies_to_ticket_category)
+    ?? normalizeTicketCategories(metadata.applies_to_ticket_categories)
+    ?? null;
+}
+
+function inferAllowedKindsFromMetadata(
+  coupon: Stripe.Coupon,
+  promotionCode: Stripe.PromotionCode | null
+): Set<ProductKind> | 'all' | null {
+  const metadata = {
+    ...(coupon.metadata ?? {}),
+    ...(promotionCode?.metadata ?? {}),
+  };
+
+  const explicitKind =
+    normalizeProductKind(metadata.product_type) ??
+    normalizeProductKind(metadata.product_kind) ??
+    normalizeProductKind(metadata.applies_to_product_type) ??
+    normalizeProductKind(metadata.applies_to_kind) ??
+    normalizeProductKind(metadata.kind);
+
+  if (explicitKind === 'all') return 'all';
+  if (explicitKind) return new Set([explicitKind]);
+
+  if (metadata.source === 'discount_popup' || metadata.source === 'utm_lottery') {
+    return new Set(['ticket']);
+  }
+
+  return null;
+}
+
+async function validateDiscountProductsForCheckout(
+  stripe: Stripe,
+  cart: Cart,
+  priceIds: string[]
+): Promise<{ valid: boolean; error?: string }> {
+  if (!cart.couponCode && !cart.promotionCodeId) {
+    return { valid: true };
+  }
+
+  let coupon: Stripe.Coupon | null = null;
+  let promotionCode: Stripe.PromotionCode | null = null;
+
+  if (cart.promotionCodeId) {
+    promotionCode = await stripe.promotionCodes.retrieve(cart.promotionCodeId);
+    const couponRef = (promotionCode as { promotion?: { coupon?: string | Stripe.Coupon }; coupon?: string | Stripe.Coupon }).promotion?.coupon
+      ?? (promotionCode as { coupon?: string | Stripe.Coupon }).coupon;
+
+    if (!promotionCode.active || !couponRef) {
+      return { valid: false, error: 'This promo code is no longer active' };
+    }
+
+    coupon = typeof couponRef === 'string'
+      ? await stripe.coupons.retrieve(couponRef)
+      : couponRef;
+  } else if (cart.couponCode) {
+    coupon = await stripe.coupons.retrieve(cart.couponCode);
+  }
+
+  if (!coupon?.valid) {
+    return { valid: false, error: 'This promo code is no longer valid' };
+  }
+
+  const prices = await Promise.all(
+    Array.from(new Set(priceIds)).map((priceId) =>
+      stripe.prices.retrieve(priceId, { expand: ['product'] })
+    )
+  );
+  const priceProductIds = new Map<string, string>();
+  const priceTicketCategories = new Map<string, TicketCategory>();
+  const priceKinds = new Map<string, ProductKind | 'unknown'>();
+
+  for (const price of prices) {
+    const product = price.product;
+    const productId = typeof product === 'string' ? product : product.id;
+    priceProductIds.set(price.id, productId);
+    const isWorkshop = isWorkshopPrice(price) || isWorkshopVoucher(price);
+    const isTicket = isTicketProduct(price);
+    priceKinds.set(price.id, isWorkshop ? 'workshop' : isTicket ? 'ticket' : 'unknown');
+    if (isTicket && price.lookup_key) {
+      priceTicketCategories.set(price.id, parseTicketInfo(price.lookup_key).category as TicketCategory);
+    }
+  }
+
+  let restrictedProductIds = coupon.applies_to?.products ?? [];
+  if (restrictedProductIds.length === 0) {
+    const supabase = createServiceRoleClient();
+    const sanitizedCouponId = sanitizeSupabaseOrValue(coupon.id);
+    const sanitizedCouponCode = sanitizeSupabaseOrValue(cart.couponCode);
+    const sanitizedPromotionCodeId = sanitizeSupabaseOrValue(cart.promotionCodeId);
+    const filters = [
+      sanitizedCouponId ? `stripe_coupon_id.eq.${sanitizedCouponId}` : null,
+      sanitizedCouponCode ? `code.eq.${sanitizedCouponCode}` : null,
+      sanitizedPromotionCodeId ? `stripe_promotion_code_id.eq.${sanitizedPromotionCodeId}` : null,
+    ].filter(Boolean).join(',');
+    const { data: dbCoupon } = filters
+      ? await supabase
+        .from('partnership_coupons')
+        .select('restricted_product_ids')
+        .or(filters)
+        .maybeSingle()
+      : { data: null };
+    restrictedProductIds = dbCoupon?.restricted_product_ids ?? [];
+  }
+
+  if (restrictedProductIds.length > 0) {
+    const eligiblePriceIds = Array.from(priceProductIds.entries())
+      .filter(([, productId]) => restrictedProductIds.includes(productId))
+      .map(([priceId]) => priceId);
+    if (eligiblePriceIds.length === 0) {
+      return { valid: false, error: 'This promo code is not applicable to the product type in your cart' };
+    }
+
+    const allowedTicketCategories = inferAllowedTicketCategoriesFromMetadata(coupon, promotionCode);
+    if (allowedTicketCategories && allowedTicketCategories !== 'all') {
+      const disallowedEligibleTicket = eligiblePriceIds.some((priceId) => {
+        const category = priceTicketCategories.get(priceId);
+        return category && !allowedTicketCategories.has(category);
+      });
+      if (disallowedEligibleTicket) {
+        return {
+          valid: false,
+          error: `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`,
+        };
+      }
+    }
+    return { valid: true };
+  }
+
+  const allowedTicketCategories = inferAllowedTicketCategoriesFromMetadata(coupon, promotionCode);
+  if (allowedTicketCategories && allowedTicketCategories !== 'all') {
+    const disallowedTicket = Array.from(priceTicketCategories.values()).some((category) =>
+      !allowedTicketCategories.has(category)
+    );
+    if (disallowedTicket) {
+      return {
+        valid: false,
+        error: `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`,
+      };
+    }
+  }
+
+  // Unrestricted Stripe coupons apply to the whole Checkout Session. Respect
+  // metadata-driven product-kind allowances; otherwise default unrestricted
+  // coupons to ticket-only so generic ticket promos cannot discount workshops.
+  const allowedKinds = inferAllowedKindsFromMetadata(coupon, promotionCode) ?? new Set<ProductKind>(['ticket']);
+  if (allowedKinds !== 'all') {
+    const hasDisallowedKind = Array.from(priceKinds.values()).some((kind) =>
+      kind === 'unknown' || !allowedKinds.has(kind)
+    );
+    if (hasDisallowedKind) {
+      return {
+        valid: false,
+        error: allowedKinds.has('ticket')
+          ? 'This promo code is only valid for conference tickets. Remove workshop seats before applying it.'
+          : 'This promo code is not applicable to the product type in your cart',
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
 /**
  * API Handler
  */
@@ -145,6 +375,17 @@ export default async function handler(
       return;
     }
 
+    const discountValidation = await validateDiscountProductsForCheckout(stripe, cart, priceIds);
+    if (!discountValidation.valid) {
+      log.warn('Checkout blocked: discount product validation failed', {
+        error: discountValidation.error,
+        couponCode: cart.couponCode,
+        promotionCodeId: cart.promotionCodeId,
+      });
+      res.status(400).json({ error: discountValidation.error ?? 'Invalid promo code for cart' });
+      return;
+    }
+
     // Convert cart items to Stripe line items
     // Note: Prices in cart are in base currency units (e.g., CHF)
     // Stripe expects amounts in cents
@@ -185,22 +426,9 @@ export default async function handler(
       metadata.has_workshops = 'true';
     }
 
-    // Encode cart state for cancel URL (so user can resume checkout)
-    const encodedCart = encodeCartState(cart);
-
-    // Get Stripe redirect URLs using centralized utility
-    const { successUrl, cancelUrl } = getStripeRedirectUrls(req, encodedCart);
-
-    // Prepare discounts array if coupon was applied
-    // Use coupon code for direct coupon application
-    const discounts = cart.couponCode
-      ? [{ coupon: cart.couponCode }]
-      : undefined;
-
     log.info('Cart coupon info', {
       couponCode: cart.couponCode,
       discountAmount: cart.discountAmount,
-      hasDiscounts: !!discounts,
     });
 
     // Get or create Stripe Customer to avoid duplicates
@@ -259,32 +487,41 @@ export default async function handler(
       log.info('Created new customer', { customerId: customer.id });
     }
 
-    // Create Stripe Checkout Session
-    // Note: Prices already include 8.1% Swiss VAT - no additional tax calculation
-    // By passing a customer with address, Stripe will prefill the billing address in checkout
+    // Prepare discounts array if coupon/promotion code was applied.
+    // Promotion codes must be sent by ID so Stripe enforces active state,
+    // expiry, redemption limits, and minimum amount restrictions at checkout.
+    const discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined = cart.promotionCodeId
+      ? [{ promotion_code: cart.promotionCodeId }]
+      : cart.couponCode
+        ? [{ coupon: cart.couponCode }]
+        : undefined;
+
+    // Create Checkout Session in embedded mode.
+    // This returns a client_secret for use with Custom Checkout Elements
+    // (PaymentElement, BillingAddressElement, etc.) while preserving the
+    // checkout.session.completed webhook flow.
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
-      payment_method_types: ['card'],
+      ui_mode: 'custom',
       line_items: lineItems,
-      customer: customer.id, // Use the customer we just created with prefilled address
+      customer: customer.id,
       customer_update: {
-        // Allow Stripe to update customer with any changes made in checkout
         address: 'auto',
         name: 'auto',
       },
-      metadata, // Stored for retrieval in webhook
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      billing_address_collection: 'auto', // Use customer's saved address, prefilling the checkout form
+      metadata,
+      return_url: `${getBaseUrl(req)}/success?session_id={CHECKOUT_SESSION_ID}`,
       phone_number_collection: {
         enabled: true,
       },
     };
 
-    // Apply pre-validated coupon if available
     if (discounts && discounts.length > 0) {
       sessionParams.discounts = discounts;
-      log.info('Applying coupon to checkout session', { couponCode: cart.couponCode });
+      log.info('Applying discount to checkout session', {
+        couponCode: cart.couponCode,
+        promotionCodeId: cart.promotionCodeId,
+      });
     }
 
     log.info('Creating checkout session', { customerId: customer.id, totalItems: cart.totalItems });
@@ -293,9 +530,7 @@ export default async function handler(
 
     log.info('Checkout session created', { sessionId: session.id });
 
-    // Persist a cart snapshot so the Stripe webhook can hydrate workshop
-    // attendee info without relying on Stripe metadata (which is capped at
-    // 500 chars per value).
+    // Persist cart snapshot so the webhook can hydrate workshop attendee info.
     if (workshopCartItems.length > 0) {
       try {
         const supabase = createServiceRoleClient();
@@ -328,9 +563,8 @@ export default async function handler(
       }
     }
 
-    // Return the checkout URL
     res.status(200).json({
-      url: session.url || undefined,
+      clientSecret: session.client_secret || undefined,
       sessionId: session.id,
     });
   } catch (error) {
@@ -343,4 +577,3 @@ export default async function handler(
     });
   }
 }
-

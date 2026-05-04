@@ -12,6 +12,8 @@ import type {
   CfpSpeakerProfileCompletedData,
   CfpTalkSubmittedData,
   TicketPurchasedData,
+  WorkshopRegisteredData,
+  WorkshopOversoldData,
   CartAbandonmentData,
   StatusVerificationData,
   SponsorInterestData,
@@ -183,19 +185,67 @@ export function notifyCfpTalkSubmitted(data: CfpTalkSubmittedData): void {
 export function notifyTicketPurchased(data: TicketPurchasedData): void {
   const amount = formatCurrency(data.amount, data.currency)
   const text = `Ticket: ${data.quantity}x ${data.ticketType} (${amount})`
-  const blocks = buildBlocks(
-    ':ticket: *Ticket Purchased*',
-    [
-      { label: 'Buyer', value: data.buyerName },
-      { label: 'Email', value: data.buyerEmail },
-      { label: 'Type', value: data.ticketType },
-      { label: 'Qty', value: String(data.quantity) },
-      { label: 'Amount', value: amount },
-    ],
-    data.orderAdminUrl,
-    'View Order'
-  )
+  const fields = [
+    { label: 'Buyer', value: data.buyerName },
+    { label: 'Email', value: data.buyerEmail },
+    { label: 'Type', value: data.ticketType },
+    { label: 'Qty', value: String(data.quantity) },
+    { label: 'Amount', value: amount },
+  ]
+  if (data.couponCode) {
+    fields.push({ label: 'Coupon', value: data.couponCode })
+  }
+  if (data.discountAmount && data.discountAmount > 0) {
+    fields.push({ label: 'Discount', value: formatCurrency(data.discountAmount, data.currency) })
+  }
+  const blocks = buildBlocks(':ticket: *Ticket Purchased*', fields, data.orderAdminUrl, 'View Order')
   void safeSend('ticket_purchased', text, blocks)
+}
+
+export function notifyWorkshopRegistered(data: WorkshopRegisteredData): void {
+  const amount = formatCurrency(data.amount, data.currency)
+  const title = truncate(data.workshopTitle, 80)
+  const text = `Workshop: ${data.quantity}x "${title}" (${amount})`
+  const fields = [
+    { label: 'Workshop', value: title },
+    { label: 'Buyer', value: data.buyerName },
+    { label: 'Email', value: data.buyerEmail },
+    { label: 'Seats', value: String(data.quantity) },
+    { label: 'Amount', value: amount },
+  ]
+  if (data.instructorName) {
+    fields.push({ label: 'Instructor', value: data.instructorName })
+  }
+  if (data.couponCode) {
+    fields.push({ label: 'Coupon', value: data.couponCode })
+  }
+  if (data.discountAmount && data.discountAmount > 0) {
+    fields.push({ label: 'Discount', value: formatCurrency(data.discountAmount, data.currency) })
+  }
+  const blocks = buildBlocks(':mortar_board: *Workshop Registration*', fields)
+  void safeSend('workshop_registered', text, blocks)
+}
+
+export function notifyWorkshopOversold(data: WorkshopOversoldData): void {
+  const amount = formatCurrency(data.amount, data.currency)
+  const title = truncate(data.workshopTitle, 80)
+  const text = `Workshop oversold paid seat needs manual resolution: "${title}" (${amount})`
+  const fields = [
+    { label: 'Workshop', value: title },
+    { label: 'Workshop ID', value: data.workshopId },
+    { label: 'Session', value: data.sessionId },
+    { label: 'Seat index', value: String(data.seatIndex) },
+    { label: 'Buyer', value: data.buyerName || 'Unknown' },
+    { label: 'Buyer email', value: data.buyerEmail },
+    { label: 'Attendee', value: data.attendeeName || 'Unknown' },
+    { label: 'Attendee email', value: data.attendeeEmail },
+    { label: 'Paid amount', value: amount },
+  ]
+  if (data.instructorName) {
+    fields.push({ label: 'Instructor', value: data.instructorName })
+  }
+  const blocks = buildBlocks(':warning: *Workshop Oversold - Manual Resolution Required*', fields)
+  void safeSend('workshop_oversold_manual_resolution_required', text, blocks)
 }
 
 export function notifyCartAbandonment(data: CartAbandonmentData): void {

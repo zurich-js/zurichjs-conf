@@ -30,7 +30,7 @@ export function ReviewStep({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col lg:flex-row gap-8 justify-center"
+      className="flex flex-col lg:flex-row gap-4 lg:gap-8 justify-center"
     >
       {/* Ticket Items */}
       <div className="flex-[2_0_0] flex flex-col gap-5 max-w-screen-lg">
@@ -102,7 +102,7 @@ export function ReviewStep({
       </div>
 
       {/* Order Summary Sidebar */}
-      <div className="flex-[1_0_0] lg:max-w-screen-xs sticky top-24 flex flex-col gap-5">
+      <div className="flex-[1_0_0] lg:max-w-screen-xs sticky top-16 lg:top-24 flex flex-col gap-5">
         <Heading level="h2" className="text-lg mt-1.5 font-bold text-brand-white">Order summary</Heading>
 
         <CartSummary

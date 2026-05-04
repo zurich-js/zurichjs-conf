@@ -3,7 +3,7 @@ import type { Cart } from '@/types/cart';
 import type { CheckoutFormData } from '@/lib/validations/checkout';
 
 interface CreateCheckoutSessionResponse {
-  url: string;
+  clientSecret: string;
   sessionId: string;
 }
 
@@ -13,8 +13,8 @@ interface CreateCheckoutSessionRequest {
 }
 
 /**
- * Custom hook for creating a Stripe checkout session
- * Uses TanStack Query for optimistic updates and error handling
+ * Custom hook for creating a Stripe checkout session.
+ * Returns clientSecret for embedded checkout rendering.
  */
 export const useCheckout = () => {
   return useMutation<
@@ -23,11 +23,6 @@ export const useCheckout = () => {
     CreateCheckoutSessionRequest
   >({
     mutationFn: async ({ cart, customerInfo }) => {
-      console.log('[useCheckout] Creating checkout session with cart:', {
-        couponCode: cart.couponCode,
-        discountAmount: cart.discountAmount,
-      });
-
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -45,12 +40,6 @@ export const useCheckout = () => {
       }
 
       return response.json();
-    },
-    onSuccess: (data) => {
-      // Redirect to Stripe checkout
-      if (data.url) {
-        window.location.href = data.url;
-      }
     },
   });
 };

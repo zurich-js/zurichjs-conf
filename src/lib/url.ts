@@ -92,3 +92,14 @@ export function getStripeRedirectUrls(
     cancelUrl,
   };
 }
+
+/**
+ * Get Stripe return URL for embedded checkout sessions.
+ * Embedded checkout uses a single return_url instead of success_url + cancel_url.
+ */
+export function getStripeReturnUrl(
+  req: NextApiRequest | IncomingMessage
+): string {
+  const baseUrl = getBaseUrl(req);
+  return `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+}

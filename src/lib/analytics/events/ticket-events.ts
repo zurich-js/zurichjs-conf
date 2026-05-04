@@ -54,9 +54,18 @@ export interface CartReviewedEvent {
 export interface CartStepViewedEvent {
   event: 'cart_step_viewed';
   properties: BaseEventProperties & {
-    step: 'review' | 'attendees' | 'upsells' | 'checkout';
+    step: 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
     cart_item_count: number;
     cart_total_amount: number;
+    cart_currency?: string;
+    cart_items?: CartProperties['cart_items'];
+    ticket_count?: number;
+    workshop_count?: number;
+    seat_count?: number;
+    has_attendee_step?: boolean;
+    has_discount?: boolean;
+    coupon_code?: string;
+    purchase_type?: 'ticket' | 'workshop' | 'mixed';
   };
 }
 

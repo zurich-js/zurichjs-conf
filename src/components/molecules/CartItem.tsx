@@ -119,7 +119,7 @@ export const CartItem: React.FC<CartItemProps> = ({
             {/* Remove button */}
             <button
               onClick={handleRemove}
-              className="ml-auto -mr-2.5 shrink-0 group/btn cursor-pointer p-2.5 rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out"
+              className="ml-auto -mr-2 shrink-0 group/btn cursor-pointer p-3 rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out"
               aria-label={`Remove ${item.title} from cart`}
             >
               <Trash2Icon size={16} className="stroke-brand-gray-light group-hover/btn:stroke-brand-red transition-colors duration-300 ease-in-out" />
@@ -150,7 +150,7 @@ export const CartItem: React.FC<CartItemProps> = ({
               <button
                 onClick={() => handleQuantityChange(Math.max(1, item.quantity - 1))}
                 disabled={item.quantity <= 1}
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-brand-gray-dark hover:bg-brand-gray-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-brand-gray-dark hover:bg-brand-gray-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
                 aria-label={`Decrease quantity of ${item.title}`}
               >
                 <Minus size={16} className="stroke-brand-white" />
@@ -163,7 +163,7 @@ export const CartItem: React.FC<CartItemProps> = ({
               <button
                 onClick={() => handleQuantityChange(Math.min(10, item.quantity + 1))}
                 disabled={item.quantity >= 10}
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-brand-gray-dark hover:bg-brand-gray-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-brand-gray-dark hover:bg-brand-gray-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
                 aria-label={`Increase quantity of ${item.title}`}
               >
                 <Plus size={16} className="stroke-brand-white" />

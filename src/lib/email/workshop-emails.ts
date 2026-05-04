@@ -26,6 +26,8 @@ export interface WorkshopConfirmationData {
   totalSeats: number;
   workshopSlug?: string | null;
   calendarUrl?: string | null;
+  qrCodeUrl?: string | null;
+  pdfAttachment?: Buffer;
 }
 
 export async function sendWorkshopConfirmationEmail(
@@ -58,10 +60,19 @@ export async function sendWorkshopConfirmationEmail(
       seatLabel,
       workshopUrl: data.workshopSlug ? `${getBaseUrl()}/workshops/${data.workshopSlug}` : undefined,
       calendarUrl: data.calendarUrl ?? undefined,
+      qrSrc: data.qrCodeUrl ?? undefined,
       supportEmail: EMAIL_CONFIG.supportEmail,
     };
 
     const emailHtml = await render(React.createElement(WorkshopPurchaseEmail, emailProps));
+
+    const attachments = [];
+    if (data.pdfAttachment) {
+      attachments.push({
+        filename: `ZurichJS_Workshop_${data.workshopTitle.replace(/\s+/g, '_')}.pdf`,
+        content: data.pdfAttachment,
+      });
+    }
 
     const result = await resend.emails.send({
       from: EMAIL_CONFIG.from,
@@ -69,6 +80,7 @@ export async function sendWorkshopConfirmationEmail(
       replyTo: EMAIL_CONFIG.replyTo,
       subject: `Your workshop seat — ${data.workshopTitle}`,
       html: emailHtml,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     if (result.error) {

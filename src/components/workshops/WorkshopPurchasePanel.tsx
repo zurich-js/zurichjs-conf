@@ -13,6 +13,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { createWorkshopPricingQueryOptions } from '@/lib/queries/workshops';
 import { formatPrice } from '@/lib/cart';
+import { formatDuration } from '@/components/scheduling/utils';
 
 interface WorkshopPurchasePanelProps {
   /** Program session id — preferred match for post-CFP workshop offerings. */
@@ -68,7 +69,7 @@ export function WorkshopPurchasePanel({
   return (
     <section id="purchase" className="scroll-mt-24">
       <div className="rounded-2xl border border-brand-black/10 bg-brand-white p-6 shadow-sm md:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-brand-black/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand-black/70">
               <GraduationCap size={14} /> Workshop seat
@@ -80,7 +81,7 @@ export function WorkshopPurchasePanel({
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-brand-black/70">
                 {offering.durationMinutes ? (
                   <span className="inline-flex items-center gap-1.5">
-                    <Timer size={14} /> {offering.durationMinutes} min
+                    <Timer size={14} /> {formatDuration(offering.durationMinutes)}
                   </span>
                 ) : null}
                 {offering.room ? (
@@ -101,9 +102,9 @@ export function WorkshopPurchasePanel({
           </div>
 
           {offering && (
-            <div className="text-right">
+            <div className="sm:text-right">
               <div className="text-xs uppercase tracking-wide text-brand-black/50">Price</div>
-              <div className="text-3xl font-bold text-brand-black">
+              <div className="text-2xl sm:text-3xl font-bold text-brand-black">
                 {formatPrice(offering.unitAmount / 100, offering.currency)}
               </div>
             </div>

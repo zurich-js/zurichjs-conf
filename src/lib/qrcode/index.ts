@@ -249,3 +249,143 @@ export async function checkInTicket(
     };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Workshop Registration QR Codes
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generate and store QR code for a workshop registration.
+ * Uses the same validation URL format and storage bucket as tickets.
+ */
+export async function generateAndStoreWorkshopQRCode(
+  registrationId: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const supabase = createServiceRoleClient();
+    const validationData = `${getBaseUrl()}/validate/${registrationId}`;
+
+    const qrCodeBuffer = await QRCode.toBuffer(validationData, {
+      width: 400,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' },
+      errorCorrectionLevel: 'H',
+    });
+
+    const fileName = `workshop-${registrationId}.png`;
+    const { error: uploadError } = await supabase.storage
+      .from('ticket-qrcodes')
+      .upload(fileName, qrCodeBuffer, {
+        contentType: 'image/png',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      // Fallback to data URL
+      try {
+        const dataUrl = await generateTicketQRCode(registrationId);
+        return { success: true, url: dataUrl };
+      } catch {
+        return { success: false, error: `Storage and fallback failed: ${uploadError.message}` };
+      }
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('ticket-qrcodes')
+      .getPublicUrl(fileName);
+
+    return { success: true, url: urlData.publicUrl };
+  } catch (error) {
+    // Emergency fallback
+    try {
+      const dataUrl = await generateTicketQRCode(registrationId);
+      return { success: true, url: dataUrl };
+    } catch {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+}
+
+/**
+ * Validate a workshop registration by its ID.
+ * Used by the shared /validate/[id] route when the ID is not a ticket.
+ */
+export async function validateWorkshopRegistration(
+  registrationId: string
+): Promise<{
+  valid: boolean;
+  registration?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    workshopTitle: string;
+    checkedIn: boolean;
+  };
+  error?: string;
+}> {
+  try {
+    const supabase = createServiceRoleClient();
+
+    const { data, error } = await supabase
+      .from('workshop_registrations')
+      .select('*')
+      .eq('id', registrationId)
+      .single();
+
+    if (error || !data) {
+      return { valid: false, error: 'Workshop registration not found' };
+    }
+
+    const row = data;
+
+    if (row.status !== 'confirmed') {
+      return { valid: false, error: 'Registration is not confirmed' };
+    }
+
+    // Fetch workshop title
+    const { data: workshop } = await supabase
+      .from('workshops')
+      .select('title')
+      .eq('id', row.workshop_id)
+      .single();
+
+    return {
+      valid: true,
+      registration: {
+        id: row.id,
+        firstName: row.first_name ?? '',
+        lastName: row.last_name ?? '',
+        email: row.email ?? '',
+        workshopTitle: workshop?.title ?? 'Workshop',
+        checkedIn: row.checked_in || false,
+      },
+    };
+  } catch (error) {
+    return { valid: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
+ * Mark a workshop registration as checked in.
+ */
+export async function checkInWorkshopRegistration(
+  registrationId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createServiceRoleClient();
+
+    const { error } = await supabase
+      .from('workshop_registrations')
+      .update({ checked_in: true, checked_in_at: new Date().toISOString() })
+      .eq('id', registrationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}

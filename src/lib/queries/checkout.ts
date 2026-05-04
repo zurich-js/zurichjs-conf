@@ -4,7 +4,7 @@
 
 import { queryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-import { apiClient, endpoints } from '@/lib/api';
+import { apiClient, ApiError, endpoints } from '@/lib/api';
 
 /**
  * Checkout session details returned from Stripe
@@ -16,6 +16,13 @@ export interface CheckoutSessionDetails {
   currency?: string;
   payment_status?: string;
   session_id?: string;
+  purchase_type?: 'ticket' | 'workshop' | 'mixed';
+  line_items?: Array<{
+    description: string;
+    quantity: number;
+    amount: number;
+    type: 'ticket' | 'workshop' | 'other';
+  }>;
   error?: string;
 }
 
@@ -43,9 +50,13 @@ export function checkoutSessionQueryOptions(sessionId: string) {
   return queryOptions({
     queryKey: queryKeys.checkout.session(sessionId),
     queryFn: () => fetchCheckoutSession(sessionId),
-    enabled: !!sessionId, // Only run query if sessionId is provided
-    staleTime: Infinity, // Session data doesn't change
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    retry: 2, // Retry failed requests twice
+    enabled: !!sessionId,
+    staleTime: Infinity,
+    gcTime: 30 * 60 * 1000,
+    // Don't retry payment failures (4xx) — only retry server errors (5xx)
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && error.statusCode < 500) return false;
+      return failureCount < 2;
+    },
   });
 }

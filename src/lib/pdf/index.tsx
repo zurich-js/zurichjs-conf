@@ -6,6 +6,7 @@
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { TicketPDF, type TicketPDFProps } from './ticket-pdf';
+import { WorkshopPDF, type WorkshopPDFProps } from './workshop-pdf';
 import { InvoicePDF } from './invoice-pdf';
 import { SponsorshipInvoicePDF } from './sponsorship-invoice-pdf';
 import { TicketInvoicePDF } from './ticket-invoice-pdf';
@@ -120,7 +121,23 @@ export async function generateTicketInvoicePDF(props: TicketInvoicePDFProps): Pr
   }
 }
 
+/**
+ * Generate a PDF workshop registration and return as buffer
+ */
+export async function generateWorkshopPDF(props: WorkshopPDFProps): Promise<Buffer> {
+  try {
+    console.log('[PDF] Generating PDF for workshop registration:', props.registrationId);
+    const pdfBuffer = await renderToBuffer(<WorkshopPDF {...props} />);
+    console.log('[PDF] Workshop PDF generated, size:', pdfBuffer.length, 'bytes');
+    return pdfBuffer;
+  } catch (error) {
+    console.error('[PDF] Error generating workshop PDF:', error);
+    throw error;
+  }
+}
+
 export type { TicketPDFProps } from './ticket-pdf';
+export type { WorkshopPDFProps } from './workshop-pdf';
 export type { InvoicePDFProps } from '@/lib/types/b2b';
 export type { SponsorshipInvoicePDFProps } from '@/lib/types/sponsorship';
 export type { TicketInvoicePDFProps } from '@/lib/types/ticket-invoice';

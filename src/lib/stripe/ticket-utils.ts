@@ -132,12 +132,14 @@ export function isWorkshopVoucher(price: Stripe.Price | undefined): boolean {
 
 /**
  * Check if a price is a sellable workshop offering.
- * Identified by a `workshop_` prefix on the (currency-stripped) lookup key.
+ * Identified by a `_workshop_` segment or `workshop_` prefix on the
+ * (currency-stripped) lookup key.
  * Distinct from {@link isWorkshopVoucher}, which detects the free-seat voucher product.
  */
 export const WORKSHOP_LOOKUP_KEY_PREFIX = 'workshop_';
 
 export function isWorkshopPrice(price: Stripe.Price | undefined): boolean {
   if (!price?.lookup_key) return false;
-  return stripCurrencySuffix(price.lookup_key).startsWith(WORKSHOP_LOOKUP_KEY_PREFIX);
+  const key = stripCurrencySuffix(price.lookup_key);
+  return key.startsWith(WORKSHOP_LOOKUP_KEY_PREFIX) || key.includes('_workshop_');
 }

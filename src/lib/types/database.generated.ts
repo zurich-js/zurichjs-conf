@@ -2324,6 +2324,9 @@ export type Database = {
       workshop_registrations: {
         Row: {
           amount_paid: number
+          checked_in: boolean
+          checked_in_at: string | null
+          company: string | null
           coupon_code: string | null
           created_at: string
           currency: string
@@ -2331,10 +2334,12 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          job_title: string | null
           last_name: string | null
           metadata: Json | null
           partnership_coupon_id: string | null
           partnership_voucher_id: string | null
+          qr_code_url: string | null
           seat_index: number
           status: Database["public"]["Enums"]["payment_status"]
           stripe_payment_intent_id: string | null
@@ -2346,6 +2351,9 @@ export type Database = {
         }
         Insert: {
           amount_paid: number
+          checked_in?: boolean
+          checked_in_at?: string | null
+          company?: string | null
           coupon_code?: string | null
           created_at?: string
           currency?: string
@@ -2353,10 +2361,12 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
           metadata?: Json | null
           partnership_coupon_id?: string | null
           partnership_voucher_id?: string | null
+          qr_code_url?: string | null
           seat_index?: number
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_payment_intent_id?: string | null
@@ -2368,6 +2378,9 @@ export type Database = {
         }
         Update: {
           amount_paid?: number
+          checked_in?: boolean
+          checked_in_at?: string | null
+          company?: string | null
           coupon_code?: string | null
           created_at?: string
           currency?: string
@@ -2375,10 +2388,12 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
           metadata?: Json | null
           partnership_coupon_id?: string | null
           partnership_voucher_id?: string | null
+          qr_code_url?: string | null
           seat_index?: number
           status?: Database["public"]["Enums"]["payment_status"]
           stripe_payment_intent_id?: string | null

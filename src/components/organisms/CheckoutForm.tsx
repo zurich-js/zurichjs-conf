@@ -39,7 +39,7 @@ export interface CheckoutFormProps {
     cart_total_amount: number;
     cart_currency: string;
     cart_items: Array<{
-      type: 'ticket' | 'workshop_voucher';
+      type: 'ticket' | 'workshop' | 'workshop_voucher';
       category?: string;
       stage?: string;
       quantity: number;
@@ -370,7 +370,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="text-gray-400 hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2"
+          className="text-gray-400 hover:text-brand-white transition-colors cursor-pointer text-sm inline-flex items-center gap-2 py-2.5"
         >
           <svg
             className="w-4 h-4"
