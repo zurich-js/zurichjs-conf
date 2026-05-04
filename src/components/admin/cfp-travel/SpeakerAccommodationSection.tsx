@@ -3,7 +3,7 @@
  * Manage hotel booking for a speaker within the detail modal
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Hotel, Pencil } from 'lucide-react';
 import type { CfpSpeakerAccommodation } from '@/lib/types/cfp';
 import { calculateNights } from './types';
@@ -34,18 +34,21 @@ export function SpeakerAccommodationSection({
   isSubmitting,
 }: SpeakerAccommodationSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState<AccommodationFormData>({
-    hotel_name: accommodation?.hotel_name || '',
-    hotel_address: accommodation?.hotel_address || '',
-    check_in_date: accommodation?.check_in_date || '',
-    check_out_date: accommodation?.check_out_date || '',
-    reservation_number: accommodation?.reservation_number || '',
-    reservation_confirmation_url: accommodation?.reservation_confirmation_url || '',
-    cost_amount: accommodation?.cost_amount ? (accommodation.cost_amount / 100).toString() : '',
-    cost_currency: accommodation?.cost_currency || 'CHF',
-    is_covered_by_conference: accommodation?.is_covered_by_conference ?? true,
-    admin_notes: accommodation?.admin_notes || '',
-  });
+
+  const buildFormData = useCallback((acc: CfpSpeakerAccommodation | null): AccommodationFormData => ({
+    hotel_name: acc?.hotel_name || '',
+    hotel_address: acc?.hotel_address || '',
+    check_in_date: acc?.check_in_date || '',
+    check_out_date: acc?.check_out_date || '',
+    reservation_number: acc?.reservation_number || '',
+    reservation_confirmation_url: acc?.reservation_confirmation_url || '',
+    cost_amount: acc?.cost_amount ? (acc.cost_amount / 100).toString() : '',
+    cost_currency: acc?.cost_currency || 'CHF',
+    is_covered_by_conference: acc?.is_covered_by_conference ?? true,
+    admin_notes: acc?.admin_notes || '',
+  }), []);
+
+  const [form, setForm] = useState<AccommodationFormData>(() => buildFormData(accommodation));
 
   const nights = calculateNights(form.check_in_date || null, form.check_out_date || null);
   const displayNights = calculateNights(
@@ -54,18 +57,18 @@ export function SpeakerAccommodationSection({
   );
 
   const handleSubmit = () => {
-    const costCents = form.cost_amount ? Math.round(parseFloat(form.cost_amount) * 100) : undefined;
+    const costCents = form.cost_amount ? Math.round(parseFloat(form.cost_amount) * 100) : null;
     onSave({
-      hotel_name: form.hotel_name || undefined,
-      hotel_address: form.hotel_address || undefined,
-      check_in_date: form.check_in_date || undefined,
-      check_out_date: form.check_out_date || undefined,
-      reservation_number: form.reservation_number || undefined,
-      reservation_confirmation_url: form.reservation_confirmation_url || undefined,
+      hotel_name: form.hotel_name || null,
+      hotel_address: form.hotel_address || null,
+      check_in_date: form.check_in_date || null,
+      check_out_date: form.check_out_date || null,
+      reservation_number: form.reservation_number || null,
+      reservation_confirmation_url: form.reservation_confirmation_url || null,
       cost_amount: costCents,
       cost_currency: form.cost_currency,
       is_covered_by_conference: form.is_covered_by_conference,
-      admin_notes: form.admin_notes || undefined,
+      admin_notes: form.admin_notes || null,
     });
     setIsEditing(false);
   };
@@ -79,7 +82,7 @@ export function SpeakerAccommodationSection({
         </h3>
         {!isEditing && (
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={() => { setForm(buildFormData(accommodation)); setIsEditing(true); }}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-primary text-black hover:bg-[#e8d95e] cursor-pointer"
           >
             <Pencil className="w-3 h-3" /> {accommodation?.hotel_name ? 'Edit' : 'Add Hotel'}

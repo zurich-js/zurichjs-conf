@@ -53,7 +53,9 @@ export function OverviewTab({ stats, isLoading, onNavigate }: OverviewTabProps) 
         <StatCard
           label="Pending Invoices"
           value={stats.pending_invoices}
-          subtitle={`CHF ${(stats.total_invoice_amount / 100).toFixed(2)}`}
+          subtitle={Object.entries(stats.total_invoice_amounts)
+            .map(([cur, amount]) => `${cur} ${(amount / 100).toFixed(2)}`)
+            .join(' + ') || 'CHF 0.00'}
           color="text-yellow-600"
         />
       </div>

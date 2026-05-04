@@ -77,7 +77,15 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     mutationFn: async ({ data, file }: { data: Record<string, unknown>; file?: File }) => {
       const result = await apiCreateInvoice(data);
       if (file && result.invoice?.id) {
-        await uploadInvoicePdf(result.invoice.id, file);
+        try {
+          await uploadInvoicePdf(result.invoice.id, file);
+        } catch {
+          // Invoice was created but PDF upload failed - still return the result
+          // so onSuccess fires and the invoice appears in the UI
+          invalidateAll();
+          toast.warning('Invoice Added', 'Invoice was created but PDF upload failed. You can re-upload the PDF.');
+          return result;
+        }
       }
       return result;
     },

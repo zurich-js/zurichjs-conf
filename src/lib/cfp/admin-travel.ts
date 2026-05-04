@@ -34,7 +34,7 @@ export interface TravelDashboardStats {
   attending_dinner: number;
   attending_activities: number;
   pending_invoices: number;
-  total_invoice_amount: number;
+  total_invoice_amounts: Record<string, number>;
   flights_arriving_today: number;
   flights_departing_today: number;
   hotels_booked: number;
@@ -120,14 +120,19 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
   const attendingDinner = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_dinner).length;
   const attendingActivities = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_activities).length;
 
-  // Get pending invoices
+  // Get pending invoices (scoped to program speakers)
   const { data: pendingInvoices } = await supabase
     .from('cfp_speaker_reimbursements')
-    .select('amount')
+    .select('amount, currency')
+    .in('speaker_id', uniqueSpeakerIds)
     .eq('status', 'pending');
 
   const pendingCount = (pendingInvoices || []).length;
-  const totalPendingAmount = (pendingInvoices || []).reduce((sum: number, r: { amount: number }) => sum + r.amount, 0);
+  const totalPendingAmounts: Record<string, number> = {};
+  (pendingInvoices || []).forEach((r: { amount: number; currency: string }) => {
+    const cur = r.currency || 'CHF';
+    totalPendingAmounts[cur] = (totalPendingAmounts[cur] || 0) + r.amount;
+  });
 
   // Get flights arriving/departing today
   const { data: todayFlights } = await supabase
@@ -169,7 +174,7 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
     attending_dinner: attendingDinner,
     attending_activities: attendingActivities,
     pending_invoices: pendingCount,
-    total_invoice_amount: totalPendingAmount,
+    total_invoice_amounts: totalPendingAmounts,
     flights_arriving_today: arrivingToday,
     flights_departing_today: departingToday,
     hotels_booked: hotelsBooked,
@@ -686,6 +691,9 @@ export async function updateInvoiceAdmin(
     updated_at: new Date().toISOString(),
   };
 
+  if (updates.status === 'approved' || updates.status === 'rejected') {
+    updatePayload.reviewed_at = new Date().toISOString();
+  }
   if (updates.status === 'paid') {
     updatePayload.paid_at = new Date().toISOString();
   }
@@ -721,12 +729,27 @@ export async function updateInvoiceAdmin(
 }
 
 /**
- * Delete an invoice (admin)
+ * Delete an invoice (admin) - also removes uploaded PDF from storage
  */
 export async function deleteInvoiceAdmin(
   invoiceId: string
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = createCfpServiceClient();
+
+  // Fetch receipt_url to clean up storage
+  const { data: invoice } = await supabase
+    .from('cfp_speaker_reimbursements')
+    .select('receipt_url')
+    .eq('id', invoiceId)
+    .single();
+
+  // Delete the PDF from storage if it exists
+  if (invoice?.receipt_url) {
+    const match = invoice.receipt_url.match(/travel-invoices\/(.+)$/);
+    if (match) {
+      await supabase.storage.from('travel-invoices').remove([match[1]]);
+    }
+  }
 
   const { error } = await supabase
     .from('cfp_speaker_reimbursements')

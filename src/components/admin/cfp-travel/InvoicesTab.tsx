@@ -42,7 +42,14 @@ export function InvoicesTab({
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + pageSize);
 
-  const totalAmount = filteredInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalsByCurrency: Record<string, number> = {};
+  filteredInvoices.forEach((inv) => {
+    const cur = inv.currency || 'CHF';
+    totalsByCurrency[cur] = (totalsByCurrency[cur] || 0) + inv.amount;
+  });
+  const totalDisplay = Object.entries(totalsByCurrency)
+    .map(([cur, amount]) => `${cur} ${(amount / 100).toFixed(2)}`)
+    .join(' + ') || 'CHF 0.00';
 
   return (
     <div className="space-y-4">
@@ -52,7 +59,7 @@ export function InvoicesTab({
             <h2 className="text-lg font-bold text-black">Invoices</h2>
             <p className="text-sm text-gray-500">
               {filteredInvoices.length} invoice{filteredInvoices.length !== 1 ? 's' : ''}
-              {' · '}Total: CHF {(totalAmount / 100).toFixed(2)}
+              {' · '}Total: {totalDisplay}
             </p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">

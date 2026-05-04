@@ -15,16 +15,19 @@ interface ArrivalsTabProps {
 
 export function ArrivalsTab({ flights, isLoading }: ArrivalsTabProps) {
   const [selectedDate, setSelectedDate] = useState(() => {
-    // Default to today
-    return new Date().toISOString().split('T')[0];
+    // Default to today in local timezone
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   });
 
-  // Filter to inbound flights arriving on selected date
+  // Filter to inbound flights arriving on selected date (compare in local time)
   const arrivals = useMemo(() => {
     return flights
       .filter((f) => {
         if (f.direction !== 'inbound' || !f.arrival_time) return false;
-        return f.arrival_time.startsWith(selectedDate);
+        const localDate = new Date(f.arrival_time);
+        const localDateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+        return localDateStr === selectedDate;
       })
       .sort((a, b) => {
         const ta = a.arrival_time ? new Date(a.arrival_time).getTime() : 0;

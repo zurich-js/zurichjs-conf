@@ -71,9 +71,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('travel-invoices')
       .getPublicUrl(filePath);
 
-    await updateInvoicePdfUrl(id, urlData.publicUrl);
+    const updateResult = await updateInvoicePdfUrl(id, urlData.publicUrl);
 
     await fs.promises.unlink(uploadedFile.filepath).catch(() => {});
+
+    if (!updateResult.success) {
+      log.error('PDF uploaded to storage but failed to update invoice record', updateResult.error);
+      return res.status(500).json({ error: 'PDF uploaded but failed to link to invoice record' });
+    }
 
     return res.status(200).json({
       success: true,
