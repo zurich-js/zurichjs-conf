@@ -6,9 +6,9 @@ let mergeWorkshopScheduleItems: typeof import('../schedule').mergeWorkshopSchedu
 beforeAll(async () => {
   vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'http://localhost:3000');
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
-  vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-key');
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'anon-key');
   vi.stubEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'pk_test_123');
-  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'service-role-key');
+  vi.stubEnv('SUPABASE_SECRET_KEY', 'service-role-key');
   vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_123');
   vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_123');
   vi.stubEnv('RESEND_API_KEY', 're_123');
