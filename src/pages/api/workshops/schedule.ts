@@ -124,7 +124,6 @@ export default async function handler(
 
     const merged = mergeWorkshopScheduleItems(builtItems);
 
-    res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
     res.status(200).json({
       items: merged,
       offeringsBySubmissionId,

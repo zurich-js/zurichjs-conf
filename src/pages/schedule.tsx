@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GetStaticProps } from 'next';
+import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs } from '@/components/molecules';
@@ -147,7 +147,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
   );
 }
 
-export const getStaticProps: GetStaticProps<SchedulePageProps> = async () => {
+export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async () => {
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);
@@ -156,6 +156,5 @@ export const getStaticProps: GetStaticProps<SchedulePageProps> = async () => {
     props: {
       items,
     },
-    revalidate: 120,
   };
 };

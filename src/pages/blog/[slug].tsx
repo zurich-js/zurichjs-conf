@@ -42,7 +42,6 @@ export const getStaticProps: GetStaticProps<BlogPostPageProps> = async ({
       slug: post.slug,
       mdxSource,
     },
-    revalidate: 3600,
   };
 };
 

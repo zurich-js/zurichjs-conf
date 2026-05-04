@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GetStaticPaths, GetStaticProps } from 'next';
+import type { GetServerSideProps } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
@@ -472,27 +472,18 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
     );
 }
 
-export const getStaticPaths: GetStaticPaths = async () => {
-    const { speakers } = await fetchPublicSpeakers();
-    return {
-        paths: speakers.map((s) => ({ params: { slug: s.slug } })),
-        fallback: 'blocking',
-    };
-};
-
-export const getStaticProps: GetStaticProps<SpeakerDetailPageProps> = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps<SpeakerDetailPageProps> = async ({ params }) => {
     const slug = typeof params?.slug === 'string' ? params.slug : '';
     const { speakers } = await fetchPublicSpeakers();
     const speaker = speakers.find((entry) => entry.slug === slug);
 
     if (!speaker) {
-        return { notFound: true, revalidate: 60 };
+        return { notFound: true };
     }
 
     return {
         props: {
             speaker,
         },
-        revalidate: 300,
     };
 };

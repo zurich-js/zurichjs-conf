@@ -117,7 +117,6 @@ export default async function handler(
       items = await buildOfferingSummaries(stripe, workshops, 'CHF');
     }
 
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     res.status(200).json({ items, currency });
   } catch (error) {
     log.error('Error handling workshops pricing request', error);

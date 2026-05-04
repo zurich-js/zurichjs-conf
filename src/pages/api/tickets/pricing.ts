@@ -218,7 +218,6 @@ export default async function handler(
       plans = await fetchPlansForCurrency('CHF');
     }
 
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     res.status(200).json({
       plans,
       currentStage,
