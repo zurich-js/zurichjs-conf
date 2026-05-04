@@ -13,6 +13,7 @@ import type {
   CfpTalkSubmittedData,
   TicketPurchasedData,
   WorkshopRegisteredData,
+  WorkshopOversoldData,
   CartAbandonmentData,
   StatusVerificationData,
   SponsorInterestData,
@@ -223,6 +224,28 @@ export function notifyWorkshopRegistered(data: WorkshopRegisteredData): void {
   }
   const blocks = buildBlocks(':mortar_board: *Workshop Registration*', fields)
   void safeSend('workshop_registered', text, blocks)
+}
+
+export function notifyWorkshopOversold(data: WorkshopOversoldData): void {
+  const amount = formatCurrency(data.amount, data.currency)
+  const title = truncate(data.workshopTitle, 80)
+  const text = `Workshop oversold paid seat needs manual resolution: "${title}" (${amount})`
+  const fields = [
+    { label: 'Workshop', value: title },
+    { label: 'Workshop ID', value: data.workshopId },
+    { label: 'Session', value: data.sessionId },
+    { label: 'Seat index', value: String(data.seatIndex) },
+    { label: 'Buyer', value: data.buyerName || 'Unknown' },
+    { label: 'Buyer email', value: data.buyerEmail },
+    { label: 'Attendee', value: data.attendeeName || 'Unknown' },
+    { label: 'Attendee email', value: data.attendeeEmail },
+    { label: 'Paid amount', value: amount },
+  ]
+  if (data.instructorName) {
+    fields.push({ label: 'Instructor', value: data.instructorName })
+  }
+  const blocks = buildBlocks(':warning: *Workshop Oversold - Manual Resolution Required*', fields)
+  void safeSend('workshop_oversold_manual_resolution_required', text, blocks)
 }
 
 export function notifyCartAbandonment(data: CartAbandonmentData): void {

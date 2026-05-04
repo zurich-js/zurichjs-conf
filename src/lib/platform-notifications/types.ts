@@ -53,6 +53,20 @@ export interface WorkshopRegisteredData {
   discountAmount?: number
 }
 
+export interface WorkshopOversoldData {
+  workshopTitle: string
+  workshopId: string
+  sessionId: string
+  seatIndex: number
+  currency: string
+  amount: number
+  buyerName: string
+  buyerEmail: string
+  attendeeName: string
+  attendeeEmail: string
+  instructorName?: string | null
+}
+
 export interface CartAbandonmentData {
   cartId?: string
   buyerEmail?: string

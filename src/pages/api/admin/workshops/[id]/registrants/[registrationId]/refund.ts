@@ -73,11 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Decrement enrolled_count
-    const { data: ws } = await supabase.from('workshops').select('enrolled_count').eq('id', id).single();
-    if (ws) {
-      await supabase.from('workshops').update({ enrolled_count: Math.max(0, (ws.enrolled_count ?? 1) - 1) }).eq('id', id);
-    }
+    // enrolled_count is maintained atomically by sync_workshop_enrolled_count_trigger.
 
     return res.status(200).json({
       success: true,

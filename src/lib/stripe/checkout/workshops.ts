@@ -22,7 +22,7 @@ import { getOfferingByLookupKey } from '@/lib/workshops/getOfferings';
 import { stripCurrencySuffix } from '../ticket-utils';
 import { extractPartnershipDiscountInfo } from './helpers';
 import { addNewsletterContact, sendWorkshopConfirmationEmail } from '@/lib/email';
-import { notifyWorkshopRegistered } from '@/lib/platform-notifications';
+import { notifyWorkshopOversold, notifyWorkshopRegistered } from '@/lib/platform-notifications';
 import { generateWorkshopPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateTicketQRCode } from '@/lib/qrcode';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
@@ -188,8 +188,30 @@ export async function processWorkshops(
       });
 
       if (result.oversold) {
+        const instructorName = speakerContext
+          ? [speakerContext.speaker.first_name, speakerContext.speaker.last_name]
+              .filter(Boolean)
+              .join(' ')
+          : null;
+
+        // Do not auto-refund here. Stripe fees are not returned on refunds, so
+        // oversold paid seats are escalated for manual resolution instead.
+        notifyWorkshopOversold({
+          workshopTitle: workshop.title,
+          workshopId,
+          sessionId: session.id,
+          seatIndex,
+          currency,
+          amount: amountPaidPerSeat,
+          buyerName: `${firstName} ${lastName}`.trim(),
+          buyerEmail: customerEmail,
+          attendeeName: `${seatFirstName} ${seatLastName}`.trim(),
+          attendeeEmail: seatEmail,
+          instructorName,
+        });
+
         log.error(
-          'Workshop oversold — seat skipped, manual resolution required',
+          'Workshop oversold — paid seat skipped and escalated for manual resolution',
           new Error('Workshop capacity exceeded'),
           {
             type: 'system',
@@ -199,6 +221,8 @@ export async function processWorkshops(
             sessionId: session.id,
             seatIndex,
             amountPaid: amountPaidPerSeat,
+            attendeeEmail: seatEmail,
+            autoRefunded: false,
           }
         );
         continue;

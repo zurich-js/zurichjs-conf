@@ -141,34 +141,56 @@ export async function createWorkshopRegistration(
       return { success: false, error: 'Atomic insert returned no registration' };
     }
 
-    // Post-insert updates for columns not handled by the RPC
-    if (!row.was_duplicate) {
-      const postUpdates: { company?: string; job_title?: string; qr_code_url?: string } = {};
-      if (params.company) postUpdates.company = params.company;
-      if (params.jobTitle) postUpdates.job_title = params.jobTitle;
+    // Post-insert updates for columns not handled by the RPC. Idempotent retries
+    // also repair missing values if the first post-insert update failed.
+    const postUpdates: { company?: string; job_title?: string; qr_code_url?: string } = {};
+    if (params.company && (!row.was_duplicate || !row.registration.company)) {
+      postUpdates.company = params.company;
+    }
+    if (params.jobTitle && (!row.was_duplicate || !row.registration.job_title)) {
+      postUpdates.job_title = params.jobTitle;
+    }
 
-      // Generate QR code for new registrations
-      try {
-        const qrResult = await generateAndStoreWorkshopQRCode(row.registration.id);
-        if (qrResult.success && qrResult.url) {
-          postUpdates.qr_code_url = qrResult.url;
-          row.registration.qr_code_url = qrResult.url;
-        }
-      } catch (e) {
-        log.warn('QR generation failed for workshop registration', {
+    if (!row.registration.qr_code_url) {
+      const qrResult = await generateAndStoreWorkshopQRCode(row.registration.id);
+      if (!qrResult.success || !qrResult.url) {
+        const message = qrResult.error || 'QR generation returned no URL';
+        log.error('QR generation failed for workshop registration', new Error(message), {
           registrationId: row.registration.id,
-          error: e instanceof Error ? e.message : 'Unknown',
+          workshopId: params.workshopId,
+          stripeSessionId: params.stripeSessionId,
+          seatIndex,
         });
+        return { success: false, duplicate: row.was_duplicate, registration: row.registration, error: message };
+      }
+      postUpdates.qr_code_url = qrResult.url;
+    }
+
+    if (Object.keys(postUpdates).length > 0) {
+      const { data: updatedRegistration, error: postUpdateError } = await supabase
+        .from('workshop_registrations')
+        .update(postUpdates)
+        .eq('id', row.registration.id)
+        .select('*')
+        .single();
+
+      if (postUpdateError) {
+        log.error('Failed to persist workshop registration post-insert fields', postUpdateError, {
+          registrationId: row.registration.id,
+          workshopId: params.workshopId,
+          stripeSessionId: params.stripeSessionId,
+          seatIndex,
+          fields: Object.keys(postUpdates),
+        });
+        return {
+          success: false,
+          duplicate: row.was_duplicate,
+          registration: row.registration,
+          error: postUpdateError.message,
+        };
       }
 
-      if (Object.keys(postUpdates).length > 0) {
-        await supabase
-          .from('workshop_registrations')
-          .update(postUpdates)
-          .eq('id', row.registration.id);
-        if (params.company) row.registration.company = params.company;
-        if (params.jobTitle) row.registration.job_title = params.jobTitle;
-      }
+      row.registration = updatedRegistration as WorkshopRegistration;
     }
 
     return {
