@@ -2441,6 +2441,78 @@ export type Database = {
           },
         ]
       }
+      verification_requests: {
+        Row: {
+          additional_info: string | null
+          country_code: string | null
+          created_at: string
+          currency: string | null
+          email: string
+          id: string
+          linkedin_url: string | null
+          name: string
+          price_id: string
+          rav_registration_date: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          stripe_payment_link_id: string | null
+          stripe_payment_link_url: string | null
+          stripe_session_id: string | null
+          student_id: string | null
+          university: string | null
+          updated_at: string
+          verification_id: string
+          verification_type: string
+        }
+        Insert: {
+          additional_info?: string | null
+          country_code?: string | null
+          created_at?: string
+          currency?: string | null
+          email: string
+          id?: string
+          linkedin_url?: string | null
+          name: string
+          price_id: string
+          rav_registration_date?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_payment_link_id?: string | null
+          stripe_payment_link_url?: string | null
+          stripe_session_id?: string | null
+          student_id?: string | null
+          university?: string | null
+          updated_at?: string
+          verification_id: string
+          verification_type: string
+        }
+        Update: {
+          additional_info?: string | null
+          country_code?: string | null
+          created_at?: string
+          currency?: string | null
+          email?: string
+          id?: string
+          linkedin_url?: string | null
+          name?: string
+          price_id?: string
+          rav_registration_date?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_payment_link_id?: string | null
+          stripe_payment_link_url?: string | null
+          stripe_session_id?: string | null
+          student_id?: string | null
+          university?: string | null
+          updated_at?: string
+          verification_id?: string
+          verification_type?: string
+        }
+        Relationships: []
+      }
       workshops: {
         Row: {
           capacity: number

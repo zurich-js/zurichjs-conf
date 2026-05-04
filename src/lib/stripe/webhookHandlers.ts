@@ -68,7 +68,24 @@ export async function handleCheckoutSessionCompleted(
   // STEP 2: Validate and extract customer information
   // ─────────────────────────────────────────────────────────────────────────────
   const customerEmail = session.customer_details?.email;
-  const customerName = session.customer_details?.name || 'Valued Customer';
+  const resolvedName = session.customer_details?.name || session.metadata?.customer_name;
+  const customerName = resolvedName || '';
+
+  if (!resolvedName) {
+    log.error('No customer name found in checkout session or metadata', new Error('Missing customer name'), {
+      type: 'payment',
+      severity: 'high',
+      code: 'MISSING_CUSTOMER_NAME',
+      sessionId: session.id,
+      paymentLinkId: session.payment_link,
+    });
+    await serverAnalytics.error(session.id, 'No customer name in checkout session or metadata', {
+      type: 'payment',
+      severity: 'high',
+      code: 'MISSING_CUSTOMER_NAME',
+      stack: new Error('Missing customer name').stack,
+    });
+  }
 
   if (!customerEmail) {
     log.error('No customer email in checkout session', new Error('Customer email is required'), {
