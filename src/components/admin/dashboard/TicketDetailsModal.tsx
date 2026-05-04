@@ -3,6 +3,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import type { Ticket } from './types';
 import { TicketInvoiceModal } from '@/components/admin/tickets';
 
@@ -326,7 +327,7 @@ export function TicketDetailsModal({
           {ticket.qr_code_url && (
             <InfoSection title="QR Code">
               <div className="flex justify-center">
-                <img src={ticket.qr_code_url} alt="Ticket QR Code" className="w-32 h-32 border border-gray-200 rounded-lg" />
+                <Image src={ticket.qr_code_url} alt="Ticket QR Code" width={128} height={128} className="w-32 h-32 border border-gray-200 rounded-lg" />
               </div>
             </InfoSection>
           )}

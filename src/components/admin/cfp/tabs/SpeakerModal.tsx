@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { X, User, Trash2, FileText, ExternalLink, MessageSquare, IdCard, Video, Presentation } from 'lucide-react';
 import type { CfpAdminSpeaker, CfpSpeakerSubmission, CfpAdminSubmission } from '@/lib/types/cfp-admin';
@@ -303,7 +304,7 @@ export function SpeakerModal({ speaker, onClose, onUpdated, onDeleted, isDeletin
                 <h4 className="text-xs font-bold text-black uppercase tracking-wide mb-3">Profile Photo</h4>
                 <div className="flex items-center gap-4">
                   {profileImageUrl ? (
-                    <img src={profileImageUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+                    <Image src={profileImageUrl} alt="Profile" width={80} height={80} className="w-20 h-20 rounded-full object-cover" />
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
                       <User className="w-8 h-8 text-gray-500" />

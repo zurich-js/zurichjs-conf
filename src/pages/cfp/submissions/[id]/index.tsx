@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
@@ -192,7 +193,7 @@ export default function SubmissionDetail({ submission, isSubmissionClosed }: Sub
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href="/cfp/dashboard" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
+              <Image src="/images/logo/zurichjs-square.png" alt="ZurichJS" width={40} height={40} className="h-10 w-10" />
               <span className="text-white font-semibold">CFP</span>
             </Link>
             <Link

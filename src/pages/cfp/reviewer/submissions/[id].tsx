@@ -4,6 +4,7 @@
  */
 
 import React, { useReducer, useState, useEffect, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -261,7 +262,7 @@ export default function ReviewerSubmission() {
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href={dashboardUrl} className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
+              <Image src="/images/logo/zurichjs-square.png" alt="ZurichJS" width={40} height={40} className="h-10 w-10" />
               <span className="text-white font-semibold">Zurich JS Conf 2026</span>
             </Link>
             <div className="flex items-center gap-4">

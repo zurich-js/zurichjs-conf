@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
@@ -134,7 +135,7 @@ export default function FlightsPage({ flights }: FlightsPageProps) {
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
             <Link href="/cfp/travel" className="flex items-center gap-2 sm:gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-8 w-8 sm:h-10 sm:w-10" />
+              <Image src="/images/logo/zurichjs-square.png" alt="ZurichJS" width={40} height={40} className="h-8 w-8 sm:h-10 sm:w-10" />
               <span className="text-white font-semibold text-sm sm:text-base">Flights</span>
             </Link>
             <Link
