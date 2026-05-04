@@ -134,7 +134,7 @@ export function SpeakerInvoicesSection({
         const metadata = (invoice.metadata || {}) as Record<string, unknown>;
         return (
           <div key={invoice.id} className="border border-gray-200 rounded-lg p-3 mb-2">
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-900">{invoice.description}</span>
@@ -247,7 +247,7 @@ export function SpeakerInvoicesSection({
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
             />
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <input
                 type="number"
                 step="0.01"
@@ -273,7 +273,7 @@ export function SpeakerInvoicesSection({
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Invoice Date</label>
                 <input

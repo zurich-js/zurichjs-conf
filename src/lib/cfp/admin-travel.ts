@@ -65,6 +65,39 @@ export interface InvoiceWithSpeaker extends CfpSpeakerReimbursement {
 export type ReimbursementWithSpeaker = InvoiceWithSpeaker;
 
 // ============================================================================
+// Speaker Sourcing (matches admin speakers "program" scope)
+// ============================================================================
+
+/**
+ * Get all speaker IDs that should appear in travel management.
+ * Matches the admin speakers tab logic: accepted submissions OR admin-managed/featured/visible.
+ */
+async function getProgramSpeakerIds(): Promise<string[]> {
+  const supabase = createCfpServiceClient();
+
+  // Get speaker IDs with accepted submissions
+  const { data: acceptedSubmissions } = await supabase
+    .from('cfp_submissions')
+    .select('speaker_id')
+    .eq('status', 'accepted');
+
+  const acceptedIds = new Set((acceptedSubmissions || []).map((s: { speaker_id: string }) => s.speaker_id));
+
+  // Get admin-managed, featured, or visible speakers (invited speakers)
+  const { data: programSpeakers } = await supabase
+    .from('cfp_speakers')
+    .select('id')
+    .or('is_admin_managed.eq.true,is_featured.eq.true,is_visible.eq.true');
+
+  const programIds = (programSpeakers || []).map((s: { id: string }) => s.id);
+
+  // Merge both sets
+  programIds.forEach((id: string) => acceptedIds.add(id));
+
+  return [...acceptedIds];
+}
+
+// ============================================================================
 // Dashboard Stats
 // ============================================================================
 
@@ -75,13 +108,7 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
   const supabase = createCfpServiceClient();
   const today = new Date().toISOString().split('T')[0];
 
-  // Get accepted speakers count
-  const { data: acceptedSpeakers } = await supabase
-    .from('cfp_submissions')
-    .select('speaker_id')
-    .eq('status', 'accepted');
-
-  const uniqueSpeakerIds = [...new Set((acceptedSpeakers || []).map((s: { speaker_id: string }) => s.speaker_id))];
+  const uniqueSpeakerIds = await getProgramSpeakerIds();
 
   // Get travel stats
   const { data: travelData } = await supabase
@@ -156,22 +183,16 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
 // ============================================================================
 
 /**
- * Get all accepted speakers with their travel details
+ * Get all program speakers (accepted + invited) with their travel details
  */
 export async function getAcceptedSpeakersWithTravel(): Promise<SpeakerWithTravel[]> {
   const supabase = createCfpServiceClient();
 
-  // Get accepted submissions with speaker IDs
-  const { data: acceptedSubmissions } = await supabase
-    .from('cfp_submissions')
-    .select('speaker_id')
-    .eq('status', 'accepted');
+  const speakerIds = await getProgramSpeakerIds();
 
-  if (!acceptedSubmissions || acceptedSubmissions.length === 0) {
+  if (speakerIds.length === 0) {
     return [];
   }
-
-  const speakerIds = [...new Set(acceptedSubmissions.map((s: { speaker_id: string }) => s.speaker_id))];
 
   // Get speakers
   const { data: speakers } = await supabase
@@ -184,6 +205,13 @@ export async function getAcceptedSpeakersWithTravel(): Promise<SpeakerWithTravel
     return [];
   }
 
+  // Get accepted submission counts
+  const { data: acceptedSubmissions } = await supabase
+    .from('cfp_submissions')
+    .select('speaker_id')
+    .eq('status', 'accepted')
+    .in('speaker_id', speakerIds);
+
   // Get all travel data in parallel
   const [travelResult, flightsResult, accommodationResult, reimbursementsResult] = await Promise.all([
     supabase.from('cfp_speaker_travel').select('*').in('speaker_id', speakerIds),
@@ -194,7 +222,7 @@ export async function getAcceptedSpeakersWithTravel(): Promise<SpeakerWithTravel
 
   // Count accepted submissions per speaker
   const submissionCounts: Record<string, number> = {};
-  acceptedSubmissions.forEach((s: { speaker_id: string }) => {
+  (acceptedSubmissions || []).forEach((s: { speaker_id: string }) => {
     submissionCounts[s.speaker_id] = (submissionCounts[s.speaker_id] || 0) + 1;
   });
 
@@ -341,17 +369,11 @@ export async function getAllFlights(options?: {
 }): Promise<FlightWithSpeaker[]> {
   const supabase = createCfpServiceClient();
 
-  // Get accepted speaker IDs first
-  const { data: acceptedSubmissions } = await supabase
-    .from('cfp_submissions')
-    .select('speaker_id')
-    .eq('status', 'accepted');
+  const speakerIds = await getProgramSpeakerIds();
 
-  if (!acceptedSubmissions || acceptedSubmissions.length === 0) {
+  if (speakerIds.length === 0) {
     return [];
   }
-
-  const speakerIds = [...new Set(acceptedSubmissions.map((s: { speaker_id: string }) => s.speaker_id))];
 
   // Build flights query
   let query = supabase

@@ -123,8 +123,8 @@ export function SpeakerFlightsSection({
         const trackingUrl = getFlightTrackingUrl(flight.flight_number, flight.tracking_url);
         return (
           <div key={flight.id} className="border border-gray-200 rounded-lg p-3 mb-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-3 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
                 <span className={`px-2 py-0.5 text-xs rounded capitalize ${
                   flight.direction === 'inbound' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                 }`}>
@@ -190,7 +190,7 @@ export function SpeakerFlightsSection({
                 </label>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 placeholder="Airline (e.g. Swiss)"
                 value={form.airline}
@@ -204,7 +204,7 @@ export function SpeakerFlightsSection({
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
               <input
                 placeholder="From (e.g. LHR)"
                 value={form.departure_airport}
@@ -220,7 +220,7 @@ export function SpeakerFlightsSection({
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Departure</label>
                 <input

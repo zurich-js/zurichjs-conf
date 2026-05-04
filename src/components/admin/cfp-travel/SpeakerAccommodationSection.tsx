@@ -151,7 +151,7 @@ export function SpeakerAccommodationSection({
       {isEditing && (
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Hotel Name</label>
                 <input
@@ -171,7 +171,7 @@ export function SpeakerAccommodationSection({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Check-in</label>
                 <input
@@ -196,7 +196,7 @@ export function SpeakerAccommodationSection({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 placeholder="Reservation #"
                 value={form.reservation_number}
@@ -210,7 +210,7 @@ export function SpeakerAccommodationSection({
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 type="number"
                 step="0.01"

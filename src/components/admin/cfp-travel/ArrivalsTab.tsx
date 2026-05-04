@@ -48,20 +48,22 @@ export function ArrivalsTab({ flights, isLoading }: ArrivalsTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-black">Airport Arrivals</h2>
-          <p className="text-sm text-gray-500">
-            {arrivals.length} speaker{arrivals.length !== 1 ? 's' : ''} arriving on{' '}
-            {new Date(selectedDate + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-black">Airport Arrivals</h2>
+            <p className="text-sm text-gray-500">
+              {arrivals.length} speaker{arrivals.length !== 1 ? 's' : ''} arriving on{' '}
+              {new Date(selectedDate + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none w-full sm:w-auto"
+          />
         </div>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
-        />
       </div>
 
       {isLoading ? (
@@ -88,36 +90,38 @@ export function ArrivalsTab({ flights, isLoading }: ArrivalsTabProps) {
                 const trackingUrl = getFlightTrackingUrl(flight.flight_number, flight.tracking_url);
 
                 return (
-                  <div key={flight.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
-                    <div className="flex items-center gap-4">
-                      <div className="text-lg font-bold text-gray-900 w-14">
-                        {arrivalTime ? arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {flight.speaker.first_name} {flight.speaker.last_name}
+                  <div key={flight.id} className="px-4 py-3 hover:bg-gray-50">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="text-lg font-bold text-gray-900 w-14 flex-shrink-0">
+                          {arrivalTime ? arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {flight.airline} {flight.flight_number}
-                          <span className="mx-2">·</span>
-                          {flight.departure_airport} → {flight.arrival_airport}
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {flight.speaker.first_name} {flight.speaker.last_name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {flight.airline} {flight.flight_number}
+                            <span className="mx-2">·</span>
+                            {flight.departure_airport} → {flight.arrival_airport}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 text-xs rounded capitalize ${FLIGHT_STATUS_COLORS[flight.flight_status]}`}>
-                        {flight.flight_status.replace('_', ' ')}
-                      </span>
-                      {trackingUrl && (
-                        <a
-                          href={trackingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
-                        >
-                          <ExternalLink className="w-3 h-3" /> Track
-                        </a>
-                      )}
+                      <div className="flex items-center gap-2 ml-17 sm:ml-0">
+                        <span className={`px-2 py-0.5 text-xs rounded capitalize ${FLIGHT_STATUS_COLORS[flight.flight_status]}`}>
+                          {flight.flight_status.replace('_', ' ')}
+                        </span>
+                        {trackingUrl && (
+                          <a
+                            href={trackingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
+                          >
+                            <ExternalLink className="w-3 h-3" /> Track
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

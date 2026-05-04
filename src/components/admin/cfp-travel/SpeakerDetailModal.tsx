@@ -163,7 +163,7 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
       size="3xl"
     >
       {/* At-a-glance summary */}
-      <div className="grid grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3 mb-6">
         <SummaryCard
           label="Flights"
           value={speaker.flights.length > 0 ? `${speaker.flights.length}` : 'None'}
