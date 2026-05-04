@@ -360,6 +360,11 @@ export async function processTickets(
   await trackTicketPurchasesAndNewsletterSignups(ticketResults, ticketInfo, session);
   await sendTicketConfirmationEmails(ticketResults, ticketDisplayName, session, log);
 
+  // Auto-generate VIP perk if this is a VIP ticket
+  if (ticketInfo.category === 'vip') {
+    await autoGenerateVipPerks(ticketResults, log);
+  }
+
   // Send Slack notification for ticket purchase
   const primaryAttendee = attendees[0];
   notifyTicketPurchased({
@@ -375,4 +380,59 @@ export async function processTickets(
   });
 
   log.info('Tickets processed', { count: ticketLineItems.length });
+}
+
+/**
+ * Auto-generate VIP perk discount codes for newly purchased VIP tickets
+ * Non-fatal — failures do not affect the ticket purchase flow
+ */
+async function autoGenerateVipPerks(
+  ticketResults: TicketCreationResult[],
+  log: ReturnType<typeof logger.scope>
+): Promise<void> {
+  try {
+    const { getVipPerkConfig, createVipPerkCoupon, sendVipPerkEmail } = await import('@/lib/vip-perks');
+    const config = await getVipPerkConfig();
+
+    if (config.restricted_product_ids.length === 0) {
+      log.warn('VIP perk config has no product IDs, skipping auto-generation');
+      return;
+    }
+
+    for (const result of ticketResults) {
+      if (!result.success || !result.ticket) continue;
+
+      try {
+        const perk = await createVipPerkCoupon({
+          ticket_id: result.ticket.id,
+          restricted_product_ids: config.restricted_product_ids,
+          discount_percent: config.discount_percent,
+          expires_at: config.expires_at || undefined,
+        });
+
+        log.info('VIP perk auto-generated', { ticketId: result.ticket.id, code: perk.code });
+
+        if (config.auto_send_email) {
+          try {
+            await sendVipPerkEmail({
+              vip_perk_id: perk.id,
+              custom_message: config.custom_email_message || undefined,
+            });
+          } catch (emailErr) {
+            log.warn('Failed to auto-send VIP perk email', { ticketId: result.ticket.id, error: emailErr });
+          }
+        }
+      } catch (perkErr) {
+        log.error('Failed to auto-generate VIP perk for ticket', perkErr as Error, {
+          ticketId: result.ticket.id,
+        });
+      }
+    }
+  } catch (error) {
+    log.error('Failed to auto-generate VIP perks', error as Error, {
+      type: 'system',
+      severity: 'medium',
+      code: 'VIP_PERK_AUTO_GENERATE_FAILED',
+    });
+  }
 }
