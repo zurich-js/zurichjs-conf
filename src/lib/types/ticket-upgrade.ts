@@ -117,7 +117,7 @@ export interface PendingUpgradeInfo {
  */
 export const VIP_PERKS = [
   '20% off all workshops (voucher sent when workshops are released, or within 48h after purchase if workshops are already available)',
-  'Exclusive speaker tour invitation',
+  'Afterparty access',
   'Limited edition goodies',
 ] as const;
 

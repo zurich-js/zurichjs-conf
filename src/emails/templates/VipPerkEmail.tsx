@@ -95,7 +95,7 @@ export const VipPerkEmail: React.FC<VipPerkEmailProps> = ({
       <Section style={cardStyle}>
         <Text style={sectionTitleStyle}>Your VIP Perks</Text>
         <Text style={perkItemStyle}>&#10024; {discountPercent}% off all workshops</Text>
-        <Text style={perkItemStyle}>&#10024; Exclusive speaker tour invitation</Text>
+        <Text style={perkItemStyle}>&#10024; Afterparty access</Text>
         <Text style={perkItemStyle}>&#10024; Limited edition goodies</Text>
       </Section>
 
