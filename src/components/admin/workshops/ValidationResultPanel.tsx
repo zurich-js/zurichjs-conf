@@ -3,6 +3,7 @@
  */
 
 import type { StripeValidation } from './readiness';
+import { REQUIRED_CURRENCIES_LABEL } from '@/config/currency';
 
 export function ValidationResultPanel({
   validation,
@@ -17,7 +18,7 @@ export function ValidationResultPanel({
     >
       <div className={`font-medium ${validation.valid ? 'text-green-800' : 'text-amber-800'}`}>
         {validation.valid
-          ? 'All CHF + EUR + GBP prices resolve to the same Stripe product.'
+          ? `All ${REQUIRED_CURRENCIES_LABEL} prices resolve to the same Stripe product.`
           : 'Some prices are missing or belong to a different product.'}
       </div>
       <ul className="mt-2 space-y-1 font-mono text-[11px] text-gray-700">
@@ -33,7 +34,7 @@ export function ValidationResultPanel({
       </ul>
       {validation.productMismatch && (
         <p className="mt-2 text-amber-800">
-          Product ids differ across currencies. All three prices must belong to one Stripe product.
+          Product ids differ across currencies. All prices must belong to one Stripe product.
         </p>
       )}
     </div>

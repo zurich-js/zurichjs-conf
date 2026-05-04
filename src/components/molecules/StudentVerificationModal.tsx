@@ -184,12 +184,12 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
           <DialogBackdrop className="fixed inset-0 bg-brand-black/80 backdrop-blur-sm" />
 
           {/* Center container */}
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <DialogPanel className="relative w-full max-w-2xl bg-brand-gray-darkest rounded-[28px] p-6 md:p-8 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-4">
+            <DialogPanel className="relative w-full max-w-2xl bg-brand-gray-darkest rounded-t-[28px] p-4 max-h-[calc(100dvh-0.75rem)] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xs:p-5 sm:max-h-[90vh] sm:rounded-[28px] sm:p-6 md:p-8">
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 cursor-pointer w-10 h-10 flex items-center justify-center rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              className="absolute top-3 right-3 cursor-pointer w-10 h-10 flex items-center justify-center rounded-full hover:bg-brand-gray-dark transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary sm:top-4 sm:right-4"
               aria-label="Close modal"
               autoFocus
             >
@@ -197,22 +197,22 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
             </button>
 
             {/* Header */}
-            <div className="mb-6">
-              <DialogTitle className="text-xl font-bold text-brand-white mb-2">
+            <div className="mb-4 pr-11 sm:mb-6">
+              <DialogTitle className="text-lg font-bold text-brand-white mb-2 sm:text-xl">
                 Verify Your Status
               </DialogTitle>
-              <p className="text-brand-gray-light">
+              <p className="text-sm leading-relaxed text-brand-gray-light sm:text-base">
                 Please provide your details to verify your eligibility for the discounted ticket.
                 Over the next few days, we&#39;ll review your information; we might reach out for further verification.
-                Once verification is successeful, you&#39;ll get a payment link.
+                Once verification is successful, you&#39;ll get a payment link.
               </p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Error message */}
               {error && (
-                <p className="border-2 border-brand-red/50 rounded-lg p-4 text-brand-red">
+                <p className="border-2 border-brand-red/50 rounded-lg p-3 text-sm text-brand-red sm:p-4 sm:text-base">
                   <OctagonAlertIcon size={16} className="stroke-brand-red inline-block mr-1 mb-[0.1em]" />&nbsp;
                   {error}
                 </p>
@@ -226,14 +226,14 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                 <label className="block text-sm font-semibold text-brand-white mb-3">
                   I am <span className="text-brand-red">*</span>
                 </label>
-                <div className="flex w-fit gap-2">
+                <div className="grid grid-cols-1 gap-2 2xs:grid-cols-2 sm:flex sm:w-fit">
                   {radioOptions.map((option) => (
                     <Field key={option.key} className="">
                       <Radio
                         value={option.key}
-                        className="w-fit flex items-center px-2.5 py-2.5 shrink-0 rounded-full font-semibold group
+                        className="flex min-w-0 items-center justify-center px-2.5 py-2.5 shrink-0 rounded-full font-semibold group
                       transition-all cursor-pointer data-checked:text-brand-primary border border-brand-gray-medium
-                      text-brand-white hover:text-gray-300"
+                      text-brand-white hover:text-gray-300 sm:w-fit"
                       >
                         <div className="size-4 shrink-0 rounded-full bg-brand-gray-medium group-data-[checked]:bg-brand-primary transition-colors duration-300 ease-in-out" />
                         <HeadlessLabel className="px-2.5 pointer-events-none">
@@ -412,6 +412,7 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                   variant="ghost"
                   onClick={onClose}
                   disabled={isSubmitting}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
@@ -420,8 +421,9 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
                   variant="primary"
                   loading={isSubmitting}
                   disabled={isSubmitting}
+                  className="order-first w-full sm:order-none sm:w-auto"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Verification'}
+                  Submit Verification
                 </Button>
               </div>
             </form>
@@ -432,4 +434,3 @@ export const StudentVerificationModal: React.FC<StudentVerificationModalProps> =
     </AnimatePresence>
   );
 };
-

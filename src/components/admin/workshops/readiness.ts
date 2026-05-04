@@ -5,6 +5,11 @@
  */
 
 import type { Workshop } from '@/lib/types/database';
+import {
+  REQUIRED_STRIPE_CURRENCIES,
+  REQUIRED_CURRENCIES_LABEL,
+  NON_BASE_SUFFIXES_LABEL,
+} from '@/config/currency';
 
 export interface ReadinessItem {
   key: ReadinessKey;
@@ -106,7 +111,7 @@ export function computeStaticReadiness(input: ReadinessInput): ReadinessItem[] {
       key: 'stripeLookupKey',
       label: 'Stripe price lookup key set',
       ok: isNonEmpty(lookupKey),
-      hint: 'Base CHF key — runtime will append `_eur` / `_gbp`.',
+      hint: `Base CHF key — runtime will append \`${NON_BASE_SUFFIXES_LABEL}\`.`,
     },
   ];
 }
@@ -119,13 +124,13 @@ export function computeFullReadiness(input: ReadinessInput): {
   const base = computeStaticReadiness(input);
   const validationItem: ReadinessItem = {
     key: 'stripeValidated',
-    label: 'Validated in CHF + EUR + GBP',
+    label: `Validated in ${REQUIRED_CURRENCIES_LABEL}`,
     ok: input.validation?.valid === true,
     hint: input.validation
       ? input.validation.valid
         ? undefined
         : 'Run "Validate Stripe" — at least one currency is missing or points at a different product.'
-      : 'Click "Validate Stripe" to confirm all three prices exist.',
+      : `Click "Validate Stripe" to confirm all ${REQUIRED_STRIPE_CURRENCIES.length} prices exist.`,
   };
   const items = [...base, validationItem];
   const openItems = items.filter((i) => !i.ok).length;
