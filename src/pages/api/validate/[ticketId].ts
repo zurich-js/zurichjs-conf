@@ -27,6 +27,12 @@ export default async function handler(
 
   // GET: Validate ticket or workshop registration (read-only check)
   if (req.method === 'GET') {
+    const { authorized } = verifyAdminAccess(req);
+    if (!authorized) {
+      res.status(401).json({ valid: false, error: 'Unauthorized - Admin access required' });
+      return;
+    }
+
     try {
       // Try ticket first
       const ticketResult = await validateTicket(id);

@@ -408,30 +408,31 @@ export default async function handler(
         cartProductIds: Array.from(priceToProductMap.values()),
       });
 
-      const disallowedPriceIds = uniqueCartPriceIds.filter((priceId) => {
+      // Stripe product-restricted coupons safely apply only to matching
+      // Checkout line items, so mixed carts are allowed here. The cart summary
+      // uses this list to calculate the local discount preview on eligible
+      // items only.
+      applicablePriceIds = uniqueCartPriceIds.filter((priceId) => {
         const productId = priceToProductMap.get(priceId);
-        return !productId || !restrictedProductIds.includes(productId);
+        return productId && restrictedProductIds.includes(productId);
       });
 
-      if (disallowedPriceIds.length > 0) {
-        log.warn('Cart contains products outside this coupon restriction', {
+      log.info('Filtered applicable price IDs', {
+        applicablePriceIds,
+        allPriceIds: uniqueCartPriceIds,
+      });
+
+      if (applicablePriceIds.length === 0) {
+        log.warn('No applicable products in cart for this coupon', {
           couponId: coupon.id,
           restrictedToProducts: restrictedProductIds,
           cartProductIds: Array.from(priceToProductMap.values()),
-          disallowedPriceIds,
         });
         return res.status(200).json({
           valid: false,
           error: 'This promo code is not applicable to the product type in your cart',
         });
       }
-
-      applicablePriceIds = uniqueCartPriceIds;
-
-      log.info('All cart price IDs match product restriction', {
-        applicablePriceIds,
-        allPriceIds: uniqueCartPriceIds,
-      });
     } else {
       const allowedKinds = inferAllowedKindsFromMetadata(coupon, promotionCode) ?? new Set<ProductKind>(['ticket']);
       if (allowedKinds !== 'all') {

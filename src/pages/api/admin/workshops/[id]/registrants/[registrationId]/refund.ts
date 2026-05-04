@@ -38,8 +38,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Registration not found' });
     }
 
-    if (registration.status === 'refunded') {
-      return res.status(400).json({ error: 'Registration already refunded' });
+    if (registration.status === 'refunded' || registration.status === 'cancelled') {
+      return res.status(400).json({
+        error: registration.status === 'refunded'
+          ? 'Registration already refunded'
+          : 'Cancelled registrations cannot be refunded from this action',
+      });
     }
 
     if (!registration.stripe_payment_intent_id) {

@@ -18,6 +18,18 @@ import type Stripe from 'stripe';
 
 // Use vi.hoisted to create mock functions that are hoisted with vi.mock
 const mocks = vi.hoisted(() => ({
+  env: (() => {
+    process.env.NEXT_PUBLIC_BASE_URL ??= 'https://example.com';
+    process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'https://example.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= 'anon-key';
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ??= 'pk_test_123';
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??= 'service-role-key';
+    process.env.STRIPE_SECRET_KEY ??= 'sk_test_123';
+    process.env.STRIPE_WEBHOOK_SECRET ??= 'whsec_123';
+    process.env.RESEND_API_KEY ??= 're_123';
+    process.env.ADMIN_PASSWORD ??= 'secret';
+    return true;
+  })(),
   mockCustomersCreate: vi.fn().mockResolvedValue({ id: 'cus_mock123' }),
   mockListLineItems: vi.fn().mockResolvedValue({ data: [] }),
   mockCreateTicket: vi.fn().mockResolvedValue({

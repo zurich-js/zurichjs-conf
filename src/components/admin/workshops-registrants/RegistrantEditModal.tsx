@@ -18,8 +18,8 @@ export function RegistrantEditModal({ workshopId, registration, onClose, onSucce
   const [firstName, setFirstName] = useState(registration.first_name ?? registration.profile_first_name ?? '');
   const [lastName, setLastName] = useState(registration.last_name ?? registration.profile_last_name ?? '');
   const [email, setEmail] = useState(registration.email ?? registration.profile_email ?? '');
-  const [company, setCompany] = useState((metadata.company as string) ?? '');
-  const [jobTitle, setJobTitle] = useState((metadata.job_title as string) ?? '');
+  const [company, setCompany] = useState(registration.company ?? (metadata.company as string) ?? '');
+  const [jobTitle, setJobTitle] = useState(registration.job_title ?? (metadata.job_title as string) ?? '');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {

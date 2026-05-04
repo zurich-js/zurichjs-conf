@@ -36,8 +36,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Registration not found' });
     }
 
-    if (registration.status === 'cancelled') {
-      return res.status(400).json({ error: 'Registration already cancelled' });
+    if (registration.status === 'cancelled' || registration.status === 'refunded') {
+      return res.status(400).json({
+        error: registration.status === 'cancelled'
+          ? 'Registration already cancelled'
+          : 'Refunded registrations cannot be cancelled',
+      });
     }
 
     const { error: updateError } = await supabase

@@ -77,6 +77,11 @@ type SortDirection = 'asc' | 'desc';
 type ModalAction = 'refund' | 'cancel' | 'reassign' | 'edit' | null;
 
 const ITEMS_PER_PAGE = 10;
+const ACTION_SUCCESS_LABELS: Record<'refund' | 'cancel' | 'resend', string> = {
+  refund: 'refunded',
+  cancel: 'cancelled',
+  resend: 'email resent',
+};
 
 // ── Data fetchers ──────────────────────────────────────────────────────────────
 
@@ -339,7 +344,7 @@ export function WorkshopsRegistrantsTab() {
         { method: 'POST', headers: { 'Content-Type': 'application/json' } }
       );
       if (res.ok) {
-        showToast('success', `Registration ${action === 'resend' ? 'email resent' : action + 'led'} successfully!`);
+        showToast('success', `Registration ${ACTION_SUCCESS_LABELS[action]} successfully!`);
         refreshData();
       } else {
         const data = await res.json();
