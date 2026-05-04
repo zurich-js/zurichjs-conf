@@ -163,6 +163,34 @@ export async function handleVipUpgradePayment(
       // Non-fatal - upgrade is complete
     }
 
+    // Auto-generate VIP perk for the upgraded ticket
+    try {
+      const { getVipPerkConfig, createVipPerkCoupon, sendVipPerkEmail } = await import('@/lib/vip-perks');
+      const config = await getVipPerkConfig();
+      if (config.restricted_product_ids.length > 0) {
+        const perk = await createVipPerkCoupon({
+          ticket_id: ticketId,
+          restricted_product_ids: config.restricted_product_ids,
+          discount_percent: config.discount_percent,
+          expires_at: config.expires_at || undefined,
+        });
+        log.info('VIP perk auto-generated for upgrade', { ticketId, code: perk.code });
+        if (config.auto_send_email) {
+          await sendVipPerkEmail({
+            vip_perk_id: perk.id,
+            custom_message: config.custom_email_message || undefined,
+          });
+        }
+      }
+    } catch (perkError) {
+      log.error('Failed to auto-generate VIP perk for upgrade', perkError, {
+        type: 'system',
+        severity: 'medium',
+        code: 'VIP_PERK_AUTO_GENERATE_FAILED',
+      });
+      // Non-fatal - upgrade is complete
+    }
+
     return true;
   } catch (error) {
     log.error('Error completing VIP upgrade', error, {

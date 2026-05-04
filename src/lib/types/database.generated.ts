@@ -2193,6 +2193,149 @@ export type Database = {
           },
         ]
       }
+      vip_perk_config: {
+        Row: {
+          auto_send_email: boolean
+          custom_email_message: string | null
+          discount_percent: number
+          expires_at: string | null
+          id: string
+          restricted_product_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          auto_send_email?: boolean
+          custom_email_message?: string | null
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          restricted_product_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          auto_send_email?: boolean
+          custom_email_message?: string | null
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          restricted_product_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vip_perk_emails: {
+        Row: {
+          created_at: string
+          custom_message: string | null
+          id: string
+          recipient_email: string
+          recipient_name: string
+          resend_message_id: string | null
+          sent_at: string
+          status: string
+          subject: string
+          ticket_id: string
+          vip_perk_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_name: string
+          resend_message_id?: string | null
+          sent_at?: string
+          status?: string
+          subject: string
+          ticket_id: string
+          vip_perk_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_name?: string
+          resend_message_id?: string | null
+          sent_at?: string
+          status?: string
+          subject?: string
+          ticket_id?: string
+          vip_perk_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_perk_emails_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vip_perk_emails_vip_perk_id_fkey"
+            columns: ["vip_perk_id"]
+            isOneToOne: false
+            referencedRelation: "vip_perks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vip_perks: {
+        Row: {
+          code: string
+          created_at: string
+          current_redemptions: number
+          discount_percent: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          restricted_product_ids: string[]
+          stripe_coupon_id: string
+          stripe_promotion_code_id: string | null
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_redemptions?: number
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          restricted_product_ids?: string[]
+          stripe_coupon_id: string
+          stripe_promotion_code_id?: string | null
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_redemptions?: number
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          restricted_product_ids?: string[]
+          stripe_coupon_id?: string
+          stripe_promotion_code_id?: string | null
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_perks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           amount_paid: number
