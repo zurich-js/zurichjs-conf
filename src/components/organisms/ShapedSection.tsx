@@ -53,6 +53,10 @@ export interface ShapedSectionProps {
    * Reduce the top padding for tighter spacing with previous section
    */
   compactTop?: boolean;
+  /**
+   * Use tighter vertical padding for straight sections
+   */
+  compact?: boolean;
 }
 
 /**
@@ -82,6 +86,7 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
   children,
   id,
   compactTop = false,
+  compact = false,
 }) => {
   // Map variants to Tailwind theme colors (defined in @theme in globals.css)
   const variantStyles = {
@@ -150,10 +155,20 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     '4xl:py-76',
   ].join(' ')
 
+  const spaceWithBothCompact = [
+    'py-10',
+    'sm:py-12',
+    'md:py-16',
+    'lg:py-24',
+    '2xl:py-28',
+    '3xl:py-40',
+    '4xl:py-48',
+  ].join(' ')
+
   const keepEdgesStraight = shape === 'straight' || (dropTop && dropBottom);
 
   const spacingClasses = (function () {
-    if (keepEdgesStraight) return spaceWithBoth;
+    if (keepEdgesStraight) return compact ? spaceWithBothCompact : spaceWithBoth;
     if (dropTop && !dropBottom) return spaceWithoutBottom;
     if (dropBottom && !dropTop) return spaceWithoutTop;
     if (!dropTop && !dropBottom) {

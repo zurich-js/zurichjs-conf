@@ -21,8 +21,8 @@ export function SessionDetailHero({ session, kind, ctaHref, ctaLabel }: SessionD
   const ctaVariant = isWorkshop ? 'blue' : 'primary';
 
   return (
-    <section className="relative isolate bg-brand-black text-brand-white pt-12 md:pt-20">
-      <div className="container relative mx-auto px-4 py-14 xs:px-6 sm:px-8 md:px-10 md:py-20 lg:px-12">
+    <section className="relative isolate bg-brand-black text-brand-white pt-12 md:pt-16">
+      <div className="container relative mx-auto px-4 py-10 xs:px-6 sm:px-8 md:px-10 md:py-14 lg:px-12">
         <div className="max-w-screen-lg">
           <p className="text-sm font-bold uppercase tracking-[0.2em]">
             {sessionTypeLabel}
