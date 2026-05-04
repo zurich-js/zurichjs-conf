@@ -5,6 +5,7 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
+import { clientEnv } from '@/config/env';
 import { supabase } from '@/lib/supabase/client';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { isDuplicateKeyError } from './auth-constants';
@@ -24,8 +25,8 @@ export function createSupabaseServerClient(
   context: GetServerSidePropsContext
 ) {
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    clientEnv.supabase.url,
+    clientEnv.supabase.publishableKey,
     {
       cookies: {
         getAll() {
@@ -56,8 +57,8 @@ export function createSupabaseApiClient(
   res: NextApiResponse
 ) {
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    clientEnv.supabase.url,
+    clientEnv.supabase.publishableKey,
     {
       cookies: {
         getAll() {
@@ -89,18 +90,7 @@ export function createSupabaseApiClient(
  * Uses the anon key since signInWithOtp needs to work with the public API
  */
 function createServerAuthClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    console.error("[CFP Auth]", 'Missing Supabase configuration', {
-      hasUrl: !!url,
-      hasAnonKey: !!anonKey,
-    });
-    throw new Error('Supabase configuration missing');
-  }
-
-  return createClient(url, anonKey, {
+  return createClient(clientEnv.supabase.url, clientEnv.supabase.publishableKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

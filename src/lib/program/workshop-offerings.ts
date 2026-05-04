@@ -1,20 +1,11 @@
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { env } from '@/config/env';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
 import type { StripeValidationResult, WorkshopOfferingInput } from '@/lib/types/program';
 
-function createProgramClient() {
-  return createClient(env.supabase.url, env.supabase.serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
-
 async function getSessionSource(sessionId: string) {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_sessions')
     .select('id, cfp_submission_id, title, abstract, workshop_capacity, workshop_duration_minutes')
@@ -36,7 +27,7 @@ async function getSessionSource(sessionId: string) {
 export async function getWorkshopOfferingBySessionId(
   sessionId: string
 ): Promise<{ offering: Workshop | null; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('workshops')
     .select('*')
@@ -50,7 +41,7 @@ export async function getWorkshopOfferingBySessionId(
 export async function createWorkshopOfferingForSession(
   input: WorkshopOfferingInput
 ): Promise<{ offering: Workshop | null; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const source = await getSessionSource(input.session_id);
   if (source.error || !source.session) return { offering: null, error: source.error };
 
@@ -92,7 +83,7 @@ export async function updateWorkshopOfferingForSession(
   sessionId: string,
   input: Partial<Omit<WorkshopOfferingInput, 'session_id'>>
 ): Promise<{ offering: Workshop | null; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const { offering: current, error: currentError } = await getWorkshopOfferingBySessionId(sessionId);
   if (currentError) return { offering: null, error: currentError };
   if (!current) return { offering: null, error: 'Workshop offering not found' };

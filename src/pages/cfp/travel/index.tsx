@@ -494,9 +494,8 @@ export const getServerSideProps: GetServerSideProps<TravelPageProps> = async (ct
   }
 
   // Check if speaker has an accepted submission
-  const { createClient } = await import('@supabase/supabase-js');
-  const { env } = await import('@/config/env');
-  const adminClient = createClient(env.supabase.url, env.supabase.serviceRoleKey);
+  const { createCfpServiceClient } = await import('@/lib/supabase/cfp-client');
+  const adminClient = createCfpServiceClient();
 
   const { data: acceptedSubmissions } = await adminClient
     .from('cfp_submissions')

@@ -42,9 +42,9 @@ export const clientEnv = {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       'NEXT_PUBLIC_SUPABASE_URL'
     ),
-    anonKey: getRequiredEnv(
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY'
+    publishableKey: getRequiredEnv(
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
     ),
   },
   stripe: {
@@ -65,7 +65,7 @@ let _serverEnv: {
   isDevelopment: boolean;
   isProduction: boolean;
   supabase: {
-    serviceRoleKey: string;
+    secretKey: string;
   };
   stripe: {
     secretKey: string;
@@ -94,9 +94,9 @@ function getServerEnv() {
       isProduction: process.env.NODE_ENV === 'production',
 
       supabase: {
-        serviceRoleKey: getRequiredEnv(
-          process.env.SUPABASE_SERVICE_ROLE_KEY,
-          'SUPABASE_SERVICE_ROLE_KEY'
+        secretKey: getRequiredEnv(
+          process.env.SUPABASE_SECRET_KEY,
+          'SUPABASE_SECRET_KEY'
         ),
       },
 

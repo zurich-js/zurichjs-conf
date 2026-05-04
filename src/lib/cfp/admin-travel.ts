@@ -3,8 +3,7 @@
  * Functions for managing speaker travel, flights, and reimbursements from the admin side
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type {
   CfpSpeaker,
   CfpSpeakerTravel,
@@ -14,22 +13,6 @@ import type {
   CfpReimbursementStatus,
   CfpFlightStatus,
 } from '@/lib/types/cfp';
-
-/**
- * Create untyped Supabase client for CFP tables
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 // ============================================================================
 // Types

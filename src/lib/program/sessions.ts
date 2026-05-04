@@ -1,5 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type {
   ProgramSession,
   ProgramSessionInput,
@@ -9,15 +8,6 @@ import type {
   ProgramSessionStatus,
   ProgramSessionUpdateInput,
 } from '@/lib/types/program';
-
-function createProgramClient() {
-  return createClient(env.supabase.url, env.supabase.serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
 
 interface CfpSubmissionSource {
   id: string;
@@ -59,7 +49,7 @@ function normalizeTagNames(tags: string[]) {
   return Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean)));
 }
 
-async function getSubmissionTagNames(supabase: ReturnType<typeof createProgramClient>, submissionId: string) {
+async function getSubmissionTagNames(supabase: ReturnType<typeof createCfpServiceClient>, submissionId: string) {
   const { data, error } = await supabase
     .from('cfp_submission_tags')
     .select('tag:cfp_tags(name)')
@@ -77,7 +67,7 @@ async function getSubmissionTagNames(supabase: ReturnType<typeof createProgramCl
 }
 
 async function syncSessionTagsFromSubmission(
-  supabase: ReturnType<typeof createProgramClient>,
+  supabase: ReturnType<typeof createCfpServiceClient>,
   sessionId: string,
   submissionId: string
 ) {
@@ -111,7 +101,7 @@ export async function listProgramSessions(options: {
   kind?: ProgramSessionKind | ProgramSessionKind[];
   includeArchived?: boolean;
 } = {}): Promise<{ sessions: ProgramSession[]; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   let query = supabase
     .from('program_sessions')
     .select(`
@@ -157,7 +147,7 @@ export async function listProgramSessions(options: {
 }
 
 export async function getProgramSession(id: string): Promise<{ session: ProgramSession | null; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_sessions')
     .select(`
@@ -190,7 +180,7 @@ export async function getProgramSession(id: string): Promise<{ session: ProgramS
 export async function createProgramSession(
   input: ProgramSessionInput
 ): Promise<{ session: ProgramSession | null; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const { speakers = [], ...sessionInput } = input;
 
   const { data, error } = await supabase
@@ -217,7 +207,7 @@ export async function updateProgramSession(
   id: string,
   input: ProgramSessionUpdateInput
 ): Promise<{ session: ProgramSession | null; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const updates = cleanSessionInput(input);
 
   if (Object.keys(updates).length === 0) {
@@ -238,7 +228,7 @@ export async function updateProgramSession(
 }
 
 export async function archiveProgramSession(id: string): Promise<{ success: boolean; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const { error } = await supabase
     .from('program_sessions')
     .update({ status: 'archived' })
@@ -252,7 +242,7 @@ export async function replaceProgramSessionSpeakers(
   sessionId: string,
   speakers: ProgramSessionSpeakerInput[]
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const normalized = speakers
     .filter((speaker, index, list) =>
       Boolean(speaker.speaker_id) &&
@@ -285,7 +275,7 @@ export async function promoteCfpSubmissionToProgramSession(
   submissionId: string,
   status: ProgramSessionStatus = 'confirmed'
 ): Promise<{ session: ProgramSession | null; error?: string }> {
-  const supabase = createProgramClient();
+  const supabase = createCfpServiceClient();
   const { data: existing, error: existingError } = await supabase
     .from('program_sessions')
     .select('id')

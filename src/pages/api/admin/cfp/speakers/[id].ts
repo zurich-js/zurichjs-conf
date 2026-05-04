@@ -5,19 +5,12 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { CfpSpeaker, UpdateCfpSpeakerRequest } from '@/lib/types/cfp';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('CFP Admin Speaker API');
-
-function createCfpServiceClient() {
-  return createClient(env.supabase.url, env.supabase.serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication

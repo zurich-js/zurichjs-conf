@@ -3,8 +3,7 @@
  * Compute aggregate analytics for the CFP admin dashboard
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type {
   CfpAnalytics,
   CfpFunnelData,
@@ -17,12 +16,6 @@ import type {
   CfpTagCount,
   CfpContentInsights,
 } from '../types/cfp-analytics';
-
-function createCfpServiceClient() {
-  return createClient(env.supabase.url, env.supabase.serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 type CfpServiceClient = ReturnType<typeof createCfpServiceClient>;
 

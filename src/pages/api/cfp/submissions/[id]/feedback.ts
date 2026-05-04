@@ -4,19 +4,12 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { logger } from '@/lib/logger';
 import { sendCfpFeedbackRequestEmail } from '@/lib/email';
 
 const log = logger.scope('CFP Feedback API');
-
-function createCfpServiceClient() {
-  return createClient(env.supabase.url, env.supabase.serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
 
 const TYPE_LABELS: Record<string, string> = {
   lightning: 'Lightning Talk',

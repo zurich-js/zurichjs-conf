@@ -7,7 +7,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { AlertCircle } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button, Heading } from '@/components/atoms';
@@ -17,7 +17,7 @@ import type { CfpSpeaker, CfpSubmission } from '@/lib/types/cfp';
 import { getSpeakerVisibleStatus, type SpeakerVisibleStatus } from '@/lib/cfp/submissions';
 import { SUBMISSION_LIMITS, getActiveSubmissions, canCreateSubmission } from '@/lib/cfp/config';
 import { supabase } from '@/lib/supabase/client';
-import { env } from '@/config/env';
+
 import { CFP_MEETUP_CFP_URL, isCfpClosed } from '@/lib/cfp/closure';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -363,9 +363,7 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async (ctx
   }
 
   // Fetch speaker's submissions using untyped client for CFP tables
-  const cfpClient = createClient(env.supabase.url, env.supabase.serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const cfpClient = createCfpServiceClient();
   const { data: submissions, error: submissionsError } = await cfpClient
     .from('cfp_submissions')
     .select('*')

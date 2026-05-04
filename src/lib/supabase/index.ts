@@ -8,3 +8,6 @@ export { createServiceRoleClient } from './client';
 
 // Browser client for client-side operations
 export { createBrowserClient, supabase } from './client';
+
+// CFP service client for untyped CFP table operations
+export { createCfpServiceClient } from './cfp-client';

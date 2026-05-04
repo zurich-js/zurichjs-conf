@@ -28,13 +28,13 @@ export function createCfpServiceClient(): SupabaseClient<any> {
     throw new Error('[CFP Supabase] SUPABASE_URL is missing');
   }
 
-  if (!env.supabase.serviceRoleKey) {
-    throw new Error('[CFP Supabase] SUPABASE_SERVICE_ROLE_KEY is missing');
+  if (!env.supabase.secretKey) {
+    throw new Error('[CFP Supabase] SUPABASE_SECRET_KEY is missing');
   }
 
   cfpClientInstance = createClient(
     env.supabase.url,
-    env.supabase.serviceRoleKey,
+    env.supabase.secretKey,
     {
       auth: {
         autoRefreshToken: false,

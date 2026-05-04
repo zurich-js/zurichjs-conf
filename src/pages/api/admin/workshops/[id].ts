@@ -6,10 +6,9 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { env } from '@/config/env';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { Json, TablesUpdate } from '@/lib/types/database.generated';
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
 import { logger } from '@/lib/logger';
@@ -21,19 +20,6 @@ import {
 } from '@/lib/admin/workshopValidation';
 
 const log = logger.scope('Admin Workshop API');
-
-function createProgramScheduleClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const access = verifyAdminAccess(req);
@@ -227,7 +213,7 @@ async function syncProgramScheduleForWorkshop(
   if (!workshop.cfp_submission_id && !workshop.session_id) return;
   if (!schedule.date || !schedule.startTime || !schedule.durationMinutes) return;
 
-  const supabase = createProgramScheduleClient();
+  const supabase = createCfpServiceClient();
   const { data: existing, error: existingError } = await supabase
     .from('program_schedule_items')
     .select('id, is_visible')

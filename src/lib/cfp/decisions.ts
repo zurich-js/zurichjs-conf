@@ -3,8 +3,7 @@
  * Handles accept/reject decisions, coupon generation, and email sending
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
+import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { getStripeClient } from '@/lib/stripe/client';
 import { logger } from '@/lib/logger';
 import { sendCfpAcceptanceEmail, sendCfpRejectionEmail } from '@/lib/email/cfp-decision-emails';
@@ -16,22 +15,6 @@ import type {
 } from '@/lib/types/cfp/decisions';
 
 const log = logger.scope('CfpDecisions');
-
-/**
- * Create Supabase client for CFP operations
- */
-function createCfpServiceClient() {
-  return createClient(
-    env.supabase.url,
-    env.supabase.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-}
 
 /**
  * Generate a unique coupon code for CFP rejection
