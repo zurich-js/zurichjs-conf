@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, Utensils, Calendar } from 'lucide-react';
+import { Check, X, Utensils, Calendar, Sparkles } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { useToast } from '@/contexts/ToastContext';
 import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
@@ -19,6 +19,7 @@ import {
   updateInvoice as apiUpdateInvoice,
   deleteInvoice as apiDeleteInvoice,
   uploadInvoicePdf,
+  updateSpeakerTravel as apiUpdateSpeakerTravel,
 } from './api';
 import { calculateNights } from './types';
 import { SpeakerFlightsSection } from './SpeakerFlightsSection';
@@ -111,9 +112,15 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     onError: () => toast.error('Error', 'Failed to upload PDF'),
   });
 
+  const updateTravel = useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiUpdateSpeakerTravel(speaker.id, data),
+    onSuccess: () => { invalidateAll(); toast.success('Travel Updated', 'Speaker travel details saved'); },
+    onError: () => toast.error('Error', 'Failed to update travel details'),
+  });
+
   const isSubmitting = createFlight.isPending || updateFlight.isPending || deleteFlight.isPending
     || saveAccommodation.isPending || createInvoice.isPending || updateInvoice.isPending
-    || deleteInvoice.isPending || uploadPdf.isPending;
+    || deleteInvoice.isPending || uploadPdf.isPending || updateTravel.isPending;
 
   const nights = calculateNights(
     speaker.accommodation?.check_in_date ?? null,
@@ -187,6 +194,14 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
           isSubmitting={isSubmitting}
         />
 
+        <hr className="border-gray-200" />
+
+        <TravelStatusSection
+          speaker={speaker}
+          onUpdate={(data) => updateTravel.mutate(data)}
+          isSubmitting={isSubmitting}
+        />
+
         {speaker.travel && (
           <>
             <hr className="border-gray-200" />
@@ -209,10 +224,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
                   <span className="text-gray-400">Accessibility:</span>{' '}
                   <span className="text-gray-700">{speaker.travel.accessibility_needs || 'None'}</span>
                 </div>
-                <div>
-                  <span className="text-gray-400">Activities:</span>{' '}
-                  <span className="text-gray-700">{speaker.travel.attending_speakers_activities ? 'Yes' : 'No'}</span>
-                </div>
                 {speaker.travel.flight_budget_amount && (
                   <div>
                     <span className="text-gray-400">Budget:</span>{' '}
@@ -227,6 +238,132 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
         )}
       </div>
     </AdminModal>
+  );
+}
+
+function TravelStatusSection({
+  speaker,
+  onUpdate,
+  isSubmitting,
+}: {
+  speaker: SpeakerWithTravel;
+  onUpdate: (data: Record<string, unknown>) => void;
+  isSubmitting: boolean;
+}) {
+  const travel = speaker.travel;
+
+  return (
+    <div>
+      <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+        <Check className="w-4 h-4" />
+        Travel Status
+      </h3>
+      <div className="space-y-2">
+        <ToggleRow
+          label="Travel Confirmed"
+          description="Mark when flights and hotel are finalized"
+          icon={<Check className="w-4 h-4 text-green-600" />}
+          value={!!travel?.travel_confirmed}
+          disabled={isSubmitting}
+          onChange={(checked) => onUpdate({ travel_confirmed: checked })}
+        />
+        <TristateRow
+          label="Attending Speakers Dinner"
+          icon={<Utensils className="w-4 h-4 text-purple-500" />}
+          value={travel?.attending_speakers_dinner ?? null}
+          disabled={isSubmitting}
+          onChange={(value) => onUpdate({ attending_speakers_dinner: value })}
+        />
+        <TristateRow
+          label="Attending Speakers Activities"
+          icon={<Sparkles className="w-4 h-4 text-blue-500" />}
+          value={travel?.attending_speakers_activities ?? null}
+          disabled={isSubmitting}
+          onChange={(value) => onUpdate({ attending_speakers_activities: value })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  description,
+  icon,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  icon: React.ReactNode;
+  value: boolean;
+  disabled: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className={`flex items-center justify-between gap-3 p-3 border rounded-lg ${value ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'} ${disabled ? 'opacity-60' : 'cursor-pointer'}`}>
+      <div className="flex items-center gap-3 min-w-0">
+        {icon}
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-gray-900">{label}</div>
+          {description && <div className="text-xs text-gray-500">{description}</div>}
+        </div>
+      </div>
+      <input
+        type="checkbox"
+        checked={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary"
+      />
+    </label>
+  );
+}
+
+function TristateRow({
+  label,
+  icon,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  value: boolean | null;
+  disabled: boolean;
+  onChange: (value: boolean | null) => void;
+}) {
+  const options: { label: string; val: boolean | null; activeClass: string }[] = [
+    { label: 'Yes', val: true, activeClass: 'bg-green-100 text-green-700 border-green-300' },
+    { label: 'No', val: false, activeClass: 'bg-red-100 text-red-700 border-red-300' },
+    { label: 'Unknown', val: null, activeClass: 'bg-gray-100 text-gray-700 border-gray-300' },
+  ];
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 border border-gray-200 bg-white rounded-lg">
+      <div className="flex items-center gap-3 min-w-0">
+        {icon}
+        <div className="text-sm font-medium text-gray-900">{label}</div>
+      </div>
+      <div className="flex gap-1">
+        {options.map((opt) => {
+          const isActive = value === opt.val;
+          return (
+            <button
+              key={String(opt.val)}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(opt.val)}
+              className={`px-2.5 py-1 text-xs rounded-md border transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                isActive ? opt.activeClass : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

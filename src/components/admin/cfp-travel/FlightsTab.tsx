@@ -3,7 +3,8 @@
  * Flight tracker with status updates and tracking links
  */
 
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Search } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
 import { Pagination } from '@/components/atoms';
 import type { FlightWithSpeaker } from '@/lib/cfp/admin-travel';
 import type { CfpFlightStatus } from '@/lib/types/cfp';
@@ -21,6 +22,8 @@ interface FlightsTabProps {
   onUpdateStatus: (id: string, status: CfpFlightStatus) => void;
   isUpdating: boolean;
   onSelectSpeaker?: (speakerId: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 export function FlightsTab({
@@ -34,27 +37,67 @@ export function FlightsTab({
   onUpdateStatus,
   isUpdating,
   onSelectSpeaker,
+  searchQuery,
+  onSearchChange,
 }: FlightsTabProps) {
-  const totalPages = Math.ceil(filteredFlights.length / pageSize);
+  const searchedFlights = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredFlights;
+    return filteredFlights.filter((f) => {
+      const haystack = [
+        f.speaker.first_name,
+        f.speaker.last_name,
+        f.speaker.email,
+        f.airline,
+        f.flight_number,
+        f.departure_airport,
+        f.arrival_airport,
+        f.booking_reference,
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [filteredFlights, searchQuery]);
+
+  const totalPages = Math.ceil(searchedFlights.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedFlights = filteredFlights.slice(startIndex, startIndex + pageSize);
+  const paginatedFlights = searchedFlights.slice(startIndex, startIndex + pageSize);
+
+  useEffect(() => {
+    if (currentPage > 1 && startIndex >= searchedFlights.length) {
+      onPageChange(1);
+    }
+  }, [searchedFlights.length, currentPage, startIndex, onPageChange]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-black">Flight Tracker</h2>
-        <div className="flex gap-2">
-          {(['all', 'inbound', 'outbound'] as const).map((dir) => (
-            <button
-              key={dir}
-              onClick={() => setFlightDirection(dir)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors capitalize cursor-pointer ${
-                flightDirection === dir ? 'bg-brand-primary text-black' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {dir}
-            </button>
-          ))}
+      <div className="p-4 border-b border-gray-200 flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-lg font-bold text-black">
+            Flight Tracker ({searchedFlights.length}{searchQuery ? ` of ${filteredFlights.length}` : ''})
+          </h2>
+          <div className="flex gap-2">
+            {(['all', 'inbound', 'outbound'] as const).map((dir) => (
+              <button
+                key={dir}
+                onClick={() => setFlightDirection(dir)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors capitalize cursor-pointer ${
+                  flightDirection === dir ? 'bg-brand-primary text-black' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {dir}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search by speaker, airline, flight number, airport, booking ref..."
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+          />
         </div>
       </div>
       {isLoading ? (
@@ -239,7 +282,7 @@ export function FlightsTab({
             totalPages={totalPages}
             onPageChange={onPageChange}
             pageSize={pageSize}
-            totalItems={filteredFlights.length}
+            totalItems={searchedFlights.length}
             variant="light"
           />
         </>

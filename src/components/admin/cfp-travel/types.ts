@@ -26,6 +26,42 @@ export const FLIGHT_STATUS_COLORS: Record<CfpFlightStatus, string> = {
 };
 
 /**
+ * Supported currencies for invoices, accommodation, and travel costs.
+ * ISO 4217 codes covering common conference traveler home currencies.
+ */
+export const CURRENCIES: { code: string; label: string }[] = [
+  { code: 'CHF', label: 'CHF — Swiss Franc' },
+  { code: 'EUR', label: 'EUR — Euro' },
+  { code: 'USD', label: 'USD — US Dollar' },
+  { code: 'GBP', label: 'GBP — British Pound' },
+  { code: 'CAD', label: 'CAD — Canadian Dollar' },
+  { code: 'AUD', label: 'AUD — Australian Dollar' },
+  { code: 'NZD', label: 'NZD — New Zealand Dollar' },
+  { code: 'JPY', label: 'JPY — Japanese Yen' },
+  { code: 'CNY', label: 'CNY — Chinese Yuan' },
+  { code: 'HKD', label: 'HKD — Hong Kong Dollar' },
+  { code: 'SGD', label: 'SGD — Singapore Dollar' },
+  { code: 'KRW', label: 'KRW — South Korean Won' },
+  { code: 'INR', label: 'INR — Indian Rupee' },
+  { code: 'AED', label: 'AED — UAE Dirham' },
+  { code: 'ILS', label: 'ILS — Israeli Shekel' },
+  { code: 'ZAR', label: 'ZAR — South African Rand' },
+  { code: 'BRL', label: 'BRL — Brazilian Real' },
+  { code: 'MXN', label: 'MXN — Mexican Peso' },
+  { code: 'SEK', label: 'SEK — Swedish Krona' },
+  { code: 'NOK', label: 'NOK — Norwegian Krone' },
+  { code: 'DKK', label: 'DKK — Danish Krone' },
+  { code: 'ISK', label: 'ISK — Icelandic Krona' },
+  { code: 'PLN', label: 'PLN — Polish Zloty' },
+  { code: 'CZK', label: 'CZK — Czech Koruna' },
+  { code: 'HUF', label: 'HUF — Hungarian Forint' },
+  { code: 'RON', label: 'RON — Romanian Leu' },
+  { code: 'BGN', label: 'BGN — Bulgarian Lev' },
+  { code: 'TRY', label: 'TRY — Turkish Lira' },
+  { code: 'UAH', label: 'UAH — Ukrainian Hryvnia' },
+];
+
+/**
  * Generate a FlightAware tracking URL from a flight number
  */
 export function getFlightTrackingUrl(flightNumber: string | null, trackingUrl: string | null): string | null {

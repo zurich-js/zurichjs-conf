@@ -114,6 +114,14 @@ export function saveAccommodation(speakerId: string, data: Record<string, unknow
 }
 
 // ============================================================================
+// Speaker Travel Mutations
+// ============================================================================
+
+export function updateSpeakerTravel(speakerId: string, data: Record<string, unknown>) {
+  return jsonPut(`/api/admin/cfp/travel/speakers/${speakerId}/travel`, data);
+}
+
+// ============================================================================
 // Invoice Mutations
 // ============================================================================
 

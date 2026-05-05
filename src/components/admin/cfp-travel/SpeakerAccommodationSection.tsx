@@ -6,7 +6,7 @@
 import { useState, useCallback } from 'react';
 import { Hotel, Pencil } from 'lucide-react';
 import type { CfpSpeakerAccommodation } from '@/lib/types/cfp';
-import { calculateNights } from './types';
+import { calculateNights, CURRENCIES } from './types';
 
 interface SpeakerAccommodationSectionProps {
   accommodation: CfpSpeakerAccommodation | null;
@@ -227,10 +227,9 @@ export function SpeakerAccommodationSection({
                 onChange={(e) => setForm({ ...form, cost_currency: e.target.value })}
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               >
-                <option value="CHF">CHF</option>
-                <option value="EUR">EUR</option>
-                <option value="USD">USD</option>
-                <option value="GBP">GBP</option>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
               </select>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">

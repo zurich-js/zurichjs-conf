@@ -6,7 +6,7 @@
 import { useState, useRef } from 'react';
 import { FileText, Plus, Upload, ExternalLink, Trash2 } from 'lucide-react';
 import type { CfpSpeakerReimbursement, CfpReimbursementType } from '@/lib/types/cfp';
-import { STATUS_COLORS } from './types';
+import { STATUS_COLORS, CURRENCIES } from './types';
 
 interface SpeakerInvoicesSectionProps {
   invoices: CfpSpeakerReimbursement[];
@@ -267,10 +267,9 @@ export function SpeakerInvoicesSection({
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
                 className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               >
-                <option value="CHF">CHF</option>
-                <option value="EUR">EUR</option>
-                <option value="USD">USD</option>
-                <option value="GBP">GBP</option>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
               </select>
               <input
                 placeholder="Invoice #"

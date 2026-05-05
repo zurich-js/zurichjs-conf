@@ -294,20 +294,31 @@ export async function updateSpeakerTravelAdmin(
     flight_budget_amount?: number;
     flight_budget_currency?: string;
     travel_confirmed?: boolean;
+    attending_speakers_dinner?: boolean | null;
+    attending_speakers_activities?: boolean | null;
+    arrival_date?: string | null;
+    departure_date?: string | null;
+    dietary_restrictions?: string | null;
+    accessibility_needs?: string | null;
   }
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = createCfpServiceClient();
 
+  const payload: Record<string, unknown> = {
+    speaker_id: speakerId,
+    ...updates,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (updates.travel_confirmed === true) {
+    payload.confirmed_at = new Date().toISOString();
+  } else if (updates.travel_confirmed === false) {
+    payload.confirmed_at = null;
+  }
+
   const { error } = await supabase
     .from('cfp_speaker_travel')
-    .upsert({
-      speaker_id: speakerId,
-      ...updates,
-      confirmed_at: updates.travel_confirmed ? new Date().toISOString() : undefined,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'speaker_id',
-    });
+    .upsert(payload, { onConflict: 'speaker_id' });
 
   if (error) {
     console.error('[Admin Travel] Update error:', error);
