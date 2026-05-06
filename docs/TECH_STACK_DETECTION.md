@@ -63,5 +63,5 @@ Only add signals based on browser extension hooks - never site-specific markers.
 ## Testing
 
 ```bash
-npm run test:run -- src/lib/analytics/techStackDetector
+docker compose run --rm tools pnpm test:run -- src/lib/analytics/techStackDetector
 ```

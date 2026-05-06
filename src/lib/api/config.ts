@@ -29,8 +29,7 @@ export function getBaseUrl(): string {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  // Default to localhost for development
-  return 'http://localhost:3000';
+  return process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
 }
 
 /**
@@ -132,5 +131,4 @@ export type EndpointPath = ReturnType<
 export function buildUrl(endpoint: string, config: ApiConfig = defaultApiConfig): string {
   return `${config.baseUrl}${endpoint}`;
 }
-
 

@@ -1,13 +1,13 @@
 # Local Seed Phases
 
-`supabase/seed-local-cfp.sql` remains the default seed used by `supabase db reset`.
+`supabase/seed-local-cfp.sql` remains the default seed used by `just db-reset`.
 
-For phase-specific testing, use the npm scripts:
+For phase-specific testing, use the Docker-only `just` recipes:
 
-- `npm run db:seed:cfp-first-stage` — reviewer dashboard/load-test phase.
-- `npm run db:seed:cfp-admission` — accepted/rejected speaker selection phase, no schedule.
-- `npm run db:seed:cfp-schedule` — schedule slots and a few linked submissions, no commerce.
-- `npm run db:seed:workshop-commerce` — full local seed with workshop commerce fixtures.
+- `just db-seed-cfp-first-stage` — reviewer dashboard/load-test phase.
+- `just db-seed-cfp-admission` — accepted/rejected speaker selection phase, no schedule.
+- `just db-seed-cfp-schedule` — schedule slots and a few linked submissions, no commerce.
+- `just db-seed-workshop-commerce` — full local seed with workshop commerce fixtures.
 
 ## Expected state by phase
 

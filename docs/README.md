@@ -74,8 +74,8 @@ Required environment variables (see `.env.example`):
 ```env
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
 
 # Stripe
 STRIPE_SECRET_KEY=
@@ -93,13 +93,19 @@ NEXT_PUBLIC_POSTHOG_HOST=
 ## Development Commands
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run test:run     # Run tests
-npm run typecheck    # TypeScript check
-npm run lint         # ESLint
-npm run email:dev    # Preview email templates
+just dev            # Start Supabase and the Dockerized development server
+just env-check      # Verify process.env usage is covered by .env.example
+just build          # Build for production inside Docker
+just test           # Run tests inside Docker
+just check          # Run env-check, lint, typecheck, and tests inside Docker
+just typecheck      # TypeScript check inside Docker
+just lint           # Lint inside Docker
+just email-dev      # Preview email templates inside Docker
 ```
+
+Direct host-side `pnpm`, `npm`, `npx`, and Supabase CLI workflows are blocked.
+Use `just ...` or `docker compose run --rm tools ...`. Host-side Git commands
+are allowed.
 
 ## Related Files
 

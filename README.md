@@ -23,7 +23,7 @@ A production-ready conference ticketing and workshop management platform built w
 - **Styling**: Tailwind CSS v4
 - **State Management**: React Query, Context API
 - **Type Safety**: TypeScript (strict mode)
-- **Code Quality**: ESLint, Husky, lint-staged
+- **Code Quality**: Docker-only local execution with CI validation
 
 ## Project Structure
 
@@ -65,19 +65,18 @@ docs/
 
 ### Prerequisites
 
-- Node.js 20+
-- npm or yarn
+- Docker
+- just
 - Supabase account
 - Stripe account
 - Resend account (for emails)
 
 ### Installation
 
-1. **Clone and install dependencies**
+1. **Clone the repository**
    ```bash
    git clone <repo-url>
    cd zurichjs-conf
-   npm install
    ```
 
 2. **Set up environment variables**
@@ -85,22 +84,22 @@ docs/
    cp .env.example .env.local
    ```
 
-   Fill in your credentials in `.env.local`:
+   `just setup` can build/install/start Supabase before these are filled in.
+   If any values needed by the dev server are missing, setup prints a clear
+   message and leaves Supabase running without starting the frontend.
+   Fill these in before running the app or production checks:
    - Supabase URL and keys
    - Stripe keys and webhook secret
    - Resend API key
 
-3. **Set up Supabase**
+3. **Build containers, install dependencies, and start services**
    ```bash
-   # Install Supabase CLI
-   npm install -g supabase
-
-   # Link to your project
-   supabase link --project-ref your-project-ref
-
-   # Apply migrations
-   supabase db push
+   just setup
    ```
+
+   `just setup` runs in detached mode. If containers were previously stopped
+   with `docker compose down`, run either `just setup` or `just dev` to bring
+   the local stack back.
 
 4. **Configure Stripe**
    - Create products and prices in Stripe Dashboard
@@ -109,14 +108,14 @@ docs/
 
 5. **Run development server**
    ```bash
-   npm run dev
+   just dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000)
+   Open the URL from `NEXT_PUBLIC_BASE_URL`.
 
 6. **Test webhooks locally** (optional)
    ```bash
-   stripe listen --forward-to localhost:3000/api/webhooks/stripe
+   stripe listen --forward-to <host-and-port-from-NEXT_PUBLIC_BASE_URL>/api/webhooks/stripe
    ```
 
 ## Documentation
@@ -132,17 +131,74 @@ docs/
 ### Available Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run typecheck    # Run TypeScript type checking
-npm run email:dev    # Preview email templates
+just dev            # Start Supabase and the Dockerized development server
+just env-check      # Verify process.env usage is covered by .env.example
+just build          # Build for production inside Docker
+just lint           # Run linting inside Docker
+just typecheck      # Run TypeScript type checking inside Docker
+just test           # Run tests inside Docker
+just check          # Run env-check, lint, typecheck, and tests inside Docker
+just email-dev      # Preview email templates inside Docker
 ```
+
+Direct host-side `pnpm`, `npm`, `npx`, and Supabase CLI workflows are blocked
+for this repository. Use `just ...` or `docker compose run --rm tools ...`.
+Host-side Git commands are fine.
+
+`NEXT_PUBLIC_BASE_URL` is the source of truth for the local app endpoint. For
+example, setting `NEXT_PUBLIC_BASE_URL=http://localhost:4000` in `.env.local`
+makes `just dev` publish port 4000 and start Next.js on port 4000.
+
+### Docker-Only Security Model
+
+Local app commands are blocked to prevent dependency lifecycle scripts, hidden
+config evaluation, or unexpected build tooling from running directly on the
+developer machine. Dependency installation, Next.js, PostCSS, tests, linting,
+Supabase migrations, and all package scripts must run in Docker.
+
+Common direct commands:
+
+```bash
+docker compose run --rm tools pnpm test:run
+docker compose run --rm tools pnpm typecheck
+docker compose run --rm tools pnpm lint
+docker compose run --rm tools supabase status
+```
+
+Remote Supabase CLI work is still supported through Docker:
+
+```bash
+just supabase status
+just supabase migration list --linked
+just supabase db push --linked
+```
+
+Provide any required Supabase credentials through `.env.local` or the shell
+environment passed to Docker, for example `SUPABASE_ACCESS_TOKEN`.
+
+`SUPABASE_ACCESS_TOKEN` is only for Supabase CLI authentication.
+
+For hosted Supabase, use:
+
+```env
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+SUPABASE_SECRET_KEY=sb_secret_...
+```
+
+For local Supabase CLI, use the local keys printed by `just supabase status`.
+Keep the same env var names; only the values change:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<local Publishable key>
+SUPABASE_SECRET_KEY=<local Secret key>
+```
+
+Do not put the publishable key in `SUPABASE_SECRET_KEY`.
 
 ### Code Quality
 
-- Pre-commit hooks run linting and type checking
+- GitHub Actions runs linting, tests, type checking, coverage, and builds
 - Strict TypeScript configuration
 - ESLint with Next.js recommended rules
 

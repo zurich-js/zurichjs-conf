@@ -8,29 +8,24 @@
 		"pnpm": "10.x"
 	},
 	"scripts": {
-		"dev": "next dev",
-		"build": "next build",
-		"build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
-		"start": "next start",
-		"lint": "oxlint --fix",
-		"typecheck": "tsc --noEmit",
-		"clean": "rm -rf .next && rm -rf node_modules/.cache",
-		"prepare": "husky",
-		"email:dev": "email dev --dir ./src/emails --port 3001",
-		"test": "vitest",
-		"test:run": "vitest run",
-		"test:coverage": "vitest run --coverage",
-		"test:related": "vitest related --run",
-		"db:seed:cfp-first-stage": "scripts/seed-supabase-phase.sh cfp-first-stage",
-		"db:seed:cfp-admission": "scripts/seed-supabase-phase.sh cfp-admission",
-		"db:seed:cfp-schedule": "scripts/seed-supabase-phase.sh cfp-schedule",
-		"db:seed:workshop-commerce": "scripts/seed-supabase-phase.sh workshop-commerce"
-	},
-	"lint-staged": {
-		"*.{ts,tsx,js,jsx}": [
-			"oxlint --fix",
-			"vitest related --run"
-		]
+		"preinstall": "scripts/require-docker.sh",
+		"dev": "scripts/require-docker.sh && scripts/start-frontend.sh",
+		"build": "scripts/require-docker.sh && next build",
+		"build:clean": "scripts/require-docker.sh && rm -rf .next && rm -rf node_modules/.cache && next build",
+		"start": "scripts/require-docker.sh && next start",
+		"lint": "scripts/require-docker.sh && oxlint --fix",
+		"env:check": "scripts/require-docker.sh && scripts/check-env-example.sh",
+		"typecheck": "scripts/require-docker.sh && tsc --noEmit",
+		"clean": "scripts/require-docker.sh && rm -rf .next && rm -rf node_modules/.cache",
+		"email:dev": "scripts/require-docker.sh && email dev --dir ./src/emails --port 3001",
+		"test": "scripts/require-docker.sh && vitest",
+		"test:run": "scripts/require-docker.sh && vitest run",
+		"test:coverage": "scripts/require-docker.sh && vitest run --coverage",
+		"test:related": "scripts/require-docker.sh && vitest related --run",
+		"db:seed:cfp-first-stage": "scripts/require-docker.sh && scripts/seed-supabase-phase.sh cfp-first-stage",
+		"db:seed:cfp-admission": "scripts/require-docker.sh && scripts/seed-supabase-phase.sh cfp-admission",
+		"db:seed:cfp-schedule": "scripts/require-docker.sh && scripts/seed-supabase-phase.sh cfp-schedule",
+		"db:seed:workshop-commerce": "scripts/require-docker.sh && scripts/seed-supabase-phase.sh workshop-commerce"
 	},
 	"dependencies": {
 		"@headlessui/react": "^2.2.10",
@@ -96,8 +91,6 @@
 		"@types/react-dom": "^19.2.3",
 		"@types/recharts": "^1.8.29",
 		"@vitest/coverage-v8": "^4.1.5",
-		"husky": "^9.1.7",
-		"lint-staged": "^16.4.0",
 		"oxlint": "^1.62.0",
 		"react-email": "^5.2.11",
 		"tailwindcss": "^4.2.4",

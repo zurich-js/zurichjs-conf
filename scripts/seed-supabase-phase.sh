@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+scripts/require-docker.sh
+
 phase="${1:-}"
 project_id="${SUPABASE_PROJECT_ID:-svkbzhlrjujeteqjrckv}"
 db_container="${SUPABASE_DB_CONTAINER:-supabase_db_${project_id}}"

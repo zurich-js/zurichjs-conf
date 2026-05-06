@@ -11,6 +11,29 @@ This is a Next.js conference landing page for ZurichJS Conference 2026. The code
 3. **Data Separation**: All content data lives in `src/data/`, never in components
 4. **Accessibility**: WCAG AAA compliance, keyboard navigation, screen readers
 5. **Performance**: No hydration warnings, optimized bundles, lazy loading when appropriate
+6. **Docker-Only Execution**: Host-side Git is allowed; project code execution, package scripts, installs, tests, linting, typechecking, builds, dev servers, and Supabase migrations must run through `just` or `docker compose`.
+
+## Local Command Policy
+
+Do not run Node, pnpm, npm, npx, Supabase CLI, migrations, tests, linters,
+typechecks, builds, or dev servers on the host machine. This prevents package
+lifecycle scripts, hidden config evaluation, and unexpected build tooling from
+executing directly on the developer machine.
+
+Use:
+
+```bash
+just setup
+just dev
+just env-check
+just lint
+just typecheck
+just test
+just check
+just build
+docker compose run --rm tools pnpm test:run
+docker compose run --rm tools supabase status
+```
 
 ## Architecture
 
@@ -395,7 +418,7 @@ const bgColor = '#242528'; // Use tokens!
 
 ### Linting & Formatting
 
-- Run `npm run lint` before committing
+- Run `just lint` before committing; all project commands must execute through Docker
 - Fix all linter errors immediately
 - Use ESLint and TypeScript compiler strictly
 
@@ -636,4 +659,3 @@ Build these insights in PostHog:
 ---
 
 **Remember**: This codebase values type safety, accessibility, maintainability, and excellent developer experience above all else. When adding features, ensure they follow these established patterns.
-

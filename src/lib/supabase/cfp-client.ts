@@ -9,6 +9,7 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { env } from '@/config/env';
+import { getSupabaseServerUrl } from './url';
 
 let cfpClientInstance: SupabaseClient<any> | null = null;
 
@@ -24,7 +25,9 @@ export function createCfpServiceClient(): SupabaseClient<any> {
     return cfpClientInstance;
   }
 
-  if (!env.supabase.url) {
+  const supabaseUrl = getSupabaseServerUrl();
+
+  if (!supabaseUrl) {
     throw new Error('[CFP Supabase] SUPABASE_URL is missing');
   }
 
@@ -33,7 +36,7 @@ export function createCfpServiceClient(): SupabaseClient<any> {
   }
 
   cfpClientInstance = createClient(
-    env.supabase.url,
+    supabaseUrl,
     env.supabase.secretKey,
     {
       auth: {

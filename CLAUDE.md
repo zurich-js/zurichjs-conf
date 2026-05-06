@@ -127,11 +127,58 @@ src/components/admin/
 
 ## Testing
 ```bash
-npm run test:run      # Run tests
-npm run typecheck     # TypeScript check
-npm run lint          # ESLint
-npm run build         # Full build
+just test                                      # Run tests
+just typecheck                                 # TypeScript check
+just lint                                      # Lint
+just build                                     # Full build
+docker compose run --rm tools pnpm test:run   # Direct Docker command
 ```
+
+## Docker-Only Execution Policy
+
+Host-side Git commands are allowed. Do not run project Node, pnpm, npm, npx,
+Supabase CLI, migrations, tests, linters, typechecks, builds, or dev servers on
+the host.
+
+This project blocks local package scripts to reduce the chance that dependency
+lifecycle scripts, hidden config evaluation, or unexpected build tooling runs on
+the developer machine. Everything that can execute project code must run inside
+Docker.
+
+Use these entrypoints:
+
+```bash
+just setup
+just dev
+just env-check
+just lint
+just typecheck
+just test
+just check
+just build
+docker compose run --rm tools pnpm test:run
+docker compose run --rm tools pnpm typecheck
+docker compose run --rm tools pnpm lint
+docker compose run --rm tools supabase status
+docker compose exec frontend pnpm dev
+```
+
+Before handing work back, run at least:
+
+```bash
+just check
+```
+
+Use `just supabase ...` or `docker compose run --rm tools supabase ...` for
+local and remote Supabase migrations.
+
+`SUPABASE_ACCESS_TOKEN` authenticates the Supabase CLI only. Keep the same app
+env var names for hosted and local Supabase. Hosted Supabase uses
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...` and
+`SUPABASE_SECRET_KEY=sb_secret_...`. Local Supabase CLI uses
+`NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321` plus the local keys from
+`just supabase status` in `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and
+`SUPABASE_SECRET_KEY`. Never use the publishable key as `SUPABASE_SECRET_KEY`.
 
 ## Common Tasks
 

@@ -63,7 +63,7 @@ Run this to watch logs in real-time during a test purchase:
 vercel logs --follow
 
 # If running locally
-npm run dev
+just dev
 # Then watch the terminal for [WebhookHandler] and [Email] logs
 ```
 
@@ -96,7 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 Then test with:
 ```bash
-curl -X POST http://localhost:3000/api/test-voucher-email
+curl -X POST "$NEXT_PUBLIC_BASE_URL/api/test-voucher-email"
 ```
 
 ## What the Logs Tell You

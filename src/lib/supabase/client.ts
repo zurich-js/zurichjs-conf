@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/lib/types/database';
 import { env, clientEnv } from '@/config/env';
+import { getSupabaseServerUrl } from './url';
 
 /**
  * Browser client instance for client-side operations
@@ -26,10 +27,11 @@ let browserClientInstance: ReturnType<typeof createSSRBrowserClient<Database>> |
  */
 export function createServiceRoleClient() {
   console.log('[Supabase] Creating service role client');
-  console.log('[Supabase] URL:', env.supabase.url);
+  const supabaseUrl = getSupabaseServerUrl();
+  console.log('[Supabase] URL:', supabaseUrl);
   console.log('[Supabase] Secret key:', env.supabase.secretKey ? '(present)' : '❌ MISSING');
 
-  if (!env.supabase.url) {
+  if (!supabaseUrl) {
     throw new Error('[Supabase] ❌ SUPABASE_URL is missing');
   }
 
@@ -38,7 +40,7 @@ export function createServiceRoleClient() {
   }
 
   const client = createClient<Database>(
-    env.supabase.url,
+    supabaseUrl,
     env.supabase.secretKey,
     {
       auth: {
