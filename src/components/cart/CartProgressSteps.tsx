@@ -8,7 +8,6 @@ import type { CartStep } from './types';
 interface CartProgressStepsProps {
   currentStep: CartStep;
   needsAttendeeInfo: boolean;
-  showWorkshopUpsells: boolean;
   isPricingLoading: boolean;
   onStepClick: (step: CartStep) => void;
 }
@@ -22,7 +21,6 @@ interface StepConfig {
 export function CartProgressSteps({
   currentStep,
   needsAttendeeInfo,
-  showWorkshopUpsells,
   isPricingLoading,
   onStepClick,
 }: CartProgressStepsProps) {

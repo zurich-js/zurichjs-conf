@@ -14,11 +14,9 @@ import {
   getTicketDisplayName,
   toLegacyType,
   isTicketProduct,
-  isWorkshopVoucher,
   isWorkshopPrice,
 } from './ticket-utils';
 import {
-  processVouchers,
   processTickets,
   processWorkshops,
   handleVipUpgradePayment,
@@ -144,12 +142,11 @@ export async function handleCheckoutSessionCompleted(
     throw new Error('No line items in session');
   }
 
-  const { tickets, vouchers, workshops, unrecognized } = categorizeLineItems(lineItems.data);
+  const { tickets, workshops, unrecognized } = categorizeLineItems(lineItems.data);
 
   log.debug('Line items categorized', {
     total: lineItems.data.length,
     tickets: tickets.length,
-    vouchers: vouchers.length,
     workshops: workshops.length,
     unrecognized: unrecognized.length,
   });
@@ -168,17 +165,12 @@ export async function handleCheckoutSessionCompleted(
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 6: Process vouchers (fast path - no database operations)
-  // ─────────────────────────────────────────────────────────────────────────────
-  await processVouchers(vouchers, session, customerEmail, firstName, log);
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 7: Process tickets (slow path - DB + PDF generation + emails)
+  // STEP 6: Process tickets (slow path - DB + PDF generation + emails)
   // ─────────────────────────────────────────────────────────────────────────────
   await processTickets(tickets, session, stripeCustomerId, customerEmail, firstName, lastName, log);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 8: Process workshop registrations (runs after tickets so ticket_id can
+  // STEP 7: Process workshop registrations (runs after tickets so ticket_id can
   // be linked for registrants who also bought a conference ticket in the same
   // checkout session).
   // ─────────────────────────────────────────────────────────────────────────────
@@ -244,6 +236,5 @@ export const __testing = {
   getTicketDisplayName,
   toLegacyType,
   isTicketProduct,
-  isWorkshopVoucher,
   isWorkshopPrice,
 };

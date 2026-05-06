@@ -9,7 +9,7 @@ import type { Cart, CheckoutFormData } from '@/types/cart';
 import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
-import { isTicketProduct, isWorkshopPrice, isWorkshopVoucher, parseTicketInfo } from '@/lib/stripe/ticket-utils';
+import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Json } from '@/lib/types/database';
@@ -166,8 +166,8 @@ function inferAllowedKindsFromMetadata(
   promotionCode: Stripe.PromotionCode | null
 ): Set<ProductKind> | 'all' | null {
   const metadata = {
-    ...(coupon.metadata ?? {}),
-    ...(promotionCode?.metadata ?? {}),
+    ...coupon.metadata,
+    ...promotionCode?.metadata,
   };
 
   const explicitKind =
@@ -232,7 +232,7 @@ async function validateDiscountProductsForCheckout(
     const product = price.product;
     const productId = typeof product === 'string' ? product : product.id;
     priceProductIds.set(price.id, productId);
-    const isWorkshop = isWorkshopPrice(price) || isWorkshopVoucher(price);
+    const isWorkshop = isWorkshopPrice(price);
     const isTicket = isTicketProduct(price);
     priceKinds.set(price.id, isWorkshop ? 'workshop' : isTicket ? 'ticket' : 'unknown');
     if (isTicket && price.lookup_key) {

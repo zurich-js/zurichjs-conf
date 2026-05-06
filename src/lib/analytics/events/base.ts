@@ -72,7 +72,7 @@ export interface RevenueProperties {
   /** ISO 4217 currency code */
   revenue_currency: string;
   /** Revenue type for categorization */
-  revenue_type: 'ticket' | 'workshop' | 'voucher' | 'mixed' | 'other';
+  revenue_type: 'ticket' | 'workshop' | 'mixed' | 'other';
   /** Optional transaction ID */
   transaction_id?: string;
   /** Optional product details */
@@ -88,7 +88,7 @@ export interface CartProperties {
   cart_total_amount: number;
   cart_currency: string;
   cart_items: Array<{
-    type: 'ticket' | 'workshop' | 'workshop_voucher';
+    type: 'ticket' | 'workshop';
     category?: TicketCategory;
     stage?: TicketStage;
     quantity: number;

@@ -42,13 +42,9 @@ export type {
 // Workshop events
 export type {
   WorkshopViewedEvent,
-  WorkshopVoucherPurchasedEvent,
   WorkshopRegisteredEvent,
   WorkshopCancelledEvent,
-  WorkshopVoucherAddedToCartEvent,
-  WorkshopVoucherRemovedFromCartEvent,
-  WorkshopUpsellViewedEvent,
-  WorkshopUpsellSkippedEvent,
+  WorkshopAddedToCartEvent,
 } from './workshop-events';
 
 // Checkout events
@@ -150,13 +146,9 @@ import type {
 } from './ticket-events';
 import type {
   WorkshopViewedEvent,
-  WorkshopVoucherPurchasedEvent,
   WorkshopRegisteredEvent,
   WorkshopCancelledEvent,
-  WorkshopVoucherAddedToCartEvent,
-  WorkshopVoucherRemovedFromCartEvent,
-  WorkshopUpsellViewedEvent,
-  WorkshopUpsellSkippedEvent,
+  WorkshopAddedToCartEvent,
 } from './workshop-events';
 import type {
   CheckoutStartedEvent,
@@ -240,13 +232,9 @@ export type AnalyticsEvent =
   | CartReviewedEvent
   | CartStepViewedEvent
   | WorkshopViewedEvent
-  | WorkshopVoucherPurchasedEvent
   | WorkshopRegisteredEvent
   | WorkshopCancelledEvent
-  | WorkshopVoucherAddedToCartEvent
-  | WorkshopVoucherRemovedFromCartEvent
-  | WorkshopUpsellViewedEvent
-  | WorkshopUpsellSkippedEvent
+  | WorkshopAddedToCartEvent
   | CheckoutStartedEvent
   | CheckoutCompletedEvent
   | CheckoutAbandonedEvent

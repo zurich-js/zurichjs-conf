@@ -67,48 +67,6 @@ export async function trackTicketPurchaseServer(params: {
 }
 
 /**
- * Track workshop voucher purchase from server
- */
-export async function trackWorkshopVoucherPurchaseServer(params: {
-  distinctId: string
-  workshopId: string
-  workshopTitle: string
-  voucherCount: number
-  price: number
-  currency: string
-  stripeSessionId: string
-  stripeCustomerId?: string
-  email: string
-}) {
-  await serverAnalytics.track('workshop_voucher_purchased', params.distinctId, {
-    workshop_id: params.workshopId,
-    workshop_title: params.workshopTitle,
-    voucher_count: params.voucherCount,
-    stripe_session_id: params.stripeSessionId,
-    stripe_customer_id: params.stripeCustomerId,
-    payment_status: 'succeeded',
-    revenue_amount: params.price,
-    revenue_currency: params.currency,
-    revenue_type: 'workshop' as const,
-    transaction_id: params.stripeSessionId,
-    email: params.email,
-  })
-
-  await serverAnalytics.revenue(params.distinctId, {
-    amount: params.price,
-    currency: params.currency,
-    type: 'workshop',
-    transactionId: params.stripeSessionId,
-    productName: params.workshopTitle,
-    productCategory: 'workshop_voucher',
-    metadata: {
-      voucher_count: params.voucherCount,
-      workshop_id: params.workshopId,
-    },
-  })
-}
-
-/**
  * Track checkout completion from server
  */
 export async function trackCheckoutCompletedServer(params: {

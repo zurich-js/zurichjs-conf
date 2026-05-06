@@ -6,7 +6,6 @@
  * - getTicketDisplayName: Get display name for ticket
  * - toLegacyType: Map category/stage to legacy ticket type
  * - isTicketProduct: Check if price is a valid conference ticket
- * - isWorkshopVoucher: Check if price is a workshop voucher
  * - handleCheckoutSessionCompleted: Main webhook handler
  * - handleAsyncPaymentSucceeded: Async payment success handler
  * - handleAsyncPaymentFailed: Async payment failure handler
@@ -43,7 +42,6 @@ const mocks = vi.hoisted(() => ({
     },
   }),
   mockSendTicketConfirmationEmailsQueued: vi.fn().mockResolvedValue([{ success: true }]),
-  mockSendVoucherConfirmationEmail: vi.fn().mockResolvedValue({ success: true }),
   mockAddNewsletterContact: vi.fn().mockResolvedValue({ success: true }),
   mockGenerateTicketPDF: vi.fn().mockResolvedValue(Buffer.from('mock-pdf')),
   mockImageUrlToDataUrl: vi.fn().mockResolvedValue('data:image/png;base64,mock'),
@@ -88,7 +86,6 @@ vi.mock('@/lib/tickets', () => ({
 
 vi.mock('@/lib/email', () => ({
   sendTicketConfirmationEmailsQueued: mocks.mockSendTicketConfirmationEmailsQueued,
-  sendVoucherConfirmationEmail: mocks.mockSendVoucherConfirmationEmail,
   sendWorkshopConfirmationEmail: vi.fn().mockResolvedValue({ success: true }),
   addNewsletterContact: mocks.mockAddNewsletterContact,
 }));
@@ -176,7 +173,7 @@ import {
   handlePaymentIntentSucceeded,
 } from '../webhookHandlers';
 
-const { stripCurrencySuffix, parseTicketInfo, getTicketDisplayName, toLegacyType, isTicketProduct, isWorkshopVoucher } =
+const { stripCurrencySuffix, parseTicketInfo, getTicketDisplayName, toLegacyType, isTicketProduct } =
   __testing;
 
 // ============================================================================
@@ -521,52 +518,6 @@ describe('isTicketProduct', () => {
 });
 
 // ============================================================================
-// isWorkshopVoucher Tests
-// ============================================================================
-describe('isWorkshopVoucher', () => {
-  const originalEnv = process.env.WORKSHOP_VOUCHER_PRODUCT_ID;
-
-  beforeEach(() => {
-    process.env.WORKSHOP_VOUCHER_PRODUCT_ID = 'prod_workshop_voucher_123';
-  });
-
-  afterEach(() => {
-    if (originalEnv) {
-      process.env.WORKSHOP_VOUCHER_PRODUCT_ID = originalEnv;
-    } else {
-      delete process.env.WORKSHOP_VOUCHER_PRODUCT_ID;
-    }
-  });
-
-  it('should return false for undefined price', () => {
-    expect(isWorkshopVoucher(undefined)).toBe(false);
-  });
-
-  it('should return false when WORKSHOP_VOUCHER_PRODUCT_ID is not set', () => {
-    delete process.env.WORKSHOP_VOUCHER_PRODUCT_ID;
-    const price = { product: 'prod_workshop_voucher_123' } as Stripe.Price;
-    expect(isWorkshopVoucher(price)).toBe(false);
-  });
-
-  it('should return true when product ID matches (string product)', () => {
-    const price = { product: 'prod_workshop_voucher_123' } as Stripe.Price;
-    expect(isWorkshopVoucher(price)).toBe(true);
-  });
-
-  it('should return true when product ID matches (object product)', () => {
-    const price = {
-      product: { id: 'prod_workshop_voucher_123' } as Stripe.Product,
-    } as Stripe.Price;
-    expect(isWorkshopVoucher(price)).toBe(true);
-  });
-
-  it('should return false when product ID does not match', () => {
-    const price = { product: 'prod_different_123' } as Stripe.Price;
-    expect(isWorkshopVoucher(price)).toBe(false);
-  });
-});
-
-// ============================================================================
 // handleCheckoutSessionCompleted Tests
 // ============================================================================
 describe('handleCheckoutSessionCompleted', () => {
@@ -695,42 +646,6 @@ describe('handleCheckoutSessionCompleted', () => {
           email: 'test@example.com',
           firstName: 'John',
           lastName: 'Doe',
-        })
-      );
-    });
-  });
-
-  describe('voucher handling', () => {
-    beforeEach(() => {
-      process.env.WORKSHOP_VOUCHER_PRODUCT_ID = 'prod_voucher_123';
-
-      mocks.mockListLineItems.mockResolvedValue({
-        data: [
-          {
-            price: {
-              product: 'prod_voucher_123',
-              unit_amount: 5000,
-              currency: 'chf',
-              id: 'price_voucher_123',
-            } as Stripe.Price,
-            quantity: 2,
-            description: 'Workshop Voucher',
-          },
-        ],
-      });
-    });
-
-    it('should process workshop vouchers', async () => {
-      const session = createMockSession();
-
-      await handleCheckoutSessionCompleted(session);
-
-      // Should be called twice (quantity of 2)
-      expect(mocks.mockSendVoucherConfirmationEmail).toHaveBeenCalledTimes(2);
-      expect(mocks.mockSendVoucherConfirmationEmail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@example.com',
-          firstName: 'John',
         })
       );
     });

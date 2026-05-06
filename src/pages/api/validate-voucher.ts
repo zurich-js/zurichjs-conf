@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { logger } from '@/lib/logger';
 import { createServiceRoleClient } from '@/lib/supabase/client';
-import { isTicketProduct, isWorkshopPrice, isWorkshopVoucher, parseTicketInfo } from '@/lib/stripe/ticket-utils';
+import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 
 const log = logger.scope('Voucher Validation API');
 
@@ -307,7 +307,7 @@ export default async function handler(
         const metadataKind = normalizeProductKind(productMetadataKind);
         const kind = metadataKind === 'ticket' || metadataKind === 'workshop'
           ? metadataKind
-          : isWorkshopPrice(price) || isWorkshopVoucher(price)
+          : isWorkshopPrice(price)
             ? 'workshop'
             : isTicketProduct(price)
               ? 'ticket'

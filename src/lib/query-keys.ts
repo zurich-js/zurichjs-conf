@@ -48,11 +48,6 @@ export const workshopsKeys = {
   all: ['workshops'] as const,
 
   /**
-   * Key for vouchers queries
-   */
-  vouchers: () => [...workshopsKeys.all, 'vouchers'] as const,
-
-  /**
    * Key for workshop offering pricing, currency-scoped.
    * Pass `sessionSlug` or `cfpSubmissionId` to scope to a single workshop.
    */

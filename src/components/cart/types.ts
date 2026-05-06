@@ -6,9 +6,7 @@
 import type { CartItem, Cart, OrderSummary, CheckoutFormData } from '@/types/cart';
 import type { AttendeeInfo } from '@/lib/validations/checkout';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
-import type { WorkshopVoucher } from '@/lib/queries/workshops';
-
-export type CartStep = 'review' | 'attendees' | 'upsells' | 'checkout' | 'payment';
+export type CartStep = 'review' | 'attendees' | 'checkout' | 'payment';
 
 export interface CartStepProps {
   onNext: () => void;
@@ -37,20 +35,11 @@ export interface AttendeesStepProps extends CartStepProps {
   onSubmit: (attendees: AttendeeInfo[]) => void;
 }
 
-export interface UpsellsStepProps extends CartStepProps {
-  workshopVouchers: WorkshopVoucher[];
-  bonusPercent: number;
-  needsAttendeeInfo: boolean;
-  onAddVoucher: (voucherId: string) => void;
-  onSkip: () => void;
-}
-
 export interface CheckoutStepProps extends CartStepProps {
   cart: Cart;
   orderSummary: OrderSummary;
   attendees: AttendeeInfo[];
   isPartialDiscount: boolean;
-  showWorkshopUpsells: boolean;
   needsAttendeeInfo: boolean;
   isSubmitting: boolean;
   error: Error | null;

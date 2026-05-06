@@ -26,7 +26,7 @@ interface UseFormFieldTrackingOptions {
     cart_total_amount: number;
     cart_currency: string;
     cart_items: Array<{
-      type: 'ticket' | 'workshop' | 'workshop_voucher';
+      type: 'ticket' | 'workshop';
       category?: string;
       stage?: string;
       quantity: number;
