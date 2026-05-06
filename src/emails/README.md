@@ -148,8 +148,7 @@ import { TicketPurchaseEmail } from '@/emails/templates/TicketPurchaseEmail';
 If using React Email's preview server:
 
 ```bash
-npm install react-email @react-email/components
-npx email dev
+just email-dev
 ```
 
 Point the preview to `src/emails/examples/ticket-purchase.example.tsx`.

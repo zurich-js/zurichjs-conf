@@ -1,0 +1,46 @@
+services:
+  frontend:
+    build:
+      context: .
+    working_dir: ${PWD}
+    command: scripts/start-frontend.sh
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      IN_DOCKER: "1"
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      APP_PORT: ${APP_PORT:-3000}
+    ports:
+      - "${APP_PORT:-3000}:${APP_PORT:-3000}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${PWD}:${PWD}
+      - node_modules:${PWD}/node_modules
+      - pnpm_store:/pnpm/store
+
+  tools:
+    build:
+      context: .
+    working_dir: ${PWD}
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      IN_DOCKER: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+    network_mode: host
+    volumes:
+      - ${PWD}:${PWD}
+      - node_modules:${PWD}/node_modules
+      - pnpm_store:/pnpm/store
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  node_modules:
+  pnpm_store:

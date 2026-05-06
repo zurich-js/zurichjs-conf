@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
     process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'https://example.supabase.co';
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??= 'anon-key';
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ??= 'pk_test_123';
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??= 'service-role-key';
+    process.env.SUPABASE_SECRET_KEY ??= 'server-secret-key';
     process.env.STRIPE_SECRET_KEY ??= 'sk_test_123';
     process.env.STRIPE_WEBHOOK_SECRET ??= 'whsec_123';
     process.env.RESEND_API_KEY ??= 're_123';
