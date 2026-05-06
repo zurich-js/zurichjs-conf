@@ -8,7 +8,7 @@ import { User } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import type { SpeakerWithSessions } from './types';
 
-type SpeakerImageField = 'profile_image_url' | 'portrait_foreground_url' | 'portrait_background_url';
+type SpeakerImageField = 'profile_image_url' | 'header_image_url' | 'portrait_foreground_url' | 'portrait_background_url';
 
 interface EditSpeakerModalProps {
   speaker: SpeakerWithSessions;
@@ -41,12 +41,14 @@ export function EditSpeakerModal({
     speaker_role: speaker.speaker_role || 'speaker',
   });
   const [profileImageUrl, setProfileImageUrl] = useState(speaker.profile_image_url);
+  const [headerImageUrl, setHeaderImageUrl] = useState(speaker.header_image_url);
   const [portraitForegroundUrl, setPortraitForegroundUrl] = useState(speaker.portrait_foreground_url);
   const [portraitBackgroundUrl, setPortraitBackgroundUrl] = useState(speaker.portrait_background_url);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingField, setUploadingField] = useState<SpeakerImageField | null>(null);
   const [error, setError] = useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const headerImageInputRef = React.useRef<HTMLInputElement>(null);
   const portraitForegroundInputRef = React.useRef<HTMLInputElement>(null);
   const portraitBackgroundInputRef = React.useRef<HTMLInputElement>(null);
   const acceptedSessions = speaker.submissions?.filter((submission) => submission.status === 'accepted') ?? [];
@@ -120,6 +122,9 @@ export function EditSpeakerModal({
       if (profileImageUrl !== speaker.profile_image_url) {
         updates.profile_image_url = profileImageUrl;
       }
+      if (headerImageUrl !== speaker.header_image_url) {
+        updates.header_image_url = headerImageUrl;
+      }
       if (portraitForegroundUrl !== speaker.portrait_foreground_url) {
         updates.portrait_foreground_url = portraitForegroundUrl;
       }
@@ -189,7 +194,7 @@ export function EditSpeakerModal({
 
           <div className="border-b border-gray-200 pb-4">
             <h4 className="text-sm font-semibold text-black mb-3">Speaker Images</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <p className={`text-xs font-medium ${missingFields.profile_image_url ? 'text-red-700' : 'text-gray-600'}`}>Profile photo</p>
                 <div className="flex items-center gap-3">
@@ -217,6 +222,36 @@ export function EditSpeakerModal({
                       className="text-sm text-[#b8a820] hover:underline cursor-pointer disabled:opacity-50"
                     >
                       {uploadingField === 'profile_image_url' ? 'Uploading...' : 'Change photo'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-600">Header image</p>
+                <div className="flex items-center gap-3">
+                  {headerImageUrl ? (
+                    <img src={headerImageUrl} alt="Header" className="w-16 h-16 rounded-lg object-cover bg-gray-100" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                      <span className="text-xs text-gray-500">None</span>
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      ref={headerImageInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'header_image_url', setHeaderImageUrl)}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => headerImageInputRef.current?.click()}
+                      disabled={uploadingField !== null}
+                      className="text-sm text-[#b8a820] hover:underline cursor-pointer disabled:opacity-50"
+                    >
+                      {uploadingField === 'header_image_url' ? 'Uploading...' : 'Upload'}
                     </button>
                   </div>
                 </div>
