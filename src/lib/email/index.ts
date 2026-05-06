@@ -7,7 +7,6 @@
 export type {
   TicketConfirmationData,
   VerificationRequestData,
-  VoucherConfirmationData,
   ReviewerInvitationData,
   SponsorshipInquiryData,
   VipUpgradeEmailData,
@@ -22,9 +21,6 @@ export {
   sendTicketConfirmationEmail,
   sendTicketConfirmationEmailsQueued,
 } from './ticket-emails';
-
-// Voucher emails
-export { sendVoucherConfirmationEmail } from './voucher-emails';
 
 // Workshop emails
 export { sendWorkshopConfirmationEmail } from './workshop-emails';

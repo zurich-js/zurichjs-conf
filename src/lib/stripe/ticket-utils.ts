@@ -117,24 +117,9 @@ export function isTicketProduct(price: Stripe.Price | undefined): boolean {
 }
 
 /**
- * Check if a price is a workshop voucher
- * Vouchers are identified by matching WORKSHOP_VOUCHER_PRODUCT_ID
- */
-export function isWorkshopVoucher(price: Stripe.Price | undefined): boolean {
-  if (!price) return false;
-
-  const workshopVoucherProductId = process.env.WORKSHOP_VOUCHER_PRODUCT_ID;
-  if (!workshopVoucherProductId) return false;
-
-  const productId = typeof price.product === 'string' ? price.product : price.product?.id;
-  return productId === workshopVoucherProductId;
-}
-
-/**
  * Check if a price is a sellable workshop offering.
  * Identified by a `_workshop_` segment or `workshop_` prefix on the
  * (currency-stripped) lookup key.
- * Distinct from {@link isWorkshopVoucher}, which detects the free-seat voucher product.
  */
 export const WORKSHOP_LOOKUP_KEY_PREFIX = 'workshop_';
 

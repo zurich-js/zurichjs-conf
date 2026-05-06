@@ -43,10 +43,8 @@ export function WorkshopBuyButton({
         workshopRoom: offering.room,
         workshopDurationMinutes: offering.durationMinutes,
       });
-      analytics.track('workshop_voucher_added_to_cart', {
-        voucher_amount: offering.unitAmount / 100,
-        bonus_percent: 0,
-        total_value: offering.unitAmount / 100,
+      analytics.track('workshop_added_to_cart', {
+        workshop_amount: offering.unitAmount / 100,
         currency: offering.currency,
         quantity: 1,
       });

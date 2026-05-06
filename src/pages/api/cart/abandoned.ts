@@ -185,7 +185,7 @@ export default async function handler(
       cart_total_amount: cartTotal,
       cart_currency: currency,
       cart_items: cartItems.map((item) => ({
-        type: item.title.includes('Workshop') ? 'workshop_voucher' as const : 'ticket' as const,
+        type: item.title.includes('Workshop') ? 'workshop' as const : 'ticket' as const,
         quantity: item.quantity,
         price: item.price,
       })),

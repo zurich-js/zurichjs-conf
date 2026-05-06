@@ -162,7 +162,7 @@ class ServerAnalyticsClient {
     params: {
       amount: number
       currency: string
-      type: 'ticket' | 'workshop' | 'voucher' | 'other'
+      type: 'ticket' | 'workshop' | 'other'
       transactionId?: string
       productName?: string
       productCategory?: string

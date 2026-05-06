@@ -3,7 +3,6 @@
  * Barrel export for checkout-related functionality
  */
 
-export { processVouchers } from './vouchers';
 export { processTickets } from './tickets';
 export type { AttendeeInfo, TicketCreationResult } from './tickets';
 export { processWorkshops } from './workshops';

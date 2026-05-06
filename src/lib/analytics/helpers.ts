@@ -59,9 +59,7 @@ export function mapCartItemsToAnalytics(items: Array<{
   return items.map((item) => ({
     type: item.kind === 'workshop'
       ? ('workshop' as const)
-      : item.title.includes('Workshop')
-        ? ('workshop_voucher' as const)
-        : ('ticket' as const),
+      : ('ticket' as const),
     category: mapVariantToCategory(item.variant),
     stage: 'general_admission' as TicketStage,
     quantity: item.quantity,
@@ -101,7 +99,7 @@ export function trackCheckoutStarted(params: {
   cartTotalAmount: number
   cartCurrency: string
   cartItems: Array<{
-    type: 'ticket' | 'workshop' | 'workshop_voucher'
+    type: 'ticket' | 'workshop'
     category?: TicketCategory
     stage?: TicketStage
     quantity: number

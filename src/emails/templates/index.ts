@@ -6,9 +6,6 @@
 export { TicketPurchaseEmail } from './TicketPurchaseEmail';
 export type { TicketPurchaseEmailProps } from './TicketPurchaseEmail';
 
-export { VoucherPurchaseEmail } from './VoucherPurchaseEmail';
-export type { VoucherPurchaseEmailProps } from './VoucherPurchaseEmail';
-
 export { SponsorshipInquiryEmail } from './SponsorshipInquiryEmail';
 export type { SponsorshipInquiryEmailProps } from './SponsorshipInquiryEmail';
 

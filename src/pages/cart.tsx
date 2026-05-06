@@ -14,7 +14,6 @@ import type { GetServerSideProps } from 'next';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
-import { useWorkshopVouchers } from '@/hooks/useWorkshopVouchers';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
@@ -29,7 +28,6 @@ import type { EventProperties } from '@/lib/analytics/events';
 import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
 import { calculateOrderSummary } from '@/lib/cart';
 import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
-import { workshopVouchersQueryOptions } from '@/lib/queries/workshops';
 import { createQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
 import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
@@ -61,7 +59,6 @@ export default function CartPage() {
 
   const { currency } = useCurrency();
   const { plans: ticketPlans, currentStage, isLoading: isPricingLoading } = useTicketPricing();
-  const { vouchers: workshopVouchers, isLoading: isVouchersLoading } = useWorkshopVouchers();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
   const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
   const [workshopAttendees, setWorkshopAttendees] = useState<Record<string, AttendeeInfo[]>>({});
@@ -86,13 +83,8 @@ export default function CartPage() {
     cart.applicablePriceIds.length > 0 &&
     cart.applicablePriceIds.length < cart.items.length;
 
-  // Workshop upsell logic (CHF only during early pricing stages)
-  const showWorkshopUpsells = currency === 'CHF' && !isPricingLoading && !isVouchersLoading && workshopVouchers.length > 0 && (currentStage === 'blind_bird' || currentStage === 'early_bird');
-  const bonusPercent = currentStage === 'blind_bird' ? 25 : currentStage === 'early_bird' ? 15 : 0;
-
-  // Filter out workshop vouchers for ticket counting
   const ticketItems = cart.items.filter(
-    (item) => item.kind !== 'workshop' && !item.title.includes('Workshop Voucher')
+    (item) => item.kind !== 'workshop'
   );
   const workshopItems = cart.items.filter((item) => item.kind === 'workshop');
   const ticketCount = ticketItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -140,26 +132,6 @@ export default function CartPage() {
       ].join(', ');
       openTeamModal(summary, totalSeatCount);
     }
-  };
-
-  const handleAddWorkshopVoucher = (voucherId: string) => {
-    const voucher = workshopVouchers.find(v => v.id === voucherId);
-    if (!voucher) return;
-
-    const amount = voucher.amount / 100;
-    const bonusAmount = (amount * bonusPercent) / 100;
-    const totalValue = amount + bonusAmount;
-
-    addToCart({
-      id: voucher.id,
-      title: `Workshop Voucher (+${bonusPercent}% bonus)`,
-      price: voucher.amount / 100,
-      currency: voucher.currency,
-      priceId: voucher.priceId,
-      variant: 'standard',
-    }, 1);
-
-    showToast(`Added ${totalValue} ${voucher.currency} workshop credit to your order!`, 'success');
   };
 
   const handleUpgradeToVip = () => {
@@ -375,7 +347,6 @@ export default function CartPage() {
             <CartProgressSteps
               currentStep={currentStep}
               needsAttendeeInfo={needsAttendeeInfo}
-              showWorkshopUpsells={false}
               isPricingLoading={isPricingLoading}
               onStepClick={(step) => {
                 // Prevent clicking directly to payment — must complete billing first
@@ -425,7 +396,6 @@ export default function CartPage() {
                 orderSummary={orderSummary}
                 attendees={attendees}
                 isPartialDiscount={isPartialDiscount}
-                showWorkshopUpsells={false}
                 needsAttendeeInfo={needsAttendeeInfo}
                 isSubmitting={isSubmitting}
                 error={error}
@@ -504,11 +474,10 @@ export const getServerSideProps: GetServerSideProps = async ({ query, req }) => 
     initialCart = { ...initialCart, currency: detectedCurrency };
   }
 
-  // Optional prefetches — if they fail or exceed 1s timeout,
-  // the page renders and useTicketPricing / useWorkshopVouchers refetch client-side
+  // Optional prefetch — if it fails or exceeds 1s timeout,
+  // the page renders and useTicketPricing refetches client-side
   await Promise.allSettled([
     optionalQuery(createTicketPricingQueryOptions(detectedCurrency)),
-    optionalQuery(workshopVouchersQueryOptions),
   ]);
 
   return {

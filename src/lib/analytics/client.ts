@@ -199,7 +199,7 @@ class AnalyticsClient {
     /** ISO 4217 currency code */
     currency: string
     /** Type of revenue */
-    type: 'ticket' | 'workshop' | 'voucher' | 'other'
+    type: 'ticket' | 'workshop' | 'other'
     /** Transaction ID */
     transactionId?: string
     /** Product name */

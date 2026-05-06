@@ -58,7 +58,6 @@ export const endpoints = {
     byId: (id: string) => `/api/tickets/${id}` as const,
   },
   workshops: {
-    vouchers: () => '/api/workshops/vouchers' as const,
     pricing: (params?: {
       currency?: SupportedCurrency;
       slug?: string;
@@ -120,7 +119,6 @@ export type EndpointPath = ReturnType<
   | typeof endpoints.tickets.pricing
   | typeof endpoints.tickets.purchase
   | typeof endpoints.tickets.byId
-  | typeof endpoints.workshops.vouchers
   | typeof endpoints.checkout.session
   | typeof endpoints.checkout.createSession
   | typeof endpoints.newsletter.subscribe

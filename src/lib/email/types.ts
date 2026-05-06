@@ -43,19 +43,6 @@ export interface VerificationRequestData {
 }
 
 /**
- * Data structure for voucher confirmation email
- */
-export interface VoucherConfirmationData {
-  to: string;
-  firstName: string;
-  amountPaid: number;
-  voucherValue: number;
-  currency: string;
-  bonusPercent?: number;
-  orderUrl?: string;
-}
-
-/**
  * Data structure for reviewer invitation email
  */
 export const REVIEWER_INVITATION_ACCESS_LEVELS = {

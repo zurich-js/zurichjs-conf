@@ -1,13 +1,11 @@
 /**
  * Workshop Analytics Events
- * Events related to workshop viewing, registration, and vouchers
+ * Events related to workshop viewing and registration
  */
 
 import type {
   BaseEventProperties,
   WorkshopProperties,
-  PaymentProperties,
-  RevenueProperties,
   UserProperties,
 } from './base';
 
@@ -16,24 +14,11 @@ export interface WorkshopViewedEvent {
   properties: BaseEventProperties & WorkshopProperties;
 }
 
-export interface WorkshopVoucherPurchasedEvent {
-  event: 'workshop_voucher_purchased';
-  properties: BaseEventProperties &
-    WorkshopProperties &
-    PaymentProperties &
-    RevenueProperties &
-    UserProperties & {
-      voucher_code?: string;
-      voucher_count: number;
-    };
-}
-
 export interface WorkshopRegisteredEvent {
   event: 'workshop_registered';
   properties: BaseEventProperties &
     WorkshopProperties &
     UserProperties & {
-      voucher_code?: string;
       registration_status: 'confirmed' | 'waitlist';
     };
 }
@@ -47,38 +32,11 @@ export interface WorkshopCancelledEvent {
     };
 }
 
-export interface WorkshopVoucherAddedToCartEvent {
-  event: 'workshop_voucher_added_to_cart';
+export interface WorkshopAddedToCartEvent {
+  event: 'workshop_added_to_cart';
   properties: BaseEventProperties & {
-    voucher_amount: number;
-    bonus_percent: number;
-    total_value: number;
+    workshop_amount: number;
     currency: string;
     quantity: number;
-  };
-}
-
-export interface WorkshopVoucherRemovedFromCartEvent {
-  event: 'workshop_voucher_removed_from_cart';
-  properties: BaseEventProperties & {
-    voucher_amount: number;
-    currency: string;
-    quantity: number;
-  };
-}
-
-export interface WorkshopUpsellViewedEvent {
-  event: 'workshop_upsell_viewed';
-  properties: BaseEventProperties & {
-    bonus_percent: number;
-    available_vouchers: number;
-    current_stage: string;
-  };
-}
-
-export interface WorkshopUpsellSkippedEvent {
-  event: 'workshop_upsell_skipped';
-  properties: BaseEventProperties & {
-    bonus_percent: number;
   };
 }

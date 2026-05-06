@@ -4,4 +4,3 @@
  */
 
 export * from './ticket-purchase.example';
-export * from './voucher-purchase.example';
