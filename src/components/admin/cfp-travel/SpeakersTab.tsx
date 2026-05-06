@@ -3,7 +3,8 @@
  * Table view (desktop) / Card view (mobile) of speakers with travel status
  */
 
-import { Check, X } from 'lucide-react';
+import { Check, X, Search } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
 import { Pagination } from '@/components/atoms';
 import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
 import { calculateNights } from './types';
@@ -15,6 +16,8 @@ interface SpeakersTabProps {
   onPageChange: (page: number) => void;
   pageSize: number;
   onSelectSpeaker: (speaker: SpeakerWithTravel) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 function StatusDot({ speaker }: { speaker: SpeakerWithTravel }) {
@@ -40,15 +43,43 @@ function StatusBadge({ speaker }: { speaker: SpeakerWithTravel }) {
   return <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">Not Started</span>;
 }
 
-export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pageSize, onSelectSpeaker }: SpeakersTabProps) {
-  const totalPages = Math.ceil(speakers.length / pageSize);
+export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pageSize, onSelectSpeaker, searchQuery, onSearchChange }: SpeakersTabProps) {
+  const filteredSpeakers = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return speakers;
+    return speakers.filter((s) => {
+      const haystack = `${s.first_name ?? ''} ${s.last_name ?? ''} ${s.email ?? ''}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [speakers, searchQuery]);
+
+  const totalPages = Math.ceil(filteredSpeakers.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedSpeakers = speakers.slice(startIndex, startIndex + pageSize);
+  const paginatedSpeakers = filteredSpeakers.slice(startIndex, startIndex + pageSize);
+
+  // Reset to page 1 whenever the filter shrinks results past the current page.
+  useEffect(() => {
+    if (currentPage > 1 && startIndex >= filteredSpeakers.length) {
+      onPageChange(1);
+    }
+  }, [filteredSpeakers.length, currentPage, startIndex, onPageChange]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-bold text-black">Speakers ({speakers.length})</h2>
+      <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 className="text-lg font-bold text-black">
+          Speakers ({filteredSpeakers.length}{searchQuery ? ` of ${speakers.length}` : ''})
+        </h2>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search by name or email"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+          />
+        </div>
       </div>
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -196,7 +227,7 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
             totalPages={totalPages}
             onPageChange={onPageChange}
             pageSize={pageSize}
-            totalItems={speakers.length}
+            totalItems={filteredSpeakers.length}
             variant="light"
           />
         </>

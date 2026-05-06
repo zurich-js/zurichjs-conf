@@ -54,6 +54,10 @@ export default function AdminTravelPage() {
   const [flightDirection, setFlightDirection] = useState<'all' | 'inbound' | 'outbound'>('all');
   const [selectedSpeaker, setSelectedSpeaker] = useState<SpeakerWithTravel | null>(null);
 
+  // Search state
+  const [speakersSearch, setSpeakersSearch] = useState('');
+  const [flightsSearch, setFlightsSearch] = useState('');
+
   // Pagination state
   const [speakersPage, setSpeakersPage] = useState(1);
   const [flightsPage, setFlightsPage] = useState(1);
@@ -163,6 +167,8 @@ export default function AdminTravelPage() {
               onPageChange={setSpeakersPage}
               pageSize={ITEMS_PER_PAGE}
               onSelectSpeaker={setSelectedSpeaker}
+              searchQuery={speakersSearch}
+              onSearchChange={setSpeakersSearch}
             />
           )}
 
@@ -179,6 +185,8 @@ export default function AdminTravelPage() {
               onUpdateStatus={(id, status) => flightMutation.mutate({ id, status })}
               isUpdating={flightMutation.isPending}
               onSelectSpeaker={handleSelectSpeakerById}
+              searchQuery={flightsSearch}
+              onSearchChange={setFlightsSearch}
             />
           )}
 

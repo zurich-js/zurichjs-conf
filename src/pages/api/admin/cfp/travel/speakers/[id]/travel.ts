@@ -15,6 +15,12 @@ const travelSchema = z.object({
   flight_budget_amount: z.number().optional(),
   flight_budget_currency: z.string().optional(),
   travel_confirmed: z.boolean().optional(),
+  attending_speakers_dinner: z.boolean().nullable().optional(),
+  attending_speakers_activities: z.boolean().nullable().optional(),
+  arrival_date: z.string().nullable().optional(),
+  departure_date: z.string().nullable().optional(),
+  dietary_restrictions: z.string().nullable().optional(),
+  accessibility_needs: z.string().nullable().optional(),
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
