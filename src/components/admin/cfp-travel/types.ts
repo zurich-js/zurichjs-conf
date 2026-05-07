@@ -2,7 +2,7 @@
  * CFP Travel Admin Component Types
  */
 
-import type { CfpReimbursementStatus, CfpFlightStatus } from '@/lib/types/cfp';
+import type { CfpReimbursementStatus, CfpFlightStatus, CfpFlightDirection } from '@/lib/types/cfp';
 
 export type { CfpReimbursementStatus, CfpFlightStatus };
 export type TabType = 'overview' | 'speakers' | 'flights' | 'arrivals' | 'invoices';
@@ -62,13 +62,14 @@ export const CURRENCIES: { code: string; label: string }[] = [
 ];
 
 /**
- * Generate a FlightAware tracking URL from a flight number
+ * Flightradar24 deep link from a flight number. Falls back to the explicit
+ * tracking_url if one was stored on the flight record.
  */
 export function getFlightTrackingUrl(flightNumber: string | null, trackingUrl: string | null): string | null {
   if (trackingUrl) return trackingUrl;
   if (!flightNumber) return null;
-  const cleaned = flightNumber.replace(/\s+/g, '');
-  return `https://www.flightaware.com/live/flight/${cleaned}`;
+  const cleaned = flightNumber.replace(/\s+/g, '').toLowerCase();
+  return `https://www.flightradar24.com/data/flights/${cleaned}`;
 }
 
 /**
@@ -80,4 +81,46 @@ export function calculateNights(checkIn: string | null, checkOut: string | null)
     (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000
   );
   return Math.max(0, nights);
+}
+
+function isoToLocalDate(iso: string): string {
+  const d = new Date(iso);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+interface FlightDateInput {
+  direction: CfpFlightDirection;
+  arrival_time: string | null;
+  departure_time: string | null;
+}
+
+/**
+ * Derive hotel check-in/out dates from a speaker's flights.
+ * check_in_date  comes from the earliest inbound flight's arrival.
+ * check_out_date comes from the latest outbound flight's departure.
+ * Either side can be null if only one direction is booked.
+ */
+export function deriveHotelDatesFromFlights(flights: FlightDateInput[]): {
+  check_in_date: string | null;
+  check_out_date: string | null;
+  nights: number | null;
+} | null {
+  const inbound = flights
+    .filter((f) => f.direction === 'inbound' && f.arrival_time)
+    .sort((a, b) => new Date(a.arrival_time!).getTime() - new Date(b.arrival_time!).getTime());
+  const outbound = flights
+    .filter((f) => f.direction === 'outbound' && f.departure_time)
+    .sort((a, b) => new Date(b.departure_time!).getTime() - new Date(a.departure_time!).getTime());
+
+  const arrival = inbound[0]?.arrival_time ?? null;
+  const departure = outbound[0]?.departure_time ?? null;
+  if (!arrival && !departure) return null;
+
+  const check_in_date = arrival ? isoToLocalDate(arrival) : null;
+  const check_out_date = departure ? isoToLocalDate(departure) : null;
+  const nights = check_in_date && check_out_date ? calculateNights(check_in_date, check_out_date) : null;
+  return { check_in_date, check_out_date, nights };
 }

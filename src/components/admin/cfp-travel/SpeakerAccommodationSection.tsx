@@ -1,15 +1,19 @@
 /**
  * Speaker Accommodation Section
- * Manage hotel booking for a speaker within the detail modal
+ * Manage hotel booking for a speaker within the detail modal.
+ * When the speaker has flights, suggests check-in/check-out dates derived
+ * from the inbound arrival and outbound departure (admin opts in via
+ * 'Use these dates' — we never overwrite silently).
  */
 
-import { useState, useCallback } from 'react';
-import { Hotel, Pencil } from 'lucide-react';
-import type { CfpSpeakerAccommodation } from '@/lib/types/cfp';
-import { calculateNights, CURRENCIES } from './types';
+import { useState, useCallback, useMemo } from 'react';
+import { Hotel, Pencil, Plane } from 'lucide-react';
+import type { CfpSpeakerAccommodation, CfpSpeakerFlight } from '@/lib/types/cfp';
+import { calculateNights, CURRENCIES, deriveHotelDatesFromFlights } from './types';
 
 interface SpeakerAccommodationSectionProps {
   accommodation: CfpSpeakerAccommodation | null;
+  flights: CfpSpeakerFlight[];
   speakerId: string;
   onSave: (data: Record<string, unknown>) => void;
   isSubmitting: boolean;
@@ -30,6 +34,7 @@ interface AccommodationFormData {
 
 export function SpeakerAccommodationSection({
   accommodation,
+  flights,
   onSave,
   isSubmitting,
 }: SpeakerAccommodationSectionProps) {
@@ -50,11 +55,25 @@ export function SpeakerAccommodationSection({
 
   const [form, setForm] = useState<AccommodationFormData>(() => buildFormData(accommodation));
 
+  const suggested = useMemo(() => deriveHotelDatesFromFlights(flights), [flights]);
   const nights = calculateNights(form.check_in_date || null, form.check_out_date || null);
   const displayNights = calculateNights(
     accommodation?.check_in_date ?? null,
     accommodation?.check_out_date ?? null
   );
+  const formDiffersFromSuggestion = !!suggested && (
+    form.check_in_date !== (suggested.check_in_date ?? '') ||
+    form.check_out_date !== (suggested.check_out_date ?? '')
+  );
+
+  const applySuggestedDates = () => {
+    if (!suggested) return;
+    setForm((prev) => ({
+      ...prev,
+      check_in_date: suggested.check_in_date ?? prev.check_in_date,
+      check_out_date: suggested.check_out_date ?? prev.check_out_date,
+    }));
+  };
 
   const handleSubmit = () => {
     const costCents = form.cost_amount ? Math.round(parseFloat(form.cost_amount) * 100) : null;
@@ -91,7 +110,23 @@ export function SpeakerAccommodationSection({
       </div>
 
       {!isEditing && !accommodation?.hotel_name && (
-        <p className="text-sm text-gray-500 py-3">No hotel booked yet.</p>
+        <>
+          {suggested && (suggested.check_in_date || suggested.check_out_date) && (
+            <div className="mb-3 border border-blue-200 bg-blue-50 rounded-lg p-3 flex items-start gap-2">
+              <Plane className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-blue-900">
+                <div className="font-medium mb-0.5">Suggested from flights</div>
+                <div>
+                  Check-in: {suggested.check_in_date || '—'} · Check-out: {suggested.check_out_date || '—'}
+                  {suggested.nights !== null && (
+                    <span className="ml-2 font-medium">({suggested.nights} night{suggested.nights !== 1 ? 's' : ''})</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <p className="text-sm text-gray-500 py-3">No hotel booked yet.</p>
+        </>
       )}
 
       {!isEditing && accommodation?.hotel_name && (
@@ -174,6 +209,31 @@ export function SpeakerAccommodationSection({
                 />
               </div>
             </div>
+
+            {suggested && formDiffersFromSuggestion && (
+              <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 min-w-0">
+                  <Plane className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-blue-900 min-w-0">
+                    <div className="font-medium mb-0.5">Suggested from flights</div>
+                    <div>
+                      Check-in: {suggested.check_in_date || '—'} · Check-out: {suggested.check_out_date || '—'}
+                      {suggested.nights !== null && (
+                        <span className="ml-2 font-medium">({suggested.nights} night{suggested.nights !== 1 ? 's' : ''})</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={applySuggestedDates}
+                  className="px-2.5 py-1 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer flex-shrink-0"
+                >
+                  Use these dates
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Check-in</label>

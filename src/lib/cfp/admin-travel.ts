@@ -474,7 +474,10 @@ export async function updateFlightStatus(
 
 
 /**
- * Create a flight for a speaker (admin)
+ * Create a flight for a speaker (admin).
+ * New flights default to 'confirmed' — admins don't manually track
+ * boarding/departed/arrived states; live status is shown via the
+ * Flightradar24 deep link in the UI.
  */
 export async function createFlightAdmin(
   speakerId: string,
@@ -510,7 +513,7 @@ export async function createFlightAdmin(
       cost_amount: data.cost_amount ?? null,
       cost_currency: data.cost_currency || 'CHF',
       tracking_url: data.tracking_url || null,
-      flight_status: data.flight_status || 'pending',
+      flight_status: data.flight_status || 'confirmed',
     })
     .select()
     .single();

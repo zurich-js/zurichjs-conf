@@ -177,6 +177,7 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
 
         <SpeakerAccommodationSection
           accommodation={speaker.accommodation}
+          flights={speaker.flights}
           speakerId={speaker.id}
           onSave={(data) => saveAccommodation.mutate(data)}
           isSubmitting={isSubmitting}

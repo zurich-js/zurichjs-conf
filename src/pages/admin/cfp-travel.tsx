@@ -27,10 +27,8 @@ import {
   fetchInvoices,
   type TabType,
   type CfpReimbursementStatus,
-  type CfpFlightStatus,
 } from '@/components/admin/cfp-travel';
 import {
-  updateFlightStatus as apiUpdateFlightStatus,
   updateInvoice as apiUpdateInvoice,
   deleteInvoice as apiDeleteInvoice,
 } from '@/components/admin/cfp-travel/api';
@@ -50,7 +48,7 @@ export default function AdminTravelPage() {
   const toast = useToast();
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [invoiceFilter, setInvoiceFilter] = useState<CfpReimbursementStatus | 'all'>('pending');
+  const [invoiceFilter, setInvoiceFilter] = useState<CfpReimbursementStatus | 'all'>('all');
   const [flightDirection, setFlightDirection] = useState<'all' | 'inbound' | 'outbound'>('all');
   const [selectedSpeaker, setSelectedSpeaker] = useState<SpeakerWithTravel | null>(null);
 
@@ -114,17 +112,6 @@ export default function AdminTravelPage() {
     onError: () => toast.error('Delete Failed', 'Failed to delete invoice'),
   });
 
-  const flightMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: CfpFlightStatus }) =>
-      apiUpdateFlightStatus(id, status),
-    onSuccess: (_data, { status }) => {
-      queryClient.invalidateQueries({ queryKey: travelQueryKeys.flights });
-      queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
-      toast.success('Flight Updated', `Status changed to ${status.replace('_', ' ')}`);
-    },
-    onError: () => toast.error('Update Failed', 'Failed to update flight status'),
-  });
-
   // Filtered data
   const filteredInvoices =
     invoiceFilter === 'all' ? invoices : invoices.filter((r) => r.status === invoiceFilter);
@@ -182,8 +169,6 @@ export default function AdminTravelPage() {
               currentPage={flightsPage}
               onPageChange={setFlightsPage}
               pageSize={ITEMS_PER_PAGE}
-              onUpdateStatus={(id, status) => flightMutation.mutate({ id, status })}
-              isUpdating={flightMutation.isPending}
               onSelectSpeaker={handleSelectSpeakerById}
               searchQuery={flightsSearch}
               onSearchChange={setFlightsSearch}
