@@ -20,6 +20,13 @@ interface SpeakersTabProps {
   onSearchChange: (query: string) => void;
 }
 
+function hasInboundAndOutbound(speaker: SpeakerWithTravel): boolean {
+  return (
+    speaker.flights.some((f) => f.direction === 'inbound') &&
+    speaker.flights.some((f) => f.direction === 'outbound')
+  );
+}
+
 function StatusDot({ speaker }: { speaker: SpeakerWithTravel }) {
   const hasFlights = speaker.flights.length > 0;
   const hasHotel = !!speaker.accommodation?.hotel_name;
@@ -33,11 +40,17 @@ function StatusDot({ speaker }: { speaker: SpeakerWithTravel }) {
   return <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-300" title="Nothing booked" />;
 }
 
+/**
+ * Travel-confirmed badge.
+ * Confirmed   = both inbound and outbound flights booked
+ * In Progress = at least one flight or a hotel exists, but not both directions
+ * Not Started = nothing booked
+ */
 function StatusBadge({ speaker }: { speaker: SpeakerWithTravel }) {
-  if (speaker.travel?.travel_confirmed) {
+  if (hasInboundAndOutbound(speaker)) {
     return <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">Confirmed</span>;
   }
-  if (speaker.travel) {
+  if (speaker.flights.length > 0 || speaker.accommodation?.hotel_name) {
     return <span className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">In Progress</span>;
   }
   return <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">Not Started</span>;
