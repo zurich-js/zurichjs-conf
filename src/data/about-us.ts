@@ -129,10 +129,10 @@ export const aboutPageData: AboutPageData = {
     ],
   },
   stats: [
-    { value: "300", label: "attendees" },
-    { value: "~15", label: "speakers" },
+    { value: "300-500", label: "attendees" },
+    { value: "19", label: "speakers" },
     { value: "3", label: "days" },
-    { value: "5+", label: "workshops" },
+    { value: "6", label: "workshops" },
   ],
   team: {
     kicker: "the team",
