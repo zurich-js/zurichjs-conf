@@ -23,6 +23,7 @@ export { TeamRequestModal } from './TeamRequestModal';
 export { TeamRequestSuccessDialog } from './TeamRequestSuccessDialog';
 export { SponsorshipInquiryModal } from './SponsorshipInquiryModal';
 export { StudentTicketInfoModal } from './StudentTicketInfoModal';
+export { SeebadEngeModal } from './SeebadEngeModal';
 export { AttendeeForm, AttendeeTicketForm } from './AttendeeForm';
 export { PhotoSwiper } from './PhotoSwiper';
 export { TierCard } from './TierCard';
@@ -65,6 +66,7 @@ export type { TeamRequestModalProps, TeamRequestData } from './TeamRequestModal'
 export type { TeamRequestSuccessDialogProps } from './TeamRequestSuccessDialog';
 export type { SponsorshipInquiryModalProps } from './SponsorshipInquiryModal';
 export type { StudentTicketInfoModalProps } from './StudentTicketInfoModal';
+export type { SeebadEngeModalProps } from './SeebadEngeModal';
 export type { AttendeeFormProps, AttendeeTicketFormProps } from './AttendeeForm';
 export type { PhotoSwiperProps, PhotoSlide, PhotoLayout, NestedContainer } from './PhotoSwiper';
 export type { TierCardProps, TierBenefit } from './TierCard';

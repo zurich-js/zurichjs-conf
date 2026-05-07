@@ -5,7 +5,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { CartItem, CartSummary, VoucherInput } from '@/components/molecules';
+import { useState } from 'react';
+import { CartItem, CartSummary, VoucherInput, SeebadEngeModal } from '@/components/molecules';
 import { Button, Heading } from '@/components/atoms';
 import type { ReviewStepProps, CartItem as CartItemType } from './types';
 
@@ -23,6 +24,8 @@ export function ReviewStep({
   onUpgradeToVip,
   onTeamRequest,
 }: ReviewStepProps) {
+  const [isSeebadEngeOpen, setIsSeebadEngeOpen] = useState(false);
+
   return (
     <motion.div
       key="review"
@@ -62,7 +65,15 @@ export function ReviewStep({
                   Want an extra special experience?
                 </h3>
                 <p className="text-sm text-brand-gray-light mb-4">
-                  Get <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">exclusive after party access</strong>, <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">limited edition goodies</strong>, and <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">20% discount to all workshops</strong>. Only 15 VIP seats available!
+                  Get{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsSeebadEngeOpen(true)}
+                    className="text-brand-yellow-main font-bold underline decoration-dotted underline-offset-4 hover:text-brand-yellow-secondary transition-colors cursor-pointer drop-shadow-md drop-shadow-brand-yellow-main/30"
+                  >
+                    exclusive after party access ✨
+                  </button>
+                  , <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">limited edition goodies</strong>, and <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">20% discount to all workshops</strong>. Only 15 VIP seats available!
                 </p>
                 <Button variant="primary" size="sm" onClick={onUpgradeToVip}>
                   Upgrade to VIP
@@ -126,6 +137,11 @@ export function ReviewStep({
           </Button>
         </Link>
       </div>
+
+      <SeebadEngeModal
+        isOpen={isSeebadEngeOpen}
+        onClose={() => setIsSeebadEngeOpen(false)}
+      />
     </motion.div>
   );
 }

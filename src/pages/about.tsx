@@ -1,4 +1,5 @@
 import React from "react";
+import { Clock, MapPin, ExternalLink } from "lucide-react";
 import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import { aboutPageData } from "@/data/about-us";
 import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
@@ -170,6 +171,89 @@ export default function AboutUs() {
                 >
                   Visit Website
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ShapedSection>
+
+      <ShapedSection
+        shape="down"
+        variant="dark"
+      >
+        <div id="after-party" className="rich-text-renderer">
+          <Kicker variant="dark" className="mb-4">
+            {aboutPageData.afterParty.kicker}
+          </Kicker>
+          <Heading level="h2" variant="dark" className="mb-3 text-xl font-bold">
+            {aboutPageData.afterParty.title}
+          </Heading>
+          <p className="text-brand-gray-light text-base mb-8 max-w-3xl">
+            {aboutPageData.afterParty.subtitle}
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
+            <div className="space-y-4">
+              {aboutPageData.afterParty.description.map((text, index) => (
+                <p
+                  key={index}
+                  className="text-brand-white leading-relaxed text-base"
+                >
+                  {text}
+                </p>
+              ))}
+
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2" role="list">
+                {aboutPageData.afterParty.highlights.map(({ icon: Icon, label }) => (
+                  <li
+                    key={label}
+                    className="flex items-start gap-2.5 bg-brand-gray-darkest/60 rounded-xl p-3 text-sm text-brand-white"
+                  >
+                    <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
+                    <span>{label}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  variant="accent"
+                  asChild
+                  href={aboutPageData.afterParty.ctaUrl}
+                >
+                  {aboutPageData.afterParty.ctaLabel}
+                </Button>
+                <Button
+                  variant="outline"
+                  asChild
+                  href={aboutPageData.afterParty.websiteUrl}
+                >
+                  {aboutPageData.afterParty.websiteLabel}
+                  <ExternalLink size={14} />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-brand-gray-darkest">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={aboutPageData.afterParty.imageSrc}
+                  alt={aboutPageData.afterParty.imageAlt}
+                  className="size-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 text-sm text-brand-gray-light">
+                <span className="flex items-center gap-1.5">
+                  <MapPin size={14} className="text-brand-yellow-main" />
+                  {aboutPageData.afterParty.address}
+                </span>
+                <span className="hidden sm:inline text-brand-gray-medium">·</span>
+                <span className="flex items-center gap-1.5">
+                  <Clock size={14} className="text-brand-yellow-main" />
+                  {aboutPageData.afterParty.schedule}
+                </span>
               </div>
             </div>
           </div>
