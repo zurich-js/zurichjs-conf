@@ -54,11 +54,9 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
 
       <ModalBody className="space-y-5">
         <p className="text-brand-gray-light leading-relaxed text-sm">
-          We&apos;ve booked{' '}
-          <strong className="text-brand-white">Seebad Enge</strong> as our private after-party venue
-          — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with
-          fellow VIPs, take in the September summer sunset, and enjoy drinks and apéro in one of
-          Zürich&apos;s most iconic lakeside spots.
+          {`We've booked `}
+          <strong className="text-brand-white">Seebad Enge</strong>
+          {` as our private after-party venue — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with fellow VIPs, take in the September summer sunset, and enjoy drinks and apéro in one of Zürich's most iconic lakeside spots.`}
         </p>
 
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="list">
