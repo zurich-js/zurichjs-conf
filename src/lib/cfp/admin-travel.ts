@@ -102,7 +102,12 @@ async function getProgramSpeakerIds(): Promise<string[]> {
 // ============================================================================
 
 /**
- * Get travel dashboard statistics
+ * Get travel dashboard statistics.
+ *
+ * "Travel confirmed" is derived: a speaker counts as confirmed when they
+ * have BOTH an inbound and an outbound flight booked. The cfp_speaker_travel
+ * .travel_confirmed boolean column is no longer the source of truth — admins
+ * never had to flip it manually for the count to be useful.
  */
 export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
   const supabase = createCfpServiceClient();
@@ -110,13 +115,12 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
 
   const uniqueSpeakerIds = await getProgramSpeakerIds();
 
-  // Get travel stats
+  // Get travel preferences (dinner / activities only — confirmation is derived)
   const { data: travelData } = await supabase
     .from('cfp_speaker_travel')
     .select('*')
     .in('speaker_id', uniqueSpeakerIds);
 
-  const travelConfirmed = (travelData || []).filter((t: CfpSpeakerTravel) => t.travel_confirmed).length;
   const attendingDinner = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_dinner).length;
   const attendingActivities = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_activities).length;
 
@@ -134,22 +138,36 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
     totalPendingAmounts[cur] = (totalPendingAmounts[cur] || 0) + r.amount;
   });
 
-  // Get flights arriving/departing today
-  const { data: todayFlights } = await supabase
+  // Pull all in-scope flights once — used for arriving/departing today AND
+  // for the derived travel_confirmed count.
+  type FlightRow = { speaker_id: string; direction: string; arrival_time: string | null; departure_time: string | null };
+  const { data: scopedFlights } = await supabase
     .from('cfp_speaker_flights')
-    .select('direction, arrival_time, departure_time')
+    .select('speaker_id, direction, arrival_time, departure_time')
     .in('speaker_id', uniqueSpeakerIds);
 
-  type FlightData = { direction: string; arrival_time: string | null; departure_time: string | null };
-  const arrivingToday = (todayFlights || []).filter((f: FlightData) => {
-    if (f.direction !== 'inbound' || !f.arrival_time) return false;
-    return f.arrival_time.startsWith(today);
-  }).length;
+  const flightsList: FlightRow[] = (scopedFlights || []) as FlightRow[];
 
-  const departingToday = (todayFlights || []).filter((f: FlightData) => {
-    if (f.direction !== 'outbound' || !f.departure_time) return false;
-    return f.departure_time.startsWith(today);
-  }).length;
+  const arrivingToday = flightsList.filter((f) =>
+    f.direction === 'inbound' && !!f.arrival_time && f.arrival_time.startsWith(today)
+  ).length;
+
+  const departingToday = flightsList.filter((f) =>
+    f.direction === 'outbound' && !!f.departure_time && f.departure_time.startsWith(today)
+  ).length;
+
+  // travel_confirmed = speaker has at least one inbound AND one outbound flight
+  const directionsBySpeaker = new Map<string, Set<string>>();
+  flightsList.forEach((f) => {
+    let dirs = directionsBySpeaker.get(f.speaker_id);
+    if (!dirs) {
+      dirs = new Set<string>();
+      directionsBySpeaker.set(f.speaker_id, dirs);
+    }
+    dirs.add(f.direction);
+  });
+  const travelConfirmed = [...directionsBySpeaker.values()]
+    .filter((dirs) => dirs.has('inbound') && dirs.has('outbound')).length;
 
   // Get accommodation stats
   const { data: accommodationData } = await supabase
@@ -474,7 +492,10 @@ export async function updateFlightStatus(
 
 
 /**
- * Create a flight for a speaker (admin)
+ * Create a flight for a speaker (admin).
+ * New flights default to 'confirmed' — admins don't manually track
+ * boarding/departed/arrived states; live status is shown via the
+ * Flightradar24 deep link in the UI.
  */
 export async function createFlightAdmin(
   speakerId: string,
@@ -510,7 +531,7 @@ export async function createFlightAdmin(
       cost_amount: data.cost_amount ?? null,
       cost_currency: data.cost_currency || 'CHF',
       tracking_url: data.tracking_url || null,
-      flight_status: data.flight_status || 'pending',
+      flight_status: data.flight_status || 'confirmed',
     })
     .select()
     .single();

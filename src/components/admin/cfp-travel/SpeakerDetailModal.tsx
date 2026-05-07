@@ -31,6 +31,17 @@ interface SpeakerDetailModalProps {
   onClose: () => void;
 }
 
+/**
+ * A speaker counts as travel-confirmed when they have at least one inbound
+ * AND one outbound flight booked. Hotel and other prefs aren't part of the
+ * definition.
+ */
+function isTravelConfirmed(speaker: SpeakerWithTravel): boolean {
+  const hasInbound = speaker.flights.some((f) => f.direction === 'inbound');
+  const hasOutbound = speaker.flights.some((f) => f.direction === 'outbound');
+  return hasInbound && hasOutbound;
+}
+
 export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: SpeakerDetailModalProps) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -126,6 +137,7 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     speaker.accommodation?.check_in_date ?? null,
     speaker.accommodation?.check_out_date ?? null
   );
+  const travelConfirmed = isTravelConfirmed(speaker);
 
   return (
     <AdminModal
@@ -158,8 +170,8 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
         />
         <SummaryCard
           label="Status"
-          value={speaker.travel?.travel_confirmed ? 'Confirmed' : 'Pending'}
-          icon={speaker.travel?.travel_confirmed ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-yellow-500" />}
+          value={travelConfirmed ? 'Confirmed' : 'Pending'}
+          icon={travelConfirmed ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-yellow-500" />}
         />
       </div>
 
@@ -177,6 +189,7 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
 
         <SpeakerAccommodationSection
           accommodation={speaker.accommodation}
+          flights={speaker.flights}
           speakerId={speaker.id}
           onSave={(data) => saveAccommodation.mutate(data)}
           isSubmitting={isSubmitting}
@@ -196,8 +209,9 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
 
         <hr className="border-gray-200" />
 
-        <TravelStatusSection
+        <SpeakerPreferencesSection
           speaker={speaker}
+          travelConfirmed={travelConfirmed}
           onUpdate={(data) => updateTravel.mutate(data)}
           isSubmitting={isSubmitting}
         />
@@ -241,12 +255,19 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
   );
 }
 
-function TravelStatusSection({
+/**
+ * Speaker Preferences Section
+ * Shows derived travel-confirmed status (read-only) plus the dinner /
+ * activities tristates (still admin-editable).
+ */
+function SpeakerPreferencesSection({
   speaker,
+  travelConfirmed,
   onUpdate,
   isSubmitting,
 }: {
   speaker: SpeakerWithTravel;
+  travelConfirmed: boolean;
   onUpdate: (data: Record<string, unknown>) => void;
   isSubmitting: boolean;
 }) {
@@ -256,17 +277,21 @@ function TravelStatusSection({
     <div>
       <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
         <Check className="w-4 h-4" />
-        Travel Status
+        Travel Status & Preferences
       </h3>
       <div className="space-y-2">
-        <ToggleRow
-          label="Travel Confirmed"
-          description="Mark when flights and hotel are finalized"
-          icon={<Check className="w-4 h-4 text-green-600" />}
-          value={!!travel?.travel_confirmed}
-          disabled={isSubmitting}
-          onChange={(checked) => onUpdate({ travel_confirmed: checked })}
-        />
+        <div className={`flex items-center justify-between gap-3 p-3 border rounded-lg ${travelConfirmed ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}>
+          <div className="flex items-center gap-3 min-w-0">
+            {travelConfirmed ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-yellow-500" />}
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-gray-900">Travel Confirmed</div>
+              <div className="text-xs text-gray-500">Auto-set when both inbound and outbound flights are booked</div>
+            </div>
+          </div>
+          <span className={`px-2 py-0.5 text-xs rounded font-medium ${travelConfirmed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+            {travelConfirmed ? 'Confirmed' : 'Pending'}
+          </span>
+        </div>
         <TristateRow
           label="Attending Speakers Dinner"
           icon={<Utensils className="w-4 h-4 text-purple-500" />}
@@ -283,41 +308,6 @@ function TravelStatusSection({
         />
       </div>
     </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  description,
-  icon,
-  value,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  description?: string;
-  icon: React.ReactNode;
-  value: boolean;
-  disabled: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className={`flex items-center justify-between gap-3 p-3 border rounded-lg ${value ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'} ${disabled ? 'opacity-60' : 'cursor-pointer'}`}>
-      <div className="flex items-center gap-3 min-w-0">
-        {icon}
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-gray-900">{label}</div>
-          {description && <div className="text-xs text-gray-500">{description}</div>}
-        </div>
-      </div>
-      <input
-        type="checkbox"
-        checked={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary"
-      />
-    </label>
   );
 }
 

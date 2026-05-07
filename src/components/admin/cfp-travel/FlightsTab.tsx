@@ -1,13 +1,14 @@
 /**
  * Flights Tab Component
- * Flight tracker with status updates and tracking links
+ * Read-only flight tracker. Live status is shown via the Flightradar24
+ * deep link — admins don't manually update boarding/in-air state, so the
+ * status field is informational only here.
  */
 
 import { ExternalLink, Search } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { Pagination } from '@/components/atoms';
 import type { FlightWithSpeaker } from '@/lib/cfp/admin-travel';
-import type { CfpFlightStatus } from '@/lib/types/cfp';
 import { FLIGHT_STATUS_COLORS, getFlightTrackingUrl } from './types';
 
 interface FlightsTabProps {
@@ -19,8 +20,6 @@ interface FlightsTabProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   pageSize: number;
-  onUpdateStatus: (id: string, status: CfpFlightStatus) => void;
-  isUpdating: boolean;
   onSelectSpeaker?: (speakerId: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -34,8 +33,6 @@ export function FlightsTab({
   currentPage,
   onPageChange,
   pageSize,
-  onUpdateStatus,
-  isUpdating,
   onSelectSpeaker,
   searchQuery,
   onSearchChange,
@@ -144,37 +141,20 @@ export function FlightsTab({
                       <span className="mx-2">·</span>
                       {flight.departure_time ? new Date(flight.departure_time).toLocaleString() : 'TBD'}
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 text-xs rounded capitalize ${FLIGHT_STATUS_COLORS[flight.flight_status]}`}>
-                          {flight.flight_status.replace('_', ' ')}
-                        </span>
-                        {trackingUrl && (
-                          <a
-                            href={trackingUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700"
-                          >
-                            <ExternalLink className="w-3 h-3" /> Track
-                          </a>
-                        )}
-                      </div>
-                      <select
-                        value={flight.flight_status}
-                        onChange={(e) => onUpdateStatus(flight.id, e.target.value as CfpFlightStatus)}
-                        disabled={isUpdating}
-                        className="text-xs px-2 py-1 rounded border border-gray-300 focus:ring-2 focus:ring-yellow-400 focus:outline-none disabled:opacity-50"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="checked_in">Checked In</option>
-                        <option value="boarding">Boarding</option>
-                        <option value="departed">Departed</option>
-                        <option value="arrived">Arrived</option>
-                        <option value="delayed">Delayed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 text-xs rounded capitalize ${FLIGHT_STATUS_COLORS[flight.flight_status]}`}>
+                        {flight.flight_status.replace('_', ' ')}
+                      </span>
+                      {trackingUrl && (
+                        <a
+                          href={trackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Track
+                        </a>
+                      )}
                     </div>
                   </div>
                 );
@@ -194,13 +174,12 @@ export function FlightsTab({
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Track</th>
-                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedFlights.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No flights found</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No flights found</td>
                   </tr>
                 ) : (
                   paginatedFlights.map((flight) => {
@@ -251,23 +230,6 @@ export function FlightsTab({
                           ) : (
                             <span className="text-gray-400 text-xs">-</span>
                           )}
-                        </td>
-                        <td className="px-4 py-4">
-                          <select
-                            value={flight.flight_status}
-                            onChange={(e) => onUpdateStatus(flight.id, e.target.value as CfpFlightStatus)}
-                            disabled={isUpdating}
-                            className="text-sm px-2 py-1 rounded border border-gray-300 focus:ring-2 focus:ring-yellow-400 focus:outline-none disabled:opacity-50"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="checked_in">Checked In</option>
-                            <option value="boarding">Boarding</option>
-                            <option value="departed">Departed</option>
-                            <option value="arrived">Arrived</option>
-                            <option value="delayed">Delayed</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
                         </td>
                       </tr>
                     );
