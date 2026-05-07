@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { trackCommunityPartnerClicked } from '@/lib/analytics/helpers';
 
 export interface LogoMarqueeItem {
   id: string;
@@ -75,6 +76,10 @@ export const LogoMarquee: React.FC<LogoMarqueeProps> = ({
           rel="noopener noreferrer"
           aria-label={`Visit ${item.name} website`}
           className="focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none rounded"
+          onClick={() => trackCommunityPartnerClicked({
+            partnerName: item.name,
+            partnerUrl: item.website!,
+          })}
         >
           {content}
         </a>

@@ -116,6 +116,7 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                                     logo={sponsor?.logo}
                                     logoColor={sponsor?.logoColor ?? undefined}
                                     url={sponsor?.url}
+                                    tier={sponsor?.tier}
                                     isCta={isFirstSlot && !sponsor}
                                 />
                             );
