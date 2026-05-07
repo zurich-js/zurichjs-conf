@@ -84,7 +84,7 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
           </Button>
         </Link>
         <Button variant="accent" onClick={onClose}>
-          Save me a sundowner
+          See you lakeside
         </Button>
       </ModalFooter>
     </Modal>
