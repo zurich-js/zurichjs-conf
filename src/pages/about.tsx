@@ -1,11 +1,13 @@
 import React from "react";
-import { Clock, MapPin, ExternalLink } from "lucide-react";
+import { Clock, ExternalLink } from "lucide-react";
 import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import { aboutPageData } from "@/data/about-us";
 import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
 import {Button, Heading, Kicker} from "@/components/atoms";
 import {TeamMemberCard} from "@/components/molecules/TeamMemberCard";
 import {ValueCard} from "@/components/molecules/ValueCard";
+import { useCart } from "@/contexts/CartContext";
+import { useTicketPricing } from "@/hooks/useTicketPricing";
 
 export default function AboutUs() {
   // Breadcrumb schema for about page
@@ -13,6 +15,30 @@ export default function AboutUs() {
     { name: 'Home', url: '/' },
     { name: 'About', url: '/about' },
   ]);
+
+  const { addToCart, navigateToCart } = useCart();
+  const { plans: ticketPlans } = useTicketPricing();
+  const vipPlan = ticketPlans.find((plan) => plan.id === 'vip');
+
+  const handleBookVip = () => {
+    if (!vipPlan) {
+      // Fallback: navigate to tickets section if VIP pricing isn't loaded
+      window.location.href = aboutPageData.afterParty.ctaUrl;
+      return;
+    }
+    addToCart(
+      {
+        id: vipPlan.id,
+        title: vipPlan.title,
+        price: vipPlan.price / 100,
+        currency: vipPlan.currency,
+        priceId: vipPlan.priceId,
+        variant: 'vip',
+      },
+      1,
+    );
+    navigateToCart();
+  };
 
   return (
     <>
@@ -216,11 +242,7 @@ export default function AboutUs() {
               </ul>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button
-                  variant="accent"
-                  asChild
-                  href={aboutPageData.afterParty.ctaUrl}
-                >
+                <Button variant="accent" onClick={handleBookVip}>
                   {aboutPageData.afterParty.ctaLabel}
                 </Button>
                 <Button
@@ -245,16 +267,29 @@ export default function AboutUs() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-black/70 via-brand-black/30 to-brand-black/10" />
               </div>
-              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 text-sm text-brand-gray-light">
-                <span className="flex items-center gap-1.5">
-                  <MapPin size={14} className="text-brand-yellow-main" />
-                  {aboutPageData.afterParty.address}
-                </span>
-                <span className="hidden sm:inline text-brand-gray-medium">·</span>
-                <span className="flex items-center gap-1.5">
-                  <Clock size={14} className="text-brand-yellow-main" />
-                  {aboutPageData.afterParty.schedule}
-                </span>
+              <div className="mt-4 flex items-center gap-1.5 text-sm text-brand-gray-light">
+                <Clock size={14} className="text-brand-yellow-main" />
+                {aboutPageData.afterParty.schedule}
+              </div>
+
+              <div className="mt-6">
+                <h3 className="text-xs uppercase tracking-widest font-medium text-brand-yellow-main mb-3">
+                  {aboutPageData.afterParty.directionsTitle}
+                </h3>
+                <ul className="space-y-2.5" role="list">
+                  {aboutPageData.afterParty.directions.map(({ icon: Icon, mode, detail }) => (
+                    <li
+                      key={mode}
+                      className="flex items-start gap-3 text-sm text-brand-white"
+                    >
+                      <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
+                      <span>
+                        <strong className="font-semibold">{mode}:</strong>{' '}
+                        <span className="text-brand-gray-light">{detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>

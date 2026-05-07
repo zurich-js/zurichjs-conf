@@ -1,4 +1,4 @@
-import {Heart, Lightbulb, Handshake, Target, Sunset, Waves, Wine, Clock, LucideIcon} from 'lucide-react';
+import {Heart, Lightbulb, Handshake, Target, Sunset, Waves, Wine, Clock, Footprints, Bike, TrainFront, LucideIcon} from 'lucide-react';
 
 export interface AboutHeroData {
   title: string;
@@ -52,6 +52,12 @@ export interface AboutAfterPartyHighlight {
   label: string;
 }
 
+export interface AboutAfterPartyDirection {
+  icon: LucideIcon;
+  mode: string;
+  detail: string;
+}
+
 export interface AboutAfterPartyData {
   kicker: string;
   title: string;
@@ -64,7 +70,8 @@ export interface AboutAfterPartyData {
   ctaUrl: string;
   websiteLabel: string;
   websiteUrl: string;
-  address: string;
+  directionsTitle: string;
+  directions: AboutAfterPartyDirection[];
   schedule: string;
 }
 
@@ -218,7 +225,24 @@ export const aboutPageData: AboutPageData = {
     ctaUrl: "/#tickets",
     websiteLabel: "Visit Seebad Enge",
     websiteUrl: "https://www.seebadenge.ch/wp/",
-    address: "Mythenquai 9, 8002 Zürich",
+    directionsTitle: "Getting there from Technopark",
+    directions: [
+      {
+        icon: Footprints,
+        mode: "On foot",
+        detail: "~35 min stroll along the Limmat and lakefront promenade",
+      },
+      {
+        icon: Bike,
+        mode: "By bike",
+        detail: "~12 min via the riverside path (Publibike stations at both ends)",
+      },
+      {
+        icon: TrainFront,
+        mode: "Public transport",
+        detail: "~15 min — S-Bahn from Hardbrücke to Bahnhof Enge, then a short walk",
+      },
+    ],
     schedule: "19:00 – 23:00",
   },
   values: {

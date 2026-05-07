@@ -6,7 +6,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Modal, ModalBody, ModalFooter, Button } from '@/components/atoms';
-import { Clock, MapPin, Sunset, Wine, Waves, ExternalLink } from 'lucide-react';
+import { Clock, Sunset, Wine, Waves, ExternalLink } from 'lucide-react';
 
 export interface SeebadEngeModalProps {
   /** Whether the modal is open */
@@ -45,10 +45,6 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
           <h2 className="text-xl sm:text-2xl font-bold text-brand-white">
             After Party @ Seebad Enge
           </h2>
-          <p className="flex items-center gap-1.5 text-sm text-brand-gray-light mt-1">
-            <MapPin size={14} />
-            Mythenquai 9, 8002 Zürich
-          </p>
         </div>
       </div>
 
