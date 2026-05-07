@@ -56,7 +56,7 @@ export const buildVipFeatures = (onAfterPartyClick?: () => void): Feature[] => [
         className="text-left text-brand-yellow-main font-semibold underline decoration-dotted underline-offset-4 hover:text-brand-yellow-secondary transition-colors cursor-pointer"
         aria-label="Exclusive after party access — see venue details"
       >
-        Exclusive after party access ✨
+        Exclusive after party access
       </button>
     ) : (
       'Exclusive after party access'

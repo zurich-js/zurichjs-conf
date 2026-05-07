@@ -243,6 +243,7 @@ export default function AboutUs() {
                   className="size-full object-cover"
                   loading="lazy"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-black/70 via-brand-black/30 to-brand-black/10" />
               </div>
               <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 text-sm text-brand-gray-light">
                 <span className="flex items-center gap-1.5">

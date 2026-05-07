@@ -37,7 +37,7 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
           className="size-full object-cover"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-black/80 via-brand-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-black/95 via-brand-black/60 to-brand-black/30" />
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
           <p className="text-xs uppercase tracking-widest font-medium text-brand-yellow-main mb-1">
             VIP Exclusive
@@ -54,10 +54,11 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
 
       <ModalBody className="space-y-5">
         <p className="text-brand-gray-light leading-relaxed text-sm">
-          We&apos;ve booked <strong className="text-brand-white">Seebad Enge</strong> as our private after-party
-          venue — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with
-          fellow VIPs, take in the September summer sunset, and enjoy drinks and apéro in one of Zürich&apos;s
-          most iconic lakeside spots.
+          We&apos;ve booked{' '}
+          <strong className="text-brand-white">Seebad Enge</strong> as our private after-party venue
+          — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with
+          fellow VIPs, take in the September summer sunset, and enjoy drinks and apéro in one of
+          Zürich&apos;s most iconic lakeside spots.
         </p>
 
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="list">
@@ -85,7 +86,7 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
           </Button>
         </Link>
         <Button variant="accent" onClick={onClose}>
-          Got it
+          Save me a sundowner
         </Button>
       </ModalFooter>
     </Modal>
