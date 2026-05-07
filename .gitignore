@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+.pnpm-store/
 
 # debug
 npm-debug.log*
@@ -42,6 +43,8 @@ yarn-error.log*
 next-env.d.ts
 
 .idea/
+.vscode/
+.cursor/
 
 # Sentry Config File
 .env.sentry-build-plugin
