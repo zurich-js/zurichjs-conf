@@ -203,7 +203,7 @@ export const aboutPageData: AboutPageData = {
     title: "After Party @ Seebad Enge",
     subtitle: "A private post-conference soirée on the shores of Lake Zürich",
     description: [
-      "We've booked Seebad Enge as our private after-party venue — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with fellow VIPs, take in the September summer sunset, and enjoy drinks and apéro in one of Zurich's most iconic lakeside spots.",
+      "We've booked Seebad Enge as our private after-party venue — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with fellow VIPs and speakers, take in the September summer sunset, and enjoy drinks and apéro in one of Zurich's most iconic lakeside spots.",
       "From 19:00 to 23:00, the space is ours — and so is the view. A perfect way to close out the conference, whether you fancy a swim, a chat, or simply a glass in hand as the sun dips behind the Alps.",
     ],
     highlights: [
