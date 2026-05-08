@@ -23,16 +23,8 @@ const SEEBAD_IMAGES: { src: string; alt: string }[] = [
     alt: 'Seebad Enge — lakeside swimming deck on Lake Zürich',
   },
   {
-    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-2.jpg',
-    alt: 'Seebad Enge — sunset over the lake',
-  },
-  {
-    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-3.jpg',
-    alt: 'Seebad Enge — bar and apéro deck',
-  },
-  {
-    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-4.jpg',
-    alt: 'Seebad Enge — guests enjoying the lakeside view',
+    src: 'https://www.seebadenge.ch/wp/wp-content/themes/seebadenge/assets/img/page-thumb-aux.png',
+    alt: 'Seebad Enge — venue overview',
   },
 ];
 
