@@ -107,8 +107,8 @@ export function QuoteBuilder() {
   // Compute breakdown
   const breakdown = useMemo(() => computeQuoteBreakdown(state), [state]);
 
-  // Fetch available workshops
-  const workshopsQuery = useQuery(createWorkshopsScheduleQueryOptions('CHF'));
+  // Fetch available workshops in the same currency as the quote
+  const workshopsQuery = useQuery(createWorkshopsScheduleQueryOptions(state.currency));
   const availableWorkshops = useMemo(() => {
     if (!workshopsQuery.data) return [];
     const { items, offeringsBySubmissionId } = workshopsQuery.data;
@@ -116,9 +116,12 @@ export function QuoteBuilder() {
       .filter((item) => item.session_kind === 'workshop' && item.session)
       .map((item) => {
         const session = item.session!;
-        const offering = session.cfp_submission_id
-          ? offeringsBySubmissionId[session.cfp_submission_id]
-          : undefined;
+        // The schedule API keys offerings by both session id and CFP submission
+        // id, so try both — autofill should work whether the workshop came from
+        // the CFP or was created directly.
+        const offering =
+          offeringsBySubmissionId[session.id] ??
+          (session.cfp_submission_id ? offeringsBySubmissionId[session.cfp_submission_id] : undefined);
         return {
           id: session.id,
           title: session.title,

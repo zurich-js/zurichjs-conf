@@ -55,7 +55,6 @@ export interface WorkshopQuoteLine {
   quantity: number;
   unitPriceCents: number;
   discountPercent: number;
-  linkedToVip: boolean; // true = discount derives from VIP benefit (20%)
 }
 
 /** Arbitrary extra line item (e.g. "Logistics coordination") */

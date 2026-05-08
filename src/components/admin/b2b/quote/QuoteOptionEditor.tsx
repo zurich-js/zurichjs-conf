@@ -3,7 +3,7 @@
  * Editable card for a single quote option: tickets, workshops, custom items, discounts
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   ChevronDown,
   ChevronUp,
@@ -53,14 +53,63 @@ function centsToDisplay(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
-function displayToCents(val: string): number {
-  const n = parseFloat(val);
-  return isNaN(n) ? 0 : Math.round(n * 100);
-}
-
 let nextId = 1;
 function uid(): string {
   return `item-${Date.now()}-${nextId++}`;
+}
+
+/**
+ * Money input that lets the user type freely (e.g. "250") without the field
+ * being reformatted to "2.00" mid-keystroke. Internal draft string is only
+ * synced to cents on blur or Enter.
+ */
+function MoneyInput({
+  cents,
+  onChange,
+  className,
+}: {
+  cents: number;
+  onChange: (cents: number) => void;
+  className?: string;
+}) {
+  const [draft, setDraft] = useState<string>(() => centsToDisplay(cents));
+  const focused = useRef(false);
+
+  // Sync external changes (e.g. workshop autofill) back into the draft when
+  // the input is not currently focused.
+  useEffect(() => {
+    if (!focused.current) {
+      setDraft(centsToDisplay(cents));
+    }
+  }, [cents]);
+
+  const commit = () => {
+    const n = parseFloat(draft.replace(',', '.'));
+    const next = isNaN(n) ? 0 : Math.max(0, Math.round(n * 100));
+    onChange(next);
+    setDraft(centsToDisplay(next));
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={(e) => {
+        focused.current = true;
+        e.target.select();
+      }}
+      onBlur={() => {
+        focused.current = false;
+        commit();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+      }}
+      className={className ?? smallInputCls}
+    />
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -104,7 +153,6 @@ export function QuoteOptionEditor({
       quantity: 1,
       unitPriceCents: found.unitAmountCents,
       discountPercent: 0,
-      linkedToVip: false,
     };
     patch({ workshops: [...option.workshops, ws] });
   };
@@ -158,6 +206,8 @@ export function QuoteOptionEditor({
   const removeCustomDiscount = (idx: number) => {
     patch({ customDiscounts: option.customDiscounts.filter((_, i) => i !== idx) });
   };
+
+  const hasVip = option.vipTickets.quantity > 0;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -234,11 +284,9 @@ export function QuoteOptionEditor({
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Unit price</label>
-                <input
-                  type="text"
-                  value={centsToDisplay(option.standardTickets.unitPriceCents)}
-                  onChange={(e) => updateStandard('unitPriceCents', displayToCents(e.target.value))}
-                  className={smallInputCls}
+                <MoneyInput
+                  cents={option.standardTickets.unitPriceCents}
+                  onChange={(cents) => updateStandard('unitPriceCents', cents)}
                 />
               </div>
               <div>
@@ -247,8 +295,9 @@ export function QuoteOptionEditor({
                   type="number"
                   min={0}
                   max={100}
+                  step={0.5}
                   value={option.standardTickets.discountPercent}
-                  onChange={(e) => updateStandard('discountPercent', Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                  onChange={(e) => updateStandard('discountPercent', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
                   className={numberCls}
                 />
               </div>
@@ -279,11 +328,9 @@ export function QuoteOptionEditor({
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Unit price</label>
-                <input
-                  type="text"
-                  value={centsToDisplay(option.vipTickets.unitPriceCents)}
-                  onChange={(e) => updateVip('unitPriceCents', displayToCents(e.target.value))}
-                  className={smallInputCls}
+                <MoneyInput
+                  cents={option.vipTickets.unitPriceCents}
+                  onChange={(cents) => updateVip('unitPriceCents', cents)}
                 />
               </div>
               <div>
@@ -292,8 +339,9 @@ export function QuoteOptionEditor({
                   type="number"
                   min={0}
                   max={100}
+                  step={0.5}
                   value={option.vipTickets.discountPercent}
-                  onChange={(e) => updateVip('discountPercent', Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                  onChange={(e) => updateVip('discountPercent', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
                   className={numberCls}
                 />
               </div>
@@ -312,89 +360,93 @@ export function QuoteOptionEditor({
                 <GraduationCap className="w-4 h-4 text-gray-500" />
                 <h4 className="text-sm font-medium text-gray-800">Workshops</h4>
               </div>
+              {hasVip && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  <Crown className="w-3 h-3" /> VIP 20% applied
+                </span>
+              )}
             </div>
 
-            {/* Workshop picker */}
+            {/* Workshop picker — clickable list */}
             {unusedWorkshops.length > 0 && (
               <div className="mb-3">
-                <select
-                  value=""
-                  onChange={(e) => { if (e.target.value) addWorkshopById(e.target.value); }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-black bg-white focus:ring-2 focus:ring-brand-primary focus:outline-none"
-                >
-                  <option value="">+ Add a workshop...</option>
+                <p className="text-xs text-gray-500 mb-2">Add a workshop:</p>
+                <div className="flex flex-wrap gap-2">
                   {unusedWorkshops.map((aw) => (
-                    <option key={aw.id} value={aw.id}>
-                      {aw.title}{aw.unitAmountCents > 0 ? ` — ${centsToDisplay(aw.unitAmountCents)} ${currency}` : ''}
-                      {aw.durationMinutes ? ` (${aw.durationMinutes}min)` : ''}
-                    </option>
+                    <button
+                      key={aw.id}
+                      type="button"
+                      onClick={() => addWorkshopById(aw.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:border-brand-primary hover:bg-brand-primary/5 hover:text-black transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>{aw.title}</span>
+                      {aw.unitAmountCents > 0 && (
+                        <span className="text-gray-400">· {centsToDisplay(aw.unitAmountCents)} {currency}</span>
+                      )}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
             )}
 
             {option.workshops.length === 0 && unusedWorkshops.length === 0 && (
               <p className="text-xs text-gray-400">No workshops available</p>
             )}
-            {option.workshops.length === 0 && unusedWorkshops.length > 0 && (
-              <p className="text-xs text-gray-400">Select a workshop above to add it</p>
-            )}
             <div className="space-y-3">
-              {option.workshops.map((ws, idx) => (
-                <div key={ws.workshopId} className="flex flex-wrap items-end gap-2 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1 min-w-[140px]">
-                    <label className="block text-xs text-gray-500 mb-1">Workshop</label>
-                    <span className="block text-sm font-medium text-gray-900 py-1.5">{ws.title}</span>
+              {option.workshops.map((ws, idx) => {
+                const wsBreakdown = breakdown.workshops[idx];
+                return (
+                  <div key={ws.workshopId} className="flex flex-wrap items-end gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1 min-w-[140px]">
+                      <label className="block text-xs text-gray-500 mb-1">Workshop</label>
+                      <span className="block text-sm font-medium text-gray-900 py-1.5">{ws.title}</span>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Qty</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={ws.quantity}
+                        onChange={(e) => updateWorkshop(idx, { quantity: Math.max(0, parseInt(e.target.value) || 0) })}
+                        className={numberCls}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Price</label>
+                      <MoneyInput
+                        cents={ws.unitPriceCents}
+                        onChange={(cents) => updateWorkshop(idx, { unitPriceCents: cents })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Disc %</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={ws.discountPercent}
+                        onChange={(e) => updateWorkshop(idx, { discountPercent: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)) })}
+                        className={numberCls}
+                      />
+                    </div>
+                    {hasVip && wsBreakdown && wsBreakdown.vipSavingsCents > 0 && (
+                      <div className="text-[11px] text-amber-700 pb-2">
+                        −{formatQuoteAmount(wsBreakdown.vipSavingsCents, currency)} VIP
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeWorkshop(idx)}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Remove workshop"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Qty</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={ws.quantity}
-                      onChange={(e) => updateWorkshop(idx, { quantity: Math.max(0, parseInt(e.target.value) || 0) })}
-                      className={numberCls}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Price</label>
-                    <input
-                      type="text"
-                      value={centsToDisplay(ws.unitPriceCents)}
-                      onChange={(e) => updateWorkshop(idx, { unitPriceCents: displayToCents(e.target.value) })}
-                      className={smallInputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Disc %</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={ws.discountPercent}
-                      onChange={(e) => updateWorkshop(idx, { discountPercent: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
-                      className={numberCls}
-                    />
-                  </div>
-                  <label className="flex items-center gap-1.5 text-xs text-gray-600 pb-1.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={ws.linkedToVip}
-                      onChange={(e) => updateWorkshop(idx, { linkedToVip: e.target.checked })}
-                      className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-                    />
-                    VIP benefit
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => removeWorkshop(idx)}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                    title="Remove workshop"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -437,11 +489,9 @@ export function QuoteOptionEditor({
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Price</label>
-                    <input
-                      type="text"
-                      value={centsToDisplay(item.unitPriceCents)}
-                      onChange={(e) => updateCustomItem(idx, { unitPriceCents: displayToCents(e.target.value) })}
-                      className={smallInputCls}
+                    <MoneyInput
+                      cents={item.unitPriceCents}
+                      onChange={(cents) => updateCustomItem(idx, { unitPriceCents: cents })}
                     />
                   </div>
                   <button
@@ -498,18 +548,24 @@ export function QuoteOptionEditor({
                     <label className="block text-xs text-gray-500 mb-1">
                       {d.type === 'percent' ? 'Percent' : 'Amount'}
                     </label>
-                    <input
-                      type="text"
-                      value={d.type === 'percent' ? String(d.value) : centsToDisplay(d.value)}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        const val = d.type === 'percent'
-                          ? Math.min(100, Math.max(0, parseFloat(raw) || 0))
-                          : displayToCents(raw);
-                        updateCustomDiscount(idx, { value: val });
-                      }}
-                      className={smallInputCls}
-                    />
+                    {d.type === 'percent' ? (
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={d.value}
+                        onChange={(e) => updateCustomDiscount(idx, {
+                          value: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)),
+                        })}
+                        className={smallInputCls}
+                      />
+                    ) : (
+                      <MoneyInput
+                        cents={d.value}
+                        onChange={(cents) => updateCustomDiscount(idx, { value: cents })}
+                      />
+                    )}
                   </div>
                   <button
                     type="button"
