@@ -57,6 +57,7 @@
 		"ics": "^3.12.0",
 		"lightningcss": "^1.32.0",
 		"lucide-react": "^0.553.0",
+		"lz-string": "^1.5.0",
 		"micro": "^10.0.1",
 		"next": "^16.2.4",
 		"next-mdx-remote": "^6.0.0",

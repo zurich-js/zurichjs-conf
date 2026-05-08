@@ -145,7 +145,6 @@ describe('computeOptionBreakdown — workshops', () => {
         quantity: 4,
         unitPriceCents: 25000,
         discountPercent: 0,
-        linkedToVip: false,
         slug: 'react-deep-dive',
       }],
     });
@@ -156,7 +155,7 @@ describe('computeOptionBreakdown — workshops', () => {
     expect(bd.workshops[0].netCents).toBe(100000);
   });
 
-  it('applies VIP workshop discount when linkedToVip is true', () => {
+  it('applies VIP workshop discount automatically when VIP tickets are present', () => {
     const opt = makeOption({
       vipTickets: { quantity: 3, unitPriceCents: 49500, discountPercent: 0 },
       workshops: [{
@@ -165,7 +164,6 @@ describe('computeOptionBreakdown — workshops', () => {
         quantity: 5,
         unitPriceCents: 25000,
         discountPercent: 0,
-        linkedToVip: true,
         slug: 'react-deep-dive',
       }],
     });
@@ -186,7 +184,6 @@ describe('computeOptionBreakdown — workshops', () => {
         quantity: 4,
         unitPriceCents: 25000,
         discountPercent: 10,
-        linkedToVip: true,
         slug: 'react-deep-dive',
       }],
     });
@@ -285,7 +282,7 @@ describe('computeOptionBreakdown — edge cases', () => {
       vipTickets: { quantity: 1, unitPriceCents: 20000, discountPercent: 0 },
       workshops: [{
         workshopId: 'ws1', title: 'WS', slug: 'ws', quantity: 1,
-        unitPriceCents: 5000, discountPercent: 0, linkedToVip: false,
+        unitPriceCents: 5000, discountPercent: 0,
       }],
       customLineItems: [
         { id: 'c1', label: 'Extra', quantity: 1, unitPriceCents: 3000 },
@@ -397,7 +394,6 @@ describe('real-world scenario — 8-person team quote', () => {
         quantity: 8,
         unitPriceCents: 25000,
         discountPercent: 0,
-        linkedToVip: true,
         slug: 'react-deep-dive',
       }],
     });

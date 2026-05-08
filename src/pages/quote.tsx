@@ -17,6 +17,7 @@ import { Heading } from '@/components/atoms/Heading';
 import { Kicker } from '@/components/atoms/Kicker';
 import { SiteFooter, ShapedSection } from '@/components/organisms';
 import { SeebadEngeModal } from '@/components/molecules';
+import { analytics } from '@/lib/analytics/client';
 import type { B2BQuoteState, QuoteBreakdown, QuoteOptionBreakdown, QuoteCurrency } from '@/lib/types/b2b-quote';
 import {
   decodeQuoteFromUrl,
@@ -47,6 +48,7 @@ function OptionCard({
   currency,
   totalOptions,
   onSeebadClick,
+  companyName,
 }: {
   opt: QuoteOptionBreakdown;
   index: number;
@@ -54,6 +56,7 @@ function OptionCard({
   currency: QuoteCurrency;
   totalOptions: number;
   onSeebadClick: () => void;
+  companyName?: string;
 }) {
   const hasStandard = opt.standardTickets.quantity > 0;
   const hasVip = opt.vipTickets.quantity > 0;
@@ -140,6 +143,14 @@ function OptionCard({
                   amount={ws.netCents}
                   currency={currency}
                   href={ws.slug ? `/workshops/${ws.slug}` : undefined}
+                  onLinkClick={() => {
+                    analytics.track('link_clicked', {
+                      link_text: ws.title || 'Workshop',
+                      link_url: `/workshops/${ws.slug}`,
+                      link_type: 'internal',
+                      link_location: `quote:${companyName || 'unknown'}:${opt.title || `option_${index + 1}`}:workshop`,
+                    });
+                  }}
                 />
               ))}
             </div>
@@ -252,6 +263,7 @@ function LineRow({
   amount,
   currency,
   href,
+  onLinkClick,
 }: {
   label: string;
   unitLabel: string;
@@ -260,9 +272,16 @@ function LineRow({
   amount: number;
   currency: QuoteCurrency;
   href?: string;
+  onLinkClick?: () => void;
 }) {
   const labelContent = href ? (
-    <Link href={href} target="_blank" className="text-sm text-gray-800 underline decoration-dotted underline-offset-2 hover:text-black transition-colors">
+    <Link
+      href={href}
+      target="_blank"
+      onClick={onLinkClick}
+      onAuxClick={onLinkClick}
+      className="text-sm text-gray-800 underline decoration-dotted underline-offset-2 hover:text-black transition-colors"
+    >
       {label}
     </Link>
   ) : (
@@ -437,6 +456,7 @@ export default function QuotePage() {
                 currency={currency}
                 totalOptions={options.length}
                 onSeebadClick={() => setSeebadOpen(true)}
+                companyName={quoteState.companyName}
               />
             ))}
           </div>
