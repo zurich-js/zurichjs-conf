@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { TicketsSection } from './TicketsSection';
-import { StudentVerificationModal, VerificationSuccessModal, StudentTicketInfoModal } from '@/components/molecules';
+import { StudentVerificationModal, VerificationSuccessModal, StudentTicketInfoModal, SeebadEngeModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useStudentVerification } from '@/hooks/useStudentVerification';
 import { useCart } from '@/contexts/CartContext';
@@ -108,6 +108,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   } = useStudentVerification();
   const [isNavigating, setIsNavigating] = useState(false);
   const [isStudentInfoModalOpen, setIsStudentInfoModalOpen] = useState(false);
+  const [isSeebadEngeModalOpen, setIsSeebadEngeModalOpen] = useState(false);
 
   const openStudentInfoModal = useCallback(() => {
     setIsStudentInfoModalOpen(true);
@@ -115,6 +116,14 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
 
   const closeStudentInfoModal = useCallback(() => {
     setIsStudentInfoModalOpen(false);
+  }, []);
+
+  const openSeebadEngeModal = useCallback(() => {
+    setIsSeebadEngeModalOpen(true);
+  }, []);
+
+  const closeSeebadEngeModal = useCallback(() => {
+    setIsSeebadEngeModalOpen(false);
   }, []);
 
   // Show loading state only when there's no data yet
@@ -205,7 +214,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   const studentPlan = plans.find(p => p.id === 'standard_student_unemployed');
   const isStudentSoldOut = studentPlan?.stock?.soldOut ?? false;
 
-  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart, openStudentInfoModal);
+  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart, openStudentInfoModal, openSeebadEngeModal);
 
   // Disable all CTAs while navigating to prevent duplicate adds
   if (isNavigating) {
@@ -236,6 +245,10 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
         isOpen={isStudentInfoModalOpen}
         onClose={closeStudentInfoModal}
         isSoldOut={isStudentSoldOut}
+      />
+      <SeebadEngeModal
+        isOpen={isSeebadEngeModalOpen}
+        onClose={closeSeebadEngeModal}
       />
     </>
   );

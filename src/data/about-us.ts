@@ -1,4 +1,4 @@
-import {Heart, Lightbulb, Handshake, Target, LucideIcon} from 'lucide-react';
+import {Heart, Lightbulb, Handshake, Target, Sunset, Waves, Wine, Clock, Footprints, Bike, TrainFront, LucideIcon} from 'lucide-react';
 
 export interface AboutHeroData {
   title: string;
@@ -47,6 +47,34 @@ export interface AboutVenueData {
   websiteUrl: string;
 }
 
+export interface AboutAfterPartyHighlight {
+  icon: LucideIcon;
+  label: string;
+}
+
+export interface AboutAfterPartyDirection {
+  icon: LucideIcon;
+  mode: string;
+  detail: string;
+}
+
+export interface AboutAfterPartyData {
+  kicker: string;
+  title: string;
+  subtitle: string;
+  description: string[];
+  highlights: AboutAfterPartyHighlight[];
+  imageSrc: string;
+  imageAlt: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  websiteLabel: string;
+  websiteUrl: string;
+  directionsTitle: string;
+  directions: AboutAfterPartyDirection[];
+  schedule: string;
+}
+
 export interface AboutValueData {
   icon: LucideIcon;
   title: string;
@@ -79,6 +107,7 @@ export interface AboutPageData {
   stats: AboutStatData[];
   team: AboutTeamData;
   venue: AboutVenueData;
+  afterParty: AboutAfterPartyData;
   values: AboutValuesData;
   ctaSlides: AboutCTASlide[];
 }
@@ -100,10 +129,10 @@ export const aboutPageData: AboutPageData = {
     ],
   },
   stats: [
-    { value: "300", label: "attendees" },
-    { value: "~15", label: "speakers" },
+    { value: "300-500", label: "attendees" },
+    { value: "19", label: "speakers" },
     { value: "3", label: "days" },
-    { value: "5+", label: "workshops" },
+    { value: "6", label: "workshops" },
   ],
   team: {
     kicker: "the team",
@@ -175,6 +204,46 @@ export const aboutPageData: AboutPageData = {
     },
     directionsUrl: "https://maps.google.com",
     websiteUrl: "https://technopark.ch",
+  },
+  afterParty: {
+    kicker: "VIP exclusive",
+    title: "After Party @ Seebad Enge",
+    subtitle: "A private post-conference soirée on the shores of Lake Zürich",
+    description: [
+      "We've booked Seebad Enge as our private after-party venue — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with fellow VIPs and speakers, take in the September summer sunset, and enjoy drinks and apéro in one of Zurich's most iconic lakeside spots.",
+      "From 19:00 to 23:00, the space is ours — and so is the view. A perfect way to close out the conference, whether you fancy a swim, a chat, or simply a glass in hand as the sun dips behind the Alps.",
+    ],
+    highlights: [
+      { icon: Sunset, label: "Swiss September sunset over the lake" },
+      { icon: Waves, label: "Optional swim in Lake Zürich" },
+      { icon: Wine, label: "Drinks & apéro included" },
+      { icon: Clock, label: "19:00 – 23:00, after the conference" },
+    ],
+    imageSrc: "https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-1.jpg",
+    imageAlt: "Seebad Enge — lakeside venue in Zürich with sunset views over Lake Zürich",
+    ctaLabel: "Book your VIP ticket",
+    ctaUrl: "/#tickets",
+    websiteLabel: "Visit Seebad Enge",
+    websiteUrl: "https://www.seebadenge.ch/wp/",
+    directionsTitle: "Getting there from Technopark",
+    directions: [
+      {
+        icon: Footprints,
+        mode: "On foot",
+        detail: "~35 min stroll along the Limmat and lakefront promenade",
+      },
+      {
+        icon: Bike,
+        mode: "By bike",
+        detail: "~12 min via the riverside path (Publibike stations at both ends)",
+      },
+      {
+        icon: TrainFront,
+        mode: "Public transport",
+        detail: "~15 min — S-Bahn from Hardbrücke to Bahnhof Enge, then a short walk",
+      },
+    ],
+    schedule: "19:00 – 23:00",
   },
   values: {
     kicker: "Our Values",

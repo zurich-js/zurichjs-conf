@@ -5,7 +5,7 @@ export interface Feature {
   /**
    * Feature label/description
    */
-  label: string;
+  label: React.ReactNode;
   /**
    * Feature kind: included (green check), extra (orange dot), or excluded (gray minus)
    */
@@ -48,6 +48,8 @@ export const FeatureList: React.FC<FeatureListProps> = ({
         const kind = feature.kind || 'included';
         const isExtra = kind === 'extra';
         const isExcluded = kind === 'excluded';
+        const key =
+          typeof feature.label === 'string' ? `${feature.label}-${index}` : `feature-${index}`;
 
         // VIP extra features use double-check, others use dot
         const iconType = isExcluded
@@ -59,7 +61,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({
 
         return (
           <li
-            key={`${feature.label}-${index}`}
+            key={key}
             className={`flex items-start gap-2.5 text-brand-white`}
           >
             {

@@ -43,6 +43,31 @@ export const TICKET_FEATURES: Record<string, Feature[]> = {
 };
 
 /**
+ * Build VIP features with a clickable after-party label that opens the
+ * Seebad Enge venue modal. Falls back to static text if no handler is provided.
+ */
+export const buildVipFeatures = (onAfterPartyClick?: () => void): Feature[] => [
+  { label: 'Everything in Standard', kind: 'extra' as const },
+  {
+    label: onAfterPartyClick ? (
+      <button
+        type="button"
+        onClick={onAfterPartyClick}
+        className="text-left text-brand-yellow-main font-semibold underline decoration-dotted underline-offset-4 hover:text-brand-yellow-secondary transition-colors cursor-pointer"
+        aria-label="Exclusive after party access — see venue details"
+      >
+        Exclusive after party access
+      </button>
+    ) : (
+      'Exclusive after party access'
+    ),
+    kind: 'included' as const,
+  },
+  { label: 'Limited edition goodies', kind: 'included' as const },
+  { label: '20% discount to all workshops', kind: 'included' as const },
+];
+
+/**
  * Ticket metadata (blurbs, footnotes)
  */
 export const TICKET_METADATA: Record<
@@ -257,8 +282,12 @@ export const mapStripePlanToTicketPlan = (
   }, quantity: number) => void,
   navigateToCart?: () => void,
   onStudentInfoClick?: () => void,
+  onAfterPartyClick?: () => void,
 ): Plan => {
-  const features = TICKET_FEATURES[stripePlan.id] || TICKET_FEATURES.standard;
+  const features =
+    stripePlan.id === 'vip'
+      ? buildVipFeatures(onAfterPartyClick)
+      : TICKET_FEATURES[stripePlan.id] || TICKET_FEATURES.standard;
   const metadata = TICKET_METADATA[stripePlan.id] || TICKET_METADATA.standard;
 
   // Convert from cents to base units (Stripe stores amounts in cents)
@@ -365,9 +394,10 @@ export const createTicketDataFromStripe = (
   }, quantity: number) => void,
   navigateToCart?: () => void,
   onStudentInfoClick?: () => void,
+  onAfterPartyClick?: () => void,
 ): Omit<TicketsSectionProps, 'className'> => {
   const plans = stripePlans.map((plan) =>
-    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, navigateToCart, onStudentInfoClick)
+    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, navigateToCart, onStudentInfoClick, onAfterPartyClick)
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 

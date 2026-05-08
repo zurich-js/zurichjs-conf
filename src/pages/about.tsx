@@ -1,10 +1,13 @@
 import React from "react";
+import { Clock, ExternalLink } from "lucide-react";
 import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import { aboutPageData } from "@/data/about-us";
 import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
 import {Button, Heading, Kicker} from "@/components/atoms";
 import {TeamMemberCard} from "@/components/molecules/TeamMemberCard";
 import {ValueCard} from "@/components/molecules/ValueCard";
+import { useCart } from "@/contexts/CartContext";
+import { useTicketPricing } from "@/hooks/useTicketPricing";
 
 export default function AboutUs() {
   // Breadcrumb schema for about page
@@ -13,11 +16,35 @@ export default function AboutUs() {
     { name: 'About', url: '/about' },
   ]);
 
+  const { addToCart, navigateToCart } = useCart();
+  const { plans: ticketPlans } = useTicketPricing();
+  const vipPlan = ticketPlans.find((plan) => plan.id === 'vip');
+
+  const handleBookVip = () => {
+    if (!vipPlan) {
+      // Fallback: navigate to tickets section if VIP pricing isn't loaded
+      window.location.href = aboutPageData.afterParty.ctaUrl;
+      return;
+    }
+    addToCart(
+      {
+        id: vipPlan.id,
+        title: vipPlan.title,
+        price: vipPlan.price / 100,
+        currency: vipPlan.currency,
+        priceId: vipPlan.priceId,
+        variant: 'vip',
+      },
+      1,
+    );
+    navigateToCart();
+  };
+
   return (
     <>
       <SEO
         title="About ZurichJS Conference | Team, Venue & Mission"
-        description="Meet the team behind ZurichJS Conference 2026. Learn about our mission to unite the JavaScript community at Technopark Zürich. 300 attendees, ~15 speakers, 5+ workshops."
+        description="Meet the team behind ZurichJS Conference 2026. Learn about our mission to unite the JavaScript community at Technopark Zürich. 300-500 attendees, 19 speakers, 6 workshops."
         canonical="/about"
         keywords="zurichjs team, javascript community zurich, swiss javascript group, technopark zurich conference"
         jsonLd={[organizationSchema, breadcrumbSchema]}
@@ -170,6 +197,98 @@ export default function AboutUs() {
                 >
                   Visit Website
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ShapedSection>
+
+      <ShapedSection
+        shape="down"
+        variant="dark"
+      >
+        <div id="after-party" className="rich-text-renderer">
+          <Kicker variant="dark" className="mb-4">
+            {aboutPageData.afterParty.kicker}
+          </Kicker>
+          <Heading level="h2" variant="dark" className="mb-3 text-xl font-bold">
+            {aboutPageData.afterParty.title}
+          </Heading>
+          <p className="text-brand-gray-light text-base mb-8 max-w-3xl">
+            {aboutPageData.afterParty.subtitle}
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
+            <div className="space-y-4">
+              {aboutPageData.afterParty.description.map((text, index) => (
+                <p
+                  key={index}
+                  className="text-brand-white leading-relaxed text-base"
+                >
+                  {text}
+                </p>
+              ))}
+
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2" role="list">
+                {aboutPageData.afterParty.highlights.map(({ icon: Icon, label }) => (
+                  <li
+                    key={label}
+                    className="flex items-start gap-2.5 bg-brand-gray-darkest/60 rounded-xl p-3 text-sm text-brand-white"
+                  >
+                    <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
+                    <span>{label}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button variant="accent" onClick={handleBookVip}>
+                  {aboutPageData.afterParty.ctaLabel}
+                </Button>
+                <Button
+                  variant="outline"
+                  asChild
+                  href={aboutPageData.afterParty.websiteUrl}
+                >
+                  {aboutPageData.afterParty.websiteLabel}
+                  <ExternalLink size={14} />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-brand-gray-darkest">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={aboutPageData.afterParty.imageSrc}
+                  alt={aboutPageData.afterParty.imageAlt}
+                  className="size-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="mt-4 flex items-center gap-1.5 text-sm text-brand-gray-light">
+                <Clock size={14} className="text-brand-yellow-main" />
+                {aboutPageData.afterParty.schedule}
+              </div>
+
+              <div className="mt-6">
+                <h3 className="text-xs uppercase tracking-widest font-medium text-brand-yellow-main mb-3">
+                  {aboutPageData.afterParty.directionsTitle}
+                </h3>
+                <ul className="space-y-2.5" role="list">
+                  {aboutPageData.afterParty.directions.map(({ icon: Icon, mode, detail }) => (
+                    <li
+                      key={mode}
+                      className="flex items-start gap-3 text-sm text-brand-white"
+                    >
+                      <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
+                      <span>
+                        <strong className="font-semibold">{mode}:</strong>{' '}
+                        <span className="text-brand-gray-light">{detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
