@@ -49,18 +49,16 @@ export const TICKET_FEATURES: Record<string, Feature[]> = {
 export const buildVipFeatures = (onAfterPartyClick?: () => void): Feature[] => [
   { label: 'Everything in Standard', kind: 'extra' as const },
   {
-    label: onAfterPartyClick ? (
-      <button
-        type="button"
-        onClick={onAfterPartyClick}
-        className="text-left text-brand-yellow-main font-semibold underline decoration-dotted underline-offset-4 hover:text-brand-yellow-secondary transition-colors cursor-pointer"
-        aria-label="Exclusive after party access — see venue details"
-      >
-        Exclusive after party access
-      </button>
-    ) : (
-      'Exclusive after party access'
-    ),
+    label: !onAfterPartyClick
+        ? 'Exclusive After-party access'
+        : <button
+            onClick={onAfterPartyClick}
+            className="inline-flex rounded-full items-center gap-1 align-middle text-white hover:text-brand-yellow-main transition-colors cursor-pointer decoration-dotted underline underline-offset-4"
+            aria-label="Exclusive after party access — see venue details"
+        >
+            Exclusive After-party access
+            <InfoIcon size={14} />
+        </button>,
     kind: 'included' as const,
   },
   { label: 'Limited edition goodies', kind: 'included' as const },

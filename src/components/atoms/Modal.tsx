@@ -84,9 +84,7 @@ export function Modal({
             {/* Header */}
             {(title || headerContent || showCloseButton) && (
               <div
-                className={`flex items-start justify-between p-4 sm:p-6 border-b shrink-0 ${
-                  isDark ? 'border-brand-gray-medium' : 'border-gray-200'
-                }`}
+                className={'flex items-start justify-between p-4 sm:p-6 shrink-0'}
               >
                 {headerContent || (
                   <div className="min-w-0 flex-1">
@@ -162,8 +160,8 @@ export function ModalFooter({
 
   return (
     <div
-      className={`p-4 sm:p-6 border-t shrink-0 ${
-        isDark ? 'border-brand-gray-medium bg-brand-gray-darkest/50' : 'border-gray-200 bg-gray-50'
+      className={`p-4 sm:p-6 shrink-0 ${
+        isDark ? 'bg-brand-gray-darkest/50' : 'bg-gray-50'
       } ${className}`}
     >
       {children}

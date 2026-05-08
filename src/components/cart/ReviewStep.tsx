@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { CartItem, CartSummary, VoucherInput, SeebadEngeModal } from '@/components/molecules';
 import { Button, Heading } from '@/components/atoms';
 import type { ReviewStepProps, CartItem as CartItemType } from './types';
+import {InfoIcon} from "lucide-react";
 
 export function ReviewStep({
   cart,
@@ -60,8 +61,8 @@ export function ReviewStep({
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="flex items-start gap-4">
-              <div className="flex-1">
-                <h3 className="text-md font-bold text-brand-white mb-1">
+              <div className="flex-1 p-4 rounded-4xl border border-brand-gray-medium border-dashed">
+                <h3 className="text-lg font-bold text-brand-white mb-1">
                   Want an extra special experience?
                 </h3>
                 <p className="text-sm text-brand-gray-light mb-4">
@@ -69,11 +70,12 @@ export function ReviewStep({
                   <button
                     type="button"
                     onClick={() => setIsSeebadEngeOpen(true)}
-                    className="text-brand-yellow-main font-bold underline decoration-dotted underline-offset-4 hover:text-brand-yellow-secondary transition-colors cursor-pointer drop-shadow-md drop-shadow-brand-yellow-main/30"
+                    className="inline-flex items-center gap-1 text-white hover:text-brand-yellow-main font-bold underline decoration-dotted underline-offset-4 transition-colors cursor-pointer drop-shadow-md drop-shadow-brand-yellow-main/30"
                   >
-                    exclusive after party access ✨
+                    exclusive after party access
+                    <InfoIcon size={14} />
                   </button>
-                  , <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">limited edition goodies</strong>, and <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">20% discount to all workshops</strong>. Only 15 VIP seats available!
+                  , <strong className="text-white drop-shadow-md drop-shadow-brand-yellow-main/30">limited edition goodies</strong>, and <strong className="text-white drop-shadow-md drop-shadow-brand-yellow-main/30">20% discount to all workshops</strong>. Only 15 VIP seats available!
                 </p>
                 <Button variant="primary" size="sm" onClick={onUpgradeToVip}>
                   Upgrade to VIP
