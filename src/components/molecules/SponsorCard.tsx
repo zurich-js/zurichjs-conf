@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CirclePlus } from 'lucide-react';
 import {clsx} from "clsx";
+import { trackSponsorClicked } from '@/lib/analytics/helpers';
 
 export interface SponsorCardProps {
   /** Sponsor name (used for alt text) */
@@ -15,6 +16,8 @@ export interface SponsorCardProps {
   logoColorBackground?: string | null;
   /** Link to sponsor website */
   url?: string | null;
+  /** Sponsor tier (for analytics) */
+  tier?: string;
   /** CTA href for empty state (default: /sponsorship) */
   ctaHref?: string;
   isCta?: boolean
@@ -26,6 +29,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   logoColor,
   logoColorBackground,
   url,
+  tier,
   ctaHref = '/sponsorship',
   isCta
 }) => {
@@ -108,6 +112,11 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         rel="noopener noreferrer"
         className={`${baseClasses} bg-transparent hover:scale-[1.02] group`}
         aria-label={name ? `Visit ${name} website` : 'Visit sponsor website'}
+        onClick={() => trackSponsorClicked({
+          sponsorName: name || 'Unknown',
+          sponsorUrl: url,
+          sponsorTier: tier,
+        })}
       >
         {content}
       </a>

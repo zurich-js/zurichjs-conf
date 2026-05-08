@@ -172,6 +172,34 @@ export function trackWorkshopViewed(params: {
   })
 }
 
+/**
+ * Track sponsor logo click
+ */
+export function trackSponsorClicked(params: {
+  sponsorName: string
+  sponsorUrl: string
+  sponsorTier?: string
+}) {
+  analytics.track('sponsor_clicked', {
+    sponsor_name: params.sponsorName,
+    sponsor_url: params.sponsorUrl,
+    sponsor_tier: params.sponsorTier,
+  })
+}
+
+/**
+ * Track community partner logo click
+ */
+export function trackCommunityPartnerClicked(params: {
+  partnerName: string
+  partnerUrl: string
+}) {
+  analytics.track('community_partner_clicked', {
+    partner_name: params.partnerName,
+    partner_url: params.partnerUrl,
+  })
+}
+
 // ============================================================================
 // Error Tracking Helpers
 // ============================================================================
