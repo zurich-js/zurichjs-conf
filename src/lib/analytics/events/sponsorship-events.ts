@@ -21,3 +21,12 @@ export interface CommunityPartnerClickedEvent {
     partner_url: string;
   };
 }
+
+export interface SponsorQuoteViewedEvent {
+  event: 'sponsor_quote_viewed';
+  properties: BaseEventProperties & {
+    company_name: string;
+    option_count: number;
+    currency: string;
+  };
+}
