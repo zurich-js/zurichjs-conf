@@ -11,3 +11,6 @@ export { CreateInvoiceModal } from './CreateInvoiceModal';
 export { InvoiceDetailsModal } from './InvoiceDetailsModal';
 export { MarkAsPaidModal } from './MarkAsPaidModal';
 export * from './types';
+
+// Quote builder
+export { QuoteBuilder } from './quote';

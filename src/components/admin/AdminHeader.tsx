@@ -33,6 +33,7 @@ export default function AdminHeader({ title, subtitle, onLogout }: AdminHeaderPr
     { href: '/admin/speakers', label: 'Speakers', icon: Users },
     { href: '/admin/partnerships', label: 'Partners', icon: Handshake },
     { href: '/admin/sponsorships', label: 'Sponsors', icon: Building2 },
+    { href: '/admin/b2b', label: 'B2B', icon: Building2 },
     { href: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   ];
 

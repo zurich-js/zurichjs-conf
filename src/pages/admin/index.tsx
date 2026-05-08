@@ -5,8 +5,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, Building2, GraduationCap, Crown } from 'lucide-react';
-import { B2BOrdersTab } from '@/components/admin/B2BOrdersTab';
+import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -21,7 +20,6 @@ const TABS: AdminTab<Tab>[] = [
   { id: 'workshops', label: 'Workshops', icon: GraduationCap },
   { id: 'issue', label: 'Issue', icon: PlusCircle },
   { id: 'financials', label: 'Financials', icon: DollarSign },
-  { id: 'b2b', label: 'B2B Orders', icon: Building2 },
   { id: 'vip-perks', label: 'VIP Perks', icon: Crown },
 ];
 
@@ -44,7 +42,6 @@ export default function AdminDashboard() {
             {activeTab === 'workshops' && <WorkshopsRegistrantsTab />}
             {activeTab === 'issue' && <IssueTicketTab />}
             {activeTab === 'financials' && <FinancialsTab />}
-            {activeTab === 'b2b' && <B2BOrdersTab />}
             {activeTab === 'vip-perks' && <VipPerksTab />}
           </div>
         </div>
