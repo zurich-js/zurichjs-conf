@@ -22,10 +22,6 @@ const SEEBAD_IMAGES: { src: string; alt: string }[] = [
     src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-1.jpg',
     alt: 'Seebad Enge — lakeside swimming deck on Lake Zürich',
   },
-  {
-    src: 'https://www.seebadenge.ch/wp/wp-content/themes/seebadenge/assets/img/page-thumb-aux.png',
-    alt: 'Seebad Enge — venue overview',
-  },
 ];
 
 export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClose }) => {
