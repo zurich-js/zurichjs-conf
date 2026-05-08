@@ -4,9 +4,10 @@
  */
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Modal, ModalBody, ModalFooter, Button } from '@/components/atoms';
-import { Clock, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 
 export interface SeebadEngeModalProps {
   /** Whether the modal is open */
@@ -19,54 +20,52 @@ const SEEBAD_ENGE_URL = 'https://www.seebadenge.ch/wp/';
 
 const SEEBAD_IMAGES: { src: string; alt: string }[] = [
   {
-    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-1.jpg',
+    src: '/images/seebad-enge/seebad-enge-1.jpg',
     alt: 'Seebad Enge — lakeside swimming deck on Lake Zürich',
+  },
+  {
+    src: '/images/seebad-enge/seebad-enge-2.jpg',
+    alt: 'Seebad Enge — evening atmosphere at the lakeside venue',
   },
 ];
 
 export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClose }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-
-  const validImages = SEEBAD_IMAGES.filter((img) => !failedImages.has(img.src));
-  const safeIndex = Math.min(activeIndex, Math.max(0, validImages.length - 1));
-  const hasMultiple = validImages.length > 1;
+  const hasMultiple = SEEBAD_IMAGES.length > 1;
 
   const goToPrev = () =>
-    setActiveIndex((prev) => (prev - 1 + validImages.length) % validImages.length);
-  const goToNext = () => setActiveIndex((prev) => (prev + 1) % validImages.length);
-
-  const handleImageError = (src: string) => {
-    setFailedImages((prev) => {
-      const next = new Set(prev);
-      next.add(src);
-      return next;
-    });
-  };
+    setActiveIndex((prev) => (prev - 1 + SEEBAD_IMAGES.length) % SEEBAD_IMAGES.length);
+  const goToNext = () => setActiveIndex((prev) => (prev + 1) % SEEBAD_IMAGES.length);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl" variant="dark" showCloseButton>
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-gray-darkest">
-        {SEEBAD_IMAGES.map((img, i) => {
-          const isFailed = failedImages.has(img.src);
-          if (isFailed) return null;
-          const visibleIndex = validImages.findIndex((v) => v.src === img.src);
-          return (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              key={img.src}
-              src={img.src}
-              alt={img.alt}
-              onError={() => handleImageError(img.src)}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              className={`absolute inset-0 size-full object-cover transition-opacity duration-500 ${
-                visibleIndex === safeIndex ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
-          );
-        })}
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" variant="dark" showCloseButton={false}>
+      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-brand-gray-darkest">
+        {SEEBAD_IMAGES.map((img, i) => (
+          <Image
+            key={img.src}
+            src={img.src}
+            alt={img.alt}
+            fill
+            sizes="(max-width: 512px) 100vw, 512px"
+            className={`object-cover transition-opacity duration-500 ${
+              i === activeIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+            quality={90}
+            unoptimized
+            priority={i === 0}
+          />
+        ))}
 
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/30 via-transparent to-brand-black/40 pointer-events-none" />
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close modal"
+          className="absolute top-3 right-3 size-9 rounded-full bg-brand-black/60 hover:bg-brand-black/80 text-brand-white flex items-center justify-center transition-colors cursor-pointer z-10"
+        >
+          <X size={18} />
+        </button>
 
         {hasMultiple && (
           <>
@@ -88,14 +87,14 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
             </button>
 
             <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
-              {validImages.map((img, i) => (
+              {SEEBAD_IMAGES.map((img, i) => (
                 <button
                   key={img.src}
                   type="button"
                   onClick={() => setActiveIndex(i)}
                   aria-label={`Go to photo ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                    i === safeIndex
+                    i === activeIndex
                       ? 'w-6 bg-brand-yellow-main'
                       : 'w-1.5 bg-brand-white/50 hover:bg-brand-white/80'
                   }`}

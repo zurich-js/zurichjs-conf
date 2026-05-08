@@ -62,7 +62,7 @@ export const LogoMarquee: React.FC<LogoMarqueeProps> = ({
           alt={`${item.name} logo`}
           width={140}
           height={50}
-          className="max-w-full max-h-full object-contain"
+          className="max-w-full max-h-full w-auto h-auto object-contain"
           unoptimized={item.logo.endsWith('.svg') || item.logo.endsWith('.gif')}
         />
       </div>

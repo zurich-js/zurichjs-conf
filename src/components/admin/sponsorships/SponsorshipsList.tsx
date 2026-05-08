@@ -97,6 +97,7 @@ export function SponsorshipsList({ deals, isLoading, onSelectDeal }: Sponsorship
                           src={deal.sponsor.logo_url}
                           alt={deal.sponsor.company_name}
                           fill
+                          sizes="40px"
                           className="rounded-lg object-contain bg-gray-100"
                           unoptimized={deal.sponsor.logo_url.endsWith('.svg') || deal.sponsor.logo_url.endsWith('.gif')}
                         />
@@ -166,7 +167,9 @@ export function SponsorshipsList({ deals, isLoading, onSelectDeal }: Sponsorship
                       src={deal.sponsor.logo_url}
                       alt={deal.sponsor.company_name}
                       fill
+                      sizes="40px"
                       className="rounded-lg object-contain bg-gray-100"
+                      unoptimized={deal.sponsor.logo_url.endsWith('.svg') || deal.sponsor.logo_url.endsWith('.gif')}
                     />
                   ) : (
                     <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">

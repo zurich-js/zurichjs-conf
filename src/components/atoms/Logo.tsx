@@ -26,7 +26,7 @@ export const Logo: React.FC<LogoProps> = ({
         alt="ZurichJS"
         width={width}
         height={height}
-        className="h-auto"
+        className="h-auto w-auto"
         priority
         unoptimized
       />

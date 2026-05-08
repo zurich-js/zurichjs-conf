@@ -58,14 +58,18 @@ export interface AboutAfterPartyDirection {
   detail: string;
 }
 
+export interface AboutAfterPartyImage {
+  src: string;
+  alt: string;
+}
+
 export interface AboutAfterPartyData {
   kicker: string;
   title: string;
   subtitle: string;
   description: string[];
   highlights: AboutAfterPartyHighlight[];
-  imageSrc: string;
-  imageAlt: string;
+  images: AboutAfterPartyImage[];
   ctaLabel: string;
   ctaUrl: string;
   websiteLabel: string;
@@ -219,8 +223,10 @@ export const aboutPageData: AboutPageData = {
       { icon: Wine, label: "Drinks & apéro included" },
       { icon: Clock, label: "19:00 – 23:00, after the conference" },
     ],
-    imageSrc: "https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-1.jpg",
-    imageAlt: "Seebad Enge — lakeside venue in Zürich with sunset views over Lake Zürich",
+    images: [
+      { src: "/images/seebad-enge/seebad-enge-1.jpg", alt: "Seebad Enge — lakeside venue in Zürich with sunset views over Lake Zürich" },
+      { src: "/images/seebad-enge/seebad-enge-2.jpg", alt: "Seebad Enge — evening atmosphere at the lakeside venue" },
+    ],
     ctaLabel: "Book your VIP ticket",
     ctaUrl: "/#tickets",
     websiteLabel: "Visit Seebad Enge",

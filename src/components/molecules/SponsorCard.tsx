@@ -84,12 +84,13 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         src={logo}
         alt={name ? `${name} logo` : 'Sponsor logo'}
         fill
+        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
         className={`object-contain p-4 transition-all duration-500 ease-in-out ${
           hasExplicitColorLogo
             ? 'opacity-100 group-hover:opacity-0'
             : 'grayscale group-hover:grayscale-0'
         }`}
-        unoptimized={isSvgOrGif}
+        unoptimized
       />
       {/* Color logo (only if explicitly provided) */}
       {hasExplicitColorLogo && (
@@ -97,8 +98,9 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
           src={logoColor}
           alt={name ? `${name} logo` : 'Sponsor logo'}
           fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
           className="object-contain p-4 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100"
-          unoptimized={isColorSvgOrGif}
+          unoptimized
         />
       )}
     </div>
