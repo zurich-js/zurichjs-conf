@@ -511,9 +511,6 @@ export default async function handler(
       },
       metadata,
       return_url: `${getBaseUrl(req)}/success?session_id={CHECKOUT_SESSION_ID}`,
-      phone_number_collection: {
-        enabled: true,
-      },
     };
 
     if (discounts && discounts.length > 0) {
