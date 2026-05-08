@@ -1,5 +1,6 @@
-import React from "react";
-import { Clock, ExternalLink } from "lucide-react";
+import React, { useState } from "react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, Clock, ExternalLink } from "lucide-react";
 import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/SEO";
 import { aboutPageData } from "@/data/about-us";
 import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
@@ -8,6 +9,58 @@ import {TeamMemberCard} from "@/components/molecules/TeamMemberCard";
 import {ValueCard} from "@/components/molecules/ValueCard";
 import { useCart } from "@/contexts/CartContext";
 import { useTicketPricing } from "@/hooks/useTicketPricing";
+
+function AfterPartyCarousel() {
+  const images = aboutPageData.afterParty.images;
+  const [current, setCurrent] = useState(0);
+
+  const prev = () => setCurrent((c) => (c === 0 ? images.length - 1 : c - 1));
+  const next = () => setCurrent((c) => (c === images.length - 1 ? 0 : c + 1));
+
+  return (
+    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-brand-gray-darkest group">
+      {images.map((img, i) => (
+        <Image
+          key={img.src}
+          src={img.src}
+          alt={img.alt}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className={`object-cover transition-opacity duration-500 ${i === current ? "opacity-100" : "opacity-0"}`}
+          priority={i === 0}
+        />
+      ))}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            aria-label="Previous image"
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={next}
+            aria-label="Next image"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronRight size={20} />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                aria-label={`Go to image ${i + 1}`}
+                className={`w-2 h-2 rounded-full transition-colors ${i === current ? "bg-white" : "bg-white/50"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function AboutUs() {
   // Breadcrumb schema for about page
@@ -257,15 +310,7 @@ export default function AboutUs() {
             </div>
 
             <div>
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-brand-gray-darkest">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={aboutPageData.afterParty.imageSrc}
-                  alt={aboutPageData.afterParty.imageAlt}
-                  className="size-full object-cover"
-                  loading="lazy"
-                />
-              </div>
+              <AfterPartyCarousel />
               <div className="mt-4 flex items-center gap-1.5 text-sm text-brand-gray-light">
                 <Clock size={14} className="text-brand-yellow-main" />
                 {aboutPageData.afterParty.schedule}
