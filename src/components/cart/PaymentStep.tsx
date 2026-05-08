@@ -29,6 +29,7 @@ interface PaymentStepProps {
   orderSummary: OrderSummary;
   totalAmount: string;
   currency: string;
+  phoneNumber?: string;
   onBack: () => void;
   onPaymentSubmitting?: () => void;
   onPaymentFailed?: () => void;
@@ -41,6 +42,7 @@ export function PaymentStep({
   orderSummary,
   totalAmount,
   currency,
+  phoneNumber,
   onBack,
   onPaymentSubmitting,
   onPaymentFailed,
@@ -91,6 +93,7 @@ export function PaymentStep({
                 <PaymentForm
                   totalAmount={totalAmount}
                   currency={currency}
+                  phoneNumber={phoneNumber}
                   analyticsContext={analyticsContext}
                   onPaymentSubmitting={onPaymentSubmitting}
                   onPaymentFailed={onPaymentFailed}
@@ -150,12 +153,14 @@ export function PaymentStep({
 function PaymentForm({
   totalAmount,
   currency,
+  phoneNumber,
   analyticsContext,
   onPaymentSubmitting,
   onPaymentFailed,
 }: {
   totalAmount: string;
   currency: string;
+  phoneNumber?: string;
   analyticsContext: PaymentAnalyticsContext;
   onPaymentSubmitting?: () => void;
   onPaymentFailed?: () => void;
@@ -177,6 +182,10 @@ function PaymentForm({
       ...analyticsContext,
       payment_ui: 'embedded_checkout',
     } as EventProperties<'payment_submitted'>);
+
+    if (phoneNumber) {
+      checkout.checkout.updatePhoneNumber(phoneNumber);
+    }
 
     const result = await checkout.checkout.confirm();
 
