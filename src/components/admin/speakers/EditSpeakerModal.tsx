@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { User } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import type { SpeakerWithSessions } from './types';
@@ -199,7 +200,7 @@ export function EditSpeakerModal({
                 <p className={`text-xs font-medium ${missingFields.profile_image_url ? 'text-red-700' : 'text-gray-600'}`}>Profile photo</p>
                 <div className="flex items-center gap-3">
                   {profileImageUrl ? (
-                    <img src={profileImageUrl} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
+                    <Image src={profileImageUrl} alt="Profile" width={64} height={64} className="w-16 h-16 rounded-full object-cover" />
                   ) : (
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
                       missingFields.profile_image_url ? 'bg-red-50 ring-2 ring-red-300' : 'bg-gray-200'
@@ -261,7 +262,7 @@ export function EditSpeakerModal({
                 <p className="text-xs font-medium text-gray-600">Portrait foreground</p>
                 <div className="flex items-center gap-3">
                   {portraitForegroundUrl ? (
-                    <img src={portraitForegroundUrl} alt="Portrait foreground" className="w-16 h-16 rounded-lg object-cover bg-gray-100" />
+                    <Image src={portraitForegroundUrl} alt="Portrait foreground" width={64} height={64} className="w-16 h-16 rounded-lg object-cover bg-gray-100" />
                   ) : (
                     <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
                       <User className="w-8 h-8 text-gray-400" />
@@ -291,7 +292,7 @@ export function EditSpeakerModal({
                 <p className="text-xs font-medium text-gray-600">Portrait background</p>
                 <div className="flex items-center gap-3">
                   {portraitBackgroundUrl ? (
-                    <img src={portraitBackgroundUrl} alt="Portrait background" className="w-16 h-16 rounded-lg object-cover" />
+                    <Image src={portraitBackgroundUrl} alt="Portrait background" width={64} height={64} className="w-16 h-16 rounded-lg object-cover" />
                   ) : (
                     <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
                       <span className="text-xs text-gray-500">None</span>
