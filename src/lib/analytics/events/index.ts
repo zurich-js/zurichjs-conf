@@ -215,7 +215,7 @@ import type {
   EasterEggClaimFailedEvent,
 } from './easter-egg-events';
 import type { TechStackDetectedEvent } from './tech-stack-events';
-import type { SponsorClickedEvent, CommunityPartnerClickedEvent } from './sponsorship-events';
+import type { SponsorClickedEvent, CommunityPartnerClickedEvent, SponsorQuoteViewedEvent } from './sponsorship-events';
 
 /**
  * Union of all possible analytics events.
@@ -291,7 +291,8 @@ export type AnalyticsEvent =
   | EasterEggClaimFailedEvent
   | TechStackDetectedEvent
   | SponsorClickedEvent
-  | CommunityPartnerClickedEvent;
+  | CommunityPartnerClickedEvent
+  | SponsorQuoteViewedEvent;
 
 /**
  * Extract event name from AnalyticsEvent
