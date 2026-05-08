@@ -21,10 +21,15 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
   const { sponsor, tier, line_items } = deal;
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<EditFormData>(getInitialEditForm(sponsor));
+  const [logoColorBackground, setLogoColorBackground] = useState(sponsor.logo_background_color || '');
 
   useEffect(() => {
     if (isEditing) setEditForm(getInitialEditForm(sponsor));
   }, [isEditing, sponsor]);
+
+  useEffect(() => {
+    setLogoColorBackground(sponsor.logo_background_color || '');
+  }, [sponsor]);
 
   const allowedTransitions = VALID_DEAL_STATUS_TRANSITIONS[deal.status as SponsorshipDealStatus] || [];
 
@@ -76,6 +81,16 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
       }),
     }, setError, setIsUpdating, onUpdate);
     setIsEditing(false);
+  };
+
+  const handleSaveLogoColorBackground = async () => {
+    await apiCall(`/api/admin/sponsorships/${sponsor.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        logoBackgroundColor: logoColorBackground.trim() || null,
+      }),
+    }, setError, setIsUpdating, onUpdate);
   };
 
   const updateEditForm = (field: keyof EditFormData, value: string) => {
@@ -171,6 +186,28 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
           currentLogoUrl={sponsor.logo_url_color}
           onUpdate={onUpdate}
         />
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-700">Hover Background Color</h3>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              value={logoColorBackground}
+              onChange={(e) => setLogoColorBackground(e.target.value)}
+              placeholder="#ffffff or rgb(0, 0, 0)"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-brand-primary sm:max-w-xs"
+            />
+            <button
+              onClick={handleSaveLogoColorBackground}
+              disabled={isUpdating}
+              className="px-4 py-2 text-sm font-medium text-black bg-brand-primary hover:bg-[#e6d766] rounded-lg transition-colors disabled:opacity-50"
+            >
+              Save Background
+            </button>
+          </div>
+          <p className="text-xs text-gray-500">
+            Optional: this background stays transparent by default and fades in behind the hover color logo.
+          </p>
+        </div>
       </div>
 
       {/* Logo Visibility */}

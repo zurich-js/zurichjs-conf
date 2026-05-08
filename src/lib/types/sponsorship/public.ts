@@ -16,6 +16,7 @@ export interface PublicSponsor {
   name: string;
   logo: string;
   logoColor: string | null;
+  logoColorBackground: string | null;
   url: string | null;
   tier: string;
   sizes: Record<string, GridSize>;

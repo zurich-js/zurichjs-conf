@@ -54,6 +54,7 @@ export interface Sponsor {
   // Logo Management
   logo_url: string | null;
   logo_url_color: string | null;
+  logo_background_color: string | null;
   is_logo_public: boolean;
 
   // Internal Notes
