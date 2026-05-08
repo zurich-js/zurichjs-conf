@@ -3,10 +3,10 @@
  * Showcases the private VIP after-party venue at Seebad Enge
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Modal, ModalBody, ModalFooter, Button } from '@/components/atoms';
-import { Clock, Sunset, Wine, Waves, ExternalLink } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 
 export interface SeebadEngeModalProps {
   /** Whether the modal is open */
@@ -15,73 +15,132 @@ export interface SeebadEngeModalProps {
   onClose: () => void;
 }
 
-const SEEBAD_ENGE_IMAGE =
-  'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-1.jpg';
 const SEEBAD_ENGE_URL = 'https://www.seebadenge.ch/wp/';
 
-const HIGHLIGHTS: { icon: React.ComponentType<{ className?: string; size?: number }>; label: string }[] = [
-  { icon: Sunset, label: 'Swiss September sunset over the lake' },
-  { icon: Waves, label: 'Optional swim in Lake Zürich' },
-  { icon: Wine, label: 'Drinks & apéro included' },
-  { icon: Clock, label: '19:00 – 23:00, after the conference' },
+const SEEBAD_IMAGES: { src: string; alt: string }[] = [
+  {
+    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-1.jpg',
+    alt: 'Seebad Enge — lakeside swimming deck on Lake Zürich',
+  },
+  {
+    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-2.jpg',
+    alt: 'Seebad Enge — sunset over the lake',
+  },
+  {
+    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-3.jpg',
+    alt: 'Seebad Enge — bar and apéro deck',
+  },
+  {
+    src: 'https://www.seebadenge.ch/wp/wp-content/uploads/2017/08/page-img-4.jpg',
+    alt: 'Seebad Enge — guests enjoying the lakeside view',
+  },
 ];
 
 export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClose }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const validImages = SEEBAD_IMAGES.filter((img) => !failedImages.has(img.src));
+  const safeIndex = Math.min(activeIndex, Math.max(0, validImages.length - 1));
+  const hasMultiple = validImages.length > 1;
+
+  const goToPrev = () =>
+    setActiveIndex((prev) => (prev - 1 + validImages.length) % validImages.length);
+  const goToNext = () => setActiveIndex((prev) => (prev + 1) % validImages.length);
+
+  const handleImageError = (src: string) => {
+    setFailedImages((prev) => {
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="2xl" variant="dark" showCloseButton>
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-gray-darkest">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={SEEBAD_ENGE_IMAGE}
-          alt="Seebad Enge — lakeside venue in Zürich"
-          className="size-full object-cover"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-black/95 via-brand-black/60 to-brand-black/30" />
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-          <p className="text-xs uppercase tracking-widest font-medium text-brand-yellow-main mb-1">
-            VIP Exclusive
-          </p>
+        {SEEBAD_IMAGES.map((img, i) => {
+          const isFailed = failedImages.has(img.src);
+          if (isFailed) return null;
+          const visibleIndex = validImages.findIndex((v) => v.src === img.src);
+          return (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              key={img.src}
+              src={img.src}
+              alt={img.alt}
+              onError={() => handleImageError(img.src)}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              className={`absolute inset-0 size-full object-cover transition-opacity duration-500 ${
+                visibleIndex === safeIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          );
+        })}
+
+        {hasMultiple && (
+          <>
+            <button
+              type="button"
+              onClick={goToPrev}
+              aria-label="Previous photo"
+              className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-brand-black/60 hover:bg-brand-black/80 text-brand-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={goToNext}
+              aria-label="Next photo"
+              className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-brand-black/60 hover:bg-brand-black/80 text-brand-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronRight size={18} />
+            </button>
+
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+              {validImages.map((img, i) => (
+                <button
+                  key={img.src}
+                  type="button"
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Go to photo ${i + 1}`}
+                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                    i === safeIndex
+                      ? 'w-6 bg-brand-yellow-main'
+                      : 'w-1.5 bg-brand-white/50 hover:bg-brand-white/80'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <ModalBody className="space-y-4">
+        <div>
           <h2 className="text-xl sm:text-2xl font-bold text-brand-white">
             After Party @ Seebad Enge
           </h2>
+          <p className="flex items-center gap-1.5 text-sm text-brand-yellow-main mt-1.5">
+            <Clock size={14} />
+            19:00 – 23:00, after the conference
+          </p>
         </div>
-      </div>
 
-      <ModalBody className="space-y-5">
         <p className="text-brand-gray-light leading-relaxed text-sm">
           {`We've booked `}
           <strong className="text-brand-white">Seebad Enge</strong>
-          {` as our private after-party venue — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with fellow VIPs and speakers, take in the September summer sunset, and enjoy drinks and apéro in one of Zürich's most iconic lakeside spots.`}
-        </p>
-
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="list">
-          {HIGHLIGHTS.map(({ icon: Icon, label }) => (
-            <li
-              key={label}
-              className="flex items-start gap-2.5 bg-brand-gray-dark/50 rounded-xl p-3 text-sm text-brand-white"
-            >
-              <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
-              <span>{label}</span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="text-xs text-brand-gray-light leading-relaxed">
-          Exclusive to VIP ticket holders. Limited to 15 seats.
+          {` as our private after-party venue — a beautiful taste of Swiss scenery, right on the shores of Lake Zürich. Wind down with fellow VIPs and speakers, tuck into a barbecue and drinks as the September sun sets, and take a dip in the lake if you're feeling brave.`}
         </p>
       </ModalBody>
 
-      <ModalFooter variant="dark" className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+      <ModalFooter variant="dark" className="flex justify-end">
         <Link href={SEEBAD_ENGE_URL} target="_blank" rel="noopener noreferrer">
           <Button variant="ghost" asChild>
             Visit Seebad Enge
             <ExternalLink size={14} />
           </Button>
         </Link>
-        <Button variant="accent" onClick={onClose}>
-          See you lakeside
-        </Button>
       </ModalFooter>
     </Modal>
   );
