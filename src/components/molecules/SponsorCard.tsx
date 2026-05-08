@@ -11,6 +11,8 @@ export interface SponsorCardProps {
   logo?: string;
   /** Full-color logo — shown on hover. If omitted, `logo` is used with a CSS grayscale filter */
   logoColor?: string;
+  /** Optional background color to reveal behind the color logo on hover */
+  logoColorBackground?: string | null;
   /** Link to sponsor website */
   url?: string | null;
   /** CTA href for empty state (default: /sponsorship) */
@@ -22,6 +24,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   name,
   logo,
   logoColor,
+  logoColorBackground,
   url,
   ctaHref = '/sponsorship',
   isCta
@@ -59,7 +62,19 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
 
   // --- Filled state: keep the base logo as-is, unless we need the grayscale fallback. ---
   const content = (
-    <div className="relative w-full h-full flex items-center justify-center group">
+    <div
+        className={clsx(
+            'relative w-full h-full flex items-center justify-center rounded-2xl border-2 border-transparent',
+            hasExplicitColorLogo && !logoColorBackground && 'group-hover:border-white',
+        )}
+    >
+      {hasExplicitColorLogo && logoColorBackground && (
+        <div
+          className="absolute inset-0 opacity-0 rounded-2xl transition-opacity duration-500 ease-in-out group-hover:opacity-100"
+          style={{ backgroundColor: logoColorBackground }}
+          aria-hidden="true"
+        />
+      )}
       {/* Default (grayscale) logo */}
       <Image
         src={logo}

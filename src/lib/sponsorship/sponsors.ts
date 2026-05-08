@@ -101,6 +101,9 @@ export async function updateSponsor(
   if (data.contactPhone !== undefined) updateData.contact_phone = data.contactPhone;
   if (data.internalNotes !== undefined) updateData.internal_notes = data.internalNotes;
   if (data.isLogoPublic !== undefined) updateData.is_logo_public = data.isLogoPublic;
+  if (data.logoBackgroundColor !== undefined) {
+    updateData.logo_background_color = data.logoBackgroundColor;
+  }
 
   // Handle partial billing address updates
   if (data.billingAddress) {
@@ -314,6 +317,7 @@ export async function getPublicSponsors(): Promise<PublicSponsor[]> {
       id,
       company_name,
       company_website,
+      logo_background_color,
       logo_url,
       logo_url_color,
       sponsorship_deals!inner(tier_id, status)
@@ -339,6 +343,7 @@ export async function getPublicSponsors(): Promise<PublicSponsor[]> {
       name: sponsor.company_name,
       logo: sponsor.logo_url!,
       logoColor: sponsor.logo_url_color,
+      logoColorBackground: sponsor.logo_background_color,
       url: sponsor.company_website,
       tier: tierId,
       sizes: displayConfig.sizes,

@@ -45,6 +45,7 @@ export interface UpdateSponsorRequest {
   contactPhone?: string | null;
   internalNotes?: string | null;
   isLogoPublic?: boolean;
+  logoBackgroundColor?: string | null;
 }
 
 /**

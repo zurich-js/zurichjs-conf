@@ -1678,6 +1678,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           is_logo_public: boolean
+          logo_background_color: string | null
           logo_url: string | null
           logo_url_color: string | null
           metadata: Json | null
@@ -1698,6 +1699,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_logo_public?: boolean
+          logo_background_color?: string | null
           logo_url?: string | null
           logo_url_color?: string | null
           metadata?: Json | null
@@ -1718,6 +1720,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_logo_public?: boolean
+          logo_background_color?: string | null
           logo_url?: string | null
           logo_url_color?: string | null
           metadata?: Json | null
@@ -3104,4 +3107,3 @@ export const Constants = {
     },
   },
 } as const
-
