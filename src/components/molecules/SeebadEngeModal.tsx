@@ -78,6 +78,8 @@ export const SeebadEngeModal: React.FC<SeebadEngeModalProps> = ({ isOpen, onClos
           );
         })}
 
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/30 via-transparent to-brand-black/40 pointer-events-none" />
+
         {hasMultiple && (
           <>
             <button
