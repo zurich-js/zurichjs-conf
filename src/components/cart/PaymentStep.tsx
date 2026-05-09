@@ -13,7 +13,7 @@ import {
   PaymentElement,
   useCheckout,
 } from '@stripe/react-stripe-js/checkout';
-import { ChevronLeft, Lock } from 'lucide-react';
+import { AlertCircle, ChevronLeft, Lock } from 'lucide-react';
 import { getStripePromise } from '@/lib/stripe/client-browser';
 import { Button, Heading } from '@/components/atoms';
 import { CartSummary } from '@/components/molecules';
@@ -29,7 +29,6 @@ interface PaymentStepProps {
   orderSummary: OrderSummary;
   totalAmount: string;
   currency: string;
-  phoneNumber?: string;
   onBack: () => void;
   onPaymentSubmitting?: () => void;
   onPaymentFailed?: () => void;
@@ -42,7 +41,6 @@ export function PaymentStep({
   orderSummary,
   totalAmount,
   currency,
-  phoneNumber,
   onBack,
   onPaymentSubmitting,
   onPaymentFailed,
@@ -93,7 +91,6 @@ export function PaymentStep({
                 <PaymentForm
                   totalAmount={totalAmount}
                   currency={currency}
-                  phoneNumber={phoneNumber}
                   analyticsContext={analyticsContext}
                   onPaymentSubmitting={onPaymentSubmitting}
                   onPaymentFailed={onPaymentFailed}
@@ -153,14 +150,12 @@ export function PaymentStep({
 function PaymentForm({
   totalAmount,
   currency,
-  phoneNumber,
   analyticsContext,
   onPaymentSubmitting,
   onPaymentFailed,
 }: {
   totalAmount: string;
   currency: string;
-  phoneNumber?: string;
   analyticsContext: PaymentAnalyticsContext;
   onPaymentSubmitting?: () => void;
   onPaymentFailed?: () => void;
@@ -182,10 +177,6 @@ function PaymentForm({
       ...analyticsContext,
       payment_ui: 'embedded_checkout',
     } as EventProperties<'payment_submitted'>);
-
-    if (phoneNumber) {
-      checkout.checkout.updatePhoneNumber(phoneNumber);
-    }
 
     const result = await checkout.checkout.confirm();
 
@@ -223,12 +214,6 @@ function PaymentForm({
 
       <PaymentElement />
 
-      {errorMessage && (
-        <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-sm text-red-700">{errorMessage}</p>
-        </div>
-      )}
-
       <Button
         type="submit"
         variant="primary"
@@ -238,6 +223,23 @@ function PaymentForm({
       >
         {isProcessing ? 'Processing...' : `Pay ${totalAmount} ${currency}`}
       </Button>
+
+      {errorMessage && (
+        <div className="mt-4 border-2 border-brand-red/50 rounded-lg p-4">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-brand-red shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-brand-red">{errorMessage}</p>
+              <p className="mt-2 text-xs text-black">
+                If the issue persists, please contact us at{' '}
+                <a href="mailto:hello@zurichjs.com" className="underline text-black hover:text-brand-yellow-main">
+                  hello@zurichjs.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

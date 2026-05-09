@@ -420,7 +420,6 @@ export default function CartPage() {
                 orderSummary={orderSummary}
                 totalAmount={orderSummary.total.toFixed(2)}
                 currency={orderSummary.currency}
-                phoneNumber={savedBillingData?.phone || ''}
                 onBack={() => {
                   setClientSecret(null);
                   setCheckoutSessionId(null);
