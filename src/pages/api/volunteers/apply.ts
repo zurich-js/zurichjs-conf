@@ -53,6 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       motivation: data.motivation,
       availability: data.availability,
       relevantExperience: data.relevant_experience,
+      location: data.location || '',
       affiliation: data.affiliation,
       notes: data.notes,
     }).catch((err) => {

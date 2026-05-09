@@ -79,6 +79,7 @@ export async function submitApplication(
         motivation: formData.motivation,
         availability: formData.availability,
         relevant_experience: formData.relevant_experience,
+        location: formData.location,
         affiliation: formData.affiliation || null,
         notes: formData.notes || null,
         commitment_confirmed: formData.commitment_confirmed,

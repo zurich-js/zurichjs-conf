@@ -109,6 +109,7 @@ export interface VolunteerApplication {
   motivation: string;
   availability: string;
   relevant_experience: string;
+  location: string | null;
   affiliation: string | null;
   notes: string | null;
   commitment_confirmed: boolean;

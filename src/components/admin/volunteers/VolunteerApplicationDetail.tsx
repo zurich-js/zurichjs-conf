@@ -147,6 +147,9 @@ export function VolunteerApplicationDetail({ application, isOpen, onClose }: Vol
                 </a>
               </DetailRow>
             )}
+            {application.location && (
+              <DetailRow label="Location">{application.location}</DetailRow>
+            )}
             {application.affiliation && (
               <DetailRow label="Affiliation">{application.affiliation}</DetailRow>
             )}

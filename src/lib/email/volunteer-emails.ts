@@ -15,6 +15,7 @@ interface VolunteerApplicationEmailData {
   motivation: string;
   availability: string;
   relevantExperience: string;
+  location: string;
   affiliation: string | null;
   notes: string | null;
 }
@@ -183,6 +184,14 @@ function buildAdminNotificationHtml(data: VolunteerApplicationEmailData): string
                   </td>
                   <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
                     <a href="${data.linkedinUrl}" style="color: #258BCC; text-decoration: underline;">${data.linkedinUrl}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <strong style="color: #6b7280;">Location:</strong>
+                  </td>
+                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+                    ${data.location}
                   </td>
                 </tr>
                 <tr>

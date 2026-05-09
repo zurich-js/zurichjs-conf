@@ -43,6 +43,7 @@ export const volunteerApplicationSchema = z.object({
     .string()
     .min(20, 'Please provide at least 20 characters about your experience')
     .max(2000, 'Experience description is too long'),
+  location: z.string().min(1, 'Please let us know where you are based'),
   affiliation: z.string().max(200).optional().or(z.literal('')),
   notes: z.string().max(1000).optional().or(z.literal('')),
   commitment_confirmed: z.literal(true, {

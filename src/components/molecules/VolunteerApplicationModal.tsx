@@ -26,6 +26,7 @@ interface FormState {
   phone: string;
   linkedin_url: string;
   website_url: string;
+  location: string;
   motivation: string;
   availability: string;
   relevant_experience: string;
@@ -43,6 +44,7 @@ const INITIAL_FORM: FormState = {
   phone: '',
   linkedin_url: '',
   website_url: '',
+  location: '',
   motivation: '',
   availability: '',
   relevant_experience: '',
@@ -88,6 +90,7 @@ export function VolunteerApplicationModal({
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = 'Invalid email';
     if (!form.phone.trim()) newErrors.phone = 'Phone number is required';
     if (!form.linkedin_url.trim()) newErrors.linkedin_url = 'LinkedIn profile is required';
+    if (!form.location.trim()) newErrors.location = 'Please let us know where you are based';
     if (!form.motivation.trim()) newErrors.motivation = 'Motivation is required';
     else if (form.motivation.trim().length < 50) newErrors.motivation = 'Please provide at least 50 characters';
     if (!form.availability.trim()) newErrors.availability = 'Availability is required';
@@ -240,14 +243,26 @@ export function VolunteerApplicationModal({
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-brand-gray-light mb-1">Company / Community</label>
-                    <Input
-                      value={form.affiliation}
-                      onChange={(e) => updateField('affiliation', e.target.value)}
-                      placeholder="Optional"
-                      fullWidth
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-brand-gray-light mb-1">Where are you based? *</label>
+                      <Input
+                        value={form.location}
+                        onChange={(e) => updateField('location', e.target.value)}
+                        error={errors.location}
+                        placeholder="e.g. Zurich, Switzerland"
+                        fullWidth
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-brand-gray-light mb-1">Company / Community</label>
+                      <Input
+                        value={form.affiliation}
+                        onChange={(e) => updateField('affiliation', e.target.value)}
+                        placeholder="Optional"
+                        fullWidth
+                      />
+                    </div>
                   </div>
                 </div>
 
