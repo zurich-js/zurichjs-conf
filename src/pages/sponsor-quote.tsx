@@ -145,21 +145,23 @@ function LineRow({
 }) {
   const { chf, estimate } = fmtWithEstimate(amount, currency, rates);
   const excluded = optionalToggleable && !optionalIncluded;
+  const hasToggles = optionalToggleable || (exclusivityToggleable && !excluded);
   return (
-    <div className={`space-y-1.5 ${excluded ? 'opacity-50' : ''}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
+    <div className={`${excluded ? 'opacity-40' : ''}`}>
+      {/* Main row: label + price */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {exclusive && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
-            <span className={`text-sm ${excluded ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{label}</span>
+            <span className={`text-[13px] sm:text-sm leading-snug ${excluded ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{label}</span>
             {exclusive && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
+              <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
                 Exclusive
               </span>
             )}
           </div>
           {unitLabel && !excluded && (
-            <span className="block text-xs text-gray-500">
+            <span className="block text-[11px] sm:text-xs text-gray-500 mt-0.5">
               {unitLabel}
               {discount && <span className="text-green-600 ml-1">({discount})</span>}
             </span>
@@ -167,30 +169,31 @@ function LineRow({
         </div>
         <div className="text-right shrink-0">
           {excluded ? (
-            <span className="text-sm text-gray-400">--</span>
+            <span className="text-[13px] sm:text-sm text-gray-400">--</span>
           ) : forgone ? (
-            <span className="text-sm font-medium text-orange-500 line-through">Forgone</span>
+            <span className="text-[13px] sm:text-sm font-medium text-orange-500 line-through">Forgone</span>
           ) : includedInTier ? (
-            <span className="text-sm font-medium text-green-600">Included</span>
+            <span className="text-[13px] sm:text-sm font-medium text-green-600">Included</span>
           ) : (
             <>
               {originalAmount !== undefined && (
-                <span className="block text-xs text-gray-400 line-through">{fmtChf(originalAmount)}</span>
+                <span className="block text-[11px] text-gray-400 line-through">{fmtChf(originalAmount)}</span>
               )}
-              <span className="text-sm font-medium text-gray-900">{chf}</span>
-              {estimate && <span className="block text-xs text-gray-400">({estimate})</span>}
+              <span className="text-[13px] sm:text-sm font-medium text-gray-900">{chf}</span>
+              {estimate && <span className="block text-[11px] text-gray-400">({estimate})</span>}
             </>
           )}
         </div>
       </div>
+      {/* Exclusivity premium detail */}
       {exclusive && exclusivityPremium !== undefined && exclusivityPremium > 0 && !excluded && (
-        <div className="ml-5 text-xs text-amber-600">
+        <div className="text-[11px] sm:text-xs text-amber-600 mt-1 pl-5">
           + Exclusivity premium: {fmtChf(exclusivityPremium)}
         </div>
       )}
       {/* Sponsor toggle controls */}
-      {(optionalToggleable || (exclusivityToggleable && !excluded)) && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 ml-0.5">
+      {hasToggles && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 pt-2 border-t border-gray-100">
           {optionalToggleable && onToggleOptional && (
             <ToggleSwitch on={!!optionalIncluded} color="purple"
               label="Include this perk?"
@@ -273,14 +276,14 @@ function OptionCard({
                 <Package className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-gray-400" />
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{category}</h4>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="space-y-1.5 sm:space-y-1">
                 {categoryItems.map((item) => {
                   const kept = item.includedInTier ? item.quantity - item.forgoneQty : item.quantity;
                   const isFullyForgone = item.includedInTier && item.forgoneQty >= item.quantity;
                   const isPartiallyForgone = item.includedInTier && item.forgoneQty > 0 && !isFullyForgone;
                   const hasToggle = optionalIds.has(item.id) || exclusivityToggleableIds.has(item.id);
                   return (
-                    <div key={item.id} className={`py-2.5 first:pt-1.5 last:pb-0 ${hasToggle ? 'bg-gray-50/60 -mx-2 px-2 rounded-lg' : ''}`}>
+                    <div key={item.id} className={`${hasToggle ? 'bg-gray-50/70 border border-gray-100 -mx-1.5 sm:-mx-2 px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl' : 'py-1.5 sm:py-2'}`}>
                       <LineRow
                         label={kept > 1 ? `${kept}× ${item.label}` : item.label}
                         unitLabel={!item.includedInTier && item.quantity > 1 ? `${fmtChf(item.unitPriceCents)} each` : undefined}
