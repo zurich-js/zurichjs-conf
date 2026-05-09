@@ -14,6 +14,7 @@ import {
   Package,
   Star,
   Wallet,
+  ToggleRight,
 } from 'lucide-react';
 import type {
   SponsorQuoteCurrency,
@@ -111,6 +112,7 @@ export function SponsorQuoteOptionEditor({
       quantity: 1, unitPriceCents: cat.priceCHF, discountPercent: 0,
       includedInTier: false, forgoneQty: 0, forgoneValuePerUnitCents: 0, exclusive: false,
       exclusivityPremiumType: 'fixed', exclusivityPremiumValue: cat.suggestedExclusivityPremiumCHF,
+      exclusivityToggleable: false, optional: false, optionalDefault: true,
     };
     onUpdate({ ...option, items: [...option.items, item] });
   };
@@ -120,6 +122,7 @@ export function SponsorQuoteOptionEditor({
       id: uid(), category: 'Custom', label: '', quantity: 1, unitPriceCents: 0,
       discountPercent: 0, includedInTier: false, forgoneQty: 0, forgoneValuePerUnitCents: 0,
       exclusive: false, exclusivityPremiumType: 'fixed', exclusivityPremiumValue: 0,
+      exclusivityToggleable: false, optional: false, optionalDefault: true,
     };
     onUpdate({ ...option, items: [...option.items, item] });
   };
@@ -353,9 +356,45 @@ export function SponsorQuoteOptionEditor({
                                         className={`${numberCls} border-amber-300 focus:ring-amber-500`} />
                                     )}
                                   </div>
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={item.exclusivityToggleable}
+                                      onChange={(e) => updateItem(idx, { exclusivityToggleable: e.target.checked })}
+                                      className="w-4 h-4 rounded border-amber-300 text-amber-500 focus:ring-amber-500" />
+                                    <span className="text-xs text-amber-700">Sponsor can toggle</span>
+                                  </label>
+                                  {item.exclusivityToggleable && (
+                                    <span className="text-xs text-amber-600">
+                                      Default: {item.exclusive ? 'exclusive (opt-out)' : 'non-exclusive (opt-in)'}
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </>
+                          )}
+
+                          {/* Optional — sponsor can toggle this item on/off */}
+                          {!item.includedInTier && (
+                            <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={item.optional}
+                                  onChange={(e) => updateItem(idx, { optional: e.target.checked })}
+                                  className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500" />
+                                <span className="text-sm text-gray-700">Optional for sponsor</span>
+                              </label>
+                              {item.optional && (
+                                <>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                                    <ToggleRight className="w-3 h-3" /> Toggleable
+                                  </span>
+                                  <label className="flex items-center gap-2 cursor-pointer ml-2">
+                                    <input type="checkbox" checked={item.optionalDefault}
+                                      onChange={(e) => updateItem(idx, { optionalDefault: e.target.checked })}
+                                      className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500" />
+                                    <span className="text-xs text-purple-700">Included by default</span>
+                                  </label>
+                                </>
+                              )}
+                            </div>
                           )}
                         </>
                       )}
