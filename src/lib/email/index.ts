@@ -46,3 +46,6 @@ export { addNewsletterContact } from './newsletter';
 
 // Student ticket waitlist
 export { addStudentWaitlistContact } from './student-waitlist';
+
+// Volunteer emails
+export { sendVolunteerApplicationConfirmationEmail } from './volunteer-emails';
