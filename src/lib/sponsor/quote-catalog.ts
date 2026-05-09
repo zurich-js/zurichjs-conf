@@ -185,6 +185,9 @@ export function itemsFromTier(
     exclusive: false,
     exclusivityPremiumType: 'fixed',
     exclusivityPremiumValue: 0,
+    exclusivityToggleable: false,
+    optional: false,
+    optionalDefault: true,
   };
 
   const included: SponsorQuoteItem[] = tier.includedItems.map((inc) => ({
@@ -200,6 +203,9 @@ export function itemsFromTier(
     exclusive: false,
     exclusivityPremiumType: 'fixed' as const,
     exclusivityPremiumValue: 0,
+    exclusivityToggleable: false,
+    optional: false,
+    optionalDefault: true,
   }));
 
   return [base, ...included];

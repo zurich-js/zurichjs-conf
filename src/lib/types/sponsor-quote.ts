@@ -49,6 +49,9 @@ export interface SponsorQuoteItem {
   exclusive: boolean;
   exclusivityPremiumType: 'fixed' | 'percent';
   exclusivityPremiumValue: number;
+  exclusivityToggleable: boolean; // sponsor can toggle exclusivity on/off on public page
+  optional: boolean; // sponsor can toggle this item on/off on public page
+  optionalDefault: boolean; // true = included by default, false = excluded by default
 }
 
 /** Arbitrary discount line item */
@@ -79,6 +82,9 @@ export interface SponsorItemBreakdown {
   forgoneCreditCents: number; // forgoneQty * forgoneValuePerUnitCents
   exclusive: boolean;
   exclusivityPremiumCents: number;
+  exclusivityToggleable: boolean;
+  optional: boolean;
+  optionalDefault: boolean;
   netCents: number;
 }
 

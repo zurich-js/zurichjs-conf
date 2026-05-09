@@ -64,7 +64,10 @@ function computeItemBreakdown(item: SponsorQuoteItem): SponsorItemBreakdown {
       quantity: item.quantity, unitPriceCents: 0,
       subtotalCents: 0, discountPercent: 0, discountCents: 0,
       includedInTier: true, forgoneQty, forgoneCreditCents,
-      exclusive: false, exclusivityPremiumCents: 0, netCents: 0,
+      exclusive: false, exclusivityPremiumCents: 0,
+      exclusivityToggleable: item.exclusivityToggleable ?? false,
+      optional: item.optional ?? false, optionalDefault: item.optionalDefault ?? true,
+      netCents: 0,
     };
   }
 
@@ -86,7 +89,10 @@ function computeItemBreakdown(item: SponsorQuoteItem): SponsorItemBreakdown {
     quantity: item.quantity, unitPriceCents: item.unitPriceCents,
     subtotalCents, discountPercent: item.discountPercent, discountCents,
     includedInTier: item.includedInTier, forgoneQty, forgoneCreditCents,
-    exclusive: item.exclusive, exclusivityPremiumCents, netCents,
+    exclusive: item.exclusive, exclusivityPremiumCents,
+    exclusivityToggleable: item.exclusivityToggleable ?? false,
+    optional: item.optional ?? false, optionalDefault: item.optionalDefault ?? true,
+    netCents,
   };
 }
 
@@ -173,7 +179,7 @@ export function computeSponsorQuoteBreakdown(state: SponsorQuoteState): SponsorQ
 }
 
 // ---------------------------------------------------------------------------
-// URL encode / decode — v5 (adds forgoneQty/forgoneValuePerUnitCents)
+// URL encode / decode — v6 (adds exclusivityToggleable, optional, optionalDefault)
 // ---------------------------------------------------------------------------
 
 type CompactItem = [
@@ -181,6 +187,7 @@ type CompactItem = [
   priceCents: number, discountPct: number,
   includedInTier: 0 | 1, forgoneQty: number, forgoneValuePerUnit: number,
   exclusive: 0 | 1, premiumType: 0 | 1, premiumValue: number,
+  exclusivityToggleable: 0 | 1, optional: 0 | 1, optionalDefault: 0 | 1,
 ];
 type CompactDiscount = [id: string, label: string, type: 0 | 1, value: number];
 type CompactOption = [
@@ -189,7 +196,7 @@ type CompactOption = [
   items: CompactItem[], discounts: CompactDiscount[],
 ];
 type CompactSponsorQuote = [
-  version: 5,
+  version: 6,
   companyName: string, contactName: string, contactEmail: string, notes: string,
   currency: SponsorQuoteCurrency, validUntil: string, recommendedOptionId: string,
   options: CompactOption[],
@@ -197,7 +204,7 @@ type CompactSponsorQuote = [
 
 function toCompact(state: SponsorQuoteState): CompactSponsorQuote {
   return [
-    5,
+    6,
     state.companyName, state.contactName, state.contactEmail, state.notes,
     state.currency, state.validUntil, state.recommendedOptionId ?? '',
     state.options.map((o): CompactOption => [
@@ -207,13 +214,14 @@ function toCompact(state: SponsorQuoteState): CompactSponsorQuote {
         i.id, i.category, i.label, i.quantity, i.unitPriceCents, i.discountPercent,
         i.includedInTier ? 1 : 0, i.forgoneQty, i.forgoneValuePerUnitCents,
         i.exclusive ? 1 : 0, i.exclusivityPremiumType === 'fixed' ? 1 : 0, i.exclusivityPremiumValue,
+        i.exclusivityToggleable ? 1 : 0, i.optional ? 1 : 0, i.optionalDefault ? 1 : 0,
       ]),
       o.customDiscounts.map((d) => [d.id, d.label, d.type === 'fixed' ? 1 : 0, d.value]),
     ]),
   ];
 }
 
-function fromCompactV5(c: CompactSponsorQuote): SponsorQuoteState {
+function fromCompactV5or6(c: CompactSponsorQuote): SponsorQuoteState {
   return {
     companyName: c[1] ?? '', contactName: c[2] ?? '', contactEmail: c[3] ?? '',
     notes: c[4] ?? '', currency: c[5] ?? 'CHF', validUntil: c[6] ?? '',
@@ -228,6 +236,9 @@ function fromCompactV5(c: CompactSponsorQuote): SponsorQuoteState {
         exclusive: i[9] === 1,
         exclusivityPremiumType: i[10] === 1 ? 'fixed' as const : 'percent' as const,
         exclusivityPremiumValue: i[11],
+        exclusivityToggleable: i[12] === 1,
+        optional: i[13] === 1,
+        optionalDefault: i[14] === undefined ? true : i[14] === 1,
       })),
       customDiscounts: (o[6] ?? []).map((d) => ({
         id: d[0], label: d[1], type: d[2] === 1 ? 'fixed' as const : 'percent' as const, value: d[3],
@@ -256,6 +267,7 @@ function fromOlderCompact(c: unknown[]): SponsorQuoteState {
         exclusive: i[hasAddOnBudget ? 7 : 6] === 1,
         exclusivityPremiumType: i[hasAddOnBudget ? 8 : 7] === 1 ? 'fixed' as const : 'percent' as const,
         exclusivityPremiumValue: i[hasAddOnBudget ? 9 : 8] as number,
+        exclusivityToggleable: false, optional: false, optionalDefault: true,
       })),
       customDiscounts: ((o[hasAddOnBudget ? 6 : 5] as unknown[][]) ?? []).map((d: unknown[]) => ({
         id: d[0] as string, label: d[1] as string,
@@ -282,7 +294,7 @@ export function decodeSponsorQuoteFromUrl(encoded: string): SponsorQuoteState | 
     if (!Array.isArray(parsed) || !Array.isArray(parsed[8])) return null;
 
     let state: SponsorQuoteState | null = null;
-    if (parsed[0] === 5) state = fromCompactV5(parsed as CompactSponsorQuote);
+    if (parsed[0] === 5 || parsed[0] === 6) state = fromCompactV5or6(parsed as CompactSponsorQuote);
     else if (parsed[0] >= 2 && parsed[0] <= 4) state = fromOlderCompact(parsed);
 
     if (state && state.options.length >= 1) return state;

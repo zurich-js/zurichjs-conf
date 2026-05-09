@@ -126,6 +126,12 @@ export function SponsorQuoteBuilder() {
 
   // Share URL — points to the public /sponsor-quote page
   const handleShare = useCallback(async () => {
+    if (state.options.length > 1 && !state.recommendedOptionId) {
+      const ok = window.confirm(
+        'No option is marked as recommended. The quote will be shared without a highlighted recommendation.\n\nContinue anyway?',
+      );
+      if (!ok) return;
+    }
     const encoded = encodeSponsorQuoteToUrl(state);
     const url = `${window.location.origin}/sponsor-quote?q=${encoded}`;
     try {
