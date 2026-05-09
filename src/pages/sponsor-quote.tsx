@@ -583,7 +583,7 @@ export default function SponsorQuotePage() {
           {/* Hero */}
           <div className="max-w-3xl mb-6 sm:mb-8 md:mb-12">
             <Kicker variant="light">Sponsorship Quote</Kicker>
-            <Heading level="h1" variant="light" className="mt-2 sm:mt-3 mb-2 sm:mb-3 md:mb-4 text-lg sm:text-xl md:text-2xl">
+            <Heading level="h1" variant="light" className="mt-2 sm:mt-3 mb-2 sm:mb-3 md:mb-4 text-base sm:text-lg md:text-xl">
               {quoteState.contactName
                 ? `Hey ${quoteState.contactName}, here's your sponsorship quote`
                 : 'Your ZurichJS Conf Sponsorship Quote'}
