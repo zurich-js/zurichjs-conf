@@ -509,7 +509,6 @@ export default async function handler(
         address: 'auto',
         name: 'auto',
       },
-      phone_number_collection: { enabled: true },
       metadata,
       return_url: `${getBaseUrl(req)}/success?session_id={CHECKOUT_SESSION_ID}`,
     };
