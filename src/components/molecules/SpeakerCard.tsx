@@ -56,7 +56,7 @@ function SpeakerCardInner({
   }
 
   return (
-          <div className="bg-white relative flex h-full flex-col rounded-2xl overflow-hidden transition-all duration-300
+          <div className="bg-white text-brand-black relative flex h-full flex-col rounded-2xl overflow-hidden transition-all duration-300
           shadow-md shadow-brand-black/10 group-hover:shadow-brand-black/20 focus-within:shadow-brand-black/20
           group-hover:shadow-lg group-focus-within:shadow-lg
           group-hover:-translate-y-0.5 group-focus-within:-translate-y-0.5

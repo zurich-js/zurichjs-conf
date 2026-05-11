@@ -1,105 +1,117 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Download, Copy, Check } from 'lucide-react';
-import {
-  ShapedSection,
-} from '@/components/organisms';
+import type { DehydratedState } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import type { GetServerSideProps } from 'next';
+import { Download, Copy, Check, Mic, GraduationCap, PartyPopper, ChevronLeft, ChevronRight, Clock, ExternalLink } from 'lucide-react';
+import { ShapedSection } from '@/components/organisms';
 import { Button } from '@/components/atoms';
+import { SpeakerCard } from '@/components/molecules';
+import { ProgramScheduleItemCard } from '@/components/scheduling';
 import { SEO } from '@/components/SEO';
+import { getQueryClient } from '@/lib/query-client';
+import { createPrefetch } from '@/lib/prefetch';
+import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
+import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { aboutPageData } from '@/data/about-us';
+import { conferenceBlurbs, keyFacts, topics } from '@/data/partner-assets';
+import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
-const conferenceBlurbs = {
-  short: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 11, 2026 at Technopark Zurich. Join 300+ developers, engineers, and tech leaders for multiple days of learning, networking, and community building.`,
-  medium: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, taking place September 9-12, 2026 at Technopark Zurich. The event kicks off with a warm-up meetup on September 9th, followed by a workshop day on September 10th, the main conference day on September 11th, and VIP/speaker activities on September 12th. With 15+ speakers from around the world, ZurichJS Conf covers the latest in JavaScript, TypeScript, React, Vue, Angular, and the wider web ecosystem. Join us to learn from industry experts, connect with the Swiss tech community, and be part of the growing ZurichJS movement.`,
-  full: `ZurichJS Conference 2026 is Switzerland's premier JavaScript event, organized by the ZurichJS community — a thriving meetup group that has been bringing together JavaScript enthusiasts in Zurich since 2024. Taking place September 9-12, 2026 at Technopark Zurich, this multi-day event brings together 300+ developers, engineers, and tech leaders from across Switzerland and Europe.
+interface PartnerAssetsPageProps {
+  dehydratedState: DehydratedState;
+}
 
-        The event kicks off with a warm-up meetup on September 9th, followed by hands-on workshops on September 10th, and culminates with the main conference day on September 11th featuring 15+ speakers from leading companies and the open-source community. Confirmed speakers include Daniel Roe (Nuxt Core Team Lead at Vercel), Dominik Dorfmeister (Maintainer of TanStack Query at Sentry), Ramona Schwering (GDE for Web Technologies & Developer Advocate at Auth0), Scott Tolinski (Co-Host of Syntax.fm at Sentry), and Tejas Kumar (ConTejas Host & Developer Advocate at IBM). September 12th offers exclusive VIP and speaker activities. Topics span JavaScript, TypeScript, React, Vue, Angular, Node.js, developer tooling, testing, serverless architectures, AI/ML in web development, and the wider web ecosystem.
+const WORKSHOP_DAY = '2026-09-10';
 
-        Beyond the talks, ZurichJS Conference is about community. With dedicated networking sessions, sponsor booths, and an afterparty, it's the perfect opportunity to connect with fellow developers, discover new tools and frameworks, and be part of the Swiss JavaScript ecosystem.`,
-};
+const tocItems = [
+  { id: 'logos', label: 'Logos' },
+  { id: 'blurbs', label: 'About the Conference' },
+  { id: 'speakers', label: 'Speakers' },
+  { id: 'workshops', label: 'Workshops' },
+  { id: 'after-party', label: 'After Party' },
+  { id: 'facts', label: 'Key Facts' },
+  { id: 'contact', label: 'Contact' },
+];
 
-function CopyButton({ text, label }: { text: string; label: string }) {
+function AfterPartyCarousel() {
+  const images = aboutPageData.afterParty.images;
+  const [current, setCurrent] = useState(0);
+  const prev = () => setCurrent((c) => (c === 0 ? images.length - 1 : c - 1));
+  const next = () => setCurrent((c) => (c === images.length - 1 ? 0 : c + 1));
+
+  return (
+    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-brand-gray-darkest group">
+      {images.map((img, i) => (
+        <Image
+          key={img.src}
+          src={img.src}
+          alt={img.alt}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className={`object-cover transition-opacity duration-500 ${i === current ? 'opacity-100' : 'opacity-0'}`}
+          priority={i === 0}
+        />
+      ))}
+      {images.length > 1 && (
+        <>
+          <button onClick={prev} aria-label="Previous image" className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ChevronLeft size={20} />
+          </button>
+          <button onClick={next} aria-label="Next image" className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ChevronRight size={20} />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+            {images.map((_, i) => (
+              <button key={i} onClick={() => setCurrent(i)} aria-label={`Go to image ${i + 1}`} className={`w-2 h-2 rounded-full transition-colors ${i === current ? 'bg-white' : 'bg-white/50'}`} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function CopyButton({ text, label, variant = 'light' }: { text: string; label: string; variant?: 'light' | 'dark' }) {
   const [copied, setCopied] = React.useState(false);
-
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const styles = variant === 'dark'
+    ? 'text-brand-gray-light hover:text-white border-white/20 hover:border-white/40'
+    : 'text-brand-gray-dark hover:text-brand-black border-brand-gray-light hover:border-brand-gray-dark';
 
   return (
-    <button
-      onClick={handleCopy}
-      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-brand-gray-dark hover:text-brand-black border border-brand-gray-light rounded-lg hover:border-brand-gray-dark transition-colors cursor-pointer"
-    >
-      {copied ? (
-        <>
-          <Check className="w-4 h-4 text-green-600" />
-          Copied!
-        </>
-      ) : (
-        <>
-          <Copy className="w-4 h-4" />
-          {label}
-        </>
-      )}
+    <button onClick={handleCopy} className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded-lg transition-colors cursor-pointer ${styles}`}>
+      {copied ? (<><Check className="w-4 h-4 text-green-400" />Copied!</>) : (<><Copy className="w-4 h-4" />{label}</>)}
     </button>
   );
 }
 
-function LogoCard({
-  title,
-  description,
-  imageSrc,
-  downloadHref,
-  downloadName,
-  bgColor = 'bg-brand-gray-lightest',
-  isWide = false,
-}: {
-  title: string;
-  description: string;
-  imageSrc: string;
-  downloadHref: string;
-  downloadName: string;
-  bgColor?: string;
-  isWide?: boolean;
+function LogoCard({ title, description, imageSrc, downloadHref, downloadName, bgColor = 'bg-brand-gray-lightest', isWide = false }: {
+  title: string; description: string; imageSrc: string; downloadHref: string; downloadName: string; bgColor?: string; isWide?: boolean;
 }) {
   return (
     <div className="border border-brand-gray-light rounded-xl overflow-hidden flex flex-col h-full">
       <div className={`${bgColor} ${isWide ? 'px-6 py-10 md:py-12' : 'p-8'} flex items-center justify-center flex-1 min-h-[200px] ${isWide ? 'md:min-h-[240px] lg:min-h-[260px]' : ''}`}>
-        <Image
-          src={imageSrc}
-          alt={title}
-          width={isWide ? 500 : 200}
-          height={isWide ? 160 : 200}
+        <Image src={imageSrc} alt={title} width={isWide ? 500 : 200} height={isWide ? 160 : 200}
           className={`w-auto h-auto object-contain ${isWide ? 'w-full max-h-[120px] md:max-h-[160px] lg:max-h-[180px]' : 'max-w-[160px] max-h-[160px]'}`}
-          unoptimized={imageSrc.endsWith('.svg') || imageSrc.endsWith('.gif')}
-        />
+          unoptimized={imageSrc.endsWith('.svg') || imageSrc.endsWith('.gif')} />
       </div>
       <div className="p-6 bg-white">
         <h3 className="text-lg font-semibold text-brand-black mb-2">{title}</h3>
         <p className="text-sm text-brand-gray-dark mb-4">{description}</p>
-        <a
-          href={downloadHref}
-          download={downloadName}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-black text-white text-sm font-medium rounded-lg hover:bg-brand-gray-darkest transition-colors cursor-pointer"
-        >
-          <Download className="w-4 h-4" />
-          Download
+        <a href={downloadHref} download={downloadName} className="inline-flex items-center gap-2 px-4 py-2 bg-brand-black text-white text-sm font-medium rounded-lg hover:bg-brand-gray-darkest transition-colors cursor-pointer">
+          <Download className="w-4 h-4" />Download
         </a>
       </div>
     </div>
   );
 }
 
-function BlurbCard({
-  title,
-  text,
-  wordCount,
-}: {
-  title: string;
-  text: string;
-  wordCount: string;
-}) {
+function BlurbCard({ title, text, wordCount }: { title: string; text: string; wordCount: string }) {
   return (
     <div className="border border-brand-gray-light rounded-xl p-6 bg-white">
       <div className="flex items-start justify-between gap-4 mb-4">
@@ -109,40 +121,81 @@ function BlurbCard({
         </div>
         <CopyButton text={text} label="Copy" />
       </div>
-      <p className="text-brand-gray-dark text-sm leading-relaxed whitespace-pre-line">
-        {text}
-      </p>
+      <p className="text-brand-gray-dark text-sm leading-relaxed whitespace-pre-line">{text}</p>
     </div>
   );
 }
 
+function getWorkshopItems(items: PublicProgramScheduleItem[]) {
+  return items
+    .filter((item) => item.date === WORKSHOP_DAY && item.type !== 'break' && item.type !== 'event')
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+}
+
 export default function PartnerAssetsPage() {
+  const { data: speakerData, isLoading: speakersLoading } = useQuery(publicSpeakersQueryOptions());
+  const speakers = speakerData?.speakers ?? [];
+  const programSpeakerCount = speakerData?.programSpeakerCount ?? 0;
+  const placeholderCount = Math.max(0, programSpeakerCount - speakers.length);
+
+  const { currency } = useCurrency();
+  const workshopQueryOptions = useMemo(() => createWorkshopsScheduleQueryOptions(currency), [currency]);
+  const { data: workshopData, isLoading: workshopsLoading } = useQuery(workshopQueryOptions);
+  const workshopItems = useMemo(() => workshopData ? getWorkshopItems(workshopData.items) : [], [workshopData]);
+
+  const speakerListText = speakers
+    .map((s) => {
+      const name = [s.first_name, s.last_name].filter(Boolean).join(' ');
+      const title = [s.job_title, s.company].filter(Boolean).join(' @ ');
+      return `${name} — ${title}`;
+    })
+    .join('\n');
+
+  const afterParty = aboutPageData.afterParty;
+
   return (
     <>
       <SEO
-        title="Partner Assets | ZurichJS Conference 2026"
-        description="Download ZurichJS Conference logos, brand assets, and promotional materials. Find official descriptions and resources for partners."
+        title="Partner Toolkit | ZurichJS Conference 2026"
+        description="Download ZurichJS Conference logos, brand assets, and promotional materials. Find speakers, workshops, and official descriptions for partners."
         canonical="/partners/assets"
         ogType="website"
-        keywords="zurichjs partner assets, zurichjs logo, zurichjs partnership, javascript conference assets, zurichjs brand"
+        keywords="zurichjs partner assets, zurichjs logo, zurichjs partnership, javascript conference assets, zurichjs brand, zurichjs speakers"
       />
 
       <main className="min-h-screen">
         {/* Hero Section */}
         <ShapedSection shape="widen" variant="light" dropTop id="hero">
-          <div className="py-12 md:py-20">
+          <div className="pt-40 pb-12 md:pb-20">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold text-brand-yellow-dark uppercase tracking-wider mb-4">
                 Partner Resources
               </p>
               <h1 className="text-2xl lg:text-3xl font-bold text-brand-black mb-6">
-                Brand Assets
+                Partner Toolkit
               </h1>
-              <p className="text-lg md:text-xl text-brand-gray-dark leading-relaxed">
+              <p className="text-lg md:text-xl text-brand-gray-dark leading-relaxed mb-10">
                 Everything you need to promote ZurichJS Conference 2026.
-                Download our logos, grab a blurb, and help spread the word about
+                Logos, copy-ready blurbs, speaker lineup, workshop details, and key facts —
+                all in one place to help you spread the word about
                 Switzerland&apos;s premier JavaScript event.
               </p>
+              <nav aria-label="Table of contents">
+                <p className="text-sm text-brand-gray-dark mb-3">
+                  Click any section below to jump straight to the details.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {tocItems.map((item) => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      className="px-4 py-2 text-sm font-medium bg-brand-black text-white rounded-full hover:bg-brand-gray-darkest transition-colors"
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              </nav>
             </div>
           </div>
         </ShapedSection>
@@ -151,33 +204,17 @@ export default function PartnerAssetsPage() {
         <ShapedSection shape="tighten" variant="light" className="!bg-[#EDEDEF]" id="logos">
           <div className="py-12 md:py-16">
             <div className="mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">
-                Logos
-              </h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">Logos</h2>
               <p className="text-brand-gray-dark max-w-2xl">
                 Use these official logos when promoting or writing about ZurichJS Conference.
                 Please don&apos;t modify, distort, or recolor the logos.
               </p>
             </div>
-
             <div className="grid md:grid-cols-2 gap-6">
-              <LogoCard
-                title="Square Logo (Primary)"
-                description="Our primary logo. Use this for most applications including web, print, social media, and profile pictures."
-                imageSrc="/images/logo/zurichjs-square.png"
-                downloadHref="/images/logo/zurichjs-square.png"
-                downloadName="zurichjs-square-logo.png"
-                bgColor="bg-brand-black"
-              />
-              <LogoCard
-                title="Full Logo"
-                description="Extended horizontal logo with wordmark. Use against contrasting backgrounds when the square logo doesn't fit the layout."
-                imageSrc="/images/logo/zurichjs-full.svg"
-                downloadHref="/images/logo/zurichjs-full.svg"
-                downloadName="zurichjs-full-logo.svg"
-                bgColor="bg-brand-black"
-                isWide={true}
-              />
+              <LogoCard title="Square Logo (Primary)" description="Our primary logo. Use this for most applications including web, print, social media, and profile pictures."
+                imageSrc="/images/logo/zurichjs-square.png" downloadHref="/images/logo/zurichjs-square.png" downloadName="zurichjs-square-logo.png" bgColor="bg-brand-black" />
+              <LogoCard title="Full Logo" description="Extended horizontal logo with wordmark. Use against contrasting backgrounds when the square logo doesn't fit the layout."
+                imageSrc="/images/logo/zurichjs-full.svg" downloadHref="/images/logo/zurichjs-full.svg" downloadName="zurichjs-full-logo.svg" bgColor="bg-brand-black" isWide={true} />
             </div>
           </div>
         </ShapedSection>
@@ -186,87 +223,192 @@ export default function PartnerAssetsPage() {
         <ShapedSection shape="widen" variant="light" id="blurbs">
           <div className="py-12 md:py-16">
             <div className="mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">
-                About the Conference
-              </h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">About the Conference</h2>
               <p className="text-brand-gray-dark max-w-2xl">
                 Official descriptions you can use in articles, social posts, newsletters, or
                 anywhere else you&apos;re writing about ZurichJS Conference 2026.
               </p>
             </div>
-
             <div className="space-y-6">
-              <BlurbCard
-                title="Short Description"
-                text={conferenceBlurbs.short}
-                wordCount="~40 words"
-              />
-              <BlurbCard
-                title="Medium Description"
-                text={conferenceBlurbs.medium}
-                wordCount="~100 words"
-              />
-              <BlurbCard
-                title="Full Description"
-                text={conferenceBlurbs.full}
-                wordCount="~250 words"
-              />
+              <BlurbCard title="Short Description" text={conferenceBlurbs.short} wordCount="~50 words" />
+              <BlurbCard title="Medium Description" text={conferenceBlurbs.medium} wordCount="~110 words" />
+              <BlurbCard title="Full Description" text={conferenceBlurbs.full} wordCount="~250 words" />
+            </div>
+          </div>
+        </ShapedSection>
+
+        {/* Speakers Section */}
+        <ShapedSection shape="tighten" variant="dark" id="speakers">
+          <div className="py-12 md:py-16">
+            <div className="flex items-start justify-between gap-4 mb-10 flex-wrap">
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <Mic className="w-5 h-5 text-brand-yellow-main" />
+                  <p className="text-sm font-semibold text-brand-yellow-main uppercase tracking-wider">Speaker Lineup</p>
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                  {programSpeakerCount || 20} Speakers from World-Class Companies
+                </h2>
+                <p className="text-brand-gray-light max-w-2xl">
+                  Our lineup includes maintainers of major open-source projects, developer advocates,
+                  and engineering leaders from across the JavaScript ecosystem.
+                </p>
+              </div>
+              {speakers.length > 0 && <CopyButton text={speakerListText} label="Copy list" variant="dark" />}
+            </div>
+
+            {speakersLoading ? (
+              <div className="grid min-h-64 place-items-center rounded-3xl bg-white/5">
+                <div className="flex items-center gap-3 text-sm font-medium text-brand-gray-light">
+                  <span className="size-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  Loading speakers...
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] auto-rows-fr gap-4">
+                {speakers.map((speaker) => (
+                  <SpeakerCard
+                    key={speaker.id}
+                    variant="compact"
+                    avatar={speaker.profile_image_url}
+                    name={[speaker.first_name, speaker.last_name].filter(Boolean).join(' ')}
+                    title={[speaker.job_title, speaker.company].filter(Boolean).join(' @')}
+                    footer={speaker.sessions?.[0]?.title || 'To be announced'}
+                    to={`/speakers/${speaker.slug}`}
+                  />
+                ))}
+                {Array.from({ length: placeholderCount }).map((_, index) => (
+                  <SpeakerCard key={`placeholder-${index}`} variant="compact" name="To be announced" placeholder />
+                ))}
+              </div>
+            )}
+          </div>
+        </ShapedSection>
+
+        {/* Workshops Section */}
+        <ShapedSection shape="widen" variant="light" id="workshops">
+          <div className="py-12 md:py-16">
+            <div className="mb-10">
+              <div className="flex items-center gap-3 mb-4">
+                <GraduationCap className="w-5 h-5 text-brand-yellow-dark" />
+                <p className="text-sm font-semibold text-brand-yellow-dark uppercase tracking-wider">Zurich Engineering Day</p>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">
+                Hands-On Workshops — September 10th, 2026
+              </h2>
+              <p className="text-brand-gray-dark max-w-2xl">
+                A full day of workshops for software engineers from all domains.
+                Morning sessions run 09:00–13:00, afternoon sessions 14:00–18:00, with a lunch break in between.
+                Affordable pricing with limited seats per workshop.
+              </p>
+            </div>
+
+            {workshopsLoading ? (
+              <div className="flex flex-col gap-4" aria-busy="true">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="rounded-2xl border border-brand-gray-lightest bg-brand-gray-lightest p-5 animate-pulse">
+                    <div className="h-3 w-20 rounded bg-brand-gray-light/60" />
+                    <div className="mt-3 h-5 w-3/4 rounded bg-brand-gray-light/70" />
+                    <div className="mt-4 flex gap-3">
+                      <div className="h-3 w-28 rounded bg-brand-gray-light/50" />
+                      <div className="h-3 w-24 rounded bg-brand-gray-light/50" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : workshopItems.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                {workshopItems.map((item) => (
+                  <ProgramScheduleItemCard
+                    key={item.id}
+                    item={item}
+                    expandableSessions
+                    offeringsBySubmissionId={workshopData?.offeringsBySubmissionId}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-brand-gray-lightest bg-brand-white p-6 text-center text-sm text-brand-gray-dark">
+                Workshop schedule coming soon — check back for updates.
+              </p>
+            )}
+          </div>
+        </ShapedSection>
+
+        {/* VIP After Party Section */}
+        <ShapedSection shape="tighten" variant="dark" id="after-party">
+          <div className="py-12 md:py-16">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <PartyPopper className="w-5 h-5 text-brand-yellow-main" />
+                <p className="text-sm font-semibold text-brand-yellow-main uppercase tracking-wider">{afterParty.kicker}</p>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{afterParty.title}</h2>
+              <p className="text-brand-gray-light text-base max-w-3xl">{afterParty.subtitle}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
+              <div className="space-y-4">
+                {afterParty.description.map((text, index) => (
+                  <p key={index} className="text-brand-white leading-relaxed text-base">{text}</p>
+                ))}
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2" role="list">
+                  {afterParty.highlights.map(({ icon: Icon, label }) => (
+                    <li key={label} className="flex items-start gap-2.5 bg-brand-gray-darkest/60 rounded-xl p-3 text-sm text-brand-white">
+                      <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
+                      <span>{label}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button variant="outline" asChild href={afterParty.websiteUrl}>
+                    {afterParty.websiteLabel}
+                    <ExternalLink size={14} />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <AfterPartyCarousel />
+                <div className="mt-4 flex items-center gap-1.5 text-sm text-brand-gray-light">
+                  <Clock size={14} className="text-brand-yellow-main" />
+                  {afterParty.schedule}
+                </div>
+                <div className="mt-6">
+                  <h3 className="text-xs uppercase tracking-widest font-medium text-brand-yellow-main mb-3">{afterParty.directionsTitle}</h3>
+                  <ul className="space-y-2.5" role="list">
+                    {afterParty.directions.map(({ icon: Icon, mode, detail }) => (
+                      <li key={mode} className="flex items-start gap-3 text-sm text-brand-white">
+                        <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
+                        <span><strong className="font-semibold">{mode}:</strong>{' '}<span className="text-brand-gray-light">{detail}</span></span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </ShapedSection>
 
         {/* Key Facts Section */}
-        <ShapedSection shape="tighten" variant="yellow" id="facts">
+        <ShapedSection shape="widen" variant="yellow" id="facts">
           <div className="py-12 md:py-16">
             <div className="mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">
-                Key Facts
-              </h2>
-              <p className="text-brand-black/70 max-w-2xl">
-                Quick reference information for your promotional materials.
-              </p>
+              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">Key Facts</h2>
+              <p className="text-brand-black/70 max-w-2xl">Quick reference information for your promotional materials.</p>
             </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { label: 'Main Conference', value: 'September 11, 2026' },
-                { label: 'Location', value: 'Technopark Zurich' },
-                { label: 'Expected Attendees', value: '300+' },
-                { label: 'Speakers', value: '15+' },
-              ].map((fact) => (
-                <div key={fact.label} className="bg-brand-black/10 rounded-xl p-6">
-                  <p className="text-sm font-semibold text-brand-black/70 mb-1">
-                    {fact.label}
-                  </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {keyFacts.map((fact) => (
+                <div key={fact.label + fact.value} className="bg-brand-black/10 rounded-xl p-6">
+                  <p className="text-sm font-semibold text-brand-black/70 mb-1">{fact.label}</p>
                   <p className="text-xl font-bold text-brand-black">{fact.value}</p>
                 </div>
               ))}
             </div>
-
             <div className="mt-10 p-6 bg-brand-black/10 rounded-xl">
-              <h3 className="text-lg font-semibold text-brand-black mb-3">
-                Topics Covered
-              </h3>
+              <h3 className="text-lg font-semibold text-brand-black mb-3">Topics Covered</h3>
               <div className="flex flex-wrap gap-2">
-                {[
-                  'JavaScript',
-                  'TypeScript',
-                  'React',
-                  'Vue',
-                  'Angular',
-                  'Node.js',
-                  'Serverless',
-                  'Web Performance',
-                  'AI/ML',
-                  'Testing',
-                  'DevOps',
-                ].map((topic) => (
-                  <span
-                    key={topic}
-                    className="px-3 py-1 bg-brand-black text-white text-sm font-medium rounded-full"
-                  >
-                    {topic}
-                  </span>
+                {topics.map((topic) => (
+                  <span key={topic} className="px-3 py-1 bg-brand-black text-white text-sm font-medium rounded-full">{topic}</span>
                 ))}
               </div>
             </div>
@@ -274,20 +416,16 @@ export default function PartnerAssetsPage() {
         </ShapedSection>
 
         {/* Contact Section */}
-        <ShapedSection shape="widen" variant="dark" id="contact">
+        <ShapedSection shape="tighten" variant="dark" id="contact">
           <div className="py-12 md:py-16">
             <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                Need Something Else?
-              </h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Need Something Else?</h2>
               <p className="text-brand-gray-light mb-8">
                 Need high-resolution assets, custom materials, or additional information?
                 We&apos;re happy to help our partners succeed.
               </p>
               <a href="mailto:hello@zurichjs.com?subject=Partner Assets Request - ZurichJS Conference 2026">
-                <Button variant="primary" size="lg">
-                  Contact Us
-                </Button>
+                <Button variant="primary" size="lg">Contact Us</Button>
               </a>
             </div>
           </div>
@@ -296,3 +434,19 @@ export default function PartnerAssetsPage() {
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps<PartnerAssetsPageProps> = async () => {
+  const queryClient = getQueryClient();
+  const { optionalQuery, dehydrate } = createPrefetch(queryClient);
+
+  await Promise.all([
+    optionalQuery(publicSpeakersQueryOptions()),
+    optionalQuery(createWorkshopsScheduleQueryOptions()),
+  ]);
+
+  return {
+    props: {
+      dehydratedState: dehydrate(),
+    },
+  };
+};
