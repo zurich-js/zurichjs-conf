@@ -5,7 +5,7 @@ import type { DehydratedState } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import type { GetServerSideProps } from 'next';
 import { Download, Copy, Check, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { ShapedSection } from '@/components/organisms';
+import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { Button } from '@/components/atoms';
 import { SpeakerCard } from '@/components/molecules';
 import { ProgramScheduleItemCard } from '@/components/scheduling';
@@ -491,13 +491,20 @@ export default function PartnerAssetsPage() {
                 Need high-resolution assets, custom materials, or additional information?
                 We&apos;re happy to help our partners succeed.
               </p>
-              <a href="mailto:hello@zurichjs.com?subject=Partner Assets Request - ZurichJS Conference 2026">
+              <a href="mailto:partners@zurichjs.com?subject=Partner Assets Request - ZurichJS Conference 2026">
                 <Button variant="primary" size="lg">Contact Us</Button>
               </a>
             </div>
           </div>
         </ShapedSection>
       </main>
+      <ShapedSection
+          shape="straight"
+          variant="dark"
+          compactTop={true}
+      >
+        <SiteFooter showContactLinks />
+      </ShapedSection>
     </>
   );
 }
