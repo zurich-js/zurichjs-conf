@@ -110,6 +110,23 @@ export const endpoints = {
     reviewerSubmission: (id: string) => `/api/cfp/reviewer/submissions/${id}` as const,
     reviewerSubmitReview: (id: string) => `/api/cfp/reviewer/submissions/${id}/review` as const,
   },
+  // Volunteer endpoints
+  volunteers: {
+    // Public
+    publicRoles: () => '/api/volunteers/roles' as const,
+    publicRole: (slug: string) => `/api/volunteers/roles/${slug}` as const,
+    apply: () => '/api/volunteers/apply' as const,
+    // Admin
+    adminRoles: () => '/api/admin/volunteers/roles' as const,
+    adminRole: (id: string) => `/api/admin/volunteers/roles/${id}` as const,
+    adminApplications: () => '/api/admin/volunteers/applications' as const,
+    adminApplication: (id: string) => `/api/admin/volunteers/applications/${id}` as const,
+    adminApplicationStatus: (id: string) =>
+      `/api/admin/volunteers/applications/${id}/status` as const,
+    adminProfiles: () => '/api/admin/volunteers/profiles' as const,
+    adminProfile: (id: string) => `/api/admin/volunteers/profiles/${id}` as const,
+    adminStats: () => '/api/admin/volunteers/stats' as const,
+  },
 } as const;
 
 /**

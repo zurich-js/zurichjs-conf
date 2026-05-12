@@ -229,6 +229,46 @@ export const discountKeys = {
 } as const;
 
 /**
+ * Volunteer query keys
+ */
+export const volunteerKeys = {
+  /**
+   * Base key for all volunteer queries
+   */
+  all: ['volunteers'] as const,
+
+  /**
+   * Roles
+   */
+  roles: () => [...volunteerKeys.all, 'roles'] as const,
+  role: (id: string) => [...volunteerKeys.roles(), id] as const,
+
+  /**
+   * Public roles (for job board)
+   */
+  publicRoles: () => [...volunteerKeys.all, 'public', 'roles'] as const,
+  publicRole: (slug: string) => [...volunteerKeys.publicRoles(), slug] as const,
+
+  /**
+   * Applications
+   */
+  applications: (filters?: Record<string, unknown>) =>
+    [...volunteerKeys.all, 'applications', filters] as const,
+  application: (id: string) => [...volunteerKeys.all, 'application', id] as const,
+
+  /**
+   * Profiles
+   */
+  profiles: () => [...volunteerKeys.all, 'profiles'] as const,
+  profile: (id: string) => [...volunteerKeys.profiles(), id] as const,
+
+  /**
+   * Stats
+   */
+  stats: () => [...volunteerKeys.all, 'stats'] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
@@ -242,4 +282,5 @@ export const queryKeys = {
   speakers: speakersKeys,
   program: programKeys,
   discount: discountKeys,
+  volunteers: volunteerKeys,
 } as const;

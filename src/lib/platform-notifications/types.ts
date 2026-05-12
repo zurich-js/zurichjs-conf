@@ -135,3 +135,10 @@ export interface TicketCreationErrorData {
 export interface StudentTicketWaitlistData {
   email: string
 }
+
+export interface VolunteerApplicationData {
+  applicationId: string
+  name: string
+  email: string
+  roleId: string
+}
