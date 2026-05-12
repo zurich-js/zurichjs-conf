@@ -63,6 +63,18 @@ function getSeverityFromStatus(status: number): 'low' | 'medium' | 'high' | 'cri
   return 'low';
 }
 
+// Endpoints removed from the codebase that stale browser bundles may still hit.
+// Suppress error capture for these so deprecated 404s don't drown out real signals.
+// Safe to drop entries here once old client bundles have aged out.
+const REMOVED_ENDPOINTS = new Set<string>([
+  '/api/workshops/vouchers',
+]);
+
+function isRemovedEndpoint(endpoint: string): boolean {
+  const path = endpoint.split('?')[0];
+  return REMOVED_ENDPOINTS.has(path);
+}
+
 /**
  * Base fetch wrapper with error handling and automatic error capturing
  */
@@ -95,7 +107,7 @@ async function fetchApi<T>(
       );
 
       // Capture the error to PostHog unless explicitly skipped
-      if (!skipErrorCapture) {
+      if (!skipErrorCapture && !isRemovedEndpoint(endpoint)) {
         captureException(apiError, {
           type: 'network',
           severity: getSeverityFromStatus(response.status),
@@ -117,7 +129,7 @@ async function fetchApi<T>(
     return data as T;
   } catch (error) {
     // Capture non-HTTP errors (network errors, timeouts, etc.)
-    if (!(error instanceof ApiError) && !skipErrorCapture) {
+    if (!(error instanceof ApiError) && !skipErrorCapture && !isRemovedEndpoint(endpoint)) {
       captureException(error, {
         type: 'network',
         severity: 'high',
