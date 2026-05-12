@@ -31,6 +31,7 @@ export const EUROZONE_COUNTRIES = [
   'MK', // North Macedonia
   'MT', // Malta
   'NL', // Netherlands
+  'PL', // Poland
   'PT', // Portugal
   'SK', // Slovakia
   'SI', // Slovenia
