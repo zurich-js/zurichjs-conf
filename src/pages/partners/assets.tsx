@@ -91,18 +91,28 @@ function CopyButton({ text, label, variant = 'light' }: { text: string; label: s
   );
 }
 
+type LogoCardTheme = 'dark' | 'neutral' | 'yellow';
+
+const logoCardThemeStyles: Record<LogoCardTheme, { preview: string; titleNote: string }> = {
+  dark: { preview: 'bg-brand-black', titleNote: 'dark' },
+  neutral: { preview: 'bg-brand-gray-lightest', titleNote: 'neutral' },
+  yellow: { preview: 'bg-brand-yellow-main', titleNote: 'yellow' },
+};
+
 function LogoCard({
   title,
   description,
   imageSrc,
-  bgColor = 'bg-brand-gray-lightest',
+  theme,
   imageClassName = '',
 }: {
-  title: string; description: string; imageSrc: string; bgColor?: string; imageClassName?: string;
+  title: string; description: string; imageSrc: string; theme?: LogoCardTheme; imageClassName?: string;
 }) {
   const [copied, setCopied] = React.useState(false);
   const pngSrc = imageSrc.replace(/\.svg$/i, '.png');
   const assetName = imageSrc.split('/').pop()?.replace(/\.svg$/i, '') ?? 'zurichjs-logo';
+  const themeStyle = theme ? logoCardThemeStyles[theme] : undefined;
+  const previewBackground = themeStyle?.preview ?? 'bg-white';
 
   const copySvg = async () => {
     const response = await fetch(imageSrc);
@@ -114,15 +124,18 @@ function LogoCard({
 
   return (
     <div className="border border-brand-gray-light rounded-xl overflow-hidden flex flex-col h-full">
-      <div className={`${bgColor} flex min-h-[220px] flex-1 items-center justify-center px-6 py-10 md:min-h-[240px]`}>
+      <div className={`${previewBackground} flex h-56 shrink-0 items-center justify-center px-6 py-10 md:h-60`}>
         <Image src={imageSrc} alt={title} width={520} height={220}
           className={`h-auto w-auto max-h-[160px] max-w-full object-contain ${imageClassName}`}
           unoptimized={imageSrc.endsWith('.svg') || imageSrc.endsWith('.gif')} />
       </div>
-      <div className="p-6 bg-white">
-        <h3 className="text-lg font-semibold text-brand-black mb-2">{title}</h3>
-        <p className="text-sm text-brand-gray-dark mb-4">{description}</p>
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-1 flex-col bg-white p-6">
+        <h3 className="text-md font-semibold text-brand-black mb-2">
+          {title}
+          {themeStyle ? <small className="ml-1 text-xs font-medium text-brand-gray-dark">({themeStyle.titleNote})</small> : null}
+        </h3>
+        <p className="mb-6 text-sm text-brand-gray-dark">{description}</p>
+        <div className="mt-auto flex flex-wrap gap-2">
           <Menu as="div" className="relative">
             <MenuButton className="inline-flex items-center gap-2 px-3 py-2 bg-brand-black text-white text-sm font-medium rounded-lg hover:bg-brand-gray-darkest transition-colors cursor-pointer">
               <Download className="w-4 h-4" />Download
@@ -254,61 +267,64 @@ export default function PartnerAssetsPage() {
             <div className="mb-10">
               <h2 className="text-2xl font-bold text-brand-black mb-4">Logos</h2>
               <p className="text-brand-gray-dark max-w-2xl">
-                Use the ZurichJS wordmark as the default brand mark. If space is tight,
-                use the square logo instead. Please don&apos;t modify, distort, or recolor the logos.
+                Use the <b>ZurichJS Conf 2026 wordmark</b> when promoting the conference. Use the
+                ZurichJS wordmark for community or organizer references, and use the square logo
+                when horizontal space is limited, as long as the wordmark is used somewhere else.
+                <b>Please do not modify the assets. If you need a better fit, reach out to us at media@zurichjs.com</b>
               </p>
             </div>
             <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
               <LogoCard
-                title="Wordmark"
-                description="Default ZurichJS logo for light backgrounds. Prefer this wherever there is enough horizontal space."
-                imageSrc="/images/logo/wordmark.svg"
-                bgColor="bg-white"
-              />
-              <LogoCard
-                title="Wordmark, Dark Background"
-                description="Default ZurichJS logo for dark backgrounds."
-                imageSrc="/images/logo/wordmark-white.svg"
-                bgColor="bg-brand-black"
+                title="Conference Wordmark"
+                description="Use this version for ZurichJS Conf 2026 promotion on light backgrounds."
+                imageSrc="/images/logo/wordmark-conf.svg"
               />
               <LogoCard
                 title="Conference Wordmark"
-                description="Use this full event wordmark when the conference year should be explicit."
-                imageSrc="/images/logo/wordmark-conf.svg"
-                bgColor="bg-white"
+                description="Use this version for ZurichJS Conf 2026 promotion on dark backgrounds."
+                imageSrc="/images/logo/wordmark-conf-white.svg"
+                theme="dark"
               />
               <LogoCard
-                title="Conference Wordmark, Dark Background"
-                description="Full event wordmark for dark backgrounds."
-                imageSrc="/images/logo/wordmark-conf-white.svg"
-                bgColor="bg-brand-black"
+                title="ZurichJS Wordmark"
+                description="Use this version when referencing ZurichJS as the community or event organizer on light backgrounds."
+                imageSrc="/images/logo/wordmark.svg"
+              />
+              <LogoCard
+                title="ZurichJS Wordmark"
+                description="Use this version when referencing ZurichJS as the community or event organizer on dark backgrounds."
+                imageSrc="/images/logo/wordmark-white.svg"
+                theme="dark"
               />
               <LogoCard
                 title="Square Logo"
-                description="Use only when the wordmark does not fit, such as icons, avatars, or very compact placements."
+                description="Use this compact mark when the wordmark does not fit, such as icons, avatars, or very small placements."
                 imageSrc="/images/logo/square.svg"
+                theme="neutral"
               />
               <LogoCard
                 title="Square Logo for Circle Inscription"
-                description="Use this adjusted square when the logo will be placed inside a circular container."
+                description="Use this adjusted square when placing the mark inside a circular crop or badge."
                 imageSrc="/images/logo/square-circle.svg"
+                theme="neutral"
               />
               <LogoCard
-                title="Square Logo for Brand Gradient"
-                description="Use this no-yellow square on ZurichJS gradient backgrounds."
+                title="Square Logo Transparent"
+                description="Use this version on ZurichJS brand-gradient backgrounds to keep enough contrast."
                 imageSrc="/images/logo/square-no-yellow.svg"
-                bgColor="bg-brand-yellow-main"
+                theme="yellow"
               />
               <LogoCard
                 title="Swag Lockup"
-                description="Use this lockup for merchandise and swag when the ZurichJS name should sit below the square."
+                description="Use this lockup for merchandise when the ZurichJS name should sit below the square mark."
                 imageSrc="/images/logo/swag.svg"
+                theme="neutral"
               />
               <LogoCard
-                title="Swag Lockup, Dark Background"
-                description="White-text swag lockup for dark merchandise or dark backgrounds."
+                title="Swag Lockup"
+                description="Use this lockup for dark merchandise or other dark-background applications."
                 imageSrc="/images/logo/swag-white.svg"
-                bgColor="bg-brand-black"
+                theme="dark"
               />
             </div>
           </div>
