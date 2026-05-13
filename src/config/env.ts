@@ -17,24 +17,6 @@ function getRequiredEnv(value: string | undefined, name: string): string {
 }
 
 /**
- * Validate that one of several accepted environment variable names is set.
- * Supabase renamed anon/service role keys to publishable/secret keys; support
- * both so production environments do not break during the migration.
- */
-function getRequiredEnvAlias(
-  values: Array<{ value: string | undefined; name: string }>
-): string {
-  const found = values.find(({ value }) => Boolean(value));
-  if (found?.value) {
-    return found.value;
-  }
-
-  throw new Error(
-    `Missing required environment variable: ${values.map(({ name }) => name).join(' or ')}`
-  );
-}
-
-/**
  * Get an optional environment variable with a default value
  */
 function getOptionalEnv(value: string | undefined, defaultValue: string): string {
@@ -60,12 +42,10 @@ export const clientEnv = {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       'NEXT_PUBLIC_SUPABASE_URL'
     ),
-    publishableKey: getRequiredEnvAlias([
-      {
-        value: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-        name: 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
-      },
-    ]),
+    publishableKey: getRequiredEnv(
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
+    ),
   },
   stripe: {
     publishableKey: getRequiredEnv(
@@ -114,12 +94,10 @@ function getServerEnv() {
       isProduction: process.env.NODE_ENV === 'production',
 
       supabase: {
-        secretKey: getRequiredEnvAlias([
-          {
-            value: process.env.SUPABASE_SECRET_KEY,
-            name: 'SUPABASE_SECRET_KEY',
-          },
-        ]),
+        secretKey: getRequiredEnv(
+          process.env.SUPABASE_SECRET_KEY,
+          'SUPABASE_SECRET_KEY'
+        ),
       },
 
       stripe: {

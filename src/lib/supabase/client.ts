@@ -67,7 +67,7 @@ export function createBrowserClient() {
   }
 
   if (!clientEnv.supabase.publishableKey) {
-    throw new Error('[Supabase] ❌ SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY is missing');
+    throw new Error('[Supabase] ❌ SUPABASE_PUBLISHABLE_KEY is missing');
   }
 
   // Use @supabase/ssr's createBrowserClient for proper cookie synchronization
