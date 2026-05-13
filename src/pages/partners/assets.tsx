@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import type { DehydratedState } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import type { GetServerSideProps } from 'next';
-import { Download, Copy, Check, Mic, GraduationCap, PartyPopper, ChevronLeft, ChevronRight, Clock, ExternalLink } from 'lucide-react';
-import { ShapedSection } from '@/components/organisms';
+import { Download, Copy, Check, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { Button } from '@/components/atoms';
 import { SpeakerCard } from '@/components/molecules';
 import { ProgramScheduleItemCard } from '@/components/scheduling';
@@ -90,22 +91,84 @@ function CopyButton({ text, label, variant = 'light' }: { text: string; label: s
   );
 }
 
-function LogoCard({ title, description, imageSrc, downloadHref, downloadName, bgColor = 'bg-brand-gray-lightest', isWide = false }: {
-  title: string; description: string; imageSrc: string; downloadHref: string; downloadName: string; bgColor?: string; isWide?: boolean;
+type LogoCardTheme = 'dark' | 'neutral' | 'yellow';
+
+const logoCardThemeStyles: Record<LogoCardTheme, { preview: string; titleNote: string }> = {
+  dark: { preview: 'bg-brand-black', titleNote: 'dark' },
+  neutral: { preview: 'bg-brand-gray-lightest', titleNote: 'neutral' },
+  yellow: { preview: 'bg-brand-yellow-main', titleNote: 'yellow' },
+};
+
+function LogoCard({
+  title,
+  description,
+  imageSrc,
+  theme,
+  imageClassName = '',
+}: {
+  title: string; description: string; imageSrc: string; theme?: LogoCardTheme; imageClassName?: string;
 }) {
+  const [copied, setCopied] = React.useState(false);
+  const pngSrc = imageSrc.replace(/\.svg$/i, '.png');
+  const assetName = imageSrc.split('/').pop()?.replace(/\.svg$/i, '') ?? 'zurichjs-logo';
+  const themeStyle = theme ? logoCardThemeStyles[theme] : undefined;
+  const previewBackground = themeStyle?.preview ?? 'bg-white';
+
+  const copySvg = async () => {
+    const response = await fetch(imageSrc);
+    const svgText = await response.text();
+    await navigator.clipboard.writeText(svgText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="border border-brand-gray-light rounded-xl overflow-hidden flex flex-col h-full">
-      <div className={`${bgColor} ${isWide ? 'px-6 py-10 md:py-12' : 'p-8'} flex items-center justify-center flex-1 min-h-[200px] ${isWide ? 'md:min-h-[240px] lg:min-h-[260px]' : ''}`}>
-        <Image src={imageSrc} alt={title} width={isWide ? 500 : 200} height={isWide ? 160 : 200}
-          className={`w-auto h-auto object-contain ${isWide ? 'w-full max-h-[120px] md:max-h-[160px] lg:max-h-[180px]' : 'max-w-[160px] max-h-[160px]'}`}
+      <div className={`${previewBackground} flex h-56 shrink-0 items-center justify-center px-6 py-10 md:h-60`}>
+        <Image src={imageSrc} alt={title} width={520} height={220}
+          className={`h-auto w-auto max-h-[160px] max-w-full object-contain ${imageClassName}`}
           unoptimized={imageSrc.endsWith('.svg') || imageSrc.endsWith('.gif')} />
       </div>
-      <div className="p-6 bg-white">
-        <h3 className="text-lg font-semibold text-brand-black mb-2">{title}</h3>
-        <p className="text-sm text-brand-gray-dark mb-4">{description}</p>
-        <a href={downloadHref} download={downloadName} className="inline-flex items-center gap-2 px-4 py-2 bg-brand-black text-white text-sm font-medium rounded-lg hover:bg-brand-gray-darkest transition-colors cursor-pointer">
-          <Download className="w-4 h-4" />Download
-        </a>
+      <div className="flex flex-1 flex-col bg-white p-6">
+        <h3 className="text-md font-semibold text-brand-black mb-2">
+          {title}
+          {themeStyle ? <small className="ml-1 text-xs font-medium text-brand-gray-dark">({themeStyle.titleNote})</small> : null}
+        </h3>
+        <p className="mb-6 text-sm text-brand-gray-dark">{description}</p>
+        <div className="mt-auto flex flex-wrap gap-2">
+          <Menu as="div" className="relative">
+            <MenuButton className="inline-flex items-center gap-2 px-3 py-2 bg-brand-black text-white text-sm font-medium rounded-lg hover:bg-brand-gray-darkest transition-colors cursor-pointer">
+              <Download className="w-4 h-4" />Download
+            </MenuButton>
+            <MenuItems
+              anchor="bottom start"
+              className="z-30 mt-1 w-40 rounded-xl border border-brand-gray-dark bg-brand-black p-2 shadow-[0_20px_50px_rgba(0,0,0,0.22)] outline-none"
+            >
+              <MenuItem>
+                <a
+                  href={pngSrc}
+                  download={`${assetName}.png`}
+                  className="block cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors data-[focus]:bg-brand-gray-darkest"
+                >
+                  PNG
+                </a>
+              </MenuItem>
+              <MenuItem>
+                <a
+                  href={imageSrc}
+                  download={`${assetName}.svg`}
+                  className="block cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors data-[focus]:bg-brand-gray-darkest"
+                >
+                  SVG
+                </a>
+              </MenuItem>
+            </MenuItems>
+          </Menu>
+          <button type="button" onClick={copySvg} className="inline-flex items-center gap-2 px-3 py-2 border border-brand-gray-light text-brand-gray-dark text-sm font-medium rounded-lg hover:border-brand-gray-dark hover:text-brand-black transition-colors cursor-pointer">
+            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+            {copied ? 'Copied' : 'Copy SVG'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -176,9 +239,7 @@ export default function PartnerAssetsPage() {
               </h1>
               <p className="text-lg md:text-xl text-brand-gray-dark leading-relaxed mb-10">
                 Everything you need to promote ZurichJS Conference 2026.
-                Logos, copy-ready blurbs, speaker lineup, workshop details, and key facts —
-                all in one place to help you spread the word about
-                Switzerland&apos;s premier JavaScript event.
+                Logos, copy-ready blurbs, speaker lineup, workshop details, and key facts.
               </p>
               <nav aria-label="Table of contents">
                 <p className="text-sm text-brand-gray-dark mb-3">
@@ -201,20 +262,70 @@ export default function PartnerAssetsPage() {
         </ShapedSection>
 
         {/* Logos Section */}
-        <ShapedSection shape="tighten" variant="light" className="!bg-[#EDEDEF]" id="logos">
+        <ShapedSection shape="tighten" variant="gray-light" id="logos">
           <div className="py-12 md:py-16">
             <div className="mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">Logos</h2>
+              <h2 className="text-2xl font-bold text-brand-black mb-4">Logos</h2>
               <p className="text-brand-gray-dark max-w-2xl">
-                Use these official logos when promoting or writing about ZurichJS Conference.
-                Please don&apos;t modify, distort, or recolor the logos.
+                Use the <b>ZurichJS Conf 2026 wordmark</b> when promoting the conference. Use the
+                ZurichJS wordmark for community or organizer references, and use the square logo
+                when horizontal space is limited, as long as the wordmark is used somewhere else.
+                <b>Please do not modify the assets. If you need a better fit, reach out to us at media@zurichjs.com</b>
               </p>
             </div>
-            <div className="grid md:grid-cols-2 gap-6">
-              <LogoCard title="Square Logo (Primary)" description="Our primary logo. Use this for most applications including web, print, social media, and profile pictures."
-                imageSrc="/images/logo/zurichjs-square.png" downloadHref="/images/logo/zurichjs-square.png" downloadName="zurichjs-square-logo.png" bgColor="bg-brand-black" />
-              <LogoCard title="Full Logo" description="Extended horizontal logo with wordmark. Use against contrasting backgrounds when the square logo doesn't fit the layout."
-                imageSrc="/images/logo/zurichjs-full.svg" downloadHref="/images/logo/zurichjs-full.svg" downloadName="zurichjs-full-logo.svg" bgColor="bg-brand-black" isWide={true} />
+            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
+              <LogoCard
+                title="Conference Wordmark"
+                description="Use this version for ZurichJS Conf 2026 promotion on light backgrounds."
+                imageSrc="/images/logo/wordmark-conf.svg"
+              />
+              <LogoCard
+                title="Conference Wordmark"
+                description="Use this version for ZurichJS Conf 2026 promotion on dark backgrounds."
+                imageSrc="/images/logo/wordmark-conf-white.svg"
+                theme="dark"
+              />
+              <LogoCard
+                title="ZurichJS Wordmark"
+                description="Use this version when referencing ZurichJS as the community or event organizer on light backgrounds."
+                imageSrc="/images/logo/wordmark.svg"
+              />
+              <LogoCard
+                title="ZurichJS Wordmark"
+                description="Use this version when referencing ZurichJS as the community or event organizer on dark backgrounds."
+                imageSrc="/images/logo/wordmark-white.svg"
+                theme="dark"
+              />
+              <LogoCard
+                title="Square Logo"
+                description="Use this compact mark when the wordmark does not fit, such as icons, avatars, or very small placements."
+                imageSrc="/images/logo/square.svg"
+                theme="neutral"
+              />
+              <LogoCard
+                title="Square Logo for Circle Inscription"
+                description="Use this adjusted square when placing the mark inside a circular crop or badge."
+                imageSrc="/images/logo/square-circle.svg"
+                theme="neutral"
+              />
+              <LogoCard
+                title="Square Logo Transparent"
+                description="Use this version on ZurichJS brand-gradient backgrounds to keep enough contrast."
+                imageSrc="/images/logo/square-no-yellow.svg"
+                theme="yellow"
+              />
+              <LogoCard
+                title="Swag Lockup"
+                description="Use this lockup for merchandise when the ZurichJS name should sit below the square mark."
+                imageSrc="/images/logo/swag.svg"
+                theme="neutral"
+              />
+              <LogoCard
+                title="Swag Lockup"
+                description="Use this lockup for dark merchandise or other dark-background applications."
+                imageSrc="/images/logo/swag-white.svg"
+                theme="dark"
+              />
             </div>
           </div>
         </ShapedSection>
@@ -223,7 +334,7 @@ export default function PartnerAssetsPage() {
         <ShapedSection shape="widen" variant="light" id="blurbs">
           <div className="py-12 md:py-16">
             <div className="mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">About the Conference</h2>
+              <h2 className="text-2xl font-bold text-brand-black mb-4">About the Conference</h2>
               <p className="text-brand-gray-dark max-w-2xl">
                 Official descriptions you can use in articles, social posts, newsletters, or
                 anywhere else you&apos;re writing about ZurichJS Conference 2026.
@@ -243,10 +354,9 @@ export default function PartnerAssetsPage() {
             <div className="flex items-start justify-between gap-4 mb-10 flex-wrap">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <Mic className="w-5 h-5 text-brand-yellow-main" />
                   <p className="text-sm font-semibold text-brand-yellow-main uppercase tracking-wider">Speaker Lineup</p>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                <h2 className="text-2xl font-bold text-white mb-4">
                   {programSpeakerCount || 20} Speakers from World-Class Companies
                 </h2>
                 <p className="text-brand-gray-light max-w-2xl">
@@ -265,7 +375,7 @@ export default function PartnerAssetsPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] auto-rows-fr gap-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] auto-rows-fr gap-4 text-brand-black">
                 {speakers.map((speaker) => (
                   <SpeakerCard
                     key={speaker.id}
@@ -290,11 +400,10 @@ export default function PartnerAssetsPage() {
           <div className="py-12 md:py-16">
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
-                <GraduationCap className="w-5 h-5 text-brand-yellow-dark" />
                 <p className="text-sm font-semibold text-brand-yellow-dark uppercase tracking-wider">Zurich Engineering Day</p>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">
-                Hands-On Workshops — September 10th, 2026
+              <h2 className="text-2xl font-bold text-brand-black mb-4">
+                Hands-On Workshops - September 10th, 2026
               </h2>
               <p className="text-brand-gray-dark max-w-2xl">
                 A full day of workshops for software engineers from all domains.
@@ -340,10 +449,9 @@ export default function PartnerAssetsPage() {
           <div className="py-12 md:py-16">
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
-                <PartyPopper className="w-5 h-5 text-brand-yellow-main" />
                 <p className="text-sm font-semibold text-brand-yellow-main uppercase tracking-wider">{afterParty.kicker}</p>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{afterParty.title}</h2>
+              <h2 className="text-2xl font-bold text-white mb-3">{afterParty.title}</h2>
               <p className="text-brand-gray-light text-base max-w-3xl">{afterParty.subtitle}</p>
             </div>
 
@@ -352,14 +460,6 @@ export default function PartnerAssetsPage() {
                 {afterParty.description.map((text, index) => (
                   <p key={index} className="text-brand-white leading-relaxed text-base">{text}</p>
                 ))}
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2" role="list">
-                  {afterParty.highlights.map(({ icon: Icon, label }) => (
-                    <li key={label} className="flex items-start gap-2.5 bg-brand-gray-darkest/60 rounded-xl p-3 text-sm text-brand-white">
-                      <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
-                      <span>{label}</span>
-                    </li>
-                  ))}
-                </ul>
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <Button variant="outline" asChild href={afterParty.websiteUrl}>
                     {afterParty.websiteLabel}
@@ -367,33 +467,16 @@ export default function PartnerAssetsPage() {
                   </Button>
                 </div>
               </div>
-              <div>
-                <AfterPartyCarousel />
-                <div className="mt-4 flex items-center gap-1.5 text-sm text-brand-gray-light">
-                  <Clock size={14} className="text-brand-yellow-main" />
-                  {afterParty.schedule}
-                </div>
-                <div className="mt-6">
-                  <h3 className="text-xs uppercase tracking-widest font-medium text-brand-yellow-main mb-3">{afterParty.directionsTitle}</h3>
-                  <ul className="space-y-2.5" role="list">
-                    {afterParty.directions.map(({ icon: Icon, mode, detail }) => (
-                      <li key={mode} className="flex items-start gap-3 text-sm text-brand-white">
-                        <Icon size={18} className="text-brand-yellow-main shrink-0 mt-0.5" />
-                        <span><strong className="font-semibold">{mode}:</strong>{' '}<span className="text-brand-gray-light">{detail}</span></span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              <AfterPartyCarousel />
             </div>
           </div>
         </ShapedSection>
 
         {/* Key Facts Section */}
-        <ShapedSection shape="widen" variant="yellow" id="facts">
+        <ShapedSection shape="widen" variant="gray-light" id="facts">
           <div className="py-12 md:py-16">
             <div className="mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-brand-black mb-4">Key Facts</h2>
+              <h2 className="text-2xl font-bold text-brand-black mb-4">Key Facts</h2>
               <p className="text-brand-black/70 max-w-2xl">Quick reference information for your promotional materials.</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -406,9 +489,9 @@ export default function PartnerAssetsPage() {
             </div>
             <div className="mt-10 p-6 bg-brand-black/10 rounded-xl">
               <h3 className="text-lg font-semibold text-brand-black mb-3">Topics Covered</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {topics.map((topic) => (
-                  <span key={topic} className="px-3 py-1 bg-brand-black text-white text-sm font-medium rounded-full">{topic}</span>
+                  <span key={topic} className="px-3 py-1 bg-brand-gray-dark text-white text-xs font-medium rounded-sm">{topic}</span>
                 ))}
               </div>
             </div>
@@ -419,18 +502,25 @@ export default function PartnerAssetsPage() {
         <ShapedSection shape="tighten" variant="dark" id="contact">
           <div className="py-12 md:py-16">
             <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Need Something Else?</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Need Something Else?</h2>
               <p className="text-brand-gray-light mb-8">
                 Need high-resolution assets, custom materials, or additional information?
                 We&apos;re happy to help our partners succeed.
               </p>
-              <a href="mailto:hello@zurichjs.com?subject=Partner Assets Request - ZurichJS Conference 2026">
+              <a href="mailto:partners@zurichjs.com?subject=Partner Assets Request - ZurichJS Conference 2026">
                 <Button variant="primary" size="lg">Contact Us</Button>
               </a>
             </div>
           </div>
         </ShapedSection>
       </main>
+      <ShapedSection
+          shape="straight"
+          variant="dark"
+          compactTop={true}
+      >
+        <SiteFooter showContactLinks />
+      </ShapedSection>
     </>
   );
 }

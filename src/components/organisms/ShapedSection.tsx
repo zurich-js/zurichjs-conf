@@ -19,7 +19,7 @@ export interface ShapedSectionProps {
    * - medium: Medium gray background with white text
    * - dark: black background with white text
    */
-  variant: 'light' | 'yellow' | 'gray' | 'medium' | 'dark';
+  variant: 'light' | 'yellow' | 'gray' | 'gray-light' | 'medium' | 'dark';
 
   /**
    * Whether to keep the top edge straight
@@ -93,6 +93,7 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     light: 'bg-brand-white text-brand-black',
     yellow: 'bg-brand-yellow-main text-brand-black',
     gray: 'bg-brand-gray-light text-brand-black',
+    'gray-light': 'bg-brand-gray-lightest text-brand-black',
     medium: 'bg-brand-gray-darkest text-brand-white',
     dark: 'bg-brand-black text-brand-white',
   };
