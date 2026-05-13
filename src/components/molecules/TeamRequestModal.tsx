@@ -28,6 +28,8 @@ export interface TeamRequestModalProps {
    * Callback fired when submission is successful
    */
   onSuccess?: (data: TeamRequestData) => void;
+  onEmailCaptured?: (email: string) => void;
+  onFieldCaptured?: (fieldName: string, value: string) => void;
 }
 
 export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
@@ -37,6 +39,8 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
   quantity,
   onSubmit,
   onSuccess,
+  onEmailCaptured,
+  onFieldCaptured,
 }) => {
   const [formData, setFormData] = useState<TeamRequestData>({
     name: '',
@@ -131,6 +135,19 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
     }
   };
 
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) return;
+
+    onFieldCaptured?.(name, trimmedValue);
+
+    if (name === 'email' && trimmedValue.includes('@')) {
+      onEmailCaptured?.(trimmedValue);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -211,6 +228,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                           required
                           value={formData.quantity}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           className="w-20 text-center"
                           aria-invalid={!!validationErrors.quantity}
                           aria-describedby={validationErrors.quantity ? 'quantity-error' : undefined}
@@ -237,6 +255,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                     required
                     value={formData.name}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder="John Doe"
                     className="w-full"
                     aria-invalid={!!validationErrors.name}
@@ -261,6 +280,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                     required
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder="john@company.com"
                     className="w-full"
                     aria-invalid={!!validationErrors.email}
@@ -285,6 +305,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                     required
                     value={formData.company}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     placeholder="Acme Inc."
                     className="w-full"
                     aria-invalid={!!validationErrors.company}
@@ -308,6 +329,7 @@ export const TeamRequestModal: React.FC<TeamRequestModalProps> = ({
                     rows={3}
                     value={formData.message}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className="w-full"
                     placeholder="Any specific requirements or questions..."
                   />

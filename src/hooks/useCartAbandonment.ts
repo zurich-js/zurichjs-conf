@@ -107,6 +107,7 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
   const router = useRouter();
   const sessionStartTime = useRef<number>(Date.now());
   const hasTrackedAbandonment = useRef<boolean>(false);
+  const lastTrackedEmail = useRef<string | null>(null);
 
   /**
    * Format cart items for analytics using the centralized utility
@@ -120,12 +121,23 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
    * Prevents duplicate tracking with hasTrackedAbandonment ref
    */
   const trackAbandonment = useCallback(() => {
-    // Prevent duplicate abandonment events in the same session
-    if (!enabled || hasTrackedAbandonment.current) {
+    const normalizedEmail = userEmail?.trim().toLowerCase() || null;
+
+    if (!enabled) {
+      return;
+    }
+
+    // Prevent duplicate abandonment events in the same session, but allow a
+    // second capture if the first one happened before we knew the user's email.
+    if (
+      hasTrackedAbandonment.current &&
+      (!normalizedEmail || lastTrackedEmail.current === normalizedEmail)
+    ) {
       return;
     }
 
     hasTrackedAbandonment.current = true;
+    lastTrackedEmail.current = normalizedEmail;
 
     const timeSpent = (Date.now() - sessionStartTime.current) / 1000;
     const formattedItems = formatCartItems(cartData.items);
@@ -176,6 +188,7 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
    */
   const resetAbandonment = useCallback(() => {
     hasTrackedAbandonment.current = false;
+    lastTrackedEmail.current = null;
   }, []);
 
   /**

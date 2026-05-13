@@ -12,7 +12,6 @@ import { AnimatePresence } from 'framer-motion';
 import type { GetServerSideProps } from 'next';
 
 import { useCart } from '@/contexts/CartContext';
-import { useCurrency } from '@/contexts/CurrencyContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
@@ -57,8 +56,7 @@ export default function CartPage() {
     addToCart,
   } = useCart();
 
-  const { currency } = useCurrency();
-  const { plans: ticketPlans, currentStage, isLoading: isPricingLoading } = useTicketPricing();
+  const { plans: ticketPlans, isLoading: isPricingLoading } = useTicketPricing();
   const [currentStep, setCurrentStep] = useState<CartStep>('review');
   const [attendees, setAttendees] = useState<AttendeeInfo[]>([]);
   const [workshopAttendees, setWorkshopAttendees] = useState<Record<string, AttendeeInfo[]>>({});
@@ -263,6 +261,12 @@ export default function CartPage() {
     else setCurrentStep('review');
   };
 
+  const handleCapturedField = (fieldName: string, value: string) => {
+    if (fieldName === 'firstName' || fieldName === 'name') {
+      setCapturedFirstName(value);
+    }
+  };
+
   // Cart abandonment tracking
   useCartAbandonment({
     enabled: !isEmpty && !checkoutFinalizing,
@@ -284,6 +288,7 @@ export default function CartPage() {
       if (data.email) {
         scheduleAbandonmentEmail({
           email: data.email,
+          firstName: data.first_name,
           cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
             title, quantity, price, currency,
           })),
@@ -406,9 +411,7 @@ export default function CartPage() {
                 onRemoveVoucher={removeVoucher}
                 onSubmit={handleCheckoutSubmit}
                 onEmailCaptured={setCapturedEmail}
-                onFieldCaptured={(fieldName, value) => {
-                  if (fieldName === 'firstName') setCapturedFirstName(value);
-                }}
+                onFieldCaptured={handleCapturedField}
               />
             )}
 
@@ -443,6 +446,8 @@ export default function CartPage() {
             quantity={teamTicketInfo.quantity}
             onSubmit={handleTeamRequestSubmit}
             onSuccess={handleTeamRequestSuccess}
+            onEmailCaptured={setCapturedEmail}
+            onFieldCaptured={handleCapturedField}
           />
         )}
 

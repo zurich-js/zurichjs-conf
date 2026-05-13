@@ -4,7 +4,6 @@
  * + read-only API key authentication for bot/automation access
  */
 
-import { serverEnv } from '@/config/env';
 import type { NextApiRequest } from 'next';
 import { verifyReadOnlyApiKey, type BotAuthResult } from './bot-auth';
 
@@ -20,7 +19,12 @@ export interface AdminAccessResult {
  * Verify admin password
  */
 export function verifyAdminPassword(password: string): boolean {
-  return password === serverEnv.admin.password;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    throw new Error('Missing required environment variable: ADMIN_PASSWORD');
+  }
+
+  return password === adminPassword;
 }
 
 /**
