@@ -74,8 +74,7 @@ Required environment variables (see `.env.example`):
 ```env
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
 # Stripe
 STRIPE_SECRET_KEY=
