@@ -1,8 +1,8 @@
 /**
  * UTM-Based Lottery Discount System
  *
- * Triggers a lottery discount (5-15%) when visitors arrive via
- * specific offline marketing campaigns (QR codes, flyers, posters).
+ * Triggers a lottery discount when visitors arrive via specific offline
+ * marketing campaigns (QR codes, flyers, posters).
  */
 
 export interface UtmParams {
@@ -27,6 +27,18 @@ const LOTTERY_CONFIG = {
   minPercent: 5,
   maxPercent: 15,
 
+  // Exact-match campaigns that should always receive a specific discount
+  guaranteedDiscounts: [
+    {
+      source: 'offline',
+      medium: 'qr_code',
+      campaign: 'business_card_bogdan',
+      percentOff: 20,
+      activeFrom: '2026-05-15T00:00:00+02:00',
+      activeUntil: '2026-05-17T00:00:00+02:00',
+    },
+  ],
+
   // Valid values for utm_source (case-insensitive)
   validSources: ['offline', 'print'],
 
@@ -37,6 +49,19 @@ const LOTTERY_CONFIG = {
   campaignKeywords: ['business', 'card', 'faris', 'nadja', 'bogdan'],
 } as const;
 
+export const LOTTERY_PERCENT_BOUNDS = {
+  minPercent: LOTTERY_CONFIG.minPercent,
+  maxPercent: LOTTERY_CONFIG.maxPercent,
+} as const;
+
+function normalizeUtmValue(value: string): string {
+  return value.toLowerCase();
+}
+
+function hasRequiredUtmParams(params: UtmParams): params is Required<UtmParams> {
+  return Boolean(params.utm_source && params.utm_medium && params.utm_campaign);
+}
+
 /**
  * Generates a random integer between min and max (inclusive)
  */
@@ -44,20 +69,66 @@ function randomIntBetween(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function isGuaranteedDiscountActive(
+  discount: (typeof LOTTERY_CONFIG.guaranteedDiscounts)[number],
+  now: Date
+): boolean {
+  const nowMs = now.getTime();
+  return (
+    nowMs >= new Date(discount.activeFrom).getTime() &&
+    nowMs < new Date(discount.activeUntil).getTime()
+  );
+}
+
+function getGuaranteedDiscount(params: Required<UtmParams>, now: Date): number | null {
+  const sourceLower = normalizeUtmValue(params.utm_source);
+  const mediumLower = normalizeUtmValue(params.utm_medium);
+  const campaignLower = normalizeUtmValue(params.utm_campaign);
+
+  const guaranteedDiscount = LOTTERY_CONFIG.guaranteedDiscounts.find(
+    (discount) =>
+      sourceLower === normalizeUtmValue(discount.source) &&
+      mediumLower === normalizeUtmValue(discount.medium) &&
+      campaignLower === normalizeUtmValue(discount.campaign) &&
+      isGuaranteedDiscountActive(discount, now)
+  );
+
+  return guaranteedDiscount?.percentOff ?? null;
+}
+
+export function isValidLotteryPercent(
+  percentOff: unknown,
+  now: Date = new Date()
+): percentOff is number {
+  if (typeof percentOff !== 'number') {
+    return false;
+  }
+
+  if (
+    percentOff >= LOTTERY_PERCENT_BOUNDS.minPercent &&
+    percentOff <= LOTTERY_PERCENT_BOUNDS.maxPercent
+  ) {
+    return true;
+  }
+
+  return LOTTERY_CONFIG.guaranteedDiscounts.some(
+    (discount) =>
+      discount.percentOff === percentOff &&
+      isGuaranteedDiscountActive(discount, now)
+  );
+}
+
 /**
  * Checks if UTM parameters match the lottery criteria
  */
 function matchesLotteryCriteria(params: UtmParams): boolean {
-  const { utm_source, utm_medium, utm_campaign } = params;
-
-  // All three parameters must be present
-  if (!utm_source || !utm_medium || !utm_campaign) {
+  if (!hasRequiredUtmParams(params)) {
     return false;
   }
 
-  const sourceLower = utm_source.toLowerCase();
-  const mediumLower = utm_medium.toLowerCase();
-  const campaignLower = utm_campaign.toLowerCase();
+  const sourceLower = normalizeUtmValue(params.utm_source);
+  const mediumLower = normalizeUtmValue(params.utm_medium);
+  const campaignLower = normalizeUtmValue(params.utm_campaign);
 
   // Check source matches
   const sourceMatches = LOTTERY_CONFIG.validSources.some(
@@ -86,7 +157,21 @@ function matchesLotteryCriteria(params: UtmParams): boolean {
  * @param params - UTM parameters from URL
  * @returns LotteryResult with eligibility and discount percentage
  */
-export function evaluateUtmLottery(params: UtmParams): LotteryResult {
+export function evaluateUtmLottery(
+  params: UtmParams,
+  now: Date = new Date()
+): LotteryResult {
+  if (hasRequiredUtmParams(params)) {
+    const guaranteedPercentOff = getGuaranteedDiscount(params, now);
+    if (guaranteedPercentOff !== null) {
+      return {
+        eligible: true,
+        percentOff: guaranteedPercentOff,
+        source: `utm:${params.utm_source}/${params.utm_medium}/${params.utm_campaign}`,
+      };
+    }
+  }
+
   if (!matchesLotteryCriteria(params)) {
     return { eligible: false, percentOff: 0 };
   }
