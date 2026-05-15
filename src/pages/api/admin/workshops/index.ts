@@ -71,39 +71,54 @@ async function handleList(req: NextApiRequest, res: NextApiResponse) {
       return res.status(500).json({ error: submissionsError.message });
     }
 
-    // Offering overlays keyed by cfp_submission_id.
+    // All workshop offerings — including those manually added for invited
+    // speakers (no cfp_submission_id) and those whose linked CFP submission
+    // is not in the accepted set.
     const { data: offerings, error: offeringsError } = await supabase
       .from('workshops')
-      .select('*')
-      .not('cfp_submission_id', 'is', null);
+      .select('*');
 
     if (offeringsError) {
       log.error('Error loading workshop offerings', offeringsError);
       return res.status(500).json({ error: offeringsError.message });
     }
 
+    const allOfferings = (offerings ?? []) as Workshop[];
     const offeringBySubmission = new Map<string, Workshop>();
-    for (const row of (offerings ?? []) as Workshop[]) {
+    for (const row of allOfferings) {
       if (row.cfp_submission_id) offeringBySubmission.set(row.cfp_submission_id, row);
     }
 
     const revenueByWorkshop = await getAllWorkshopRevenue();
 
-    // Resolve the public session slug (what /workshops/[slug] uses) by looking
-    // it up in fetchPublicSpeakers so the admin link matches the detail page.
+    // Resolve the public session slug + speaker label by looking it up in
+    // fetchPublicSpeakers so the admin link matches the detail page. We key
+    // by both cfp_submission_id and program_session.id because manually-added
+    // workshops may only have a program_session link.
     const { speakers } = await fetchPublicSpeakers();
     const slugBySubmissionId = new Map<string, string>();
+    const slugByProgramSessionId = new Map<string, string>();
+    const speakerNameBySubmissionId = new Map<string, string>();
+    const speakerNameByProgramSessionId = new Map<string, string>();
     for (const speaker of speakers) {
+      const speakerName = `${speaker.first_name ?? ''} ${speaker.last_name ?? ''}`.trim();
       for (const session of speaker.sessions) {
-        if (session.type === 'workshop') {
-          slugBySubmissionId.set(session.id, session.slug);
+        if (session.type !== 'workshop') continue;
+        slugByProgramSessionId.set(session.id, session.slug);
+        if (speakerName) speakerNameByProgramSessionId.set(session.id, speakerName);
+        if (session.cfp_submission_id) {
+          slugBySubmissionId.set(session.cfp_submission_id, session.slug);
+          if (speakerName) speakerNameBySubmissionId.set(session.cfp_submission_id, speakerName);
         }
       }
     }
 
+    const usedOfferingIds = new Set<string>();
+
     const items: AdminWorkshopListItem[] = (submissions ?? []).map((submission) => {
       const speaker = Array.isArray(submission.speaker) ? submission.speaker[0] : submission.speaker;
       const offering = offeringBySubmission.get(submission.id) ?? null;
+      if (offering) usedOfferingIds.add(offering.id);
       const revenue = offering ? revenueByWorkshop.get(offering.id) : undefined;
       return {
         cfpSubmissionId: submission.id,
@@ -123,6 +138,41 @@ async function handleList(req: NextApiRequest, res: NextApiResponse) {
           })) ?? [],
       };
     });
+
+    // Orphan offerings: manually-added workshops (no CFP link) or workshops
+    // whose linked CFP submission isn't in the accepted set. Surface them so
+    // admins can manage registrations and configuration from the same view.
+    for (const offering of allOfferings) {
+      if (usedOfferingIds.has(offering.id)) continue;
+      const revenue = revenueByWorkshop.get(offering.id);
+      const sessionId = offering.session_id ?? null;
+      const cfpId = offering.cfp_submission_id;
+      const sessionSlug =
+        (sessionId ? slugByProgramSessionId.get(sessionId) : null)
+        ?? (cfpId ? slugBySubmissionId.get(cfpId) : null)
+        ?? null;
+      const speakerName =
+        (sessionId ? speakerNameByProgramSessionId.get(sessionId) : null)
+        ?? (cfpId ? speakerNameBySubmissionId.get(cfpId) : null)
+        ?? null;
+      items.push({
+        cfpSubmissionId: cfpId ?? '',
+        submissionTitle: offering.title,
+        submissionAbstract: offering.description,
+        submissionStatus: offering.status,
+        speakerName,
+        cfpDurationHours: null,
+        sessionSlug,
+        offering,
+        registrantCount: revenue?.totalRegistrations ?? 0,
+        revenueByCurrency:
+          revenue?.byCurrency.map(({ currency, grossCents, registrations }) => ({
+            currency,
+            grossCents,
+            registrations,
+          })) ?? [],
+      });
+    }
 
     return res.status(200).json({ items });
   } catch (error) {
