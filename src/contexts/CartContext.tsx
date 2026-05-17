@@ -279,14 +279,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
 
   // ---- Navigation ----
 
+  // The cart already lives in React context + localStorage, so we don't need
+  // to round-trip it through the URL on every nav. `useCartUrlSync` on /cart
+  // still writes the encoded state to the URL after mount for share links.
+  // Keeping the path clean here makes the navigation feel instant.
   const navigateToCart = useCallback(() => {
-    const currentCart = cartRef.current;
-    if (currentCart.items.length > 0) {
-      const encoded = encodeCartState(currentCart);
-      router.push(`/cart?cart=${encoded}`);
-    } else {
-      router.push('/cart');
-    }
+    router.push('/cart');
   }, [router]);
 
   // ---- Context Value ----

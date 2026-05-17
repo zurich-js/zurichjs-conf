@@ -138,22 +138,23 @@ export function WorkshopPurchasePanel({
               Workshop purchases aren&apos;t open yet — check back soon.
             </p>
           )}
-          {offering && (
+          {offering && !offering.soldOut && alreadyInCart && (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-md font-bold bg-brand-gray-darkest text-brand-white hover:bg-brand-black transition-colors cursor-pointer"
+            >
+              <Check size={16} />
+              View in cart
+            </button>
+          )}
+          {offering && !alreadyInCart && (
             <Button
-              variant={alreadyInCart ? 'ghost' : 'blue'}
+              variant="blue"
               onClick={offering.soldOut ? undefined : handleAddToCart}
               disabled={offering.soldOut}
             >
-              {offering.soldOut ? (
-                'Sold out'
-              ) : alreadyInCart ? (
-                <>
-                  <Check size={16} />
-                  View in cart
-                </>
-              ) : (
-                'Add to cart'
-              )}
+              {offering.soldOut ? 'Sold out' : 'Add to cart'}
             </Button>
           )}
           {offering && (

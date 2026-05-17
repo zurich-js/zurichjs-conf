@@ -74,10 +74,16 @@ export function WorkshopBuyButton({
         </span>
       )}
       {alreadyInCart ? (
-        <Button variant="ghost" size={size} onClick={navigateToCart}>
+        <button
+          type="button"
+          onClick={navigateToCart}
+          className={`inline-flex items-center gap-1.5 rounded-full bg-brand-gray-darkest text-brand-white font-bold hover:bg-brand-black transition-colors cursor-pointer ${
+            size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-md'
+          }`}
+        >
           <Check size={14} />
           In cart
-        </Button>
+        </button>
       ) : (
         <Button
           variant={offering.soldOut ? 'ghost' : variant}

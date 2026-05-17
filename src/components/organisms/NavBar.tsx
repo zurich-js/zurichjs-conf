@@ -44,7 +44,7 @@ export const NavBar: React.FC<NavBarProps> = ({
   const isHomePage = router.pathname === "/";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { cart, navigateToCart } = useCart();
+  const { cart } = useCart();
   const cartCount = cart.totalItems;
   const hasCart = cartCount > 0;
 
@@ -117,9 +117,9 @@ export const NavBar: React.FC<NavBarProps> = ({
             </div>
             <div className="w-px h-6 bg-gray-600" />
             {hasCart && (
-              <button
-                type="button"
-                onClick={navigateToCart}
+              <Link
+                href="/cart"
+                prefetch
                 aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
                 className="relative inline-flex items-center justify-center h-8 w-8 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer"
               >
@@ -127,7 +127,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
                   {cartCount}
                 </span>
-              </button>
+              </Link>
             )}
             <Button
               variant="primary"
@@ -141,9 +141,9 @@ export const NavBar: React.FC<NavBarProps> = ({
 
           <div className="lg:hidden flex items-center gap-1">
             {hasCart && (
-              <button
-                type="button"
-                onClick={navigateToCart}
+              <Link
+                href="/cart"
+                prefetch
                 aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
                 className="relative inline-flex items-center justify-center h-11 w-11 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer select-none"
               >
@@ -151,7 +151,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                 <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
                   {cartCount}
                 </span>
-              </button>
+              </Link>
             )}
             <button
               className="inline-flex items-center justify-center h-11 w-11 text-white hover:text-brand-yellow-main transition-colors"
@@ -209,17 +209,15 @@ export const NavBar: React.FC<NavBarProps> = ({
               Tickets
             </Button>
             {hasCart && (
-              <Button
-                variant="ghost"
-                size="lg"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigateToCart();
-                }}
+              <Link
+                href="/cart"
+                prefetch
+                onClick={() => setMobileMenuOpen(false)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-lg leading-none bg-transparent text-white font-medium hover:bg-white hover:text-brand-black transition-all"
               >
                 <ShoppingCart size={18} />
                 View cart ({cartCount})
-              </Button>
+              </Link>
             )}
           </div>
           <div
