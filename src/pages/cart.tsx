@@ -89,9 +89,10 @@ export default function CartPage() {
   const workshopSeatCount = workshopItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalSeatCount = ticketCount + workshopSeatCount;
   const attendeeItems = [...ticketItems, ...workshopItems];
-  // Gather per-seat attendee info whenever there's more than one seat (across
-  // tickets + workshop seats), mirroring how tickets work today.
-  const needsAttendeeInfo = totalSeatCount > 1;
+  // Per-seat attendee info is only needed when at least one line has qty > 1.
+  // 1 ticket + 1 workshop is still "one person" — they attend the conference
+  // and the workshop themselves, so the billing contact covers everything.
+  const needsAttendeeInfo = cart.items.some((item) => item.quantity > 1);
   const purchaseType = ticketCount > 0 && workshopSeatCount > 0
     ? 'mixed'
     : workshopSeatCount > 0
