@@ -12,6 +12,7 @@ import { GraduationCap, MapPin, Timer, Users } from 'lucide-react';
 import { Button, Heading } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useToast } from '@/contexts/ToastContext';
 import { createWorkshopPricingQueryOptions } from '@/lib/queries/workshops';
 import { formatPrice } from '@/lib/cart';
 import { formatDuration } from '@/components/scheduling/utils';
@@ -36,6 +37,7 @@ export function WorkshopPurchasePanel({
   const { currency } = useCurrency();
   const router = useRouter();
   const { addToCart, isInCart, navigateToCart } = useCart();
+  const { addToast } = useToast();
 
   const queryOptions = useMemo(
     () => createWorkshopPricingQueryOptions({ currency, sessionId, cfpSubmissionId: cfpSubmissionId ?? undefined, sessionSlug }),
@@ -48,28 +50,37 @@ export function WorkshopPurchasePanel({
     data?.items[0] ??
     null;
 
+  const itemId = offering ? `workshop_${offering.workshopId}` : null;
+  const alreadyInCart = itemId ? isInCart(itemId) : false;
+
   const handleAddToCart = () => {
-    if (!offering) return;
-    const itemId = `workshop_${offering.workshopId}`;
-    if (!isInCart(itemId)) {
-      addToCart({
-        id: itemId,
-        kind: 'workshop',
-        workshopId: offering.workshopId,
-        title,
-        price: offering.unitAmount / 100,
-        currency: offering.currency,
-        priceId: offering.priceId,
-        workshopRoom: offering.room,
-        workshopDurationMinutes: offering.durationMinutes,
-      });
-      analytics.track('workshop_added_to_cart', {
-        workshop_amount: offering.unitAmount / 100,
-        currency: offering.currency,
-        quantity: 1,
-      });
+    if (!offering || !itemId) return;
+    if (alreadyInCart) {
+      navigateToCart();
+      return;
     }
-    navigateToCart();
+    addToCart({
+      id: itemId,
+      kind: 'workshop',
+      workshopId: offering.workshopId,
+      title,
+      price: offering.unitAmount / 100,
+      currency: offering.currency,
+      priceId: offering.priceId,
+      workshopRoom: offering.room,
+      workshopDurationMinutes: offering.durationMinutes,
+    });
+    analytics.track('workshop_added_to_cart', {
+      workshop_amount: offering.unitAmount / 100,
+      currency: offering.currency,
+      quantity: 1,
+    });
+    addToast({
+      type: 'success',
+      title: 'Added to cart',
+      message: `${title} is in your cart. Add more workshops or check out.`,
+      action: { label: 'View cart', onClick: navigateToCart },
+    });
   };
 
   return (
@@ -129,11 +140,15 @@ export function WorkshopPurchasePanel({
           )}
           {offering && (
             <Button
-              variant="blue"
+              variant={alreadyInCart ? 'ghost' : 'blue'}
               onClick={offering.soldOut ? undefined : handleAddToCart}
               disabled={offering.soldOut}
             >
-              {offering.soldOut ? 'Sold out' : 'Add to cart'}
+              {offering.soldOut
+                ? 'Sold out'
+                : alreadyInCart
+                  ? 'In cart — View cart'
+                  : 'Add to cart'}
             </Button>
           )}
           {offering && (
@@ -141,7 +156,7 @@ export function WorkshopPurchasePanel({
               onClick={() => router.push('/workshops')}
               className="text-sm font-medium text-brand-black/70 underline-offset-4 hover:underline cursor-pointer"
             >
-              Back to workshops
+              {alreadyInCart ? 'Add another workshop' : 'Back to workshops'}
             </button>
           )}
         </div>

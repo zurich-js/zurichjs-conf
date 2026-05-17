@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Menu, X } from "lucide-react";
+import { Menu, ShoppingCart, X } from "lucide-react";
 import { Dialog } from "@headlessui/react";
 import { Logo, Button, SocialIcon } from "@/components/atoms";
+import { useCart } from "@/contexts/CartContext";
 
 export interface NavBarProps {
   scrollThreshold?: number;
@@ -43,6 +44,9 @@ export const NavBar: React.FC<NavBarProps> = ({
   const isHomePage = router.pathname === "/";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { cart, navigateToCart } = useCart();
+  const cartCount = cart.totalItems;
+  const hasCart = cartCount > 0;
 
   // Hide NavBar on admin and CFP sub-routes (but not /cfp itself)
   const shouldHideNavBar = router.pathname.startsWith('/admin') || router.pathname.startsWith('/cfp/');
@@ -112,6 +116,19 @@ export const NavBar: React.FC<NavBarProps> = ({
                 ))}
             </div>
             <div className="w-px h-6 bg-gray-600" />
+            {hasCart && (
+              <button
+                type="button"
+                onClick={navigateToCart}
+                aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+                className="relative inline-flex items-center justify-center h-8 w-8 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer"
+              >
+                <ShoppingCart size={20} />
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
+                  {cartCount}
+                </span>
+              </button>
+            )}
             <Button
               variant="primary"
               size="sm"
@@ -123,6 +140,19 @@ export const NavBar: React.FC<NavBarProps> = ({
           </div>
 
           <div className="lg:hidden flex items-center gap-3">
+            {hasCart && (
+              <button
+                type="button"
+                onClick={navigateToCart}
+                aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+                className="relative inline-flex items-center justify-center p-2 text-white hover:text-brand-yellow-main transition-colors cursor-pointer"
+              >
+                <ShoppingCart size={22} />
+                <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
+                  {cartCount}
+                </span>
+              </button>
+            )}
             <button
               className="text-white p-2 hover:text-brand-yellow-main transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -178,6 +208,19 @@ export const NavBar: React.FC<NavBarProps> = ({
             >
               Tickets
             </Button>
+            {hasCart && (
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigateToCart();
+                }}
+              >
+                <ShoppingCart size={18} />
+                View cart ({cartCount})
+              </Button>
+            )}
           </div>
           <div
             className="flex items-center justify-start gap-4 p-4 pl-6"
