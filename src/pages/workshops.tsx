@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useQueryState, parseAsStringLiteral } from 'nuqs';
 
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
@@ -10,6 +11,9 @@ import { workshopProgramSections } from '@/data';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
+
+const TAB_VALUES = ['morning', 'lunch', 'afternoon'] as const;
+type TabValue = (typeof TAB_VALUES)[number];
 
 const DAY_DATE = '2026-09-10';
 
@@ -37,7 +41,11 @@ function hasPublishedWorkshop(items: PublicProgramScheduleItem[]) {
 }
 
 export default function WorkshopsPage() {
-  const [activeTab, setActiveTab] = useState('morning');
+  // URL-driven so back-navigation and shared links preserve the slot view.
+  const [activeTab, setActiveTab] = useQueryState<TabValue>(
+    'slot',
+    parseAsStringLiteral(TAB_VALUES).withDefault('morning').withOptions({ shallow: true, clearOnDefault: true })
+  );
   const tabsRef = useRef<HTMLDivElement>(null);
   const { currency } = useCurrency();
 
@@ -111,7 +119,11 @@ export default function WorkshopsPage() {
                   date: section.date,
                 }))}
                 activeTab={activeTab}
-                onTabChange={setActiveTab}
+                onTabChange={(tabId) => {
+                  if ((TAB_VALUES as readonly string[]).includes(tabId)) {
+                    setActiveTab(tabId as TabValue);
+                  }
+                }}
                 color="blue"
                 className="pt-0"
               />

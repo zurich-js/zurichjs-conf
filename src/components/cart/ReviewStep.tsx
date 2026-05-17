@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { CartItem, CartSummary, VoucherInput, SeebadEngeModal } from '@/components/molecules';
 import { Button, Heading } from '@/components/atoms';
 import type { ReviewStepProps, CartItem as CartItemType } from './types';
-import {InfoIcon} from "lucide-react";
+import { InfoIcon, PlusIcon } from 'lucide-react';
 
 export function ReviewStep({
   cart,
@@ -26,6 +26,9 @@ export function ReviewStep({
   onTeamRequest,
 }: ReviewStepProps) {
   const [isSeebadEngeOpen, setIsSeebadEngeOpen] = useState(false);
+
+  const hasTicket = cart.items.some((item) => item.kind !== 'workshop');
+  const hasWorkshop = cart.items.some((item) => item.kind === 'workshop');
 
   return (
     <motion.div
@@ -52,6 +55,23 @@ export function ReviewStep({
               />
             ))}
           </AnimatePresence>
+        </div>
+
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          {!hasTicket && (
+            <Link
+              href="/#tickets"
+              className="inline-flex items-center gap-1.5 font-medium text-brand-yellow-main hover:underline"
+            >
+              <PlusIcon size={14} /> Add a conference ticket
+            </Link>
+          )}
+          <Link
+            href="/workshops"
+            className="inline-flex items-center gap-1.5 font-medium text-brand-yellow-main hover:underline"
+          >
+            <PlusIcon size={14} /> {hasWorkshop ? 'Add another workshop' : 'Add a workshop'}
+          </Link>
         </div>
 
         {/* VIP Upgrade Upsell Banner */}

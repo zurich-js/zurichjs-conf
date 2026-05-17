@@ -22,15 +22,22 @@ export function EmptyCartState() {
           <div className="w-full flex justify-center">
             <TicketXIcon size={48} className="stroke-brand-red" />
           </div>
-          <h1 className="text-3xl font-bold text-brand-white mb-3">No Tickets Selected</h1>
+          <h1 className="text-3xl font-bold text-brand-white mb-3">Your cart is empty</h1>
           <p className="text-brand-gray-light mb-8">
-            Choose your tickets to get started with your conference registration.
+            Add a conference ticket, a workshop seat, or both — they all check out together.
           </p>
-          <Link href="/#tickets">
-            <Button variant="primary" asChild>
-              View Tickets
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/#tickets">
+              <Button variant="primary" asChild>
+                View Tickets
+              </Button>
+            </Link>
+            <Link href="/workshops">
+              <Button variant="ghost" asChild>
+                Browse Workshops
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </>

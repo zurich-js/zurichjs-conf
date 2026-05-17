@@ -10,12 +10,14 @@
 
 import { useState, useCallback } from 'react';
 import type { CheckoutFormData } from '@/lib/validations/checkout';
+import type { Cart } from '@/types/cart';
 
 // ── Allowed keys + their value types ───────────────────────────────────────────
 
 interface LocalStorageSchema {
   zurichjs_billing_data: Partial<CheckoutFormData>;
   zurichjs_cart_recovery: string;
+  zurichjs_cart_v1: Cart;
 }
 
 export type LocalStorageKey = keyof LocalStorageSchema;

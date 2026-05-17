@@ -26,9 +26,6 @@ import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
 import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
 import { calculateOrderSummary } from '@/lib/cart';
-import { createTicketPricingQueryOptions } from '@/lib/queries/tickets';
-import { createQueryClient } from '@/lib/query-client';
-import { createPrefetch } from '@/lib/prefetch';
 import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry } from '@/config/currency';
@@ -89,9 +86,10 @@ export default function CartPage() {
   const workshopSeatCount = workshopItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalSeatCount = ticketCount + workshopSeatCount;
   const attendeeItems = [...ticketItems, ...workshopItems];
-  // Gather per-seat attendee info whenever there's more than one seat (across
-  // tickets + workshop seats), mirroring how tickets work today.
-  const needsAttendeeInfo = totalSeatCount > 1;
+  // Per-seat attendee info is only needed when at least one line has qty > 1.
+  // 1 ticket + 1 workshop is still "one person" — they attend the conference
+  // and the workshop themselves, so the billing contact covers everything.
+  const needsAttendeeInfo = cart.items.some((item) => item.quantity > 1);
   const purchaseType = ticketCount > 0 && workshopSeatCount > 0
     ? 'mixed'
     : workshopSeatCount > 0
@@ -464,11 +462,11 @@ export default function CartPage() {
 }
 
 /**
- * Server-side props - Prefetch pricing data, workshop vouchers, and decode cart from URL
+ * Server-side props — geo-detect currency and decode the shared cart from URL.
+ * Ticket pricing is fetched client-side via useTicketPricing so the
+ * navigation isn't blocked on a Stripe round-trip.
  */
 export const getServerSideProps: GetServerSideProps = async ({ query, req }) => {
-  const queryClient = createQueryClient();
-  const { optionalQuery, dehydrate } = createPrefetch(queryClient);
   const countryCode = detectCountryFromRequest(req);
   const detectedCurrency = getCurrencyFromCountry(countryCode);
 
@@ -479,15 +477,8 @@ export const getServerSideProps: GetServerSideProps = async ({ query, req }) => 
     initialCart = { ...initialCart, currency: detectedCurrency };
   }
 
-  // Optional prefetch — if it fails or exceeds 1s timeout,
-  // the page renders and useTicketPricing refetches client-side
-  await Promise.allSettled([
-    optionalQuery(createTicketPricingQueryOptions(detectedCurrency)),
-  ]);
-
   return {
     props: {
-      dehydratedState: dehydrate(),
       initialCart: initialCart ?? createEmptyCart(detectedCurrency),
       detectedCurrency,
     },

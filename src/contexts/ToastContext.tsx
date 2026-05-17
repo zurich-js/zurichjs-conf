@@ -36,17 +36,19 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-// Toast icon styles
-const iconStyles: Record<ToastType, string> = {
-  success: 'text-green-500',
-  error: 'text-red-500',
-  warning: 'text-orange-500',
-  info: 'text-blue-500',
+// Per-type accents — matches the dark brand palette used across the cart UI.
+// Background is consistent across types so the toast reads as a single
+// component family; the left border + icon color carry the status meaning.
+const variantStyles: Record<ToastType, { border: string; iconColor: string }> = {
+  success: { border: 'border-l-brand-green', iconColor: 'text-brand-green' },
+  error: { border: 'border-l-brand-red', iconColor: 'text-brand-red' },
+  warning: { border: 'border-l-brand-orange', iconColor: 'text-brand-orange' },
+  info: { border: 'border-l-brand-blue', iconColor: 'text-brand-blue' },
 };
 
 // Toast icons
 const ToastIcon: React.FC<{ type: ToastType }> = ({ type }) => {
-  const className = `w-5 h-5 ${iconStyles[type]}`;
+  const className = `w-5 h-5 ${variantStyles[type].iconColor}`;
   switch (type) {
     case 'success':
       return <Check className={className} />;
@@ -64,19 +66,7 @@ const ToastItem: React.FC<{
   toast: Toast;
   onDismiss: () => void;
 }> = ({ toast, onDismiss }) => {
-  const bgColors: Record<ToastType, string> = {
-    success: 'bg-green-50 border-green-200',
-    error: 'bg-red-50 border-red-200',
-    warning: 'bg-orange-50 border-orange-200',
-    info: 'bg-blue-50 border-blue-200',
-  };
-
-  const textColors: Record<ToastType, string> = {
-    success: 'text-green-800',
-    error: 'text-red-800',
-    warning: 'text-orange-800',
-    info: 'text-blue-800',
-  };
+  const { border } = variantStyles[toast.type];
 
   useEffect(() => {
     if (toast.duration !== 0) {
@@ -87,11 +77,11 @@ const ToastItem: React.FC<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+      initial={{ opacity: 0, y: -16, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+      exit={{ opacity: 0, y: -16, scale: 0.97 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={`flex items-start gap-3 p-4 rounded-lg border shadow-lg ${bgColors[toast.type]} max-w-md w-full`}
+      className={`flex items-start gap-3 p-4 rounded-2xl border border-brand-gray-dark border-l-4 ${border} bg-brand-gray-darkest shadow-xl shadow-black/40 w-full sm:max-w-md`}
       role="alert"
       aria-live="polite"
     >
@@ -99,9 +89,9 @@ const ToastItem: React.FC<{
         <ToastIcon type={toast.type} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-semibold ${textColors[toast.type]}`}>{toast.title}</p>
+        <p className="text-sm font-bold text-brand-white">{toast.title}</p>
         {toast.message && (
-          <p className={`text-sm mt-1 ${textColors[toast.type]} opacity-80`}>{toast.message}</p>
+          <p className="text-sm mt-1 text-brand-gray-light">{toast.message}</p>
         )}
         {toast.action && (
           <button
@@ -109,7 +99,7 @@ const ToastItem: React.FC<{
               toast.action?.onClick();
               onDismiss();
             }}
-            className={`text-sm font-medium mt-2 underline hover:no-underline ${textColors[toast.type]} cursor-pointer`}
+            className="inline-flex items-center mt-3 px-3 py-1.5 text-xs font-bold rounded-full bg-brand-yellow-main text-brand-black hover:bg-brand-yellow-secondary transition-colors cursor-pointer"
           >
             {toast.action.label}
           </button>
@@ -117,7 +107,7 @@ const ToastItem: React.FC<{
       </div>
       <button
         onClick={onDismiss}
-        className={`flex-shrink-0 p-1 rounded hover:bg-black/5 transition-colors cursor-pointer ${textColors[toast.type]}`}
+        className="flex-shrink-0 p-1 rounded-full text-brand-gray-light hover:text-brand-white hover:bg-white/5 transition-colors cursor-pointer"
         aria-label="Dismiss notification"
       >
         <X className="w-4 h-4" />
@@ -133,7 +123,7 @@ const ToastContainer: React.FC<{ toasts: Toast[]; removeToast: (id: string) => v
 }) => {
   return (
     <div
-      className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"
+      className="fixed left-3 right-3 top-20 sm:left-auto sm:right-4 sm:top-24 z-[100] flex flex-col gap-2 pointer-events-none"
       aria-label="Notifications"
     >
       <AnimatePresence mode="popLayout">

@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { CopyIcon } from 'lucide-react';
 import { attendeeInfoSchema, type AttendeeInfo } from '@/lib/validations/checkout';
 import { Input, Button, Heading } from '@/components/atoms';
 import type { CartItem as CartItemType } from '@/types/cart';
@@ -30,6 +31,11 @@ export interface AttendeeTicketFormProps {
    * Called when any field changes
    */
   onChange: (field: keyof AttendeeInfo, value: string) => void;
+  /**
+   * Called to copy the primary contact's info into this slot. Only provided
+   * for non-primary slots where the primary has usable data.
+   */
+  onCopyFromPrimary?: () => void;
 }
 
 export interface AttendeeFormSubmitResult {
@@ -72,6 +78,7 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
   attendee,
   errors = {},
   onChange,
+  onCopyFromPrimary,
 }) => {
   const isPrimaryContact = ticketIndex === 0;
 
@@ -81,7 +88,7 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
       data-error={Object.keys(errors).length > 0 ? 'true' : 'false'}
     >
       {/* Ticket Header */}
-      <div className="flex items-center justify-between mb-4 pb-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4 pb-4">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-white">
@@ -95,6 +102,16 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
           </div>
           <p className="text-sm text-brand-gray-light">{itemTitle}</p>
         </div>
+        {onCopyFromPrimary && (
+          <button
+            type="button"
+            onClick={onCopyFromPrimary}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-brand-yellow-main border border-brand-gray-medium hover:text-brand-black hover:bg-brand-yellow-main hover:border-brand-yellow-main transition-colors cursor-pointer"
+          >
+            <CopyIcon size={12} />
+            Same as primary
+          </button>
+        )}
       </div>
 
       {/* Name Fields */}
@@ -291,6 +308,27 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
     }
   };
 
+  const handleCopyFromPrimary = (index: number) => {
+    const primary = attendees[0];
+    if (!primary) return;
+    const newAttendees = [...attendees];
+    newAttendees[index] = { ...primary };
+    setAttendees(newAttendees);
+
+    if (errors[index]) {
+      const newErrors = { ...errors };
+      delete newErrors[index];
+      setErrors(newErrors);
+    }
+  };
+
+  // Show the copy shortcut only when the primary slot has enough info to be
+  // worth copying — otherwise the button does nothing useful.
+  const primary = attendees[0];
+  const primaryHasUsableInfo = Boolean(
+    primary && (primary.firstName.trim() || primary.lastName.trim() || primary.email.trim())
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -357,6 +395,11 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
             attendee={attendees[index]}
             errors={errors[index]}
             onChange={(field, value) => handleAttendeeChange(index, field, value)}
+            onCopyFromPrimary={
+              index > 0 && primaryHasUsableInfo
+                ? () => handleCopyFromPrimary(index)
+                : undefined
+            }
           />
         ))}
 
