@@ -156,7 +156,7 @@ async function handleList(req: NextApiRequest, res: NextApiResponse) {
         ?? (cfpId ? speakerNameBySubmissionId.get(cfpId) : null)
         ?? null;
       items.push({
-        cfpSubmissionId: cfpId ?? '',
+        cfpSubmissionId: cfpId ?? offering.id,
         submissionTitle: offering.title,
         submissionAbstract: offering.description,
         submissionStatus: offering.status,
