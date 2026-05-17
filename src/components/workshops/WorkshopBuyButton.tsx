@@ -5,6 +5,7 @@
  * query) so we don't run N per-card pricing queries.
  */
 
+import { Check } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -74,7 +75,8 @@ export function WorkshopBuyButton({
       )}
       {alreadyInCart ? (
         <Button variant="ghost" size={size} onClick={navigateToCart}>
-          In cart — View cart
+          <Check size={14} />
+          In cart
         </Button>
       ) : (
         <Button

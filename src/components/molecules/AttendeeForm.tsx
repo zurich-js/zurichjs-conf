@@ -106,10 +106,10 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
           <button
             type="button"
             onClick={onCopyFromPrimary}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-yellow-main hover:text-brand-yellow-light transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-brand-yellow-main border border-brand-gray-medium hover:text-brand-black hover:bg-brand-yellow-main hover:border-brand-yellow-main transition-colors cursor-pointer"
           >
             <CopyIcon size={12} />
-            Same as primary contact
+            Same as primary
           </button>
         )}
       </div>

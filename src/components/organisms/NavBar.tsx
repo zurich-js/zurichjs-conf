@@ -139,22 +139,22 @@ export const NavBar: React.FC<NavBarProps> = ({
             </Button>
           </div>
 
-          <div className="lg:hidden flex items-center gap-3">
+          <div className="lg:hidden flex items-center gap-1">
             {hasCart && (
               <button
                 type="button"
                 onClick={navigateToCart}
                 aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-                className="relative inline-flex items-center justify-center p-2 text-white hover:text-brand-yellow-main transition-colors cursor-pointer"
+                className="relative inline-flex items-center justify-center h-11 w-11 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer select-none"
               >
                 <ShoppingCart size={22} />
-                <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
                   {cartCount}
                 </span>
               </button>
             )}
             <button
-              className="text-white p-2 hover:text-brand-yellow-main transition-colors"
+              className="inline-flex items-center justify-center h-11 w-11 text-white hover:text-brand-yellow-main transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >

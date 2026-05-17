@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { analytics } from '@/lib/analytics';
-import { GraduationCap, MapPin, Timer, Users } from 'lucide-react';
+import { Check, GraduationCap, MapPin, Timer, Users } from 'lucide-react';
 import { Button, Heading } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -144,11 +144,16 @@ export function WorkshopPurchasePanel({
               onClick={offering.soldOut ? undefined : handleAddToCart}
               disabled={offering.soldOut}
             >
-              {offering.soldOut
-                ? 'Sold out'
-                : alreadyInCart
-                  ? 'In cart — View cart'
-                  : 'Add to cart'}
+              {offering.soldOut ? (
+                'Sold out'
+              ) : alreadyInCart ? (
+                <>
+                  <Check size={16} />
+                  View in cart
+                </>
+              ) : (
+                'Add to cart'
+              )}
             </Button>
           )}
           {offering && (
