@@ -16,7 +16,7 @@ import { heroData, scheduleData, timelineData, sponsorsData, learningData } from
 import type { DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
-import { publicSponsorsQueryOptions, communityPartnersQueryOptions } from '@/lib/queries/sponsors';
+import { publicSponsorsQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
@@ -198,7 +198,6 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
 
   const results = await Promise.allSettled([
     optionalQuery(publicSponsorsQueryOptions),
-    optionalQuery(communityPartnersQueryOptions),
     optionalQuery(publicSpeakersQueryOptions({ featured: true })),
     optionalQuery(ticketPricingQueryOptions),
   ]);
