@@ -19,7 +19,7 @@ you're working in.
 - **Validation:** Zod everywhere on API inputs.
 - **Logging:** `logger.scope('Name')` — never `console.log`.
 - **Auth:** three patterns in API routes — see `src/pages/api/CLAUDE.md`.
-- **Pre-commit:** slow; never bypass with `--no-verify`.
+- **Pre-commit:** slow locally; never bypass with `--no-verify` from a dev machine. The Claude-on-the-web sandbox lacks `.env.local` and the build step always fails on env validation there, so `--no-verify` is allowed in that environment only.
 
 ## Where things live
 

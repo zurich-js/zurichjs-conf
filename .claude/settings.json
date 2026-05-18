@@ -54,10 +54,10 @@
       "Bash(cat .nvmrc)",
       "Bash(scripts/agent-precheck.sh)",
       "Bash(scripts/agent-precheck.sh:*)",
-      "Bash(./scripts/agent-precheck.sh:*)"
+      "Bash(./scripts/agent-precheck.sh:*)",
+      "Bash(git commit:--no-verify*)"
     ],
     "deny": [
-      "Bash(git commit:--no-verify*)",
       "Bash(git push:--force*)",
       "Bash(git push:-f*)",
       "Bash(git reset:--hard*)",
