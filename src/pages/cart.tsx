@@ -19,6 +19,7 @@ import { useCartUrlSync } from '@/hooks/useCartUrlState';
 import { useTeamRequest } from '@/hooks/useTeamRequest';
 import { useCartAbandonment } from '@/hooks/useCartAbandonment';
 import { useCartAbandonmentEmail } from '@/hooks/useCartAbandonmentEmail';
+import { useExitIntent } from '@/hooks/useExitIntent';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 import { encodeCartState } from '@/lib/cart-url-state';
@@ -38,6 +39,7 @@ import {
   ReviewStep,
   CheckoutStep,
   PaymentStep,
+  ExitIntentSurvey,
   type CartStep,
   type CheckoutFormData,
   type AttendeeInfo,
@@ -69,6 +71,8 @@ export default function CartPage() {
   const { toasts, showToast } = useToast();
   const router = useRouter();
   const hasTrackedRecovery = useRef(false);
+
+  const [showExitSurvey, setShowExitSurvey] = useState(false);
 
   useCartUrlSync(cart);
 
@@ -298,6 +302,22 @@ export default function CartPage() {
     },
   });
 
+  // Exit-intent survey
+  useExitIntent({
+    enabled: !isEmpty && !checkoutFinalizing,
+    currentStep,
+    onExitIntent: () => {
+      setShowExitSurvey(true);
+      analytics.track('exit_survey_shown', {
+        cart_total: orderSummary.total,
+        cart_currency: orderSummary.currency,
+        cart_items_count: cart.items.length,
+        checkout_step: currentStep,
+        time_on_page_seconds: 0, // placeholder — actual time tracked in component
+      } as EventProperties<'exit_survey_shown'>);
+    },
+  });
+
   // Track step views
   useEffect(() => {
     analytics.track('cart_step_viewed', {
@@ -455,6 +475,16 @@ export default function CartPage() {
           email={successTeamData?.email || null}
           company={successTeamData?.company || null}
           quantity={successTeamData?.quantity || null}
+        />
+
+        <ExitIntentSurvey
+          isOpen={showExitSurvey}
+          onClose={() => setShowExitSurvey(false)}
+          checkoutStep={currentStep}
+          cartTotal={orderSummary.total}
+          cartCurrency={orderSummary.currency}
+          cartItemsCount={cart.items.length}
+          email={capturedEmail}
         />
       </div>
     </>
