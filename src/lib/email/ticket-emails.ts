@@ -65,6 +65,8 @@ export async function sendTicketConfirmationEmail(
       refundPolicyUrl: `${getBaseUrl()}/info/refund-policy`,
       supportEmail: EMAIL_CONFIG.supportEmail,
       notes: data.notes,
+      teamColleagueCount: data.teamColleagueCount,
+      teamCompanyName: data.teamCompanyName,
     };
 
     log.debug('Email props prepared', { ticketId: emailProps.ticketId, to: data.to });

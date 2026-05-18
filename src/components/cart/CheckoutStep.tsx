@@ -7,8 +7,16 @@ import { motion } from 'framer-motion';
 import { TicketXIcon } from 'lucide-react';
 import { CartSummary } from '@/components/molecules';
 import { CheckoutForm } from '@/components/organisms';
+import { ColleagueBanner } from './ColleagueBanner';
+import { useWorkEmailDetection } from '@/hooks/useWorkEmailDetection';
 import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
 import type { CheckoutStepProps, CartItem } from './types';
+
+function extractDomain(email: string): string | null {
+  const parts = email.trim().toLowerCase().split('@');
+  if (parts.length !== 2 || !parts[1]) return null;
+  return parts[1];
+}
 
 export function CheckoutStep({
   cart,
@@ -24,7 +32,10 @@ export function CheckoutStep({
   onEmailCaptured,
   onFieldCaptured,
   savedBillingData,
+  capturedEmail,
 }: CheckoutStepProps) {
+  const { colleagueCount, companyName, isLoading: isDetecting } = useWorkEmailDetection(capturedEmail);
+  const emailDomain = capturedEmail ? extractDomain(capturedEmail) : null;
   return (
     <motion.div
       key="checkout"
@@ -65,6 +76,14 @@ export function CheckoutStep({
               onEmailCaptured={onEmailCaptured}
               onFieldCaptured={onFieldCaptured}
             />
+            {emailDomain && (
+              <ColleagueBanner
+                colleagueCount={colleagueCount}
+                companyName={companyName}
+                domain={emailDomain}
+                isLoading={isDetecting}
+              />
+            )}
           </div>
 
           {/* Order Summary — shown at top on mobile */}

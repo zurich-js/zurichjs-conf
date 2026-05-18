@@ -22,6 +22,10 @@ export interface TicketConfirmationData {
   qrCodeUrl?: string; // QR code URL from Supabase object storage (required for emails to work)
   pdfAttachment?: Buffer; // Optional PDF ticket attachment
   orderUrl?: string; // Optional custom order URL (uses secure token if provided)
+  /** Number of colleagues from the same work email domain already attending */
+  teamColleagueCount?: number;
+  /** Company name detected from the same email domain */
+  teamCompanyName?: string;
 }
 
 /**
