@@ -16,6 +16,10 @@ export interface TicketPurchaseEmailProps extends TicketCardProps {
   refundPolicyUrl?: string;
   supportEmail?: string;
   notes?: string;
+  /** Number of colleagues from same work email domain already attending */
+  teamColleagueCount?: number;
+  /** Company name detected from same email domain */
+  teamCompanyName?: string;
 }
 
 export const TicketPurchaseEmail: React.FC<TicketPurchaseEmailProps> = ({
@@ -26,6 +30,8 @@ export const TicketPurchaseEmail: React.FC<TicketPurchaseEmailProps> = ({
   refundPolicyUrl = 'https://zurichjs-conf.vercel.app/info/refund-policy',
   supportEmail = 'hello@zurichjs.com',
   notes,
+  teamColleagueCount,
+  teamCompanyName,
   ...ticketCardProps
 }) => {
   const preheader = `Your ${ticketCardProps.tierLabel} for ${ticketCardProps.eventName}`;
@@ -78,6 +84,19 @@ export const TicketPurchaseEmail: React.FC<TicketPurchaseEmailProps> = ({
           </tbody>
         </table>
       </Section>
+
+      {/* Bring Your Team — shown for work email domains with colleagues */}
+      {teamColleagueCount != null && teamColleagueCount > 0 && (
+        <Section style={teamSectionStyle}>
+          <Text style={sectionTitleStyle}>Bring Your Team!</Text>
+          <Text style={bodyTextStyle}>
+            {teamColleagueCount} {teamColleagueCount === 1 ? 'colleague' : 'colleagues'}
+            {teamCompanyName ? ` from ${teamCompanyName}` : ' from your company'}{' '}
+            {teamColleagueCount === 1 ? 'is' : 'are'} already attending. Share this conference
+            with your team — the more you learn together, the more impact you make.
+          </Text>
+        </Section>
+      )}
 
       {/* Conditional Notes */}
       {notes && (
@@ -184,6 +203,14 @@ const actionButtonPrimaryStyle: React.CSSProperties = {
   backgroundColor: colors.brand.yellow,
   border: 'none',
   color: colors.text.primary,
+};
+
+const teamSectionStyle: React.CSSProperties = {
+  backgroundColor: colors.surface.card,
+  border: `1px solid ${colors.border.default}`,
+  borderRadius: `${radii.button}px`,
+  padding: spacing.base,
+  marginBottom: spacing['3xl'],
 };
 
 const notesSectionStyle: React.CSSProperties = {
