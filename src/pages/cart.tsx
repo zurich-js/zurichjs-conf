@@ -20,6 +20,7 @@ import { useTeamRequest } from '@/hooks/useTeamRequest';
 import { useCartAbandonment } from '@/hooks/useCartAbandonment';
 import { useCartAbandonmentEmail } from '@/hooks/useCartAbandonmentEmail';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { getStoredReferralCode } from '@/hooks/useReferralCode';
 
 import { encodeCartState } from '@/lib/cart-url-state';
 import { analytics } from '@/lib/analytics/client';
@@ -230,7 +231,7 @@ export default function CartPage() {
     } as EventProperties<'checkout_started'>);
 
     createCheckout(
-      { cart, customerInfo: { ...data, attendees, workshopAttendees } },
+      { cart, customerInfo: { ...data, attendees, workshopAttendees }, referralCode: getStoredReferralCode() },
       {
         onSuccess: (response) => {
           setClientSecret(response.clientSecret);

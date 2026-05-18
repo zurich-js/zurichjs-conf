@@ -22,6 +22,7 @@ const log = logger.scope('Create Checkout Session');
 interface CheckoutSessionRequest {
   cart: Cart;
   customerInfo: CheckoutFormData;
+  referralCode?: string;
 }
 
 /**
@@ -335,7 +336,7 @@ export default async function handler(
   }
 
   try {
-    const { cart, customerInfo } = req.body as CheckoutSessionRequest;
+    const { cart, customerInfo, referralCode } = req.body as CheckoutSessionRequest;
 
     // Validation
     if (!cart || !cart.items || cart.items.length === 0) {
@@ -394,6 +395,48 @@ export default async function handler(
       quantity: item.quantity,
     }));
 
+    // Referral code handling — validate and create friend's discount
+    let referralDiscount: Stripe.Checkout.SessionCreateParams.Discount | undefined;
+    if (referralCode && !cart.couponCode && !cart.promotionCodeId) {
+      try {
+        const { getReferrerByCode, getReferralConfig } = await import('@/lib/referrals');
+        const referrer = await getReferrerByCode(referralCode);
+        const config = await getReferralConfig();
+
+        if (referrer && config.is_active) {
+          // Self-referral guard
+          if (referrer.email === customerInfo.email.toLowerCase()) {
+            res.status(400).json({ error: 'You cannot use your own referral code' });
+            return;
+          }
+
+          // Create a one-time percentage coupon for the friend
+          const refereeCoupon = await stripe.coupons.create({
+            percent_off: config.referee_discount_percent,
+            duration: 'once',
+            max_redemptions: 1,
+            metadata: {
+              type: 'referral_discount',
+              referral_code: referralCode,
+              referrer_id: referrer.id,
+            },
+          });
+
+          referralDiscount = { coupon: refereeCoupon.id };
+          log.info('Referral discount created for checkout', {
+            referralCode,
+            discountPercent: config.referee_discount_percent,
+            couponId: refereeCoupon.id,
+          });
+        } else {
+          log.warn('Referral code invalid or programme inactive', { referralCode });
+        }
+      } catch (refError) {
+        // Non-fatal: referral discount failure should not block checkout
+        log.error('Failed to process referral discount', refError as Error, { referralCode });
+      }
+    }
+
     // Note: Voucher/discount handling
     // Pre-validated coupons are passed to Stripe checkout via the discounts parameter
 
@@ -413,6 +456,7 @@ export default async function handler(
       country: customerInfo.country,
       subscribeNewsletter: customerInfo.subscribeNewsletter ? 'true' : 'false',
       couponCode: cart.couponCode || '',
+      referralCode: referralCode || '',
       // Store attendee information as JSON string for multi-ticket purchases
       attendees: customerInfo.attendees ? JSON.stringify(customerInfo.attendees) : '',
       totalTickets: cart.totalItems.toString(),
@@ -494,7 +538,9 @@ export default async function handler(
       ? [{ promotion_code: cart.promotionCodeId }]
       : cart.couponCode
         ? [{ coupon: cart.couponCode }]
-        : undefined;
+        : referralDiscount
+          ? [referralDiscount]
+          : undefined;
 
     // Create Checkout Session in embedded mode.
     // This returns a client_secret for use with Custom Checkout Elements

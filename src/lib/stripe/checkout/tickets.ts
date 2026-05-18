@@ -365,6 +365,15 @@ export async function processTickets(
     await autoGenerateVipPerks(ticketResults, log);
   }
 
+  // Auto-create referrer profiles for each new ticket
+  await autoCreateReferrers(ticketResults, log);
+
+  // Process referral conversion if this purchase used a referral code
+  const referralCode = session.metadata?.referralCode;
+  if (referralCode) {
+    await autoProcessReferralConversion(referralCode, ticketResults, session, log);
+  }
+
   // Send Slack notification for ticket purchase
   const primaryAttendee = attendees[0];
   notifyTicketPurchased({
@@ -433,6 +442,79 @@ async function autoGenerateVipPerks(
       type: 'system',
       severity: 'medium',
       code: 'VIP_PERK_AUTO_GENERATE_FAILED',
+    });
+  }
+}
+
+/**
+ * Auto-create referrer profiles for newly purchased tickets.
+ * Non-fatal — failures do not affect the ticket purchase flow.
+ */
+async function autoCreateReferrers(
+  ticketResults: TicketCreationResult[],
+  log: ReturnType<typeof logger.scope>
+): Promise<void> {
+  try {
+    const { createReferrer } = await import('@/lib/referrals');
+
+    for (const result of ticketResults) {
+      if (!result.success || !result.ticket) continue;
+
+      try {
+        await createReferrer(
+          result.ticket.id,
+          result.attendee.email,
+          result.attendee.firstName,
+          result.attendee.lastName
+        );
+      } catch (err) {
+        // Duplicate ticket_id is handled inside createReferrer, so only
+        // unexpected errors reach here — log but don't fail.
+        log.error('Failed to auto-create referrer for ticket', err as Error, {
+          ticketId: result.ticket.id,
+        });
+      }
+    }
+  } catch (error) {
+    log.error('Failed to auto-create referrers', error as Error, {
+      type: 'system',
+      severity: 'medium',
+      code: 'REFERRER_AUTO_CREATE_FAILED',
+    });
+  }
+}
+
+/**
+ * Process a referral conversion when the purchase used a referral code.
+ * Non-fatal — failures do not affect the ticket purchase flow.
+ */
+async function autoProcessReferralConversion(
+  referralCode: string,
+  ticketResults: TicketCreationResult[],
+  session: Stripe.Checkout.Session,
+  log: ReturnType<typeof logger.scope>
+): Promise<void> {
+  try {
+    const { processReferralConversion } = await import('@/lib/referrals');
+
+    const primaryResult = ticketResults.find(r => r.success && r.ticket);
+    if (!primaryResult?.ticket) return;
+
+    const currency = session.currency?.toUpperCase() || 'CHF';
+
+    await processReferralConversion(
+      referralCode,
+      primaryResult.attendee.email,
+      primaryResult.ticket.id,
+      session.id,
+      currency
+    );
+  } catch (error) {
+    log.error('Failed to process referral conversion', error as Error, {
+      type: 'system',
+      severity: 'medium',
+      code: 'REFERRAL_CONVERSION_FAILED',
+      referralCode,
     });
   }
 }
