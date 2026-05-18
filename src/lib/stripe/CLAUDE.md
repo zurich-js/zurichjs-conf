@@ -62,7 +62,8 @@ Events handled today: `checkout.session.completed`, `invoice.payment_succeeded`,
 Always add a test when adding a webhook handler — fulfilment bugs are silent in
 production.
 
-`__tests__/validate-checkout.ts` covers the price/inventory checks.
+Price/inventory validation should also be covered by tests whenever checkout
+validation logic changes.
 
 ## Local dev
 
