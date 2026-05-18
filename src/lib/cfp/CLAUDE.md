@@ -94,4 +94,4 @@ accepted but invisible (NDA, late confirmation). See migration `20251220000000_a
 - `__tests__/scoring.test.ts` — score math edge cases
 - `__tests__/decisions.test.ts` — decision workflow
 - `__tests__/analytics.test.ts` — stat aggregation
-- `__tests__/closure.test.ts` — closure gating
+- `__tests__/cfp-closure.test.ts` — closure gating
