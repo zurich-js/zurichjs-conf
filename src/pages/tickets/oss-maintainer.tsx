@@ -79,7 +79,7 @@ export default function OssMaintainerPage() {
         <ShapedSection shape="straight" variant="dark">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <Kicker>For the people who keep our stack alive</Kicker>
-            <Heading level="h1" className="mt-3 mb-4 text-4xl sm:text-5xl font-bold">
+            <Heading level="h1" className="mt-3 mb-4 text-2xl sm:text-3xl md:text-4xl">
               OSS maintainer tickets
             </Heading>
             <p className="text-base sm:text-lg text-brand-gray-light max-w-2xl">
@@ -100,7 +100,7 @@ export default function OssMaintainerPage() {
         <ShapedSection shape="tighten" variant="medium" id="tiers">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <Kicker>The ladder</Kicker>
-            <Heading level="h2" className="mt-3 mb-3 text-3xl sm:text-4xl font-bold">
+            <Heading level="h2" className="mt-3 mb-3 text-xl sm:text-2xl md:text-3xl">
               Pick your tier — they&apos;re public, not secret
             </Heading>
             <p className="text-sm sm:text-base text-brand-gray-light max-w-2xl mb-8">
@@ -160,7 +160,7 @@ export default function OssMaintainerPage() {
         <ShapedSection shape="tighten" variant="dark" id="apply">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <Kicker>Apply</Kicker>
-            <Heading level="h2" className="mt-3 mb-3 text-3xl sm:text-4xl font-bold">
+            <Heading level="h2" className="mt-3 mb-3 text-xl sm:text-2xl md:text-3xl">
               Submit your maintainer application
             </Heading>
             <p className="text-sm sm:text-base text-brand-gray-light mb-8">
