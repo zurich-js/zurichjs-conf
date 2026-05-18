@@ -129,9 +129,22 @@ const supabase = createServiceRoleClient();
 
 Standard handler shape:
 
-```typescript
-import { z } from 'zod';
-import { logger } from '@/lib/logger';
+### Retries & Resilience
+Do NOT write ad-hoc retry loops. Use the shared helpers so backoff, jitter,
+and `Retry-After` handling stay consistent.
+
+- **Server-side fetch** (API routes, webhook handlers, server code): use
+  `fetchWithRetry` from `@/lib/retry`. Retries transient network errors and
+  retryable HTTP statuses (408, 425, 429, 5xx) and honors `Retry-After`.
+- **Server-side non-fetch async** (SDK calls, DB ops you expect to be
+  idempotent): use `retry` from `@/lib/retry` with a custom `shouldRetry`.
+- **Client-side data fetching**: use TanStack Query's built-in `retry`
+  option — don't import `@/lib/retry` in components/hooks.
+
+Only retry idempotent operations. For non-idempotent calls (Stripe charges,
+ticket creation, etc.) rely on the provider's idempotency keys instead.
+
+## CFP System
 
 const log = logger.scope('Resource API');
 
