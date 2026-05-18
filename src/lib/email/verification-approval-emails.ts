@@ -12,9 +12,11 @@ import { getResendClient, EMAIL_CONFIG, log } from './config';
 export interface VerificationApprovalEmailData {
   to: string;
   firstName: string;
-  verificationType: 'student' | 'unemployed';
+  verificationType: 'student' | 'unemployed' | 'oss_maintainer';
   verificationId: string;
   paymentLinkUrl: string;
+  discountPercent?: number;
+  qualifyingTier?: 1 | 2 | 3 | 4;
 }
 
 /**
@@ -31,7 +33,12 @@ export async function sendVerificationApprovalEmail(
 
   try {
     const resend = getResendClient();
-    const typeLabel = data.verificationType === 'student' ? 'Student' : 'Unemployed';
+    const typeLabel =
+      data.verificationType === 'student'
+        ? 'Student'
+        : data.verificationType === 'oss_maintainer'
+          ? 'OSS Maintainer'
+          : 'Unemployed';
 
     const emailProps: VerificationApprovalEmailProps = {
       firstName: data.firstName,
@@ -39,6 +46,8 @@ export async function sendVerificationApprovalEmail(
       verificationId: data.verificationId,
       paymentLinkUrl: data.paymentLinkUrl,
       supportEmail: EMAIL_CONFIG.supportEmail,
+      discountPercent: data.discountPercent,
+      qualifyingTier: data.qualifyingTier,
     };
 
     log.debug('Rendering verification approval email template');

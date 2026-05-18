@@ -2593,18 +2593,26 @@ export type Database = {
       verification_requests: {
         Row: {
           additional_info: string | null
+          auto_check_result: Json | null
           country_code: string | null
           created_at: string
           currency: string | null
+          discount_percent: number | null
           email: string
+          github_username: string | null
           id: string
           linkedin_url: string | null
           name: string
+          npm_packages: Json | null
+          oss_repos: Json | null
           price_id: string
+          qualifying_tier: number | null
           rav_registration_date: string | null
+          requested_ticket_tier: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
+          stripe_coupon_id: string | null
           stripe_payment_link_id: string | null
           stripe_payment_link_url: string | null
           stripe_session_id: string | null
@@ -2616,18 +2624,26 @@ export type Database = {
         }
         Insert: {
           additional_info?: string | null
+          auto_check_result?: Json | null
           country_code?: string | null
           created_at?: string
           currency?: string | null
+          discount_percent?: number | null
           email: string
+          github_username?: string | null
           id?: string
           linkedin_url?: string | null
           name: string
+          npm_packages?: Json | null
+          oss_repos?: Json | null
           price_id: string
+          qualifying_tier?: number | null
           rav_registration_date?: string | null
+          requested_ticket_tier?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          stripe_coupon_id?: string | null
           stripe_payment_link_id?: string | null
           stripe_payment_link_url?: string | null
           stripe_session_id?: string | null
@@ -2639,18 +2655,26 @@ export type Database = {
         }
         Update: {
           additional_info?: string | null
+          auto_check_result?: Json | null
           country_code?: string | null
           created_at?: string
           currency?: string | null
+          discount_percent?: number | null
           email?: string
+          github_username?: string | null
           id?: string
           linkedin_url?: string | null
           name?: string
+          npm_packages?: Json | null
+          oss_repos?: Json | null
           price_id?: string
+          qualifying_tier?: number | null
           rav_registration_date?: string | null
+          requested_ticket_tier?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          stripe_coupon_id?: string | null
           stripe_payment_link_id?: string | null
           stripe_payment_link_url?: string | null
           stripe_session_id?: string | null

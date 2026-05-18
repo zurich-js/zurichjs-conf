@@ -293,10 +293,16 @@ export function notifyCartAbandonment(data: CartAbandonmentData): void {
 }
 
 export function notifyStatusVerification(data: StatusVerificationData): void {
-  const type = data.statusType === 'student' ? 'Student' : 'Unemployed'
+  const type =
+    data.statusType === 'student'
+      ? 'Student'
+      : data.statusType === 'oss_maintainer'
+        ? 'OSS Maintainer'
+        : 'Unemployed'
+  const emoji = data.statusType === 'oss_maintainer' ? ':package:' : ':mortar_board:'
   const text = `${type} verification: ${data.name}`
   const blocks = buildBlocks(
-    `:mortar_board: *${type} Verification Request*`,
+    `${emoji} *${type} Verification Request*`,
     [
       { label: 'Name', value: data.name },
       { label: 'Email', value: data.email },

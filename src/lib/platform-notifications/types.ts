@@ -79,7 +79,7 @@ export interface StatusVerificationData {
   submissionId: string
   name: string
   email: string
-  statusType: 'student' | 'unemployed'
+  statusType: 'student' | 'unemployed' | 'oss_maintainer'
   adminReviewUrl?: string
 }
 

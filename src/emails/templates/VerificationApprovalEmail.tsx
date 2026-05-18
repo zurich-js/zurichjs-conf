@@ -11,10 +11,12 @@ import { colors, spacing, typography, radii } from '../design/tokens';
 
 export interface VerificationApprovalEmailProps {
   firstName: string;
-  verificationType: 'student' | 'unemployed';
+  verificationType: 'student' | 'unemployed' | 'oss_maintainer';
   verificationId: string;
   paymentLinkUrl: string;
   supportEmail?: string;
+  discountPercent?: number;
+  qualifyingTier?: 1 | 2 | 3 | 4;
 }
 
 export const VerificationApprovalEmail: React.FC<VerificationApprovalEmailProps> = ({
@@ -23,9 +25,19 @@ export const VerificationApprovalEmail: React.FC<VerificationApprovalEmailProps>
   verificationId = 'VER-XXXXX',
   paymentLinkUrl = 'https://buy.stripe.com/example',
   supportEmail = 'hello@zurichjs.com',
+  discountPercent,
+  qualifyingTier,
 }) => {
-  const typeLabel = verificationType === 'student' ? 'Student' : 'Unemployed';
-  const preheader = `Your ${typeLabel.toLowerCase()} verification is approved — complete your ticket purchase!`;
+  const typeLabel =
+    verificationType === 'student'
+      ? 'Student'
+      : verificationType === 'oss_maintainer'
+        ? 'OSS Maintainer'
+        : 'Unemployed';
+  const preheader =
+    verificationType === 'oss_maintainer'
+      ? `Your OSS maintainer discount (${discountPercent ?? 'tiered'}% off) is approved — complete your ticket purchase!`
+      : `Your ${typeLabel.toLowerCase()} verification is approved — complete your ticket purchase!`;
 
   return (
     <EmailLayout preheader={preheader}>
@@ -37,6 +49,13 @@ export const VerificationApprovalEmail: React.FC<VerificationApprovalEmailProps>
           Great news! Your {typeLabel.toLowerCase()} verification has been approved.
           You can now purchase your discounted ZurichJS Conference 2026 ticket using the
           secure payment link below.
+          {verificationType === 'oss_maintainer' && discountPercent ? (
+            <>
+              {' '}
+              The {discountPercent}% OSS maintainer discount is pre-applied — no promo code
+              needed at checkout.
+            </>
+          ) : null}
         </Text>
       </Section>
 
@@ -71,6 +90,9 @@ export const VerificationApprovalEmail: React.FC<VerificationApprovalEmailProps>
         <div style={detailsBoxStyle}>
           <InfoBlock label="Verification ID" value={verificationId} />
           <InfoBlock label="Type" value={`${typeLabel} Discount`} />
+          {verificationType === 'oss_maintainer' && qualifyingTier && discountPercent ? (
+            <InfoBlock label="Discount" value={`T${qualifyingTier} — ${discountPercent}% off`} />
+          ) : null}
           <InfoBlock label="Status" value="Approved" />
         </div>
       </Section>

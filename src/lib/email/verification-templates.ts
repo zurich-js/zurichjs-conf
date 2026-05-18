@@ -41,6 +41,15 @@ export function buildUserVerificationHtml(data: VerificationRequestData, typeLab
               <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
                 Thank you for submitting your ${typeLabel} verification request for the discounted ZurichJS Conference 2026 ticket.
               </p>
+              ${
+                data.verificationType === 'oss_maintainer' && data.qualifyingTier
+                  ? `<div style="background-color: #ecfeff; border: 1px solid #67e8f9; border-radius: 8px; padding: 16px; margin: 0 0 24px 0;">
+                      <p style="margin: 0 0 4px 0; color: #155e75; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Provisional qualifying tier</p>
+                      <p style="margin: 0; color: #0e7490; font-size: 18px; font-weight: bold;">T${data.qualifyingTier} — ${data.qualifyingTier === 1 ? '80%' : data.qualifyingTier === 2 ? '60%' : data.qualifyingTier === 3 ? '40%' : '20%'} off</p>
+                      <p style="margin: 8px 0 0 0; color: #155e75; font-size: 13px;">Final tier is confirmed at admin review — we may adjust if the auto-check needs a human look.</p>
+                    </div>`
+                  : ''
+              }
 
               <div style="background-color: #F1E271; border-left: 4px solid #000000; padding: 16px; margin: 24px 0;">
                 <p style="margin: 0 0 8px 0; color: #000000; font-size: 14px; font-weight: bold;">
@@ -116,6 +125,64 @@ function buildVerificationDetailsHtml(data: VerificationRequestData): string {
         </td>
         <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
           ${data.studentId || 'Not provided'}
+        </td>
+      </tr>
+    `;
+  }
+
+  if (data.verificationType === 'oss_maintainer') {
+    const tierLabel =
+      data.qualifyingTier === 1
+        ? 'T1 — 80% off (Core)'
+        : data.qualifyingTier === 2
+          ? 'T2 — 60% off (Established)'
+          : data.qualifyingTier === 3
+            ? 'T3 — 40% off (Growing)'
+            : data.qualifyingTier === 4
+              ? 'T4 — 20% off (Emerging)'
+              : 'Below floor (manual review)';
+    const githubUrl = data.githubUsername ? `https://github.com/${data.githubUsername}` : null;
+    const reposHtml = (data.ossRepos ?? []).length
+      ? (data.ossRepos ?? [])
+          .map((r) => `<li style="margin-bottom: 4px;">${r}</li>`)
+          .join('')
+      : '<li>None submitted</li>';
+    const packagesHtml = (data.ossNpmPackages ?? []).length
+      ? (data.ossNpmPackages ?? [])
+          .map((p) => `<li style="margin-bottom: 4px;">${p}</li>`)
+          .join('')
+      : '<li>None submitted</li>';
+    return `
+      <tr>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+          <strong style="color: #6b7280;">GitHub:</strong>
+        </td>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+          ${githubUrl ? `<a href="${githubUrl}" style="color: #258BCC; text-decoration: underline;">@${data.githubUsername}</a>` : 'Not provided'}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; vertical-align: top;">
+          <strong style="color: #6b7280;">Repositories:</strong>
+        </td>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+          <ul style="margin: 0; padding-left: 18px;">${reposHtml}</ul>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; vertical-align: top;">
+          <strong style="color: #6b7280;">npm packages:</strong>
+        </td>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+          <ul style="margin: 0; padding-left: 18px;">${packagesHtml}</ul>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+          <strong style="color: #6b7280;">Computed tier:</strong>
+        </td>
+        <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
+          ${tierLabel}
         </td>
       </tr>
     `;
@@ -207,7 +274,7 @@ export function buildAdminVerificationHtml(data: VerificationRequestData, typeLa
                     <strong style="color: #6b7280;">Type:</strong>
                   </td>
                   <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
-                    <span style="background-color: ${data.verificationType === 'student' ? '#DBEAFE' : '#FEF3C7'}; color: ${data.verificationType === 'student' ? '#1E40AF' : '#92400E'}; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+                    <span style="background-color: ${data.verificationType === 'student' ? '#DBEAFE' : data.verificationType === 'oss_maintainer' ? '#E0F2FE' : '#FEF3C7'}; color: ${data.verificationType === 'student' ? '#1E40AF' : data.verificationType === 'oss_maintainer' ? '#075985' : '#92400E'}; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;">
                       ${typeLabel}
                     </span>
                   </td>

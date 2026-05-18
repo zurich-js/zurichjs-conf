@@ -15,6 +15,8 @@ import {
   Copy,
   GraduationCap,
   Briefcase,
+  Github,
+  Package,
 } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
@@ -25,12 +27,50 @@ import { Pill } from '@/components/admin/shared/Pill';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast, type Toast } from '@/hooks/useToast';
 
+interface OssRepoSnapshot {
+  owner: string;
+  name: string;
+  url: string;
+  stars: number;
+  isFork: boolean;
+  forkAheadBy: number | null;
+  commitsByUser: number;
+  isOwner: boolean;
+  isTopContributor: boolean;
+  topContributors: string[];
+  firstCommitByUser: string | null;
+  lastCommitByUser: string | null;
+  error?: string;
+}
+
+interface OssNpmSnapshot {
+  name: string;
+  weeklyDownloads: number;
+  firstPublishedAt: string | null;
+  isMaintainer: boolean;
+  maintainers: string[];
+  error?: string;
+}
+
+interface OssAutoCheckSnapshot {
+  qualifyingTier: 1 | 2 | 3 | 4 | null;
+  bestRepoStars: number;
+  bestNpmWeeklyDownloads: number;
+  bestRepoTenureYears: number | null;
+  hasRecentActivity: boolean;
+  githubAccountAgeYears: number | null;
+  gates: { id: string; label: string; passed: boolean; detail: string }[];
+  notes: string[];
+  repos?: OssRepoSnapshot[];
+  npmPackages?: OssNpmSnapshot[];
+}
+
 interface VerificationRequest {
   id: string;
   verification_id: string;
   name: string;
   email: string;
-  verification_type: 'student' | 'unemployed';
+  verification_type: 'student' | 'unemployed' | 'oss_maintainer';
   student_id: string | null;
   university: string | null;
   linkedin_url: string | null;
@@ -45,6 +85,14 @@ interface VerificationRequest {
   stripe_session_id: string | null;
   reviewed_at: string | null;
   created_at: string;
+  github_username: string | null;
+  oss_repos: OssRepoSnapshot[] | null;
+  npm_packages: OssNpmSnapshot[] | null;
+  auto_check_result: OssAutoCheckSnapshot | null;
+  qualifying_tier: 1 | 2 | 3 | 4 | null;
+  requested_ticket_tier: 'standard' | 'vip' | null;
+  stripe_coupon_id: string | null;
+  discount_percent: number | null;
 }
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -246,7 +294,7 @@ export default function VerificationsDashboard() {
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <TypeIcon type={v.verification_type} />
-                      <span className="capitalize">{v.verification_type}</span>
+                      <span>{typeLabel(v.verification_type)}</span>
                       {v.currency && (
                         <>
                           <span>&middot;</span>
@@ -301,7 +349,7 @@ export default function VerificationsDashboard() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-1.5">
                             <TypeIcon type={v.verification_type} />
-                            <span className="text-sm text-black capitalize">{v.verification_type}</span>
+                            <span className="text-sm text-black">{typeLabel(v.verification_type)}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -405,11 +453,15 @@ function StatusPill({ status }: { status: string }) {
 }
 
 function TypeIcon({ type }: { type: string }) {
-  return type === 'student' ? (
-    <GraduationCap className="w-4 h-4 text-blue-600" />
-  ) : (
-    <Briefcase className="w-4 h-4 text-amber-600" />
-  );
+  if (type === 'student') return <GraduationCap className="w-4 h-4 text-blue-600" />;
+  if (type === 'oss_maintainer') return <Github className="w-4 h-4 text-sky-600" />;
+  return <Briefcase className="w-4 h-4 text-amber-600" />;
+}
+
+function typeLabel(type: string): string {
+  if (type === 'student') return 'Student';
+  if (type === 'oss_maintainer') return 'OSS Maintainer';
+  return 'Unemployed';
 }
 
 function VerificationDetailModal({
@@ -432,7 +484,7 @@ function VerificationDetailModal({
       isOpen
       onClose={onClose}
       title={v.name}
-      subtitle={`${v.verification_type === 'student' ? 'Student' : 'Unemployed'} Verification`}
+      subtitle={`${typeLabel(v.verification_type)} Verification`}
       size="lg"
       footer={
         v.status === 'pending' ? (
@@ -472,7 +524,7 @@ function VerificationDetailModal({
 
         {/* Verification details */}
         <Section title="Verification Details">
-          <DetailRow label="Type" value={v.verification_type === 'student' ? 'Student' : 'Unemployed'} />
+          <DetailRow label="Type" value={typeLabel(v.verification_type)} />
           {v.university && <DetailRow label="University" value={v.university} />}
           {v.student_id && <DetailRow label="Student ID" value={v.student_id} />}
           {v.linkedin_url && (
@@ -497,7 +549,48 @@ function VerificationDetailModal({
               value={new Date(v.rav_registration_date).toLocaleDateString('en-CH')}
             />
           )}
+          {v.github_username && (
+            <DetailRow
+              label="GitHub"
+              value={
+                <a
+                  href={`https://github.com/${v.github_username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                >
+                  @{v.github_username}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              }
+            />
+          )}
+          {v.requested_ticket_tier && (
+            <DetailRow
+              label="Requested ticket"
+              value={v.requested_ticket_tier === 'vip' ? 'VIP' : 'Standard'}
+            />
+          )}
+          {v.qualifying_tier && (
+            <DetailRow
+              label="Qualifying tier"
+              value={
+                <span className="inline-flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-semibold">
+                    T{v.qualifying_tier}
+                  </span>
+                  <span>
+                    {v.qualifying_tier === 1 ? '80% off' : v.qualifying_tier === 2 ? '60% off' : v.qualifying_tier === 3 ? '40% off' : '20% off'}
+                  </span>
+                </span>
+              }
+            />
+          )}
         </Section>
+
+        {v.verification_type === 'oss_maintainer' && (
+          <OssAutoCheckBlock v={v} />
+        )}
 
         {/* Pricing info */}
         {(v.country_code || v.currency) && (
@@ -588,5 +681,139 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
       <span className="text-sm text-gray-500 w-32 shrink-0">{label}</span>
       <span className="text-sm text-black">{value}</span>
     </div>
+  );
+}
+
+function OssAutoCheckBlock({ v }: { v: VerificationRequest }) {
+  const repos = (v.oss_repos ?? v.auto_check_result?.repos ?? []) as OssRepoSnapshot[];
+  const npmPackages = (v.npm_packages ?? v.auto_check_result?.npmPackages ?? []) as OssNpmSnapshot[];
+  const gates = v.auto_check_result?.gates ?? [];
+  const notes = v.auto_check_result?.notes ?? [];
+
+  return (
+    <>
+      {repos.length > 0 && (
+        <Section title="Repositories">
+          <div className="space-y-3">
+            {repos.map((r) => (
+              <div key={`${r.owner}/${r.name}`} className="rounded-lg border border-gray-200 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+                  >
+                    {r.owner}/{r.name}
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>⭐ {r.stars.toLocaleString()}</span>
+                    {r.isFork && (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                        fork{typeof r.forkAheadBy === 'number' ? ` (+${r.forkAheadBy})` : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {r.error ? (
+                  <p className="text-xs text-red-600 mt-1">{r.error}</p>
+                ) : (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                    <span>
+                      Owner: <strong>{r.isOwner ? 'yes' : 'no'}</strong>
+                    </span>
+                    <span>
+                      Top-3: <strong>{r.isTopContributor ? 'yes' : 'no'}</strong>
+                    </span>
+                    <span>
+                      Commits by user: <strong>{r.commitsByUser}</strong>
+                    </span>
+                    <span>
+                      First commit:{' '}
+                      <strong>{r.firstCommitByUser ? new Date(r.firstCommitByUser).toLocaleDateString('en-CH') : '—'}</strong>
+                    </span>
+                    <span>
+                      Last commit:{' '}
+                      <strong>{r.lastCommitByUser ? new Date(r.lastCommitByUser).toLocaleDateString('en-CH') : '—'}</strong>
+                    </span>
+                    <span className="truncate">
+                      Top contributors: <strong>{r.topContributors.join(', ') || '—'}</strong>
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {npmPackages.length > 0 && (
+        <Section title="npm packages">
+          <div className="space-y-3">
+            {npmPackages.map((p) => (
+              <div key={p.name} className="rounded-lg border border-gray-200 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <a
+                    href={`https://www.npmjs.com/package/${p.name}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+                  >
+                    <Package className="w-3.5 h-3.5" />
+                    {p.name}
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <span className="text-xs text-gray-500">
+                    {p.weeklyDownloads.toLocaleString()}/wk
+                  </span>
+                </div>
+                {p.error ? (
+                  <p className="text-xs text-red-600 mt-1">{p.error}</p>
+                ) : (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                    <span>
+                      Maintainer: <strong>{p.isMaintainer ? 'yes' : 'no'}</strong>
+                    </span>
+                    <span>
+                      First published:{' '}
+                      <strong>{p.firstPublishedAt ? new Date(p.firstPublishedAt).toLocaleDateString('en-CH') : '—'}</strong>
+                    </span>
+                    <span className="col-span-full truncate">
+                      Maintainers: <strong>{p.maintainers.join(', ') || '—'}</strong>
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {gates.length > 0 && (
+        <Section title="Auto-check gates">
+          <div className="space-y-2">
+            {gates.map((g) => (
+              <div key={g.id} className="flex items-start gap-2 text-sm">
+                {g.passed ? (
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+                )}
+                <div>
+                  <p className="text-black">{g.label}</p>
+                  <p className="text-xs text-gray-500">{g.detail}</p>
+                </div>
+              </div>
+            ))}
+            {notes.length > 0 && (
+              <div className="mt-3 rounded-md bg-amber-50 border border-amber-200 p-2 text-xs text-amber-900">
+                {notes.map((n, i) => <p key={i}>{n}</p>)}
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
+    </>
   );
 }
