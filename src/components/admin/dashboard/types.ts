@@ -93,6 +93,11 @@ export interface FinancialData {
     };
     byTier: Record<string, { count: number; revenueCHF: number; revenueEUR: number }>;
   };
+  upgradeSummary?: {
+    totalUpgrades: number;
+    revenueByCurrency: Record<string, number>;
+    stripeFeesByCurrency: Record<string, number>;
+  };
   workshopSummary?: {
     soldSeats: number;
     grossRevenue: number;

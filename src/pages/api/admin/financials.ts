@@ -93,6 +93,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to fetch workshop registrations' });
     }
 
+    // Get completed VIP upgrades
+    const { data: completedUpgrades, error: upgradesError } = await supabase
+      .from('ticket_upgrades')
+      .select('amount, currency, stripe_checkout_session_id')
+      .eq('status', 'completed')
+      .not('amount', 'is', null);
+
+    if (upgradesError) {
+      log.error('Error fetching completed upgrades', upgradesError);
+      // Non-fatal: continue without upgrade data
+    }
+
+    // Resolve payment intent IDs from upgrade checkout sessions (for fee lookup)
+    const upgradePaymentIntentIds: string[] = [];
+    const upgradeSessionToPi = new Map<string, string>();
+    if (completedUpgrades?.length) {
+      const stripe = getStripeClient();
+      const sessionIds = completedUpgrades
+        .map(u => u.stripe_checkout_session_id)
+        .filter((id): id is string => !!id);
+
+      const batchSize = 10;
+      for (let i = 0; i < sessionIds.length; i += batchSize) {
+        const batch = sessionIds.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(async (sessionId) => {
+            try {
+              const session = await stripe.checkout.sessions.retrieve(sessionId);
+              if (session.payment_intent && typeof session.payment_intent === 'string') {
+                upgradePaymentIntentIds.push(session.payment_intent);
+                upgradeSessionToPi.set(sessionId, session.payment_intent);
+              }
+            } catch (err) {
+              log.warn('Could not retrieve checkout session for upgrade fee', { sessionId, error: err });
+            }
+          })
+        );
+      }
+    }
+
     // Get payment intent IDs for confirmed tickets/workshop seats (for Stripe fee lookup)
     const confirmedPaymentIntentIds = [
       ...tickets
@@ -101,6 +141,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ...(workshopRegistrations ?? [])
         .filter((registration) => registration.stripe_payment_intent_id)
         .map((registration) => registration.stripe_payment_intent_id as string),
+      ...upgradePaymentIntentIds,
     ];
 
     // Fetch actual Stripe fees
@@ -161,6 +202,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         workshopSummary.totalStripeFees += fee;
         workshopSummary.stripeFeesByCurrency[cur] =
           (workshopSummary.stripeFeesByCurrency[cur] || 0) + fee;
+      }
+    }
+
+    // Compute upgrade summary
+    const upgradeSummary = {
+      totalUpgrades: 0,
+      revenueByCurrency: {} as Record<string, number>,
+      stripeFeesByCurrency: {} as Record<string, number>,
+    };
+
+    for (const upgrade of completedUpgrades ?? []) {
+      const cur = upgrade.currency?.toUpperCase() || 'CHF';
+      upgradeSummary.totalUpgrades += 1;
+      upgradeSummary.revenueByCurrency[cur] =
+        (upgradeSummary.revenueByCurrency[cur] || 0) + (upgrade.amount || 0);
+
+      // Look up fee via session -> payment intent mapping
+      const piId = upgrade.stripe_checkout_session_id
+        ? upgradeSessionToPi.get(upgrade.stripe_checkout_session_id)
+        : undefined;
+      if (piId && stripeFees.has(piId) && !countedPIs.has(piId)) {
+        countedPIs.add(piId);
+        const fee = stripeFees.get(piId)!;
+        upgradeSummary.stripeFeesByCurrency[cur] =
+          (upgradeSummary.stripeFeesByCurrency[cur] || 0) + fee;
       }
     }
 
@@ -421,6 +487,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       revenueBreakdown,
       b2bSummary,
       sponsorshipSummary,
+      upgradeSummary,
       workshopSummary,
       purchasesTimeSeries,
     });

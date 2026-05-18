@@ -22,3 +22,6 @@ export { useCartAbandonmentEmail } from './useCartAbandonmentEmail';
 export { useDiscount } from './useDiscount';
 
 export * from './useProgram';
+
+export { useTicketSpendBreakdown } from './useTicketSpendBreakdown';
+export type { TicketSpendData, WorkshopBooking, SpendBreakdown } from './useTicketSpendBreakdown';
