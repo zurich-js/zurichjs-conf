@@ -2,6 +2,10 @@
 
 ## Documentation Index
 
+### AI Agents
+- **[Agent Playbooks](./AGENT_PLAYBOOKS.md)** - Recipes for common tasks (new API route, new migration, etc.)
+- **[../CLAUDE.md](../CLAUDE.md)** - Canonical AI-agent rulebook (with scoped CLAUDE.md files in every major directory)
+
 ### Analytics & Logging
 - **[Quick Start Guide](./ANALYTICS_QUICK_START.md)** - Get up and running in 5 minutes
 - **[Full Analytics Guide](./ANALYTICS_AND_LOGGING.md)** - Complete analytics/logging documentation
@@ -11,8 +15,8 @@
 ### CFP System
 - **[CFP Improvements](./CFP_IMPROVEMENTS.md)** - Roadmap for CFP system enhancements
 
-### Debugging
-- **[Voucher Emails Debug](./DEBUG_VOUCHER_EMAILS.md)** - Debugging voucher email issues
+### Workshops
+- **[Workshops Summary](./WORKSHOPS_SUMMARY.md)** - Workshop subsystem overview
 
 ## Project Architecture
 

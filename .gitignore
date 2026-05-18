@@ -46,6 +46,9 @@ next-env.d.ts
 .vscode/
 .cursor/
 
+# Claude Code user-local settings (settings.json is committed)
+.claude/settings.local.json
+
 # Sentry Config File
 .env.sentry-build-plugin
 

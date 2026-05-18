@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:run)",
+      "Bash(pnpm test:run:*)",
+      "Bash(pnpm test:related:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm build)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm email:dev)",
+      "Bash(pnpm db:seed:*)",
+      "Bash(pnpm install)",
+      "Bash(pnpm install --frozen-lockfile)",
+      "Bash(pnpm why:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm exec vitest:*)",
+      "Bash(node --version)",
+      "Bash(pnpm --version)",
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git stash list)",
+      "Bash(git ls-files:*)",
+      "Bash(git remote -v)",
+      "Bash(git rev-parse:*)",
+      "Bash(git fetch:*)",
+      "Bash(ls:*)",
+      "Bash(find . -name:*)",
+      "Bash(find . -type:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(cat package.json)",
+      "Bash(cat tsconfig.json)",
+      "Bash(cat .nvmrc)",
+      "Bash(scripts/agent-precheck.sh)",
+      "Bash(scripts/agent-precheck.sh:*)",
+      "Bash(./scripts/agent-precheck.sh:*)",
+      "Bash(git commit:--no-verify*)"
+    ],
+    "deny": [
+      "Bash(git push:--force*)",
+      "Bash(git push:-f*)",
+      "Bash(git reset:--hard*)",
+      "Bash(rm:-rf*)",
+      "Bash(npm:*)",
+      "Bash(yarn:*)"
+    ]
+  }
+}
