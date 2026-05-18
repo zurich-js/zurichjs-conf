@@ -4,9 +4,11 @@
 # the full pre-commit suite (which builds the whole project).
 #
 # Runs:
-#   1. oxlint on changed files
-#   2. tsc --noEmit
+#   1. oxlint on the whole repo (it's < 1s for 900+ files; not worth scoping)
+#   2. tsc --noEmit on the whole project (must be repo-wide for type resolution)
 #   3. vitest related on changed TS/TSX files (skipped if none)
+#
+# The --staged flag only changes which set of changed files is fed to step 3.
 #
 # Usage:
 #   scripts/agent-precheck.sh
