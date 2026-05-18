@@ -27,8 +27,18 @@ Use the scaffold:
    Always write a follow-up migration instead.
 2. **New tables must enable RLS** in the same migration. Service-role bypass is
    the safety net, but RLS is the gate for everything else.
-3. **Migrations should be transactional.** Wrap multi-statement migrations in
-   `BEGIN; ... COMMIT;` (or rely on Supabase's per-file transaction).
+3. **Wrap multi-statement migrations in `BEGIN; ... COMMIT;` explicitly.** The
+   Supabase CLI does NOT automatically wrap each migration file in a single
+   transaction, so without `BEGIN`/`COMMIT` a partial failure leaves the schema
+   half-applied. Wrap every multi-statement migration unless you're using one of
+   the statements below that can't run in a transaction:
+   - `CREATE INDEX CONCURRENTLY` / `DROP INDEX CONCURRENTLY`
+   - `ALTER TYPE ... ADD VALUE` (in some Postgres versions)
+   - `VACUUM`, `REINDEX`, `CLUSTER`
+   - `CREATE DATABASE` / `DROP DATABASE`
+
+   When you need one of these, put it in its own migration file (no `BEGIN`/`COMMIT`)
+   so a failure doesn't leave an unrelated transaction half-applied.
 4. **Idempotent where possible.** Use `IF NOT EXISTS`, `IF EXISTS`, and
    `CREATE OR REPLACE` so re-running is safe.
 
