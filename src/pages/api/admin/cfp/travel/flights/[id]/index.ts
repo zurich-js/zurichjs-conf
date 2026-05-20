@@ -13,6 +13,9 @@ import { logger } from '@/lib/logger';
 const log = logger.scope('Admin Flight CRUD API');
 
 const updateSchema = z.object({
+  speaker_id: z.string().uuid().nullable().optional(),
+  traveler_name: z.string().nullable().optional(),
+  traveler_email: z.string().email().nullable().optional().or(z.literal('')),
   direction: z.enum(['inbound', 'outbound']).optional(),
   airline: z.string().optional(),
   flight_number: z.string().optional(),

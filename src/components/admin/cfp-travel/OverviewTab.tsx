@@ -66,6 +66,22 @@ export function OverviewTab({ stats, isLoading, onNavigate }: OverviewTabProps) 
         <StatCard label="Departures Today" value={stats.flights_departing_today} color="text-red-600" />
       </div>
 
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Tracked Rooms" value={stats.accommodation_rooms} color="text-indigo-600" />
+        <StatCard label="Tracked People" value={stats.accommodation_people} color="text-purple-600" />
+        <StatCard
+          label="Accommodation Status"
+          value={stats.accommodation_confirmed}
+          subtitle={`${stats.accommodation_pending} pending`}
+          color="text-green-600"
+        />
+        <StatCard
+          label="Guest Payments Due"
+          value={`CHF ${(stats.accommodation_guest_payments_due / 100).toFixed(2)}`}
+          color="text-orange-600"
+        />
+      </div>
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-bold text-black mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
@@ -88,6 +104,12 @@ export function OverviewTab({ stats, isLoading, onNavigate }: OverviewTabProps) 
             Flight Tracker
           </button>
           <button
+            onClick={() => onNavigate('accommodations')}
+            className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-black font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            Manage Accommodations
+          </button>
+          <button
             onClick={() => onNavigate('invoices')}
             className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-black font-medium rounded-lg transition-colors cursor-pointer"
           >
@@ -106,7 +128,7 @@ function StatCard({
   color = 'text-gray-900',
 }: {
   label: string;
-  value: number;
+  value: number | string;
   subtitle?: string;
   color?: string;
 }) {

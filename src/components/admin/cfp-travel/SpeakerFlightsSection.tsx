@@ -6,14 +6,18 @@
 import { useState } from 'react';
 import { Plane, ExternalLink, Pencil, Trash2, Plus } from 'lucide-react';
 import type { CfpSpeakerFlight, CfpFlightDirection } from '@/lib/types/cfp';
+import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
 import { FLIGHT_STATUS_COLORS, getFlightTrackingUrl } from './types';
 
 interface SpeakerFlightsSectionProps {
   flights: CfpSpeakerFlight[];
+  unlinkedFlights?: CfpSpeakerFlight[];
+  speaker: SpeakerWithTravel;
   speakerId: string;
   onCreateFlight: (data: Record<string, unknown>) => void;
   onUpdateFlight: (flightId: string, data: Record<string, unknown>) => void;
   onDeleteFlight: (flightId: string) => void;
+  onLinkFlight: (flightId: string) => void;
   isSubmitting: boolean;
 }
 
@@ -41,12 +45,17 @@ const EMPTY_FORM: FlightFormData = {
 
 export function SpeakerFlightsSection({
   flights,
+  unlinkedFlights = [],
+  speaker,
   onCreateFlight,
   onUpdateFlight,
   onDeleteFlight,
+  onLinkFlight,
   isSubmitting,
 }: SpeakerFlightsSectionProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showLink, setShowLink] = useState(false);
+  const [linkFlightId, setLinkFlightId] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FlightFormData>(EMPTY_FORM);
 
@@ -73,6 +82,8 @@ export function SpeakerFlightsSection({
 
   const handleSubmit = () => {
     const data = {
+      traveler_name: `${speaker.first_name} ${speaker.last_name}`,
+      traveler_email: speaker.email,
       direction: form.direction,
       airline: form.airline || undefined,
       flight_number: form.flight_number || undefined,
@@ -106,14 +117,50 @@ export function SpeakerFlightsSection({
           Flights ({flights.length})
         </h3>
         {!showForm && (
-          <button
-            onClick={startAdd}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-primary text-black hover:bg-[#e8d95e] cursor-pointer"
-          >
-            <Plus className="w-3 h-3" /> Add Flight
-          </button>
+          <div className="flex gap-2">
+            {unlinkedFlights.length > 0 && (
+              <button
+                onClick={() => setShowLink((value) => !value)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
+              >
+                Link flight
+              </button>
+            )}
+            <button
+              onClick={startAdd}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-primary text-black hover:bg-[#e8d95e] cursor-pointer"
+            >
+              <Plus className="w-3 h-3" /> Add Flight
+            </button>
+          </div>
         )}
       </div>
+
+      {showLink && (
+        <div className="mb-3 border border-gray-200 rounded-lg p-3 bg-gray-50 flex flex-col sm:flex-row gap-2">
+          <select value={linkFlightId} onChange={(event) => setLinkFlightId(event.target.value)} className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+            <option value="">Select unlinked flight</option>
+            {unlinkedFlights.map((flight) => (
+              <option key={flight.id} value={flight.id}>
+                {(flight.traveler_name || 'Other')} · {flight.airline || ''} {flight.flight_number || ''} · {flight.departure_airport || '?'} → {flight.arrival_airport || '?'}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => {
+              if (!linkFlightId) return;
+              onLinkFlight(linkFlightId);
+              setLinkFlightId('');
+              setShowLink(false);
+            }}
+            disabled={!linkFlightId || isSubmitting}
+            className="px-3 py-2 text-sm rounded-lg bg-brand-primary text-black hover:bg-[#e8d95e] disabled:opacity-50 cursor-pointer"
+          >
+            Link
+          </button>
+        </div>
+      )}
 
       {flights.length === 0 && !showForm && (
         <p className="text-sm text-gray-500 py-3">No flights added yet.</p>
@@ -133,6 +180,9 @@ export function SpeakerFlightsSection({
                 <span className="font-medium text-gray-900 text-sm">
                   {flight.airline} {flight.flight_number}
                 </span>
+                {flight.traveler_name && (
+                  <span className="text-xs text-gray-400">{flight.traveler_name}</span>
+                )}
                 <span className="text-sm text-gray-500">
                   {flight.departure_airport} → {flight.arrival_airport}
                 </span>

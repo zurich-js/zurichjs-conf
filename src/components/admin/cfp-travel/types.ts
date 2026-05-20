@@ -5,7 +5,7 @@
 import type { CfpReimbursementStatus, CfpFlightStatus, CfpFlightDirection } from '@/lib/types/cfp';
 
 export type { CfpReimbursementStatus, CfpFlightStatus };
-export type TabType = 'overview' | 'speakers' | 'flights' | 'arrivals' | 'invoices';
+export type TabType = 'overview' | 'speakers' | 'flights' | 'arrivals' | 'accommodations' | 'invoices';
 
 export const STATUS_COLORS: Record<CfpReimbursementStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
