@@ -6,8 +6,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/atoms';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
+import { trackButtonClick } from '@/lib/analytics';
+import type { PublicSpeaker } from '@/lib/types/cfp';
 
 export interface SpeakersSectionProps {
   className?: string;
@@ -27,7 +32,7 @@ function SpeakerCard({ name, title, avatarUrl, href }: SpeakerCardProps) {
     <Link
       href={href}
       aria-label={name ? `View ${name}'s speaker profile` : 'View speaker profile'}
-      className="group flex-shrink-0 w-[240px] sm:w-[220px] md:w-[240px] lg:w-[230px] xl:w-[260px] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white"
+      className="group relative flex-shrink-0 w-[240px] sm:w-[220px] md:w-[240px] lg:w-[230px] xl:w-[260px] rounded-2xl transition-all duration-300 ease-out hover:z-10 hover:mx-2 hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white"
     >
       <div className="relative rounded-2xl overflow-hidden bg-brand-primary">
         {/* Image container */}
@@ -85,7 +90,7 @@ function SpeakerCardsSkeleton() {
   return (
     <div className="w-full" aria-label="Loading featured speakers">
       <div className="overflow-x-auto overscroll-x-contain scrollbar-hide">
-        <div className="flex gap-4 md:gap-6 pb-4 px-4 md:px-8 w-max min-w-full justify-start lg:justify-center">
+        <div className="flex gap-4 md:gap-6 p-4 w-max min-w-full justify-start lg:justify-center">
           {Array.from({ length: 5 }).map((_, index) => (
             <SpeakerCardSkeleton key={index} />
           ))}
@@ -95,13 +100,257 @@ function SpeakerCardsSkeleton() {
   );
 }
 
-export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
-  const { data, isLoading } = useQuery(publicSpeakersQueryOptions({ featured: true }));
+interface SpeakerMarqueeCardProps {
+  speaker: PublicSpeaker;
+}
 
-  const speakers = (data?.speakers || []).filter((speaker) => speaker.is_featured);
+function getSpeakerName(speaker: PublicSpeaker) {
+  return [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
+}
+
+function getSpeakerTitle(speaker: PublicSpeaker) {
+  return [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');
+}
+
+function SpeakerMarqueeCard({ speaker }: SpeakerMarqueeCardProps) {
+  const fullName = getSpeakerName(speaker);
+  const titleWithCompany = getSpeakerTitle(speaker);
+
+  return (
+    <Link
+      href={`/speakers/${speaker.slug}`}
+      aria-label={fullName ? `View ${fullName}'s speaker profile` : 'View speaker profile'}
+      className="group/card relative flex w-[168px] flex-shrink-0 overflow-hidden rounded-lg bg-brand-white shadow-sm transition-transform duration-500 ease-out hover:z-10 hover:-translate-y-2 hover:scale-[1.08] hover:shadow-xl focus-visible:z-10 focus-visible:-translate-y-2 focus-visible:scale-[1.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white sm:w-[184px]"
+    >
+      <div className="relative aspect-[4/5] w-full bg-brand-primary">
+        {speaker.profile_image_url && (
+          <Image
+            src={speaker.profile_image_url}
+            alt={fullName ? `${fullName} avatar` : 'Speaker avatar'}
+            fill
+            className="object-cover object-top"
+            sizes="184px"
+            draggable={false}
+          />
+        )}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-3 pb-3 pt-12">
+          {fullName && <h3 className="text-sm font-bold leading-tight text-white">{fullName}</h3>}
+          {titleWithCompany && (
+            <p className="mt-1 line-clamp-2 text-xs leading-tight text-brand-primary">
+              {titleWithCompany}
+            </p>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+interface SpeakerMarqueeProps {
+  speakers: PublicSpeaker[];
+}
+
+function useSmoothMarquee(isPaused: boolean) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const isPausedRef = useRef(isPaused);
+  const speedRef = useRef(18);
+  const scrollPositionRef = useRef(0);
+  const lastFrameRef = useRef<number | null>(null);
+  const contentWidthRef = useRef(0);
+  const isAutoScrollingRef = useRef(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+    if (!viewport || !track) {
+      return undefined;
+    }
+
+    let isResetting = false;
+
+    const normalizeScrollPosition = (syncFromViewport: boolean) => {
+      const contentWidth = contentWidthRef.current;
+      if (contentWidth <= 0 || isResetting) {
+        return;
+      }
+
+      if (syncFromViewport) {
+        scrollPositionRef.current = viewport.scrollLeft;
+      }
+
+      const lowerBound = contentWidth * 0.5;
+      const upperBound = contentWidth * 1.5;
+
+      if (scrollPositionRef.current < lowerBound) {
+        isResetting = true;
+        scrollPositionRef.current += contentWidth;
+        viewport.scrollLeft = scrollPositionRef.current;
+        isResetting = false;
+      } else if (scrollPositionRef.current > upperBound) {
+        isResetting = true;
+        scrollPositionRef.current -= contentWidth;
+        viewport.scrollLeft = scrollPositionRef.current;
+        isResetting = false;
+      }
+    };
+
+    const handleScroll = () => {
+      if (isAutoScrollingRef.current) {
+        return;
+      }
+
+      normalizeScrollPosition(true);
+    };
+
+    const updateWidth = () => {
+      contentWidthRef.current = track.scrollWidth / 3;
+      if (contentWidthRef.current > 0) {
+        viewport.scrollLeft = contentWidthRef.current;
+        scrollPositionRef.current = viewport.scrollLeft;
+      }
+    };
+
+    updateWidth();
+
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(track);
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+
+    if (prefersReducedMotion) {
+      return () => {
+        resizeObserver.disconnect();
+        viewport.removeEventListener('scroll', handleScroll);
+      };
+    }
+
+    let frameId = 0;
+    const animate = (timestamp: number) => {
+      const lastFrame = lastFrameRef.current ?? timestamp;
+      const delta = Math.min(timestamp - lastFrame, 64);
+      lastFrameRef.current = timestamp;
+
+      if (isPausedRef.current) {
+        speedRef.current = 0;
+        scrollPositionRef.current = viewport.scrollLeft;
+        frameId = window.requestAnimationFrame(animate);
+        return;
+      }
+
+      const targetSpeed = isPausedRef.current ? 0 : 18;
+      const easing = 1 - Math.exp(-delta / 520);
+      speedRef.current += (targetSpeed - speedRef.current) * easing;
+
+      scrollPositionRef.current += speedRef.current * (delta / 1000);
+      normalizeScrollPosition(false);
+      isAutoScrollingRef.current = true;
+      viewport.scrollLeft = scrollPositionRef.current;
+      window.requestAnimationFrame(() => {
+        isAutoScrollingRef.current = false;
+      });
+      frameId = window.requestAnimationFrame(animate);
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      viewport.removeEventListener('scroll', handleScroll);
+      lastFrameRef.current = null;
+    };
+  }, [prefersReducedMotion]);
+
+  return { viewportRef, trackRef };
+}
+
+function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
+  const [isPaused, setIsPaused] = useState(false);
+  const { viewportRef, trackRef } = useSmoothMarquee(isPaused);
+
+  if (speakers.length === 0) {
+    return null;
+  }
+
+  const marqueeSpeakers = [...speakers, ...speakers, ...speakers];
+
+  return (
+    <div className="mx-auto w-full max-w-[1264px] px-4 sm:max-w-[1164px] md:max-w-[1296px] md:px-8 lg:max-w-[1246px] xl:max-w-[1396px]">
+      <div
+        className="group relative pb-2 pt-2"
+        role="region"
+        aria-label="More ZurichJS speakers"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onFocus={() => setIsPaused(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setIsPaused(false);
+          }
+        }}
+      >
+        <div
+          ref={viewportRef}
+          className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-6 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_56px,black_calc(100%-56px),transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)]"
+        >
+          <div
+            ref={trackRef}
+            className="flex w-max gap-4 px-14 sm:px-24"
+          >
+            {marqueeSpeakers.map((speaker, index) => (
+              <SpeakerMarqueeCard key={`${speaker.id}-${index}`} speaker={speaker} />
+            ))}
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute bottom-0 left-1/2 z-30 -translate-x-1/2 translate-y-7 rounded-full bg-brand-white p-2 opacity-0 shadow-lg transition-all duration-500 ease-out group-hover:pointer-events-auto group-hover:translate-y-4 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-4 group-focus-within:opacity-100">
+          <Button
+              href="/speakers"
+              size="md"
+              variant="black"
+              asChild
+              className="shadow-none"
+              onClick={() => {
+                trackButtonClick({
+                  buttonText: 'See the full speaker lineup',
+                  buttonLocation: 'homepage_speaker_marquee',
+                  buttonAction: 'navigate_to_speakers',
+                });
+              }}
+            >
+              <span>See the full speaker lineup</span>
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
+  const { data, isLoading } = useQuery(publicSpeakersQueryOptions());
+
+  const speakers = data?.speakers || [];
+  const featuredSpeakers = speakers.filter((speaker) => speaker.is_featured);
+  const secondarySpeakers = speakers.filter((speaker) => !speaker.is_featured);
 
   // Sort speakers so those with names come first
-  const sortedSpeakers = [...speakers].sort((a, b) => {
+  const sortedSpeakers = [...featuredSpeakers].sort((a, b) => {
     const aHasName = Boolean(a.first_name?.trim() || a.last_name?.trim());
     const bHasName = Boolean(b.first_name?.trim() || b.last_name?.trim());
     if (aHasName && !bHasName) return -1;
@@ -113,7 +362,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
     return <SpeakerCardsSkeleton />;
   }
 
-  if (speakers.length === 0) {
+  if (featuredSpeakers.length === 0) {
     return null;
   }
 
@@ -121,10 +370,10 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
     <div className={`w-full ${className}`}>
       {/* Always horizontally scrollable */}
       <div className="overflow-x-auto overscroll-x-contain scrollbar-hide">
-        <div className="flex gap-4 md:gap-6 pb-4 px-4 md:px-8 w-max min-w-full justify-start lg:justify-center">
+        <div className="flex gap-4 md:gap-6 p-4 w-max min-w-full justify-start lg:justify-center">
           {sortedSpeakers.slice(0, 5).map((speaker) => {
-            const fullName = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
-            const titleWithCompany = [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');
+            const fullName = getSpeakerName(speaker);
+            const titleWithCompany = getSpeakerTitle(speaker);
 
             return (
               <SpeakerCard
@@ -138,6 +387,7 @@ export function SpeakersSection({ className = '' }: SpeakersSectionProps) {
           })}
         </div>
       </div>
+      <SpeakerMarquee speakers={secondarySpeakers} />
     </div>
   );
 }

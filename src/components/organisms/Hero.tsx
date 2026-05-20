@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Logo, Heading, Kicker, IconButton } from '@/components/atoms';
-import { Countdown, BackgroundMedia, SpeakerCardProps } from '@/components/molecules';
+import { Countdown, BackgroundMedia } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
 import { ShapedSection } from './ShapedSection';
 import { ArrowRight } from 'lucide-react';
@@ -15,7 +15,6 @@ export interface HeroProps {
   city: string;
   ctaLabel: string;
   onCtaClick?: () => void;
-  speakers: SpeakerCardProps[];
   background: {
     videoSrc?: string;
     posterSrc?: string;
