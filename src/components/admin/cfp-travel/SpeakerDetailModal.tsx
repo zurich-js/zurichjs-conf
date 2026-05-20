@@ -7,17 +7,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, X, Utensils, Calendar, Sparkles } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { useToast } from '@/contexts/ToastContext';
-import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
+import type { FlightWithSpeaker, SpeakerWithTravel } from '@/lib/cfp/admin-travel';
 import {
   travelQueryKeys,
   fetchSpeakerDetails,
   createFlight as apiCreateFlight,
   updateFlight as apiUpdateFlight,
   deleteFlight as apiDeleteFlight,
-  saveAccommodation as apiSaveAccommodation,
+  createAccommodation as apiCreateAccommodation,
+  updateAccommodation as apiUpdateAccommodation,
+  deleteAccommodation as apiDeleteAccommodation,
   createInvoice as apiCreateInvoice,
   updateInvoice as apiUpdateInvoice,
   deleteInvoice as apiDeleteInvoice,
+  fetchAccommodations,
+  fetchFlights,
   uploadInvoicePdf,
   updateSpeakerTravel as apiUpdateSpeakerTravel,
 } from './api';
@@ -53,10 +57,31 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     staleTime: 10 * 1000,
   });
 
+  const { data: accommodationsData } = useQuery({
+    queryKey: travelQueryKeys.accommodations,
+    queryFn: fetchAccommodations,
+    staleTime: 10 * 1000,
+  });
+
+  const { data: allFlights = [] } = useQuery({
+    queryKey: travelQueryKeys.flights,
+    queryFn: fetchFlights,
+    staleTime: 10 * 1000,
+  });
+
+  const accommodationBookings = accommodationsData?.bookings.filter((booking) => booking.related_speaker_id === speaker.id)
+    ?? speaker.accommodation_bookings
+    ?? [];
+  const unlinkedAccommodations = accommodationsData?.bookings.filter((booking) => !booking.related_speaker_id) ?? [];
+  const hotels = accommodationsData?.hotels ?? [];
+  const speakerFlights = allFlights.filter((flight) => flight.speaker_id === speaker.id) as FlightWithSpeaker[];
+  const unlinkedFlights = allFlights.filter((flight) => !flight.speaker_id) as FlightWithSpeaker[];
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: travelQueryKeys.speaker(speaker.id) });
     queryClient.invalidateQueries({ queryKey: travelQueryKeys.speakers });
     queryClient.invalidateQueries({ queryKey: travelQueryKeys.flights });
+    queryClient.invalidateQueries({ queryKey: travelQueryKeys.accommodations });
     queryClient.invalidateQueries({ queryKey: travelQueryKeys.invoices });
     queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
   };
@@ -79,10 +104,22 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     onError: () => toast.error('Error', 'Failed to delete flight'),
   });
 
-  const saveAccommodation = useMutation({
-    mutationFn: (data: Record<string, unknown>) => apiSaveAccommodation(speaker.id, data),
-    onSuccess: () => { invalidateAll(); toast.success('Hotel Saved', 'Accommodation details updated'); },
-    onError: () => toast.error('Error', 'Failed to save accommodation'),
+  const createAccommodation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiCreateAccommodation(data),
+    onSuccess: () => { invalidateAll(); toast.success('Accommodation Added', 'Accommodation record has been created'); },
+    onError: () => toast.error('Error', 'Failed to create accommodation'),
+  });
+
+  const updateAccommodation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => apiUpdateAccommodation(id, data),
+    onSuccess: () => { invalidateAll(); toast.success('Accommodation Updated', 'Accommodation details saved'); },
+    onError: () => toast.error('Error', 'Failed to update accommodation'),
+  });
+
+  const deleteAccommodation = useMutation({
+    mutationFn: (id: string) => apiDeleteAccommodation(id),
+    onSuccess: () => { invalidateAll(); toast.success('Accommodation Deleted', 'Accommodation record has been removed'); },
+    onError: () => toast.error('Error', 'Failed to delete accommodation'),
   });
 
   const createInvoice = useMutation({
@@ -130,13 +167,16 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
   });
 
   const isSubmitting = createFlight.isPending || updateFlight.isPending || deleteFlight.isPending
-    || saveAccommodation.isPending || createInvoice.isPending || updateInvoice.isPending
+    || createAccommodation.isPending || updateAccommodation.isPending || deleteAccommodation.isPending
+    || createInvoice.isPending || updateInvoice.isPending
     || deleteInvoice.isPending || uploadPdf.isPending || updateTravel.isPending;
 
-  const nights = calculateNights(
-    speaker.accommodation?.check_in_date ?? null,
-    speaker.accommodation?.check_out_date ?? null
-  );
+  const firstAccommodationRoom = accommodationBookings.flatMap((booking) => booking.rooms)[0];
+  const hasAccommodation = accommodationBookings.some((booking) => booking.status !== 'canceled')
+    || !!speaker.accommodation?.hotel_name;
+  const nights = firstAccommodationRoom
+    ? calculateNights(firstAccommodationRoom.check_in_date, firstAccommodationRoom.check_out_date)
+    : calculateNights(speaker.accommodation?.check_in_date ?? null, speaker.accommodation?.check_out_date ?? null);
   const travelConfirmed = isTravelConfirmed(speaker);
 
   return (
@@ -155,8 +195,8 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
         />
         <SummaryCard
           label="Hotel"
-          value={speaker.accommodation?.hotel_name ? 'Booked' : 'Not Booked'}
-          icon={speaker.accommodation?.hotel_name ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-gray-300" />}
+          value={hasAccommodation ? 'Booked' : 'Not Booked'}
+          icon={hasAccommodation ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-gray-300" />}
         />
         <SummaryCard
           label="Nights"
@@ -177,21 +217,59 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
 
       <div className="space-y-6">
         <SpeakerFlightsSection
-          flights={speaker.flights}
+          flights={speakerFlights.length > 0 ? speakerFlights : speaker.flights}
+          unlinkedFlights={unlinkedFlights}
+          speaker={speaker}
           speakerId={speaker.id}
           onCreateFlight={(data) => createFlight.mutate(data)}
           onUpdateFlight={(id, data) => updateFlight.mutate({ id, data })}
           onDeleteFlight={(id) => deleteFlight.mutate(id)}
+          onLinkFlight={(id) => updateFlight.mutate({ id, data: { speaker_id: speaker.id } })}
           isSubmitting={isSubmitting}
         />
 
         <hr className="border-gray-200" />
 
         <SpeakerAccommodationSection
-          accommodation={speaker.accommodation}
+          speaker={speaker}
+          legacyAccommodation={speaker.accommodation}
+          bookings={accommodationBookings}
+          unlinkedBookings={unlinkedAccommodations}
+          hotels={hotels}
+          speakers={[speaker]}
           flights={speaker.flights}
-          speakerId={speaker.id}
-          onSave={(data) => saveAccommodation.mutate(data)}
+          onCreate={(data) => createAccommodation.mutate(data)}
+          onUpdate={(id, data) => updateAccommodation.mutate({ id, data })}
+          onDelete={(id) => deleteAccommodation.mutate(id)}
+          onLink={(id) => {
+            const booking = unlinkedAccommodations.find((item) => item.id === id);
+            if (!booking) return;
+            updateAccommodation.mutate({
+              id,
+              data: {
+                related_speaker_id: speaker.id,
+                guest_name: booking.guest_name,
+                guest_email: booking.guest_email,
+                status: booking.status,
+                reservation_number: booking.reservation_number,
+                reservation_confirmation_url: booking.reservation_confirmation_url,
+                conference_amount: booking.conference_amount,
+                guest_amount: booking.guest_amount,
+                admin_notes: booking.admin_notes,
+                metadata: booking.metadata,
+                rooms: booking.rooms.map((room) => ({
+                  hotel_id: room.hotel_id,
+                  room_type_id: room.room_type_id,
+                  room_type_name: room.room_type_id ? null : room.room_name,
+                  save_room_type: false,
+                  people_count: room.people_count,
+                  check_in_date: room.check_in_date,
+                  check_out_date: room.check_out_date,
+                  nightly_rate: room.nightly_rate,
+                })),
+              },
+            });
+          }}
           isSubmitting={isSubmitting}
         />
 

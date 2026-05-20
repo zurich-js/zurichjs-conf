@@ -36,7 +36,9 @@ export interface CfpSpeakerTravel {
  */
 export interface CfpSpeakerFlight {
   id: string;
-  speaker_id: string;
+  speaker_id: string | null;
+  traveler_name: string | null;
+  traveler_email: string | null;
   direction: CfpFlightDirection;
   airline: string | null;
   flight_number: string | null;

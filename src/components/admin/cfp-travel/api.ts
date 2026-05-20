@@ -8,6 +8,7 @@ import type {
   SpeakerWithTravel,
   FlightWithSpeaker,
   InvoiceWithSpeaker,
+  AccommodationsPayload,
 } from '@/lib/cfp/admin-travel';
 import type { CfpFlightStatus } from '@/lib/types/cfp';
 
@@ -21,6 +22,7 @@ export const travelQueryKeys = {
   speakers: ['admin', 'travel', 'speakers'] as const,
   speaker: (id: string) => ['admin', 'travel', 'speaker', id] as const,
   flights: ['admin', 'travel', 'flights'] as const,
+  accommodations: ['admin', 'travel', 'accommodations'] as const,
   invoices: ['admin', 'travel', 'invoices'] as const,
 };
 
@@ -85,11 +87,15 @@ export async function fetchInvoices(): Promise<InvoiceWithSpeaker[]> {
   return data.invoices;
 }
 
+export async function fetchAccommodations(): Promise<AccommodationsPayload> {
+  return jsonFetch<AccommodationsPayload>('/api/admin/cfp/travel/accommodations');
+}
+
 // ============================================================================
 // Flight Mutations
 // ============================================================================
 
-export function createFlight(speakerId: string, data: Record<string, unknown>) {
+export function createFlight(speakerId: string | null, data: Record<string, unknown>) {
   return jsonPost('/api/admin/cfp/travel/flights', { speaker_id: speakerId, ...data });
 }
 
@@ -111,6 +117,18 @@ export function updateFlightStatus(flightId: string, status: CfpFlightStatus) {
 
 export function saveAccommodation(speakerId: string, data: Record<string, unknown>) {
   return jsonPut(`/api/admin/cfp/travel/speakers/${speakerId}/accommodation`, data);
+}
+
+export function createAccommodation(data: Record<string, unknown>) {
+  return jsonPost('/api/admin/cfp/travel/accommodations', data);
+}
+
+export function updateAccommodation(accommodationId: string, data: Record<string, unknown>) {
+  return jsonPut(`/api/admin/cfp/travel/accommodations/${accommodationId}`, data);
+}
+
+export function deleteAccommodation(accommodationId: string) {
+  return jsonDelete(`/api/admin/cfp/travel/accommodations/${accommodationId}`);
 }
 
 // ============================================================================

@@ -27,9 +27,27 @@ function hasInboundAndOutbound(speaker: SpeakerWithTravel): boolean {
   );
 }
 
+function hasAccommodation(speaker: SpeakerWithTravel): boolean {
+  return speaker.accommodation_bookings.some((booking) => booking.status !== 'canceled')
+    || !!speaker.accommodation?.hotel_name;
+}
+
+function firstAccommodationNights(speaker: SpeakerWithTravel): number | null {
+  const room = speaker.accommodation_bookings
+    .filter((booking) => booking.status !== 'canceled')
+    .flatMap((booking) => booking.rooms)[0];
+  if (room) {
+    return calculateNights(room.check_in_date, room.check_out_date);
+  }
+  return calculateNights(
+    speaker.accommodation?.check_in_date ?? null,
+    speaker.accommodation?.check_out_date ?? null
+  );
+}
+
 function StatusDot({ speaker }: { speaker: SpeakerWithTravel }) {
   const hasFlights = speaker.flights.length > 0;
-  const hasHotel = !!speaker.accommodation?.hotel_name;
+  const hasHotel = hasAccommodation(speaker);
 
   if (hasFlights && hasHotel) {
     return <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" title="Flights & hotel booked" />;
@@ -50,7 +68,7 @@ function StatusBadge({ speaker }: { speaker: SpeakerWithTravel }) {
   if (hasInboundAndOutbound(speaker)) {
     return <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">Confirmed</span>;
   }
-  if (speaker.flights.length > 0 || speaker.accommodation?.hotel_name) {
+  if (speaker.flights.length > 0 || hasAccommodation(speaker)) {
     return <span className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">In Progress</span>;
   }
   return <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">Not Started</span>;
@@ -103,10 +121,7 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
           {/* Mobile: Card layout */}
           <div className="sm:hidden divide-y divide-gray-200">
             {paginatedSpeakers.map((speaker) => {
-              const nights = calculateNights(
-                speaker.accommodation?.check_in_date ?? null,
-                speaker.accommodation?.check_out_date ?? null
-              );
+              const nights = firstAccommodationNights(speaker);
               return (
                 <div
                   key={speaker.id}
@@ -134,7 +149,7 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
                       )}
                     </span>
                     <span className="flex items-center gap-1">
-                      Hotel: {speaker.accommodation?.hotel_name ? (
+                      Hotel: {hasAccommodation(speaker) ? (
                         <Check className="w-3 h-3 text-green-600" />
                       ) : (
                         <X className="w-3 h-3 text-gray-300" />
@@ -171,10 +186,7 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedSpeakers.map((speaker) => {
-                  const nights = calculateNights(
-                    speaker.accommodation?.check_in_date ?? null,
-                    speaker.accommodation?.check_out_date ?? null
-                  );
+                  const nights = firstAccommodationNights(speaker);
                   return (
                     <tr
                       key={speaker.id}
@@ -198,7 +210,7 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
                         )}
                       </td>
                       <td className="px-4 py-4">
-                        {speaker.accommodation?.hotel_name ? (
+                        {hasAccommodation(speaker) ? (
                           <Check className="w-4 h-4 text-green-600" />
                         ) : (
                           <X className="w-4 h-4 text-gray-300" />
