@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Plane } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
-import type { CfpFlightDirection, CfpFlightStatus } from '@/lib/types/cfp';
-import type { FlightWithSpeaker, SpeakerWithTravel } from '@/lib/cfp/admin-travel';
+import type { CfpFlightDirection, CfpFlightStatus, CfpSpeakerFlight } from '@/lib/types/cfp';
+import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
 
 const INPUT_CLASS = 'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none';
 const OTHER_VALUE = '__other__';
@@ -24,7 +24,7 @@ interface FlightFormData {
 }
 
 interface FlightModalProps {
-  flight: FlightWithSpeaker | null;
+  flight: CfpSpeakerFlight | null;
   defaultSpeaker?: SpeakerWithTravel | null;
   speakers: SpeakerWithTravel[];
   isSubmitting: boolean;
@@ -36,7 +36,7 @@ function toLocalDateTime(value: string | null): string {
   return value ? value.slice(0, 16) : '';
 }
 
-function buildForm(flight: FlightWithSpeaker | null, defaultSpeaker?: SpeakerWithTravel | null): FlightFormData {
+function buildForm(flight: CfpSpeakerFlight | null, defaultSpeaker?: SpeakerWithTravel | null): FlightFormData {
   return {
     traveler_for: flight?.speaker_id ?? defaultSpeaker?.id ?? (flight ? OTHER_VALUE : ''),
     traveler_name: flight?.traveler_name ?? (defaultSpeaker ? `${defaultSpeaker.first_name} ${defaultSpeaker.last_name}` : ''),
