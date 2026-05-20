@@ -193,7 +193,7 @@ function UnannouncedSessionNotice() {
 function McProfileNotice({ firstName }: { firstName: string }) {
   return (
     <article>
-      <h2 className="text-lg font-bold leading-tight">{firstName} is hosting the day</h2>
+      <h2 className="text-lg font-bold leading-tight">{firstName} is the MC</h2>
       <p className="mt-3 max-w-2xl text-sm leading-7">
         As MC, {firstName} will guide the room, introduce speakers, and keep the ZurichJS Conf program moving.
       </p>
