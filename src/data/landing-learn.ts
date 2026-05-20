@@ -6,19 +6,35 @@ export const learningData = {
     items: [
         {
             title: "Learn from industry experts",
-            description: "Brought to you by experts in frameworks like React, Vue, and Angular, as well as developer tooling, testing, and much, much more. Get the latest insights and best practices from those shaping the future of web development."
+            description: "Brought to you by experts in frameworks like React, Vue, and Angular, as well as developer tooling, testing, and much, much more. Get the latest insights and best practices from those shaping the future of web development.",
+            cta: {
+                label: "Discover the talks",
+                href: "/talks"
+            }
         },
         {
             title: "Get hands-on with workshops",
-            description: "Enough talk, let’s build! For those specific use-cases that require a deeper dive than possible on stage. Get expertise and ask questions for the best possible learning."
+            description: "Enough talk, let’s build! For those specific use-cases that require a deeper dive than possible on stage. Get expertise and ask questions for the best possible learning.",
+            cta: {
+                label: "Take a workshop",
+                href: "/workshops"
+            }
         },
         {
             title: "Connect with your community",
-            description: "Connect with the amazing ZurichJS community, make friends, professionally network, and create long-lasting connections across borders."
+            description: "Connect with the amazing ZurichJS community, make friends, professionally network, and create long-lasting connections across borders.",
+            cta: {
+                label: "See full schedule",
+                href: "/schedule"
+            }
         },
         {
             title: "... at an affordable price",
-            description: "In Switzerland! What? That’s right. You get the community pricing, up to 50% lower than other European conferences in the web dev space."
+            description: "In Switzerland! What? That’s right. You get the community pricing, up to 50% lower than other European conferences in the web dev space.",
+            cta: {
+                label: "Grab your ticket",
+                href: "#tickets"
+            }
         }
     ]
 } satisfies LearnSectionProps
