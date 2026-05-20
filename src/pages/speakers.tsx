@@ -286,8 +286,7 @@ export default function SpeakersPage() {
                         avatar: speaker.profile_image_url,
                         name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
                         title: [speaker.job_title, speaker.company].filter(Boolean).join(' @'),
-                        badge: speaker.speaker_role === 'mc' ? 'MC' : undefined,
-                        footer: speaker.sessions?.[0]?.title || 'To be announced',
+                        footer: speaker.sessions?.[0]?.title || (speaker.speaker_role === 'mc' ? 'Master of ceremonies' : 'To be announced'),
                       };
 
                       return (
