@@ -7,11 +7,25 @@ import { Download, Eye, FileText, Trash2, Upload } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { sponsorshipKeys } from '@/lib/query-keys';
+import { createBrowserClient } from '@/lib/supabase/client';
 import type { ProspectusAsset, ProspectusCategory, ProspectusCurrency } from '@/lib/sponsorship/prospectus';
 
 interface ProspectusManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+const MAX_PROSPECTUS_FILE_SIZE = 20 * 1024 * 1024;
+
+async function readErrorResponse(response: Response, fallback: string): Promise<string> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    const data = await response.json() as { error?: string };
+    return data.error || fallback;
+  }
+
+  const text = await response.text();
+  return text.trim() || fallback;
 }
 
 async function fetchProspectusAssets(): Promise<ProspectusAsset[]> {
@@ -22,15 +36,39 @@ async function fetchProspectusAssets(): Promise<ProspectusAsset[]> {
 }
 
 async function uploadProspectus(currency: ProspectusCurrency, category: ProspectusCategory, file: File): Promise<void> {
-  const formData = new FormData();
-  formData.append('file', file);
+  if (file.type !== 'application/pdf') {
+    throw new Error('Only PDF files are allowed');
+  }
+
+  if (file.size > MAX_PROSPECTUS_FILE_SIZE) {
+    throw new Error('PDF must be 20 MB or smaller');
+  }
+
   const response = await fetch(`/api/admin/sponsorships/prospectus/${currency}/${category}`, {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contentType: file.type,
+      size: file.size,
+    }),
   });
+
   if (!response.ok) {
-    const data = await response.json() as { error?: string };
-    throw new Error(data.error || 'Failed to upload prospectus');
+    throw new Error(await readErrorResponse(response, 'Failed to create prospectus upload URL'));
+  }
+
+  const upload = await response.json() as { path: string; token: string };
+  const supabase = createBrowserClient();
+  const { error } = await supabase.storage
+    .from('sponsorship-assets')
+    .uploadToSignedUrl(upload.path, upload.token, file, {
+      contentType: 'application/pdf',
+      cacheControl: String(60 * 60),
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to upload prospectus');
   }
 }
 
@@ -39,8 +77,7 @@ async function deleteProspectus(currency: ProspectusCurrency, category: Prospect
     method: 'DELETE',
   });
   if (!response.ok) {
-    const data = await response.json() as { error?: string };
-    throw new Error(data.error || 'Failed to delete prospectus');
+    throw new Error(await readErrorResponse(response, 'Failed to delete prospectus'));
   }
 }
 
@@ -164,18 +201,18 @@ export function ProspectusManagerModal({ isOpen, onClose }: ProspectusManagerMod
                             </a>
                             <button
                               type="button"
-                          disabled={isBusy}
-                          onClick={() => {
-                            if (window.confirm(`Delete the ${currency} ${category} prospectus PDF?`)) {
-                              setError(null);
-                              deleteMutation.mutate({ currency, category });
-                            }
-                          }}
-                          className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </button>
+                              disabled={isBusy}
+                              onClick={() => {
+                                if (window.confirm(`Delete the ${currency} ${category} prospectus PDF?`)) {
+                                  setError(null);
+                                  deleteMutation.mutate({ currency, category });
+                                }
+                              }}
+                              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </button>
                           </>
                         )}
                       </div>

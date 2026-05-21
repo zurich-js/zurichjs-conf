@@ -111,6 +111,27 @@ export async function uploadProspectusAsset(
   return getProspectusAsset(currency, category);
 }
 
+export async function createProspectusUploadToken(
+  currency: ProspectusCurrency,
+  category: ProspectusCategory,
+): Promise<{
+  path: string;
+  token: string;
+  signedUrl: string;
+}> {
+  const supabase = createServiceRoleClient();
+  const path = getProspectusPath(currency, category);
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUploadUrl(path, { upsert: true });
+
+  if (error) {
+    throw new Error(`Failed to create prospectus upload URL: ${error.message}`);
+  }
+
+  return data;
+}
+
 export async function deleteProspectusAsset(
   currency: ProspectusCurrency,
   category: ProspectusCategory,
