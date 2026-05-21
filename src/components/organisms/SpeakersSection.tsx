@@ -159,6 +159,7 @@ function useSmoothMarquee(isPaused: boolean) {
   const lastFrameRef = useRef<number | null>(null);
   const contentWidthRef = useRef(0);
   const isAutoScrollingRef = useRef(false);
+  const manualPauseUntilRef = useRef(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -183,6 +184,14 @@ function useSmoothMarquee(isPaused: boolean) {
     }
 
     let isResetting = false;
+    let clearAutoScrollFrame = 0;
+
+    const pauseForManualInteraction = () => {
+      manualPauseUntilRef.current = performance.now() + 1400;
+      isAutoScrollingRef.current = false;
+      speedRef.current = 0;
+      scrollPositionRef.current = viewport.scrollLeft;
+    };
 
     const normalizeScrollPosition = (syncFromViewport: boolean) => {
       const contentWidth = contentWidthRef.current;
@@ -215,6 +224,11 @@ function useSmoothMarquee(isPaused: boolean) {
         return;
       }
 
+      if (Math.abs(viewport.scrollLeft - scrollPositionRef.current) < 2) {
+        return;
+      }
+
+      pauseForManualInteraction();
       normalizeScrollPosition(true);
     };
 
@@ -230,11 +244,17 @@ function useSmoothMarquee(isPaused: boolean) {
 
     const resizeObserver = new ResizeObserver(updateWidth);
     resizeObserver.observe(track);
+    viewport.addEventListener('pointerdown', pauseForManualInteraction, { passive: true });
+    viewport.addEventListener('touchstart', pauseForManualInteraction, { passive: true });
+    viewport.addEventListener('wheel', pauseForManualInteraction, { passive: true });
     viewport.addEventListener('scroll', handleScroll, { passive: true });
 
     if (prefersReducedMotion) {
       return () => {
         resizeObserver.disconnect();
+        viewport.removeEventListener('pointerdown', pauseForManualInteraction);
+        viewport.removeEventListener('touchstart', pauseForManualInteraction);
+        viewport.removeEventListener('wheel', pauseForManualInteraction);
         viewport.removeEventListener('scroll', handleScroll);
       };
     }
@@ -245,7 +265,7 @@ function useSmoothMarquee(isPaused: boolean) {
       const delta = Math.min(timestamp - lastFrame, 64);
       lastFrameRef.current = timestamp;
 
-      if (isPausedRef.current) {
+      if (isPausedRef.current || timestamp < manualPauseUntilRef.current) {
         speedRef.current = 0;
         scrollPositionRef.current = viewport.scrollLeft;
         frameId = window.requestAnimationFrame(animate);
@@ -260,7 +280,8 @@ function useSmoothMarquee(isPaused: boolean) {
       normalizeScrollPosition(false);
       isAutoScrollingRef.current = true;
       viewport.scrollLeft = scrollPositionRef.current;
-      window.requestAnimationFrame(() => {
+      window.cancelAnimationFrame(clearAutoScrollFrame);
+      clearAutoScrollFrame = window.requestAnimationFrame(() => {
         isAutoScrollingRef.current = false;
       });
       frameId = window.requestAnimationFrame(animate);
@@ -270,7 +291,11 @@ function useSmoothMarquee(isPaused: boolean) {
 
     return () => {
       window.cancelAnimationFrame(frameId);
+      window.cancelAnimationFrame(clearAutoScrollFrame);
       resizeObserver.disconnect();
+      viewport.removeEventListener('pointerdown', pauseForManualInteraction);
+      viewport.removeEventListener('touchstart', pauseForManualInteraction);
+      viewport.removeEventListener('wheel', pauseForManualInteraction);
       viewport.removeEventListener('scroll', handleScroll);
       lastFrameRef.current = null;
     };
@@ -281,15 +306,24 @@ function useSmoothMarquee(isPaused: boolean) {
 
 function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
   const [isPaused, setIsPaused] = useState(false);
-  const [isCtaLowered, setIsCtaLowered] = useState(false);
   const { viewportRef, trackRef } = useSmoothMarquee(isPaused);
   const desktopCtaRef = useRef<HTMLDivElement>(null);
+  const isCtaLoweredRef = useRef(false);
 
   if (speakers.length === 0) {
     return null;
   }
 
   const marqueeSpeakers = [...speakers, ...speakers, ...speakers];
+  const setDesktopCtaOffset = (isLowered: boolean) => {
+    if (isCtaLoweredRef.current === isLowered) {
+      return;
+    }
+
+    isCtaLoweredRef.current = isLowered;
+    desktopCtaRef.current?.style.setProperty('--speaker-cta-y', isLowered ? '2.5rem' : '1rem');
+  };
+
   const handleCarouselMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     const buttonRect = desktopCtaRef.current?.getBoundingClientRect();
     if (!buttonRect) {
@@ -301,7 +335,7 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
       event.clientX <= buttonRect.right &&
       event.clientY < buttonRect.top;
 
-    setIsCtaLowered(isAboveButton);
+    setDesktopCtaOffset(isAboveButton);
   };
 
   return (
@@ -313,20 +347,20 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => {
           setIsPaused(false);
-          setIsCtaLowered(false);
+          setDesktopCtaOffset(false);
         }}
         onFocus={() => setIsPaused(true)}
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) {
             setIsPaused(false);
-            setIsCtaLowered(false);
+            setDesktopCtaOffset(false);
           }
         }}
       >
         <div
           ref={viewportRef}
           onMouseMove={handleCarouselMouseMove}
-          onMouseLeave={() => setIsCtaLowered(false)}
+          onMouseLeave={() => setDesktopCtaOffset(false)}
           className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-8 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_56px,black_calc(100%-56px),transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)] md:pb-6"
         >
           <div
@@ -370,11 +404,8 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
 
         <div
           ref={desktopCtaRef}
-          className={`pointer-events-none absolute bottom-0 left-1/2 z-30 hidden -translate-x-1/2 translate-y-7 rounded-full bg-brand-white p-2 opacity-0 shadow-lg transition-all duration-500 ease-out md:block md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100 ${
-            isCtaLowered
-              ? 'md:group-hover:translate-y-10 md:group-focus-within:translate-y-10'
-              : 'md:group-hover:translate-y-4 md:group-focus-within:translate-y-4'
-          }`}
+          className="pointer-events-none absolute bottom-0 left-1/2 z-30 hidden rounded-full bg-brand-white p-2 opacity-0 shadow-lg [transform:translate(-50%,var(--speaker-cta-y,1rem))] transition-[opacity,transform] duration-500 ease-out md:block md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100"
+          style={{ '--speaker-cta-y': '1rem' } as React.CSSProperties}
         >
           <Button
               href="/speakers"
