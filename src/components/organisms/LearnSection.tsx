@@ -1,4 +1,6 @@
 import React from 'react';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/atoms';
 import {SectionSplitView, SectionSplitViewProps} from "@/components/organisms/SectionSplitView";
 
 export type LearnSectionProps = Partial<SectionSplitViewProps> & {
@@ -7,6 +9,10 @@ export type LearnSectionProps = Partial<SectionSplitViewProps> & {
     items: {
         title: string;
         description: string;
+        cta?: {
+            label: string;
+            href: string;
+        };
     }[]
 }
 
@@ -27,13 +33,25 @@ export const LearnSection: React.FC<LearnSectionProps> = ({
                 {items.map((item, index) => (
                     <div key={index} className="bg-brand-gray-lightest p-5 rounded-lg flex flex-col gap-4">
                         <h3 className="my-2 text-center font-bold text-lg">{item.title}</h3>
-                        <p className="text-brand-gray-medium text-sm">
+                        <p className="text-brand-gray-medium text-sm flex-1">
                             {item.description}
                         </p>
+                        {item.cta ? (
+                            <div className="mt-auto flex justify-center pt-1">
+                                <Button
+                                    href={item.cta.href}
+                                    size="xs"
+                                    variant="black"
+                                    asChild
+                                >
+                                    <span>{item.cta.label}</span>
+                                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                                </Button>
+                            </div>
+                        ) : null}
                     </div>
                 ))}
             </div>
         </SectionSplitView>
     );
 };
-
