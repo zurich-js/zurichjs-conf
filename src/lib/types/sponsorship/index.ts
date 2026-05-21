@@ -42,6 +42,7 @@ export type {
   UpdatePerkRequest,
   CreateInvoiceRequest,
   UpdateInvoiceConversionRequest,
+  UpdateSponsorInvoiceConversionRequest,
   ListSponsorsResponse,
   ListDealsResponse,
   ListSponsorsQuery,

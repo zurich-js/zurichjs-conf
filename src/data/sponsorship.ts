@@ -1,4 +1,5 @@
 import { LucideIcon, Users, Building2, TrendingUp, Heart, Lightbulb, Handshake, Target } from 'lucide-react';
+import type { SupportedCurrency } from '@/config/currency';
 
 // ============================================================================
 // Types
@@ -65,9 +66,8 @@ export interface TierBenefit {
   label: string;
   /** Add-on credit value (currency-specific) - if present, currency will be appended */
   addOnCredit?: {
-    CHF: number;
-    EUR: number;
-  };
+    [currency in SupportedCurrency]?: number;
+  } & { CHF: number };
 }
 
 export interface SponsorshipTier {
@@ -75,9 +75,8 @@ export interface SponsorshipTier {
   name: string;
   description: string;
   price: {
-    CHF: number;
-    EUR: number;
-  };
+    [currency in SupportedCurrency]?: number;
+  } & { CHF: number };
   benefits: TierBenefit[];
   highlighted?: boolean;
 }
@@ -213,13 +212,13 @@ export const sponsorshipPageData: SponsorshipPageData = {
         id: 'diamond',
         name: 'Diamond',
         description: 'Ultimate visibility and premium brand placement',
-        price: { CHF: 12000, EUR: 12500 },
+        price: { CHF: 15000 },
         benefits: [
           { label: '10 conference tickets' },
           { label: '5 reserved workshop seats' },
           { label: '60 sec video ad rotation' },
           { label: '5 min stage slot' },
-          { label: 'Add-on credit', addOnCredit: { CHF: 5000, EUR: 5000 } },
+          { label: 'Add-on credit', addOnCredit: { CHF: 5000 } },
         ],
         highlighted: true,
       },
@@ -227,51 +226,51 @@ export const sponsorshipPageData: SponsorshipPageData = {
         id: 'platinum',
         name: 'Platinum',
         description: 'Maximum exposure and brand recognition',
-        price: { CHF: 9000, EUR: 9500 },
+        price: { CHF: 11000 },
         benefits: [
           { label: '8 conference tickets' },
           { label: '3 reserved workshop seats' },
           { label: '30 sec video ad rotation' },
           { label: '2 min stage slot' },
-          { label: 'Add-on credit', addOnCredit: { CHF: 4000, EUR: 4000 } },
+          { label: 'Add-on credit', addOnCredit: { CHF: 4000 } },
         ],
       },
       {
         id: 'gold',
         name: 'Gold',
         description: 'Strong presence and engagement opportunities',
-        price: { CHF: 7000, EUR: 7250 },
+        price: { CHF: 8500 },
         benefits: [
           { label: '6 conference tickets' },
           { label: '1 reserved workshop seat' },
-          { label: 'Add-on credit', addOnCredit: { CHF: 2500, EUR: 2500 } },
+          { label: 'Add-on credit', addOnCredit: { CHF: 2500 } },
         ],
       },
       {
         id: 'silver',
         name: 'Silver',
         description: 'Solid brand visibility and networking',
-        price: { CHF: 5000, EUR: 5000 },
+        price: { CHF: 6000 },
         benefits: [
           { label: '4 conference tickets' },
-          { label: 'Add-on credit', addOnCredit: { CHF: 1500, EUR: 1500 } },
+          { label: 'Add-on credit', addOnCredit: { CHF: 1500 } },
         ],
       },
       {
         id: 'bronze',
         name: 'Bronze',
         description: 'Great entry-level sponsorship',
-        price: { CHF: 2500, EUR: 2500 },
+        price: { CHF: 3000 },
         benefits: [
           { label: '2 conference tickets' },
-          { label: 'Add-on credit', addOnCredit: { CHF: 1000, EUR: 1000 } },
+          { label: 'Add-on credit', addOnCredit: { CHF: 1000 } },
         ],
       },
       {
         id: 'supporter',
         name: 'Supporter',
         description: 'Show your support for the community',
-        price: { CHF: 1000, EUR: 1000 },
+        price: { CHF: 1200 },
         benefits: [
           { label: '1 conference ticket' },
         ],

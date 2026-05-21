@@ -165,6 +165,11 @@ export const sponsorshipKeys = {
    * Public sponsors (for homepage)
    */
   public: () => [...sponsorshipKeys.all, 'public'] as const,
+
+  /**
+   * Prospectus assets
+   */
+  prospectus: () => [...sponsorshipKeys.all, 'prospectus'] as const,
 } as const;
 
 /**

@@ -102,6 +102,11 @@ export interface UpdatePerkRequest {
 export interface CreateInvoiceRequest {
   dueDate: string; // ISO date string (YYYY-MM-DD)
   invoiceNotes?: string;
+  sponsorCurrency?: SponsorshipCurrency;
+  sponsorAmount?: number; // in sponsor currency cents/minor units
+  sponsorRateSource?: 'frankfurter' | 'bank' | 'manual' | 'other';
+  sponsorToChfRate?: number;
+  sponsorRateDate?: string;
   // Multi-currency conversion (optional)
   payInEur?: boolean;
   conversionRateChfToEur?: number; // e.g., 0.95
@@ -119,6 +124,17 @@ export interface UpdateInvoiceConversionRequest {
   convertedAmountEur?: number; // in cents
   conversionJustification?: string;
   conversionRateSource?: SponsorshipConversionRateSource;
+}
+
+/**
+ * Request to update sponsor currency conversion shown on invoices.
+ */
+export interface UpdateSponsorInvoiceConversionRequest {
+  sponsorCurrency: SponsorshipCurrency;
+  sponsorAmount: number;
+  sponsorRateSource?: 'frankfurter' | 'bank' | 'manual' | 'other';
+  sponsorToChfRate?: number;
+  sponsorRateDate?: string;
 }
 
 // ============================================================================
