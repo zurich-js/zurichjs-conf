@@ -8,8 +8,10 @@ import {
     SponsorshipTiersSection,
     SiteFooter,
 } from '@/components/organisms';
-import { SponsorshipInquiryModal } from '@/components/molecules';
 import { SEO } from '@/components/SEO';
+import { Button } from '@/components/atoms';
+import { SponsorshipInquiryModal } from '@/components/molecules';
+import { Download } from 'lucide-react';
 import { sponsorshipPageData } from '@/data/sponsorship';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry, type SupportedCurrency } from '@/config/currency';
@@ -30,6 +32,7 @@ export default function SponsorshipPage({ detectedCurrency, pricing, prospectusA
     pricing.availableCurrencies.includes(detectedCurrency) ? detectedCurrency : 'CHF',
   );
   const availableProspectus = prospectusAssets.filter((asset) => asset.exists && asset.currency === selectedCurrency);
+  const formatProspectusCategory = (category: string) => category.charAt(0).toUpperCase() + category.slice(1);
 
   return (
     <>
@@ -74,21 +77,32 @@ export default function SponsorshipPage({ detectedCurrency, pricing, prospectusA
             rateDate={pricing.rateDate}
             rateSource={pricing.rateSource}
             ratesStale={pricing.ratesStale}
-            onBecomeSponsor={() => setIsInquiryModalOpen(true)}
           />
           {availableProspectus.length > 0 && (
             <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               {availableProspectus.map((asset) => (
-                <a
+                <Button
+                  variant="dark"
+                  size="sm"
                   key={asset.category}
                   href={`/api/sponsorship/prospectus/${selectedCurrency}/${asset.category}`}
-                  className="inline-flex w-full items-center justify-center rounded-lg bg-brand-black px-5 py-3 text-sm font-semibold capitalize text-brand-white transition-colors hover:bg-brand-gray-dark sm:w-auto"
+                  asChild={true}
                 >
-                  Download {asset.category} prospectus ({selectedCurrency})
-                </a>
+                  <Download className="h-4 w-4" />
+                  {formatProspectusCategory(asset.category)} <small>({selectedCurrency})</small>
+                </Button>
               ))}
             </div>
           )}
+          <div className="mt-5 flex justify-center">
+            <Button
+              variant="accent"
+              size="md"
+              onClick={() => setIsInquiryModalOpen(true)}
+            >
+              {sponsorshipPageData.tiers.cta.label}
+            </Button>
+          </div>
         </ShapedSection>
 
           <ShapedSection

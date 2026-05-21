@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heading, Kicker, Button } from '@/components/atoms';
+import { Heading, Kicker } from '@/components/atoms';
 import { TierCard } from '@/components/molecules';
 import type { SponsorshipTiersData, TierBenefit } from '@/data/sponsorship';
 import type { SupportedCurrency } from '@/config/currency';
@@ -15,8 +15,6 @@ export interface SponsorshipTiersSectionProps {
   ratesStale?: boolean;
   selectedCurrency?: SupportedCurrency;
   onCurrencyChange?: (currency: SupportedCurrency) => void;
-  /** Callback when "Become a sponsor" is clicked */
-  onBecomeSponsor?: () => void;
 }
 
 /**
@@ -62,7 +60,6 @@ export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = (
   ratesStale = false,
   selectedCurrency,
   onCurrencyChange,
-  onBecomeSponsor,
 }) => {
   const [internalCurrency, setInternalCurrency] = useState<SupportedCurrency>(resolveCurrency(initialCurrency, availableCurrencies));
   const currency = resolveCurrency(selectedCurrency ?? internalCurrency, availableCurrencies);
@@ -171,23 +168,6 @@ export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = (
           />
         ))}
       </div>
-
-      {/* CTA */}
-      <motion.div
-        className="flex justify-center mt-2"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-      >
-        <Button
-          variant="black"
-          size="md"
-          onClick={onBecomeSponsor}
-        >
-          {data.cta.label}
-        </Button>
-      </motion.div>
     </div>
   );
 };
