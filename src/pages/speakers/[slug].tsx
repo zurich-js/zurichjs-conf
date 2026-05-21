@@ -5,19 +5,26 @@ import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, SocialIcon } from '@/components/atoms';
 import { DayTabs, SpeakerActionSlider } from '@/components/molecules';
-import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
+import { SectionContainer, ShapedSection, SiteFooter, SpeakerOpenSourceImpact } from '@/components/organisms';
 import { SessionCard } from '@/components/scheduling';
 import { addConferenceReminder } from '@/components/scheduling/session-actions';
 import { analytics } from '@/lib/analytics';
 import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
+import { getSpeakerNpmImpact } from '@/lib/npm';
+import type { SpeakerNpmImpact } from '@/lib/npm';
+import { getSpeakerNpmEntry } from '@/data/speaker-npm';
+import { logger } from '@/lib/logger';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
 import { BellPlus, ChevronLeft, Share2 } from 'lucide-react';
+
+const speakerPageLog = logger.scope('Speaker Page');
 
 type SessionTabId = 'talks' | 'workshops' | 'sessions';
 
 interface SpeakerDetailPageProps {
     speaker: PublicSpeaker;
+    npmImpact: SpeakerNpmImpact | null;
 }
 
 interface SessionTab {
@@ -201,7 +208,7 @@ function McProfileNotice({ firstName }: { firstName: string }) {
   );
 }
 
-export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
+export default function SpeakerDetailPage({ speaker, npmImpact }: SpeakerDetailPageProps) {
     const fullName = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
     const role = [speaker.job_title, speaker.company].filter(Boolean).join(' @ ');
     const heroForegroundUrl = speaker.portrait_foreground_url?.trim() || null;
@@ -375,6 +382,15 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                             {speaker.bio || `${fullName} is part of the ZurichJS Conf lineup. Session details will be announced soon.`}
                         </p>
 
+                        {npmImpact && npmImpact.packages.length > 0 ? (
+                            <div className="mt-12">
+                                <SpeakerOpenSourceImpact
+                                    speakerFirstName={speaker.first_name}
+                                    impact={npmImpact}
+                                />
+                            </div>
+                        ) : null}
+
                         <section id={isMc ? 'speaker-role' : 'speaker-sessions'} className="mt-14">
                             {isMc ? (
                                 <McProfileNotice firstName={speaker.first_name} />
@@ -481,9 +497,27 @@ export const getServerSideProps: GetServerSideProps<SpeakerDetailPageProps> = as
         return { notFound: true };
     }
 
+    const npmEntry = getSpeakerNpmEntry(speaker.slug);
+    let npmImpact: SpeakerNpmImpact | null = null;
+    if (npmEntry) {
+        try {
+            npmImpact = await getSpeakerNpmImpact({
+                speakerSlug: speaker.slug,
+                npmUsername: npmEntry.npm_username,
+                contributesTo: npmEntry.contributes_to,
+            });
+        } catch (error) {
+            speakerPageLog.warn('Skipping npm impact section after fetch failure', {
+                slug: speaker.slug,
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+
     return {
         props: {
             speaker,
+            npmImpact,
         },
     };
 };
