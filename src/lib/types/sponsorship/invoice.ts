@@ -69,6 +69,15 @@ export interface SponsorshipInvoicePDFProps {
     justification: string;
   };
 
+  sponsorConversion?: {
+    sponsorCurrency: SponsorshipCurrency;
+    sponsorAmount: number;
+    sponsorToChfRate: number;
+    sponsorRateDate: string | null;
+    sponsorRateSource: string;
+    payableAmountChf: number;
+  };
+
   // Notes
   invoiceNotes?: string;
 }

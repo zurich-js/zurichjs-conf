@@ -34,6 +34,14 @@ export interface ConversionState {
   conversionRateSource: 'ecb' | 'bank' | 'manual' | 'other';
 }
 
+export interface SponsorConversionState {
+  sponsorCurrency: 'CHF' | 'EUR' | 'GBP' | 'USD';
+  sponsorAmount: string;
+  sponsorToChfRate: string;
+  sponsorRateDate: string;
+  sponsorRateSource: 'frankfurter' | 'bank' | 'manual' | 'other';
+}
+
 export function formatAmount(cents: number, currency: string): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

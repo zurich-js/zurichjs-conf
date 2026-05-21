@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, Eye, Download, Edit2, Check, X, ArrowRightLeft, Info } from 'lucide-react';
 import type { SponsorshipDealWithRelations } from '../types';
-import { formatAmount, calculateConvertedAmount, calculateRateFromAmount, isConversionValid, apiCall, type ConversionState } from './types';
+import { formatAmount, calculateConvertedAmount, calculateRateFromAmount, isConversionValid, apiCall, type ConversionState, type SponsorConversionState } from './types';
 
 interface InvoiceTabProps {
   deal: SponsorshipDealWithRelations;
@@ -30,6 +30,13 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
     conversionJustification: '',
     conversionRateSource: 'manual',
   });
+  const [sponsorConversion, setSponsorConversion] = useState<SponsorConversionState>({
+    sponsorCurrency: 'CHF',
+    sponsorAmount: (total / 100).toFixed(2),
+    sponsorToChfRate: '',
+    sponsorRateDate: '',
+    sponsorRateSource: 'frankfurter',
+  });
 
   // Initialize conversion state from invoice
   useEffect(() => {
@@ -44,6 +51,24 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
       });
     }
   }, [invoice]);
+
+  useEffect(() => {
+    if (!invoice) {
+      setSponsorConversion(prev => ({
+        ...prev,
+        sponsorAmount: prev.sponsorAmount || (total / 100).toFixed(2),
+      }));
+      return;
+    }
+
+    setSponsorConversion({
+      sponsorCurrency: invoice.sponsor_currency || 'CHF',
+      sponsorAmount: invoice.sponsor_amount ? (invoice.sponsor_amount / 100).toFixed(2) : '',
+      sponsorToChfRate: invoice.sponsor_to_chf_rate ? invoice.sponsor_to_chf_rate.toString() : '',
+      sponsorRateDate: invoice.sponsor_rate_date || '',
+      sponsorRateSource: invoice.sponsor_rate_source || 'frankfurter',
+    });
+  }, [invoice, total]);
 
   const handleGeneratePDF = async () => {
     await apiCall(`/api/admin/sponsorships/deals/${deal.id}/invoice/pdf/generate`, { method: 'POST' }, setError, setIsUpdating, onUpdate);
@@ -71,6 +96,18 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
       }
       requestData.conversionJustification = conversion.conversionJustification;
       requestData.conversionRateSource = conversion.conversionRateSource;
+    }
+
+    if (sponsorConversion.sponsorAmount) {
+      requestData.sponsorCurrency = sponsorConversion.sponsorCurrency;
+      requestData.sponsorAmount = Math.round(parseFloat(sponsorConversion.sponsorAmount) * 100);
+      requestData.sponsorRateSource = sponsorConversion.sponsorRateSource;
+      if (sponsorConversion.sponsorToChfRate) {
+        requestData.sponsorToChfRate = parseFloat(sponsorConversion.sponsorToChfRate);
+      }
+      if (sponsorConversion.sponsorRateDate) {
+        requestData.sponsorRateDate = sponsorConversion.sponsorRateDate;
+      }
     }
 
     await apiCall(`/api/admin/sponsorships/deals/${deal.id}/invoice`, {
@@ -102,6 +139,23 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
     } catch { /* handled by apiCall */ }
   };
 
+  const handleUpdateSponsorConversion = async () => {
+    if (!invoice || !sponsorConversion.sponsorAmount) return;
+    await apiCall(`/api/admin/sponsorships/deals/${deal.id}/invoice`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sponsorConversion: {
+          sponsorCurrency: sponsorConversion.sponsorCurrency,
+          sponsorAmount: Math.round(parseFloat(sponsorConversion.sponsorAmount) * 100),
+          sponsorRateSource: sponsorConversion.sponsorRateSource,
+          sponsorToChfRate: sponsorConversion.sponsorToChfRate ? parseFloat(sponsorConversion.sponsorToChfRate) : undefined,
+          sponsorRateDate: sponsorConversion.sponsorRateDate || undefined,
+        },
+      }),
+    }, setError, setIsUpdating, onUpdate);
+  };
+
   const handleRateChange = (rate: string) => {
     const baseAmount = invoice?.base_amount_chf ?? invoice?.total_amount ?? total;
     setConversion(prev => ({
@@ -122,7 +176,7 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
   };
 
   if (!invoice) {
-    return <NoInvoiceView deal={deal} dueDate={dueDate} setDueDate={setDueDate} conversion={conversion} setConversion={setConversion} total={total} onCreateInvoice={handleCreateInvoice} isUpdating={isUpdating} handleRateChange={handleRateChange} handleAmountChange={handleAmountChange} />;
+    return <NoInvoiceView deal={deal} dueDate={dueDate} setDueDate={setDueDate} conversion={conversion} setConversion={setConversion} sponsorConversion={sponsorConversion} setSponsorConversion={setSponsorConversion} total={total} onCreateInvoice={handleCreateInvoice} isUpdating={isUpdating} handleRateChange={handleRateChange} handleAmountChange={handleAmountChange} />;
   }
 
   return (
@@ -170,6 +224,15 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
       </div>
 
       {/* Currency Conversion Section */}
+      <SponsorConversionSection
+        invoice={invoice}
+        sponsorConversion={sponsorConversion}
+        setSponsorConversion={setSponsorConversion}
+        onSave={handleUpdateSponsorConversion}
+        isUpdating={isUpdating}
+      />
+
+      {/* Currency Conversion Section */}
       {deal.currency === 'CHF' && (
         <ConversionSection
           invoice={invoice}
@@ -207,12 +270,14 @@ export function InvoiceTab({ deal, total, onUpdate, isUpdating, setIsUpdating, s
   );
 }
 
-function NoInvoiceView({ deal, dueDate, setDueDate, conversion, setConversion, total, onCreateInvoice, isUpdating, handleRateChange, handleAmountChange }: {
+function NoInvoiceView({ deal, dueDate, setDueDate, conversion, setConversion, sponsorConversion, setSponsorConversion, total, onCreateInvoice, isUpdating, handleRateChange, handleAmountChange }: {
   deal: SponsorshipDealWithRelations;
   dueDate: string;
   setDueDate: (d: string) => void;
   conversion: ConversionState;
   setConversion: (c: ConversionState | ((prev: ConversionState) => ConversionState)) => void;
+  sponsorConversion: SponsorConversionState;
+  setSponsorConversion: (c: SponsorConversionState | ((prev: SponsorConversionState) => SponsorConversionState)) => void;
   total: number;
   onCreateInvoice: () => void;
   isUpdating: boolean;
@@ -245,10 +310,143 @@ function NoInvoiceView({ deal, dueDate, setDueDate, conversion, setConversion, t
           <ConversionToggle conversion={conversion} setConversion={setConversion} total={total} handleRateChange={handleRateChange} handleAmountChange={handleAmountChange} />
         )}
 
+        <SponsorConversionFields
+          sponsorConversion={sponsorConversion}
+          setSponsorConversion={setSponsorConversion}
+          total={total}
+        />
+
         <button onClick={onCreateInvoice} disabled={!dueDate || isUpdating || (conversion.payInEur && !isConversionValid(conversion))} className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-black bg-brand-primary hover:bg-[#e6d766] rounded-lg transition-colors disabled:opacity-50">
           Create Invoice
         </button>
       </div>
+    </div>
+  );
+}
+
+function SponsorConversionFields({ sponsorConversion, setSponsorConversion, total }: {
+  sponsorConversion: SponsorConversionState;
+  setSponsorConversion: (c: SponsorConversionState | ((prev: SponsorConversionState) => SponsorConversionState)) => void;
+  total: number;
+}) {
+  return (
+    <div className="border border-emerald-200 rounded-lg bg-emerald-50 p-4 space-y-3">
+      <div>
+        <h3 className="text-sm font-medium text-emerald-900">Sponsor-facing currency</h3>
+        <p className="text-xs text-emerald-700">Manage line items in CHF, but show the sponsor&apos;s agreed currency and request the converted CHF amount.</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Sponsor currency</label>
+          <select
+            value={sponsorConversion.sponsorCurrency}
+            onChange={(e) => setSponsorConversion(prev => ({
+              ...prev,
+              sponsorCurrency: e.target.value as SponsorConversionState['sponsorCurrency'],
+              sponsorRateSource: e.target.value === 'CHF' ? 'manual' : 'frankfurter',
+              sponsorToChfRate: '',
+            }))}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          >
+            <option value="CHF">CHF</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Sponsor amount</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={sponsorConversion.sponsorAmount}
+            onChange={(e) => setSponsorConversion(prev => ({ ...prev, sponsorAmount: e.target.value }))}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Rate source</label>
+          <select
+            value={sponsorConversion.sponsorRateSource}
+            onChange={(e) => setSponsorConversion(prev => ({ ...prev, sponsorRateSource: e.target.value as SponsorConversionState['sponsorRateSource'] }))}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          >
+            <option value="frankfurter">Frankfurter / ECB</option>
+            <option value="bank">Bank</option>
+            <option value="manual">Manual</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Manual rate to CHF</label>
+          <input
+            type="number"
+            step="0.0001"
+            min="0"
+            placeholder="Auto"
+            value={sponsorConversion.sponsorToChfRate}
+            onChange={(e) => setSponsorConversion(prev => ({ ...prev, sponsorToChfRate: e.target.value }))}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Rate date</label>
+          <input
+            type="date"
+            value={sponsorConversion.sponsorRateDate}
+            onChange={(e) => setSponsorConversion(prev => ({ ...prev, sponsorRateDate: e.target.value }))}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+      <p className="text-xs text-emerald-700">Current CHF line-item total: {formatAmount(total, 'CHF')}. CHF payable is computed on the server and rounded to the nearest CHF.</p>
+    </div>
+  );
+}
+
+function SponsorConversionSection({ invoice, sponsorConversion, setSponsorConversion, onSave, isUpdating }: {
+  invoice: NonNullable<SponsorshipDealWithRelations['invoice']>;
+  sponsorConversion: SponsorConversionState;
+  setSponsorConversion: (c: SponsorConversionState | ((prev: SponsorConversionState) => SponsorConversionState)) => void;
+  onSave: () => void;
+  isUpdating: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <SponsorConversionFields
+        sponsorConversion={sponsorConversion}
+        setSponsorConversion={setSponsorConversion}
+        total={invoice.total_amount}
+      />
+      {invoice.payable_amount_chf && invoice.sponsor_currency && invoice.sponsor_amount && (
+        <div className="rounded-lg border border-emerald-200 bg-white p-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Sponsor amount</span>
+            <span className="font-medium">{formatAmount(invoice.sponsor_amount, invoice.sponsor_currency)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">CHF payable</span>
+            <span className="font-bold text-emerald-700">{formatAmount(invoice.payable_amount_chf, 'CHF')}</span>
+          </div>
+          {invoice.sponsor_to_chf_rate && (
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Rate</span>
+              <span>1 {invoice.sponsor_currency} = {invoice.sponsor_to_chf_rate} CHF</span>
+            </div>
+          )}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={isUpdating || !sponsorConversion.sponsorAmount}
+        className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50"
+      >
+        Save sponsor currency
+      </button>
     </div>
   );
 }

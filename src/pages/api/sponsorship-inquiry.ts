@@ -122,7 +122,13 @@ export default async function handler(
         inquiryId,
         error: emailResult.error,
       });
-      // Still return success to the user, we have the inquiry logged
+      res.status(502).json({
+        success: false,
+        inquiryId,
+        message: 'Failed to send sponsorship inquiry email',
+        error: emailResult.error || 'Email delivery failed',
+      });
+      return;
     }
 
     // Send Slack notification for sponsor interest

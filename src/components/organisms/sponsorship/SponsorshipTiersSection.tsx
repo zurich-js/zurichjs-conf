@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heading, Kicker, Button } from '@/components/atoms';
+import { Heading, Kicker } from '@/components/atoms';
 import { TierCard } from '@/components/molecules';
 import type { SponsorshipTiersData, TierBenefit } from '@/data/sponsorship';
 import type { SupportedCurrency } from '@/config/currency';
 
-/** Sponsorship pricing is only available in CHF and EUR */
-type SponsorshipCurrency = 'CHF' | 'EUR';
-
 export interface SponsorshipTiersSectionProps {
   data: SponsorshipTiersData;
-  /** Initial currency (from context or server). GBP falls back to CHF. */
+  /** Initial currency (from context or server). Falls back to CHF if unavailable. */
   initialCurrency?: SupportedCurrency;
-  /** Callback when "Become a sponsor" is clicked */
-  onBecomeSponsor?: () => void;
+  availableCurrencies?: SupportedCurrency[];
+  rateDate?: string | null;
+  rateSource?: string | null;
+  ratesStale?: boolean;
+  selectedCurrency?: SupportedCurrency;
+  onCurrencyChange?: (currency: SupportedCurrency) => void;
 }
 
 /**
@@ -26,10 +27,10 @@ function formatPrice(price: number): string {
 /**
  * Format benefits with correct currency for add-on credits
  */
-function formatBenefits(benefits: TierBenefit[], currency: SponsorshipCurrency): { label: string }[] {
+function formatBenefits(benefits: TierBenefit[], currency: SupportedCurrency): { label: string }[] {
   return benefits.map((benefit) => {
     if (benefit.addOnCredit) {
-      const amount = formatPrice(benefit.addOnCredit[currency]);
+      const amount = formatPrice(benefit.addOnCredit[currency] ?? benefit.addOnCredit.CHF);
       return { label: `${amount} ${currency} Add-on credit` };
     }
     return { label: benefit.label };
@@ -37,11 +38,11 @@ function formatBenefits(benefits: TierBenefit[], currency: SponsorshipCurrency):
 }
 
 /**
- * Convert SupportedCurrency to SponsorshipCurrency (GBP falls back to CHF)
+ * Resolve requested currency against available converted prices.
  */
-function toSponsorshipCurrency(currency?: SupportedCurrency): SponsorshipCurrency {
-  if (currency === 'EUR') return 'EUR';
-  return 'CHF'; // CHF is default, GBP also falls back to CHF
+function resolveCurrency(currency: SupportedCurrency | undefined, availableCurrencies: SupportedCurrency[]): SupportedCurrency {
+  if (currency && availableCurrencies.includes(currency)) return currency;
+  return 'CHF';
 }
 
 /**
@@ -53,12 +54,19 @@ function toSponsorshipCurrency(currency?: SupportedCurrency): SponsorshipCurrenc
 export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = ({
   data,
   initialCurrency,
-  onBecomeSponsor,
+  availableCurrencies = ['CHF'],
+  rateDate,
+  rateSource,
+  ratesStale = false,
+  selectedCurrency,
+  onCurrencyChange,
 }) => {
-  const [currency, setCurrency] = useState<SponsorshipCurrency>(toSponsorshipCurrency(initialCurrency));
+  const [internalCurrency, setInternalCurrency] = useState<SupportedCurrency>(resolveCurrency(initialCurrency, availableCurrencies));
+  const currency = resolveCurrency(selectedCurrency ?? internalCurrency, availableCurrencies);
 
-  const handleCurrencyChange = (newCurrency: SponsorshipCurrency) => {
-    setCurrency(newCurrency);
+  const handleCurrencyChange = (newCurrency: SupportedCurrency) => {
+    setInternalCurrency(newCurrency);
+    onCurrencyChange?.(newCurrency);
   };
 
   return (
@@ -106,28 +114,27 @@ export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = (
         >
           <span className="text-xs text-brand-gray-dark">Show prices in</span>
           <div className="flex rounded-full border border-brand-gray-light/30 overflow-hidden">
-            <button
-              onClick={() => handleCurrencyChange('CHF')}
-              className={`px-2.5 py-0.5 text-xs transition-colors cursor-pointer ${
-                currency === 'CHF'
-                  ? 'bg-brand-gray-dark text-brand-white'
-                  : 'bg-transparent text-brand-gray-dark hover:bg-brand-gray-lightest'
-              }`}
-            >
-              CHF
-            </button>
-            <button
-              onClick={() => handleCurrencyChange('EUR')}
-              className={`px-2.5 py-0.5 text-xs transition-colors cursor-pointer ${
-                currency === 'EUR'
-                  ? 'bg-brand-gray-dark text-brand-white'
-                  : 'bg-transparent text-brand-gray-dark hover:bg-brand-gray-lightest'
-              }`}
-            >
-              EUR
-            </button>
+            {availableCurrencies.map((option) => (
+              <button
+                key={option}
+                onClick={() => handleCurrencyChange(option)}
+                className={`px-2.5 py-0.5 text-xs transition-colors cursor-pointer ${
+                  currency === option
+                    ? 'bg-brand-gray-dark text-brand-white'
+                    : 'bg-transparent text-brand-gray-dark hover:bg-brand-gray-lightest'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
           </div>
         </motion.div>
+        {currency !== 'CHF' && rateDate && (
+          <p className="text-[11px] text-brand-gray-dark/70">
+            Converted from CHF at {rateSource ?? 'current exchange'} rates from {rateDate}
+            {ratesStale ? ' (cached)' : ''}.
+          </p>
+        )}
       </div>
 
       {/* Tiers Grid - Top row (3 tiers) */}
@@ -137,7 +144,7 @@ export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = (
             key={tier.id}
             name={tier.name}
             description={tier.description}
-            priceDisplay={formatPrice(tier.price[currency])}
+            priceDisplay={formatPrice(tier.price[currency] ?? tier.price.CHF)}
             currencyLabel={currency}
             benefits={formatBenefits(tier.benefits, currency)}
             highlighted={tier.highlighted}
@@ -153,7 +160,7 @@ export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = (
             key={tier.id}
             name={tier.name}
             description={tier.description}
-            priceDisplay={formatPrice(tier.price[currency])}
+            priceDisplay={formatPrice(tier.price[currency] ?? tier.price.CHF)}
             currencyLabel={currency}
             benefits={formatBenefits(tier.benefits, currency)}
             highlighted={tier.highlighted}
@@ -161,23 +168,6 @@ export const SponsorshipTiersSection: React.FC<SponsorshipTiersSectionProps> = (
           />
         ))}
       </div>
-
-      {/* CTA */}
-      <motion.div
-        className="flex justify-center mt-2"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-      >
-        <Button
-          variant="black"
-          size="md"
-          onClick={onBecomeSponsor}
-        >
-          {data.cta.label}
-        </Button>
-      </motion.div>
     </div>
   );
 };

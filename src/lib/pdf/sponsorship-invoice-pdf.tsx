@@ -28,6 +28,7 @@ export const SponsorshipInvoicePDF: React.FC<SponsorshipInvoicePDFProps> = ({
   total,
   currency,
   conversion,
+  sponsorConversion,
   invoiceNotes,
 }) => {
   // Separate line items by type for grouping
@@ -155,13 +156,45 @@ export const SponsorshipInvoicePDF: React.FC<SponsorshipInvoicePDFProps> = ({
           )}
 
           <View style={styles.grandTotalRow}>
-            <Text style={styles.grandTotalLabel}>{conversion ? 'Base Total (CHF)' : 'Total Due'}</Text>
+            <Text style={styles.grandTotalLabel}>{sponsorConversion ? 'Managed Total (CHF)' : conversion ? 'Base Total (CHF)' : 'Total Due'}</Text>
             <Text style={styles.grandTotalValue}>{formatAmount(total, currency)}</Text>
           </View>
         </View>
 
+        {sponsorConversion && (
+          <View style={styles.conversionSection}>
+            <Text style={styles.conversionTitle}>Sponsor Currency Agreement</Text>
+            <View style={styles.conversionRow}>
+              <Text style={styles.conversionLabel}>Sponsor Amount:</Text>
+              <Text style={styles.conversionValue}>
+                {formatAmount(sponsorConversion.sponsorAmount, sponsorConversion.sponsorCurrency)}
+              </Text>
+            </View>
+            <View style={styles.conversionRow}>
+              <Text style={styles.conversionLabel}>Conversion Rate:</Text>
+              <Text style={styles.conversionValue}>
+                1 {sponsorConversion.sponsorCurrency} = {sponsorConversion.sponsorToChfRate.toFixed(4)} CHF
+              </Text>
+            </View>
+            <View style={styles.conversionRow}>
+              <Text style={styles.conversionLabel}>Rate Source:</Text>
+              <Text style={styles.conversionValue}>
+                {sponsorConversion.sponsorRateSource}
+                {sponsorConversion.sponsorRateDate ? `, ${sponsorConversion.sponsorRateDate}` : ''}
+              </Text>
+            </View>
+            <View style={styles.amountDueHighlight}>
+              <Text style={styles.amountDueLabel}>Amount Payable in CHF</Text>
+              <Text style={styles.amountDueValue}>{formatAmount(sponsorConversion.payableAmountChf, 'CHF')}</Text>
+            </View>
+            <Text style={styles.conversionNote}>
+              Please pay the CHF amount shown above by bank transfer. The sponsor currency amount documents the agreed sponsorship value.
+            </Text>
+          </View>
+        )}
+
         {/* Currency Conversion Section - Only shown when paying in EUR */}
-        {conversion && (
+        {!sponsorConversion && conversion && (
           <View style={styles.conversionSection}>
             <Text style={styles.conversionTitle}>Currency Conversion (CHF to EUR)</Text>
             <View style={styles.conversionRow}>

@@ -10,6 +10,7 @@ import type {
   SponsorshipPerkStatus,
   SponsorshipInvoicePDFSource,
   SponsorshipConversionRateSource,
+  SponsorshipSponsorRateSource,
 } from './base';
 
 /**
@@ -172,6 +173,15 @@ export interface SponsorshipInvoice {
   conversion_rate_source: SponsorshipConversionRateSource | null;
   conversion_updated_by: string | null;
   conversion_updated_at: string | null;
+
+  // Sponsor-facing currency support (sponsor currency -> CHF payable)
+  sponsor_currency: SponsorshipCurrency | null;
+  sponsor_amount: number | null;
+  sponsor_to_chf_rate: number | null;
+  sponsor_rate_date: string | null;
+  sponsor_rate_source: SponsorshipSponsorRateSource | null;
+  payable_amount_chf: number | null;
+  payable_rounding: 'nearest_1_chf' | null;
 
   // PDF
   invoice_pdf_url: string | null;

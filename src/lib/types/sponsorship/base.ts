@@ -45,12 +45,17 @@ export type SponsorshipInvoicePDFSource = 'generated' | 'uploaded';
 /**
  * Currency type
  */
-export type SponsorshipCurrency = 'CHF' | 'EUR';
+export type SponsorshipCurrency = 'CHF' | 'EUR' | 'GBP' | 'USD';
 
 /**
  * Conversion rate source - Where the exchange rate came from
  */
 export type SponsorshipConversionRateSource = 'ecb' | 'bank' | 'manual' | 'other';
+
+/**
+ * Sponsor invoice FX source
+ */
+export type SponsorshipSponsorRateSource = 'frankfurter' | 'bank' | 'manual' | 'other';
 
 /**
  * Billing Address structure
