@@ -12,7 +12,7 @@ import type { SponsorshipConfirmationEmailProps } from '@/emails/templates/Spons
 import { getResendClient, EMAIL_CONFIG, log } from './config';
 import type { SponsorshipInquiryData } from './types';
 
-const SPONSORSHIP_INQUIRY_RECIPIENT = 'partners@zurichjs.com';
+const SPONSORSHIP_INQUIRY_RECIPIENT = 'hello@zurichjs.com';
 
 /**
  * Send sponsorship inquiry emails (to admin and confirmation to sender)
@@ -63,7 +63,10 @@ export async function sendSponsorshipInquiryEmails(
       log.error('Error sending admin notification', new Error(adminResult.error.message));
       return { success: false, error: adminResult.error.message };
     }
-    log.info('Admin notification sent', { emailId: adminResult.data?.id });
+    log.info('Admin notification sent', {
+      emailId: adminResult.data?.id,
+      to: SPONSORSHIP_INQUIRY_RECIPIENT,
+    });
 
     // 2. Send confirmation to the person who submitted
     const confirmationEmailProps: SponsorshipConfirmationEmailProps = {
