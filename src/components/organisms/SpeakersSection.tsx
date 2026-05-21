@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { trackButtonClick } from '@/lib/analytics';
@@ -120,23 +120,23 @@ function SpeakerMarqueeCard({ speaker }: SpeakerMarqueeCardProps) {
     <Link
       href={`/speakers/${speaker.slug}`}
       aria-label={fullName ? `View ${fullName}'s speaker profile` : 'View speaker profile'}
-      className="group/card relative flex w-[168px] flex-shrink-0 overflow-hidden rounded-lg bg-brand-white shadow-sm transition-transform duration-500 ease-out hover:z-10 hover:-translate-y-2 hover:scale-[1.08] hover:shadow-xl focus-visible:z-10 focus-visible:-translate-y-2 focus-visible:scale-[1.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white sm:w-[184px]"
+      className="group/card relative flex w-[142px] flex-shrink-0 overflow-hidden rounded-lg bg-brand-white shadow-sm transition-transform duration-500 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-md focus-visible:z-10 focus-visible:-translate-y-1.5 focus-visible:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white sm:w-[156px]"
     >
-      <div className="relative aspect-[4/5] w-full bg-brand-primary">
+      <div className="relative aspect-[5/6] w-full bg-brand-gray-lightest">
         {speaker.profile_image_url && (
           <Image
             src={speaker.profile_image_url}
             alt={fullName ? `${fullName} avatar` : 'Speaker avatar'}
             fill
             className="object-cover object-top"
-            sizes="184px"
+            sizes="156px"
             draggable={false}
           />
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-3 pb-3 pt-12">
-          {fullName && <h3 className="text-sm font-bold leading-tight text-white">{fullName}</h3>}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-3 pb-3 pt-12 transition-all duration-300 group-hover/card:pt-16 group-focus-visible/card:pt-16">
+          {fullName && <h3 className="text-xs font-bold leading-tight text-white">{fullName}</h3>}
           {titleWithCompany && (
-            <p className="mt-1 line-clamp-2 text-xs leading-tight text-brand-primary">
+            <p className="mt-1 max-h-0 overflow-hidden text-[11px] leading-tight text-brand-primary opacity-0 transition-all duration-300 group-hover/card:max-h-8 group-hover/card:opacity-100 group-focus-visible/card:max-h-8 group-focus-visible/card:opacity-100">
               {titleWithCompany}
             </p>
           )}
@@ -281,13 +281,28 @@ function useSmoothMarquee(isPaused: boolean) {
 
 function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
   const [isPaused, setIsPaused] = useState(false);
+  const [isCtaLowered, setIsCtaLowered] = useState(false);
   const { viewportRef, trackRef } = useSmoothMarquee(isPaused);
+  const desktopCtaRef = useRef<HTMLDivElement>(null);
 
   if (speakers.length === 0) {
     return null;
   }
 
   const marqueeSpeakers = [...speakers, ...speakers, ...speakers];
+  const handleCarouselMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const buttonRect = desktopCtaRef.current?.getBoundingClientRect();
+    if (!buttonRect) {
+      return;
+    }
+
+    const isAboveButton =
+      event.clientX >= buttonRect.left &&
+      event.clientX <= buttonRect.right &&
+      event.clientY < buttonRect.top;
+
+    setIsCtaLowered(isAboveButton);
+  };
 
   return (
     <div className="mx-auto w-full max-w-[1264px] px-4 sm:max-w-[1164px] md:max-w-[1296px] md:px-8 lg:max-w-[1246px] xl:max-w-[1396px]">
@@ -296,17 +311,23 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
         role="region"
         aria-label="More ZurichJS speakers"
         onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
+        onMouseLeave={() => {
+          setIsPaused(false);
+          setIsCtaLowered(false);
+        }}
         onFocus={() => setIsPaused(true)}
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) {
             setIsPaused(false);
+            setIsCtaLowered(false);
           }
         }}
       >
         <div
           ref={viewportRef}
-          className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-6 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_56px,black_calc(100%-56px),transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)]"
+          onMouseMove={handleCarouselMouseMove}
+          onMouseLeave={() => setIsCtaLowered(false)}
+          className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-8 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_56px,black_calc(100%-56px),transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)] md:pb-6"
         >
           <div
             ref={trackRef}
@@ -318,7 +339,43 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute bottom-0 left-1/2 z-30 -translate-x-1/2 translate-y-7 rounded-full bg-brand-white p-2 opacity-0 shadow-lg transition-all duration-500 ease-out group-hover:pointer-events-auto group-hover:translate-y-4 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-4 group-focus-within:opacity-100">
+        <div className="pointer-events-none absolute left-4 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-1 text-brand-black/55 md:flex">
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          <span className="sr-only">Scroll speakers left</span>
+        </div>
+        <div className="pointer-events-none absolute right-4 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-1 text-brand-black/55 md:flex">
+          <span className="sr-only">Scroll speakers right</span>
+          <ArrowRight className="h-5 w-5" aria-hidden="true" />
+        </div>
+
+        <div className="flex justify-center md:hidden">
+          <Button
+            href="/speakers"
+            size="xs"
+            variant="black"
+            asChild
+            className="whitespace-nowrap shadow-none"
+            onClick={() => {
+              trackButtonClick({
+                buttonText: 'See all speakers',
+                buttonLocation: 'homepage_speaker_marquee_mobile',
+                buttonAction: 'navigate_to_speakers',
+              });
+            }}
+          >
+            <span>See all speakers</span>
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Button>
+        </div>
+
+        <div
+          ref={desktopCtaRef}
+          className={`pointer-events-none absolute bottom-0 left-1/2 z-30 hidden -translate-x-1/2 translate-y-7 rounded-full bg-brand-white p-2 opacity-0 shadow-lg transition-all duration-500 ease-out md:block md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100 ${
+            isCtaLowered
+              ? 'md:group-hover:translate-y-10 md:group-focus-within:translate-y-10'
+              : 'md:group-hover:translate-y-4 md:group-focus-within:translate-y-4'
+          }`}
+        >
           <Button
               href="/speakers"
               size="md"
