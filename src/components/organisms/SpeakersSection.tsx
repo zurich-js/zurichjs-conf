@@ -161,6 +161,7 @@ function useSmoothMarquee(isPaused: boolean) {
   const isAutoScrollingRef = useRef(false);
   const manualPauseUntilRef = useRef(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [useCssAnimation, setUseCssAnimation] = useState(false);
 
   useEffect(() => {
     isPausedRef.current = isPaused;
@@ -169,6 +170,16 @@ function useSmoothMarquee(isPaused: boolean) {
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const handleChange = () => setUseCssAnimation(mediaQuery.matches);
 
     handleChange();
     mediaQuery.addEventListener('change', handleChange);
@@ -249,7 +260,7 @@ function useSmoothMarquee(isPaused: boolean) {
     viewport.addEventListener('wheel', pauseForManualInteraction, { passive: true });
     viewport.addEventListener('scroll', handleScroll, { passive: true });
 
-    if (prefersReducedMotion) {
+    if (prefersReducedMotion || useCssAnimation) {
       return () => {
         resizeObserver.disconnect();
         viewport.removeEventListener('pointerdown', pauseForManualInteraction);
@@ -299,22 +310,50 @@ function useSmoothMarquee(isPaused: boolean) {
       viewport.removeEventListener('scroll', handleScroll);
       lastFrameRef.current = null;
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, useCssAnimation]);
 
-  return { viewportRef, trackRef };
+  return { viewportRef, trackRef, prefersReducedMotion, useCssAnimation };
 }
 
 function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
   const [isPaused, setIsPaused] = useState(false);
-  const { viewportRef, trackRef } = useSmoothMarquee(isPaused);
+  const touchPauseTimeoutRef = useRef<number | null>(null);
+  const { viewportRef, trackRef, prefersReducedMotion, useCssAnimation } = useSmoothMarquee(isPaused);
   const desktopCtaRef = useRef<HTMLDivElement>(null);
   const isCtaLoweredRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (touchPauseTimeoutRef.current !== null) {
+        window.clearTimeout(touchPauseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (speakers.length === 0) {
     return null;
   }
 
   const marqueeSpeakers = [...speakers, ...speakers, ...speakers];
+  const shouldUseMobileAnimation = useCssAnimation && !prefersReducedMotion;
+
+  const pauseTemporarily = () => {
+    if (!useCssAnimation) {
+      return;
+    }
+
+    setIsPaused(true);
+
+    if (touchPauseTimeoutRef.current !== null) {
+      window.clearTimeout(touchPauseTimeoutRef.current);
+    }
+
+    touchPauseTimeoutRef.current = window.setTimeout(() => {
+      setIsPaused(false);
+      touchPauseTimeoutRef.current = null;
+    }, 1400);
+  };
+
   const setDesktopCtaOffset = (isLowered: boolean) => {
     if (isCtaLoweredRef.current === isLowered) {
       return;
@@ -346,12 +385,20 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
         aria-label="More ZurichJS speakers"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => {
+          if (touchPauseTimeoutRef.current !== null) {
+            window.clearTimeout(touchPauseTimeoutRef.current);
+            touchPauseTimeoutRef.current = null;
+          }
           setIsPaused(false);
           setDesktopCtaOffset(false);
         }}
         onFocus={() => setIsPaused(true)}
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) {
+            if (touchPauseTimeoutRef.current !== null) {
+              window.clearTimeout(touchPauseTimeoutRef.current);
+              touchPauseTimeoutRef.current = null;
+            }
             setIsPaused(false);
             setDesktopCtaOffset(false);
           }
@@ -361,11 +408,19 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
           ref={viewportRef}
           onMouseMove={handleCarouselMouseMove}
           onMouseLeave={() => setDesktopCtaOffset(false)}
-          className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-8 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_56px,black_calc(100%-56px),transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)] md:pb-6"
+          onPointerDown={pauseTemporarily}
+          onTouchStart={pauseTemporarily}
+          onWheel={pauseTemporarily}
+          className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-8 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_24px,black_calc(100%-24px),transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_56px,black_calc(100%-56px),transparent_100%)] md:pb-6 md:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)]"
         >
           <div
             ref={trackRef}
-            className="flex w-max gap-4 px-14 sm:px-24"
+            className="flex w-max gap-4"
+            style={shouldUseMobileAnimation ? {
+              animation: 'speaker-mobile-marquee 85s linear infinite',
+              animationPlayState: isPaused ? 'paused' : 'running',
+              willChange: 'transform',
+            } : undefined}
           >
             {marqueeSpeakers.map((speaker, index) => (
               <SpeakerMarqueeCard key={`${speaker.id}-${index}`} speaker={speaker} />
@@ -426,6 +481,16 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
             </Button>
         </div>
       </div>
+      <style jsx global>{`
+        @keyframes speaker-mobile-marquee {
+          0% {
+            transform: translate3d(0, 0, 0);
+          }
+          100% {
+            transform: translate3d(-33.333%, 0, 0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
