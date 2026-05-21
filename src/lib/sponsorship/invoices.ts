@@ -28,6 +28,22 @@ import { getTier } from './tiers';
 const MIN_CONVERSION_RATE = 0.1;
 const MAX_CONVERSION_RATE = 10;
 
+function buildManualChfBaseRateMap(
+  currency: Exclude<SponsorshipDisplayCurrency, 'CHF'>,
+  sponsorToChfRate: number,
+): Partial<Record<SponsorshipDisplayCurrency, number>> {
+  const chfToSponsorRate = 1 / sponsorToChfRate;
+
+  switch (currency) {
+    case 'EUR':
+      return { EUR: chfToSponsorRate };
+    case 'GBP':
+      return { GBP: chfToSponsorRate };
+    case 'USD':
+      return { USD: chfToSponsorRate };
+  }
+}
+
 async function resolveSponsorCurrencyConversion(
   data: {
     sponsorCurrency?: SponsorshipCurrency;
@@ -86,7 +102,7 @@ async function resolveSponsorCurrencyConversion(
       payableAmountChf: convertCurrencyMinorToChf(
         data.sponsorAmount,
         data.sponsorCurrency as SponsorshipDisplayCurrency,
-        { [data.sponsorCurrency]: 1 / data.sponsorToChfRate },
+        buildManualChfBaseRateMap(data.sponsorCurrency as Exclude<SponsorshipDisplayCurrency, 'CHF'>, data.sponsorToChfRate),
       ),
       payableRounding: 'nearest_1_chf',
     };
