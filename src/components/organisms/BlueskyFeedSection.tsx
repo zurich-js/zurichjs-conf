@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Heart, MessageCircle, Repeat2 } from 'lucide-react';
-import { Heading, Kicker, LinkText } from '@/components/atoms';
+import { Button, Heading, Kicker, LinkText } from '@/components/atoms';
 import { SocialIcon } from '@/components/atoms';
 import { useMotion } from '@/contexts/MotionContext';
 import { useBlueskyFeed } from '@/hooks/useBlueskyFeed';
@@ -29,7 +29,7 @@ function formatRelativeTime(isoDate: string, now: number): string {
 function PostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: number | null }) {
   const authorName = post.author.displayName ?? post.author.handle;
   return (
-    <article className="flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 transition hover:shadow-md">
+    <article className="flex h-full flex-col gap-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 transition hover:shadow-md">
       <div className="flex items-center gap-3">
         <a
           href={`https://bsky.app/profile/${post.author.handle}`}
@@ -73,7 +73,7 @@ function PostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: number | null
         </a>
       </div>
 
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-black">
+      <p className="line-clamp-5 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-black">
         {post.text}
       </p>
 
@@ -109,7 +109,7 @@ function PostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: number | null
 
 function PostSkeleton() {
   return (
-    <div className="flex animate-pulse flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-black/5">
+    <div className="flex h-full animate-pulse flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-black/5">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-full bg-brand-gray-light" />
         <div className="flex-1 space-y-2">
@@ -169,27 +169,37 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
         </LinkText>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <PostSkeleton key={i} />)
           : posts.map((post, idx) => {
               // Mobile: only show the first 3 posts.
               const hideOnMobile = idx >= 3 ? 'hidden sm:block' : '';
-              // Mobile: fade the 3rd card when there are more posts hiding behind it.
+              // Mobile: fade most of the 3rd card when more posts hide behind it,
+              // so the CTA below feels like the natural next step.
               const isFadedTeaser = idx === 2 && posts.length > 3;
               return (
-                <div key={post.uri} className={`relative ${hideOnMobile}`}>
+                <div key={post.uri} className={`relative h-full ${hideOnMobile}`}>
                   <PostCard post={post} nowMs={nowMs} />
                   {isFadedTeaser && (
                     <div
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-b from-transparent to-white sm:hidden"
+                      className="pointer-events-none absolute inset-x-0 bottom-0 h-[85%] bg-gradient-to-b from-transparent via-white/90 to-white sm:hidden"
                     />
                   )}
                 </div>
               );
             })}
       </div>
+
+      {/* Mobile-only CTA: appears under the faded 3rd card to drive follows. */}
+      {!isLoading && posts.length > 3 && (
+        <div className="-mt-4 flex justify-center sm:hidden">
+          <Button variant="primary" size="md" href={profileUrl}>
+            See more on Bluesky
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
