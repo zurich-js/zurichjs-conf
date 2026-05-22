@@ -16,6 +16,7 @@ export interface Speaker {
   twitter_handle: string | null;
   bluesky_handle: string | null;
   mastodon_handle: string | null;
+  npm_username: string | null;
   profile_image_url: string | null;
   header_image_url: string | null;
   portrait_foreground_url: string | null;

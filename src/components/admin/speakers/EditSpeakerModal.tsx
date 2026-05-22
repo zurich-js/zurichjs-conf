@@ -38,6 +38,7 @@ export function EditSpeakerModal({
     twitter_handle: speaker.twitter_handle || '',
     bluesky_handle: speaker.bluesky_handle || '',
     mastodon_handle: speaker.mastodon_handle || '',
+    npm_username: speaker.npm_username || '',
     speaker_role: speaker.speaker_role || 'speaker',
   });
   const [profileImageUrl, setProfileImageUrl] = useState(speaker.profile_image_url);
@@ -436,6 +437,21 @@ export function EditSpeakerModal({
                   onChange={(e) => setFormData({ ...formData, mastodon_handle: e.target.value })}
                   className={inputClass(false, 'text-sm')}
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  npm Username
+                </label>
+                <input
+                  type="text"
+                  value={formData.npm_username}
+                  onChange={(e) => setFormData({ ...formData, npm_username: e.target.value })}
+                  className={inputClass(false, 'text-sm')}
+                  placeholder="e.g. tkdodo"
+                />
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Powers the open-source footprint section on the public speaker page.
+                </p>
               </div>
             </div>
           </div>

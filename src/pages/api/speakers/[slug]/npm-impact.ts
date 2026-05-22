@@ -3,9 +3,10 @@
  * GET /api/speakers/[slug]/npm-impact
  *
  * Returns the speaker's maintained packages (+ declared contributions) with
- * weekly download counts aggregated from the npm registry. The data is cached
- * server-side for 6h; this handler additionally sets a 6h CDN cache header
- * with a 24h stale-while-revalidate window.
+ * weekly download counts aggregated from the npm registry. The npm handle is
+ * read from `cfp_speakers.npm_username`, set in the admin speaker editor.
+ * Data is cached server-side for 6h; this handler additionally sets a 6h CDN
+ * cache header with a 24h stale-while-revalidate window.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -13,7 +14,7 @@ import { z } from 'zod';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { getSpeakerNpmImpact } from '@/lib/npm';
 import type { SpeakerNpmImpact } from '@/lib/npm';
-import { getSpeakerNpmEntry } from '@/data/speaker-npm';
+import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Speaker npm Impact API');
@@ -52,17 +53,23 @@ export default async function handler(
   }
 
   const slug = parsed.data.slug.toLowerCase();
-  const entry = getSpeakerNpmEntry(slug);
 
-  if (!entry) {
-    return res.status(404).json({ error: 'No npm impact data registered for this speaker' });
+  const { speakers } = await fetchPublicSpeakers();
+  const speaker = speakers.find((entry) => entry.slug === slug);
+  const npmUsername = speaker?.socials.npm_username?.trim() ?? null;
+
+  if (!speaker) {
+    return res.status(404).json({ error: 'Speaker not found' });
+  }
+
+  if (!npmUsername) {
+    return res.status(404).json({ error: 'Speaker has no npm username configured' });
   }
 
   try {
     const impact = await getSpeakerNpmImpact({
       speakerSlug: slug,
-      npmUsername: entry.npm_username,
-      contributesTo: entry.contributes_to,
+      npmUsername,
     });
 
     res.setHeader('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
@@ -70,7 +77,7 @@ export default async function handler(
   } catch (error) {
     log.error('Failed to fetch speaker npm impact', error, {
       slug,
-      npmUsername: entry.npm_username,
+      npmUsername,
     });
     return res.status(502).json({ error: 'Failed to fetch npm impact' });
   }
