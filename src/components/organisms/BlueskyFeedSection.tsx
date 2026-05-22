@@ -179,7 +179,23 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <PostSkeleton key={i} />)
-          : posts.map((post) => <PostCard key={post.uri} post={post} nowMs={nowMs} />)}
+          : posts.map((post, idx) => {
+              // Mobile: only show the first 3 posts.
+              const hideOnMobile = idx >= 3 ? 'hidden sm:block' : '';
+              // Mobile: fade the 3rd card when there are more posts hiding behind it.
+              const isFadedTeaser = idx === 2 && posts.length > 3;
+              return (
+                <div key={post.uri} className={`relative ${hideOnMobile}`}>
+                  <PostCard post={post} nowMs={nowMs} />
+                  {isFadedTeaser && (
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-b from-transparent to-white sm:hidden"
+                    />
+                  )}
+                </div>
+              );
+            })}
       </div>
     </div>
   );
