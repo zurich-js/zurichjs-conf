@@ -52,21 +52,14 @@ function PostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: number | null
           )}
         </a>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <a
-              href={`https://bsky.app/profile/${post.author.handle}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate text-sm font-semibold text-brand-black hover:text-brand-blue"
-            >
-              {authorName}
-            </a>
-            {post.isFromOfficial && (
-              <span className="rounded-full bg-brand-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-black">
-                ZurichJS
-              </span>
-            )}
-          </div>
+          <a
+            href={`https://bsky.app/profile/${post.author.handle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block truncate text-sm font-semibold text-brand-black hover:text-brand-blue"
+          >
+            {authorName}
+          </a>
           <span className="truncate text-xs text-brand-gray-medium">@{post.author.handle}</span>
         </div>
         <a
