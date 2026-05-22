@@ -138,12 +138,12 @@ export default function Home() {
           />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="light" id="community-buzz">
-          <BlueskyFeedSection />
-        </ShapedSection>
-
         <ShapedSection shape="tighten" variant="yellow" id="tickets">
           <TicketsSectionWithStripe />
+        </ShapedSection>
+
+        <ShapedSection shape="tighten" variant="light" id="community-buzz">
+          <BlueskyFeedSection />
         </ShapedSection>
 
         <ShapedSection shape="widen" variant="medium" id="faq">
