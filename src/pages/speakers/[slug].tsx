@@ -13,7 +13,6 @@ import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { getSpeakerNpmImpact } from '@/lib/npm';
 import type { SpeakerNpmImpact } from '@/lib/npm';
-import { getSpeakerNpmEntry } from '@/data/speaker-npm';
 import { logger } from '@/lib/logger';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
 import { BellPlus, ChevronLeft, Share2 } from 'lucide-react';
@@ -497,14 +496,13 @@ export const getServerSideProps: GetServerSideProps<SpeakerDetailPageProps> = as
         return { notFound: true };
     }
 
-    const npmEntry = getSpeakerNpmEntry(speaker.slug);
+    const npmUsername = speaker.socials.npm_username?.trim();
     let npmImpact: SpeakerNpmImpact | null = null;
-    if (npmEntry) {
+    if (npmUsername) {
         try {
             npmImpact = await getSpeakerNpmImpact({
                 speakerSlug: speaker.slug,
-                npmUsername: npmEntry.npm_username,
-                contributesTo: npmEntry.contributes_to,
+                npmUsername,
             });
         } catch (error) {
             speakerPageLog.warn('Skipping npm impact section after fetch failure', {

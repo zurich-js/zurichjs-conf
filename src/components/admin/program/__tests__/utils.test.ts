@@ -31,6 +31,7 @@ const speaker: SpeakerWithSessions = {
   twitter_handle: null,
   bluesky_handle: null,
   mastodon_handle: null,
+  npm_username: null,
   profile_image_url: 'https://example.com/ada.png',
   header_image_url: null,
   portrait_foreground_url: null,

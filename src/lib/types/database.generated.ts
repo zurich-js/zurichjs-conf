@@ -843,6 +843,7 @@ export type Database = {
           last_name: string
           linkedin_url: string | null
           mastodon_handle: string | null
+          npm_username: string | null
           portrait_background_url: string | null
           portrait_foreground_url: string | null
           profile_image_url: string | null
@@ -877,6 +878,7 @@ export type Database = {
           last_name: string
           linkedin_url?: string | null
           mastodon_handle?: string | null
+          npm_username?: string | null
           portrait_background_url?: string | null
           portrait_foreground_url?: string | null
           profile_image_url?: string | null
@@ -911,6 +913,7 @@ export type Database = {
           last_name?: string
           linkedin_url?: string | null
           mastodon_handle?: string | null
+          npm_username?: string | null
           portrait_background_url?: string | null
           portrait_foreground_url?: string | null
           profile_image_url?: string | null

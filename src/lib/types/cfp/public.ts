@@ -59,6 +59,7 @@ export interface PublicSpeaker {
     twitter_handle: string | null;
     bluesky_handle: string | null;
     mastodon_handle: string | null;
+    npm_username: string | null;
   };
   assigned_session_kinds: {
     talks: boolean;
