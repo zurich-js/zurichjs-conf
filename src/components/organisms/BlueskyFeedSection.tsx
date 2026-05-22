@@ -195,7 +195,13 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
       {/* Mobile-only CTA: appears under the faded 3rd card to drive follows. */}
       {!isLoading && posts.length > 3 && (
         <div className="-mt-4 flex justify-center sm:hidden">
-          <Button variant="primary" size="md" href={profileUrl}>
+          <Button
+            asChild
+            variant="primary"
+            size="md"
+            href={profileUrl}
+            target="_blank"
+          >
             See more on Bluesky
           </Button>
         </div>
