@@ -22,6 +22,9 @@ const log = logger.scope('Bluesky Feed API');
 const BLUESKY_PUBLIC_APPVIEW = 'https://public.api.bsky.app';
 const SEARCH_LIMIT_PER_TERM = 25;
 const AUTHOR_FEED_LIMIT = 20;
+// Bluesky's public AppView is fronted by Cloudflare and 403s requests without
+// a User-Agent. Identify ourselves so they can contact us if we misbehave.
+const USER_AGENT = 'zurichjs-conf/1.0 (+https://zurichjs.com)';
 
 export interface BlueskyFeedAuthor {
   did: string;
@@ -91,7 +94,12 @@ function atUriToWebUrl(uri: string): string {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  const res = await fetch(url, {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': USER_AGENT,
+    },
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`Bluesky ${res.status}: ${body.slice(0, 200)}`);
