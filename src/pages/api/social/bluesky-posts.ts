@@ -7,24 +7,23 @@
  *   2. Posts MENTIONING @zurichjs.com (via searchPosts?mentions=)
  *   3. Posts tagged with any configured hashtag (via searchPosts?tag=)
  *
- * Backed by the unauthenticated public AppView (public.api.bsky.app), so no
- * API key or session is required.
+ * Uses an authenticated Bluesky session when `BLUESKY_IDENTIFIER` /
+ * `BLUESKY_APP_PASSWORD` are configured (recommended — much higher rate
+ * limits). Falls back to the unauthenticated public AppView otherwise.
  *
- * Pass ?_debug=1 to get a per-query breakdown of what the upstream returned.
+ * Pass ?_debug=1 to get a per-query breakdown of upstream URL / status /
+ * count, plus whether the request was authenticated.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { blueskyConfig } from '@/data/social';
+import { isBlueskyAuthenticated, xrpcGet } from '@/lib/bluesky/client';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Bluesky Feed API');
 
-const BLUESKY_PUBLIC_APPVIEW = 'https://public.api.bsky.app';
 const SEARCH_LIMIT_PER_TERM = 25;
 const AUTHOR_FEED_LIMIT = 20;
-// Bluesky's public AppView is fronted by Cloudflare and 403s requests without
-// a User-Agent. Identify ourselves so they can contact us if we misbehave.
-const USER_AGENT = 'zurichjs-conf/1.0 (+https://zurichjs.com)';
 
 export interface BlueskyFeedAuthor {
   did: string;
@@ -47,7 +46,6 @@ export interface BlueskyFeedPost {
 
 export interface BlueskyFeedDebugEntry {
   source: string;
-  url: string;
   status: 'ok' | 'error';
   count: number;
   error?: string;
@@ -55,7 +53,10 @@ export interface BlueskyFeedDebugEntry {
 
 export interface BlueskyFeedResponse {
   posts: BlueskyFeedPost[];
-  debug?: BlueskyFeedDebugEntry[];
+  debug?: {
+    authenticated: boolean;
+    entries: BlueskyFeedDebugEntry[];
+  };
 }
 
 interface ErrorResponse {
@@ -93,38 +94,6 @@ function atUriToWebUrl(uri: string): string {
   return `https://bsky.app/profile/${match[1]}/post/${match[2]}`;
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': USER_AGENT,
-    },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Bluesky ${res.status}: ${body.slice(0, 200)}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-function buildSearchUrl(params: Record<string, string>): string {
-  const url = new URL('/xrpc/app.bsky.feed.searchPosts', BLUESKY_PUBLIC_APPVIEW);
-  for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
-  }
-  url.searchParams.set('limit', String(SEARCH_LIMIT_PER_TERM));
-  url.searchParams.set('sort', 'latest');
-  return url.toString();
-}
-
-function buildAuthorFeedUrl(actor: string): string {
-  const url = new URL('/xrpc/app.bsky.feed.getAuthorFeed', BLUESKY_PUBLIC_APPVIEW);
-  url.searchParams.set('actor', actor);
-  url.searchParams.set('limit', String(AUTHOR_FEED_LIMIT));
-  url.searchParams.set('filter', 'posts_no_replies');
-  return url.toString();
-}
-
 function normalize(post: RawBlueskyPost, officialHandle: string): BlueskyFeedPost | null {
   const text = post.record?.text;
   const createdAt = post.record?.createdAt;
@@ -150,18 +119,19 @@ function normalize(post: RawBlueskyPost, officialHandle: string): BlueskyFeedPos
 
 interface FetchSpec {
   source: string;
-  url: string;
-  extract: (data: unknown) => RawBlueskyPost[];
+  run: () => Promise<RawBlueskyPost[]>;
 }
 
 function specForAuthorFeed(handle: string): FetchSpec {
   return {
     source: `getAuthorFeed(${handle})`,
-    url: buildAuthorFeedUrl(handle),
-    extract: (data) => {
-      const feed = (data as { feed?: AuthorFeedItem[] }).feed ?? [];
-      // Drop reposts (items with a reason) — keep only original posts.
-      return feed.filter((item) => !item.reason).map((item) => item.post);
+    run: async () => {
+      const data = await xrpcGet<{ feed?: AuthorFeedItem[] }>({
+        method: 'app.bsky.feed.getAuthorFeed',
+        params: { actor: handle, limit: AUTHOR_FEED_LIMIT, filter: 'posts_no_replies' },
+      });
+      // Drop reposts (items carrying a reason) — keep original posts only.
+      return (data.feed ?? []).filter((item) => !item.reason).map((item) => item.post);
     },
   };
 }
@@ -169,16 +139,26 @@ function specForAuthorFeed(handle: string): FetchSpec {
 function specForMentions(handle: string): FetchSpec {
   return {
     source: `searchPosts(mentions=${handle})`,
-    url: buildSearchUrl({ q: handle, mentions: handle }),
-    extract: (data) => (data as { posts?: RawBlueskyPost[] }).posts ?? [],
+    run: async () => {
+      const data = await xrpcGet<{ posts?: RawBlueskyPost[] }>({
+        method: 'app.bsky.feed.searchPosts',
+        params: { q: handle, mentions: handle, sort: 'latest', limit: SEARCH_LIMIT_PER_TERM },
+      });
+      return data.posts ?? [];
+    },
   };
 }
 
 function specForTag(tag: string): FetchSpec {
   return {
     source: `searchPosts(tag=${tag})`,
-    url: buildSearchUrl({ q: tag, tag }),
-    extract: (data) => (data as { posts?: RawBlueskyPost[] }).posts ?? [],
+    run: async () => {
+      const data = await xrpcGet<{ posts?: RawBlueskyPost[] }>({
+        method: 'app.bsky.feed.searchPosts',
+        params: { q: tag, tag, sort: 'latest', limit: SEARCH_LIMIT_PER_TERM },
+      });
+      return data.posts ?? [];
+    },
   };
 }
 
@@ -192,6 +172,7 @@ export default async function handler(
 
   const { handle, hashtags, maxPosts } = blueskyConfig;
   const debugMode = req.query._debug === '1';
+  const authenticated = isBlueskyAuthenticated();
 
   const specs: FetchSpec[] = [
     specForAuthorFeed(handle),
@@ -200,23 +181,24 @@ export default async function handler(
   ];
 
   try {
-    const results = await Promise.allSettled(
-      specs.map(async (spec) => {
-        const data = await fetchJson<unknown>(spec.url);
-        return spec.extract(data);
-      })
-    );
+    const results = await Promise.allSettled(specs.map((s) => s.run()));
 
     const seen = new Set<string>();
     const merged: BlueskyFeedPost[] = [];
-    const debug: BlueskyFeedDebugEntry[] = [];
+    const entries: BlueskyFeedDebugEntry[] = [];
 
     results.forEach((result, idx) => {
       const spec = specs[idx];
       if (result.status === 'rejected') {
         const errMsg = result.reason instanceof Error ? result.reason.message : String(result.reason);
-        debug.push({ source: spec.source, url: spec.url, status: 'error', count: 0, error: errMsg });
-        log.error('Bluesky upstream failed', result.reason, { source: spec.source });
+        entries.push({ source: spec.source, status: 'error', count: 0, error: errMsg });
+        // Only escalate to error-level if the section ends up empty; otherwise
+        // partial failures are expected against the public AppView.
+        log.warn('Bluesky upstream failed', {
+          source: spec.source,
+          error: errMsg,
+          authenticated,
+        });
         return;
       }
 
@@ -229,16 +211,15 @@ export default async function handler(
         merged.push(normalized);
         added += 1;
       }
-      debug.push({ source: spec.source, url: spec.url, status: 'ok', count: added });
+      entries.push({ source: spec.source, status: 'ok', count: added });
     });
 
     merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const posts = merged.slice(0, maxPosts);
 
-    // 15-min CDN cache, 1-hour SWR — but bypass when debugging.
     if (debugMode) {
       res.setHeader('Cache-Control', 'no-store');
-      return res.status(200).json({ posts, debug });
+      return res.status(200).json({ posts, debug: { authenticated, entries } });
     }
 
     res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=3600');
