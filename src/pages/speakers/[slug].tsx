@@ -383,7 +383,7 @@ export default function SpeakerDetailPage({ speaker, npmImpact }: SpeakerDetailP
                         </p>
 
                         {npmImpact && npmImpact.packages.length > 0 ? (
-                            <div className="mt-12">
+                            <div className="mt-6">
                                 <SpeakerOpenSourceImpact
                                     speakerFirstName={speaker.first_name}
                                     impact={npmImpact}
