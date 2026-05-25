@@ -3,7 +3,6 @@ import {
     ScheduleSection,
     ShapedSection,
     TicketsSectionWithStripe,
-    TimelineSection,
     FAQSection,
     SponsorsSection,
     SpeakersSection,
@@ -12,7 +11,7 @@ import {
     SiteFooter
 } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
-import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
+import { heroData, scheduleData, sponsorsData, learningData } from '@/data';
 import type { DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
@@ -118,29 +117,20 @@ export default function Home() {
           <SponsorsSection {...sponsorsData} />
         </ShapedSection>
 
-      <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
+        <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
           <ScheduleSection
               title={scheduleData.title}
               subtitle={scheduleData.subtitle}
               aboutLink={scheduleData.aboutLink}
               days={scheduleData.days}
           />
-      </ShapedSection>
-
-        <ShapedSection shape="widen" variant="medium" id="timeline">
-          <TimelineSection
-            kicker={timelineData.kicker}
-            title={timelineData.title}
-            subtitle={timelineData.subtitle}
-            entries={timelineData.entries}
-          />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="yellow" id="tickets">
+        <ShapedSection shape="widen" variant="yellow" id="tickets">
           <TicketsSectionWithStripe />
         </ShapedSection>
 
-        <ShapedSection shape="widen" variant="medium" id="faq">
+        <ShapedSection shape="tighten" variant="medium" id="faq">
           <FAQSection />
         </ShapedSection>
 

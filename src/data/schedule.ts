@@ -9,13 +9,13 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
   title: 'JS Conference by humans, for humans',
   subtitle: 'Join us for four days of community building, learning, and networking. From grassroots meetups to cutting-edge technical sessions, we\'re bringing together JavaScript enthusiasts from around the world.',
   aboutLink: {
-    label: 'More about us',
-    href: 'https://conf.zurichjs.com/about',
+    label: 'View full schedule',
+    href: '/schedule',
   },
   days: [
     {
       id: 'community',
-      label: 'Community day',
+      label: 'Community Day',
       date: 'September 9, 2026',
       description: 'Kick off the conference with a special edition warm-up meetup, regular ZurichJS style. Connect with local and visiting JavaScript developers for an evening of informal discussions and networking.',
       tbaMode: false,
@@ -29,7 +29,7 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
     },
     {
       id: 'warmup',
-      label: 'Warm-up day',
+      label: 'Zurich Engineering Day',
       date: 'September 10, 2026',
       description: 'A full day of workshops covering various topics and lengths, followed by an exclusive speakers dinner in the evening. All workshops will be centrally hosted in Zurich.',
       tbaMode: false,
@@ -48,7 +48,7 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
     },
     {
       id: 'conference',
-      label: 'Conference day',
+      label: 'Conference Day',
       date: 'September 11, 2026',
       description: 'The main conference day featuring keynote presentations, talks, and networking opportunities. Join us for a full day of learning and celebration.',
       tbaMode: false,
@@ -97,7 +97,7 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
     },
     {
       id: 'post-conference',
-      label: 'Post-conference chill day',
+      label: 'Post-conf chill Day',
       date: 'September 12, 2026',
       description: 'A relaxed day for VIP ticket holders to join speaker activities. Activities will be announced in the future - could include hiking or other engaging experiences.',
       tbaMode: false,
@@ -111,4 +111,3 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
     },
   ],
 };
-

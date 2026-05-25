@@ -120,7 +120,7 @@ function SpeakerMarqueeCard({ speaker }: SpeakerMarqueeCardProps) {
     <Link
       href={`/speakers/${speaker.slug}`}
       aria-label={fullName ? `View ${fullName}'s speaker profile` : 'View speaker profile'}
-      className="group/card relative flex w-[142px] flex-shrink-0 overflow-hidden rounded-lg bg-brand-white shadow-sm transition-transform duration-500 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-md focus-visible:z-10 focus-visible:-translate-y-1.5 focus-visible:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white sm:w-[156px]"
+      className="group/card relative flex w-[142px] flex-shrink-0 transform-gpu overflow-hidden rounded-lg bg-brand-white shadow-none focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white sm:w-[156px] md:shadow-sm md:transition-transform md:duration-500 md:ease-out md:hover:z-10 md:hover:-translate-y-1.5 md:hover:scale-[1.04] md:hover:shadow-md md:focus-visible:-translate-y-1.5 md:focus-visible:scale-[1.04]"
     >
       <div className="relative aspect-[5/6] w-full bg-brand-gray-lightest">
         {speaker.profile_image_url && (
@@ -133,10 +133,10 @@ function SpeakerMarqueeCard({ speaker }: SpeakerMarqueeCardProps) {
             draggable={false}
           />
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-3 pb-3 pt-12 transition-all duration-300 group-hover/card:pt-16 group-focus-visible/card:pt-16">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-3 pb-3 pt-12 md:transition-all md:duration-300 md:group-hover/card:pt-16 md:group-focus-visible/card:pt-16">
           {fullName && <h3 className="text-xs font-bold leading-tight text-white">{fullName}</h3>}
           {titleWithCompany && (
-            <p className="mt-1 max-h-0 overflow-hidden text-[11px] leading-tight text-brand-primary opacity-0 transition-all duration-300 group-hover/card:max-h-8 group-hover/card:opacity-100 group-focus-visible/card:max-h-8 group-focus-visible/card:opacity-100">
+            <p className="mt-1 hidden max-h-0 overflow-hidden text-[11px] leading-tight text-brand-primary opacity-0 md:block md:transition-all md:duration-300 md:group-hover/card:max-h-8 md:group-hover/card:opacity-100 md:group-focus-visible/card:max-h-8 md:group-focus-visible/card:opacity-100">
               {titleWithCompany}
             </p>
           )}
@@ -411,13 +411,13 @@ function SpeakerMarquee({ speakers }: SpeakerMarqueeProps) {
           onPointerDown={pauseTemporarily}
           onTouchStart={pauseTemporarily}
           onWheel={pauseTemporarily}
-          className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-8 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_24px,black_calc(100%-24px),transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_56px,black_calc(100%-56px),transparent_100%)] md:pb-6 md:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)]"
+          className="scrollbar-hide relative overflow-x-auto overflow-y-visible overscroll-x-contain pb-8 pt-6 [mask-image:linear-gradient(to_right,transparent_0,black_16px,black_calc(100%-16px),transparent_100%)] md:pb-6 md:[mask-image:linear-gradient(to_right,transparent_0,black_96px,black_calc(100%-96px),transparent_100%)]"
         >
           <div
             ref={trackRef}
-            className="flex w-max gap-4"
+            className="flex w-max transform-gpu gap-4"
             style={shouldUseMobileAnimation ? {
-              animation: 'speaker-mobile-marquee 85s linear infinite',
+              animation: 'speaker-mobile-marquee 140s linear infinite',
               animationPlayState: isPaused ? 'paused' : 'running',
               willChange: 'transform',
             } : undefined}
