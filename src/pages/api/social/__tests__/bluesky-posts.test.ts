@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/bluesky', () => ({
+  BLUESKY_FEED_TIMEOUT_MS: 3000,
   fetchFreshBlueskyFeed: mocks.fetchFreshBlueskyFeed,
   getCachedBlueskyFeed: mocks.getCachedBlueskyFeed,
 }));
@@ -122,7 +123,7 @@ describe('/api/social/bluesky-posts', () => {
     expect(res._status).toBe(200);
     expect(res._json).toEqual({ posts: [post] });
     expect(res._headers['Cache-Control']).toBe('public, s-maxage=900, stale-while-revalidate=3600');
-    expect(mocks.getCachedBlueskyFeed).toHaveBeenCalledWith({ timeoutMs: 1000 });
+    expect(mocks.getCachedBlueskyFeed).toHaveBeenCalledWith({ timeoutMs: 3000 });
     expect(mocks.fetchFreshBlueskyFeed).not.toHaveBeenCalled();
   });
 

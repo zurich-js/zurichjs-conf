@@ -7,7 +7,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { fetchFreshBlueskyFeed, getCachedBlueskyFeed } from '@/lib/bluesky';
+import { BLUESKY_FEED_TIMEOUT_MS, fetchFreshBlueskyFeed, getCachedBlueskyFeed } from '@/lib/bluesky';
 import type { BlueskyFeedResult } from '@/lib/bluesky';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
@@ -64,7 +64,7 @@ export default async function handler(
       return res.status(200).json(result);
     }
 
-    const result = await getCachedBlueskyFeed({ timeoutMs: 1000 });
+    const result = await getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS });
     res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=3600');
     return res.status(200).json(result);
   } catch (error) {
