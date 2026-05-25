@@ -48,7 +48,8 @@ export function parseRepoRef(input: string): { owner: string; name: string } | n
   // URL form
   try {
     const url = new URL(trimmed);
-    if (!url.hostname.includes('github.com')) return null;
+    const host = url.hostname.toLowerCase();
+    if (host !== 'github.com' && !host.endsWith('.github.com')) return null;
     const parts = url.pathname.replace(/^\/|\/$/g, '').split('/');
     if (parts.length < 2) return null;
     const owner = parts[0];
