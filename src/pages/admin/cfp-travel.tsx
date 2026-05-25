@@ -257,8 +257,8 @@ export default function AdminTravelPage() {
               onSelectSpeaker={handleSelectSpeakerById}
               searchQuery={flightsSearch}
               onSearchChange={setFlightsSearch}
-              onCreate={(data) => flightCreateMutation.mutate(data)}
-              onUpdate={(id, data) => flightUpdateMutation.mutate({ id, data })}
+              onCreate={(data) => flightCreateMutation.mutateAsync(data)}
+              onUpdate={(id, data) => flightUpdateMutation.mutateAsync({ id, data })}
               onDelete={(id) => flightDeleteMutation.mutate(id)}
               isUpdating={flightCreateMutation.isPending || flightUpdateMutation.isPending || flightDeleteMutation.isPending}
             />

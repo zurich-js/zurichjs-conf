@@ -81,3 +81,12 @@ export interface NewsletterSubscribedEvent {
     error_message?: string;
   };
 }
+
+export interface FaqOpenedEvent {
+  event: 'faq_opened';
+  properties: BaseEventProperties & {
+    faq_question: string;
+    faq_index: number;
+    faq_location: string;
+  };
+}

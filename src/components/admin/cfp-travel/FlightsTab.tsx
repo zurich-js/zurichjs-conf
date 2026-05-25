@@ -25,8 +25,8 @@ interface FlightsTabProps {
   onSelectSpeaker?: (speakerId: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onCreate: (data: Record<string, unknown>) => void;
-  onUpdate: (id: string, data: Record<string, unknown>) => void;
+  onCreate: (data: Record<string, unknown>) => Promise<unknown>;
+  onUpdate: (id: string, data: Record<string, unknown>) => Promise<unknown>;
   onDelete: (id: string) => void;
   isUpdating: boolean;
 }
@@ -317,11 +317,15 @@ export function FlightsTab({
           speakers={speakers}
           isSubmitting={isUpdating}
           onClose={() => { setIsCreating(false); setEditing(null); }}
-          onSave={(data) => {
-            if (editing) onUpdate(editing.id, data);
-            else onCreate(data);
-            setIsCreating(false);
-            setEditing(null);
+          onSave={async (data) => {
+            try {
+              if (editing) await onUpdate(editing.id, data);
+              else await onCreate(data);
+              setIsCreating(false);
+              setEditing(null);
+            } catch {
+              // Keep modal open with form data intact so the admin can fix the error.
+            }
           }}
         />
       )}

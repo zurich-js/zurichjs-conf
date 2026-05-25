@@ -132,6 +132,13 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           </div>
         );
 
+      case "node":
+        return (
+          <div key={index} className="text-gray-700 leading-relaxed">
+            {section.node}
+          </div>
+        );
+
       default:
         return null;
     }

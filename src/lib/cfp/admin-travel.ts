@@ -1001,19 +1001,19 @@ export async function updateFlightStatus(
 export async function createFlightAdmin(
   speakerId: string | null,
   data: {
-    traveler_name?: string;
-    traveler_email?: string;
+    traveler_name?: string | null;
+    traveler_email?: string | null;
     direction: CfpFlightDirection;
-    airline?: string;
-    flight_number?: string;
-    departure_airport?: string;
-    arrival_airport?: string;
-    departure_time?: string;
-    arrival_time?: string;
-    booking_reference?: string;
-    cost_amount?: number;
-    cost_currency?: string;
-    tracking_url?: string;
+    airline?: string | null;
+    flight_number?: string | null;
+    departure_airport?: string | null;
+    arrival_airport?: string | null;
+    departure_time?: string | null;
+    arrival_time?: string | null;
+    booking_reference?: string | null;
+    cost_amount?: number | null;
+    cost_currency?: string | null;
+    tracking_url?: string | null;
     flight_status?: CfpFlightStatus;
   }
 ): Promise<{ flight: CfpSpeakerFlight | null; error: string | null }> {
@@ -1059,16 +1059,16 @@ export async function updateFlightAdmin(
     speaker_id?: string | null;
     traveler_name?: string | null;
     traveler_email?: string | null;
-    airline?: string;
-    flight_number?: string;
-    departure_airport?: string;
-    arrival_airport?: string;
-    departure_time?: string;
-    arrival_time?: string;
-    booking_reference?: string;
-    cost_amount?: number;
-    cost_currency?: string;
-    tracking_url?: string;
+    airline?: string | null;
+    flight_number?: string | null;
+    departure_airport?: string | null;
+    arrival_airport?: string | null;
+    departure_time?: string | null;
+    arrival_time?: string | null;
+    booking_reference?: string | null;
+    cost_amount?: number | null;
+    cost_currency?: string | null;
+    tracking_url?: string | null;
     flight_status?: CfpFlightStatus;
   }
 ): Promise<{ flight: CfpSpeakerFlight | null; error: string | null }> {

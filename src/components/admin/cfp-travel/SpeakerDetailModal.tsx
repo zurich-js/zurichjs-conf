@@ -221,8 +221,8 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
           unlinkedFlights={unlinkedFlights}
           speaker={speaker}
           speakerId={speaker.id}
-          onCreateFlight={(data) => createFlight.mutate(data)}
-          onUpdateFlight={(id, data) => updateFlight.mutate({ id, data })}
+          onCreateFlight={(data) => createFlight.mutateAsync(data)}
+          onUpdateFlight={(id, data) => updateFlight.mutateAsync({ id, data })}
           onDeleteFlight={(id) => deleteFlight.mutate(id)}
           onLinkFlight={(id) => updateFlight.mutate({ id, data: { speaker_id: speaker.id } })}
           isSubmitting={isSubmitting}
