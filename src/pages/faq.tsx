@@ -192,6 +192,21 @@ const faqPage: InfoPage = {
     {
       type: "heading",
       level: "h3",
+      content: "Switzerland is expensive – I'm on a budget, what are my options?",
+    },
+    {
+      type: "paragraph",
+      content:
+        'We get it — Switzerland can be pricey, but attending Zurich JS Conf on a budget is doable. Use our <strong><a href="/trip-cost">Trip Cost Calculator</a></strong> to estimate your total trip cost (ticket + travel + hotel) in your preferred currency, and to compare options across travel regions and hotel types.',
+    },
+    {
+      type: "paragraph",
+      content:
+        'We\'re also working on hotel partnerships that will be announced soon. Email <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> to join the waitlist, or to get tips on affordable accommodation, transport, and places to eat.',
+    },
+    {
+      type: "heading",
+      level: "h3",
       content: "Are there room blocks or partner hotels for attendees?",
     },
     {
