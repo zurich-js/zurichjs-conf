@@ -8,7 +8,8 @@ import {
     SpeakersSection,
     LearnSection,
     NavBar,
-    SiteFooter
+    SiteFooter,
+    BlueskyFeedSection
 } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, sponsorsData, learningData } from '@/data';
@@ -19,6 +20,8 @@ import { publicSponsorsQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
+import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from '@/lib/bluesky';
+import type { BlueskyFeedPost } from '@/lib/bluesky';
 import type { GetServerSideProps } from 'next';
 import React from "react";
 
@@ -29,6 +32,7 @@ import React from "react";
  */
 interface HomePageProps {
   dehydratedState: DehydratedState;
+  blueskyPosts: BlueskyFeedPost[];
 }
 
 // FAQ data for schema (plain text versions)
@@ -55,7 +59,7 @@ const faqSchemaData = [
   },
 ];
 
-export default function Home() {
+export default function Home({ blueskyPosts }: HomePageProps) {
   const handleCtaClick = () => {
     // Scroll smoothly to the tickets section
     const ticketsSection = document.getElementById('tickets');
@@ -126,11 +130,15 @@ export default function Home() {
           />
         </ShapedSection>
 
-        <ShapedSection shape="widen" variant="yellow" id="tickets">
+        <ShapedSection shape="widen" variant="dark" id="community-buzz">
+          <BlueskyFeedSection posts={blueskyPosts} />
+        </ShapedSection>
+
+        <ShapedSection shape="tighten" variant="yellow" id="tickets">
           <TicketsSectionWithStripe />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="medium" id="faq">
+        <ShapedSection shape="widen" variant="medium" id="faq">
           <FAQSection />
         </ShapedSection>
 
@@ -138,6 +146,7 @@ export default function Home() {
               shape="straight"
               variant="dark"
               compactTop={true}
+              dropBottom={true}
           >
               <SiteFooter />
           </ShapedSection>
@@ -163,6 +172,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     optionalQuery(publicSponsorsQueryOptions),
     optionalQuery(publicSpeakersQueryOptions()),
     optionalQuery(ticketPricingQueryOptions),
+    getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }),
   ]);
 
   // Report any rejected promises to PostHog (shouldn't happen since
@@ -178,9 +188,16 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     }
   }
 
+  const blueskyResult = results[3];
+  const blueskyPosts =
+    blueskyResult?.status === 'fulfilled' && blueskyResult.value
+      ? blueskyResult.value.posts
+      : [];
+
   return {
     props: {
       dehydratedState: dehydrate(),
+      blueskyPosts,
     },
   };
 };

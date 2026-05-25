@@ -1,0 +1,140 @@
+import React, { useEffect, useState } from 'react';
+import { Heart, MessageCircle, Repeat2 } from 'lucide-react';
+import { Heading, Kicker, SocialIcon } from '@/components/atoms';
+import type { BlueskyFeedPost } from '@/lib/bluesky/types';
+
+interface BlogBlueskyFeedGridProps {
+  posts: BlueskyFeedPost[];
+  className?: string;
+}
+
+function formatRelativeTime(isoDate: string, now: number): string {
+  const diff = now - new Date(isoDate).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+function BlogBlueskyPostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: number | null }) {
+  const authorName = post.author.displayName ?? post.author.handle;
+
+  return (
+    <article className="flex h-full flex-col gap-3 rounded-lg bg-brand-white p-5 shadow-sm ring-1 ring-black/5 transition hover:shadow-md focus-within:ring-2 focus-within:ring-brand-yellow-main">
+      <div className="flex items-center gap-3">
+        <a
+          href={`https://bsky.app/profile/${post.author.handle}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex min-w-0 flex-1 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
+        >
+          {post.author.avatar ? (
+            <img
+              src={post.author.avatar}
+              alt={authorName}
+              width={40}
+              height={40}
+              className="size-10 rounded-full object-cover ring-2 ring-brand-white"
+            />
+          ) : (
+            <div className="flex size-10 items-center justify-center rounded-full bg-brand-gray-light text-sm font-bold text-brand-gray-medium ring-2 ring-brand-white">
+              {authorName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-brand-black transition-colors group-hover:text-brand-blue">
+              {authorName}
+            </span>
+            <span className="block truncate text-xs text-brand-gray-medium">@{post.author.handle}</span>
+          </span>
+        </a>
+        <SocialIcon
+          kind="bluesky"
+          href={post.webUrl}
+          label="View post on Bluesky"
+          tone="dark"
+          className="focus:!bg-brand-yellow-main focus:!text-brand-black focus:!ring-brand-yellow-main"
+        />
+      </div>
+
+      <p className="line-clamp-5 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-black">
+        {post.text}
+      </p>
+
+      <div className="mt-auto flex items-center justify-between gap-3 text-xs text-brand-gray-medium">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1">
+            <Heart className="size-3.5" aria-hidden="true" />
+            {post.likeCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <MessageCircle className="size-3.5" aria-hidden="true" />
+            {post.replyCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Repeat2 className="size-3.5" aria-hidden="true" />
+            {post.repostCount}
+          </span>
+        </div>
+        {nowMs !== null && <time dateTime={post.createdAt}>{formatRelativeTime(post.createdAt, nowMs)}</time>}
+      </div>
+    </article>
+  );
+}
+
+const socialFallback = (
+  <span className="mt-3 block">
+    Not yet on Bluesky? Find us on{' '}
+    <a
+      href="https://linkedin.com/company/zurichjs"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-semibold text-brand-blue underline-offset-4 hover:underline"
+    >
+      LinkedIn
+    </a>
+    ,{' '}
+    <a
+      href="https://x.com/zurichjs/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-semibold text-brand-blue underline-offset-4 hover:underline"
+    >
+      Twitter
+    </a>
+    , or{' '}
+    <a
+      href="http://instagram.com/zurich.js"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-semibold text-brand-blue underline-offset-4 hover:underline"
+    >
+      Instagram
+    </a>
+  </span>
+);
+
+export function BlogBlueskyFeedGrid({ posts, className = '' }: BlogBlueskyFeedGridProps) {
+  const [nowMs, setNowMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNowMs(Date.now());
+  }, []);
+
+  if (posts.length === 0) return null;
+
+  return (
+    <div className={`flex flex-col gap-8 ${className}`}>
+      <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post) => (
+          <BlogBlueskyPostCard key={post.uri} post={post} nowMs={nowMs} />
+        ))}
+      </div>
+    </div>
+  );
+}

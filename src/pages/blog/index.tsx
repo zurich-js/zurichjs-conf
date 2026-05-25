@@ -6,27 +6,32 @@ import {
   organizationSchema,
   generateBreadcrumbSchema,
 } from "@/components/SEO";
-import { BlogPostCard, BlogTagFilter } from "@/components/blog";
+import { BlogBlueskyFeedGrid, BlogPostCard, BlogTagFilter } from "@/components/blog";
 import { getAllPosts, getAllTags } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog";
 import {SiteFooter, ShapedSection} from "@/components/organisms";
+import { getCachedBlueskyFeed } from "@/lib/bluesky";
+import type { BlueskyFeedPost } from "@/lib/bluesky";
 import React from "react";
 
 interface BlogPageProps {
   posts: BlogPostMeta[];
   tags: string[];
+  blueskyPosts: BlueskyFeedPost[];
 }
 
 export const getStaticProps: GetStaticProps<BlogPageProps> = async () => {
   const posts = getAllPosts();
   const tags = getAllTags();
+  const blueskyFeed = await getCachedBlueskyFeed({ timeoutMs: 1000 }).catch(() => ({ posts: [] }));
 
   return {
-    props: { posts, tags },
+    props: { posts, tags, blueskyPosts: blueskyFeed.posts },
+    revalidate: 900,
   };
 };
 
-export default function BlogPage({ posts, tags }: BlogPageProps) {
+export default function BlogPage({ posts, tags, blueskyPosts }: BlogPageProps) {
   const router = useRouter();
   const activeTag =
     typeof router.query.tag === "string" ? router.query.tag : undefined;
@@ -95,6 +100,8 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
                 </p>
               </div>
             )}
+
+            <BlogBlueskyFeedGrid posts={blueskyPosts} className="mt-16" />
           </div>
         </div>
       </main>
