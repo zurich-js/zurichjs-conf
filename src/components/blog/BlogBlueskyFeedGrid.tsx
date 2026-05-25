@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Heart, MessageCircle, Repeat2 } from 'lucide-react';
-import { Heading, Kicker, SocialIcon } from '@/components/atoms';
+import { SocialIcon } from '@/components/atoms';
 import type { BlueskyFeedPost } from '@/lib/bluesky/types';
 
 interface BlogBlueskyFeedGridProps {
@@ -86,38 +86,6 @@ function BlogBlueskyPostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: nu
     </article>
   );
 }
-
-const socialFallback = (
-  <span className="mt-3 block">
-    Not yet on Bluesky? Find us on{' '}
-    <a
-      href="https://linkedin.com/company/zurichjs"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-semibold text-brand-blue underline-offset-4 hover:underline"
-    >
-      LinkedIn
-    </a>
-    ,{' '}
-    <a
-      href="https://x.com/zurichjs/"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-semibold text-brand-blue underline-offset-4 hover:underline"
-    >
-      Twitter
-    </a>
-    , or{' '}
-    <a
-      href="http://instagram.com/zurich.js"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-semibold text-brand-blue underline-offset-4 hover:underline"
-    >
-      Instagram
-    </a>
-  </span>
-);
 
 export function BlogBlueskyFeedGrid({ posts, className = '' }: BlogBlueskyFeedGridProps) {
   const [nowMs, setNowMs] = useState<number | null>(null);
