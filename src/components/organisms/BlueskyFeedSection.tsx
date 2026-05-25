@@ -100,9 +100,9 @@ function PostCard({ post, nowMs, compact = false }: PostCardProps) {
 
       <p
         className={[
-          'flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed',
+          'whitespace-pre-wrap break-words text-sm',
           isDark ? 'text-brand-gray-lightest' : 'text-brand-black',
-          compact ? 'line-clamp-3 min-h-[4.5rem]' : 'line-clamp-5',
+          compact ? 'line-clamp-3 h-[4.5rem] flex-none leading-6' : 'line-clamp-5 flex-1 leading-relaxed',
         ].join(' ')}
       >
         {post.text}
