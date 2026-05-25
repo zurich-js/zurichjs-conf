@@ -66,7 +66,7 @@ function BlogBlueskyPostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: nu
         />
       </div>
 
-      <p className="line-clamp-5 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-black">
+      <p className="flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-black sm:line-clamp-5">
         {post.text}
       </p>
 
@@ -115,13 +115,13 @@ export function BlogBlueskyFeedGrid({ initialFeed, className = '' }: BlogBluesky
 
   return (
     <div className={`flex flex-col gap-8 ${className}`}>
-      <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (
           <BlogBlueskyPostCard key={post.uri} post={post} nowMs={nowMs} />
         ))}
       </div>
       {isFetchingNextPage && (
-        <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+        <div className="grid grid-cols-1 gap-4 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
           {loadingCardKeys.map((key) => (
             <div key={key} className="min-h-48 animate-pulse rounded-lg bg-brand-gray-light" />
           ))}
