@@ -41,7 +41,7 @@ export function AddSponsorModal({
   const [formData, setFormData] = useState<CreateSponsorFormData>(initialFormData);
   const [createDealAfter, setCreateDealAfter] = useState(true);
   const [selectedTier, setSelectedTier] = useState<string>(tiers[0]?.id || '');
-  const [selectedCurrency, setSelectedCurrency] = useState<SponsorshipCurrency>('CHF');
+  const [selectedCurrency] = useState<SponsorshipCurrency>('CHF');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -333,16 +333,12 @@ export function AddSponsorModal({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Currency
+                      Management currency
                     </label>
-                    <select
-                      value={selectedCurrency}
-                      onChange={(e) => setSelectedCurrency(e.target.value as SponsorshipCurrency)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                    >
-                      <option value="CHF">CHF</option>
-                      <option value="EUR">EUR</option>
-                    </select>
+                    <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700">
+                      CHF
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">Sponsor-facing invoice currency is set when creating the invoice.</p>
                   </div>
                 </div>
               )}

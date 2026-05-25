@@ -12,6 +12,8 @@ import type { SponsorshipConfirmationEmailProps } from '@/emails/templates/Spons
 import { getResendClient, EMAIL_CONFIG, log } from './config';
 import type { SponsorshipInquiryData } from './types';
 
+const SPONSORSHIP_INQUIRY_RECIPIENT = 'hello@zurichjs.com';
+
 /**
  * Send sponsorship inquiry emails (to admin and confirmation to sender)
  */
@@ -33,7 +35,7 @@ export async function sendSponsorshipInquiryEmails(
       timeZone: 'Europe/Zurich',
     });
 
-    // 1. Send notification to admin (hello@zurichjs.com)
+    // 1. Send notification to the partnerships inbox
     const adminEmailProps: SponsorshipInquiryEmailProps = {
       name: data.name,
       company: data.company,
@@ -48,10 +50,10 @@ export async function sendSponsorshipInquiryEmails(
       React.createElement(SponsorshipInquiryEmail, adminEmailProps)
     );
 
-    log.debug('Sending admin notification to hello@zurichjs.com');
+    log.debug('Sending sponsorship inquiry notification', { to: SPONSORSHIP_INQUIRY_RECIPIENT });
     const adminResult = await resend.emails.send({
       from: EMAIL_CONFIG.from,
-      to: 'hello@zurichjs.com',
+      to: SPONSORSHIP_INQUIRY_RECIPIENT,
       replyTo: data.email, // Reply goes to the person who submitted
       subject: `New Sponsorship Inquiry from ${data.company} - ${data.inquiryId}`,
       html: adminEmailHtml,
@@ -61,7 +63,10 @@ export async function sendSponsorshipInquiryEmails(
       log.error('Error sending admin notification', new Error(adminResult.error.message));
       return { success: false, error: adminResult.error.message };
     }
-    log.info('Admin notification sent', { emailId: adminResult.data?.id });
+    log.info('Admin notification sent', {
+      emailId: adminResult.data?.id,
+      to: SPONSORSHIP_INQUIRY_RECIPIENT,
+    });
 
     // 2. Send confirmation to the person who submitted
     const confirmationEmailProps: SponsorshipConfirmationEmailProps = {

@@ -8,13 +8,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { getDeal, getInvoiceForDeal, createInvoice, getTier, updateInvoiceConversion } from '@/lib/sponsorship';
-import { updateInvoice } from '@/lib/sponsorship/invoices';
+import { updateInvoice, updateSponsorInvoiceConversion } from '@/lib/sponsorship/invoices';
 import { getLineItemsForDeal } from '@/lib/sponsorship/line-items';
 import { computeSponsorshipInvoiceTotals } from '@/lib/sponsorship/calculations';
-import type { CreateInvoiceRequest, SponsorshipCurrency, UpdateInvoiceConversionRequest } from '@/lib/types/sponsorship';
+import type { CreateInvoiceRequest, SponsorshipCurrency, UpdateInvoiceConversionRequest, UpdateSponsorInvoiceConversionRequest } from '@/lib/types/sponsorship';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Deal Invoice API');
+const SUPPORTED_SPONSOR_CURRENCIES = ['CHF', 'EUR', 'GBP', 'USD'];
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Verify admin authentication
@@ -105,7 +107,6 @@ async function handleCreate(
     }
 
     // Validate date format
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(data.dueDate)) {
       return res.status(400).json({ error: 'Invalid date format (expected YYYY-MM-DD)' });
     }
@@ -147,6 +148,21 @@ async function handleCreate(
       }
     }
 
+    if (data.sponsorCurrency !== undefined || data.sponsorAmount !== undefined) {
+      if (!data.sponsorCurrency || !SUPPORTED_SPONSOR_CURRENCIES.includes(data.sponsorCurrency)) {
+        return res.status(400).json({ error: 'Invalid sponsor currency' });
+      }
+      if (!data.sponsorAmount || data.sponsorAmount <= 0) {
+        return res.status(400).json({ error: 'Sponsor amount must be positive' });
+      }
+      if (data.sponsorToChfRate !== undefined && data.sponsorToChfRate <= 0) {
+        return res.status(400).json({ error: 'Sponsor to CHF rate must be positive' });
+      }
+      if (data.sponsorRateDate !== undefined && !dateRegex.test(data.sponsorRateDate)) {
+        return res.status(400).json({ error: 'Invalid sponsor rate date format (expected YYYY-MM-DD)' });
+      }
+    }
+
     const invoice = await createInvoice(dealId, data);
     log.info('Invoice created', {
       dealId,
@@ -183,10 +199,12 @@ async function handleUpdate(
       invoiceNotes,
       // Conversion fields
       conversion,
+      sponsorConversion,
     } = req.body as {
       dueDate?: string;
       invoiceNotes?: string;
       conversion?: UpdateInvoiceConversionRequest;
+      sponsorConversion?: UpdateSponsorInvoiceConversionRequest;
     };
 
     // Get existing invoice
@@ -249,6 +267,28 @@ async function handleUpdate(
         dealId,
         invoiceId: invoice.id,
         payInEur: conversion.payInEur,
+      });
+    }
+
+    if (sponsorConversion !== undefined) {
+      if (!SUPPORTED_SPONSOR_CURRENCIES.includes(sponsorConversion.sponsorCurrency)) {
+        return res.status(400).json({ error: 'Invalid sponsor currency' });
+      }
+      if (!sponsorConversion.sponsorAmount || sponsorConversion.sponsorAmount <= 0) {
+        return res.status(400).json({ error: 'Sponsor amount must be positive' });
+      }
+      if (sponsorConversion.sponsorToChfRate !== undefined && sponsorConversion.sponsorToChfRate <= 0) {
+        return res.status(400).json({ error: 'Sponsor to CHF rate must be positive' });
+      }
+      if (sponsorConversion.sponsorRateDate !== undefined && !dateRegex.test(sponsorConversion.sponsorRateDate)) {
+        return res.status(400).json({ error: 'Invalid sponsor rate date format (expected YYYY-MM-DD)' });
+      }
+
+      updatedInvoice = await updateSponsorInvoiceConversion(invoice.id, sponsorConversion);
+      log.info('Invoice sponsor currency conversion updated', {
+        dealId,
+        invoiceId: invoice.id,
+        sponsorCurrency: sponsorConversion.sponsorCurrency,
       });
     }
 

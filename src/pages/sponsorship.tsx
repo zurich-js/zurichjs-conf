@@ -8,19 +8,31 @@ import {
     SponsorshipTiersSection,
     SiteFooter,
 } from '@/components/organisms';
-import { SponsorshipInquiryModal } from '@/components/molecules';
 import { SEO } from '@/components/SEO';
+import { Button } from '@/components/atoms';
+import { SponsorshipInquiryModal } from '@/components/molecules';
+import { Download } from 'lucide-react';
 import { sponsorshipPageData } from '@/data/sponsorship';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry, type SupportedCurrency } from '@/config/currency';
 import type { GetServerSideProps } from 'next';
+import { buildPublicSponsorshipPricing, type PublicSponsorshipPricing } from '@/lib/sponsorship/public-pricing';
+import type { ExchangeRatesResult } from '@/lib/sponsorship/currency';
+import type { ProspectusAsset } from '@/lib/sponsorship/prospectus';
 
 interface SponsorshipPageProps {
   detectedCurrency: SupportedCurrency;
+  pricing: PublicSponsorshipPricing;
+  prospectusAssets: ProspectusAsset[];
 }
 
-export default function SponsorshipPage({ detectedCurrency }: SponsorshipPageProps) {
+export default function SponsorshipPage({ detectedCurrency, pricing, prospectusAssets }: SponsorshipPageProps) {
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<SupportedCurrency>(
+    pricing.availableCurrencies.includes(detectedCurrency) ? detectedCurrency : 'CHF',
+  );
+  const availableProspectus = prospectusAssets.filter((asset) => asset.exists && asset.currency === selectedCurrency);
+  const formatProspectusCategory = (category: string) => category.charAt(0).toUpperCase() + category.slice(1);
 
   return (
     <>
@@ -57,10 +69,40 @@ export default function SponsorshipPage({ detectedCurrency }: SponsorshipPagePro
         {/* Tiers Section - Yellow background */}
         <ShapedSection shape="tighten" variant="yellow" id="tiers">
           <SponsorshipTiersSection
-            data={sponsorshipPageData.tiers}
+            data={pricing.tiers}
             initialCurrency={detectedCurrency}
-            onBecomeSponsor={() => setIsInquiryModalOpen(true)}
+            availableCurrencies={pricing.availableCurrencies}
+            selectedCurrency={selectedCurrency}
+            onCurrencyChange={setSelectedCurrency}
+            rateDate={pricing.rateDate}
+            rateSource={pricing.rateSource}
+            ratesStale={pricing.ratesStale}
           />
+          {availableProspectus.length > 0 && (
+            <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              {availableProspectus.map((asset) => (
+                <Button
+                  variant="dark"
+                  size="sm"
+                  key={asset.category}
+                  href={`/api/sponsorship/prospectus/${selectedCurrency}/${asset.category}`}
+                  asChild={true}
+                >
+                  <Download className="h-4 w-4" />
+                  {formatProspectusCategory(asset.category)} <small>({selectedCurrency})</small>
+                </Button>
+              ))}
+            </div>
+          )}
+          <div className="mt-5 flex justify-center">
+            <Button
+              variant="accent"
+              size="md"
+              onClick={() => setIsInquiryModalOpen(true)}
+            >
+              {sponsorshipPageData.tiers.cta.label}
+            </Button>
+          </div>
         </ShapedSection>
 
           <ShapedSection
@@ -79,12 +121,32 @@ export default function SponsorshipPage({ detectedCurrency }: SponsorshipPagePro
  * Server-side currency detection
  */
 export const getServerSideProps: GetServerSideProps<SponsorshipPageProps> = async (context) => {
+  const { getExchangeRates } = await import('@/lib/sponsorship/currency');
+  const { listProspectusAssets } = await import('@/lib/sponsorship/prospectus');
+  const { logger } = await import('@/lib/logger');
+  const log = logger.scope('Sponsorship Page');
   const countryCode = detectCountryFromRequest(context.req);
   const detectedCurrency = getCurrencyFromCountry(countryCode);
+  let rates: ExchangeRatesResult | null = null;
+  let prospectusAssets: ProspectusAsset[] = [];
+
+  try {
+    rates = await getExchangeRates('CHF', ['EUR', 'GBP', 'USD']);
+  } catch (error) {
+    log.error('Failed to load sponsorship exchange rates', error);
+  }
+
+  try {
+    prospectusAssets = await listProspectusAssets();
+  } catch (error) {
+    log.error('Failed to load sponsorship prospectus assets', error);
+  }
 
   return {
     props: {
       detectedCurrency,
+      pricing: buildPublicSponsorshipPricing(sponsorshipPageData.tiers, rates),
+      prospectusAssets,
     },
   };
 };

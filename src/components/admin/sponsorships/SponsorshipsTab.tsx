@@ -6,7 +6,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Filter, RefreshCw } from 'lucide-react';
+import { FileText, Plus, Search, Filter, RefreshCw } from 'lucide-react';
 import { Pagination } from '@/components/atoms';
 import { StatsCards } from './StatsCards';
 import { SponsorshipsList } from './SponsorshipsList';
@@ -26,6 +26,10 @@ import type {
 import { DEAL_STATUS_CONFIG } from '@/lib/types/sponsorship';
 
 const ITEMS_PER_PAGE = 10;
+
+interface SponsorshipsTabProps {
+  onManageProspectus?: () => void;
+}
 
 // API fetch functions
 async function fetchTiers(): Promise<SponsorshipTier[]> {
@@ -109,7 +113,7 @@ async function createDeal(data: CreateDealFormData): Promise<void> {
   }
 }
 
-export function SponsorshipsTab() {
+export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
   const queryClient = useQueryClient();
 
   // UI state
@@ -247,6 +251,16 @@ export function SponsorshipsTab() {
           >
             <RefreshCw className="h-5 w-5" />
           </button>
+          {onManageProspectus && (
+            <button
+              type="button"
+              onClick={onManageProspectus}
+              className="px-4 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Manage prospectus
+            </button>
+          )}
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-brand-primary text-black rounded-lg font-medium hover:bg-[#e6d766] transition-colors flex items-center gap-2"
