@@ -1,9 +1,13 @@
+import type { ReactNode } from "react";
+
 export interface ContentSection {
-  type: "heading" | "paragraph" | "list" | "subsection";
+  type: "heading" | "paragraph" | "list" | "subsection" | "node";
   content?: string;
   level?: "h1" | "h2" | "h3";
   items?: string[];
   subsections?: ContentSection[];
+  /** Rendered as-is when `type === "node"`. Use for paragraphs that need React components (e.g. Next/Link). */
+  node?: ReactNode;
 }
 
 export interface InfoPage {

@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { InfoContentLayout } from "@/components/InfoContentLayout";
 import type { InfoPage } from "@/data/info-pages";
 
@@ -195,9 +196,19 @@ const faqPage: InfoPage = {
       content: "Switzerland is expensive – I'm on a budget, what are my options?",
     },
     {
-      type: "paragraph",
-      content:
-        'We get it — Switzerland can be pricey, but attending Zurich JS Conf on a budget is doable. Use our <strong><a href="/trip-cost">Trip Cost Calculator</a></strong> to estimate your total trip cost (ticket + travel + hotel) in your preferred currency, and to compare options across travel regions and hotel types.',
+      type: "node",
+      node: (
+        <p>
+          We get it — Switzerland can be pricey, but attending Zurich JS Conf on
+          a budget is doable. Use our{" "}
+          <Link href="/trip-cost" className="font-semibold underline">
+            Trip Cost Calculator
+          </Link>{" "}
+          to estimate your total trip cost (ticket + travel + hotel) in your
+          preferred currency, and to compare options across travel regions and
+          hotel types.
+        </p>
+      ),
     },
     {
       type: "paragraph",
