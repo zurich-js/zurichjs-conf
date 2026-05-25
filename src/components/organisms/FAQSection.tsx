@@ -23,7 +23,7 @@ export const FAQSection = () => {
         viewport={{ once: true }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       >
-        <FAQAccordion items={TICKET_FAQ} />
+        <FAQAccordion items={TICKET_FAQ} location="home_faq_section" />
       </motion.div>
     </SectionSplitView>
 

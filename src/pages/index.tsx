@@ -48,7 +48,7 @@ const faqSchemaData = [
   },
   {
     question: "Switzerland is expensive – I'm on a budget, what are my options?",
-    answer: "Hotel partnerships are coming soon! Email hello@zurichjs.com to join the waitlist and be the first to hear about it. We're happy to help you work within your budget.",
+    answer: "Use our Trip Cost Calculator at /trip-cost to estimate your total trip cost (ticket + travel + hotel). Hotel partnerships are also coming soon — email hello@zurichjs.com to join the waitlist. We're happy to help you work within your budget with accommodation, transport, and food tips.",
   },
   {
     question: "When is the best time to arrive and leave?",
