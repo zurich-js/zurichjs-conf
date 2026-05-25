@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {useMotion} from "@/contexts";
 import { ChevronDownIcon } from "lucide-react";
+import { analytics } from '@/lib/analytics/client';
 
 export interface FAQItem {
   question: string;
@@ -16,6 +17,8 @@ export interface FAQItem {
 export interface FAQAccordionProps {
   items: FAQItem[];
   className?: string;
+  /** Identifier of where this accordion is rendered (e.g. "home_faq_section", "faq_page"). Used for PostHog analytics. */
+  location?: string;
 }
 
 /**
@@ -71,11 +74,23 @@ const AccordionItem: React.FC<{ item: FAQItem; isOpen: boolean; onClick: () => v
  * FAQ Accordion component
  * Displays a list of collapsible FAQ items
  */
-export const FAQAccordion: React.FC<FAQAccordionProps> = ({ items, className = '' }) => {
+export const FAQAccordion: React.FC<FAQAccordionProps> = ({ items, className = '', location = 'faq_accordion' }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const handleToggle = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
+    const isOpening = openIndex !== index;
+    setOpenIndex(isOpening ? index : null);
+
+    if (isOpening) {
+      const item = items[index];
+      if (item) {
+        analytics.track('faq_opened', {
+          faq_question: item.question,
+          faq_index: index,
+          faq_location: location,
+        });
+      }
+    }
   };
 
   return (

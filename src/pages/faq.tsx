@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { InfoContentLayout } from "@/components/InfoContentLayout";
 import type { InfoPage } from "@/data/info-pages";
 
@@ -188,6 +189,32 @@ const faqPage: InfoPage = {
       type: "paragraph",
       content:
         "These connections make Zurich easily accessible from across Europe, including via budget airlines, with frequent and reliable rail links into the city.",
+    },
+    {
+      type: "heading",
+      level: "h3",
+      content: "Switzerland is expensive – I'm on a budget, what are my options?",
+    },
+    {
+      type: "node",
+      node: (
+        <p>
+          Switzerland has the perception of being pricey, but there are many
+          ways to make a trip here affordable — some accommodation options come
+          out at under €100 per night. Use our{" "}
+          <Link href="/trip-cost" className="font-semibold underline">
+            Trip Cost Calculator
+          </Link>{" "}
+          to estimate your total trip cost (ticket + travel + hotel) in your
+          preferred currency, and to compare options across travel regions and
+          hotel types.
+        </p>
+      ),
+    },
+    {
+      type: "paragraph",
+      content:
+        'We\'re also working on hotel partnerships that will be announced soon. Email <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> to join the waitlist — and feel free to reach out if we can help you navigate how to plan the trip, whether that\'s accommodation, transport, or affordable places to eat.',
     },
     {
       type: "heading",

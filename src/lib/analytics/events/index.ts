@@ -74,6 +74,7 @@ export type {
   FilterAppliedEvent,
   ShareClickedEvent,
   NewsletterSubscribedEvent,
+  FaqOpenedEvent,
 } from './user-events';
 
 // System events
@@ -177,6 +178,7 @@ import type {
   FilterAppliedEvent,
   ShareClickedEvent,
   NewsletterSubscribedEvent,
+  FaqOpenedEvent,
 } from './user-events';
 import type { ErrorOccurredEvent, ApiErrorEvent, WebhookReceivedEvent } from './system-events';
 import type {
@@ -260,6 +262,7 @@ export type AnalyticsEvent =
   | FilterAppliedEvent
   | ShareClickedEvent
   | NewsletterSubscribedEvent
+  | FaqOpenedEvent
   | ErrorOccurredEvent
   | ApiErrorEvent
   | WebhookReceivedEvent
