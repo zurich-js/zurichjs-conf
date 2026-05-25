@@ -199,8 +199,9 @@ const faqPage: InfoPage = {
       type: "node",
       node: (
         <p>
-          We get it — Switzerland can be pricey, but attending Zurich JS Conf on
-          a budget is doable. Use our{" "}
+          Switzerland has the perception of being pricey, but there are many
+          ways to make a trip here affordable — some accommodation options come
+          out at under €100 per night. Use our{" "}
           <Link href="/trip-cost" className="font-semibold underline">
             Trip Cost Calculator
           </Link>{" "}
@@ -213,7 +214,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        'We\'re also working on hotel partnerships that will be announced soon. Email <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> to join the waitlist, or to get tips on affordable accommodation, transport, and places to eat.',
+        'We\'re also working on hotel partnerships that will be announced soon. Email <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> to join the waitlist — and feel free to reach out if we can help you navigate how to plan the trip, whether that\'s accommodation, transport, or affordable places to eat.',
     },
     {
       type: "heading",

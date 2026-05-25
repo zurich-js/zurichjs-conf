@@ -48,7 +48,7 @@ const faqSchemaData = [
   },
   {
     question: "Switzerland is expensive – I'm on a budget, what are my options?",
-    answer: "Use our Trip Cost Calculator at /trip-cost to estimate your total trip cost (ticket + travel + hotel). Hotel partnerships are also coming soon — email hello@zurichjs.com to join the waitlist. We're happy to help you work within your budget with accommodation, transport, and food tips.",
+    answer: "Switzerland has the perception of being pricey, but there are many ways to make a trip here affordable — some accommodation options come out at under €100 per night. Use our Trip Cost Calculator at /trip-cost to estimate your total trip cost (ticket + travel + hotel). Hotel partnerships are also coming soon — email hello@zurichjs.com to join the waitlist, and feel free to reach out if we can help you navigate how to plan the trip (accommodation, transport, or affordable places to eat).",
   },
   {
     question: "When is the best time to arrive and leave?",

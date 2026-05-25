@@ -190,20 +190,19 @@ export const TICKET_FAQ: FAQItem[] = [
     question: "Switzerland is expensive – I'm on a budget, what are my options?",
     answer: (
       <>
-        We get it – Switzerland can be pricey! But attending ZurichJS Conference on a budget is
-        definitely doable. Use our{' '}
+        Switzerland has the perception of being pricey, but there are many ways to make a trip
+        here affordable – some accommodation options come out at under €100 per night. Use our{' '}
         <Link href="/trip-cost" className="underline">
           Trip Cost Calculator
         </Link>{' '}
-        to estimate your total trip cost (ticket + travel + hotel). We&apos;re also working on
-        hotel partnerships that will be announced soon. Reach out to us at{' '}
+        to estimate your total trip cost (ticket + travel + hotel) and compare options across
+        travel regions and hotel types. We&apos;re also working on hotel partnerships that will
+        be announced soon – reach out to us at{' '}
         <a href="mailto:hello@zurichjs.com" className="underline">
           hello@zurichjs.com
         </a>{' '}
-        and we&apos;ll add you to the waitlist to be one of the first to hear about it. We&apos;re
-        also happy to help you work within your budget – whether it&apos;s accommodation tips,
-        transport advice, or affordable places to eat. Many attendees have made it work, and
-        we&apos;ll help you do the same!
+        to join the waitlist, and feel free to get in touch if we can help you navigate how to
+        plan the trip – whether that&apos;s accommodation, transport, or affordable places to eat.
       </>
     ),
   },
