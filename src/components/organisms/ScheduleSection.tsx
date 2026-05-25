@@ -54,7 +54,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       link={aboutLink}
       variant="light"
     >
-      <div className="pt-8 xl:pt-0">
+      <div className="pt-8 lg:pt-10">
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-4 xl:gap-6">
           {days.map((day) => {
             const dayParam = scheduleDayParams[day.id] ?? 'community';

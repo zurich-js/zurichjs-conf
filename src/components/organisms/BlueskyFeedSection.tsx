@@ -98,7 +98,7 @@ function PostCard({ post, nowMs, compact = false }: PostCardProps) {
         className={[
           'flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed',
           isDark ? 'text-brand-gray-lightest' : 'text-brand-black',
-          compact ? 'line-clamp-3' : 'line-clamp-5',
+          compact ? 'line-clamp-3 min-h-[4.5rem]' : 'line-clamp-5',
         ].join(' ')}
       >
         {post.text}
@@ -194,7 +194,7 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
       variant="dark"
       className={className}
     >
-      <div className="pt-8 xl:pt-0">
+      <div className="pt-8 lg:pt-10">
         <div
           className="relative -mx-4 overflow-hidden sm:-mx-8"
           role="region"
