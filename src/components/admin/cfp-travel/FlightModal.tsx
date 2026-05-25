@@ -29,7 +29,7 @@ interface FlightModalProps {
   speakers: SpeakerWithTravel[];
   isSubmitting: boolean;
   onClose: () => void;
-  onSave: (data: Record<string, unknown>) => void;
+  onSave: (data: Record<string, unknown>) => void | Promise<void>;
 }
 
 function toLocalDateTime(value: string | null): string {
