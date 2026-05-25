@@ -15,8 +15,8 @@ interface SpeakerFlightsSectionProps {
   unlinkedFlights?: CfpSpeakerFlight[];
   speaker: SpeakerWithTravel;
   speakerId: string;
-  onCreateFlight: (data: Record<string, unknown>) => void;
-  onUpdateFlight: (flightId: string, data: Record<string, unknown>) => void;
+  onCreateFlight: (data: Record<string, unknown>) => void | Promise<unknown>;
+  onUpdateFlight: (flightId: string, data: Record<string, unknown>) => void | Promise<unknown>;
   onDeleteFlight: (flightId: string) => void;
   onLinkFlight: (flightId: string) => void;
   isSubmitting: boolean;
@@ -161,11 +161,15 @@ export function SpeakerFlightsSection({
           speakers={[speaker]}
           isSubmitting={isSubmitting}
           onClose={() => { setIsCreating(false); setEditing(null); }}
-          onSave={(data) => {
-            if (editing) onUpdateFlight(editing.id, data);
-            else onCreateFlight(data);
-            setIsCreating(false);
-            setEditing(null);
+          onSave={async (data) => {
+            try {
+              if (editing) await onUpdateFlight(editing.id, data);
+              else await onCreateFlight(data);
+              setIsCreating(false);
+              setEditing(null);
+            } catch {
+              // Keep modal open with form data intact so the admin can fix the error.
+            }
           }}
         />
       )}
