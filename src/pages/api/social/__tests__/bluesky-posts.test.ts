@@ -5,12 +5,20 @@ import type { BlueskyFeedPost } from '@/lib/bluesky/types';
 const mocks = vi.hoisted(() => ({
   fetchFreshBlueskyFeed: vi.fn(),
   getCachedBlueskyFeed: vi.fn(),
+  InvalidBlueskyFeedCursorError: class InvalidBlueskyFeedCursorError extends Error {
+    constructor() {
+      super('Invalid Bluesky feed cursor');
+      this.name = 'InvalidBlueskyFeedCursorError';
+    }
+  },
   rateLimitCheck: vi.fn(),
   loggerError: vi.fn(),
 }));
 
 vi.mock('@/lib/bluesky', () => ({
+  BLUESKY_FEED_LOAD_MORE_PAGE_SIZE: 10,
   BLUESKY_FEED_TIMEOUT_MS: 3000,
+  InvalidBlueskyFeedCursorError: mocks.InvalidBlueskyFeedCursorError,
   fetchFreshBlueskyFeed: mocks.fetchFreshBlueskyFeed,
   getCachedBlueskyFeed: mocks.getCachedBlueskyFeed,
 }));
@@ -138,5 +146,40 @@ describe('/api/social/bluesky-posts', () => {
     expect(res._headers['Cache-Control']).toBe('no-store');
     expect(mocks.fetchFreshBlueskyFeed).toHaveBeenCalledWith({ debug: true });
     expect(mocks.getCachedBlueskyFeed).not.toHaveBeenCalled();
+  });
+
+  it('returns paginated cursor responses without cache', async () => {
+    const res = await callHandler({ method: 'GET', query: { cursor: 'cursor-1' } });
+
+    expect(res._status).toBe(200);
+    expect(res._json).toEqual({
+      posts: [post],
+      debug: { authenticated: false, entries: [] },
+    });
+    expect(res._headers['Cache-Control']).toBe('no-store');
+    expect(mocks.fetchFreshBlueskyFeed).toHaveBeenCalledWith({
+      cursor: 'cursor-1',
+      limit: 10,
+      debug: false,
+    });
+    expect(mocks.getCachedBlueskyFeed).not.toHaveBeenCalled();
+  });
+
+  it('validates cursor pagination limits', async () => {
+    const res = await callHandler({ method: 'GET', query: { cursor: 'cursor-1', limit: 'ten' } });
+
+    expect(res._status).toBe(400);
+    expect(res._json).toEqual(expect.objectContaining({ error: 'Validation failed' }));
+    expect(mocks.fetchFreshBlueskyFeed).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for invalid cursor payloads', async () => {
+    mocks.fetchFreshBlueskyFeed.mockRejectedValueOnce(new mocks.InvalidBlueskyFeedCursorError());
+
+    const res = await callHandler({ method: 'GET', query: { cursor: 'bad-cursor' } });
+
+    expect(res._status).toBe(400);
+    expect(res._json).toEqual({ error: 'Invalid cursor' });
+    expect(mocks.loggerError).not.toHaveBeenCalled();
   });
 });

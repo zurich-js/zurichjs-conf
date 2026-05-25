@@ -21,7 +21,7 @@ import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from '@/lib/bluesky';
-import type { BlueskyFeedPost } from '@/lib/bluesky';
+import type { BlueskyFeedResult } from '@/lib/bluesky';
 import type { GetServerSideProps } from 'next';
 import React from "react";
 
@@ -32,7 +32,7 @@ import React from "react";
  */
 interface HomePageProps {
   dehydratedState: DehydratedState;
-  blueskyPosts: BlueskyFeedPost[];
+  blueskyFeed: BlueskyFeedResult;
 }
 
 // FAQ data for schema (plain text versions)
@@ -59,7 +59,7 @@ const faqSchemaData = [
   },
 ];
 
-export default function Home({ blueskyPosts }: HomePageProps) {
+export default function Home({ blueskyFeed }: HomePageProps) {
   const handleCtaClick = () => {
     // Scroll smoothly to the tickets section
     const ticketsSection = document.getElementById('tickets');
@@ -131,7 +131,7 @@ export default function Home({ blueskyPosts }: HomePageProps) {
         </ShapedSection>
 
         <ShapedSection shape="widen" variant="dark" id="community-buzz">
-          <BlueskyFeedSection posts={blueskyPosts} />
+          <BlueskyFeedSection initialFeed={blueskyFeed} />
         </ShapedSection>
 
         <ShapedSection shape="tighten" variant="yellow" id="tickets">
@@ -189,15 +189,15 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
   }
 
   const blueskyResult = results[3];
-  const blueskyPosts =
+  const blueskyFeed =
     blueskyResult?.status === 'fulfilled' && blueskyResult.value
-      ? blueskyResult.value.posts
-      : [];
+      ? blueskyResult.value
+      : { posts: [] };
 
   return {
     props: {
       dehydratedState: dehydrate(),
-      blueskyPosts,
+      blueskyFeed,
     },
   };
 };

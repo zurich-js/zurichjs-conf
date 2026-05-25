@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, MessageCircle, Repeat2 } from 'lucide-react';
 import { SocialIcon } from '@/components/atoms';
-import type { BlueskyFeedPost } from '@/lib/bluesky/types';
+import { useBlueskyFeed } from '@/hooks/useBlueskyFeed';
+import { useLoadMoreOnIntersect } from '@/hooks/useLoadMoreOnIntersect';
+import type { BlueskyFeedPost, BlueskyFeedResult } from '@/lib/bluesky/types';
 
 interface BlogBlueskyFeedGridProps {
-  posts: BlueskyFeedPost[];
+  initialFeed: BlueskyFeedResult;
   className?: string;
 }
+
+const loadingCardKeys = ['loading-1', 'loading-2', 'loading-3'] as const;
 
 function formatRelativeTime(isoDate: string, now: number): string {
   const diff = now - new Date(isoDate).getTime();
@@ -87,8 +91,21 @@ function BlogBlueskyPostCard({ post, nowMs }: { post: BlueskyFeedPost; nowMs: nu
   );
 }
 
-export function BlogBlueskyFeedGrid({ posts, className = '' }: BlogBlueskyFeedGridProps) {
+export function BlogBlueskyFeedGrid({ initialFeed, className = '' }: BlogBlueskyFeedGridProps) {
+  const { posts, fetchNextPage, hasNextPage, isFetchingNextPage } = useBlueskyFeed({ initialFeed });
   const [nowMs, setNowMs] = useState<number | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  useLoadMoreOnIntersect({
+    targetRef: loadMoreRef,
+    enabled: Boolean(hasNextPage) && !isFetchingNextPage,
+    onLoadMore: handleLoadMore,
+  });
 
   useEffect(() => {
     setNowMs(Date.now());
@@ -103,6 +120,17 @@ export function BlogBlueskyFeedGrid({ posts, className = '' }: BlogBlueskyFeedGr
           <BlogBlueskyPostCard key={post.uri} post={post} nowMs={nowMs} />
         ))}
       </div>
+      {isFetchingNextPage && (
+        <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+          {loadingCardKeys.map((key) => (
+            <div key={key} className="min-h-48 animate-pulse rounded-lg bg-brand-gray-light" />
+          ))}
+        </div>
+      )}
+      {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+      <span className="sr-only" aria-live="polite">
+        {isFetchingNextPage ? 'Loading more Bluesky posts' : ''}
+      </span>
     </div>
   );
 }

@@ -17,5 +17,6 @@ export const blueskyFeedConfig = {
   maxPosts: 16,
 } as const satisfies BlueskyFeedConfig;
 
+export const BLUESKY_FEED_LOAD_MORE_PAGE_SIZE = 10;
 export const BLUESKY_FEED_CACHE_MAX_AGE_MS = 15 * 60 * 1000;
 export const BLUESKY_FEED_TIMEOUT_MS = 3_000;

@@ -118,6 +118,78 @@ describe('Bluesky feed helper', () => {
     expect(result.posts.some((post) => post.uri === official.uri)).toBe(false);
   });
 
+  it('returns the next page from buffered posts and upstream cursors', async () => {
+    const newest = rawPost(
+      'at://did:plc:ada/app.bsky.feed.post/newest',
+      '2026-05-04T10:00:00.000Z'
+    );
+    const middle = rawPost(
+      'at://did:plc:linus/app.bsky.feed.post/middle',
+      '2026-05-03T10:00:00.000Z'
+    );
+    const buffered = rawPost(
+      'at://did:plc:zurich/app.bsky.feed.post/buffered',
+      '2026-05-02T10:00:00.000Z',
+      'zurichjs.com'
+    );
+    const older = rawPost(
+      'at://did:plc:zurich/app.bsky.feed.post/older',
+      '2026-05-01T10:00:00.000Z',
+      'zurichjs.com'
+    );
+    const calls: XrpcGetParams[] = [];
+
+    const xrpc = createXrpc((params) => {
+      calls.push(params);
+      if (params.method === 'app.bsky.feed.getAuthorFeed' && params.params.cursor === 'author-page-2') {
+        return { feed: [{ post: older }] };
+      }
+      if (params.method === 'app.bsky.feed.getAuthorFeed') {
+        return { feed: [{ post: buffered }], cursor: 'author-page-2' };
+      }
+      if (params.params.mentions === 'zurichjs.com') {
+        return { posts: [newest] };
+      }
+      return { posts: [middle] };
+    });
+
+    const firstPage = await fetchFreshBlueskyFeed({
+      xrpc,
+      authenticated: false,
+      limit: 2,
+      config: {
+        handle: 'zurichjs.com',
+        hashtags: ['zurichjs'],
+        maxPosts: 8,
+      },
+    });
+
+    expect(firstPage.posts.map((post) => post.uri)).toEqual([newest.uri, middle.uri]);
+    expect(firstPage.nextCursor).toEqual(expect.any(String));
+
+    const secondPage = await fetchFreshBlueskyFeed({
+      xrpc,
+      authenticated: false,
+      cursor: firstPage.nextCursor,
+      limit: 2,
+      config: {
+        handle: 'zurichjs.com',
+        hashtags: ['zurichjs'],
+        maxPosts: 8,
+      },
+    });
+
+    expect(secondPage.posts.map((post) => post.uri)).toEqual([buffered.uri, older.uri]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          method: 'app.bsky.feed.getAuthorFeed',
+          params: expect.objectContaining({ cursor: 'author-page-2' }),
+        }),
+      ])
+    );
+  });
+
   it('returns partial results and debug entries when one upstream source fails', async () => {
     const official = rawPost(
       'at://did:plc:zurich/app.bsky.feed.post/official',

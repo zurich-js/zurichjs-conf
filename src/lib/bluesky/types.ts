@@ -31,5 +31,6 @@ export interface BlueskyFeedDebug {
 
 export interface BlueskyFeedResult {
   posts: BlueskyFeedPost[];
+  nextCursor?: string;
   debug?: BlueskyFeedDebug;
 }

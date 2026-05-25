@@ -11,13 +11,13 @@ import { getAllPosts, getAllTags } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog";
 import {SiteFooter, ShapedSection} from "@/components/organisms";
 import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from "@/lib/bluesky";
-import type { BlueskyFeedPost } from "@/lib/bluesky";
+import type { BlueskyFeedResult } from "@/lib/bluesky";
 import React from "react";
 
 interface BlogPageProps {
   posts: BlogPostMeta[];
   tags: string[];
-  blueskyPosts: BlueskyFeedPost[];
+  blueskyFeed: BlueskyFeedResult;
 }
 
 export const getStaticProps: GetStaticProps<BlogPageProps> = async () => {
@@ -26,12 +26,12 @@ export const getStaticProps: GetStaticProps<BlogPageProps> = async () => {
   const blueskyFeed = await getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }).catch(() => ({ posts: [] }));
 
   return {
-    props: { posts, tags, blueskyPosts: blueskyFeed.posts },
+    props: { posts, tags, blueskyFeed },
     revalidate: 900,
   };
 };
 
-export default function BlogPage({ posts, tags, blueskyPosts }: BlogPageProps) {
+export default function BlogPage({ posts, tags, blueskyFeed }: BlogPageProps) {
   const router = useRouter();
   const activeTag =
     typeof router.query.tag === "string" ? router.query.tag : undefined;
@@ -101,7 +101,7 @@ export default function BlogPage({ posts, tags, blueskyPosts }: BlogPageProps) {
               </div>
             )}
 
-            <BlogBlueskyFeedGrid posts={blueskyPosts} className="mt-16" />
+            <BlogBlueskyFeedGrid initialFeed={blueskyFeed} className="mt-16" />
           </div>
         </div>
       </main>

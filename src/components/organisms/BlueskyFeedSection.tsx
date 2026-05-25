@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Heart, MessageCircle, Repeat2 } from 'lucide-react';
 import { SocialIcon } from '@/components/atoms';
 import { SectionSplitView } from '@/components/organisms/SectionSplitView';
 import { useMotion } from '@/contexts/MotionContext';
-import type { BlueskyFeedPost } from '@/lib/bluesky/types';
+import { useBlueskyFeed } from '@/hooks/useBlueskyFeed';
+import { useLoadMoreOnIntersect } from '@/hooks/useLoadMoreOnIntersect';
+import type { BlueskyFeedPost, BlueskyFeedResult } from '@/lib/bluesky/types';
 
 export interface BlueskyFeedSectionProps {
-  posts: BlueskyFeedPost[];
+  initialFeed: BlueskyFeedResult;
   kicker?: string;
   title?: string;
   subtitle?: React.ReactNode;
@@ -18,6 +20,8 @@ interface PostCardProps {
   nowMs: number | null;
   compact?: boolean;
 }
+
+const MARQUEE_SECONDS_PER_POST = 8;
 
 function formatRelativeTime(isoDate: string, now: number): string {
   const diff = now - new Date(isoDate).getTime();
@@ -163,17 +167,32 @@ const defaultSubtitle = (
 );
 
 export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
-  posts,
+  initialFeed,
   kicker = 'Community Vibes',
   title = 'Join us on Bluesky',
   subtitle = defaultSubtitle,
   className = '',
 }) => {
   const { shouldAnimate } = useMotion();
+  const { posts, fetchNextPage, hasNextPage, isFetchingNextPage } = useBlueskyFeed({ initialFeed });
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [hasFocusWithin, setHasFocusWithin] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  useLoadMoreOnIntersect({
+    targetRef: loadMoreRef,
+    rootRef: scrollerRef,
+    enabled: Boolean(hasNextPage) && !isFetchingNextPage,
+    onLoadMore: handleLoadMore,
+    rootMargin: '0px 720px 0px 0px',
+  });
 
   useEffect(() => {
     setNowMs(Date.now());
@@ -185,6 +204,7 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
 
   const shouldScroll = shouldAnimate && posts.length > 1;
   const shouldAnimateScroller = shouldScroll && !hasFocusWithin;
+  const marqueeDurationSeconds = Math.max(130, posts.length * MARQUEE_SECONDS_PER_POST);
 
   return (
     <SectionSplitView
@@ -228,7 +248,7 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
               style={
                 shouldAnimateScroller
                   ? {
-                      animation: 'bluesky-feed-marquee 130s linear infinite',
+                      animation: `bluesky-feed-marquee ${marqueeDurationSeconds}s linear infinite`,
                       animationPlayState: isPaused ? 'paused' : 'running',
                     }
                   : undefined
@@ -237,6 +257,9 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
               {posts.map((post) => (
                 <PostCard key={post.uri} post={post} nowMs={nowMs} compact />
               ))}
+              {hasNextPage && (
+                <div ref={loadMoreRef} className="w-px shrink-0 self-stretch" aria-hidden="true" />
+              )}
               {shouldScroll && (
                 <div className="contents" aria-hidden="true" inert>
                   {posts.map((post) => (
@@ -246,6 +269,9 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
               )}
             </div>
           </div>
+          <span className="sr-only" aria-live="polite">
+            {isFetchingNextPage ? 'Loading more Bluesky posts' : ''}
+          </span>
         </div>
       </div>
 
