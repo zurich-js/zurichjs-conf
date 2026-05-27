@@ -219,6 +219,14 @@ export const programKeys = {
 } as const;
 
 /**
+ * Social feed query keys
+ */
+export const socialKeys = {
+  all: ['social'] as const,
+  bluesky: () => [...socialKeys.all, 'bluesky'] as const,
+} as const;
+
+/**
  * Discount query keys
  */
 export const discountKeys = {
@@ -247,4 +255,5 @@ export const queryKeys = {
   speakers: speakersKeys,
   program: programKeys,
   discount: discountKeys,
+  social: socialKeys,
 } as const;

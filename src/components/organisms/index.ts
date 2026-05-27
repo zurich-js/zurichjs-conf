@@ -25,6 +25,7 @@ export {
   SponsorshipContactSection,
 } from './sponsorship';
 export { AboutCTASection } from './AboutCTASection';
+export { BlueskyFeedSection } from './BlueskyFeedSection';
 
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';
@@ -39,6 +40,7 @@ export type { NavBarProps } from './NavBar';
 export type { CheckoutFormProps } from './CheckoutForm';
 export type { ShapedSectionProps } from './ShapedSection';
 export type { SponsorsSectionProps } from './SponsorsSection';
+export type { BlueskyFeedSectionProps } from './BlueskyFeedSection';
 export type { PhotoSlide, PhotoLayout } from '@/components/molecules';
 export type {
   SponsorshipHeroSectionProps,

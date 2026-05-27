@@ -9,7 +9,8 @@ import {
     SpeakersSection,
     LearnSection,
     NavBar,
-    SiteFooter
+    SiteFooter,
+    BlueskyFeedSection
 } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
 import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
@@ -19,6 +20,7 @@ import { createPrefetch } from '@/lib/prefetch';
 import { publicSponsorsQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
+import { blueskyFeedQueryOptions } from '@/lib/queries/bluesky';
 import { serverAnalytics } from '@/lib/analytics/server';
 import type { GetServerSideProps } from 'next';
 import React from "react";
@@ -140,6 +142,10 @@ export default function Home() {
           <TicketsSectionWithStripe />
         </ShapedSection>
 
+        <ShapedSection shape="tighten" variant="light" id="community-buzz">
+          <BlueskyFeedSection />
+        </ShapedSection>
+
         <ShapedSection shape="widen" variant="medium" id="faq">
           <FAQSection />
         </ShapedSection>
@@ -173,6 +179,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     optionalQuery(publicSponsorsQueryOptions),
     optionalQuery(publicSpeakersQueryOptions()),
     optionalQuery(ticketPricingQueryOptions),
+    optionalQuery(blueskyFeedQueryOptions),
   ]);
 
   // Report any rejected promises to PostHog (shouldn't happen since

@@ -23,6 +23,10 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   children: React.ReactNode;
   className?: string;
   href?: string;
+  /** When rendering as an anchor (asChild + href), forwarded to the <a> tag. */
+  target?: React.HTMLAttributeAnchorTarget;
+  /** When rendering as an anchor (asChild + href), forwarded to the <a> tag. */
+  rel?: string;
   loading?: boolean;
   forceDark?: boolean;
 }
@@ -60,6 +64,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       loading = false,
       className = '',
       href,
+      target,
+      rel,
       asChild = false,
       forceDark = false,
       ...props
@@ -83,9 +89,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     if (asChild && href) {
+      // Default rel for safe new-tab navigation when caller opts in via target.
+      const resolvedRel = rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined);
       return (
         <a
           href={isDisabled ? undefined : href}
+          target={target}
+          rel={resolvedRel}
           className={combinedClassName}
           aria-disabled={isDisabled}
           onClick={(e) => {
