@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Fast precheck for AI agents — a subset of pre-commit that runs in ~10-30s.
-# Use this to validate work before claiming a task is done, instead of running
-# the full pre-commit suite (which builds the whole project).
+# Fast Docker-local precheck for AI agents.
 #
 # Runs:
-#   1. oxlint on the whole repo (it's < 1s for 900+ files; not worth scoping)
-#   2. tsc --noEmit on the whole project (must be repo-wide for type resolution)
-#   3. vitest related on changed TS/TSX files (skipped if none)
+#   1. Varlock env/schema validation
+#   2. oxlint on the whole repo (it's < 1s for 900+ files; not worth scoping)
+#   3. tsc --noEmit on the whole project (must be repo-wide for type resolution)
+#   4. vitest related on changed TS/TSX files (skipped if none)
 #
 # The --staged flag only changes which set of changed files is fed to step 3.
 #
@@ -26,12 +25,16 @@ else
   CHANGED="$(git diff --name-only HEAD --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx)$' || true)"
 fi
 
+echo "==> Varlock"
+scripts/docker-run.sh pnpm exec varlock load
+
+echo
 echo "==> Lint"
-pnpm lint
+scripts/docker-run.sh pnpm exec oxlint --fix
 
 echo
 echo "==> Typecheck"
-pnpm typecheck
+scripts/docker-run.sh pnpm exec tsc --noEmit
 
 echo
 if [[ -z "$CHANGED" ]]; then
@@ -39,8 +42,8 @@ if [[ -z "$CHANGED" ]]; then
 else
   echo "==> Tests (related to changed files)"
   # shellcheck disable=SC2086
-  pnpm test:related $CHANGED
+  scripts/docker-run.sh pnpm exec vitest related --run $CHANGED
 fi
 
 echo
-echo "Precheck OK. Full pre-commit will also run a build."
+echo "Precheck OK."

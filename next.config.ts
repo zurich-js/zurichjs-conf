@@ -1,5 +1,25 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import { varlockNextConfigPlugin } from '@varlock/nextjs-integration/plugin';
 import type { NextConfig } from "next";
+import { legacyWebsiteRedirects } from './redirects';
+
+const getLegacyWebsiteBaseUrl = (): string =>
+  (process.env.NEXT_PUBLIC_ZURICHJS_MEETUP_URL || 'https://meetup.zurichjs.com').replace(/\/+$/, '');
+
+const getUrlHost = (value: string | undefined, fallback: string): string => {
+  try {
+    return new URL(value || fallback).host;
+  } catch {
+    return new URL(fallback).host;
+  }
+};
+
+const escapeHost = (host: string): string => host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const getMainHostPattern = (): string => {
+  const host = getUrlHost(process.env.NEXT_PUBLIC_ZURICHJS_HOME_URL, 'https://zurichjs.com');
+  return host === 'zurichjs.com' ? '(?:www\\.)?zurichjs\\.com' : escapeHost(host);
+};
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -49,6 +69,18 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
 
+  async redirects() {
+    const legacyWebsiteBaseUrl = getLegacyWebsiteBaseUrl();
+    const mainHostPattern = getMainHostPattern();
+
+    return legacyWebsiteRedirects.map((route) => ({
+      source: route,
+      destination: `${legacyWebsiteBaseUrl}${route}`,
+      permanent: true,
+      has: [{ type: 'host', value: mainHostPattern }],
+    }));
+  },
+
   // Proxy PostHog requests to bypass ad blockers
   async rewrites() {
     return [
@@ -68,7 +100,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const varlockConfig = varlockNextConfigPlugin()(nextConfig);
+
+export default withSentryConfig(varlockConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

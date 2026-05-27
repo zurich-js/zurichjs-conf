@@ -10,6 +10,8 @@ export interface CountdownProps {
   kicker?: string;
   kickerClassName?: string;
   className?: string;
+  variant?: 'default' | 'light' | 'dark';
+  align?: 'start' | 'center';
 }
 
 /**
@@ -21,7 +23,9 @@ export const Countdown: React.FC<CountdownProps> = ({
   targetDate,
   kicker = 'Time remaining',
   kickerClassName = '',
-  className = ''
+  className = '',
+  variant = 'default',
+  align = 'start',
 }) => {
   const timeRemaining = useCountdown(targetDate);
   const { shouldAnimate } = useMotion();
@@ -32,14 +36,24 @@ export const Countdown: React.FC<CountdownProps> = ({
     setIsMounted(true);
   }, []);
 
+  const isDefault = variant === 'default';
+  const textClass = variant === 'light' ? 'text-black' : 'text-brand-white';
+  const labelClass = variant === 'light' ? 'text-black/50' : 'text-brand-gray-medium';
+  const dividerClass = variant === 'light' ? 'bg-black/35' : 'bg-brand-gray-medium';
+  const alignmentClass = align === 'center' ? 'items-center text-center' : 'items-start';
+  const valueClass = isDefault ? 'text-md' : 'text-base sm:text-md';
+  const unitLabelClass = isDefault ? 'text-sm' : 'text-xs sm:text-sm';
+  const gapClass = isDefault ? 'gap-3' : 'gap-2 sm:gap-3';
+  const dividerHeightClass = isDefault ? 'h-6' : 'h-5 sm:h-6';
+
   if (timeRemaining.isComplete) {
     return (
       <div
-        className={`text-brand-white text-center ${className}`}
+        className={`${textClass} text-center ${className}`}
         role="status"
         aria-live="polite"
       >
-        <p className="text-xl font-semibold">Time is over</p>
+        <p className="text-sm font-semibold sm:text-base">Time is over</p>
       </div>
     );
   }
@@ -53,7 +67,7 @@ export const Countdown: React.FC<CountdownProps> = ({
 
   return (
     <motion.div
-      className={`flex flex-col items-start`}
+      className={`flex flex-col ${alignmentClass} ${className}`}
       role="timer"
       aria-live={isMounted ? "polite" : "off"}
       aria-label={isMounted ? `Time until event: ${timeRemaining.days} days, ${timeRemaining.hours} hours, ${timeRemaining.minutes} minutes, ${timeRemaining.seconds} seconds` : "Time until event"}
@@ -66,30 +80,30 @@ export const Countdown: React.FC<CountdownProps> = ({
       }}
     >
       {/* Header */}
-      <Kicker className={`mt-2 ${kickerClassName}`}>
+      <Kicker className={`mt-2 ${isDefault ? '' : '!normal-case !tracking-normal'} ${kickerClassName}`}>
         {kicker}
       </Kicker>
 
       {/* Countdown Units */}
-      <div className="flex items-center justify-center lg:justify-start gap-3">
+      <div className={`flex items-center justify-center lg:justify-start ${gapClass}`}>
         {units.map((unit, index) => (
           <React.Fragment key={unit.label}>
             {/* Unit Display */}
             <div className="flex flex-col items-center">
               <div
-                className="text-md font-normal text-brand-white tabular-nums"
+                className={`${valueClass} font-normal ${textClass} tabular-nums`}
                 suppressHydrationWarning
               >
                 {unit.padded ? padZero(unit.value) : unit.value}
               </div>
-              <div className="text-sm text-brand-gray-medium tracking-wide">
+              <div className={`${unitLabelClass} ${labelClass} tracking-wide`}>
                 {unit.label}
               </div>
             </div>
 
             {/* Divider */}
             {index < units.length - 1 && (
-              <div className="h-6 w-px bg-brand-gray-medium" aria-hidden="true" />
+              <div className={`${dividerHeightClass} w-px ${dividerClass}`} aria-hidden="true" />
             )}
           </React.Fragment>
         ))}
@@ -97,4 +111,3 @@ export const Countdown: React.FC<CountdownProps> = ({
     </motion.div>
   );
 };
-

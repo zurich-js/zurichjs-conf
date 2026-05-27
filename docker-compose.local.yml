@@ -1,0 +1,71 @@
+services:
+  supabase-bridge:
+    image: alpine/socat:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: TCP-LISTEN:54321,fork,reuseaddr TCP:host.docker.internal:54321
+
+  web:
+    image: node:22-bookworm
+    working_dir: /app
+    depends_on:
+      - supabase-bridge
+    ports:
+      - "3003:3003"
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+      - pnpm-store:/pnpm/store
+    environment:
+      APP_ENV: development
+      NODE_ENV: development
+      PORT: 3003
+      PNPM_HOME: /pnpm
+      NEXT_PUBLIC_BASE_URL: http://localhost:3003
+      NEXT_PUBLIC_SITE_URL: http://localhost:3003
+      NEXT_PUBLIC_ZURICHJS_HOME_URL: ${NEXT_PUBLIC_ZURICHJS_HOME_URL:-https://zurichjs.com}
+      NEXT_PUBLIC_ZURICHJS_MEETUP_URL: ${NEXT_PUBLIC_ZURICHJS_MEETUP_URL:-https://meetup.zurichjs.com}
+      NEXT_PUBLIC_ZURICHJS_CONF_URL: ${NEXT_PUBLIC_ZURICHJS_CONF_URL:-https://conf.zurichjs.com}
+      ZURICHJS_SANITY_PROJECT_ID: ${ZURICHJS_SANITY_PROJECT_ID:-viqjrovw}
+      ZURICHJS_SANITY_DATASET: ${ZURICHJS_SANITY_DATASET:-production}
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      SUPABASE_INTERNAL_URL: http://supabase-bridge:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?Run through scripts/docker-dev.sh so 1Password can inject NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:?Run through scripts/docker-dev.sh so 1Password can inject SUPABASE_SECRET_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?Run through scripts/docker-dev.sh so 1Password can inject STRIPE_SECRET_KEY}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:?Run through scripts/docker-dev.sh so 1Password can inject NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?Run through scripts/docker-dev.sh so 1Password can inject STRIPE_WEBHOOK_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY:?Run through scripts/docker-dev.sh so 1Password can inject RESEND_API_KEY}
+      RESEND_STUDENT_WAITLIST_AUDIENCE_ID: ${RESEND_STUDENT_WAITLIST_AUDIENCE_ID:-}
+      EMAIL_FROM: ${EMAIL_FROM:-ZurichJS Conference hello@zurichjs.com}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-hello@zurichjs.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Run through scripts/docker-dev.sh so 1Password can inject ADMIN_PASSWORD}
+      ADMIN_READONLY_API_KEY: ${ADMIN_READONLY_API_KEY:-}
+      ORDER_TOKEN_SECRET: ${ORDER_TOKEN_SECRET:?Run through scripts/docker-dev.sh so 1Password can inject ORDER_TOKEN_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-}
+      NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+      NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-}
+      NEXT_PUBLIC_DISCOUNT_SHOW_PROBABILITY: ${NEXT_PUBLIC_DISCOUNT_SHOW_PROBABILITY:-0.25}
+      NEXT_PUBLIC_DISCOUNT_FORCE_SHOW: ${NEXT_PUBLIC_DISCOUNT_FORCE_SHOW:-false}
+      DISCOUNT_SHOW_PROBABILITY: ${DISCOUNT_SHOW_PROBABILITY:-0.25}
+      DISCOUNT_PERCENT_OFF: ${DISCOUNT_PERCENT_OFF:-10}
+      DISCOUNT_DURATION_MINUTES: ${DISCOUNT_DURATION_MINUTES:-120}
+      DISCOUNT_COOLDOWN_HOURS: ${DISCOUNT_COOLDOWN_HOURS:-24}
+      NEXT_PUBLIC_EASTER_EGG_ENABLED: ${NEXT_PUBLIC_EASTER_EGG_ENABLED:-true}
+      EASTER_EGG_ENABLED: ${EASTER_EGG_ENABLED:-true}
+      EASTER_EGG_PERCENT_OFF: ${EASTER_EGG_PERCENT_OFF:-5}
+      EASTER_EGG_TOKEN_EXPIRY_MINUTES: ${EASTER_EGG_TOKEN_EXPIRY_MINUTES:-15}
+      EASTER_EGG_DAILY_CAP: ${EASTER_EGG_DAILY_CAP:-0}
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
+      KIWI_API_KEY: ${KIWI_API_KEY:-}
+    command: >
+      sh -lc "corepack enable &&
+      corepack prepare pnpm@11.1.1 --activate &&
+      pnpm config set store-dir /pnpm/store &&
+      rm -rf .next node_modules/.cache &&
+      pnpm install --frozen-lockfile &&
+      pnpm exec next dev -H 0.0.0.0 -p 3003"
+
+volumes:
+  node-modules:
+  pnpm-store:

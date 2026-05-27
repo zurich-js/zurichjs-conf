@@ -23,7 +23,7 @@ A production-ready conference ticketing and workshop management platform built w
 - **Styling**: Tailwind CSS v4
 - **State Management**: React Query, Context API
 - **Type Safety**: TypeScript (strict mode)
-- **Code Quality**: ESLint, Husky, lint-staged
+- **Code Quality**: oxlint, Vitest, TypeScript, Varlock
 
 ## Project Structure
 
@@ -65,58 +65,61 @@ docs/
 
 ### Prerequisites
 
-- Node.js 20+
-- npm or yarn
+- Docker Desktop
+- 1Password CLI (`op`) signed in locally
 - Supabase account
 - Stripe account
 - Resend account (for emails)
 
 ### Installation
 
-1. **Clone and install dependencies**
+1. **Clone the repository**
    ```bash
    git clone <repo-url>
    cd zurichjs-conf
-   npm install
    ```
 
-2. **Set up environment variables**
+2. **Set up 1Password references**
+
+   Local secrets are read through `.env.1password`, which contains committed
+   `op://` references only. Create matching items/fields in 1Password or update
+   the references to your vault/item names. Do not create a plaintext `.env.local`
+   for local development.
+
+3. **Authenticate Supabase CLI inside Docker**
+
    ```bash
-   cp .env.example .env.local
+   just supabase-login
    ```
 
-   Fill in your credentials in `.env.local`:
-   - Supabase URL and keys
-   - Stripe keys and webhook secret
-   - Resend API key
+   This runs `supabase login` inside the Dockerized CLI container and stores the
+   CLI credential in the `supabase-cli` Docker volume.
 
-3. **Set up Supabase**
+4. **Run the Docker development environment**
    ```bash
-   # Install Supabase CLI
-   npm install -g supabase
-
-   # Link to your project
-   supabase link --project-ref your-project-ref
-
-   # Apply migrations
-   supabase db push
+   just dev
    ```
 
-4. **Configure Stripe**
+   This runs `op run --env-file=.env.1password -- docker compose ...`, starts
+   Supabase by running the Supabase CLI inside a Node container, installs
+   dependencies inside the Node app container, and starts Next.js on
+   [http://localhost:3003](http://localhost:3003).
+   The dev script also clears any stale `public.ecr.aws` Docker credential before
+   startup because the Supabase CLI pulls local service images from Public ECR.
+
+5. **Configure Stripe**
    - Create products and prices in Stripe Dashboard
    - Set up webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
-   - Add webhook secret to `.env.local`
+   - Store the webhook secret in the 1Password item referenced by `.env.1password`
 
-5. **Run development server**
+6. **Stop the Docker development environment**
    ```bash
-   npm run dev
+   just down
    ```
 
-   Open [http://localhost:3000](http://localhost:3000)
-
-6. **Test webhooks locally** (optional)
+7. **Test webhooks locally** (optional)
    ```bash
-   stripe listen --forward-to localhost:3000/api/webhooks/stripe
+   stripe listen --forward-to localhost:3003/api/webhooks/stripe
    ```
 
 ## Documentation
@@ -132,19 +135,23 @@ docs/
 ### Available Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run typecheck    # Run TypeScript type checking
-npm run email:dev    # Preview email templates
+just dev             # Start local Docker dev detached with 1Password injection
+just down            # Stop local Docker dev and Supabase containers
+just supabase-login  # Authenticate Supabase CLI inside Docker
+just lint            # Run oxlint inside Docker
+just typecheck       # Run TypeScript type checking inside Docker
+just test            # Run Vitest inside Docker
+just test-related <files> # Run related Vitest tests inside Docker
+just check           # Run Varlock + lint + typecheck + related tests inside Docker
+just build           # Run production Next.js build inside Docker
 ```
 
 ### Code Quality
 
-- Pre-commit hooks run linting and type checking
+- Environment schema validation is handled by Varlock
 - Strict TypeScript configuration
-- ESLint with Next.js recommended rules
+- oxlint for linting
+- Package scripts are guarded so local checks/builds run through Docker or CI
 
 ## Architecture Highlights
 

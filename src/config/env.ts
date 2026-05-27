@@ -65,6 +65,7 @@ let _serverEnv: {
   isDevelopment: boolean;
   isProduction: boolean;
   supabase: {
+    url: string;
     secretKey: string;
   };
   stripe: {
@@ -94,6 +95,10 @@ function getServerEnv() {
       isProduction: process.env.NODE_ENV === 'production',
 
       supabase: {
+        url: getOptionalEnv(
+          process.env.SUPABASE_INTERNAL_URL,
+          process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+        ),
         secretKey: getRequiredEnv(
           process.env.SUPABASE_SECRET_KEY,
           'SUPABASE_SECRET_KEY'

@@ -23,8 +23,8 @@ existing example in the same domain.
    doesn't exist, create it). Mock the Supabase client at the boundary.
 6. **Wire the client call** in `src/lib/cfp/api.ts` (fetch wrapper).
 7. **Wire the hook** in `src/hooks/cfp/useSubmissions.ts` (or a new hook).
-8. **Run:** `pnpm test:related src/pages/api/cfp/submissions/[id]/bookmark.ts &&
-   pnpm typecheck`.
+8. **Run:** `just test-related src/pages/api/cfp/submissions/[id]/bookmark.ts &&
+   just typecheck`.
 
 ---
 
@@ -38,7 +38,7 @@ existing example in the same domain.
    policy. See `supabase/migrations/CLAUDE.md` for the template.
 3. **Apply locally:** `supabase db push` (or via the seed scripts).
 4. **Regenerate types:** `scripts/regen-db-types.sh` (or `/regen-db-types`).
-5. **Run typecheck:** `pnpm typecheck` — fix any drift.
+5. **Run typecheck:** `just typecheck` — fix any drift.
 6. **Update domain code** in `src/lib/<domain>/` to use the new column/table.
 7. **Commit** the migration AND the regenerated `database.generated.ts`
    together.
@@ -119,22 +119,19 @@ existing example in the same domain.
 
 ---
 
-## Investigate a failing pre-commit hook
+## Investigate a failing local check
 
-The hook runs: env-check → lint-staged (oxlint + vitest related) → full test
-suite → typecheck → build.
+Local validation is explicit rather than Git-hook driven.
 
-- **Env-check failure:** new `process.env.X` reference without an entry in
-  `.env.example`. Add the var.
-- **Lint failure:** run `pnpm lint` to auto-fix; commit the result.
-- **Test failure:** run `pnpm test:related <file>` to scope. Fix the test or the
+- **Env/schema failure:** new `process.env.X` reference without an entry in
+  `.env.schema`. Add the var and run the Varlock check.
+- **Lint failure:** run `just lint` to auto-fix; commit the result.
+- **Test failure:** run `just test-related <file>` to scope. Fix the test or the
   code.
-- **Typecheck failure:** run `pnpm typecheck` and read the error. Often a missing
+- **Typecheck failure:** run `just typecheck` and read the error. Often a missing
   `database.generated.ts` regen.
-- **Build failure:** run `pnpm build` locally; usually a Next.js-specific issue
-  (image domain, dynamic route param missing).
-
-**Never** bypass with `--no-verify`. Pre-commit catches real problems.
+- **Build failure:** run `just build`; usually a Next.js-specific
+  issue (image domain, dynamic route param missing).
 
 ---
 
@@ -145,4 +142,4 @@ scripts/agent-precheck.sh
 ```
 
 Runs lint + typecheck + vitest related on changed files. Takes ~10-30s. Use this
-to validate work without paying the full pre-commit cost.
+for a quick local validation pass.
