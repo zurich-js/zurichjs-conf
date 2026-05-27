@@ -25,7 +25,7 @@ export interface SponsorsSectionProps {
 // Minimum empty slots per size category to keep the grid looking full
 const MIN_SLOTS: Record<string, number> = {
     extralarge: 1,
-    large: 0,
+    large: 1,
     medium: 2,
     default: 2,
     small: 4,

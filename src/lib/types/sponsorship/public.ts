@@ -66,7 +66,7 @@ export const TIER_DISPLAY_CONFIG: Record<string, { sizes: Record<string, GridSiz
   bronze:    {
     sizes: {
       base: { cols: 2, rows: 1 },
-      md: { cols: 3, rows: 2 },
+      sm: { cols: 4, rows: 2 },
     },
     priority: 5,
     sizeCategory: 'small',
@@ -74,7 +74,7 @@ export const TIER_DISPLAY_CONFIG: Record<string, { sizes: Record<string, GridSiz
   supporter: {
     sizes: {
       base: { cols: 1, rows: 1 },
-      md: { cols: 2, rows: 2 },
+      sm: { cols: 3, rows: 2 },
     },
     priority: 6,
     sizeCategory: 'tiny',
