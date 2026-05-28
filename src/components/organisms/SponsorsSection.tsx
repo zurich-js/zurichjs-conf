@@ -26,9 +26,9 @@ export interface SponsorsSectionProps {
 const MIN_SLOTS: Record<string, number> = {
     extralarge: 1,
     large: 1,
-    medium: 2,
-    default: 2,
-    small: 4,
+    medium: 1,
+    default: 1,
+    small: 1,
     tiny: 4,
 };
 
