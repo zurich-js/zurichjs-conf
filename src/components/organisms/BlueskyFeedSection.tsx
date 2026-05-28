@@ -21,7 +21,8 @@ interface PostCardProps {
   compact?: boolean;
 }
 
-const MARQUEE_SECONDS_PER_POST = 8;
+const MARQUEE_PIXELS_PER_SECOND = 32;
+const MANUAL_PAUSE_MS = 1400;
 
 function formatRelativeTime(isoDate: string, now: number): string {
   const diff = now - new Date(isoDate).getTime();
@@ -177,9 +178,15 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
   const { posts, fetchNextPage, hasNextPage, isFetchingNextPage } = useBlueskyFeed({ initialFeed });
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [hasFocusWithin, setHasFocusWithin] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const isPausedRef = useRef(isPaused);
+  const scrollPositionRef = useRef(0);
+  const contentWidthRef = useRef(0);
+  const isAutoScrollingRef = useRef(false);
+  const manualPauseUntilRef = useRef(0);
+  const lastFrameRef = useRef<number | null>(null);
 
   const handleLoadMore = useCallback(() => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -198,13 +205,125 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
     setNowMs(Date.now());
   }, []);
 
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const track = trackRef.current;
+    if (!scroller || !track || !shouldAnimate || posts.length < 2) {
+      return undefined;
+    }
+
+    let isResetting = false;
+    let clearAutoScrollFrame = 0;
+
+    const normalizeScrollPosition = (syncFromScroller: boolean) => {
+      const contentWidth = contentWidthRef.current;
+      if (contentWidth <= 0 || isResetting) {
+        return;
+      }
+
+      if (syncFromScroller) {
+        scrollPositionRef.current = scroller.scrollLeft;
+      }
+
+      const lowerBound = contentWidth * 0.5;
+      const upperBound = contentWidth * 1.5;
+
+      if (scrollPositionRef.current < lowerBound) {
+        isResetting = true;
+        scrollPositionRef.current += contentWidth;
+        scroller.scrollLeft = scrollPositionRef.current;
+        isResetting = false;
+      } else if (scrollPositionRef.current > upperBound) {
+        isResetting = true;
+        scrollPositionRef.current -= contentWidth;
+        scroller.scrollLeft = scrollPositionRef.current;
+        isResetting = false;
+      }
+    };
+
+    const pauseForManualInteraction = () => {
+      manualPauseUntilRef.current = performance.now() + MANUAL_PAUSE_MS;
+      isAutoScrollingRef.current = false;
+      scrollPositionRef.current = scroller.scrollLeft;
+    };
+
+    const handleScroll = () => {
+      if (isAutoScrollingRef.current) {
+        return;
+      }
+
+      if (Math.abs(scroller.scrollLeft - scrollPositionRef.current) < 2) {
+        return;
+      }
+
+      pauseForManualInteraction();
+      normalizeScrollPosition(true);
+    };
+
+    const updateWidth = () => {
+      contentWidthRef.current = track.scrollWidth / 3;
+      if (contentWidthRef.current > 0) {
+        scroller.scrollLeft = contentWidthRef.current;
+        scrollPositionRef.current = scroller.scrollLeft;
+      }
+    };
+
+    updateWidth();
+
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(track);
+    scroller.addEventListener('pointerdown', pauseForManualInteraction, { passive: true });
+    scroller.addEventListener('touchstart', pauseForManualInteraction, { passive: true });
+    scroller.addEventListener('wheel', pauseForManualInteraction, { passive: true });
+    scroller.addEventListener('scroll', handleScroll, { passive: true });
+
+    let frameId = 0;
+    const animate = (timestamp: number) => {
+      const lastFrame = lastFrameRef.current ?? timestamp;
+      const delta = Math.min(timestamp - lastFrame, 64);
+      lastFrameRef.current = timestamp;
+
+      if (isPausedRef.current || timestamp < manualPauseUntilRef.current) {
+        scrollPositionRef.current = scroller.scrollLeft;
+        frameId = window.requestAnimationFrame(animate);
+        return;
+      }
+
+      scrollPositionRef.current += MARQUEE_PIXELS_PER_SECOND * (delta / 1000);
+      normalizeScrollPosition(false);
+      isAutoScrollingRef.current = true;
+      scroller.scrollLeft = scrollPositionRef.current;
+      window.cancelAnimationFrame(clearAutoScrollFrame);
+      clearAutoScrollFrame = window.requestAnimationFrame(() => {
+        isAutoScrollingRef.current = false;
+      });
+      frameId = window.requestAnimationFrame(animate);
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.cancelAnimationFrame(clearAutoScrollFrame);
+      resizeObserver.disconnect();
+      scroller.removeEventListener('pointerdown', pauseForManualInteraction);
+      scroller.removeEventListener('touchstart', pauseForManualInteraction);
+      scroller.removeEventListener('wheel', pauseForManualInteraction);
+      scroller.removeEventListener('scroll', handleScroll);
+      lastFrameRef.current = null;
+    };
+  }, [posts.length, shouldAnimate]);
+
   if (posts.length === 0) {
     return null;
   }
 
   const shouldScroll = shouldAnimate && posts.length > 1;
-  const shouldAnimateScroller = shouldScroll && !hasFocusWithin;
-  const marqueeDurationSeconds = Math.max(130, posts.length * MARQUEE_SECONDS_PER_POST);
+  const showLoopCopies = shouldScroll;
 
   return (
     <SectionSplitView
@@ -224,10 +343,9 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
           onFocus={(event) => {
             const focusCameFromOutside = !event.currentTarget.contains(event.relatedTarget);
             setIsPaused(true);
-            setHasFocusWithin(true);
             if (focusCameFromOutside) {
               scrollerRef.current?.scrollTo({
-                left: 0,
+                left: shouldScroll ? contentWidthRef.current : 0,
                 behavior: shouldAnimate ? 'smooth' : 'auto',
               });
             }
@@ -235,7 +353,6 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) {
               setIsPaused(false);
-              setHasFocusWithin(false);
             }
           }}
         >
@@ -244,26 +361,26 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
             className="scrollbar-hide overflow-x-auto overscroll-x-contain px-4 py-2 sm:px-8 [mask-image:linear-gradient(to_right,transparent_0,black_12px,black_calc(100%-12px),transparent_100%)] md:[mask-image:linear-gradient(to_right,transparent_0,black_48px,black_calc(100%-48px),transparent_100%)]"
           >
             <div
+              ref={trackRef}
               className="flex w-max gap-4"
-              style={
-                shouldAnimateScroller
-                  ? {
-                      animation: `bluesky-feed-marquee ${marqueeDurationSeconds}s linear infinite`,
-                      animationPlayState: isPaused ? 'paused' : 'running',
-                    }
-                  : undefined
-              }
             >
+              {showLoopCopies && (
+                <div className="contents" aria-hidden="true" inert>
+                  {posts.map((post) => (
+                    <PostCard key={`${post.uri}-before-clone`} post={post} nowMs={nowMs} compact />
+                  ))}
+                </div>
+              )}
               {posts.map((post) => (
                 <PostCard key={post.uri} post={post} nowMs={nowMs} compact />
               ))}
               {hasNextPage && (
                 <div ref={loadMoreRef} className="w-px shrink-0 self-stretch" aria-hidden="true" />
               )}
-              {shouldScroll && (
+              {showLoopCopies && (
                 <div className="contents" aria-hidden="true" inert>
                   {posts.map((post) => (
-                    <PostCard key={`${post.uri}-clone`} post={post} nowMs={nowMs} compact />
+                    <PostCard key={`${post.uri}-after-clone`} post={post} nowMs={nowMs} compact />
                   ))}
                 </div>
               )}
@@ -274,17 +391,6 @@ export const BlueskyFeedSection: React.FC<BlueskyFeedSectionProps> = ({
           </span>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes bluesky-feed-marquee {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-      `}</style>
     </SectionSplitView>
   );
 };
