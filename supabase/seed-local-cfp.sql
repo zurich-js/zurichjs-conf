@@ -2,6 +2,336 @@
 -- Applied automatically by `supabase db reset` for local development.
 -- Covers reviewer-dashboard testing plus a small public speakers lineup.
 
+-- Public sponsorship data
+-- Mirrors the public, paid sponsor set from production for local homepage work.
+insert into public.sponsorship_tiers (
+    id,
+    name,
+    description,
+    price_chf,
+    price_eur,
+    addon_credit_chf,
+    addon_credit_eur,
+    display_order,
+    is_active
+)
+values
+    ('diamond', 'Diamond', 'Ultimate visibility and premium brand placement', 1500000, 1250000, 500000, 500000, 1, true),
+    ('platinum', 'Platinum', 'Maximum exposure and brand recognition', 1100000, 950000, 400000, 400000, 2, true),
+    ('gold', 'Gold', 'Strong presence and engagement opportunities', 850000, 725000, 250000, 250000, 3, true),
+    ('silver', 'Silver', 'Solid brand visibility and networking', 600000, 500000, 150000, 150000, 4, true),
+    ('bronze', 'Bronze', 'Great entry-level sponsorship', 300000, 250000, 100000, 100000, 5, true),
+    ('supporter', 'Supporter', 'Show your support for the community', 120000, 100000, 0, 0, 6, true)
+on conflict (id) do update set
+    name = excluded.name,
+    description = excluded.description,
+    price_chf = excluded.price_chf,
+    price_eur = excluded.price_eur,
+    addon_credit_chf = excluded.addon_credit_chf,
+    addon_credit_eur = excluded.addon_credit_eur,
+    display_order = excluded.display_order,
+    is_active = excluded.is_active,
+    updated_at = now();
+
+insert into public.sponsors (
+    id,
+    company_name,
+    company_website,
+    billing_address_street,
+    billing_address_city,
+    billing_address_postal_code,
+    billing_address_country,
+    contact_name,
+    contact_email,
+    logo_url,
+    logo_url_color,
+    logo_background_color,
+    is_logo_public,
+    metadata
+)
+values
+    (
+        '85000000-0000-4000-8000-000000000001',
+        'Namespace Labs',
+        'https://namespace.so',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'Namespace Labs',
+        'sponsors+namespace@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/d40fcbfa-5004-4fa8-94eb-678b97fea4b0/logo_1775154215001.png?v=1775154215001',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/d40fcbfa-5004-4fa8-94eb-678b97fea4b0/color/logo_color_1779880853471.png?v=1779880853471',
+        '#ffffff',
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000002',
+        'Smallpdf',
+        'https://smallpdf.com/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'Smallpdf',
+        'sponsors+smallpdf@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/8c2d3546-afd3-4328-99aa-a7eea09fee8d/logo_1778234862734.png?v=1778234862734',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/8c2d3546-afd3-4328-99aa-a7eea09fee8d/color/logo_color_1778234880418.png?v=1778234880418',
+        '#FFFFFF',
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000003',
+        'Vercel, INC',
+        'https://vercel.com/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'Vercel, INC',
+        'sponsors+vercel@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/8d2707dc-7d8c-411f-9798-3346f8bea101/logo_1778234958130.png?v=1778234958130',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/8d2707dc-7d8c-411f-9798-3346f8bea101/color/logo_color_1778234963665.png?v=1778234963665',
+        '#FFFFFF',
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000004',
+        'Tiptap GmbH',
+        'https://tiptap.dev/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'Tiptap GmbH',
+        'sponsors+tiptap@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/6817af2f-dce4-4f46-a7bf-bc601871dc23/logo_1778235076920.png?v=1778235076920',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/6817af2f-dce4-4f46-a7bf-bc601871dc23/color/logo_color_1778235089895.png?v=1778235089895',
+        '#FFFFFF',
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000005',
+        'SAE Institute Switzerland AG',
+        'https://www.sae.edu/che/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'SAE Institute Switzerland AG',
+        'sponsors+sae@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/4cf9116c-ca04-4053-940d-13ea1d311bd1/logo_1772010533533.png?v=1772010533533',
+        null,
+        null,
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000006',
+        'Juranosaurus Techs',
+        'https://www.juranosaurustechs.com/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'Juranosaurus Techs',
+        'sponsors+juranosaurus@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/72beb987-1504-460e-b75d-bd9f96284e54/logo_1777990669545.png?v=1777990669545',
+        null,
+        null,
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000007',
+        'StickerMule',
+        'http://stickermule.com/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'StickerMule',
+        'sponsors+stickermule@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/f1fec90c-fb9d-4d67-96f0-ae3650afcebb/logo_1778256260651.png?v=1778256260651',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/f1fec90c-fb9d-4d67-96f0-ae3650afcebb/color/logo_color_1778256266886.png?v=1778256266886',
+        '#FFFFFF',
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000008',
+        'Stormkit',
+        'https://www.stormkit.io/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'Stormkit',
+        'sponsors+stormkit@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/aed45ccd-46bf-44c9-8a0d-56936e059835/logo_1778234821096.png?v=1778234821096',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/aed45ccd-46bf-44c9-8a0d-56936e059835/color/logo_color_1778234812787.png?v=1778234812787',
+        '#17172a',
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '85000000-0000-4000-8000-000000000009',
+        'Trust FIN GmbH',
+        'https://trust-fin.ch/',
+        'Seed Street 1',
+        'Zurich',
+        '8000',
+        'Switzerland',
+        'Trust FIN GmbH',
+        'sponsors+trust-fin@zurichjs.test',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/5a65a5b9-7661-4caf-9bd5-59e4e9857d07/logo_1779346848539.png?v=1779346848539',
+        'https://svkbzhlrjujeteqjrckv.supabase.co/storage/v1/object/public/sponsorship-assets/logos/5a65a5b9-7661-4caf-9bd5-59e4e9857d07/color/logo_color_1779346893364.png?v=1779346893364',
+        '#FFFFFF',
+        true,
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    )
+on conflict (id) do update set
+    company_name = excluded.company_name,
+    company_website = excluded.company_website,
+    billing_address_street = excluded.billing_address_street,
+    billing_address_city = excluded.billing_address_city,
+    billing_address_postal_code = excluded.billing_address_postal_code,
+    billing_address_country = excluded.billing_address_country,
+    contact_name = excluded.contact_name,
+    contact_email = excluded.contact_email,
+    logo_url = excluded.logo_url,
+    logo_url_color = excluded.logo_url_color,
+    logo_background_color = excluded.logo_background_color,
+    is_logo_public = excluded.is_logo_public,
+    metadata = excluded.metadata,
+    updated_at = now();
+
+insert into public.sponsorship_deals (
+    id,
+    sponsor_id,
+    tier_id,
+    deal_number,
+    currency,
+    status,
+    paid_at,
+    paid_by,
+    metadata
+)
+values
+    (
+        '86000000-0000-4000-8000-000000000001',
+        '85000000-0000-4000-8000-000000000001',
+        'platinum',
+        'SPO-2026-SEED-0001',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000002',
+        '85000000-0000-4000-8000-000000000002',
+        'gold',
+        'SPO-2026-SEED-0002',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000003',
+        '85000000-0000-4000-8000-000000000003',
+        'gold',
+        'SPO-2026-SEED-0003',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000004',
+        '85000000-0000-4000-8000-000000000004',
+        'silver',
+        'SPO-2026-SEED-0004',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000005',
+        '85000000-0000-4000-8000-000000000005',
+        'bronze',
+        'SPO-2026-SEED-0005',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000006',
+        '85000000-0000-4000-8000-000000000006',
+        'supporter',
+        'SPO-2026-SEED-0006',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000007',
+        '85000000-0000-4000-8000-000000000007',
+        'supporter',
+        'SPO-2026-SEED-0007',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000008',
+        '85000000-0000-4000-8000-000000000008',
+        'supporter',
+        'SPO-2026-SEED-0008',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    ),
+    (
+        '86000000-0000-4000-8000-000000000009',
+        '85000000-0000-4000-8000-000000000009',
+        'supporter',
+        'SPO-2026-SEED-0009',
+        'CHF',
+        'paid',
+        '2026-05-01T10:00:00.000Z',
+        'seed-local-cfp',
+        '{"source": "seed-local-cfp", "public_fixture": true}'::jsonb
+    )
+on conflict (id) do update set
+    sponsor_id = excluded.sponsor_id,
+    tier_id = excluded.tier_id,
+    deal_number = excluded.deal_number,
+    currency = excluded.currency,
+    status = excluded.status,
+    paid_at = excluded.paid_at,
+    paid_by = excluded.paid_by,
+    metadata = excluded.metadata,
+    updated_at = now();
+
 -- Reviewers
 insert into public.cfp_reviewers (
     id,
