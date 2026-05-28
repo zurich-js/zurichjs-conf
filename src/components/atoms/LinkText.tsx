@@ -21,7 +21,7 @@ export const LinkText: React.FC<LinkTextProps> = ({
   external = false,
   animate = false,
 }) => {
-  const baseClassName = 'inline-flex items-center gap-2 text-[#258BCC] hover:text-[#1E6FA3] font-semibold transition-colors duration-200 underline decoration-2 underline-offset-4';
+  const baseClassName = 'inline-flex w-fit items-center gap-2 text-[#258BCC] hover:text-[#1E6FA3] font-semibold transition-colors duration-200 underline decoration-2 underline-offset-4';
   const combinedClassName = `${baseClassName} ${className}`;
 
   const content = (
@@ -78,6 +78,7 @@ export const LinkText: React.FC<LinkTextProps> = ({
   if (animate) {
     return (
       <motion.div
+        className="w-fit"
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4 }}
@@ -95,6 +96,5 @@ export const LinkText: React.FC<LinkTextProps> = ({
     </Link>
   );
 };
-
 
 

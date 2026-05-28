@@ -9,8 +9,10 @@ export interface SectionSplitViewProps {
   link?: {
     label: string;
     href: string;
+    external?: boolean;
   };
   variant: 'light' | 'dark';
+  className?: string;
   children: React.ReactNode;
 }
 
@@ -21,12 +23,13 @@ export const SectionSplitView = ({
     subtitle,
     link,
     variant,
+    className = '',
     children
 }: SectionSplitViewProps) => {
   const { shouldAnimate } = useMotion();
 
   return (
-    <div className="flex flex-col xl:flex-row xl:gap-10">
+    <div className={`flex flex-col xl:flex-row xl:gap-10 ${className}`.trim()}>
       {/* Left column: Title and description */}
       <div className="flex flex-col gap-2.5 flex-[1_0_0]">
         <Kicker variant={variant}>
@@ -49,7 +52,7 @@ export const SectionSplitView = ({
           )}
 
           {link && (
-            <LinkText href={link.href} animate={shouldAnimate}>
+            <LinkText href={link.href} external={link.external} animate={shouldAnimate}>
               {link.label}
             </LinkText>
           )}

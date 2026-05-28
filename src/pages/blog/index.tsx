@@ -6,27 +6,32 @@ import {
   organizationSchema,
   generateBreadcrumbSchema,
 } from "@/components/SEO";
-import { BlogPostCard, BlogTagFilter } from "@/components/blog";
+import { BlogBlueskyFeedGrid, BlogPostCard, BlogTagFilter } from "@/components/blog";
 import { getAllPosts, getAllTags } from "@/lib/blog";
 import type { BlogPostMeta } from "@/lib/blog";
 import {SiteFooter, ShapedSection} from "@/components/organisms";
+import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from "@/lib/bluesky";
+import type { BlueskyFeedResult } from "@/lib/bluesky";
 import React from "react";
 
 interface BlogPageProps {
   posts: BlogPostMeta[];
   tags: string[];
+  blueskyFeed: BlueskyFeedResult;
 }
 
 export const getStaticProps: GetStaticProps<BlogPageProps> = async () => {
   const posts = getAllPosts();
   const tags = getAllTags();
+  const blueskyFeed = await getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }).catch(() => ({ posts: [] }));
 
   return {
-    props: { posts, tags },
+    props: { posts, tags, blueskyFeed },
+    revalidate: 900,
   };
 };
 
-export default function BlogPage({ posts, tags }: BlogPageProps) {
+export default function BlogPage({ posts, tags, blueskyFeed }: BlogPageProps) {
   const router = useRouter();
   const activeTag =
     typeof router.query.tag === "string" ? router.query.tag : undefined;
@@ -95,6 +100,8 @@ export default function BlogPage({ posts, tags }: BlogPageProps) {
                 </p>
               </div>
             )}
+
+            <BlogBlueskyFeedGrid initialFeed={blueskyFeed} className="mt-16" />
           </div>
         </div>
       </main>

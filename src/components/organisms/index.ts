@@ -15,6 +15,7 @@ export { SectionContainer } from './SectionContainer';
 export { FAQSection } from './FAQSection';
 export { SponsorsSection } from './SponsorsSection';
 export { SpeakersSection } from './SpeakersSection';
+export { BlueskyFeedSection } from './BlueskyFeedSection';
 export { DiscountContainer } from './discount';
 export {
   SponsorshipHeroSection,
@@ -39,6 +40,7 @@ export type { NavBarProps } from './NavBar';
 export type { CheckoutFormProps } from './CheckoutForm';
 export type { ShapedSectionProps } from './ShapedSection';
 export type { SponsorsSectionProps } from './SponsorsSection';
+export type { BlueskyFeedSectionProps } from './BlueskyFeedSection';
 export type { PhotoSlide, PhotoLayout } from '@/components/molecules';
 export type {
   SponsorshipHeroSectionProps,
@@ -48,4 +50,3 @@ export type {
   SponsorshipTiersSectionProps,
   SponsorshipContactSectionProps,
 } from './sponsorship';
-

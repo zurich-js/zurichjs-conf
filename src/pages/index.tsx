@@ -3,16 +3,16 @@ import {
     ScheduleSection,
     ShapedSection,
     TicketsSectionWithStripe,
-    TimelineSection,
     FAQSection,
     SponsorsSection,
     SpeakersSection,
     LearnSection,
     NavBar,
-    SiteFooter
+    SiteFooter,
+    BlueskyFeedSection
 } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
-import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
+import { heroData, scheduleData, sponsorsData, learningData } from '@/data';
 import type { DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
@@ -20,6 +20,8 @@ import { publicSponsorsQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
+import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from '@/lib/bluesky';
+import type { BlueskyFeedResult } from '@/lib/bluesky';
 import type { GetServerSideProps } from 'next';
 import React from "react";
 
@@ -30,6 +32,7 @@ import React from "react";
  */
 interface HomePageProps {
   dehydratedState: DehydratedState;
+  blueskyFeed: BlueskyFeedResult;
 }
 
 // FAQ data for schema (plain text versions)
@@ -56,7 +59,7 @@ const faqSchemaData = [
   },
 ];
 
-export default function Home() {
+export default function Home({ blueskyFeed }: HomePageProps) {
   const handleCtaClick = () => {
     // Scroll smoothly to the tickets section
     const ticketsSection = document.getElementById('tickets');
@@ -118,22 +121,17 @@ export default function Home() {
           <SponsorsSection {...sponsorsData} />
         </ShapedSection>
 
-      <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
+        <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
           <ScheduleSection
               title={scheduleData.title}
               subtitle={scheduleData.subtitle}
               aboutLink={scheduleData.aboutLink}
               days={scheduleData.days}
           />
-      </ShapedSection>
+        </ShapedSection>
 
-        <ShapedSection shape="widen" variant="medium" id="timeline">
-          <TimelineSection
-            kicker={timelineData.kicker}
-            title={timelineData.title}
-            subtitle={timelineData.subtitle}
-            entries={timelineData.entries}
-          />
+        <ShapedSection shape="widen" variant="dark" id="community-buzz">
+          <BlueskyFeedSection initialFeed={blueskyFeed} />
         </ShapedSection>
 
         <ShapedSection shape="tighten" variant="yellow" id="tickets">
@@ -148,6 +146,7 @@ export default function Home() {
               shape="straight"
               variant="dark"
               compactTop={true}
+              dropBottom={true}
           >
               <SiteFooter />
           </ShapedSection>
@@ -173,6 +172,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     optionalQuery(publicSponsorsQueryOptions),
     optionalQuery(publicSpeakersQueryOptions()),
     optionalQuery(ticketPricingQueryOptions),
+    getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }),
   ]);
 
   // Report any rejected promises to PostHog (shouldn't happen since
@@ -188,9 +188,16 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     }
   }
 
+  const blueskyResult = results[3];
+  const blueskyFeed =
+    blueskyResult?.status === 'fulfilled' && blueskyResult.value
+      ? blueskyResult.value
+      : { posts: [] };
+
   return {
     props: {
       dehydratedState: dehydrate(),
+      blueskyFeed,
     },
   };
 };

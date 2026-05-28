@@ -234,6 +234,22 @@ export const discountKeys = {
 } as const;
 
 /**
+ * Public Bluesky feed query keys
+ */
+export const blueskyKeys = {
+  /**
+   * Base key for all public Bluesky feed queries
+   */
+  all: ['bluesky'] as const,
+
+  /**
+   * Infinite feed pages. Includes page size so pagination settings do not share cache.
+   */
+  feed: (pageSize?: number) =>
+    [...blueskyKeys.all, 'feed', pageSize ?? 'default'] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
@@ -247,4 +263,5 @@ export const queryKeys = {
   speakers: speakersKeys,
   program: programKeys,
   discount: discountKeys,
+  bluesky: blueskyKeys,
 } as const;

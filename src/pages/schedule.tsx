@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
@@ -12,11 +13,26 @@ import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
 interface SchedulePageProps {
   items: PublicProgramScheduleItem[];
+  initialTab: (typeof publicProgramTabs)[number]['id'];
 }
 
+const scheduleDayParamToTab = {
+  community: 'community',
+  workshop: 'warmup',
+  conf: 'conference',
+  'post-conf': 'post-conference',
+} as const;
 
-export default function SchedulePage({ items }: SchedulePageProps) {
-  const [activeTab, setActiveTab] = useState<(typeof publicProgramTabs)[number]['id']>('community');
+const scheduleTabToDayParam: Record<(typeof publicProgramTabs)[number]['id'], string> = {
+  community: 'community',
+  warmup: 'workshop',
+  conference: 'conf',
+  'post-conference': 'post-conf',
+};
+
+export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<(typeof publicProgramTabs)[number]['id']>(initialTab);
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
   const visibleItems = activeScheduleTab.sessionDate
     ? items.filter((item) => item.date === activeScheduleTab.sessionDate)
@@ -54,7 +70,20 @@ export default function SchedulePage({ items }: SchedulePageProps) {
                 date: tab.date,
               }))}
               activeTab={activeTab}
-              onTabChange={(tabId) => setActiveTab(tabId as (typeof publicProgramTabs)[number]['id'])}
+              onTabChange={(tabId) => {
+                const nextTab = tabId as (typeof publicProgramTabs)[number]['id'];
+                const nextDayParam = scheduleTabToDayParam[nextTab];
+
+                setActiveTab(nextTab);
+                void router.replace(
+                  {
+                    pathname: '/schedule',
+                    query: nextDayParam === 'community' ? {} : { day: nextDayParam },
+                  },
+                  undefined,
+                  { shallow: true, scroll: false }
+                );
+              }}
               className="pt-0"
             />
 
@@ -147,14 +176,19 @@ export default function SchedulePage({ items }: SchedulePageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async () => {
+export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async (ctx) => {
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);
+  const requestedDay = typeof ctx.query.day === 'string' ? ctx.query.day : null;
+  const initialTab = requestedDay && requestedDay in scheduleDayParamToTab
+    ? scheduleDayParamToTab[requestedDay as keyof typeof scheduleDayParamToTab]
+    : 'community';
 
   return {
     props: {
       items,
+      initialTab,
     },
   };
 };

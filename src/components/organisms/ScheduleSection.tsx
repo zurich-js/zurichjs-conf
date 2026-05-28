@@ -1,10 +1,6 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heading } from '@/components/atoms/Heading';
-import { DayTabs } from '@/components/molecules/DayTabs';
-import { EventItem } from '@/components/molecules/EventItem';
-import { useTabs } from '@/hooks/useTabs';
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import {SectionSplitView} from "@/components/organisms/SectionSplitView";
 
 export interface Event {
@@ -33,10 +29,16 @@ export interface ScheduleSectionProps {
   days: Day[];
 }
 
+const scheduleDayParams: Record<string, string> = {
+  community: 'community',
+  warmup: 'workshop',
+  conference: 'conf',
+  'post-conference': 'post-conf',
+};
+
 /**
  * ScheduleSection organism component
- * Two-column layout with title/description on left and tabbed schedule on right
- * Features diagonal transition at bottom to match hero section
+ * Compact homepage schedule snapshot linking to the full schedule page.
  */
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   title,
@@ -44,11 +46,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   aboutLink,
   days,
 }) => {
-  const defaultTab = days.find((day) => day.defaultSelected)?.id || days[0]?.id || '';
-  const { activeTab, setActiveTab } = useTabs(defaultTab);
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const activeDay = days.find((day) => day.id === activeTab);
-
   return (
     <SectionSplitView
       kicker="Schedule"
@@ -57,81 +54,34 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       link={aboutLink}
       variant="light"
     >
-      <DayTabs
-        tabs={days.map((day) => ({
-          id: day.id,
-          label: day.label,
-          date: day.date,
-        }))}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+      <div className="pt-8 lg:pt-10">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-4 xl:gap-6">
+          {days.map((day) => {
+            const dayParam = scheduleDayParams[day.id] ?? 'community';
+            const scheduleHref = dayParam === 'community' ? '/schedule' : `/schedule?day=${dayParam}`;
 
-      {/* Tab panel with events or TBA description */}
-      <AnimatePresence mode="wait">
-        {activeDay && (
-          <motion.div
-            key={activeDay.id}
-            role="tabpanel"
-            id={`tabpanel-${activeDay.id}`}
-            aria-labelledby={`tab-${activeDay.id}`}
-            initial={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-            transition={{
-              duration: prefersReducedMotion ? 0 : 0.3,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="py-2.5"
-          >
-            {activeDay.tbaMode ? (
-              <div className="py-2.5">
-                <Heading
-                  level="h3"
-                  className="text-lg font-bold text-brand-black flex items-center gap-1"
-                  variant="light"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Schedule Coming Soon
-                </Heading>
-                <p className="text-base text-brand-gray-medium leading-relaxed">
-                  {activeDay.description || 'Detailed schedule for this day will be announced soon.'}
-                </p>
-              </div>
-            ) : activeDay.events.length > 0 ?
-                activeDay.events.map((event, index) => (
-                  <EventItem
-                    key={`${activeDay.id}-${index}`}
-                    time={event.time}
-                    title={event.title}
-                    description={event.description}
-                    index={index}
-                  />
-                )
-            ) : (
-              <div className="py-2.5">
-                <p className="text-base text-brand-gray-medium leading-relaxed">
-                  No events scheduled for this day yet.
-                </p>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            return (
+              <Link
+                key={day.id}
+                href={scheduleHref}
+                className="group relative flex min-h-32 w-full flex-col justify-between gap-4 rounded-lg bg-brand-gray-lightest p-5 pr-11 transition-colors duration-300 hover:bg-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-black focus-visible:ring-offset-2 focus-visible:ring-offset-brand-white"
+                aria-label={`View full schedule for ${day.label}`}
+              >
+                <ArrowRight className="absolute right-5 top-5 h-5 w-5 text-brand-black transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                <span className="sr-only">View full schedule for {day.label}</span>
+                <div>
+                  <time className="text-sm font-medium text-brand-gray-medium">
+                    {day.date}
+                  </time>
+                  <h3 className="mt-3 text-base font-bold leading-tight text-brand-black">
+                    {day.label}
+                  </h3>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
     </SectionSplitView>
   );
 };
-
