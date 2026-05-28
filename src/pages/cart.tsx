@@ -103,7 +103,7 @@ export default function CartPage() {
 
   // Team upsell logic — include workshop seats so bulk workshop purchases
   // trigger the team workflow too.
-  const showTeamUpsell = totalSeatCount >= 3 && !cart.couponCode;
+  const showTeamUpsell = totalSeatCount >= 5 && !cart.couponCode;
 
   // Team request hook
   const {
@@ -121,7 +121,7 @@ export default function CartPage() {
   });
 
   const handleTeamModalOpen = () => {
-    if (totalSeatCount >= 3) {
+    if (totalSeatCount >= 5) {
       const summary = [
         ...ticketItems.map((t) => `${t.title} × ${t.quantity}`),
         ...workshopItems.map((w) => `Workshop: ${w.title} × ${w.quantity}`),
