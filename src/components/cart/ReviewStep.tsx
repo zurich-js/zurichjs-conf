@@ -117,7 +117,7 @@ export function ReviewStep({
                   Coming as a group?
                 </h3>
                 <p className="text-sm text-brand-gray-light mb-4">
-                  We offer <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">custom team pricing (from Early Bird onwards)</strong> and simplified invoicing for groups of 5+. Let us create a package tailored for your team!
+                  We offer <strong className="text-brand-yellow-main drop-shadow-md drop-shadow-brand-yellow-main/30">custom team pricing</strong> and simplified invoicing for groups. Let us create a package tailored for your team!
                 </p>
                 <Button variant="primary" onClick={onTeamRequest} size="sm">
                   Request Team Quote
