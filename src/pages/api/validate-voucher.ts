@@ -46,9 +46,6 @@ export interface ValidateVoucherResponse {
 type ProductKind = 'ticket' | 'workshop';
 type TicketCategory = 'standard' | 'vip' | 'student' | 'unemployed';
 
-const DISCOUNT_RESTRICTED_TO_TICKETS_MESSAGE =
-  'This promo code is only valid for conference tickets. Remove workshop seats before applying it.';
-
 function normalizeProductKind(value: unknown): ProductKind | 'all' | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase();
@@ -112,34 +109,6 @@ function inferAllowedTicketCategoriesFromMetadata(
     normalizeTicketCategories(metadata.applies_to_ticket_categories);
 
   return categories ?? null;
-}
-
-function inferAllowedKindsFromMetadata(
-  coupon: Stripe.Coupon,
-  promotionCode: Stripe.PromotionCode | null
-): Set<ProductKind> | 'all' | null {
-  const metadata = {
-    ...coupon.metadata,
-    ...promotionCode?.metadata,
-  };
-
-  const explicitKind =
-    normalizeProductKind(metadata.product_type) ??
-    normalizeProductKind(metadata.product_kind) ??
-    normalizeProductKind(metadata.applies_to_product_type) ??
-    normalizeProductKind(metadata.applies_to_kind) ??
-    normalizeProductKind(metadata.kind);
-
-  if (explicitKind === 'all') return 'all';
-  if (explicitKind) return new Set([explicitKind]);
-
-  // Popup and UTM lottery discounts are ticket promotions. They are created
-  // without Stripe product restrictions, so keep them away from workshops.
-  if (metadata.source === 'discount_popup' || metadata.source === 'utm_lottery') {
-    return new Set(['ticket']);
-  }
-
-  return null;
 }
 
 function sanitizeOrFilterValue(value: string): string | null {
@@ -431,35 +400,6 @@ export default async function handler(
         return res.status(200).json({
           valid: false,
           error: 'This promo code is not applicable to the product type in your cart',
-        });
-      }
-    } else {
-      const allowedKinds = inferAllowedKindsFromMetadata(coupon, promotionCode) ?? new Set<ProductKind>(['ticket']);
-      if (allowedKinds !== 'all') {
-        const disallowedKinds = cartItems
-          .map((item) => priceToKindMap.get(item.priceId) ?? 'unknown')
-          .filter((kind) => kind === 'unknown' || !allowedKinds.has(kind));
-
-        if (disallowedKinds.length > 0) {
-          log.warn('Rejecting unrestricted promo for disallowed product kinds', {
-            couponId: coupon.id,
-            promotionCodeId: promotionCode?.id,
-            allowedKinds: Array.from(allowedKinds),
-            cartKinds: Array.from(new Set(cartItems.map((item) => priceToKindMap.get(item.priceId) ?? 'unknown'))),
-          });
-          return res.status(200).json({
-            valid: false,
-            error: allowedKinds.has('ticket')
-              ? DISCOUNT_RESTRICTED_TO_TICKETS_MESSAGE
-              : 'This promo code is not applicable to the product type in your cart',
-          });
-        }
-
-        applicablePriceIds = uniqueCartPriceIds.filter((priceId) => {
-          const kind = priceToKindMap.get(priceId);
-          return kind === 'ticket' || kind === 'workshop'
-            ? allowedKinds.has(kind)
-            : false;
         });
       }
     }
