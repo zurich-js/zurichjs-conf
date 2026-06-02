@@ -54,43 +54,6 @@ export type CoercedEnvSchema = {
   NEXT_PUBLIC_SITE_URL?: string;
   
   /**
-   * **NEXT_PUBLIC_ZURICHJS_HOME_URL**  
-   * Root ZurichJS domain used for the selection hub and legacy website redirects.  
-   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M24%2021V9h-2v14h8v-2zm-4-6v-4c0-1.103-.897-2-2-2h-6v14h2v-6h1.48l2.335%206h2.145l-2.333-6H18c1.103%200%202-.897%202-2m-6-4h4v4h-4zM8%2023H4c-1.103%200-2-.897-2-2V9h2v12h4V9h2v12c0%201.103-.897%202-2%202%22%2F%3E%3C%2Fsvg%3E)   
-   */
-  NEXT_PUBLIC_ZURICHJS_HOME_URL?: string;
-  
-  /**
-   * **NEXT_PUBLIC_ZURICHJS_MEETUP_URL**  
-   * Public base URL for former zurichjs-website routes redirected by this app.  
-   * Set this to the local zurichjs-website URL when running both apps locally.  
-   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M24%2021V9h-2v14h8v-2zm-4-6v-4c0-1.103-.897-2-2-2h-6v14h2v-6h1.48l2.335%206h2.145l-2.333-6H18c1.103%200%202-.897%202-2m-6-4h4v4h-4zM8%2023H4c-1.103%200-2-.897-2-2V9h2v12h4V9h2v12c0%201.103-.897%202-2%202%22%2F%3E%3C%2Fsvg%3E)   
-   */
-  NEXT_PUBLIC_ZURICHJS_MEETUP_URL?: string;
-  
-  /**
-   * **NEXT_PUBLIC_ZURICHJS_CONF_URL**  
-   * Public base URL for the conference experience linked from the ZurichJS hub.  
-   * Set this to the local conference URL when testing locally.  
-   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M24%2021V9h-2v14h8v-2zm-4-6v-4c0-1.103-.897-2-2-2h-6v14h2v-6h1.48l2.335%206h2.145l-2.333-6H18c1.103%200%202-.897%202-2m-6-4h4v4h-4zM8%2023H4c-1.103%200-2-.897-2-2V9h2v12h4V9h2v12c0%201.103-.897%202-2%202%22%2F%3E%3C%2Fsvg%3E)   
-   */
-  NEXT_PUBLIC_ZURICHJS_CONF_URL?: string;
-  
-  /**
-   * **ZURICHJS_SANITY_PROJECT_ID**  
-   * Public Sanity project used by zurichjs-website for meetup content.  
-   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
-   */
-  ZURICHJS_SANITY_PROJECT_ID?: string;
-  
-  /**
-   * **ZURICHJS_SANITY_DATASET**  
-   * Sanity dataset used by zurichjs-website for meetup content.  
-   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
-   */
-  ZURICHJS_SANITY_DATASET?: string;
-  
-  /**
    * **VERCEL_URL** 🔐 _sensitive_  
    * Vercel deployment hostname, injected by Vercel.  
    * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
@@ -362,11 +325,11 @@ export type CoercedEnvSchema = {
   
 };
 
-type _CoercedEnvSchema_6ea19404 = CoercedEnvSchema;
+type _CoercedEnvSchema_c035dd41 = CoercedEnvSchema;
 
 declare module 'varlock/env' {
-  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_6ea19404> {}
-  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_6ea19404, 'APP_ENV' | 'NODE_ENV' | 'NEXT_RUNTIME' | 'PORT' | 'CI' | 'NEXT_PUBLIC_BASE_URL' | 'NEXT_PUBLIC_SITE_URL' | 'NEXT_PUBLIC_ZURICHJS_HOME_URL' | 'NEXT_PUBLIC_ZURICHJS_MEETUP_URL' | 'NEXT_PUBLIC_ZURICHJS_CONF_URL' | 'ZURICHJS_SANITY_PROJECT_ID' | 'ZURICHJS_SANITY_DATASET' | 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY' | 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY' | 'NEXT_PUBLIC_POSTHOG_KEY' | 'NEXT_PUBLIC_POSTHOG_HOST' | 'NEXT_PUBLIC_DISCOUNT_SHOW_PROBABILITY' | 'NEXT_PUBLIC_DISCOUNT_FORCE_SHOW' | 'NEXT_PUBLIC_EASTER_EGG_ENABLED'>> {}
+  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_c035dd41> {}
+  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_c035dd41, 'APP_ENV' | 'NODE_ENV' | 'NEXT_RUNTIME' | 'PORT' | 'CI' | 'NEXT_PUBLIC_BASE_URL' | 'NEXT_PUBLIC_SITE_URL' | 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY' | 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY' | 'NEXT_PUBLIC_POSTHOG_KEY' | 'NEXT_PUBLIC_POSTHOG_HOST' | 'NEXT_PUBLIC_DISCOUNT_SHOW_PROBABILITY' | 'NEXT_PUBLIC_DISCOUNT_FORCE_SHOW' | 'NEXT_PUBLIC_EASTER_EGG_ENABLED'>> {}
 }
 
 
@@ -376,17 +339,17 @@ export type EnvSchemaAsStrings = {
       : (CoercedEnvSchema[Property] extends boolean ? ('true' | 'false') : string)
 };
 
-type _EnvSchemaAsStrings_6ea19404 = EnvSchemaAsStrings;
+type _EnvSchemaAsStrings_c035dd41 = EnvSchemaAsStrings;
 declare global {
 
   // add types for global import.meta.env
-  interface ImportMetaEnv extends _EnvSchemaAsStrings_6ea19404 {}
+  interface ImportMetaEnv extends _EnvSchemaAsStrings_c035dd41 {}
   interface ImportMeta {
     readonly env: ImportMetaEnv;
   }
 
   // add types for global process.env
   namespace NodeJS {
-    interface ProcessEnv extends _EnvSchemaAsStrings_6ea19404 {}
+    interface ProcessEnv extends _EnvSchemaAsStrings_c035dd41 {}
   }
 }

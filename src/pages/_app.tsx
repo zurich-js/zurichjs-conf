@@ -48,8 +48,6 @@ interface ExtendedPageProps {
   dehydratedState?: DehydratedState;
   initialCart?: Cart;
   detectedCurrency?: SupportedCurrency;
-  hideGlobalNav?: boolean;
-  hideDiscount?: boolean;
 }
 
 export default function App({ Component, pageProps }: AppProps<ExtendedPageProps>) {
@@ -131,10 +129,10 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
   }, []);
 
   // Hide NavBar on admin pages
-  const showNavBar = !pageProps.hideGlobalNav && !router.pathname.startsWith('/admin');
+  const showNavBar = !router.pathname.startsWith('/admin');
 
   // Only show discount popup on homepage
-  const showDiscount = !pageProps.hideDiscount && router.pathname === '/';
+  const showDiscount = router.pathname === '/';
 
   return (
     <PostHogProvider client={posthog}>
