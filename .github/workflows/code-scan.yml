@@ -1,0 +1,128 @@
+# MALWARE-SCAN-SELF-IGNORE
+# Malicious / obfuscated code scanner for the ZurichJS Next.js app.
+#
+# Three independent layers — the workflow run fails if ANY of them detects a
+# problem, which gates merges/pushes:
+#
+#   1. dependency-scan : OSV-Scanner over pnpm-lock.yaml. Flags dependency
+#                        versions with known advisories, INCLUDING the
+#                        "malicious package" (MAL) advisories that cover the
+#                        Shai-Hulud / S1ngularity / crypto-clipper compromises.
+#   2. secret-scan     : gitleaks. Catches committed tokens/keys — the exact
+#                        assets these worms try to exfiltrate.
+#   3. heuristic-scan  : custom scanner (.github/scripts/scan_malicious_code.py)
+#                        for obfuscation, env/credential exfiltration, worm
+#                        IOCs, crypto-clipper hooks and dangerous package.json
+#                        lifecycle scripts.
+#
+# Tuning: add confirmed false positives to .github/malware-scan-allowlist.txt
+# (form: `path::rule_id`). Change the heuristic gate with MALWARE_SCAN_FAIL_ON.
+
+name: Malicious Code Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly re-scan so newly-published IOCs are caught on existing code.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+# Least privilege: a security scanner must not hand out write tokens
+# (runtime workflow/token write is itself part of the worm's persistence).
+permissions:
+  contents: read
+
+concurrency:
+  group: malware-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Layer 1 — supply-chain / dependency advisories (incl. malicious packages)
+  # ---------------------------------------------------------------------------
+  dependency-scan:
+    name: Dependency advisories (OSV-Scanner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      # Pinned version for reproducibility; bump deliberately.
+      - name: Install OSV-Scanner
+        run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.3.8
+
+      - name: Scan pnpm lockfile
+        run: |
+          set +e
+          osv-scanner --lockfile=pnpm-lock.yaml --format table
+          code=$?
+          set -e
+          if [ "$code" -eq 1 ]; then
+            echo "::error::OSV-Scanner found vulnerable or malicious dependencies."
+            exit 1
+          elif [ "$code" -ne 0 ]; then
+            echo "::error::OSV-Scanner exited with $code (scan error)."
+            exit "$code"
+          fi
+          echo "No flagged dependencies."
+
+  # ---------------------------------------------------------------------------
+  # Layer 2 — committed secrets / tokens
+  # ---------------------------------------------------------------------------
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so leaks in past commits are caught
+
+      - name: Install gitleaks
+        run: |
+          ver="$(curl -fsSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
+                 | grep -oP '"tag_name":\s*"v\K[^"]+')"
+          echo "Installing gitleaks v${ver}"
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/gitleaks_${ver}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Scan repository and history
+        run: |
+          # --redact keeps secret values out of the logs.
+          # gitleaks exits non-zero when leaks are found, failing the job.
+          gitleaks dir . --redact --verbose
+          gitleaks git . --redact --verbose
+
+  # ---------------------------------------------------------------------------
+  # Layer 3 — heuristic source scan (obfuscation / exfiltration / worm IOCs)
+  # ---------------------------------------------------------------------------
+  heuristic-scan:
+    name: Heuristic malicious-code scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run heuristic scanner
+        env:
+          MALWARE_SCAN_FAIL_ON: high # fail on HIGH and CRITICAL findings
+        run: |
+          python .github/scripts/scan_malicious_code.py . \
+            --fail-on "$MALWARE_SCAN_FAIL_ON" \
+            --json malware-findings.json
+
+      - name: Upload findings report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: malware-findings
+          path: malware-findings.json
+          if-no-files-found: ignore
