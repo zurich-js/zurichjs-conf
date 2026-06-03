@@ -84,14 +84,14 @@ const validRequest = {
 describe('/api/team-request', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.RESEND_API_KEY = 're_test';
+    vi.stubEnv('RESEND_API_KEY', 're_test');
     mocks.sendEmail.mockResolvedValue({ data: { id: 'email_123' }, error: null });
     mocks.analyticsIdentify.mockResolvedValue(undefined);
     mocks.analyticsTrack.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    delete process.env.RESEND_API_KEY;
+    vi.unstubAllEnvs();
   });
 
   it('rejects unsupported methods and invalid payloads', async () => {

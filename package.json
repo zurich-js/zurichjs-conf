@@ -8,29 +8,28 @@
 		"pnpm": "11.x"
 	},
 	"scripts": {
-		"dev": "next dev",
-		"build": "next build",
-		"build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
-		"start": "next start",
-		"lint": "oxlint --fix",
-		"typecheck": "tsc --noEmit",
-		"clean": "rm -rf .next && rm -rf node_modules/.cache",
-		"prepare": "husky",
-		"email:dev": "email dev --dir ./src/emails --port 3001",
-		"test": "vitest",
-		"test:run": "vitest run",
-		"test:coverage": "vitest run --coverage",
-		"test:related": "vitest related --run",
+		"pnpm:devPreinstall": "scripts/require-docker-or-ci.sh",
+		"dev": "scripts/require-docker-or-ci.sh && next dev",
+		"dev:docker": "scripts/docker-dev.sh",
+		"docker:up": "scripts/docker-dev.sh",
+		"docker:dev": "scripts/docker-dev.sh",
+		"docker:down": "scripts/docker-down.sh",
+		"varlock:check": "scripts/require-docker-or-ci.sh && varlock load",
+		"build": "scripts/require-docker-or-ci.sh && next build",
+		"build:clean": "scripts/require-docker-or-ci.sh && rm -rf .next && rm -rf node_modules/.cache && next build",
+		"start": "scripts/require-docker-or-ci.sh && next start",
+		"lint": "scripts/require-docker-or-ci.sh && oxlint --fix",
+		"typecheck": "scripts/require-docker-or-ci.sh && tsc --noEmit",
+		"clean": "scripts/require-docker-or-ci.sh && rm -rf .next && rm -rf node_modules/.cache",
+		"email:dev": "scripts/require-docker-or-ci.sh && email dev --dir ./src/emails --port 3001",
+		"test": "scripts/require-docker-or-ci.sh && vitest",
+		"test:run": "scripts/require-docker-or-ci.sh && vitest run",
+		"test:coverage": "scripts/require-docker-or-ci.sh && vitest run --coverage",
+		"test:related": "scripts/require-docker-or-ci.sh && vitest related --run",
 		"db:seed:cfp-first-stage": "scripts/seed-supabase-phase.sh cfp-first-stage",
 		"db:seed:cfp-admission": "scripts/seed-supabase-phase.sh cfp-admission",
 		"db:seed:cfp-schedule": "scripts/seed-supabase-phase.sh cfp-schedule",
 		"db:seed:workshop-commerce": "scripts/seed-supabase-phase.sh workshop-commerce"
-	},
-	"lint-staged": {
-		"*.{ts,tsx,js,jsx}": [
-			"oxlint --fix",
-			"vitest related --run"
-		]
 	},
 	"dependencies": {
 		"@headlessui/react": "^2.2.10",
@@ -81,6 +80,7 @@
 	},
 	"pnpm": {
 		"overrides": {
+			"next>@next/env": "npm:@varlock/nextjs-integration@1.1.0",
 			"resend>svix": "1.92.2"
 		}
 	},
@@ -96,14 +96,14 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@types/recharts": "^1.8.29",
+		"@varlock/nextjs-integration": "1.1.0",
 		"@vitest/coverage-v8": "^4.1.5",
-		"husky": "^9.1.7",
-		"lint-staged": "^16.4.0",
 		"oxlint": "^1.62.0",
 		"react-email": "^5.2.11",
 		"tailwindcss": "^4.2.4",
 		"tw-animate-css": "^1.4.0",
 		"typescript": "^5.9.3",
+		"varlock": "1.2.0",
 		"vitest": "^4.1.5"
 	}
 }

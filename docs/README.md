@@ -73,7 +73,19 @@ src/
 
 ## Environment Variables
 
-Required environment variables (see `.env.example`):
+Required environment variables are defined in `.env.schema`. Local development
+loads committed `op://zurichjs-conf/development/...` references from
+`.env.schema` through the 1Password CLI, then applies Docker-local defaults,
+then applies an optional ignored `.env` override file. Do not create a plaintext
+`.env.local` for normal local work.
+
+The Docker wrapper resolves that final env set into a temporary file and Compose
+injects it with `env_file`, so local Docker commands pick up new `.env.schema`
+variables without a separate Compose allowlist.
+
+On Vercel, configure real values in the project environment settings. Vercel
+platform values override `.env.schema`; Vercel does not resolve `op://`
+references.
 
 ```env
 # Supabase
@@ -96,12 +108,18 @@ NEXT_PUBLIC_POSTHOG_HOST=
 ## Development Commands
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run test:run     # Run tests
-npm run typecheck    # TypeScript check
-npm run lint         # ESLint
-npm run email:dev    # Preview email templates
+just setup               # Validate first-run prerequisites and start Docker dev
+just hooks               # Configure this clone to use the repo Git hooks
+just up                  # Start Docker dev detached on http://localhost:3003
+just down                # Stop local Docker dev and Supabase containers
+just check               # Varlock + lint + typecheck + related tests
+just pre-commit          # Run the Git pre-commit checks inside Docker
+just pre-push            # Run the Git pre-push build check inside Docker
+just lint                # Run oxlint --fix inside Docker
+just typecheck           # TypeScript check inside Docker
+just test-related <file> # Run related Vitest tests inside Docker
+just test                # Run full Vitest suite inside Docker
+just build               # Build for production inside Docker
 ```
 
 ## Related Files

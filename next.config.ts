@@ -1,4 +1,5 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import { varlockNextConfigPlugin } from '@varlock/nextjs-integration/plugin';
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -68,7 +69,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const varlockConfig = varlockNextConfigPlugin()(nextConfig);
+
+export default withSentryConfig(varlockConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

@@ -1,0 +1,33 @@
+services:
+  supabase-bridge:
+    image: alpine/socat:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: TCP-LISTEN:54321,fork,reuseaddr TCP:host.docker.internal:54321
+
+  web:
+    image: node:22-bookworm
+    working_dir: /app
+    depends_on:
+      - supabase-bridge
+    ports:
+      - "3003:3003"
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+      - pnpm-store:/pnpm/store
+    env_file:
+      - ${COMPOSE_ENV_FILE:?Run through scripts/docker-dev.sh so local defaults and 1Password references are loaded}
+    environment:
+      PNPM_HOME: /pnpm
+    command: >
+      sh -lc "corepack enable &&
+      corepack prepare pnpm@11.1.1 --activate &&
+      pnpm config set store-dir /pnpm/store &&
+      rm -rf .next node_modules/.cache &&
+      pnpm install --frozen-lockfile &&
+      pnpm exec next dev -H 0.0.0.0 -p 3003"
+
+volumes:
+  node-modules:
+  pnpm-store:

@@ -23,7 +23,7 @@ A production-ready conference ticketing and workshop management platform built w
 - **Styling**: Tailwind CSS v4
 - **State Management**: React Query, Context API
 - **Type Safety**: TypeScript (strict mode)
-- **Code Quality**: ESLint, Husky, lint-staged
+- **Code Quality**: oxlint, Vitest, TypeScript, Varlock
 
 ## Project Structure
 
@@ -65,58 +65,107 @@ docs/
 
 ### Prerequisites
 
-- Node.js 20+
-- npm or yarn
-- Supabase account
-- Stripe account
-- Resend account (for emails)
+- Docker Desktop, or Docker Engine with Docker Compose v2
+- 1Password CLI (`op`) installed, signed in, and authorized for the shared local
+  development secrets referenced from `.env.schema`
+- Just command runner (`just`)
+
+You do not need Node, pnpm, or the Supabase CLI installed on the host for the
+normal Docker workflow. Docker provides Node 22, Corepack activates pnpm 11, and
+the Supabase CLI is run through Docker when it is not installed locally.
+
+You may need direct Supabase, Stripe, or Resend account access for provider
+configuration, production work, or changing shared secrets. Booting the local app
+only requires access to the 1Password item referenced by `.env.schema`.
+
+Local Supabase exposes its own publishable/anon and service-role keys when the
+CLI starts the containers. These local development keys can be shared through
+1Password as long as they match the local Supabase configuration. Do not put
+production Supabase service-role keys in the local development item.
 
 ### Installation
 
-1. **Clone and install dependencies**
+1. **Clone the repository**
    ```bash
    git clone <repo-url>
    cd zurichjs-conf
-   npm install
    ```
 
-2. **Set up environment variables**
+2. **Set up 1Password references**
+
+   Local secrets are read through committed `op://zurichjs-conf/development/...`
+   references in `.env.schema`. Create matching fields in the shared
+   `zurichjs-conf/development` 1Password item, or update the references to your
+   vault/item names. Do not create a plaintext `.env.local` for local
+   development. Shared operational values like `ADMIN_PASSWORD` belong in this
+   development item so local admin access has one source of truth.
+
+   For clone-specific overrides, create an ignored `.env` file. Docker local
+   environment loading is ordered as:
+
+   1. `.env.schema` committed schema/fallbacks and `op://` references
+   2. Docker-local defaults such as `APP_ENV=development` and
+      `NEXT_PUBLIC_BASE_URL=http://localhost:3003`
+   3. optional ignored `.env` overrides
+
+   `scripts/docker-dev.sh` resolves that final set into a temporary env file at
+   container startup. Docker Compose injects those values into the web container
+   with `env_file`, so adding a variable to `.env.schema` is enough for local
+   Docker startup. Once the container is running, helper commands use
+   `docker exec` and do not re-request 1Password access.
+
+   Vercel does not resolve `op://` references. Configure real production and
+   preview values in the Vercel project settings; those platform values take
+   precedence over `.env.schema` during build/runtime. `.env.schema` is the
+   committed development schema/fallback layer, not the production secret source.
+
+3. **Run first-time setup**
+
    ```bash
-   cp .env.example .env.local
+   just setup
    ```
 
-   Fill in your credentials in `.env.local`:
-   - Supabase URL and keys
-   - Stripe keys and webhook secret
-   - Resend API key
+   This checks Docker, Docker Compose v2, `op`, `just`, 1Password access, and
+   required secret references before starting the Docker development environment.
+   It also configures the repo Git hooks and installs Node dependencies inside
+   the Docker volume.
 
-3. **Set up Supabase**
+4. **Authenticate Supabase CLI inside Docker when needed**
+
    ```bash
-   # Install Supabase CLI
-   npm install -g supabase
-
-   # Link to your project
-   supabase link --project-ref your-project-ref
-
-   # Apply migrations
-   supabase db push
+   just supabase-login
    ```
 
-4. **Configure Stripe**
+   This is only needed when the Supabase CLI asks you to log in, or when you need
+   cloud-linked Supabase commands. It runs `supabase login` inside the Dockerized
+   CLI container and stores the CLI credential in the `supabase-cli` Docker
+   volume.
+
+5. **Run the Docker development environment after setup**
+   ```bash
+   just up
+   ```
+
+   This resolves local secrets through 1Password once, starts Supabase by
+   running the Supabase CLI inside a Node container, installs dependencies
+   inside the Node app container, and starts Next.js on
+   [http://localhost:3003](http://localhost:3003).
+   The dev script also clears any stale `public.ecr.aws` Docker credential before
+   startup because the Supabase CLI pulls local service images from Public ECR.
+
+6. **Configure Stripe**
    - Create products and prices in Stripe Dashboard
    - Set up webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
-   - Add webhook secret to `.env.local`
+   - Store the webhook secret in the 1Password item referenced by `.env.schema`
 
-5. **Run development server**
+7. **Stop the Docker development environment**
    ```bash
-   npm run dev
+   just down
    ```
 
-   Open [http://localhost:3000](http://localhost:3000)
-
-6. **Test webhooks locally** (optional)
+8. **Test webhooks locally** (optional)
    ```bash
-   stripe listen --forward-to localhost:3000/api/webhooks/stripe
+   stripe listen --forward-to localhost:3003/api/webhooks/stripe
    ```
 
 ## Documentation
@@ -131,20 +180,69 @@ docs/
 
 ### Available Scripts
 
+Local environment:
+
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run typecheck    # Run TypeScript type checking
-npm run email:dev    # Preview email templates
+just setup           # Validate first-run prerequisites and start local Docker dev
+just hooks           # Configure this clone to use the repo Git hooks
+just up              # Start local Docker dev detached with 1Password injection
+just down            # Stop local Docker dev and Supabase containers
+just shell           # Open a shell in the Node container
+just supabase-login  # Log the Dockerized Supabase CLI in, only when needed
+```
+
+Common checks:
+
+```bash
+just check                 # Varlock + lint + typecheck + related tests
+just pre-commit            # Run the same checks as the Git pre-commit hook
+just pre-push              # Run the same build check as the Git pre-push hook
+just lint                  # Run oxlint --fix inside Docker
+just typecheck             # Run TypeScript type checking inside Docker
+just test-related <files>  # Run related Vitest tests inside Docker
+```
+
+Broader checks:
+
+```bash
+just test        # Run the full Vitest suite inside Docker
+just build       # Run production Next.js build inside Docker
+just check-full  # Varlock + lint + typecheck + full tests + build
+```
+
+Git hooks run on the host because Git runs on the host, but the hooks only use
+host `git`, `bash`, `docker`, `op`, and `just`. Varlock, oxlint, TypeScript,
+Vitest, and Next.js build run inside Docker. Production builds are intentionally
+not part of pre-commit because they are too heavy for small commits; the
+pre-push hook runs `next build` in Docker before changes leave your machine.
+
+Local seed phases:
+
+```bash
+just seed-cfp-first-stage    # Reset local Supabase for first-stage CFP review
+just seed-cfp-admission      # Reset local Supabase for admission decisions
+just seed-cfp-schedule       # Reset local Supabase for scheduling
+just seed-workshop-commerce  # Reset local Supabase with workshop commerce data
+```
+
+Backward-compatible aliases:
+
+```bash
+just dev          # Alias for just up
+just docker-up    # Alias for just up
+just docker-dev   # Alias for just up
+just docker-down  # Alias for just down
 ```
 
 ### Code Quality
 
-- Pre-commit hooks run linting and type checking
+- Environment schema validation is handled by Varlock
 - Strict TypeScript configuration
-- ESLint with Next.js recommended rules
+- oxlint for linting
+- `pnpm install` and package scripts are guarded so local installs, checks, and
+  builds run through Docker or CI
+- Pre-commit checks run through Docker and do not include production builds
+- Pre-push runs the production build through Docker
 
 ## Architecture Highlights
 

@@ -173,7 +173,7 @@ const createMockStripePrice = (
 describe('Ticket Pricing API Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_SECRET_KEY = 'sk_test_mock';
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_mock');
 
     // Default mock: return CHF prices
     mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
@@ -236,6 +236,7 @@ describe('Ticket Pricing API Handler', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
 
@@ -751,7 +752,7 @@ describe('Ticket Pricing API Handler', () => {
     });
 
     it('should return 500 when STRIPE_SECRET_KEY is not set', async () => {
-      delete process.env.STRIPE_SECRET_KEY;
+      vi.stubEnv('STRIPE_SECRET_KEY', undefined);
 
       const req = createMockRequest();
       const res = createMockResponse();
@@ -858,7 +859,7 @@ describe('Ticket Pricing API Handler', () => {
 describe('buildLookupKey (integration)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_SECRET_KEY = 'sk_test_mock';
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_mock');
 
     mocks.mockGetCurrentStage.mockReturnValue({
       stage: 'early_bird',

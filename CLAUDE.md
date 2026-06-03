@@ -9,11 +9,11 @@ Most subdirectories also have their own scoped `CLAUDE.md` — read those when w
 
 - **Package manager: pnpm 11** — `package.json` enforces it. Never run `npm` or `yarn`.
 - **Node version: 22** — see `.nvmrc`.
-- **Linter is oxlint, not ESLint.** `pnpm lint` runs `oxlint --fix`.
+- **Linter is oxlint, not ESLint.** `just lint` runs `oxlint --fix` inside Docker.
 - **Pages Router, not App Router.** Pages live in `src/pages/`. API routes in `src/pages/api/`.
 - **Path alias: `@/*` → `src/*`** (see `tsconfig.json`). Use it for all imports — no relative `../../` chains.
 - **Never hand-edit `src/lib/types/database.generated.ts`.** It's regenerated from Supabase.
-- **Pre-commit is slow (~1-2 min).** It runs env-check + lint-staged + full test suite + typecheck + build. Plan for it; never bypass with `--no-verify`.
+- **Local environment is Docker-first.** Prefer `just up`; committed `.env.schema` references resolve the shared 1Password development item and are validated with Varlock.
 - **CFP closure gate:** new submissions must respect `isCfpClosed()` from `@/lib/cfp/closure`.
 
 ## Tech stack
@@ -37,21 +37,26 @@ Most subdirectories also have their own scoped `CLAUDE.md` — read those when w
 ## Commands
 
 ```bash
-pnpm dev                 # Start dev server (port 3000)
-pnpm build               # Production build
-pnpm lint                # oxlint --fix
-pnpm typecheck           # tsc --noEmit
-pnpm test                # vitest (watch)
-pnpm test:run            # vitest run (one shot)
-pnpm test:related <files># vitest related --run (fast, scoped to changed files)
-pnpm email:dev           # Preview email templates on :3001
-pnpm db:seed:cfp-first-stage    # Seed CFP review phase
-pnpm db:seed:cfp-admission      # Seed CFP admission phase
-pnpm db:seed:cfp-schedule       # Seed CFP scheduling phase
-pnpm db:seed:workshop-commerce  # Seed workshop commerce
+just setup               # Validate first-run prerequisites and start Docker dev
+just hooks               # Configure this clone to use the repo Git hooks
+just up                  # Start Docker dev server detached (host port 3003)
+just down                # Stop local Docker dev and Supabase containers
+just build               # Production build inside Docker
+just lint                # oxlint --fix inside Docker
+just typecheck           # tsc --noEmit inside Docker
+just test                # vitest run inside Docker
+just test-related <files># vitest related --run inside Docker
+just check               # Varlock + lint + typecheck + related tests inside Docker
+just pre-commit          # Same checks as the Git pre-commit hook; no build
+just pre-push            # Same build check as the Git pre-push hook
+just dev                 # Alias for just up
+just seed-cfp-first-stage    # Reset local Supabase for CFP review phase
+just seed-cfp-admission      # Reset local Supabase for CFP admission phase
+just seed-cfp-schedule       # Reset local Supabase for CFP scheduling phase
+just seed-workshop-commerce  # Reset local Supabase with workshop commerce
 ```
 
-When iterating: `pnpm test:related <changed-files>` + `pnpm typecheck` is much faster than `pnpm test:run`.
+When iterating: `just test-related <changed-files>` + `just typecheck` is much faster than the full suite.
 
 ## Directory layout
 
@@ -189,7 +194,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - Don't trust client-supplied prices, ticket types, or order totals — validate server-side against `src/config/pricing-stages.ts` and Supabase.
 - Don't bypass Zod validation on request bodies.
 - Don't use `console.log` — use `logger.scope()`.
-- `git commit --no-verify` is allowed in the Claude-on-the-web cloud sandbox (no `.env.local`, so pre-commit's build step always fails on env validation). Locally, fix the failing hook instead — don't bypass.
+- Don't store local secrets in `.env.local`; use committed `.env.schema` `op://zurichjs-conf/development/...` references and `just up`.
 - Don't put static content in components — it lives in `src/data/`.
 - Don't hardcode colors — use Tailwind `@theme` tokens or `src/styles/tokens.ts`.
 - Don't add new types to `src/types/` — domain types belong in `src/lib/types/`.
@@ -208,8 +213,8 @@ Speaker routes live under `/api/cfp/`. Admin routes under `/api/admin/cfp/`. See
 
 - Vitest, Node environment.
 - Tests live in `__tests__/` colocated with code.
-- Use `pnpm test:related <files>` for fast iteration.
-- Pre-commit runs the full suite; CI runs tests + coverage + lint + typecheck.
+- Use `just test-related <files>` for fast iteration.
+- CI runs tests + coverage + lint + typecheck; local package scripts are guarded to run only in Docker or CI.
 
 ## When in doubt
 
