@@ -55,7 +55,7 @@ const faqSchemaData = [
   },
   {
     question: "When is the best time to arrive and leave?",
-    answer: "Community Day (Sept 9th) isn't essential, but if you're attending a workshop on the 10th, come early and enjoy it. Depart evening of Sept 12th or 13th. VIP holders should keep the full day of Sept 12th free for speaker activities.",
+    answer: "Community Day (Sept 9th) isn't essential, but if you're attending a workshop on the 10th, come early and enjoy it. Depart evening of Sept 12th or 13th. VIP holders get exclusive access to the after party on the evening of Sept 11th, so don't book too early a departure that day.",
   },
 ];
 

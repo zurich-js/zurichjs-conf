@@ -159,7 +159,7 @@ export function TicketSection({
         <TicketButton
           icon={<Crown className="w-4 h-4 text-amber-600" />}
           label="VIP"
-          sublabel="main day + activities with speakers on Sep 12th"
+          sublabel="main day + exclusive after party access"
           price={vipPrice}
           comparePrice={vipCompare}
           isSelected={ticketType === 'vip'}
