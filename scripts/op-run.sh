@@ -26,7 +26,6 @@ cat >>"$combined_env_file" <<'EOF'
 # Docker-local defaults. These intentionally override deploy-oriented schema
 # fallbacks, while an ignored .env can still override them below.
 APP_ENV=development
-NODE_ENV=development
 PORT=3003
 CI=false
 NEXT_PUBLIC_BASE_URL=http://localhost:3003
