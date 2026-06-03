@@ -365,7 +365,7 @@ export default function SpeakersPage() {
               Want to hang out more with the speakers?
             </Heading>
             <p className="mt-6 max-w-2xl text-base leading-8 text-brand-gray-light">
-              The VIP ticket includes conference access, but you also get exclusive access to the after-party and other speaker activities.
+              The VIP ticket includes conference access, plus exclusive access to the after-party where you can hang out with the speakers.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button variant="black" asChild href="/#tickets">

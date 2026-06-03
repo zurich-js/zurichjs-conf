@@ -99,15 +99,9 @@ export const scheduleData: Omit<ScheduleSectionProps, 'className'> = {
       id: 'post-conference',
       label: 'Post-conf chill Day',
       date: 'September 12, 2026',
-      description: 'A relaxed day for VIP ticket holders to join speaker activities. Activities will be announced in the future - could include hiking or other engaging experiences.',
-      tbaMode: false,
-      events: [
-        {
-          time: 'TBA',
-          title: 'Speaker Activities',
-          description: 'Exclusive activities for VIP ticket holders with conference speakers. Activities will be announced in the future - could include hiking or other engaging experiences.',
-        },
-      ],
+      description: 'A relaxed, unstructured day to wind down after the conference. No organized sessions — explore Zurich at your own pace before heading home.',
+      tbaMode: true,
+      events: [],
     },
   ],
 };

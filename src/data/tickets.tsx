@@ -214,8 +214,8 @@ export const TICKET_FAQ: FAQItem[] = [
         essential, but if you&apos;re attending a workshop on the 10th, you might as well arrive a
         day early and enjoy the warm-up meetup. For departures, a flight on the evening of{' '}
         <strong>September 12th</strong> or <strong>September 13th</strong> works well. If you&apos;re
-        a <strong>VIP ticket holder</strong>, make sure to keep the full day of September 12th free
-        for the exclusive speaker activities!
+        a <strong>VIP ticket holder</strong>, note that the exclusive after party takes place on the
+        evening of September 11th, so don&apos;t book too early a departure that day!
       </>
     ),
   },
