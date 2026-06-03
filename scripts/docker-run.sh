@@ -8,7 +8,6 @@ if [[ "$#" -eq 0 ]]; then
   set -- bash
 fi
 
-command="$*"
 compose=(docker compose -f docker-compose.local.yml)
 
 if ! running_services="$(scripts/op-run.sh "${compose[@]}" ps --status running --services)"; then
@@ -31,8 +30,14 @@ if ! grep -qx web <<<"$running_services"; then
 fi
 
 exec scripts/op-run.sh "${compose[@]}" exec -T web \
-  sh -lc "corepack enable &&
-    corepack prepare pnpm@11.1.1 --activate &&
-    pnpm config set store-dir /pnpm/store &&
-    unset NODE_ENV &&
-    exec ${command}"
+  sh -lc '
+    marker="/tmp/zurichjs-conf-pnpm-11.1.1-ready"
+    if [ ! -f "$marker" ]; then
+      corepack enable
+      corepack prepare pnpm@11.1.1 --activate
+      pnpm config set store-dir /pnpm/store
+      touch "$marker"
+    fi
+    unset NODE_ENV
+    exec "$@"
+  ' sh "$@"
