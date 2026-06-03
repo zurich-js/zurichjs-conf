@@ -42,7 +42,7 @@ run_sql_file() {
 }
 
 echo "Resetting Supabase without automatic seed..."
-if ! supabase db reset --no-seed; then
+if ! scripts/supabase-cli.sh db reset --no-seed; then
   echo "supabase db reset reported an error. Continuing to seed directly; SQL will fail if the schema is not ready." >&2
 fi
 

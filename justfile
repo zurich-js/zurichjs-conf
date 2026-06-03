@@ -3,21 +3,29 @@ set dotenv-load := false
 default:
     just --list
 
-# Start local Docker dev with 1Password secret injection.
-dev:
+# Start local Docker dev detached with 1Password secret injection.
+up:
     scripts/docker-dev.sh -d
 
-# Alias for dev.
+# Alias for up.
+dev:
+    just up
+
+# Alias for up.
+docker-up:
+    just up
+
+# Backward-compatible alias for up.
 docker-dev:
-    scripts/docker-dev.sh -d
+    just up
 
 # Stop local Docker dev and Supabase containers.
 down:
     scripts/docker-down.sh
 
-# Alias for down.
+# Backward-compatible alias for down.
 docker-down:
-    scripts/docker-down.sh
+    just down
 
 # Open a shell in the Node container.
 shell:
@@ -59,6 +67,22 @@ check:
 # Run a production Next.js build inside Docker.
 build:
     scripts/docker-run.sh pnpm exec next build
+
+# Reset local Supabase and apply the CFP first-stage seed.
+seed-cfp-first-stage:
+    scripts/seed-supabase-phase.sh cfp-first-stage
+
+# Reset local Supabase and apply the CFP admission seed.
+seed-cfp-admission:
+    scripts/seed-supabase-phase.sh cfp-admission
+
+# Reset local Supabase and apply the CFP schedule seed.
+seed-cfp-schedule:
+    scripts/seed-supabase-phase.sh cfp-schedule
+
+# Reset local Supabase and apply the workshop commerce seed.
+seed-workshop-commerce:
+    scripts/seed-supabase-phase.sh workshop-commerce
 
 # Run the same high-signal checks CI should care about, inside Docker.
 check-full:

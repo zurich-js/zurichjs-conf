@@ -73,7 +73,9 @@ src/
 
 ## Environment Variables
 
-Required environment variables (see `.env.example`):
+Required environment variables are defined in `.env.schema`. Local development
+loads secret values from `.env.1password` through the 1Password CLI; do not
+create a plaintext `.env.local` for normal local work.
 
 ```env
 # Supabase
@@ -96,12 +98,14 @@ NEXT_PUBLIC_POSTHOG_HOST=
 ## Development Commands
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run test:run     # Run tests
-npm run typecheck    # TypeScript check
-npm run lint         # ESLint
-npm run email:dev    # Preview email templates
+just up                  # Start Docker dev detached on http://localhost:3003
+just down                # Stop local Docker dev and Supabase containers
+just check               # Varlock + lint + typecheck + related tests
+just lint                # Run oxlint --fix inside Docker
+just typecheck           # TypeScript check inside Docker
+just test-related <file> # Run related Vitest tests inside Docker
+just test                # Run full Vitest suite inside Docker
+just build               # Build for production inside Docker
 ```
 
 ## Related Files

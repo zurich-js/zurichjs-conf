@@ -76,7 +76,7 @@ add `storage.objects` policies for reads/writes.
 
 1. Run `scripts/regen-db-types.sh` (or `/regen-db-types`) to refresh
    `src/lib/types/database.generated.ts`.
-2. Run `pnpm typecheck` to surface anything broken by the schema change.
+2. Run `just typecheck` to surface anything broken by the schema change.
 3. Commit the regenerated types in the same PR as the migration.
 
 ## Seeding
@@ -84,10 +84,10 @@ add `storage.objects` policies for reads/writes.
 Phase-based seeds live in `supabase/seeds/` (with a README). Run with:
 
 ```bash
-pnpm db:seed:cfp-first-stage      # reviewer workload
-pnpm db:seed:cfp-admission        # admission decisions phase
-pnpm db:seed:cfp-schedule         # scheduling phase
-pnpm db:seed:workshop-commerce    # workshop registration data
+just seed-cfp-first-stage     # reviewer workload
+just seed-cfp-admission       # admission decisions phase
+just seed-cfp-schedule        # scheduling phase
+just seed-workshop-commerce   # workshop registration data
 ```
 
 Wrapped by `scripts/seed-supabase-phase.sh`. Run against a local Supabase

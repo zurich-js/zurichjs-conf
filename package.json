@@ -10,6 +10,7 @@
 	"scripts": {
 		"dev": "scripts/require-docker-or-ci.sh && next dev",
 		"dev:docker": "scripts/docker-dev.sh",
+		"docker:up": "scripts/docker-dev.sh",
 		"docker:dev": "scripts/docker-dev.sh",
 		"docker:down": "scripts/docker-down.sh",
 		"varlock:check": "scripts/require-docker-or-ci.sh && varlock load",

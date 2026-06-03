@@ -65,11 +65,18 @@ docs/
 
 ### Prerequisites
 
-- Docker Desktop
-- 1Password CLI (`op`) signed in locally
-- Supabase account
-- Stripe account
-- Resend account (for emails)
+- Docker Desktop, or Docker Engine with Docker Compose v2
+- 1Password CLI (`op`) installed, signed in, and authorized for the shared local
+  development secrets
+- Just command runner (`just`)
+
+You do not need Node, pnpm, or the Supabase CLI installed on the host for the
+normal Docker workflow. Docker provides Node 22, Corepack activates pnpm 11, and
+the Supabase CLI is run through Docker when it is not installed locally.
+
+You may need direct Supabase, Stripe, or Resend account access for provider
+configuration, production work, or changing shared secrets. Booting the local app
+only requires access to the 1Password item referenced by `.env.1password`.
 
 ### Installation
 
@@ -86,18 +93,20 @@ docs/
    the references to your vault/item names. Do not create a plaintext `.env.local`
    for local development.
 
-3. **Authenticate Supabase CLI inside Docker**
+3. **Authenticate Supabase CLI inside Docker when needed**
 
    ```bash
    just supabase-login
    ```
 
-   This runs `supabase login` inside the Dockerized CLI container and stores the
-   CLI credential in the `supabase-cli` Docker volume.
+   This is only needed when the Supabase CLI asks you to log in, or when you need
+   cloud-linked Supabase commands. It runs `supabase login` inside the Dockerized
+   CLI container and stores the CLI credential in the `supabase-cli` Docker
+   volume.
 
 4. **Run the Docker development environment**
    ```bash
-   just dev
+   just up
    ```
 
    This runs `op run --env-file=.env.1password -- docker compose ...`, starts
@@ -134,16 +143,48 @@ docs/
 
 ### Available Scripts
 
+Local environment:
+
 ```bash
-just dev             # Start local Docker dev detached with 1Password injection
+just up              # Start local Docker dev detached with 1Password injection
 just down            # Stop local Docker dev and Supabase containers
-just supabase-login  # Authenticate Supabase CLI inside Docker
-just lint            # Run oxlint inside Docker
-just typecheck       # Run TypeScript type checking inside Docker
-just test            # Run Vitest inside Docker
-just test-related <files> # Run related Vitest tests inside Docker
-just check           # Run Varlock + lint + typecheck + related tests inside Docker
-just build           # Run production Next.js build inside Docker
+just shell           # Open a shell in the Node container
+just supabase-login  # Log the Dockerized Supabase CLI in, only when needed
+```
+
+Common checks:
+
+```bash
+just check                 # Varlock + lint + typecheck + related tests
+just lint                  # Run oxlint --fix inside Docker
+just typecheck             # Run TypeScript type checking inside Docker
+just test-related <files>  # Run related Vitest tests inside Docker
+```
+
+Broader checks:
+
+```bash
+just test        # Run the full Vitest suite inside Docker
+just build       # Run production Next.js build inside Docker
+just check-full  # Varlock + lint + typecheck + full tests + build
+```
+
+Local seed phases:
+
+```bash
+just seed-cfp-first-stage    # Reset local Supabase for first-stage CFP review
+just seed-cfp-admission      # Reset local Supabase for admission decisions
+just seed-cfp-schedule       # Reset local Supabase for scheduling
+just seed-workshop-commerce  # Reset local Supabase with workshop commerce data
+```
+
+Backward-compatible aliases:
+
+```bash
+just dev          # Alias for just up
+just docker-up    # Alias for just up
+just docker-dev   # Alias for just up
+just docker-down  # Alias for just down
 ```
 
 ### Code Quality

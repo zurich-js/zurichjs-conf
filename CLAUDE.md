@@ -13,7 +13,7 @@ Most subdirectories also have their own scoped `CLAUDE.md` — read those when w
 - **Pages Router, not App Router.** Pages live in `src/pages/`. API routes in `src/pages/api/`.
 - **Path alias: `@/*` → `src/*`** (see `tsconfig.json`). Use it for all imports — no relative `../../` chains.
 - **Never hand-edit `src/lib/types/database.generated.ts`.** It's regenerated from Supabase.
-- **Local environment is Docker-first.** Prefer `just dev`; secrets are injected with 1Password and validated with Varlock.
+- **Local environment is Docker-first.** Prefer `just up`; secrets are injected with 1Password and validated with Varlock.
 - **CFP closure gate:** new submissions must respect `isCfpClosed()` from `@/lib/cfp/closure`.
 
 ## Tech stack
@@ -37,17 +37,19 @@ Most subdirectories also have their own scoped `CLAUDE.md` — read those when w
 ## Commands
 
 ```bash
-just dev                 # Start Docker dev server detached (host port 3003)
+just up                  # Start Docker dev server detached (host port 3003)
+just down                # Stop local Docker dev and Supabase containers
 just build               # Production build inside Docker
 just lint                # oxlint --fix inside Docker
 just typecheck           # tsc --noEmit inside Docker
 just test                # vitest run inside Docker
 just test-related <files># vitest related --run inside Docker
 just check               # Varlock + lint + typecheck + related tests inside Docker
-pnpm db:seed:cfp-first-stage    # Seed CFP review phase
-pnpm db:seed:cfp-admission      # Seed CFP admission phase
-pnpm db:seed:cfp-schedule       # Seed CFP scheduling phase
-pnpm db:seed:workshop-commerce  # Seed workshop commerce
+just dev                 # Alias for just up
+just seed-cfp-first-stage    # Reset local Supabase for CFP review phase
+just seed-cfp-admission      # Reset local Supabase for CFP admission phase
+just seed-cfp-schedule       # Reset local Supabase for CFP scheduling phase
+just seed-workshop-commerce  # Reset local Supabase with workshop commerce
 ```
 
 When iterating: `just test-related <changed-files>` + `just typecheck` is much faster than the full suite.
@@ -188,7 +190,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - Don't trust client-supplied prices, ticket types, or order totals — validate server-side against `src/config/pricing-stages.ts` and Supabase.
 - Don't bypass Zod validation on request bodies.
 - Don't use `console.log` — use `logger.scope()`.
-- Don't store local secrets in `.env.local`; use `.env.1password` references and `just dev`.
+- Don't store local secrets in `.env.local`; use `.env.1password` references and `just up`.
 - Don't put static content in components — it lives in `src/data/`.
 - Don't hardcode colors — use Tailwind `@theme` tokens or `src/styles/tokens.ts`.
 - Don't add new types to `src/types/` — domain types belong in `src/lib/types/`.
