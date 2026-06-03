@@ -108,9 +108,11 @@ production Supabase service-role keys in the local development item.
       `NEXT_PUBLIC_BASE_URL=http://localhost:3003`
    3. optional ignored `.env` overrides
 
-   `scripts/op-run.sh` resolves that final set into a temporary env file and
-   Docker Compose injects it into the web container with `env_file`, so adding a
-   variable to `.env.schema` is enough for local Docker commands.
+   `scripts/docker-dev.sh` resolves that final set into a temporary env file at
+   container startup. Docker Compose injects those values into the web container
+   with `env_file`, so adding a variable to `.env.schema` is enough for local
+   Docker startup. Once the container is running, helper commands use
+   `docker exec` and do not re-request 1Password access.
 
    Vercel does not resolve `op://` references. Configure real production and
    preview values in the Vercel project settings; those platform values take
@@ -144,9 +146,9 @@ production Supabase service-role keys in the local development item.
    just up
    ```
 
-   This runs the Docker commands through `scripts/op-run.sh`, starts
-   Supabase by running the Supabase CLI inside a Node container, installs
-   dependencies inside the Node app container, and starts Next.js on
+   This resolves local secrets through 1Password once, starts Supabase by
+   running the Supabase CLI inside a Node container, installs dependencies
+   inside the Node app container, and starts Next.js on
    [http://localhost:3003](http://localhost:3003).
    The dev script also clears any stale `public.ecr.aws` Docker credential before
    startup because the Supabase CLI pulls local service images from Public ECR.
