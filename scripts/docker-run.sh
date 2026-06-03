@@ -9,10 +9,24 @@ if [[ "$#" -eq 0 ]]; then
 fi
 
 command="$*"
+compose=(docker compose -f docker-compose.local.yml)
 
-exec scripts/op-run.sh docker compose -f docker-compose.local.yml run --rm --no-deps web \
-    sh -lc "corepack enable &&
-      corepack prepare pnpm@11.1.1 --activate &&
-      pnpm config set store-dir /pnpm/store &&
-      pnpm install --frozen-lockfile &&
-      exec ${command}"
+if ! scripts/op-run.sh "${compose[@]}" ps --status running --services | grep -qx web; then
+  echo "Docker web container is not running. Starting the local Docker environment..."
+  scripts/supabase-cli.sh start
+  scripts/op-run.sh "${compose[@]}" up -d --build web
+
+  echo "Waiting for the web container to accept commands..."
+  for _ in {1..60}; do
+    if scripts/op-run.sh "${compose[@]}" exec -T web sh -lc 'test -d node_modules/.pnpm' >/dev/null 2>&1; then
+      break
+    fi
+    sleep 2
+  done
+fi
+
+exec scripts/op-run.sh "${compose[@]}" exec -T web \
+  sh -lc "corepack enable &&
+    corepack prepare pnpm@11.1.1 --activate &&
+    pnpm config set store-dir /pnpm/store &&
+    exec ${command}"
