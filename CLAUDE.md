@@ -13,7 +13,7 @@ Most subdirectories also have their own scoped `CLAUDE.md` — read those when w
 - **Pages Router, not App Router.** Pages live in `src/pages/`. API routes in `src/pages/api/`.
 - **Path alias: `@/*` → `src/*`** (see `tsconfig.json`). Use it for all imports — no relative `../../` chains.
 - **Never hand-edit `src/lib/types/database.generated.ts`.** It's regenerated from Supabase.
-- **Local environment is Docker-first.** Prefer `just up`; secrets are injected with 1Password and validated with Varlock.
+- **Local environment is Docker-first.** Prefer `just up`; committed `.env.schema` references resolve the shared 1Password development item and are validated with Varlock.
 - **CFP closure gate:** new submissions must respect `isCfpClosed()` from `@/lib/cfp/closure`.
 
 ## Tech stack
@@ -194,7 +194,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - Don't trust client-supplied prices, ticket types, or order totals — validate server-side against `src/config/pricing-stages.ts` and Supabase.
 - Don't bypass Zod validation on request bodies.
 - Don't use `console.log` — use `logger.scope()`.
-- Don't store local secrets in `.env.local`; use `.env.1password` references and `just up`.
+- Don't store local secrets in `.env.local`; use committed `.env.schema` `op://zurichjs-conf/development/...` references and `just up`.
 - Don't put static content in components — it lives in `src/data/`.
 - Don't hardcode colors — use Tailwind `@theme` tokens or `src/styles/tokens.ts`.
 - Don't add new types to `src/types/` — domain types belong in `src/lib/types/`.

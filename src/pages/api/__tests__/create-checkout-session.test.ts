@@ -171,7 +171,7 @@ const mixedCart: Cart = {
 describe('/api/create-checkout-session', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.STRIPE_SECRET_KEY = 'sk_test';
+    vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test');
     mocks.validateCheckoutPrices.mockResolvedValue({ valid: true, currentStage: 'early_bird' });
     mocks.validateWorkshopCartItems.mockResolvedValue({ valid: true, workshopsById: new Map() });
     mocks.customersList.mockResolvedValue({ data: [] });
@@ -205,7 +205,7 @@ describe('/api/create-checkout-session', () => {
   });
 
   afterEach(() => {
-    delete process.env.STRIPE_SECRET_KEY;
+    vi.unstubAllEnvs();
   });
 
   it('rejects invalid entry requests before contacting Stripe', async () => {

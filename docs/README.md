@@ -74,8 +74,18 @@ src/
 ## Environment Variables
 
 Required environment variables are defined in `.env.schema`. Local development
-loads secret values from `.env.1password` through the 1Password CLI; do not
-create a plaintext `.env.local` for normal local work.
+loads committed `op://zurichjs-conf/development/...` references from
+`.env.schema` through the 1Password CLI, then applies Docker-local defaults,
+then applies an optional ignored `.env` override file. Do not create a plaintext
+`.env.local` for normal local work.
+
+The Docker wrapper resolves that final env set into a temporary file and Compose
+injects it with `env_file`, so local Docker commands pick up new `.env.schema`
+variables without a separate Compose allowlist.
+
+On Vercel, configure real values in the project environment settings. Vercel
+platform values override `.env.schema`; Vercel does not resolve `op://`
+references.
 
 ```env
 # Supabase

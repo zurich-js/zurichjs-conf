@@ -67,7 +67,7 @@ docs/
 
 - Docker Desktop, or Docker Engine with Docker Compose v2
 - 1Password CLI (`op`) installed, signed in, and authorized for the shared local
-  development secrets
+  development secrets referenced from `.env.schema`
 - Just command runner (`just`)
 
 You do not need Node, pnpm, or the Supabase CLI installed on the host for the
@@ -76,7 +76,7 @@ the Supabase CLI is run through Docker when it is not installed locally.
 
 You may need direct Supabase, Stripe, or Resend account access for provider
 configuration, production work, or changing shared secrets. Booting the local app
-only requires access to the 1Password item referenced by `.env.1password`.
+only requires access to the 1Password item referenced by `.env.schema`.
 
 Local Supabase exposes its own publishable/anon and service-role keys when the
 CLI starts the containers. These local development keys can be shared through
@@ -93,10 +93,29 @@ production Supabase service-role keys in the local development item.
 
 2. **Set up 1Password references**
 
-   Local secrets are read through `.env.1password`, which contains committed
-   `op://` references only. Create matching items/fields in 1Password or update
-   the references to your vault/item names. Do not create a plaintext `.env.local`
-   for local development.
+   Local secrets are read through committed `op://zurichjs-conf/development/...`
+   references in `.env.schema`. Create matching fields in the shared
+   `zurichjs-conf/development` 1Password item, or update the references to your
+   vault/item names. Do not create a plaintext `.env.local` for local
+   development. Shared operational values like `ADMIN_PASSWORD` belong in this
+   development item so local admin access has one source of truth.
+
+   For clone-specific overrides, create an ignored `.env` file. Docker local
+   environment loading is ordered as:
+
+   1. `.env.schema` committed schema/fallbacks and `op://` references
+   2. Docker-local defaults such as `APP_ENV=development` and
+      `NEXT_PUBLIC_BASE_URL=http://localhost:3003`
+   3. optional ignored `.env` overrides
+
+   `scripts/op-run.sh` resolves that final set into a temporary env file and
+   Docker Compose injects it into the web container with `env_file`, so adding a
+   variable to `.env.schema` is enough for local Docker commands.
+
+   Vercel does not resolve `op://` references. Configure real production and
+   preview values in the Vercel project settings; those platform values take
+   precedence over `.env.schema` during build/runtime. `.env.schema` is the
+   committed development schema/fallback layer, not the production secret source.
 
 3. **Run first-time setup**
 
@@ -125,7 +144,7 @@ production Supabase service-role keys in the local development item.
    just up
    ```
 
-   This runs `op run --env-file=.env.1password -- docker compose ...`, starts
+   This runs the Docker commands through `scripts/op-run.sh`, starts
    Supabase by running the Supabase CLI inside a Node container, installs
    dependencies inside the Node app container, and starts Next.js on
    [http://localhost:3003](http://localhost:3003).
@@ -135,7 +154,7 @@ production Supabase service-role keys in the local development item.
 6. **Configure Stripe**
    - Create products and prices in Stripe Dashboard
    - Set up webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
-   - Store the webhook secret in the 1Password item referenced by `.env.1password`
+   - Store the webhook secret in the 1Password item referenced by `.env.schema`
 
 7. **Stop the Docker development environment**
    ```bash

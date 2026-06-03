@@ -109,7 +109,7 @@ const validRequest = {
 describe('/api/cart/abandoned', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.RESEND_API_KEY = 're_test';
+    vi.stubEnv('RESEND_API_KEY', 're_test');
     mocks.renderEmail.mockResolvedValue('<html>email</html>');
     mocks.sendEmail.mockResolvedValue({ data: { id: 'email_new' }, error: null });
     mocks.cancelEmail.mockResolvedValue({});
@@ -128,7 +128,7 @@ describe('/api/cart/abandoned', () => {
   });
 
   afterEach(() => {
-    delete process.env.RESEND_API_KEY;
+    vi.unstubAllEnvs();
   });
 
   it('rejects invalid requests', async () => {

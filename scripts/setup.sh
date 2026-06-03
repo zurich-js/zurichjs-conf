@@ -33,8 +33,8 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -f .env.1password ]]; then
-  echo "Missing .env.1password. Local development secrets must be referenced through 1Password." >&2
+if [[ ! -f .env.schema ]]; then
+  echo "Missing .env.schema. Local development secrets must be referenced through the committed schema." >&2
   exit 1
 fi
 
@@ -46,7 +46,7 @@ if ! op whoami >/dev/null 2>&1; then
 fi
 
 echo "Checking required 1Password-backed environment values..."
-op run --env-file=.env.1password -- bash -c '
+scripts/op-run.sh bash -c '
   set -euo pipefail
   missing=0
   for name in "$@"; do
