@@ -3,20 +3,10 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import {SectionSplitView} from "@/components/organisms/SectionSplitView";
 
-export interface Event {
-  time: string;
-  title: string;
-  description: string;
-}
-
 export interface Day {
   id: string;
   label: string;
   date: string;
-  description?: string; // General description for TBA mode
-  tbaMode?: boolean; // When true, show description instead of detailed events for this day
-  defaultSelected?: boolean; // When true, this day will be selected by default
-  events: Event[];
 }
 
 export interface ScheduleSectionProps {

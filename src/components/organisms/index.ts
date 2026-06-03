@@ -30,7 +30,7 @@ export { AboutCTASection } from './AboutCTASection';
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';
 export type { SectionSplitViewProps } from './SectionSplitView';
-export type { ScheduleSectionProps, Day, Event } from './ScheduleSection';
+export type { ScheduleSectionProps, Day } from './ScheduleSection';
 export type { TicketsSectionProps, Plan, StockInfo } from './TicketsSection';
 export type { TicketsSectionWithStripeProps } from './TicketsSectionWithStripe';
 export type { TimelineSectionProps, TimelineEntry } from './TimelineSection';
