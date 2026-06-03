@@ -7,6 +7,10 @@ default:
 setup:
     scripts/setup.sh
 
+# Configure this clone to use the repo Git hooks.
+hooks:
+    git config core.hooksPath .githooks
+
 # Start local Docker dev detached with 1Password secret injection.
 up:
     scripts/docker-dev.sh -d
@@ -47,10 +51,17 @@ varlock:
 lint:
     scripts/docker-run.sh pnpm exec oxlint --fix
 
-# Run the safe per-file checks used by lint-staged. Usage: just lint-staged-check src/foo.ts
+# Run the Git pre-commit checks manually.
+pre-commit:
+    scripts/pre-commit.sh
+
+# Run the Git pre-push checks manually.
+pre-push:
+    scripts/pre-push.sh
+
+# Backward-compatible alias for pre-commit.
 lint-staged-check *files:
-    scripts/docker-run.sh pnpm exec oxlint --fix {{files}}
-    scripts/docker-run.sh pnpm exec vitest related --run {{files}}
+    just pre-commit
 
 # Run TypeScript typecheck inside Docker.
 typecheck:

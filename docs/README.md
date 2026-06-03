@@ -99,9 +99,12 @@ NEXT_PUBLIC_POSTHOG_HOST=
 
 ```bash
 just setup               # Validate first-run prerequisites and start Docker dev
+just hooks               # Configure this clone to use the repo Git hooks
 just up                  # Start Docker dev detached on http://localhost:3003
 just down                # Stop local Docker dev and Supabase containers
 just check               # Varlock + lint + typecheck + related tests
+just pre-commit          # Run the Git pre-commit checks inside Docker
+just pre-push            # Run the Git pre-push build check inside Docker
 just lint                # Run oxlint --fix inside Docker
 just typecheck           # TypeScript check inside Docker
 just test-related <file> # Run related Vitest tests inside Docker

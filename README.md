@@ -106,7 +106,8 @@ production Supabase service-role keys in the local development item.
 
    This checks Docker, Docker Compose v2, `op`, `just`, 1Password access, and
    required secret references before starting the Docker development environment.
-   It also installs Node dependencies inside the Docker volume.
+   It also configures the repo Git hooks and installs Node dependencies inside
+   the Docker volume.
 
 4. **Authenticate Supabase CLI inside Docker when needed**
 
@@ -162,6 +163,7 @@ Local environment:
 
 ```bash
 just setup           # Validate first-run prerequisites and start local Docker dev
+just hooks           # Configure this clone to use the repo Git hooks
 just up              # Start local Docker dev detached with 1Password injection
 just down            # Stop local Docker dev and Supabase containers
 just shell           # Open a shell in the Node container
@@ -172,6 +174,8 @@ Common checks:
 
 ```bash
 just check                 # Varlock + lint + typecheck + related tests
+just pre-commit            # Run the same checks as the Git pre-commit hook
+just pre-push              # Run the same build check as the Git pre-push hook
 just lint                  # Run oxlint --fix inside Docker
 just typecheck             # Run TypeScript type checking inside Docker
 just test-related <files>  # Run related Vitest tests inside Docker
@@ -184,6 +188,12 @@ just test        # Run the full Vitest suite inside Docker
 just build       # Run production Next.js build inside Docker
 just check-full  # Varlock + lint + typecheck + full tests + build
 ```
+
+Git hooks run on the host because Git runs on the host, but the hooks only use
+host `git`, `bash`, `docker`, `op`, and `just`. Varlock, oxlint, TypeScript,
+Vitest, and Next.js build run inside Docker. Production builds are intentionally
+not part of pre-commit because they are too heavy for small commits; the
+pre-push hook runs `next build` in Docker before changes leave your machine.
 
 Local seed phases:
 
@@ -210,6 +220,8 @@ just docker-down  # Alias for just down
 - oxlint for linting
 - `pnpm install` and package scripts are guarded so local installs, checks, and
   builds run through Docker or CI
+- Pre-commit checks run through Docker and do not include production builds
+- Pre-push runs the production build through Docker
 
 ## Architecture Highlights
 

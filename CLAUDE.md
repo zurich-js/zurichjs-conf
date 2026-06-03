@@ -38,6 +38,7 @@ Most subdirectories also have their own scoped `CLAUDE.md` — read those when w
 
 ```bash
 just setup               # Validate first-run prerequisites and start Docker dev
+just hooks               # Configure this clone to use the repo Git hooks
 just up                  # Start Docker dev server detached (host port 3003)
 just down                # Stop local Docker dev and Supabase containers
 just build               # Production build inside Docker
@@ -46,6 +47,8 @@ just typecheck           # tsc --noEmit inside Docker
 just test                # vitest run inside Docker
 just test-related <files># vitest related --run inside Docker
 just check               # Varlock + lint + typecheck + related tests inside Docker
+just pre-commit          # Same checks as the Git pre-commit hook; no build
+just pre-push            # Same build check as the Git pre-push hook
 just dev                 # Alias for just up
 just seed-cfp-first-stage    # Reset local Supabase for CFP review phase
 just seed-cfp-admission      # Reset local Supabase for CFP admission phase

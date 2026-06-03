@@ -58,6 +58,9 @@ op run --env-file=.env.1password -- bash -c '
   exit "$missing"
 ' bash "${required_env_vars[@]}"
 
+echo "Configuring Git hooks..."
+git config core.hooksPath .githooks
+
 echo "Starting Docker development environment..."
 scripts/docker-dev.sh -d
 
