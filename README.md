@@ -192,7 +192,8 @@ just docker-down  # Alias for just down
 - Environment schema validation is handled by Varlock
 - Strict TypeScript configuration
 - oxlint for linting
-- Package scripts are guarded so local checks/builds run through Docker or CI
+- `pnpm install` and package scripts are guarded so local installs, checks, and
+  builds run through Docker or CI
 
 ## Architecture Highlights
 
