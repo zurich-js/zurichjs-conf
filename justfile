@@ -11,7 +11,7 @@ setup:
 hooks:
     git config core.hooksPath .githooks
 
-# Start local Docker dev detached with 1Password secret injection.
+# Start local Docker dev detached with one-time 1Password secret injection.
 up:
     scripts/docker-dev.sh -d
 
