@@ -78,6 +78,11 @@ You may need direct Supabase, Stripe, or Resend account access for provider
 configuration, production work, or changing shared secrets. Booting the local app
 only requires access to the 1Password item referenced by `.env.1password`.
 
+Local Supabase exposes its own publishable/anon and service-role keys when the
+CLI starts the containers. These local development keys can be shared through
+1Password as long as they match the local Supabase configuration. Do not put
+production Supabase service-role keys in the local development item.
+
 ### Installation
 
 1. **Clone the repository**
@@ -93,7 +98,17 @@ only requires access to the 1Password item referenced by `.env.1password`.
    the references to your vault/item names. Do not create a plaintext `.env.local`
    for local development.
 
-3. **Authenticate Supabase CLI inside Docker when needed**
+3. **Run first-time setup**
+
+   ```bash
+   just setup
+   ```
+
+   This checks Docker, Docker Compose v2, `op`, `just`, 1Password access, and
+   required secret references before starting the Docker development environment.
+   It also installs Node dependencies inside the Docker volume.
+
+4. **Authenticate Supabase CLI inside Docker when needed**
 
    ```bash
    just supabase-login
@@ -104,7 +119,7 @@ only requires access to the 1Password item referenced by `.env.1password`.
    CLI container and stores the CLI credential in the `supabase-cli` Docker
    volume.
 
-4. **Run the Docker development environment**
+5. **Run the Docker development environment after setup**
    ```bash
    just up
    ```
@@ -116,17 +131,17 @@ only requires access to the 1Password item referenced by `.env.1password`.
    The dev script also clears any stale `public.ecr.aws` Docker credential before
    startup because the Supabase CLI pulls local service images from Public ECR.
 
-5. **Configure Stripe**
+6. **Configure Stripe**
    - Create products and prices in Stripe Dashboard
    - Set up webhook endpoint: `https://your-domain.com/api/webhooks/stripe`
    - Store the webhook secret in the 1Password item referenced by `.env.1password`
 
-6. **Stop the Docker development environment**
+7. **Stop the Docker development environment**
    ```bash
    just down
    ```
 
-7. **Test webhooks locally** (optional)
+8. **Test webhooks locally** (optional)
    ```bash
    stripe listen --forward-to localhost:3003/api/webhooks/stripe
    ```
@@ -146,6 +161,7 @@ only requires access to the 1Password item referenced by `.env.1password`.
 Local environment:
 
 ```bash
+just setup           # Validate first-run prerequisites and start local Docker dev
 just up              # Start local Docker dev detached with 1Password injection
 just down            # Stop local Docker dev and Supabase containers
 just shell           # Open a shell in the Node container

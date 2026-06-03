@@ -8,7 +8,7 @@
 		"pnpm": "11.x"
 	},
 	"scripts": {
-		"preinstall": "scripts/require-docker-or-ci.sh",
+		"pnpm:devPreinstall": "scripts/require-docker-or-ci.sh",
 		"dev": "scripts/require-docker-or-ci.sh && next dev",
 		"dev:docker": "scripts/docker-dev.sh",
 		"docker:up": "scripts/docker-dev.sh",

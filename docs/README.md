@@ -98,6 +98,7 @@ NEXT_PUBLIC_POSTHOG_HOST=
 ## Development Commands
 
 ```bash
+just setup               # Validate first-run prerequisites and start Docker dev
 just up                  # Start Docker dev detached on http://localhost:3003
 just down                # Stop local Docker dev and Supabase containers
 just check               # Varlock + lint + typecheck + related tests

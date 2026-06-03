@@ -37,6 +37,7 @@ Most subdirectories also have their own scoped `CLAUDE.md` — read those when w
 ## Commands
 
 ```bash
+just setup               # Validate first-run prerequisites and start Docker dev
 just up                  # Start Docker dev server detached (host port 3003)
 just down                # Stop local Docker dev and Supabase containers
 just build               # Production build inside Docker

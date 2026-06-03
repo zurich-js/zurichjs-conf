@@ -9,7 +9,8 @@ cat >&2 <<'EOF'
 This command is not allowed on the host.
 
 Use the justfile/Docker command surface instead:
-  just up
+  just setup
+  just dev
   just lint
   just typecheck
   just test

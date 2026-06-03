@@ -3,6 +3,10 @@ set dotenv-load := false
 default:
     just --list
 
+# Validate first-run prerequisites and start local Docker dev.
+setup:
+    scripts/setup.sh
+
 # Start local Docker dev detached with 1Password secret injection.
 up:
     scripts/docker-dev.sh -d
