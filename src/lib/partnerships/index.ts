@@ -6,6 +6,7 @@
 // Partnership CRUD operations
 export {
   listPartnerships,
+  listPartnerEmails,
   getPartnership,
   getPartnershipWithDetails,
   createPartnership,
@@ -14,6 +15,7 @@ export {
   generateTrackingUrl,
   getPartnershipStats,
 } from './partnerships';
+export type { PartnerEmailContact } from './partnerships';
 
 // Public partnership data
 export { getPublicCommunityPartners } from './public';
