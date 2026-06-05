@@ -38,6 +38,32 @@ export async function fetchPartnerships(params: PartnershipListParams): Promise<
   return res.json();
 }
 
+export interface PartnerEmailContact {
+  id: string;
+  name: string;
+  contact_name: string;
+  contact_email: string;
+  company_name: string | null;
+  type: PartnershipType;
+  status: PartnershipStatus;
+}
+
+export interface PartnerEmailsResponse {
+  contacts: PartnerEmailContact[];
+  count: number;
+}
+
+export async function fetchPartnerEmails(params: PartnershipListParams): Promise<PartnerEmailsResponse> {
+  const queryParams = new URLSearchParams();
+  if (params.type) queryParams.set('type', params.type);
+  if (params.status) queryParams.set('status', params.status);
+  if (params.search) queryParams.set('search', params.search);
+
+  const res = await fetch(`/api/admin/partnerships/emails?${queryParams.toString()}`);
+  if (!res.ok) throw new Error('Failed to fetch partner emails');
+  return res.json();
+}
+
 export async function fetchPartnershipStats(): Promise<PartnershipStats> {
   const res = await fetch('/api/admin/partnerships/stats');
   if (!res.ok) throw new Error('Failed to fetch stats');
@@ -65,6 +91,7 @@ export const partnershipQueryKeys = {
   all: ['partnerships'] as const,
   lists: () => [...partnershipQueryKeys.all, 'list'] as const,
   list: (params: PartnershipListParams) => [...partnershipQueryKeys.lists(), params] as const,
+  emails: (params: PartnershipListParams) => [...partnershipQueryKeys.all, 'emails', params] as const,
   stats: () => [...partnershipQueryKeys.all, 'stats'] as const,
   details: () => [...partnershipQueryKeys.all, 'detail'] as const,
   detail: (id: string) => [...partnershipQueryKeys.details(), id] as const,

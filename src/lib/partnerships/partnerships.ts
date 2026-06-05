@@ -81,6 +81,59 @@ export async function listPartnerships(
 }
 
 /**
+ * A partner contact, projected for email export / bulk mailing.
+ */
+export interface PartnerEmailContact {
+  id: string;
+  name: string;
+  contact_name: string;
+  contact_email: string;
+  company_name: string | null;
+  type: PartnershipType;
+  status: PartnershipStatus;
+}
+
+/**
+ * List all partner contact emails matching the given filters, without
+ * pagination. Used to grab every recipient for a blast/bulk email.
+ */
+export async function listPartnerEmails(
+  options: Omit<ListPartnershipsOptions, 'page' | 'limit'> = {}
+): Promise<PartnerEmailContact[]> {
+  const supabase = createServiceRoleClient();
+  const { type, status, search } = options;
+
+  let query = supabase
+    .from('partnerships')
+    .select('id, name, contact_name, contact_email, company_name, type, status');
+
+  if (type) {
+    query = query.eq('type', type);
+  }
+
+  if (status) {
+    query = query.eq('status', status);
+  }
+
+  if (search) {
+    query = query.or(
+      `name.ilike.%${search}%,contact_name.ilike.%${search}%,contact_email.ilike.%${search}%,company_name.ilike.%${search}%`
+    );
+  }
+
+  query = query.order('name', { ascending: true });
+
+  const { data, error } = await query;
+
+  if (error) {
+    log.error('Failed to list partner emails', error);
+    throw new Error(`Failed to list partner emails: ${error.message}`);
+  }
+
+  return (data || []) as PartnerEmailContact[];
+}
+
+/**
  * Get a single partnership by ID
  */
 export async function getPartnership(id: string): Promise<Partnership | null> {

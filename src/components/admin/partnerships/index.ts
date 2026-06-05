@@ -12,4 +12,5 @@ export { AddPartnershipModal } from './AddPartnershipModal';
 export { PartnershipDetailModal } from './PartnershipDetailModal';
 export { PartnershipLogoUpload } from './PartnershipLogoUpload';
 export { SendEmailModal } from './SendEmailModal';
+export { ExportEmailsModal } from './ExportEmailsModal';
 export { ProductMultiSelect } from './ProductMultiSelect';

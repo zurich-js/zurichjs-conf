@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Mail } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -20,8 +20,10 @@ import {
   AddPartnershipModal,
   PartnershipDetailModal,
   SendEmailModal,
+  ExportEmailsModal,
   PartnershipWithDetails,
   fetchPartnerships,
+  fetchPartnerEmails,
   fetchPartnershipStats,
   fetchPartnershipDetails,
   fetchProducts,
@@ -45,6 +47,7 @@ export default function PartnershipsDashboard() {
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [selectedPartnership, setSelectedPartnership] = useState<Partnership | null>(null);
   const [detailedPartnership, setDetailedPartnership] = useState<PartnershipWithDetails | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -55,6 +58,12 @@ export default function PartnershipsDashboard() {
     queryKey: partnershipQueryKeys.list({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
     queryFn: () => fetchPartnerships({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
     enabled: isAuthenticated === true,
+  });
+
+  const { data: emailsData, isLoading: isLoadingEmails } = useQuery({
+    queryKey: partnershipQueryKeys.emails({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
+    queryFn: () => fetchPartnerEmails({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
+    enabled: isAuthenticated === true && showExportModal,
   });
 
   const { data: stats, isLoading: isLoadingStats } = useQuery({
@@ -107,7 +116,14 @@ export default function PartnershipsDashboard() {
         />
 
         <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:gap-4 sm:justify-between sm:items-center">
-          <div className="sm:order-2">
+          <div className="sm:order-2 flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-black bg-white border border-gray-300 font-medium rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Mail className="h-4 w-4" />
+              Export Emails
+            </button>
             <button
               onClick={() => setShowAddModal(true)}
               className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-brand-primary text-black font-medium rounded-lg hover:bg-[#E5D665] flex items-center justify-center gap-2 cursor-pointer"
@@ -178,6 +194,13 @@ export default function PartnershipsDashboard() {
           />
         )}
       </main>
+
+      <ExportEmailsModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        contacts={emailsData?.contacts || []}
+        isLoading={isLoadingEmails}
+      />
 
       <AddPartnershipModal
         isOpen={showAddModal}
