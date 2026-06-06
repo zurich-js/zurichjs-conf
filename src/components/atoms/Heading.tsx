@@ -11,6 +11,7 @@ export interface HeadingProps {
   animate?: boolean;
   delay?: number;
   variant?: HeadingVariant;
+  id?: string;
 }
 
 /**
@@ -26,6 +27,7 @@ export const Heading: React.FC<HeadingProps> = ({
   animate = false,
   delay = 0,
   variant = 'dark',
+  id,
 }) => {
   const Component = level;
 
@@ -45,6 +47,7 @@ export const Heading: React.FC<HeadingProps> = ({
 
     return (
       <MotionComponent
+        id={id}
         className={combinedClassName}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -59,6 +62,6 @@ export const Heading: React.FC<HeadingProps> = ({
     );
   }
 
-  return <Component className={combinedClassName}>{children}</Component>;
+  return <Component id={id} className={combinedClassName}>{children}</Component>;
 };
 
