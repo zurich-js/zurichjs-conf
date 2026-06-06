@@ -194,6 +194,12 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     !dropTop && dropBottom && 'shaped-section-drop-bottom',
   ].filter(Boolean).join(' ');
 
+  // When an id is set, anchor it on the inner content rather than the outer
+  // section. The section's large clip-path top padding would otherwise push
+  // the content far below a deep-link landing spot; anchoring the content
+  // (with a scroll-mt offset to clear the fixed nav) lands `/#id` on it.
+  const anchorClass = id ? 'scroll-mt-28' : undefined;
+
   return (
     <section
       className={`
@@ -202,15 +208,19 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
         ${spacingClasses}
         ${shapeClass}
         ${dropClasses}
-        ${id ? 'scroll-mt-28' : ''}
         ${className}
       `.trim().replace(/\s+/g, ' ')}
-      id={id}
     >
       {disableContainer ? (
-        children
+        id ? (
+          <div id={id} className={anchorClass}>
+            {children}
+          </div>
+        ) : (
+          children
+        )
       ) : (
-        <SectionContainer>
+        <SectionContainer id={id} className={anchorClass}>
           {children}
         </SectionContainer>
       )}

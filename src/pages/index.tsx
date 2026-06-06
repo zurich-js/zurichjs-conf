@@ -134,8 +134,8 @@ export default function Home({ blueskyFeed }: HomePageProps) {
           <BlueskyFeedSection initialFeed={blueskyFeed} />
         </ShapedSection>
 
-        <ShapedSection shape="tighten" variant="yellow">
-          <TicketsSectionWithStripe id="tickets" />
+        <ShapedSection shape="tighten" variant="yellow" id="tickets">
+          <TicketsSectionWithStripe />
         </ShapedSection>
 
         <ShapedSection shape="widen" variant="medium" id="faq">
