@@ -48,6 +48,11 @@ export interface ShapedSectionProps {
    * Content to be rendered inside the shaped section
    */
   children: React.ReactNode;
+  /**
+   * Anchor id for the section. When set, the section becomes a deep-link
+   * target (`/page#id`) and gets a `scroll-mt` offset so it lands below the
+   * fixed nav instead of behind it.
+   */
   id?: string;
   /**
    * Reduce the top padding for tighter spacing with previous section
@@ -197,6 +202,7 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
         ${spacingClasses}
         ${shapeClass}
         ${dropClasses}
+        ${id ? 'scroll-mt-28' : ''}
         ${className}
       `.trim().replace(/\s+/g, ' ')}
       id={id}
