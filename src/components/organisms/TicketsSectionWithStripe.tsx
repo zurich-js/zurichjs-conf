@@ -16,6 +16,11 @@ import { Heading, Kicker } from '@/components/atoms';
 
 export interface TicketsSectionWithStripeProps {
   /**
+   * Optional anchor id forwarded to the section root so `/#id` deep-links
+   * land on the tickets content (offset below the fixed nav).
+   */
+  id?: string;
+  /**
    * Additional CSS classes
    */
   className?: string;
@@ -91,6 +96,7 @@ function TicketCardsSkeleton({ className = '' }: { className?: string }) {
  * Shows error UI if Stripe prices fail to load
  */
 export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> = ({
+  id,
   className = '',
 }) => {
   const { plans, currentStage, isLoading, error, refetch } = useTicketPricing();
@@ -131,7 +137,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   // By checking plans.length === 0, we avoid hydration mismatch
   if (isLoading && plans.length === 0) {
     return (
-      <SectionContainer className={`relative ${className}`} aria-labelledby="tickets-heading">
+      <SectionContainer id={id} className={`relative ${id ? 'scroll-mt-28' : ''} ${className}`} aria-labelledby="tickets-heading">
         <TicketCardsSkeleton />
       </SectionContainer>
     );
@@ -141,7 +147,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   // The hook already validates plans and currentStage, so only check error
   if (error) {
     return (
-      <SectionContainer className={`${className}`} aria-labelledby="tickets-heading">
+      <SectionContainer id={id} className={`${id ? 'scroll-mt-28' : ''} ${className}`} aria-labelledby="tickets-heading">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -228,7 +234,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
 
   return (
     <>
-      <TicketsSection {...ticketData} className={className} />
+      <TicketsSection {...ticketData} id={id} className={className} />
       <StudentVerificationModal
         isOpen={isModalOpen}
         onClose={closeModal}

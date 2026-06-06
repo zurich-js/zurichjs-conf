@@ -67,6 +67,12 @@ export interface Plan {
 
 export interface TicketsSectionProps {
   /**
+   * Optional anchor id for the section root. When set, the heading becomes a
+   * deep-link target (`/#id`) with a `scroll-mt` offset so it lands below the
+   * fixed nav rather than behind the section's clip-path padding.
+   */
+  id?: string;
+  /**
    * Section kicker/eyebrow text
    */
   kicker?: string;
@@ -109,6 +115,7 @@ export interface TicketsSectionProps {
  * Complete pricing section with yellow background, diagonal separators, price cards, and countdown
  */
 export const TicketsSection: React.FC<TicketsSectionProps> = ({
+                                                                id,
                                                                 kicker = 'TICKETS',
                                                                 title,
                                                                 subtitle,
@@ -128,7 +135,8 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
 
   return (
     <div
-      className={`relative flex flex-col gap-10 ${className}`}
+      id={id}
+      className={`relative flex flex-col gap-10 ${id ? 'scroll-mt-28' : ''} ${className}`}
       aria-labelledby="tickets-heading"
     >
       {/* Content container */}
@@ -144,6 +152,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
         </Kicker>
 
         <Heading
+          id="tickets-heading"
           level="h2"
           variant="light"
           className="text-xl text-balance leading-none"
