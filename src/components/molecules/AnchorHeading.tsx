@@ -3,7 +3,11 @@ import { Link as LinkIcon, Check } from 'lucide-react';
 import { Heading, type HeadingLevel, type HeadingVariant } from '@/components/atoms';
 
 export interface AnchorHeadingProps {
-  /** The anchor id — links resolve as `/path#{id}` */
+  /**
+   * The anchor id this heading links to (`/path#{id}`). The matching scroll
+   * target lives on the enclosing section (e.g. a ShapedSection `id`), so the
+   * kicker above the heading stays visible on landing.
+   */
   id: string;
   children: React.ReactNode;
   level?: HeadingLevel;
@@ -14,12 +18,12 @@ export interface AnchorHeadingProps {
 }
 
 /**
- * A heading that doubles as a linkable anchor target.
+ * A section heading paired with a hover-revealed "copy link" button.
  *
- * Renders a {@link Heading} carrying the given `id` (the scroll target, offset
- * below the fixed nav via `scroll-mt`) alongside a hover-revealed link button.
- * Clicking the button copies the section's deep link to the clipboard and
- * updates the URL hash so the link can be shared.
+ * Renders a {@link Heading} alongside a link button that copies the section's
+ * deep link (`/path#{id}`) to the clipboard and updates the URL hash. The
+ * actual scroll target is owned by the enclosing section, not the heading, so
+ * that any kicker above the heading remains visible when the anchor is opened.
  */
 export const AnchorHeading: React.FC<AnchorHeadingProps> = ({
   id,
@@ -58,7 +62,7 @@ export const AnchorHeading: React.FC<AnchorHeadingProps> = ({
 
   return (
     <div className="group flex items-center gap-2">
-      <Heading id={id} level={level} variant={variant} className={`scroll-mt-28 ${className}`}>
+      <Heading level={level} variant={variant} className={className}>
         {children}
       </Heading>
       <button

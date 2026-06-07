@@ -200,6 +200,7 @@ export default function AboutUs() {
       <ShapedSection
         shape="down"
         variant="medium"
+        id="venue"
       >
         <div className="rich-text-renderer">
           <Kicker variant="dark" className="mb-4">
@@ -260,6 +261,7 @@ export default function AboutUs() {
       <ShapedSection
         shape="down"
         variant="dark"
+        id="after-party"
       >
         <div className="rich-text-renderer">
           <Kicker variant="dark" className="mb-4">
