@@ -5,6 +5,7 @@ import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/
 import { aboutPageData } from "@/data/about-us";
 import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
 import {Button, Heading, Kicker} from "@/components/atoms";
+import {AnchorHeading} from "@/components/molecules";
 import {TeamMemberCard} from "@/components/molecules/TeamMemberCard";
 import {ValueCard} from "@/components/molecules/ValueCard";
 import { useCart } from "@/contexts/CartContext";
@@ -199,14 +200,15 @@ export default function AboutUs() {
       <ShapedSection
         shape="down"
         variant="medium"
+        id="venue"
       >
-        <div className="rich-text-renderer" id={"venue"}>
+        <div className="rich-text-renderer">
           <Kicker variant="dark" className="mb-4">
             {aboutPageData.venue.kicker}
           </Kicker>
-          <Heading level="h2" variant="dark" className="mb-8 text-xl font-bold">
+          <AnchorHeading id="venue" level="h2" variant="dark" label="the venue" className="mb-8 text-xl font-bold">
             {aboutPageData.venue.title}
-          </Heading>
+          </AnchorHeading>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             <div className="space-y-4">
@@ -259,14 +261,15 @@ export default function AboutUs() {
       <ShapedSection
         shape="down"
         variant="dark"
+        id="after-party"
       >
-        <div id="after-party" className="rich-text-renderer">
+        <div className="rich-text-renderer">
           <Kicker variant="dark" className="mb-4">
             {aboutPageData.afterParty.kicker}
           </Kicker>
-          <Heading level="h2" variant="dark" className="mb-3 text-xl font-bold">
+          <AnchorHeading id="after-party" level="h2" variant="dark" label="the Seebad Enge afterparty" className="mb-3 text-xl font-bold">
             {aboutPageData.afterParty.title}
-          </Heading>
+          </AnchorHeading>
           <p className="text-brand-gray-light text-base mb-8 max-w-3xl">
             {aboutPageData.afterParty.subtitle}
           </p>

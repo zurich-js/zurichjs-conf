@@ -144,6 +144,7 @@ export const TicketsSection: React.FC<TicketsSectionProps> = ({
         </Kicker>
 
         <Heading
+          id="tickets-heading"
           level="h2"
           variant="light"
           className="text-xl text-balance leading-none"

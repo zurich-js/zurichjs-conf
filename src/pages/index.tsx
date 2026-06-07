@@ -65,6 +65,8 @@ export default function Home({ blueskyFeed }: HomePageProps) {
     const ticketsSection = document.getElementById('tickets');
     if (ticketsSection) {
       ticketsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Reflect the anchor in the URL so the section is shareable/bookmarkable.
+      window.history.replaceState(null, '', '#tickets');
     }
   };
 
