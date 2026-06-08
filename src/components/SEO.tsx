@@ -104,7 +104,7 @@ export interface SEOProps {
   /** OG image path or full URL */
   ogImage?: string;
   /** OG type - defaults to 'website' */
-  ogType?: "website" | "article" | "event";
+  ogType?: "website" | "article" | "event" | "profile";
   /** Twitter card type */
   twitterCard?: "summary" | "summary_large_image";
   /** JSON-LD structured data - can be single object or array */
@@ -121,6 +121,10 @@ export interface SEOProps {
   author?: string;
   /** RSS feed URL for autodiscovery */
   feedUrl?: string;
+  /** First name for og:type=profile */
+  profileFirstName?: string;
+  /** Last name for og:type=profile */
+  profileLastName?: string;
 }
 
 /**
@@ -341,6 +345,8 @@ export const SEO: React.FC<SEOProps> = ({
   modifiedTime,
   author,
   feedUrl,
+  profileFirstName,
+  profileLastName,
 }) => {
   // Build full title with site name
   const fullTitle = `${title} | ZurichJS Conf 2026`;
@@ -409,6 +415,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:image" content={ogImageUrl} />
       <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
       <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
+      <meta property="og:image:type" content="image/png" />
       <meta property="og:image:alt" content={title} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta property="og:site_name" content="ZurichJS Conf" />
@@ -432,6 +439,14 @@ export const SEO: React.FC<SEOProps> = ({
       )}
       {ogType === "article" && author && (
         <meta property="article:author" content={author} />
+      )}
+
+      {/* Profile-specific OG tags */}
+      {ogType === "profile" && profileFirstName && (
+        <meta property="profile:first_name" content={profileFirstName} />
+      )}
+      {ogType === "profile" && profileLastName && (
+        <meta property="profile:last_name" content={profileLastName} />
       )}
 
       {/* Twitter Card Meta Tags */}

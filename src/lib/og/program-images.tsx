@@ -1,14 +1,12 @@
-import type { NextApiResponse } from 'next';
-import { ImageResponse } from 'next/og';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { publicProgramTabs } from '@/data';
+import type { SpeakerOgRow } from '@/lib/cfp/speakers';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
+export const OG_HEADER_HEIGHT = 120;
 
-const COLORS = {
+export const COLORS = {
   black: '#000000',
   white: '#FFFFFF',
   yellow: '#F1E271',
@@ -33,7 +31,7 @@ type SessionDetailOgInput = {
 };
 
 type SpeakerDetailOgInput = {
-  speaker: PublicSpeaker;
+  speaker: SpeakerOgRow;
 };
 
 type CollectionOgInput = {
@@ -55,21 +53,6 @@ const baseTextStyle = {
   letterSpacing: '0px',
 };
 
-const figtreeFontPromises = new Map<number, Promise<ArrayBuffer>>();
-
-async function getFigtreeFont(weight: 400 | 700 | 800) {
-  if (!figtreeFontPromises.has(weight)) {
-    figtreeFontPromises.set(
-      weight,
-      readFile(path.join(process.cwd(), `public/fonts/figtree-${weight}.ttf`)).then((buffer) =>
-        buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
-      )
-    );
-  }
-
-  return figtreeFontPromises.get(weight)!;
-}
-
 function getAbsoluteImageUrl(url: string | null | undefined) {
   if (!url) {
     return null;
@@ -81,6 +64,15 @@ function getAbsoluteImageUrl(url: string | null | undefined) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
   return `${baseUrl}${url}`;
+}
+
+function withSupabaseImageWidth(url: string | null | undefined, width: number) {
+  const absolute = getAbsoluteImageUrl(url);
+  if (!absolute) return null;
+  // Supabase Storage image transformations: append width param without colliding with cache-buster ?v=
+  const hasQuery = absolute.includes('?');
+  const widthParam = `width=${width}&resize=contain&quality=80`;
+  return `${absolute}${hasQuery ? '&' : '?'}${widthParam}`;
 }
 
 function truncateText(value: string, maxLength: number) {
@@ -113,7 +105,7 @@ function Header({ scheduleLabel = 'Sep 11, 2026' }: { scheduleLabel?: string }) 
         top: 0,
         left: 0,
         width: OG_WIDTH,
-        height: 120,
+        height: OG_HEADER_HEIGHT,
         background: COLORS.black,
         color: COLORS.white,
         display: 'flex',
@@ -235,38 +227,184 @@ function OgShell({
   );
 }
 
+const HERO_BODY_HEIGHT = OG_HEIGHT - OG_HEADER_HEIGHT;
+const HERO_LEFT_WIDTH = 700;
+const HERO_RIGHT_WIDTH = OG_WIDTH - HERO_LEFT_WIDTH;
+
+function HeroPills() {
+  // Visually echoes the rotated pill stack in the speaker page hero. Stacked
+  // with negative marginTop instead of absolute positioning for faster satori layout.
+  const pillBase = {
+    height: 32,
+    borderRadius: 9999,
+    transform: 'rotate(-8deg)',
+    display: 'flex',
+  };
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 120,
+        left: 180,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+      }}
+    >
+      <div style={{ ...pillBase, width: 290, background: COLORS.yellow }} />
+      <div style={{ ...pillBase, width: 280, background: COLORS.blue, marginLeft: 28 }} />
+      <div style={{ ...pillBase, width: 320, background: COLORS.white, marginLeft: -10 }} />
+    </div>
+  );
+}
+
 export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
-  const name = getSpeakerName(speaker);
+  const name = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
+  const foregroundUrl = withSupabaseImageWidth(speaker.portrait_foreground_url, 700);
+  const backgroundUrl = withSupabaseImageWidth(speaker.portrait_background_url, 900);
+  const hasForeground = Boolean(foregroundUrl);
+  const hasBackground = Boolean(backgroundUrl);
+  const hasHero = hasForeground || hasBackground;
 
   return (
     <OgShell background={COLORS.yellow}>
       <div
         style={{
           position: 'absolute',
-          top: 120,
-          right: 0,
-          bottom: 0,
+          top: OG_HEADER_HEIGHT,
           left: 0,
+          width: OG_WIDTH,
+          height: HERO_BODY_HEIGHT,
           display: 'flex',
-          alignItems: 'center',
-          padding: '0 60px',
-          gap: 48,
+          flexDirection: 'row',
         }}
       >
-        <Avatar src={speaker.profile_image_url} name={name} size={156} />
         <div
           style={{
+            width: HERO_LEFT_WIDTH,
+            height: HERO_BODY_HEIGHT,
+            position: 'relative',
+            background: hasBackground ? COLORS.grayDarkest : (hasForeground ? COLORS.grayDarkest : COLORS.yellow),
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          {hasBackground ? (
+            <>
+              <img
+                src={backgroundUrl as string}
+                alt=""
+                width={HERO_LEFT_WIDTH}
+                height={HERO_BODY_HEIGHT}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: HERO_LEFT_WIDTH,
+                  height: HERO_BODY_HEIGHT,
+                  objectFit: 'cover',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: HERO_LEFT_WIDTH,
+                  height: HERO_BODY_HEIGHT,
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                }}
+              />
+            </>
+          ) : null}
+
+          {hasHero ? <HeroPills /> : null}
+
+          {hasForeground ? (
+            <img
+              src={foregroundUrl as string}
+              alt=""
+              width={HERO_LEFT_WIDTH}
+              height={HERO_BODY_HEIGHT}
+              style={{
+                position: 'relative',
+                width: HERO_LEFT_WIDTH,
+                height: HERO_BODY_HEIGHT,
+                objectFit: 'contain',
+                objectPosition: 'center bottom',
+              }}
+            />
+          ) : !hasBackground ? (
+            <div
+              style={{
+                width: HERO_BODY_HEIGHT - 80,
+                height: HERO_BODY_HEIGHT - 80,
+                marginBottom: 40,
+                display: 'flex',
+              }}
+            >
+              <Avatar src={speaker.profile_image_url} name={name} size={HERO_BODY_HEIGHT - 80} border />
+            </div>
+          ) : null}
+
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: 12,
+              height: HERO_BODY_HEIGHT,
+              background: COLORS.yellow,
+              display: 'flex',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            width: HERO_RIGHT_WIDTH,
+            height: HERO_BODY_HEIGHT,
+            background: COLORS.yellow,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
+            alignItems: 'flex-end',
+            textAlign: 'right',
+            padding: '0 56px',
           }}
         >
-          <div style={{ ...baseTextStyle, fontSize: 44, lineHeight: 1.08, fontWeight: 800 }}>{name}</div>
+          <div style={{ ...baseTextStyle, fontSize: 52, lineHeight: 1.05, fontWeight: 800, color: COLORS.black }}>
+            {truncateText(name, 28)}
+          </div>
           {speaker.job_title ? (
-            <div style={{ ...baseTextStyle, marginTop: 20, fontSize: 32, lineHeight: 1.1, fontWeight: 800 }}>{speaker.job_title}</div>
+            <div
+              style={{
+                ...baseTextStyle,
+                marginTop: 20,
+                fontSize: 30,
+                lineHeight: 1.15,
+                fontWeight: 700,
+                color: COLORS.black,
+              }}
+            >
+              {truncateText(speaker.job_title, 38)}
+            </div>
           ) : null}
           {speaker.company ? (
-            <div style={{ ...baseTextStyle, marginTop: 6, fontSize: 28, lineHeight: 1.1 }}>{`@${speaker.company}`}</div>
+            <div
+              style={{
+                ...baseTextStyle,
+                marginTop: 10,
+                fontSize: 26,
+                lineHeight: 1.2,
+                color: COLORS.black,
+              }}
+            >
+              {`@${truncateText(speaker.company, 32)}`}
+            </div>
           ) : null}
         </div>
       </div>
@@ -460,50 +598,4 @@ export function renderScheduleOg({ counts }: ScheduleOgInput = {}) {
       </div>
     </OgShell>
   );
-}
-
-export async function sendOgImage(res: NextApiResponse, element: React.ReactElement) {
-  const render = async (withFonts: boolean) => new ImageResponse(element, {
-    width: OG_WIDTH,
-    height: OG_HEIGHT,
-    fonts: withFonts ? [
-      {
-        name: 'Figtree',
-        data: await getFigtreeFont(400),
-        style: 'normal',
-        weight: 400,
-      },
-      {
-        name: 'Figtree',
-        data: await getFigtreeFont(700),
-        style: 'normal',
-        weight: 700,
-      },
-      {
-        name: 'Figtree',
-        data: await getFigtreeFont(800),
-        style: 'normal',
-        weight: 800,
-      },
-    ] : [],
-  });
-
-  let imageBuffer: Buffer;
-  try {
-    const response = await render(true);
-    imageBuffer = Buffer.from(await response.arrayBuffer());
-  } catch (error) {
-    console.error('[OG] Failed to render with custom fonts, retrying without fonts:', error);
-    try {
-      const response = await render(false);
-      imageBuffer = Buffer.from(await response.arrayBuffer());
-    } catch (fallbackError) {
-      console.error('[OG] Failed to render dynamic image, using static fallback:', fallbackError);
-      imageBuffer = await readFile(path.join(process.cwd(), 'public/images/og-default.png'));
-    }
-  }
-
-  res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
-  res.send(imageBuffer);
 }

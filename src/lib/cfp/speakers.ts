@@ -123,6 +123,79 @@ export async function getAcceptedSpeakers(): Promise<CfpSpeaker[]> {
   return (data || []) as CfpSpeaker[];
 }
 
+export interface SpeakerOgRow {
+  slug: string;
+  first_name: string;
+  last_name: string;
+  job_title: string | null;
+  company: string | null;
+  profile_image_url: string | null;
+  portrait_foreground_url: string | null;
+  portrait_background_url: string | null;
+  updated_at: string;
+}
+
+function computeSpeakerSlug(firstName: string, lastName: string, id: string): string {
+  const base = `${firstName} ${lastName}`
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return base || id;
+}
+
+export async function getVisibleSpeakerBySlugForOg(slug: string): Promise<SpeakerOgRow | null> {
+  const supabase = createCfpServiceClient();
+
+  const { data, error } = await supabase
+    .from('cfp_speakers')
+    .select('id, first_name, last_name, job_title, company, profile_image_url, portrait_foreground_url, portrait_background_url, updated_at, is_featured')
+    .eq('is_visible', true)
+    .order('is_featured', { ascending: false })
+    .order('first_name', { ascending: true });
+
+  if (error) {
+    console.error('[CFP Speakers] OG slim fetch failed:', error.message);
+    return null;
+  }
+
+  const rows = (data ?? []) as Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    job_title: string | null;
+    company: string | null;
+    profile_image_url: string | null;
+    portrait_foreground_url: string | null;
+    portrait_background_url: string | null;
+    updated_at: string;
+    is_featured: boolean | null;
+  }>;
+
+  const slugCounts = new Map<string, number>();
+  for (const row of rows) {
+    const base = computeSpeakerSlug(row.first_name, row.last_name, row.id);
+    const count = slugCounts.get(base) ?? 0;
+    const resolvedSlug = count === 0 ? base : `${base}-${row.id.split('-')[0]}`;
+    slugCounts.set(base, count + 1);
+    if (resolvedSlug === slug) {
+      return {
+        slug: resolvedSlug,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        job_title: row.job_title,
+        company: row.company,
+        profile_image_url: row.profile_image_url,
+        portrait_foreground_url: row.portrait_foreground_url,
+        portrait_background_url: row.portrait_background_url,
+        updated_at: row.updated_at,
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function getProgramSpeakerCount(): Promise<number> {
   const supabase = createCfpServiceClient();
   const [speakersResult, submissionsResult] = await Promise.all([
@@ -409,6 +482,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
         talks: false,
         workshops: false,
       },
+      updated_at: 'updated_at' in speaker ? (speaker.updated_at as string | undefined) : undefined,
       sessions: [],
     });
   }

@@ -6,6 +6,7 @@
 import { GetServerSideProps } from 'next';
 import { getAllPageSlugs } from '@/data/info-pages';
 import { getAllPosts } from '@/lib/blog';
+import { getVisibleSpeakersWithSessions } from '@/lib/cfp/speakers';
 
 interface SitemapUrl {
   loc: string;
@@ -22,9 +23,10 @@ const escapeXml = (str: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 
-const generateSitemap = (baseUrl: string): string => {
+const generateSitemap = async (baseUrl: string): Promise<string> => {
   const infoSlugs = getAllPageSlugs();
   const blogPosts = getAllPosts();
+  const speakers = await getVisibleSpeakersWithSessions().catch(() => []);
   const currentDate = new Date().toISOString().split('T')[0];
 
   // Define all pages with their SEO properties
@@ -77,6 +79,19 @@ const generateSitemap = (baseUrl: string): string => {
       changefreq: 'monthly' as const,
       priority: '0.6',
     })),
+    // Speakers index + individual profiles
+    {
+      loc: `${baseUrl}/speakers`,
+      lastmod: currentDate,
+      changefreq: 'weekly' as const,
+      priority: '0.8',
+    },
+    ...speakers.map((speaker) => ({
+      loc: `${baseUrl}/speakers/${speaker.slug}`,
+      lastmod: speaker.updated_at?.slice(0, 10) ?? currentDate,
+      changefreq: 'weekly' as const,
+      priority: '0.7',
+    })),
   ];
 
   // Generate XML
@@ -102,7 +117,7 @@ ${urlElements}
 
 export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
-  const sitemap = generateSitemap(baseUrl);
+  const sitemap = await generateSitemap(baseUrl);
 
   res.setHeader('Content-Type', 'application/xml');
   res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
