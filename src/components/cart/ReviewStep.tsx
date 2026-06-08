@@ -158,6 +158,16 @@ export function ReviewStep({
             Estimate your trip cost
           </Button>
         </Link>
+
+        <p className="text-center text-sm text-brand-gray-light">
+          Questions about your order?{' '}
+          <a
+            href="mailto:hello@zurichjs.com"
+            className="font-medium text-brand-yellow-main hover:underline"
+          >
+            hello@zurichjs.com
+          </a>
+        </p>
       </div>
 
       <SeebadEngeModal
