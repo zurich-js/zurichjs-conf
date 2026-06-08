@@ -211,7 +211,7 @@ function OgShell({
 }
 
 const HERO_BODY_HEIGHT = OG_HEIGHT - OG_HEADER_HEIGHT;
-const HERO_LEFT_WIDTH = 700;
+const HERO_LEFT_WIDTH = OG_WIDTH / 2;
 const HERO_RIGHT_WIDTH = OG_WIDTH - HERO_LEFT_WIDTH;
 
 const HERO_PILL = {
@@ -231,160 +231,137 @@ export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
 
   return (
     <OgShell background={COLORS.yellow}>
+      {/* Left bg panel: portrait_background_url (or fallback color) + 20% white overlay */}
       <div
         style={{
           position: 'absolute',
           top: OG_HEADER_HEIGHT,
           left: 0,
-          width: OG_WIDTH,
+          width: HERO_LEFT_WIDTH,
           height: HERO_BODY_HEIGHT,
+          background: hasHero ? COLORS.grayDarkest : COLORS.yellow,
           display: 'flex',
-          flexDirection: 'row',
+          overflow: 'hidden',
         }}
       >
+        {hasBackground ? (
+          <img
+            src={backgroundUrl as string}
+            alt=""
+            width={HERO_LEFT_WIDTH}
+            height={HERO_BODY_HEIGHT}
+            style={{ width: HERO_LEFT_WIDTH, height: HERO_BODY_HEIGHT, objectFit: 'cover' }}
+          />
+        ) : null}
+      </div>
+      {hasBackground ? (
         <div
           style={{
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT,
+            left: 0,
             width: HERO_LEFT_WIDTH,
             height: HERO_BODY_HEIGHT,
-            position: 'relative',
-            background: hasHero ? COLORS.grayDarkest : COLORS.yellow,
+            background: 'rgba(255,255,255,0.2)',
             display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            overflow: 'hidden',
           }}
-        >
-          {hasBackground ? (
-            <>
-              <img
-                src={backgroundUrl as string}
-                alt=""
-                width={HERO_LEFT_WIDTH}
-                height={HERO_BODY_HEIGHT}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: HERO_LEFT_WIDTH,
-                  height: HERO_BODY_HEIGHT,
-                  objectFit: 'cover',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: HERO_LEFT_WIDTH,
-                  height: HERO_BODY_HEIGHT,
-                  background: 'rgba(255,255,255,0.2)',
-                  display: 'flex',
-                }}
-              />
-            </>
-          ) : null}
+        />
+      ) : null}
 
-          {hasHero ? (
-            <div
-              style={{
-                position: 'absolute',
-                top: 120,
-                left: 180,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-              }}
-            >
-              <div style={{ ...HERO_PILL, width: 290, background: COLORS.yellow }} />
-              <div style={{ ...HERO_PILL, width: 280, background: COLORS.blue, marginLeft: 28 }} />
-              <div style={{ ...HERO_PILL, width: 320, background: COLORS.white, marginLeft: -10 }} />
-            </div>
-          ) : null}
-
-          {hasForeground ? (
-            <img
-              src={foregroundUrl as string}
-              alt=""
-              width={HERO_LEFT_WIDTH}
-              height={HERO_BODY_HEIGHT}
-              style={{
-                position: 'relative',
-                width: HERO_LEFT_WIDTH,
-                height: HERO_BODY_HEIGHT,
-                objectFit: 'contain',
-                objectPosition: 'center bottom',
-              }}
-            />
-          ) : !hasBackground ? (
-            <div
-              style={{
-                width: HERO_BODY_HEIGHT - 80,
-                height: HERO_BODY_HEIGHT - 80,
-                marginBottom: 40,
-                display: 'flex',
-              }}
-            >
-              <Avatar src={speaker.profile_image_url} name={name} size={HERO_BODY_HEIGHT - 80} border />
-            </div>
-          ) : null}
-
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: 12,
-              height: HERO_BODY_HEIGHT,
-              background: COLORS.yellow,
-              display: 'flex',
-            }}
-          />
-        </div>
-
+      {/* Decorative stripe pills (yellow / blue / white), behind the foreground */}
+      {hasHero ? (
         <div
           style={{
-            width: HERO_RIGHT_WIDTH,
-            height: HERO_BODY_HEIGHT,
-            background: COLORS.yellow,
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT + Math.round(HERO_BODY_HEIGHT * 0.22),
+            left: Math.round(HERO_LEFT_WIDTH * 0.48) - 195,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'flex-end',
-            textAlign: 'right',
-            padding: '0 56px',
+            gap: 8,
           }}
         >
-          <div style={{ ...baseTextStyle, fontSize: 52, lineHeight: 1.05, fontWeight: 800, color: COLORS.black }}>
-            {truncateText(name, 28)}
-          </div>
-          {speaker.job_title ? (
-            <div
-              style={{
-                ...baseTextStyle,
-                marginTop: 20,
-                fontSize: 30,
-                lineHeight: 1.15,
-                fontWeight: 700,
-                color: COLORS.black,
-              }}
-            >
-              {truncateText(speaker.job_title, 38)}
-            </div>
-          ) : null}
-          {speaker.company ? (
-            <div
-              style={{
-                ...baseTextStyle,
-                marginTop: 10,
-                fontSize: 26,
-                lineHeight: 1.2,
-                color: COLORS.black,
-              }}
-            >
-              {`@${truncateText(speaker.company, 32)}`}
-            </div>
-          ) : null}
+          <div style={{ ...HERO_PILL, width: 320, background: COLORS.yellow }} />
+          <div style={{ ...HERO_PILL, width: 305, background: COLORS.blue, marginLeft: 36 }} />
+          <div style={{ ...HERO_PILL, width: 350, background: COLORS.white, marginLeft: -12 }} />
         </div>
+      ) : null}
+
+      {/* Foreground cutout (portrait_foreground_url) on top of bg + stripes */}
+      {hasForeground ? (
+        <img
+          src={foregroundUrl as string}
+          alt=""
+          width={HERO_LEFT_WIDTH}
+          height={HERO_BODY_HEIGHT}
+          style={{
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT,
+            left: 0,
+            width: HERO_LEFT_WIDTH,
+            height: HERO_BODY_HEIGHT,
+            objectFit: 'contain',
+            objectPosition: 'center bottom',
+          }}
+        />
+      ) : !hasBackground ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT + 40,
+            left: Math.round((HERO_LEFT_WIDTH - (HERO_BODY_HEIGHT - 80)) / 2),
+            display: 'flex',
+          }}
+        >
+          <Avatar src={speaker.profile_image_url} name={name} size={HERO_BODY_HEIGHT - 80} border />
+        </div>
+      ) : null}
+
+      {/* Right-side yellow text panel — 50% of OG width */}
+      <div
+        style={{
+          position: 'absolute',
+          top: OG_HEADER_HEIGHT,
+          right: 0,
+          width: HERO_RIGHT_WIDTH,
+          height: HERO_BODY_HEIGHT,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          textAlign: 'right',
+          padding: '0 56px',
+        }}
+      >
+        <div style={{ ...baseTextStyle, fontSize: 52, lineHeight: 1.05, fontWeight: 800, color: COLORS.black }}>
+          {truncateText(name, 28)}
+        </div>
+        {speaker.job_title ? (
+          <div
+            style={{
+              ...baseTextStyle,
+              marginTop: 20,
+              fontSize: 30,
+              lineHeight: 1.15,
+              fontWeight: 700,
+              color: COLORS.black,
+            }}
+          >
+            {truncateText(speaker.job_title, 38)}
+          </div>
+        ) : null}
+        {speaker.company ? (
+          <div
+            style={{
+              ...baseTextStyle,
+              marginTop: 10,
+              fontSize: 26,
+              lineHeight: 1.2,
+              color: COLORS.black,
+            }}
+          >
+            {`@${truncateText(speaker.company, 32)}`}
+          </div>
+        ) : null}
       </div>
     </OgShell>
   );
