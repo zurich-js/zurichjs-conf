@@ -149,7 +149,7 @@ export async function getVisibleSpeakerBySlugForOg(slug: string): Promise<Speake
 
   const { data, error } = await supabase
     .from('cfp_speakers')
-    .select('id, first_name, last_name, job_title, company, profile_image_url, portrait_foreground_url, portrait_background_url, updated_at, is_featured')
+    .select('id, first_name, last_name, job_title, company, profile_image_url, portrait_foreground_url, portrait_background_url, updated_at')
     .eq('is_visible', true)
     .order('is_featured', { ascending: false })
     .order('first_name', { ascending: true });
@@ -169,7 +169,6 @@ export async function getVisibleSpeakerBySlugForOg(slug: string): Promise<Speake
     portrait_foreground_url: string | null;
     portrait_background_url: string | null;
     updated_at: string;
-    is_featured: boolean | null;
   }>;
 
   const slugCounts = new Map<string, number>();

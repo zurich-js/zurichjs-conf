@@ -66,15 +66,6 @@ function getAbsoluteImageUrl(url: string | null | undefined) {
   return `${baseUrl}${url}`;
 }
 
-function withSupabaseImageWidth(url: string | null | undefined, width: number) {
-  const absolute = getAbsoluteImageUrl(url);
-  if (!absolute) return null;
-  // Supabase Storage image transformations: append width param without colliding with cache-buster ?v=
-  const hasQuery = absolute.includes('?');
-  const widthParam = `width=${width}&resize=contain&quality=80`;
-  return `${absolute}${hasQuery ? '&' : '?'}${widthParam}`;
-}
-
 function truncateText(value: string, maxLength: number) {
   if (value.length <= maxLength) {
     return value;
@@ -115,22 +106,14 @@ function Header({ scheduleLabel = 'Sep 11, 2026' }: { scheduleLabel?: string }) 
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            background: COLORS.yellow,
-            color: COLORS.black,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 15,
-            fontWeight: 800,
-          }}
-        >
-          JS
-        </div>
-        <div style={{ ...baseTextStyle, fontSize: 30, fontWeight: 700 }}>Zurich JS Conf</div>
+        <img
+          src={getAbsoluteImageUrl('/images/logo/zurichjs-square.png') as string}
+          alt=""
+          width={40}
+          height={40}
+          style={{ width: 40, height: 40, objectFit: 'contain' }}
+        />
+        <div style={{ ...baseTextStyle, fontSize: 30, fontWeight: 700 }}>ZurichJS Conf</div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
         <div style={{ ...baseTextStyle, fontSize: 30, fontWeight: 700 }}>{scheduleLabel}</div>
@@ -231,37 +214,17 @@ const HERO_BODY_HEIGHT = OG_HEIGHT - OG_HEADER_HEIGHT;
 const HERO_LEFT_WIDTH = 700;
 const HERO_RIGHT_WIDTH = OG_WIDTH - HERO_LEFT_WIDTH;
 
-function HeroPills() {
-  // Visually echoes the rotated pill stack in the speaker page hero. Stacked
-  // with negative marginTop instead of absolute positioning for faster satori layout.
-  const pillBase = {
-    height: 32,
-    borderRadius: 9999,
-    transform: 'rotate(-8deg)',
-    display: 'flex',
-  };
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 120,
-        left: 180,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-      }}
-    >
-      <div style={{ ...pillBase, width: 290, background: COLORS.yellow }} />
-      <div style={{ ...pillBase, width: 280, background: COLORS.blue, marginLeft: 28 }} />
-      <div style={{ ...pillBase, width: 320, background: COLORS.white, marginLeft: -10 }} />
-    </div>
-  );
-}
+const HERO_PILL = {
+  height: 32,
+  borderRadius: 9999,
+  transform: 'rotate(-8deg)',
+  display: 'flex',
+};
 
 export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
   const name = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
-  const foregroundUrl = withSupabaseImageWidth(speaker.portrait_foreground_url, 700);
-  const backgroundUrl = withSupabaseImageWidth(speaker.portrait_background_url, 900);
+  const foregroundUrl = getAbsoluteImageUrl(speaker.portrait_foreground_url);
+  const backgroundUrl = getAbsoluteImageUrl(speaker.portrait_background_url);
   const hasForeground = Boolean(foregroundUrl);
   const hasBackground = Boolean(backgroundUrl);
   const hasHero = hasForeground || hasBackground;
@@ -284,7 +247,7 @@ export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
             width: HERO_LEFT_WIDTH,
             height: HERO_BODY_HEIGHT,
             position: 'relative',
-            background: hasBackground ? COLORS.grayDarkest : (hasForeground ? COLORS.grayDarkest : COLORS.yellow),
+            background: hasHero ? COLORS.grayDarkest : COLORS.yellow,
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
@@ -321,7 +284,22 @@ export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
             </>
           ) : null}
 
-          {hasHero ? <HeroPills /> : null}
+          {hasHero ? (
+            <div
+              style={{
+                position: 'absolute',
+                top: 120,
+                left: 180,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div style={{ ...HERO_PILL, width: 290, background: COLORS.yellow }} />
+              <div style={{ ...HERO_PILL, width: 280, background: COLORS.blue, marginLeft: 28 }} />
+              <div style={{ ...HERO_PILL, width: 320, background: COLORS.white, marginLeft: -10 }} />
+            </div>
+          ) : null}
 
           {hasForeground ? (
             <img

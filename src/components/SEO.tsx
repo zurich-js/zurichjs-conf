@@ -362,6 +362,18 @@ export const SEO: React.FC<SEOProps> = ({
     ? selectedOgImage
     : `${BASE_URL}${selectedOgImage}`;
 
+  // Derive image MIME from extension. Dynamic /api/og/* endpoints emit PNG;
+  // legacy fallbacks under /images/og/*.jpg are JPEG. Mismatched og:image:type
+  // can cause some scrapers (WhatsApp, older Facebook) to reject the preview.
+  const ogImagePath = ogImageUrl.split("?")[0].toLowerCase();
+  const ogImageType = ogImagePath.endsWith(".jpg") || ogImagePath.endsWith(".jpeg")
+    ? "image/jpeg"
+    : ogImagePath.endsWith(".webp")
+      ? "image/webp"
+      : ogImagePath.endsWith(".gif")
+        ? "image/gif"
+        : "image/png";
+
   // Merge default keywords with custom keywords
   const allKeywords = keywords
     ? `${DEFAULT_KEYWORDS}, ${keywords}`
@@ -415,7 +427,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:image" content={ogImageUrl} />
       <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
       <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
-      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:type" content={ogImageType} />
       <meta property="og:image:alt" content={title} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta property="og:site_name" content="ZurichJS Conf" />

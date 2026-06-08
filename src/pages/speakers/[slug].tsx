@@ -243,7 +243,7 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
   const [activeTab, setActiveTab] = useState<SessionTabId>(initialSessionTab);
   const currentTab = sessionTabs.find((tab) => tab.id === activeTab) ?? sessionTabs.find((tab) => !tab.disabled) ?? sessionTabs[0] ?? null;
   const profileUrl = `${BASE_URL}/speakers/${speaker.slug}`;
-  const ogVersion = encodeURIComponent(speaker.updated_at ?? '').slice(0, 16);
+  const ogVersion = speaker.updated_at?.slice(0, 10);
   const ogImageUrl = `/api/og/speakers/${speaker.slug}${ogVersion ? `?v=${ogVersion}` : ''}`;
   const personSchema = generatePersonSchema({
     name: fullName,
