@@ -38,6 +38,15 @@ export function EmptyCartState() {
               </Button>
             </Link>
           </div>
+          <p className="mt-8 text-sm text-brand-gray-light">
+            Questions?{' '}
+            <a
+              href="mailto:hello@zurichjs.com"
+              className="font-medium text-brand-yellow-main hover:underline"
+            >
+              hello@zurichjs.com
+            </a>
+          </p>
         </div>
       </div>
     </>
