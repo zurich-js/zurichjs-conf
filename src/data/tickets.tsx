@@ -81,7 +81,7 @@ export const TICKET_METADATA: Record<
     variant: 'standard',
   },
   vip: {
-    blurb: 'For those who go all in. Limited to 15.',
+    blurb: `For those who go all in. Limited to ${GLOBAL_STOCK_LIMITS.vip}.`,
     variant: 'vip',
   },
 };
