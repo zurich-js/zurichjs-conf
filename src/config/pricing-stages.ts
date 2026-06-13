@@ -63,7 +63,7 @@ export interface StageConfig {
  * Global stock limits across all stages
  */
 export const GLOBAL_STOCK_LIMITS: GlobalStockLimits = {
-  vip: 15,
+  vip: 25,
   student_unemployed: 25,
 };
 
