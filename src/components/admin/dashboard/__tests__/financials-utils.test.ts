@@ -41,6 +41,7 @@ describe('getCombinedByCurrency', () => {
     expect(result[0]).toEqual({
       currency: 'CHF',
       ticketGross: 50000,
+      upgradeGross: 0,
       workshopGross: 0,
       sponsorPaid: 0,
       sponsorPending: 0,
@@ -217,6 +218,73 @@ describe('getCombinedByCurrency', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].currency).toBe('CHF');
+  });
+
+  it('includes upgrade revenue in combined totals', () => {
+    const upgradeSummary: FinancialData['upgradeSummary'] = {
+      totalUpgrades: 3,
+      revenueByCurrency: { CHF: 15000 },
+      stripeFeesByCurrency: { CHF: 450 },
+    };
+
+    const result = getCombinedByCurrency(baseSummary, undefined, undefined, upgradeSummary);
+
+    expect(result).toHaveLength(1);
+    const chf = result[0];
+    expect(chf.ticketGross).toBe(50000);
+    expect(chf.upgradeGross).toBe(15000);
+    expect(chf.combinedGross).toBe(65000); // 50000 + 15000
+    expect(chf.fees).toBe(1950); // 1500 + 450
+    expect(chf.combinedNet).toBe(63050); // 65000 - 1950
+  });
+
+  it('handles upgrade revenue in different currency than tickets', () => {
+    const upgradeSummary: FinancialData['upgradeSummary'] = {
+      totalUpgrades: 1,
+      revenueByCurrency: { EUR: 5000 },
+      stripeFeesByCurrency: { EUR: 150 },
+    };
+
+    const result = getCombinedByCurrency(baseSummary, undefined, undefined, upgradeSummary);
+
+    expect(result).toHaveLength(2);
+    const chf = result.find(r => r.currency === 'CHF')!;
+    expect(chf.upgradeGross).toBe(0);
+    expect(chf.combinedGross).toBe(50000);
+
+    const eur = result.find(r => r.currency === 'EUR')!;
+    expect(eur.upgradeGross).toBe(5000);
+    expect(eur.combinedGross).toBe(5000);
+    expect(eur.fees).toBe(150);
+  });
+
+  it('combines upgrades with workshops and sponsorships', () => {
+    const upgradeSummary: FinancialData['upgradeSummary'] = {
+      totalUpgrades: 2,
+      revenueByCurrency: { CHF: 10000 },
+      stripeFeesByCurrency: { CHF: 300 },
+    };
+
+    const workshopSummary: FinancialData['workshopSummary'] = {
+      soldSeats: 1,
+      grossRevenue: 20000,
+      totalDiscounts: 0,
+      totalStripeFees: 600,
+      revenueByCurrency: { CHF: 20000 },
+      registrationsByCurrency: { CHF: 1 },
+      discountsByCurrency: {},
+      stripeFeesByCurrency: { CHF: 600 },
+    };
+
+    const result = getCombinedByCurrency(baseSummary, undefined, workshopSummary, upgradeSummary);
+
+    const chf = result[0];
+    expect(chf.ticketGross).toBe(50000);
+    expect(chf.upgradeGross).toBe(10000);
+    expect(chf.workshopGross).toBe(20000);
+    expect(chf.combinedGross).toBe(80000); // 50000 + 10000 + 20000
+    expect(chf.fees).toBe(2400); // 1500 + 300 + 600
+    expect(chf.combinedNet).toBe(77600);
   });
 
   it('includes currency with only pending sponsorship revenue', () => {

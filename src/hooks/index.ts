@@ -26,3 +26,6 @@ export { useBlueskyFeed } from './useBlueskyFeed';
 export { useLoadMoreOnIntersect } from './useLoadMoreOnIntersect';
 
 export * from './useProgram';
+
+export { useTicketSpendBreakdown } from './useTicketSpendBreakdown';
+export type { TicketSpendData, WorkshopBooking, SpendBreakdown } from './useTicketSpendBreakdown';

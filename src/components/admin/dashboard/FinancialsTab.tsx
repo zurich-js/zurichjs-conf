@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { DollarSign, CreditCard, TrendingUp, RotateCcw, Ticket, Handshake, Building2, Gift, GraduationCap } from 'lucide-react';
+import { DollarSign, CreditCard, TrendingUp, RotateCcw, Ticket, Handshake, Building2, Gift, GraduationCap, Sparkles } from 'lucide-react';
 import type { FinancialData } from './types';
 import { formatAmount, getCombinedByCurrency, getGrandTotal } from './financials-utils';
 
@@ -40,8 +40,8 @@ export function FinancialsTab() {
 
   return (
     <div className="space-y-6">
-      <TotalRevenueSummary summary={summary} sponsorshipSummary={financials.sponsorshipSummary} workshopSummary={financials.workshopSummary} />
-      <RevenueBreakdown summary={summary} sponsorshipSummary={financials.sponsorshipSummary} workshopSummary={financials.workshopSummary} />
+      <TotalRevenueSummary summary={summary} sponsorshipSummary={financials.sponsorshipSummary} workshopSummary={financials.workshopSummary} upgradeSummary={financials.upgradeSummary} />
+      <RevenueBreakdown summary={summary} sponsorshipSummary={financials.sponsorshipSummary} workshopSummary={financials.workshopSummary} upgradeSummary={financials.upgradeSummary} />
       {financials.revenueBreakdown && <TicketRevenueByChannel financials={financials} />}
       {financials.workshopSummary && financials.workshopSummary.soldSeats > 0 && (
         <WorkshopRevenueCard summary={financials.workshopSummary} />
@@ -50,15 +50,15 @@ export function FinancialsTab() {
         <SponsorshipRevenueCard summary={financials.sponsorshipSummary} />
       )}
       {financials.purchasesTimeSeries?.length > 0 && <PurchasesChart timeSeries={financials.purchasesTimeSeries} />}
-      <RevenueByCategory byCategory={byCategory} workshopSummary={financials.workshopSummary} />
+      <RevenueByCategory byCategory={byCategory} workshopSummary={financials.workshopSummary} upgradeSummary={financials.upgradeSummary} />
       <RevenueByStage byStage={byStage} />
     </div>
   );
 }
 
 /** Top-level summary cards per currency */
-function TotalRevenueSummary({ summary, sponsorshipSummary, workshopSummary }: { summary: FinancialData['summary']; sponsorshipSummary?: FinancialData['sponsorshipSummary']; workshopSummary?: FinancialData['workshopSummary'] }) {
-  const byCurrency = getCombinedByCurrency(summary, sponsorshipSummary, workshopSummary);
+function TotalRevenueSummary({ summary, sponsorshipSummary, workshopSummary, upgradeSummary }: { summary: FinancialData['summary']; sponsorshipSummary?: FinancialData['sponsorshipSummary']; workshopSummary?: FinancialData['workshopSummary']; upgradeSummary?: FinancialData['upgradeSummary'] }) {
+  const byCurrency = getCombinedByCurrency(summary, sponsorshipSummary, workshopSummary, upgradeSummary);
   const grand = getGrandTotal(byCurrency, summary);
   const multiCurrency = byCurrency.length > 1;
 
@@ -94,7 +94,7 @@ function TotalRevenueSummary({ summary, sponsorshipSummary, workshopSummary }: {
         const refunded = summary.refundedByCurrency?.[cur] || (cur === 'CHF' ? summary.totalRefunded : 0);
 
         const cards = [
-          { title: 'Combined Gross', value: `${formatCHF(combinedGross)} ${cur}`, subtitle: 'Tickets + Workshops + Sponsorships', icon: DollarSign, color: 'text-green-600', bg: 'bg-green-100', iconColor: 'text-green-700' },
+          { title: 'Combined Gross', value: `${formatCHF(combinedGross)} ${cur}`, subtitle: 'Tickets + Upgrades + Workshops + Sponsorships', icon: DollarSign, color: 'text-green-600', bg: 'bg-green-100', iconColor: 'text-green-700' },
           { title: 'Stripe Fees', value: `-${formatCHF(fees)} ${cur}`, subtitle: `${feePercent}% of gross`, icon: CreditCard, color: 'text-purple-600', bg: 'bg-purple-100', iconColor: 'text-purple-700' },
           { title: 'Combined Net', value: `${formatCHF(combinedNet)} ${cur}`, subtitle: 'After Stripe fees', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-100', iconColor: 'text-blue-700' },
           { title: 'Refunded', value: `${formatCHF(refunded)} ${cur}`, subtitle: cur === 'CHF' ? `${summary.refundedTickets} refunded tickets` : 'Refunded amount', icon: RotateCcw, color: 'text-red-600', bg: 'bg-red-100', iconColor: 'text-red-700' },
@@ -127,8 +127,8 @@ function TotalRevenueSummary({ summary, sponsorshipSummary, workshopSummary }: {
 }
 
 /** Breakdown card: shows how combined gross is composed, per currency */
-function RevenueBreakdown({ summary, sponsorshipSummary, workshopSummary }: { summary: FinancialData['summary']; sponsorshipSummary?: FinancialData['sponsorshipSummary']; workshopSummary?: FinancialData['workshopSummary'] }) {
-  const byCurrency = getCombinedByCurrency(summary, sponsorshipSummary, workshopSummary);
+function RevenueBreakdown({ summary, sponsorshipSummary, workshopSummary, upgradeSummary }: { summary: FinancialData['summary']; sponsorshipSummary?: FinancialData['sponsorshipSummary']; workshopSummary?: FinancialData['workshopSummary']; upgradeSummary?: FinancialData['upgradeSummary'] }) {
+  const byCurrency = getCombinedByCurrency(summary, sponsorshipSummary, workshopSummary, upgradeSummary);
   const hasPending = byCurrency.some(c => c.sponsorPending > 0);
 
   return (
@@ -138,7 +138,7 @@ function RevenueBreakdown({ summary, sponsorshipSummary, workshopSummary }: { su
         <p className="text-xs sm:text-sm text-gray-600 mt-1">How the combined gross revenue is composed</p>
       </div>
       <div className="p-4 sm:p-6 space-y-6">
-        {byCurrency.map(({ currency: cur, ticketGross, workshopGross, sponsorPaid: sPaid, fees, combinedNet }) => (
+        {byCurrency.map(({ currency: cur, ticketGross, upgradeGross, workshopGross, sponsorPaid: sPaid, fees, combinedNet }) => (
           <div key={cur}>
             {byCurrency.length > 1 && (
               <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">{cur}</h4>
@@ -146,6 +146,9 @@ function RevenueBreakdown({ summary, sponsorshipSummary, workshopSummary }: { su
             <div className="space-y-3">
               {ticketGross > 0 && (
                 <BreakdownRow icon={Ticket} label="Ticket Sales (gross)" value={`${formatCHF(ticketGross)} ${cur}`} detail={cur === 'CHF' ? `${summary.confirmedTickets} confirmed tickets` : undefined} color="text-blue-700" />
+              )}
+              {upgradeGross > 0 && (
+                <BreakdownRow icon={Sparkles} label="VIP Upgrades (gross)" value={`${formatCHF(upgradeGross)} ${cur}`} detail={`${upgradeSummary?.totalUpgrades ?? 0} upgrades`} color="text-amber-700" />
               )}
               {workshopGross > 0 && (
                 <BreakdownRow icon={GraduationCap} label="Workshop Sales (gross)" value={`${formatCHF(workshopGross)} ${cur}`} detail={`${workshopSummary?.registrationsByCurrency[cur] ?? 0} sold seats`} color="text-emerald-700" />
@@ -402,7 +405,7 @@ function PurchasesChart({ timeSeries }: { timeSeries: FinancialData['purchasesTi
   );
 }
 
-function RevenueByCategory({ byCategory, workshopSummary }: { byCategory: FinancialData['byCategory']; workshopSummary?: FinancialData['workshopSummary'] }) {
+function RevenueByCategory({ byCategory, workshopSummary, upgradeSummary }: { byCategory: FinancialData['byCategory']; workshopSummary?: FinancialData['workshopSummary']; upgradeSummary?: FinancialData['upgradeSummary'] }) {
   const workshopRevenue = workshopSummary
     ? Object.entries(workshopSummary.revenueByCurrency)
         .filter(([, revenue]) => revenue > 0)
@@ -424,6 +427,23 @@ function RevenueByCategory({ byCategory, workshopSummary }: { byCategory: Financ
             <div className="text-left sm:text-right"><span className="text-black font-bold text-base sm:text-lg">{formatCHF(data.revenue)} CHF</span><span className="text-gray-600 text-xs sm:text-sm ml-2 sm:ml-3 font-medium">({data.count} {data.count === 1 ? 'ticket' : 'tickets'})</span></div>
           </div>
         ))}
+        {upgradeSummary && upgradeSummary.totalUpgrades > 0 && (
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 p-3 sm:p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <span className="font-bold text-black text-sm sm:text-base">VIP Upgrades</span>
+            <div className="text-left sm:text-right">
+              <span className="text-black font-bold text-base sm:text-lg">
+                {Object.entries(upgradeSummary.revenueByCurrency)
+                  .filter(([, revenue]) => revenue > 0)
+                  .sort(([a], [b]) => (a === 'CHF' ? -1 : b === 'CHF' ? 1 : a.localeCompare(b)))
+                  .map(([currency, revenue]) => `${formatCHF(revenue)} ${currency}`)
+                  .join(' · ')}
+              </span>
+              <span className="text-gray-600 text-xs sm:text-sm ml-2 sm:ml-3 font-medium">
+                ({upgradeSummary.totalUpgrades} {upgradeSummary.totalUpgrades === 1 ? 'upgrade' : 'upgrades'})
+              </span>
+            </div>
+          </div>
+        )}
         {workshopSummary && workshopSummary.soldSeats > 0 && (
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 p-3 sm:p-4 bg-emerald-50 rounded-lg border border-emerald-200">
             <span className="font-bold text-black text-sm sm:text-base">Workshops</span>

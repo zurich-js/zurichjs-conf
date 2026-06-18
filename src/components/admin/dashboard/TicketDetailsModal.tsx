@@ -5,6 +5,10 @@
 import { useState, useMemo } from 'react';
 import type { Ticket } from './types';
 import { TicketInvoiceModal } from '@/components/admin/tickets';
+import { useTicketSpendBreakdown } from '@/hooks/useTicketSpendBreakdown';
+import { SpendBreakdownSection } from './SpendBreakdownSection';
+import { UpgradeHistorySection } from './UpgradeHistorySection';
+import { WorkshopBookingsSection } from './WorkshopBookingsSection';
 
 export interface TicketDetailsModalProps {
   ticket: Ticket;
@@ -74,6 +78,7 @@ export function TicketDetailsModal({
   const isComplimentary = ticket.metadata?.paymentType === 'complimentary' || ticket.amount_paid === 0;
 
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const { data: spendData, isLoading: spendLoading } = useTicketSpendBreakdown(ticket.id);
 
   // Country editing state
   const [isEditingCountry, setIsEditingCountry] = useState(false);
@@ -310,6 +315,24 @@ export function TicketDetailsModal({
               )}
             </InfoGrid>
           </InfoSection>
+
+          {/* Spend Breakdown */}
+          <SpendBreakdownSection
+            breakdown={spendData?.spendBreakdown ?? { ticketCost: 0, ticketCurrency: 'CHF', upgradeCost: 0, upgradeCurrency: null, workshopCosts: [], totalByCurrency: [] }}
+            isLoading={spendLoading}
+          />
+
+          {/* VIP Upgrade History */}
+          <UpgradeHistorySection
+            upgrades={spendData?.upgrades ?? []}
+            isLoading={spendLoading}
+          />
+
+          {/* Workshop Bookings */}
+          <WorkshopBookingsSection
+            bookings={spendData?.workshopBookings ?? []}
+            isLoading={spendLoading}
+          />
 
           {/* Timestamps */}
           <InfoSection title="Timestamps">
