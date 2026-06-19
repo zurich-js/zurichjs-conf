@@ -3,6 +3,7 @@ import { ImageResponse } from 'next/og';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { publicProgramTabs } from '@/data';
+import { fetchWithRetry } from '@/lib/retry';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
 
 export const OG_WIDTH = 1200;
@@ -33,7 +34,15 @@ type SessionDetailOgInput = {
 };
 
 type SpeakerDetailOgInput = {
-  speaker: PublicSpeaker;
+  speaker: {
+    first_name: string;
+    last_name: string;
+    job_title: string | null;
+    company: string | null;
+    profile_image_url: string | null;
+  };
+  /** Pre-resolved avatar (e.g. a base64 data URI) — overrides profile_image_url when set. */
+  avatarSrc?: string | null;
 };
 
 type CollectionOgInput = {
@@ -75,12 +84,53 @@ function getAbsoluteImageUrl(url: string | null | undefined) {
     return null;
   }
 
-  if (url.startsWith('http')) {
+  if (url.startsWith('http') || url.startsWith('data:')) {
     return url;
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
   return `${baseUrl}${url}`;
+}
+
+const AVATAR_FETCH_TIMEOUT_MS = 2000;
+
+/**
+ * Fetch a remote image into a base64 `data:` URI with a short timeout so the OG
+ * renderer never makes its own unbounded network hop. Returns null on timeout
+ * or failure, letting the renderer fall back to initials.
+ */
+export async function prefetchImageDataUri(
+  src: string | null | undefined,
+  timeoutMs = AVATAR_FETCH_TIMEOUT_MS,
+): Promise<string | null> {
+  const url = getAbsoluteImageUrl(src);
+  if (!url || url.startsWith('data:')) {
+    return url ?? null;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetchWithRetry(
+      url,
+      { signal: controller.signal },
+      { attempts: 2, baseDelayMs: 150, maxDelayMs: 600, label: 'og-avatar' },
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return `data:${contentType};base64,${buffer.toString('base64')}`;
+  } catch (error) {
+    console.error('[OG] Failed to prefetch avatar image:', error);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function truncateText(value: string, maxLength: number) {
@@ -96,11 +146,11 @@ function initialsFromName(name: string) {
   return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'JS';
 }
 
-function getSpeakerName(speaker: PublicSpeaker) {
+function getSpeakerName(speaker: { first_name: string; last_name: string }) {
   return [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
 }
 
-function getSpeakerRole(speaker: PublicSpeaker) {
+function getSpeakerRole(speaker: { job_title: string | null; company: string | null }) {
   return [speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || null;
 }
 
@@ -235,8 +285,9 @@ function OgShell({
   );
 }
 
-export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
+export function renderSpeakerDetailOg({ speaker, avatarSrc }: SpeakerDetailOgInput) {
   const name = getSpeakerName(speaker);
+  const resolvedAvatar = avatarSrc ?? speaker.profile_image_url;
 
   return (
     <OgShell background={COLORS.yellow}>
@@ -253,7 +304,7 @@ export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
           gap: 48,
         }}
       >
-        <Avatar src={speaker.profile_image_url} name={name} size={156} />
+        <Avatar src={resolvedAvatar} name={name} size={156} />
         <div
           style={{
             display: 'flex',
@@ -462,7 +513,21 @@ export function renderScheduleOg({ counts }: ScheduleOgInput = {}) {
   );
 }
 
-export async function sendOgImage(res: NextApiResponse, element: React.ReactElement) {
+/** Default OG cache policy: 5m browser / 1h CDN / 24h stale-while-revalidate. */
+export const DEFAULT_OG_CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
+
+/**
+ * Longer policy for OG images that change rarely (e.g. speaker cards): 1h
+ * browser / 7d CDN / 30d stale-while-revalidate. Keeps the CDN warm so crawler
+ * re-fetches are served instantly.
+ */
+export const LONG_OG_CACHE_CONTROL = 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=2592000';
+
+export async function sendOgImage(
+  res: NextApiResponse,
+  element: React.ReactElement,
+  cacheControl: string = DEFAULT_OG_CACHE_CONTROL,
+) {
   const render = async (withFonts: boolean) => new ImageResponse(element, {
     width: OG_WIDTH,
     height: OG_HEIGHT,
@@ -504,6 +569,6 @@ export async function sendOgImage(res: NextApiResponse, element: React.ReactElem
   }
 
   res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
+  res.setHeader('Cache-Control', cacheControl);
   res.send(imageBuffer);
 }
