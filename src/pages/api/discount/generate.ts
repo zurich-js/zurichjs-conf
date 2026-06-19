@@ -10,15 +10,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getStripeClient } from '@/lib/stripe/client';
 import { getServerConfig } from '@/lib/discount/config';
+import { isValidLotteryPercent } from '@/lib/discount/utm-lottery';
 import { logger } from '@/lib/logger';
 import type { GenerateDiscountResponse } from '@/lib/discount/types';
 import { randomBytes } from 'crypto';
 
 const log = logger.scope('DiscountGenerate');
-
-// Lottery discount bounds (must match utm-lottery.ts)
-const LOTTERY_MIN_PERCENT = 5;
-const LOTTERY_MAX_PERCENT = 15;
 
 function generateUniqueCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -43,10 +40,7 @@ export default async function handler(
   try {
     // Parse optional lottery percentOff from body
     const bodyPercentOff = req.body?.percentOff;
-    const isLotteryDiscount =
-      typeof bodyPercentOff === 'number' &&
-      bodyPercentOff >= LOTTERY_MIN_PERCENT &&
-      bodyPercentOff <= LOTTERY_MAX_PERCENT;
+    const isLotteryDiscount = isValidLotteryPercent(bodyPercentOff);
 
     // Check if a discount already exists in httpOnly cookies
     const existingCode = req.cookies.discount_code;
@@ -97,7 +91,7 @@ export default async function handler(
         max_redemptions: 1,
         expires_at: redeemBy,
         metadata: {
-          source: 'discount_popup',
+          source: isLotteryDiscount ? 'utm_lottery' : 'discount_popup',
         },
       });
     } catch (err) {

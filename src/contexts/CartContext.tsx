@@ -9,7 +9,7 @@
  * - Currency consistency enforced via CurrencyContext
  */
 
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import type { Cart, CartItem } from '@/types/cart';
 import {
@@ -22,9 +22,15 @@ import {
 } from '@/lib/cart-operations';
 import { encodeCartState } from '@/lib/cart-url-state';
 import { useVoucherValidation } from '@/hooks/useVoucherValidation';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
 import { useCurrency } from './CurrencyContext';
+
+// 48h TTL. The server-side `validateCheckoutPrices` rejects stale pricing-stage
+// IDs at checkout, so this TTL is for UX bounding — not a price-tampering
+// defense. See src/lib/stripe/validate-checkout.ts.
+const CART_TTL_MS = 48 * 60 * 60 * 1000;
 
 // ============================================================================
 // Action Types
@@ -114,6 +120,42 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
 
   // Voucher validation (uses TanStack Query)
   const { mutateAsync: validateVoucher } = useVoucherValidation();
+
+  // localStorage persistence so the cart survives reloads / cross-page
+  // navigation. SSR-provided initialCart (URL-shared cart) takes precedence.
+  const [persistedCart, setPersistedCart, clearPersistedCart] = useLocalStorage(
+    'zurichjs_cart_v1',
+    CART_TTL_MS
+  );
+
+  // Rehydrate from localStorage on first client mount when SSR didn't ship a
+  // populated cart. We only run once — subsequent cart changes flow through
+  // the persistence effect below.
+  const hasHydratedRef = React.useRef(false);
+  useEffect(() => {
+    if (hasHydratedRef.current) return;
+    hasHydratedRef.current = true;
+
+    // SSR delivered a non-empty cart (e.g. shared /cart URL) — that wins.
+    if (initialCart && initialCart.items.length > 0) return;
+
+    if (persistedCart && persistedCart.items.length > 0) {
+      dispatch({ type: 'REPLACE_CART', cart: persistedCart });
+      cartRef.current = persistedCart;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist cart on every change. Clears storage when the cart empties so a
+  // stale 0-item record can't shadow a fresh SSR cart on the next load.
+  useEffect(() => {
+    if (!hasHydratedRef.current) return;
+    if (cart.items.length === 0) {
+      clearPersistedCart();
+    } else {
+      setPersistedCart(cart);
+    }
+  }, [cart, setPersistedCart, clearPersistedCart]);
 
   // ---- Actions ----
 
@@ -237,14 +279,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
 
   // ---- Navigation ----
 
+  // The cart already lives in React context + localStorage, so we don't need
+  // to round-trip it through the URL on every nav. `useCartUrlSync` on /cart
+  // still writes the encoded state to the URL after mount for share links.
+  // Keeping the path clean here makes the navigation feel instant.
   const navigateToCart = useCallback(() => {
-    const currentCart = cartRef.current;
-    if (currentCart.items.length > 0) {
-      const encoded = encodeCartState(currentCart);
-      router.push(`/cart?cart=${encoded}`);
-    } else {
-      router.push('/cart');
-    }
+    router.push('/cart');
   }, [router]);
 
   // ---- Context Value ----

@@ -3,27 +3,27 @@ import {
     ScheduleSection,
     ShapedSection,
     TicketsSectionWithStripe,
-    TimelineSection,
     FAQSection,
     SponsorsSection,
     SpeakersSection,
     LearnSection,
     NavBar,
-    SiteFooter
+    SiteFooter,
+    BlueskyFeedSection
 } from '@/components/organisms';
 import { SEO, eventSchema, organizationSchema, websiteSchema, speakableSchema, generateFAQSchema } from '@/components/SEO';
-import { heroData, scheduleData, timelineData, sponsorsData, learningData } from '@/data';
+import { heroData, scheduleData, sponsorsData, learningData } from '@/data';
 import type { DehydratedState } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
-import { publicSponsorsQueryOptions, communityPartnersQueryOptions } from '@/lib/queries/sponsors';
+import { publicSponsorsQueryOptions } from '@/lib/queries/sponsors';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
+import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from '@/lib/bluesky';
+import type { BlueskyFeedResult } from '@/lib/bluesky';
 import type { GetServerSideProps } from 'next';
 import React from "react";
-import {Button} from "@/components/atoms";
-import { trackButtonClick } from '@/lib/analytics';
 
 /**
  * Page props passed through _app.tsx for hydration
@@ -32,6 +32,7 @@ import { trackButtonClick } from '@/lib/analytics';
  */
 interface HomePageProps {
   dehydratedState: DehydratedState;
+  blueskyFeed: BlueskyFeedResult;
 }
 
 // FAQ data for schema (plain text versions)
@@ -50,20 +51,22 @@ const faqSchemaData = [
   },
   {
     question: "Switzerland is expensive – I'm on a budget, what are my options?",
-    answer: "Hotel partnerships are coming soon! Email hello@zurichjs.com to join the waitlist and be the first to hear about it. We're happy to help you work within your budget.",
+    answer: "Switzerland has the perception of being pricey, but there are many ways to make a trip here affordable — some accommodation options come out at under €100 per night. Use our Trip Cost Calculator at /trip-cost to estimate your total trip cost (ticket + travel + hotel). Hotel partnerships are also coming soon — email hello@zurichjs.com to join the waitlist, and feel free to reach out if we can help you navigate how to plan the trip (accommodation, transport, or affordable places to eat).",
   },
   {
     question: "When is the best time to arrive and leave?",
-    answer: "Community Day (Sept 9th) isn't essential, but if you're attending a workshop on the 10th, come early and enjoy it. Depart evening of Sept 12th or 13th. VIP holders should keep the full day of Sept 12th free for speaker activities.",
+    answer: "Community Day (Sept 9th) isn't essential, but if you're attending a workshop on the 10th, come early and enjoy it. Depart evening of Sept 12th or 13th. VIP holders get exclusive access to the after party on the evening of Sept 11th, so don't book too early a departure that day.",
   },
 ];
 
-export default function Home() {
+export default function Home({ blueskyFeed }: HomePageProps) {
   const handleCtaClick = () => {
     // Scroll smoothly to the tickets section
     const ticketsSection = document.getElementById('tickets');
     if (ticketsSection) {
       ticketsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Reflect the anchor in the URL so the section is shareable/bookmarkable.
+      window.history.replaceState(null, '', '#tickets');
     }
   };
 
@@ -99,7 +102,6 @@ export default function Home() {
             city={heroData.city}
             ctaLabel={heroData.ctaLabel}
             onCtaClick={handleCtaClick}
-            speakers={heroData.speakers}
             background={heroData.background}
           />
         </div>
@@ -107,30 +109,6 @@ export default function Home() {
         {/* Speakers positioned at the diagonal intersection */}
         <div className="relative z-30 -mt-12 sm:-mt-16 md:-mt-24 lg:-mt-32">
           <SpeakersSection />
-          <div className="flex flex-col items-center gap-3 px-4">
-            <p className="text-brand-gray-medium text-md text-center mt-2">
-                <Button href="/speakers" size="xs" variant="black" asChild onClick={() => {
-                  trackButtonClick({
-                    buttonText: 'Check out the full lineup',
-                    buttonLocation: 'homepage_speakers_section',
-                    buttonAction: 'navigate_to_speakers',
-                  });
-                }}>
-                    Check out the full lineup
-                </Button>
-            </p>
-            <p className="text-brand-gray-medium text-md text-center">
-                <Button href="/workshops" size="xs" variant="blue" asChild onClick={() => {
-                  trackButtonClick({
-                    buttonText: 'Check out the workshops',
-                    buttonLocation: 'homepage_speakers_section',
-                    buttonAction: 'navigate_to_workshops',
-                  });
-                }}>
-                    Check out the workshops
-                </Button>
-            </p>
-          </div>
         </div>
 
         <ShapedSection shape="tighten" variant="light" className="relative z-20" compactTop>
@@ -145,22 +123,17 @@ export default function Home() {
           <SponsorsSection {...sponsorsData} />
         </ShapedSection>
 
-      <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
+        <ShapedSection shape="tighten" variant="light" id="schedule" className="relative z-20">
           <ScheduleSection
               title={scheduleData.title}
               subtitle={scheduleData.subtitle}
               aboutLink={scheduleData.aboutLink}
               days={scheduleData.days}
           />
-      </ShapedSection>
+        </ShapedSection>
 
-        <ShapedSection shape="widen" variant="medium" id="timeline">
-          <TimelineSection
-            kicker={timelineData.kicker}
-            title={timelineData.title}
-            subtitle={timelineData.subtitle}
-            entries={timelineData.entries}
-          />
+        <ShapedSection shape="widen" variant="dark" id="community-buzz">
+          <BlueskyFeedSection initialFeed={blueskyFeed} />
         </ShapedSection>
 
         <ShapedSection shape="tighten" variant="yellow" id="tickets">
@@ -175,6 +148,7 @@ export default function Home() {
               shape="straight"
               variant="dark"
               compactTop={true}
+              dropBottom={true}
           >
               <SiteFooter />
           </ShapedSection>
@@ -198,9 +172,9 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
 
   const results = await Promise.allSettled([
     optionalQuery(publicSponsorsQueryOptions),
-    optionalQuery(communityPartnersQueryOptions),
-    optionalQuery(publicSpeakersQueryOptions({ featured: true })),
+    optionalQuery(publicSpeakersQueryOptions()),
     optionalQuery(ticketPricingQueryOptions),
+    getCachedBlueskyFeed({ timeoutMs: BLUESKY_FEED_TIMEOUT_MS }),
   ]);
 
   // Report any rejected promises to PostHog (shouldn't happen since
@@ -216,9 +190,16 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     }
   }
 
+  const blueskyResult = results[3];
+  const blueskyFeed =
+    blueskyResult?.status === 'fulfilled' && blueskyResult.value
+      ? blueskyResult.value
+      : { posts: [] };
+
   return {
     props: {
       dehydratedState: dehydrate(),
+      blueskyFeed,
     },
   };
 };

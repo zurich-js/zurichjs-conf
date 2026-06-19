@@ -8,10 +8,49 @@ import { Resend } from 'resend';
 import type { TeamRequestData } from '@/components/molecules';
 import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
+import { serverAnalytics } from '@/lib/analytics/server';
 
 const log = logger.scope('Team Request API');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+async function sendEmailSafely(
+  label: string,
+  payload: Parameters<typeof resend.emails.send>[0]
+) {
+  try {
+    const result = await resend.emails.send(payload);
+    if (result.error) {
+      log.error(`Failed to send ${label} email`, result.error);
+    }
+    return result;
+  } catch (error) {
+    log.error(`Failed to send ${label} email`, error);
+    return null;
+  }
+}
+
+function buildReplyHref(email: string) {
+  const params = new URLSearchParams({
+    subject: 'Re: Team Package for ZurichJS Conference 2026',
+    cc: 'hello@zurichjs.com',
+  });
+
+  return `mailto:${encodeURIComponent(email)}?${params.toString()}`;
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeHeader(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ').trim();
+}
 
 interface TeamRequestResponse {
   success: boolean;
@@ -62,9 +101,33 @@ export default async function handler(
 
     // Get base URL for email links
     const baseUrl = getBaseUrl(req);
+    const replyHref = buildReplyHref(email);
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeCompany = escapeHtml(company);
+    const safeTicketType = escapeHtml(ticketType);
+    const safeQuantity = escapeHtml(quantity);
+    const safeMessage = message ? escapeHtml(message) : '';
+
+    // Capture the lead before any external email provider work. This gives us
+    // a recovery trail even when Resend rejects one of the notifications.
+    try {
+      await serverAnalytics.identify(email, {
+        email,
+        name,
+        company,
+      });
+      await serverAnalytics.track('form_submitted', email, {
+        form_name: 'team_request',
+        form_type: 'other',
+        form_success: true,
+      });
+    } catch (analyticsError) {
+      log.error('Failed to capture team request analytics', analyticsError);
+    }
 
     // Send confirmation email to customer
-    const customerEmailResult = await resend.emails.send({
+    await sendEmailSafely('team request customer confirmation', {
       from: 'ZurichJS Conference <hello@zurichjs.com>',
       to: email,
       subject: 'Team Package Request Received - ZurichJS Conference 2026',
@@ -93,27 +156,27 @@ export default async function handler(
                 <h1 style="margin: 0; font-size: 28px;">Team Request Received!</h1>
               </div>
               <div class="content">
-                <p>Hi ${name},</p>
+                <p>Hi ${safeName},</p>
                 <p>Thank you for your interest in our team packages for <strong>ZurichJS Conference 2026</strong>!</p>
                 <p>We've received your request and our team will review it shortly. Here's what you requested:</p>
 
                 <div class="details">
                   <div class="details-row">
                     <span class="label">Ticket Type:</span>
-                    <span class="value">${ticketType}</span>
+                    <span class="value">${safeTicketType}</span>
                   </div>
                   <div class="details-row">
                     <span class="label">Quantity:</span>
-                    <span class="value">${quantity} tickets</span>
+                    <span class="value">${safeQuantity} tickets</span>
                   </div>
                   <div class="details-row">
                     <span class="label">Company:</span>
-                    <span class="value">${company}</span>
+                    <span class="value">${safeCompany}</span>
                   </div>
-                  ${message ? `
+                  ${safeMessage ? `
                   <div class="details-row">
                     <span class="label">Message:</span>
-                    <span class="value">${message}</span>
+                    <span class="value">${safeMessage}</span>
                   </div>
                   ` : ''}
                 </div>
@@ -149,16 +212,11 @@ export default async function handler(
       `,
     });
 
-    if (customerEmailResult.error) {
-      log.error('Failed to send customer email', customerEmailResult.error);
-      // Don't fail the request if customer email fails, but log it
-    }
-
     // Send notification email to sales team
-    const salesEmailResult = await resend.emails.send({
+    await sendEmailSafely('team request sales notification', {
       from: 'ZurichJS Conference <hello@zurichjs.com>',
       to: 'hello@zurichjs.com',
-      subject: `🎟️ New Team Package Request - ${company} (${quantity} tickets)`,
+      subject: sanitizeHeader(`New Team Package Request - ${company} (${quantity} tickets)`),
       html: `
         <!DOCTYPE html>
         <html>
@@ -186,9 +244,9 @@ export default async function handler(
               </div>
               <div class="content">
                 <div class="highlight-box">
-                  <h2 style="margin: 0 0 10px 0; font-size: 20px;">${company}</h2>
+                  <h2 style="margin: 0 0 10px 0; font-size: 20px;">${safeCompany}</h2>
                   <p style="margin: 0; font-size: 18px;">
-                    Requesting <strong>${quantity} ${ticketType}</strong> tickets
+                    Requesting <strong>${safeQuantity} ${safeTicketType}</strong> tickets
                     <span class="tag">PRIORITY</span>
                   </p>
                 </div>
@@ -197,15 +255,15 @@ export default async function handler(
                 <div class="details">
                   <div class="details-row">
                     <span class="label">Name:</span>
-                    <span class="value">${name}</span>
+                    <span class="value">${safeName}</span>
                   </div>
                   <div class="details-row">
                     <span class="label">Email:</span>
-                    <span class="value"><a href="mailto:${email}">${email}</a></span>
+                    <span class="value"><a href="mailto:${safeEmail}">${safeEmail}</a></span>
                   </div>
                   <div class="details-row">
                     <span class="label">Company:</span>
-                    <span class="value">${company}</span>
+                    <span class="value">${safeCompany}</span>
                   </div>
                 </div>
 
@@ -213,16 +271,16 @@ export default async function handler(
                 <div class="details">
                   <div class="details-row">
                     <span class="label">Ticket Type:</span>
-                    <span class="value">${ticketType}</span>
+                    <span class="value">${safeTicketType}</span>
                   </div>
                   <div class="details-row">
                     <span class="label">Quantity:</span>
-                    <span class="value">${quantity} tickets</span>
+                    <span class="value">${safeQuantity} tickets</span>
                   </div>
-                  ${message ? `
+                  ${safeMessage ? `
                   <div class="details-row">
                     <span class="label">Additional Message:</span>
-                    <span class="value">${message}</span>
+                    <span class="value">${safeMessage}</span>
                   </div>
                   ` : '<p style="margin: 10px 0; color: #666;"><em>No additional message provided</em></p>'}
                 </div>
@@ -237,7 +295,7 @@ export default async function handler(
                 <h3>⏭️ Next Steps</h3>
                 <ol>
                   <li>Review the request and prepare a custom quote</li>
-                  <li>Reply to <strong>${email}</strong> within 24 hours</li>
+                  <li>Reply to <strong>${safeEmail}</strong> within 24 hours</li>
                   <li>Include custom pricing and bank transfer payment option</li>
                   <li>Mention simplified invoicing (single invoice for entire team)</li>
                   <li>CC hello@zurichjs.com for tracking</li>
@@ -245,7 +303,7 @@ export default async function handler(
 
                 <p style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px;">
                   <strong>📧 Quick Reply:</strong><br>
-                  <a href="mailto:${email}?subject=Re: Team Package for ZurichJS Conference 2026&cc=hello@zurichjs.com">Send Quote to ${name}</a>
+                  <a href="${replyHref}">Send Quote to ${safeName}</a>
                 </p>
               </div>
               <div class="footer">
@@ -263,11 +321,6 @@ export default async function handler(
         </html>
       `,
     });
-
-    if (salesEmailResult.error) {
-      log.error('Failed to send sales email', salesEmailResult.error);
-      // Still return success to user even if sales notification fails
-    }
 
     return res.status(200).json({
       success: true,

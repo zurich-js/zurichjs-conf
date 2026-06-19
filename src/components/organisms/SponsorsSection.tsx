@@ -25,10 +25,10 @@ export interface SponsorsSectionProps {
 // Minimum empty slots per size category to keep the grid looking full
 const MIN_SLOTS: Record<string, number> = {
     extralarge: 1,
-    large: 0,
-    medium: 2,
-    default: 2,
-    small: 4,
+    large: 1,
+    medium: 1,
+    default: 1,
+    small: 1,
     tiny: 4,
 };
 
@@ -190,8 +190,8 @@ export const SponsorsSection: React.FC<SponsorsSectionProps> = ({
                 >
                     <p className="text-brand-gray-light text-md text-center mb-4">
                         Want to sponsor, partner, or volunteer?{' '}
-                        <a href="mailto:hello@zurichjs.com" className="text-md text-brand-blue hover:text-brand-gray-lightest duration-300 ease-in-out">
-                            Reach&nbsp;out&nbsp;to&nbsp;us
+                        <a href="/sponsorship" className="text-md text-brand-blue hover:text-brand-gray-lightest duration-300 ease-in-out">
+                            View&nbsp;sponsorship&nbsp;options
                         </a>
                     </p>
                 </motion.div>

@@ -15,27 +15,4 @@ export const heroData = {
     posterSrc: '/images/technopark.png',
     // imgFallbackSrc: '/images/zurich-fallback.jpg',
   },
-  speakers: [
-    {
-      imageSrc: undefined, // Will show silhouette placeholder
-      name: undefined,
-      role: undefined,
-    },
-    {
-      imageSrc: undefined,
-      name: undefined,
-      role: undefined,
-    },
-    {
-      imageSrc: undefined,
-      name: undefined,
-      role: undefined,
-    },
-    {
-      imageSrc: undefined,
-      name: undefined,
-      role: undefined,
-    },
-  ],
 };
-

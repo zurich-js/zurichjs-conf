@@ -7,6 +7,7 @@
 
 import { logger } from '@/lib/logger'
 import { serverAnalytics } from '@/lib/analytics/server'
+import { fetchWithRetry, retry, isNetworkError } from '@/lib/retry'
 import type {
   CfpSpeakerProfileCreatedData,
   CfpSpeakerProfileCompletedData,
@@ -48,6 +49,14 @@ function truncate(str: string, max: number): string {
 // Slack Sender
 // =============================================================================
 
+const SLACK_RETRYABLE_ERRORS = new Set([
+  'ratelimited',
+  'service_unavailable',
+  'internal_error',
+  'fatal_error',
+  'request_timeout',
+])
+
 async function sendToSlack(text: string, blocks?: unknown[]): Promise<void> {
   const token = process.env.SLACK_BOT_TOKEN
   if (!token) {
@@ -55,24 +64,45 @@ async function sendToSlack(text: string, blocks?: unknown[]): Promise<void> {
     return
   }
 
-  const response = await fetch('https://slack.com/api/chat.postMessage', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      channel: SLACK_CHANNEL,
-      text,
-      blocks,
-      unfurl_links: false,
-    }),
-  })
+  await retry(
+    async () => {
+      const response = await fetchWithRetry(
+        'https://slack.com/api/chat.postMessage',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            channel: SLACK_CHANNEL,
+            text,
+            blocks,
+            unfurl_links: false,
+          }),
+        },
+        { attempts: 3, label: 'slack.chat.postMessage' }
+      )
 
-  const result = await response.json()
-  if (!result.ok) {
-    throw new Error(`Slack API: ${result.error}`)
-  }
+      const result = (await response.json()) as { ok: boolean; error?: string }
+      if (!result.ok) {
+        throw new Error(`Slack API: ${result.error ?? 'unknown_error'}`)
+      }
+    },
+    {
+      attempts: 3,
+      label: 'sendToSlack',
+      // fetchWithRetry handles transport + HTTP-level retries; this outer retry
+      // only kicks in when Slack returns 200 with `ok: false` for a transient
+      // reason (e.g. ratelimited / service_unavailable).
+      shouldRetry: (error) => {
+        if (isNetworkError(error)) return true
+        if (!(error instanceof Error)) return false
+        const slackError = error.message.replace(/^Slack API: /, '')
+        return SLACK_RETRYABLE_ERRORS.has(slackError)
+      },
+    }
+  )
 }
 
 function buildBlocks(
@@ -368,6 +398,7 @@ export function notifyVolunteerApplication(data: VolunteerApplicationData): void
     [
       { label: 'Name', value: data.name },
       { label: 'Email', value: data.email },
+      { label: 'Role', value: data.roleTitle },
       { label: 'Application ID', value: data.applicationId },
     ],
     `${process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com'}/admin/volunteers`,

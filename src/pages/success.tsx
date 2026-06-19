@@ -11,6 +11,7 @@ import type { EventProperties } from '@/lib/analytics/events';
 
 import { ApiError } from '@/lib/api';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useCart } from '@/contexts/CartContext';
 
 /**
  * Detect if the error is a payment failure (402) vs a generic API/network error.
@@ -31,6 +32,7 @@ const SuccessPage: React.FC = () => {
   const router = useRouter();
   const { session_id } = router.query;
   const [savedCart] = useLocalStorage('zurichjs_cart_recovery');
+  const { clearCart } = useCart();
 
   // Wait for router to be ready and extract session_id
   const sessionId = router.isReady && typeof session_id === 'string' ? session_id : '';
@@ -65,6 +67,10 @@ const SuccessPage: React.FC = () => {
     }
 
     hasTracked.current = true;
+
+    // Purchase is confirmed — drop the persisted cart so a returning browser
+    // doesn't see stale items from this completed order.
+    clearCart();
 
     // Identify the user (links this purchase to their browsing session)
     if (sessionDetails.customer_email) {

@@ -8,7 +8,6 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { env } from '@/config/env';
 
 let cfpClientInstance: SupabaseClient<any> | null = null;
 
@@ -24,17 +23,20 @@ export function createCfpServiceClient(): SupabaseClient<any> {
     return cfpClientInstance;
   }
 
-  if (!env.supabase.url) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+
+  if (!supabaseUrl) {
     throw new Error('[CFP Supabase] SUPABASE_URL is missing');
   }
 
-  if (!env.supabase.secretKey) {
+  if (!supabaseSecretKey) {
     throw new Error('[CFP Supabase] SUPABASE_SECRET_KEY is missing');
   }
 
   cfpClientInstance = createClient(
-    env.supabase.url,
-    env.supabase.secretKey,
+    supabaseUrl,
+    supabaseSecretKey,
     {
       auth: {
         autoRefreshToken: false,

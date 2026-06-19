@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useQueryState, parseAsStringLiteral } from 'nuqs';
 
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
@@ -10,6 +11,9 @@ import { workshopProgramSections } from '@/data';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
+
+const TAB_VALUES = ['morning', 'lunch', 'afternoon'] as const;
+type TabValue = (typeof TAB_VALUES)[number];
 
 const DAY_DATE = '2026-09-10';
 
@@ -32,8 +36,17 @@ function partitionByTab(items: PublicProgramScheduleItem[]) {
   };
 }
 
+function hasPublishedWorkshop(items: PublicProgramScheduleItem[]) {
+  return items.some((item) => item.type === 'session' && item.session?.type === 'workshop');
+}
+
 export default function WorkshopsPage() {
-  const [activeTab, setActiveTab] = useState('morning');
+  // URL-driven so back-navigation and shared links preserve the slot view.
+  const [activeTab, setActiveTab] = useQueryState<TabValue>(
+    'slot',
+    parseAsStringLiteral(TAB_VALUES).withDefault('morning').withOptions({ shallow: true, clearOnDefault: true })
+  );
+  const tabsRef = useRef<HTMLDivElement>(null);
   const { currency } = useCurrency();
 
   const queryOptions = useMemo(
@@ -59,6 +72,18 @@ export default function WorkshopsPage() {
   const firstPublishedIndex = visibleItems.findIndex(
     (item) => item.type === 'session' && Boolean(item.session)
   );
+  const showAfternoonMobileHint =
+    activeTab === 'morning' && Boolean(partitioned && hasPublishedWorkshop(partitioned.afternoon));
+
+  const handleAfternoonHintClick = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    tabsRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+
+    window.setTimeout(() => setActiveTab('afternoon'), prefersReducedMotion ? 0 : 300);
+  };
 
   return (
     <>
@@ -86,17 +111,23 @@ export default function WorkshopsPage() {
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom compact>
           <div className="mx-auto max-w-screen-lg">
-            <DayTabs
-              tabs={workshopProgramSections.map((section) => ({
-                id: section.id,
-                label: section.label,
-                date: section.date,
-              }))}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              color="blue"
-              className="pt-0"
-            />
+            <div ref={tabsRef}>
+              <DayTabs
+                tabs={workshopProgramSections.map((section) => ({
+                  id: section.id,
+                  label: section.label,
+                  date: section.date,
+                }))}
+                activeTab={activeTab}
+                onTabChange={(tabId) => {
+                  if ((TAB_VALUES as readonly string[]).includes(tabId)) {
+                    setActiveTab(tabId as TabValue);
+                  }
+                }}
+                color="blue"
+                className="pt-0"
+              />
+            </div>
 
             <div className="mt-8 flex flex-col gap-4">
               {isLoading && <ScheduleSkeleton />}
@@ -119,6 +150,15 @@ export default function WorkshopsPage() {
                     offeringsBySubmissionId={data.offeringsBySubmissionId}
                   />
                 ))}
+              {showAfternoonMobileHint && (
+                  <button
+                    type="button"
+                    onClick={handleAfternoonHintClick}
+                    className="inline font-bold underline decoration-2 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2"
+                  >
+                    See afternoon sessions
+                  </button>
+              )}
             </div>
           </div>
         </ShapedSection>

@@ -3,7 +3,7 @@
  * Admin list of volunteer applications with filters
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Search, FileText } from 'lucide-react';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { VolunteerStatusBadge } from './VolunteerStatusBadge';

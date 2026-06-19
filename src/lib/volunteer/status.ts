@@ -6,7 +6,6 @@
 import type {
   VolunteerRoleStatus,
   VolunteerApplicationStatus,
-  VolunteerProfileStatus,
   VolunteerCommitmentType,
   VolunteerRole,
 } from '@/lib/types/volunteer';
@@ -74,28 +73,6 @@ export function getAvailableApplicationTransitions(
       return ['in_review'];
     case 'withdrawn':
       return [];
-  }
-}
-
-// ============================================
-// PROFILE STATUS
-// ============================================
-
-export const PROFILE_STATUS_LABELS: Record<VolunteerProfileStatus, string> = {
-  pending_confirmation: 'Pending',
-  confirmed: 'Confirmed',
-  active: 'Active',
-  cancelled: 'Cancelled',
-  completed: 'Completed',
-};
-
-export function getProfileStatusTone(status: VolunteerProfileStatus): 'green' | 'amber' | 'blue' | 'red' {
-  switch (status) {
-    case 'pending_confirmation': return 'amber';
-    case 'confirmed': return 'blue';
-    case 'active': return 'green';
-    case 'cancelled': return 'red';
-    case 'completed': return 'green';
   }
 }
 

@@ -81,7 +81,7 @@ export const TICKET_METADATA: Record<
     variant: 'standard',
   },
   vip: {
-    blurb: 'For those who go all in. Limited to 15.',
+    blurb: `For those who go all in. Limited to ${GLOBAL_STOCK_LIMITS.vip}.`,
     variant: 'vip',
   },
 };
@@ -190,20 +190,19 @@ export const TICKET_FAQ: FAQItem[] = [
     question: "Switzerland is expensive – I'm on a budget, what are my options?",
     answer: (
       <>
-        We get it – Switzerland can be pricey! But attending ZurichJS Conference on a budget is
-        definitely doable. Use our{' '}
+        Switzerland has the perception of being pricey, but there are many ways to make a trip
+        here affordable – some accommodation options come out at under €100 per night. Use our{' '}
         <Link href="/trip-cost" className="underline">
           Trip Cost Calculator
         </Link>{' '}
-        to estimate your total trip cost (ticket + travel + hotel). We&apos;re also working on
-        hotel partnerships that will be announced soon. Reach out to us at{' '}
+        to estimate your total trip cost (ticket + travel + hotel) and compare options across
+        travel regions and hotel types. We&apos;re also working on hotel partnerships that will
+        be announced soon – reach out to us at{' '}
         <a href="mailto:hello@zurichjs.com" className="underline">
           hello@zurichjs.com
         </a>{' '}
-        and we&apos;ll add you to the waitlist to be one of the first to hear about it. We&apos;re
-        also happy to help you work within your budget – whether it&apos;s accommodation tips,
-        transport advice, or affordable places to eat. Many attendees have made it work, and
-        we&apos;ll help you do the same!
+        to join the waitlist, and feel free to get in touch if we can help you navigate how to
+        plan the trip – whether that&apos;s accommodation, transport, or affordable places to eat.
       </>
     ),
   },
@@ -215,8 +214,8 @@ export const TICKET_FAQ: FAQItem[] = [
         essential, but if you&apos;re attending a workshop on the 10th, you might as well arrive a
         day early and enjoy the warm-up meetup. For departures, a flight on the evening of{' '}
         <strong>September 12th</strong> or <strong>September 13th</strong> works well. If you&apos;re
-        a <strong>VIP ticket holder</strong>, make sure to keep the full day of September 12th free
-        for the exclusive speaker activities!
+        a <strong>VIP ticket holder</strong>, note that the exclusive after party takes place on the
+        evening of September 11th, so don&apos;t book too early a departure that day!
       </>
     ),
   },

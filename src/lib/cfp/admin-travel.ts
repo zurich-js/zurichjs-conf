@@ -24,6 +24,7 @@ export interface SpeakerWithTravel extends CfpSpeaker {
   travel: CfpSpeakerTravel | null;
   flights: CfpSpeakerFlight[];
   accommodation: CfpSpeakerAccommodation | null;
+  accommodation_bookings: AccommodationBookingWithContext[];
   reimbursements: CfpSpeakerReimbursement[];
   accepted_submissions_count: number;
 }
@@ -40,6 +41,11 @@ export interface TravelDashboardStats {
   hotels_booked: number;
   hotels_pending: number;
   total_hotel_nights: number;
+  accommodation_people: number;
+  accommodation_rooms: number;
+  accommodation_confirmed: number;
+  accommodation_pending: number;
+  accommodation_guest_payments_due: number;
 }
 
 export interface FlightWithSpeaker extends CfpSpeakerFlight {
@@ -48,7 +54,7 @@ export interface FlightWithSpeaker extends CfpSpeakerFlight {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
 }
 
 /** Invoice data stored in cfp_speaker_reimbursements, managed admin-side */
@@ -63,6 +69,111 @@ export interface InvoiceWithSpeaker extends CfpSpeakerReimbursement {
 
 // Keep alias for backward compat
 export type ReimbursementWithSpeaker = InvoiceWithSpeaker;
+
+export type AccommodationBookingStatus = 'draft' | 'pending_details' | 'pending_payment' | 'confirmed' | 'canceled';
+
+export interface HotelRoomType {
+  id: string;
+  hotel_id: string;
+  name: string;
+  default_nightly_rate: number | null;
+  default_occupancy: number | null;
+  max_occupancy: number | null;
+  notes: string | null;
+  is_active: boolean;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Hotel {
+  id: string;
+  name: string;
+  address: string | null;
+  notes: string | null;
+  is_active: boolean;
+  metadata: Record<string, unknown>;
+  room_types: HotelRoomType[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AccommodationBookingRoom {
+  id: string;
+  booking_id: string;
+  hotel_id: string;
+  room_type_id: string | null;
+  room_name: string;
+  people_count: number;
+  check_in_date: string | null;
+  check_out_date: string | null;
+  nightly_rate: number;
+  metadata: Record<string, unknown>;
+  hotel: Hotel | null;
+  room_type: HotelRoomType | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AccommodationBooking {
+  id: string;
+  booking_group_id: string;
+  related_speaker_id: string | null;
+  guest_name: string;
+  guest_email: string | null;
+  status: AccommodationBookingStatus;
+  reservation_number: string | null;
+  reservation_confirmation_url: string | null;
+  conference_amount: number;
+  guest_amount: number;
+  admin_notes: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AccommodationBookingWithContext extends AccommodationBooking {
+  rooms: AccommodationBookingRoom[];
+  speaker: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+  next_outbound_flight: CfpSpeakerFlight | null;
+}
+
+export interface AccommodationRoomInput {
+  hotel_id?: string | null;
+  hotel_name?: string | null;
+  hotel_address?: string | null;
+  room_type_id?: string | null;
+  room_type_name?: string | null;
+  save_room_type?: boolean;
+  people_count: number;
+  check_in_date?: string | null;
+  check_out_date?: string | null;
+  nightly_rate: number;
+}
+
+export interface AccommodationBookingInput {
+  related_speaker_id?: string | null;
+  guest_name: string;
+  guest_email?: string | null;
+  status: AccommodationBookingStatus;
+  reservation_number?: string | null;
+  reservation_confirmation_url?: string | null;
+  conference_amount: number;
+  guest_amount: number;
+  admin_notes?: string | null;
+  metadata?: Record<string, unknown>;
+  rooms: AccommodationRoomInput[];
+}
+
+export interface AccommodationsPayload {
+  bookings: AccommodationBookingWithContext[];
+  hotels: Hotel[];
+}
 
 // ============================================================================
 // Speaker Sourcing (matches admin speakers "program" scope)
@@ -186,6 +297,40 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
     return sum + Math.max(0, nights);
   }, 0);
 
+  const [bookingStatsResult, roomStatsResult] = await Promise.all([
+    supabase
+      .from('accommodation_bookings')
+      .select('status, guest_amount'),
+    supabase
+      .from('accommodation_booking_rooms')
+      .select('people_count, accommodation_bookings!inner(status)'),
+  ]);
+
+  type GeneralAccommodationBookingStats = {
+    status: AccommodationBookingStatus | null;
+    guest_amount: number | null;
+  };
+  type GeneralAccommodationRoomStats = {
+    people_count: number | null;
+    accommodation_bookings?: { status: AccommodationBookingStatus | null } | { status: AccommodationBookingStatus | null }[] | null;
+  };
+  const accommodationBookings = (bookingStatsResult.data || []) as GeneralAccommodationBookingStats[];
+  const accommodationRoomStats = (roomStatsResult.data || []) as unknown as GeneralAccommodationRoomStats[];
+  const activeAccommodationRooms = accommodationRoomStats.filter((a) => {
+    const booking = Array.isArray(a.accommodation_bookings) ? a.accommodation_bookings[0] : a.accommodation_bookings;
+    return booking?.status !== 'canceled';
+  });
+  const accommodationRooms = activeAccommodationRooms.length;
+  const accommodationPeople = activeAccommodationRooms.reduce((sum, a) => sum + (a.people_count ?? 0), 0);
+  const accommodationConfirmed = accommodationBookings.filter((a) => a.status === 'confirmed').length;
+  const accommodationPending = accommodationBookings.filter((a) =>
+    a.status === 'draft' || a.status === 'pending_details' || a.status === 'pending_payment'
+  ).length;
+  const accommodationGuestPaymentsDue = accommodationBookings.reduce((sum, a) => {
+    if (a.status === 'canceled') return sum;
+    return sum + (a.guest_amount ?? 0);
+  }, 0);
+
   return {
     total_accepted_speakers: uniqueSpeakerIds.length,
     travel_confirmed: travelConfirmed,
@@ -198,6 +343,11 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
     hotels_booked: hotelsBooked,
     hotels_pending: hotelsPending,
     total_hotel_nights: totalHotelNights,
+    accommodation_people: accommodationPeople,
+    accommodation_rooms: accommodationRooms,
+    accommodation_confirmed: accommodationConfirmed,
+    accommodation_pending: accommodationPending,
+    accommodation_guest_payments_due: accommodationGuestPaymentsDue,
   };
 }
 
@@ -252,12 +402,22 @@ export async function getAcceptedSpeakersWithTravel(): Promise<SpeakerWithTravel
   // Type for DB records
   type DbRecord = { speaker_id: string; [key: string]: unknown };
 
+  const generalAccommodations = await getAccommodations();
+  const bookingsBySpeaker = new Map<string, AccommodationBookingWithContext[]>();
+  generalAccommodations.bookings.forEach((booking) => {
+    if (!booking.related_speaker_id) return;
+    const items = bookingsBySpeaker.get(booking.related_speaker_id) ?? [];
+    items.push(booking);
+    bookingsBySpeaker.set(booking.related_speaker_id, items);
+  });
+
   // Combine data
   return speakers.map((speaker: CfpSpeaker) => ({
     ...speaker,
     travel: (travelResult.data || []).find((t: DbRecord) => t.speaker_id === speaker.id) || null,
     flights: (flightsResult.data || []).filter((f: DbRecord) => f.speaker_id === speaker.id),
     accommodation: (accommodationResult.data || []).find((a: DbRecord) => a.speaker_id === speaker.id) || null,
+    accommodation_bookings: bookingsBySpeaker.get(speaker.id) ?? [],
     reimbursements: (reimbursementsResult.data || []).filter((r: DbRecord) => r.speaker_id === speaker.id),
     accepted_submissions_count: submissionCounts[speaker.id] || 0,
   })) as SpeakerWithTravel[];
@@ -289,11 +449,14 @@ export async function getSpeakerTravelDetails(speakerId: string): Promise<Speake
     supabase.from('cfp_submissions').select('id').eq('speaker_id', speakerId).eq('status', 'accepted'),
   ]);
 
+  const generalAccommodations = await getAccommodations();
+
   return {
     ...speaker,
     travel: travelResult.data || null,
     flights: flightsResult.data || [],
     accommodation: accommodationResult.data || null,
+    accommodation_bookings: generalAccommodations.bookings.filter((booking) => booking.related_speaker_id === speakerId),
     reimbursements: reimbursementsResult.data || [],
     accepted_submissions_count: (submissionsResult.data || []).length,
   } as SpeakerWithTravel;
@@ -391,6 +554,354 @@ export async function setSpeakerAccommodation(
 }
 
 // ============================================================================
+// Generic Accommodation Management
+// ============================================================================
+
+function metadata(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+}
+
+function normalizeRoomType(row: Record<string, unknown>): HotelRoomType {
+  return {
+    id: String(row.id),
+    hotel_id: String(row.hotel_id),
+    name: String(row.name ?? ''),
+    default_nightly_rate: typeof row.default_nightly_rate === 'number' ? row.default_nightly_rate : null,
+    default_occupancy: typeof row.default_occupancy === 'number' ? row.default_occupancy : null,
+    max_occupancy: typeof row.max_occupancy === 'number' ? row.max_occupancy : null,
+    notes: typeof row.notes === 'string' ? row.notes : null,
+    is_active: row.is_active !== false,
+    metadata: metadata(row.metadata),
+    created_at: String(row.created_at ?? ''),
+    updated_at: String(row.updated_at ?? ''),
+  };
+}
+
+function normalizeHotel(row: Record<string, unknown>, roomTypes: HotelRoomType[] = []): Hotel {
+  return {
+    id: String(row.id),
+    name: String(row.name ?? ''),
+    address: typeof row.address === 'string' ? row.address : null,
+    notes: typeof row.notes === 'string' ? row.notes : null,
+    is_active: row.is_active !== false,
+    metadata: metadata(row.metadata),
+    room_types: roomTypes,
+    created_at: String(row.created_at ?? ''),
+    updated_at: String(row.updated_at ?? ''),
+  };
+}
+
+function normalizeBooking(row: Record<string, unknown>): AccommodationBooking {
+  return {
+    id: String(row.id),
+    booking_group_id: String(row.booking_group_id ?? row.id ?? ''),
+    related_speaker_id: typeof row.related_speaker_id === 'string' ? row.related_speaker_id : null,
+    guest_name: String(row.guest_name ?? ''),
+    guest_email: typeof row.guest_email === 'string' ? row.guest_email : null,
+    status: (row.status as AccommodationBookingStatus) ?? 'draft',
+    reservation_number: typeof row.reservation_number === 'string' ? row.reservation_number : null,
+    reservation_confirmation_url: typeof row.reservation_confirmation_url === 'string' ? row.reservation_confirmation_url : null,
+    conference_amount: typeof row.conference_amount === 'number' ? row.conference_amount : 0,
+    guest_amount: typeof row.guest_amount === 'number' ? row.guest_amount : 0,
+    admin_notes: typeof row.admin_notes === 'string' ? row.admin_notes : null,
+    metadata: metadata(row.metadata),
+    created_at: String(row.created_at ?? ''),
+    updated_at: String(row.updated_at ?? ''),
+  };
+}
+
+function normalizeBookingRoom(
+  row: Record<string, unknown>,
+  hotels: Map<string, Hotel>,
+  roomTypes: Map<string, HotelRoomType>
+): AccommodationBookingRoom {
+  const roomTypeId = typeof row.room_type_id === 'string' ? row.room_type_id : null;
+  const hotelId = String(row.hotel_id);
+  return {
+    id: String(row.id),
+    booking_id: String(row.booking_id),
+    hotel_id: hotelId,
+    room_type_id: roomTypeId,
+    room_name: String(row.room_name ?? ''),
+    people_count: typeof row.people_count === 'number' ? row.people_count : 1,
+    check_in_date: typeof row.check_in_date === 'string' ? row.check_in_date : null,
+    check_out_date: typeof row.check_out_date === 'string' ? row.check_out_date : null,
+    nightly_rate: typeof row.nightly_rate === 'number' ? row.nightly_rate : 0,
+    metadata: metadata(row.metadata),
+    hotel: hotels.get(hotelId) ?? null,
+    room_type: roomTypeId ? roomTypes.get(roomTypeId) ?? null : null,
+    created_at: String(row.created_at ?? ''),
+    updated_at: String(row.updated_at ?? ''),
+  };
+}
+
+async function getHotels(): Promise<Hotel[]> {
+  const supabase = createCfpServiceClient();
+  const [hotelsResult, roomTypesResult] = await Promise.all([
+    supabase.from('hotels').select('*').order('name'),
+    supabase.from('hotel_room_types').select('*').order('name'),
+  ]);
+
+  const roomTypes = ((roomTypesResult.data || []) as Record<string, unknown>[]).map(normalizeRoomType);
+  const roomTypesByHotel = new Map<string, HotelRoomType[]>();
+  roomTypes.forEach((roomType) => {
+    const items = roomTypesByHotel.get(roomType.hotel_id) ?? [];
+    items.push(roomType);
+    roomTypesByHotel.set(roomType.hotel_id, items);
+  });
+
+  return ((hotelsResult.data || []) as Record<string, unknown>[])
+    .map((hotel) => normalizeHotel(hotel, roomTypesByHotel.get(String(hotel.id)) ?? []));
+}
+
+async function resolveRoomCatalog(room: AccommodationRoomInput): Promise<{
+  hotelId: string;
+  roomTypeId: string | null;
+  roomName: string;
+  nightlyRate: number;
+  error: string | null;
+}> {
+  const supabase = createCfpServiceClient();
+  let hotelId = room.hotel_id || null;
+
+  if (!hotelId) {
+    if (!room.hotel_name?.trim()) {
+      return { hotelId: '', roomTypeId: null, roomName: '', nightlyRate: 0, error: 'Hotel is required for each room' };
+    }
+
+    const { data: hotel, error } = await supabase
+      .from('hotels')
+      .insert({
+        name: room.hotel_name.trim(),
+        address: room.hotel_address?.trim() || null,
+      })
+      .select()
+      .single();
+
+    if (error || !hotel) {
+      return { hotelId: '', roomTypeId: null, roomName: '', nightlyRate: 0, error: 'Failed to create hotel' };
+    }
+    hotelId = String(hotel.id);
+  }
+
+  let roomTypeId = room.room_type_id || null;
+  let roomName = room.room_type_name?.trim() || 'Room';
+  let nightlyRate = Math.max(0, room.nightly_rate);
+
+  if (roomTypeId) {
+    const { data: roomType } = await supabase
+      .from('hotel_room_types')
+      .select('*')
+      .eq('id', roomTypeId)
+      .single();
+
+    if (roomType) {
+      roomName = String(roomType.name ?? roomName);
+      if (nightlyRate === 0 && typeof roomType.default_nightly_rate === 'number') {
+        nightlyRate = roomType.default_nightly_rate;
+      }
+    }
+  } else if (room.save_room_type && roomName.trim()) {
+    const { data: roomType, error } = await supabase
+      .from('hotel_room_types')
+      .insert({
+        hotel_id: hotelId,
+        name: roomName,
+        default_nightly_rate: nightlyRate,
+        default_occupancy: room.people_count,
+        max_occupancy: room.people_count,
+      })
+      .select()
+      .single();
+
+    if (error || !roomType) {
+      return { hotelId: '', roomTypeId: null, roomName: '', nightlyRate: 0, error: 'Failed to create room type' };
+    }
+    roomTypeId = String(roomType.id);
+  }
+
+  return { hotelId, roomTypeId, roomName, nightlyRate, error: null };
+}
+
+async function insertBookingRooms(bookingId: string, rooms: AccommodationRoomInput[]): Promise<string | null> {
+  const supabase = createCfpServiceClient();
+  const rows = [];
+
+  for (const room of rooms) {
+    const catalog = await resolveRoomCatalog(room);
+    if (catalog.error) return catalog.error;
+    rows.push({
+      booking_id: bookingId,
+      hotel_id: catalog.hotelId,
+      room_type_id: catalog.roomTypeId,
+      room_name: catalog.roomName,
+      people_count: Math.max(1, room.people_count),
+      check_in_date: room.check_in_date || null,
+      check_out_date: room.check_out_date || null,
+      nightly_rate: catalog.nightlyRate,
+    });
+  }
+
+  const { error } = await supabase.from('accommodation_booking_rooms').insert(rows);
+  return error ? 'Failed to save room lines' : null;
+}
+
+export async function getAccommodations(): Promise<AccommodationsPayload> {
+  const supabase = createCfpServiceClient();
+  const hotels = await getHotels();
+  const hotelMap = new Map(hotels.map((hotel) => [hotel.id, hotel]));
+  const roomTypeMap = new Map(hotels.flatMap((hotel) => hotel.room_types.map((roomType) => [roomType.id, roomType] as const)));
+
+  const { data: bookingRows } = await supabase
+    .from('accommodation_bookings')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const bookings = ((bookingRows || []) as Record<string, unknown>[]).map(normalizeBooking);
+  if (bookings.length === 0) {
+    return { bookings: [], hotels };
+  }
+
+  const bookingIds = bookings.map((booking) => booking.id);
+  const speakerIds = [...new Set(bookings.map((booking) => booking.related_speaker_id).filter((id): id is string => !!id))];
+
+  const [roomsResult, speakersResult, flightsResult] = await Promise.all([
+    supabase.from('accommodation_booking_rooms').select('*').in('booking_id', bookingIds),
+    speakerIds.length > 0
+      ? supabase.from('cfp_speakers').select('id, first_name, last_name, email').in('id', speakerIds)
+      : Promise.resolve({ data: [] }),
+    speakerIds.length > 0
+      ? supabase.from('cfp_speaker_flights').select('*').in('speaker_id', speakerIds).eq('direction', 'outbound').order('departure_time', { ascending: true })
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  type SpeakerRecord = { id: string; first_name: string; last_name: string; email: string };
+  const speakers = new Map(((speakersResult.data || []) as SpeakerRecord[]).map((speaker) => [speaker.id, speaker]));
+  const flights = (flightsResult.data || []) as CfpSpeakerFlight[];
+  const roomsByBooking = new Map<string, AccommodationBookingRoom[]>();
+  ((roomsResult.data || []) as Record<string, unknown>[]).forEach((row) => {
+    const room = normalizeBookingRoom(row, hotelMap, roomTypeMap);
+    const items = roomsByBooking.get(room.booking_id) ?? [];
+    items.push(room);
+    roomsByBooking.set(room.booking_id, items);
+  });
+
+  return {
+    hotels,
+    bookings: bookings.map((booking) => {
+      const rooms = roomsByBooking.get(booking.id) ?? [];
+      const sortedCheckOuts = rooms.map((room) => room.check_out_date).filter(Boolean).sort();
+      const lastCheckOut = sortedCheckOuts[sortedCheckOuts.length - 1] ?? null;
+      const speakerFlights = booking.related_speaker_id
+        ? flights.filter((flight) => flight.speaker_id === booking.related_speaker_id)
+        : [];
+      const nextOutboundFlight = speakerFlights.find((flight) =>
+        !lastCheckOut || !flight.departure_time || flight.departure_time.slice(0, 10) >= lastCheckOut
+      ) ?? speakerFlights[0] ?? null;
+
+      return {
+        ...booking,
+        rooms,
+        speaker: booking.related_speaker_id ? speakers.get(booking.related_speaker_id) ?? null : null,
+        next_outbound_flight: nextOutboundFlight,
+      };
+    }),
+  };
+}
+
+export async function createAccommodationAdmin(
+  input: AccommodationBookingInput
+): Promise<{ booking: AccommodationBooking | null; error: string | null }> {
+  const supabase = createCfpServiceClient();
+  const { rooms, ...bookingInput } = input;
+
+  const { data, error } = await supabase
+    .from('accommodation_bookings')
+    .insert({
+      ...bookingInput,
+      related_speaker_id: bookingInput.related_speaker_id || null,
+      guest_email: bookingInput.guest_email || null,
+      reservation_number: bookingInput.reservation_number || null,
+      reservation_confirmation_url: bookingInput.reservation_confirmation_url || null,
+      admin_notes: bookingInput.admin_notes || null,
+      metadata: bookingInput.metadata ?? {},
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    return { booking: null, error: 'Failed to create accommodation booking' };
+  }
+
+  const roomError = await insertBookingRooms(String(data.id), rooms);
+  if (roomError) {
+    await supabase.from('accommodation_bookings').delete().eq('id', String(data.id));
+    return { booking: null, error: roomError };
+  }
+
+  return { booking: normalizeBooking(data as Record<string, unknown>), error: null };
+}
+
+export async function updateAccommodationAdmin(
+  id: string,
+  input: AccommodationBookingInput
+): Promise<{ booking: AccommodationBooking | null; error: string | null }> {
+  const supabase = createCfpServiceClient();
+  const { rooms, ...bookingInput } = input;
+
+  const { data, error } = await supabase
+    .from('accommodation_bookings')
+    .update({
+      ...bookingInput,
+      related_speaker_id: bookingInput.related_speaker_id || null,
+      guest_email: bookingInput.guest_email || null,
+      reservation_number: bookingInput.reservation_number || null,
+      reservation_confirmation_url: bookingInput.reservation_confirmation_url || null,
+      admin_notes: bookingInput.admin_notes || null,
+      metadata: bookingInput.metadata ?? {},
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error || !data) {
+    return { booking: null, error: 'Failed to update accommodation booking' };
+  }
+
+  const { error: deleteRoomsError } = await supabase
+    .from('accommodation_booking_rooms')
+    .delete()
+    .eq('booking_id', id);
+
+  if (deleteRoomsError) {
+    return { booking: null, error: 'Failed to replace room lines' };
+  }
+
+  const roomError = await insertBookingRooms(id, rooms);
+  if (roomError) {
+    return { booking: null, error: roomError };
+  }
+
+  return { booking: normalizeBooking(data as Record<string, unknown>), error: null };
+}
+
+export async function deleteAccommodationAdmin(id: string): Promise<{ success: boolean; error: string | null }> {
+  const supabase = createCfpServiceClient();
+
+  const { error } = await supabase
+    .from('accommodation_bookings')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    return { success: false, error: 'Failed to delete accommodation booking' };
+  }
+
+  return { success: true, error: null };
+}
+
+// ============================================================================
 // Flight Management
 // ============================================================================
 
@@ -403,17 +914,10 @@ export async function getAllFlights(options?: {
 }): Promise<FlightWithSpeaker[]> {
   const supabase = createCfpServiceClient();
 
-  const speakerIds = await getProgramSpeakerIds();
-
-  if (speakerIds.length === 0) {
-    return [];
-  }
-
   // Build flights query
   let query = supabase
     .from('cfp_speaker_flights')
-    .select('*')
-    .in('speaker_id', speakerIds);
+    .select('*');
 
   if (options?.direction) {
     query = query.eq('direction', options.direction);
@@ -441,24 +945,21 @@ export async function getAllFlights(options?: {
   }
 
   // Get speaker info
-  type FlightRecord = { speaker_id: string; [key: string]: unknown };
+  type FlightRecord = { speaker_id: string | null; [key: string]: unknown };
   type SpeakerRecord = { id: string; first_name: string; last_name: string; email: string };
-  const flightSpeakerIds = [...new Set(flights.map((f: FlightRecord) => f.speaker_id))];
-  const { data: speakers } = await supabase
-    .from('cfp_speakers')
-    .select('id, first_name, last_name, email')
-    .in('id', flightSpeakerIds);
+  const flightSpeakerIds = [...new Set(flights.map((f: FlightRecord) => f.speaker_id).filter((id): id is string => !!id))];
+  const { data: speakers } = flightSpeakerIds.length > 0
+    ? await supabase
+      .from('cfp_speakers')
+      .select('id, first_name, last_name, email')
+      .in('id', flightSpeakerIds)
+    : { data: [] };
 
   const speakerMap = new Map((speakers || []).map((s: SpeakerRecord) => [s.id, s]));
 
   return flights.map((flight: FlightRecord) => ({
     ...flight,
-    speaker: speakerMap.get(flight.speaker_id) || {
-      id: flight.speaker_id,
-      first_name: 'Unknown',
-      last_name: 'Speaker',
-      email: '',
-    },
+    speaker: flight.speaker_id ? speakerMap.get(flight.speaker_id) ?? null : null,
   })) as FlightWithSpeaker[];
 }
 
@@ -498,19 +999,21 @@ export async function updateFlightStatus(
  * Flightradar24 deep link in the UI.
  */
 export async function createFlightAdmin(
-  speakerId: string,
+  speakerId: string | null,
   data: {
+    traveler_name?: string | null;
+    traveler_email?: string | null;
     direction: CfpFlightDirection;
-    airline?: string;
-    flight_number?: string;
-    departure_airport?: string;
-    arrival_airport?: string;
-    departure_time?: string;
-    arrival_time?: string;
-    booking_reference?: string;
-    cost_amount?: number;
-    cost_currency?: string;
-    tracking_url?: string;
+    airline?: string | null;
+    flight_number?: string | null;
+    departure_airport?: string | null;
+    arrival_airport?: string | null;
+    departure_time?: string | null;
+    arrival_time?: string | null;
+    booking_reference?: string | null;
+    cost_amount?: number | null;
+    cost_currency?: string | null;
+    tracking_url?: string | null;
     flight_status?: CfpFlightStatus;
   }
 ): Promise<{ flight: CfpSpeakerFlight | null; error: string | null }> {
@@ -520,6 +1023,8 @@ export async function createFlightAdmin(
     .from('cfp_speaker_flights')
     .insert({
       speaker_id: speakerId,
+      traveler_name: data.traveler_name || null,
+      traveler_email: data.traveler_email || null,
       direction: data.direction,
       airline: data.airline || null,
       flight_number: data.flight_number || null,
@@ -551,16 +1056,19 @@ export async function updateFlightAdmin(
   flightId: string,
   updates: {
     direction?: CfpFlightDirection;
-    airline?: string;
-    flight_number?: string;
-    departure_airport?: string;
-    arrival_airport?: string;
-    departure_time?: string;
-    arrival_time?: string;
-    booking_reference?: string;
-    cost_amount?: number;
-    cost_currency?: string;
-    tracking_url?: string;
+    speaker_id?: string | null;
+    traveler_name?: string | null;
+    traveler_email?: string | null;
+    airline?: string | null;
+    flight_number?: string | null;
+    departure_airport?: string | null;
+    arrival_airport?: string | null;
+    departure_time?: string | null;
+    arrival_time?: string | null;
+    booking_reference?: string | null;
+    cost_amount?: number | null;
+    cost_currency?: string | null;
+    tracking_url?: string | null;
     flight_status?: CfpFlightStatus;
   }
 ): Promise<{ flight: CfpSpeakerFlight | null; error: string | null }> {

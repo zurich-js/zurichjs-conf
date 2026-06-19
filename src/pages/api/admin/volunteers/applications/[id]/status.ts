@@ -53,8 +53,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await updateApplicationStatus(id, parsed.data.status);
     if (error) return res.status(400).json({ error });
 
-    // Update internal notes if provided
-    if (parsed.data.internal_notes) {
+    // Update internal notes if provided (empty string clears existing notes)
+    if (parsed.data.internal_notes !== undefined) {
       const { updateApplicationNotes } = await import('@/lib/volunteer');
       await updateApplicationNotes(id, parsed.data.internal_notes);
     }

@@ -7,7 +7,6 @@
  */
 
 import crypto from 'crypto';
-import { serverEnv } from '@/config/env';
 import type { NextApiRequest } from 'next';
 import { logger } from '@/lib/logger';
 
@@ -44,7 +43,7 @@ export function verifyReadOnlyApiKey(req: NextApiRequest): BotAuthResult {
     return { authenticated: false, isBot: true, botClient };
   }
 
-  const apiKey = serverEnv.admin.readonlyApiKey;
+  const apiKey = process.env.ADMIN_READONLY_API_KEY || null;
   if (!apiKey) {
     log.warn('ADMIN_READONLY_API_KEY not configured, rejecting bot request');
     return { authenticated: false, isBot: true, botClient };

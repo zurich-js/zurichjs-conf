@@ -18,19 +18,27 @@ import {
   SpeakersTab,
   FlightsTab,
   ArrivalsTab,
+  AccommodationsTab,
   InvoicesTab,
   SpeakerDetailModal,
   travelQueryKeys,
   fetchTravelStats,
   fetchSpeakers,
   fetchFlights,
+  fetchAccommodations,
   fetchInvoices,
   type TabType,
   type CfpReimbursementStatus,
 } from '@/components/admin/cfp-travel';
 import {
+  createFlight as apiCreateFlight,
+  updateFlight as apiUpdateFlight,
+  deleteFlight as apiDeleteFlight,
   updateInvoice as apiUpdateInvoice,
   deleteInvoice as apiDeleteInvoice,
+  createAccommodation as apiCreateAccommodation,
+  updateAccommodation as apiUpdateAccommodation,
+  deleteAccommodation as apiDeleteAccommodation,
 } from '@/components/admin/cfp-travel/api';
 
 const ITEMS_PER_PAGE = 10;
@@ -40,6 +48,7 @@ const TRAVEL_TABS: AdminTab<TabType>[] = [
   { id: 'speakers', label: 'Speakers' },
   { id: 'flights', label: 'Flights' },
   { id: 'arrivals', label: 'Arrivals' },
+  { id: 'accommodations', label: 'Accommodations' },
   { id: 'invoices', label: 'Invoices' },
 ];
 
@@ -55,10 +64,12 @@ export default function AdminTravelPage() {
   // Search state
   const [speakersSearch, setSpeakersSearch] = useState('');
   const [flightsSearch, setFlightsSearch] = useState('');
+  const [accommodationsSearch, setAccommodationsSearch] = useState('');
 
   // Pagination state
   const [speakersPage, setSpeakersPage] = useState(1);
   const [flightsPage, setFlightsPage] = useState(1);
+  const [accommodationsPage, setAccommodationsPage] = useState(1);
   const [invoicesPage, setInvoicesPage] = useState(1);
 
   // Data queries
@@ -72,7 +83,7 @@ export default function AdminTravelPage() {
   const { data: speakers = [], isLoading: isLoadingSpeakers } = useQuery({
     queryKey: travelQueryKeys.speakers,
     queryFn: fetchSpeakers,
-    enabled: isAuthenticated === true && (activeTab === 'overview' || activeTab === 'speakers'),
+    enabled: isAuthenticated === true && (activeTab === 'overview' || activeTab === 'speakers' || activeTab === 'accommodations'),
     staleTime: 30 * 1000,
   });
 
@@ -89,6 +100,15 @@ export default function AdminTravelPage() {
     enabled: isAuthenticated === true && (activeTab === 'overview' || activeTab === 'invoices'),
     staleTime: 30 * 1000,
   });
+
+  const { data: accommodationsData, isLoading: isLoadingAccommodations } = useQuery({
+    queryKey: travelQueryKeys.accommodations,
+    queryFn: fetchAccommodations,
+    enabled: isAuthenticated === true && (activeTab === 'overview' || activeTab === 'accommodations'),
+    staleTime: 30 * 1000,
+  });
+  const accommodationBookings = accommodationsData?.bookings ?? [];
+  const hotels = accommodationsData?.hotels ?? [];
 
   // Invoice mutations
   const invoiceMutation = useMutation({
@@ -112,6 +132,69 @@ export default function AdminTravelPage() {
     onError: () => toast.error('Delete Failed', 'Failed to delete invoice'),
   });
 
+  const flightCreateMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiCreateFlight((data.speaker_id as string | null) ?? null, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.flights });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.speakers });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
+      toast.success('Flight Added', 'Flight has been created');
+    },
+    onError: () => toast.error('Create Failed', 'Failed to create flight'),
+  });
+
+  const flightUpdateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => apiUpdateFlight(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.flights });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.speakers });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
+      toast.success('Flight Updated', 'Flight details saved');
+    },
+    onError: () => toast.error('Update Failed', 'Failed to update flight'),
+  });
+
+  const flightDeleteMutation = useMutation({
+    mutationFn: (id: string) => apiDeleteFlight(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.flights });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.speakers });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
+      toast.success('Flight Deleted', 'Flight has been removed');
+    },
+    onError: () => toast.error('Delete Failed', 'Failed to delete flight'),
+  });
+
+  const accommodationCreateMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiCreateAccommodation(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.accommodations });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
+      toast.success('Accommodation Added', 'Accommodation record has been created');
+    },
+    onError: () => toast.error('Create Failed', 'Failed to create accommodation'),
+  });
+
+  const accommodationUpdateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => apiUpdateAccommodation(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.accommodations });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
+      toast.success('Accommodation Updated', 'Accommodation details saved');
+    },
+    onError: () => toast.error('Update Failed', 'Failed to update accommodation'),
+  });
+
+  const accommodationDeleteMutation = useMutation({
+    mutationFn: (id: string) => apiDeleteAccommodation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.accommodations });
+      queryClient.invalidateQueries({ queryKey: travelQueryKeys.stats });
+      toast.success('Accommodation Deleted', 'Accommodation record has been removed');
+    },
+    onError: () => toast.error('Delete Failed', 'Failed to delete accommodation'),
+  });
+
   // Filtered data
   const filteredInvoices =
     invoiceFilter === 'all' ? invoices : invoices.filter((r) => r.status === invoiceFilter);
@@ -121,6 +204,7 @@ export default function AdminTravelPage() {
   // Reset page when filters change
   useEffect(() => setFlightsPage(1), [flightDirection]);
   useEffect(() => setInvoicesPage(1), [invoiceFilter]);
+  useEffect(() => setAccommodationsPage(1), [accommodationsSearch]);
 
   // Handle selecting a speaker from the flights tab
   const handleSelectSpeakerById = useCallback((speakerId: string) => {
@@ -169,9 +253,14 @@ export default function AdminTravelPage() {
               currentPage={flightsPage}
               onPageChange={setFlightsPage}
               pageSize={ITEMS_PER_PAGE}
+              speakers={speakers}
               onSelectSpeaker={handleSelectSpeakerById}
               searchQuery={flightsSearch}
               onSearchChange={setFlightsSearch}
+              onCreate={(data) => flightCreateMutation.mutateAsync(data)}
+              onUpdate={(id, data) => flightUpdateMutation.mutateAsync({ id, data })}
+              onDelete={(id) => flightDeleteMutation.mutate(id)}
+              isUpdating={flightCreateMutation.isPending || flightUpdateMutation.isPending || flightDeleteMutation.isPending}
             />
           )}
 
@@ -179,6 +268,24 @@ export default function AdminTravelPage() {
             <ArrivalsTab
               flights={flights}
               isLoading={isLoadingFlights}
+            />
+          )}
+
+          {activeTab === 'accommodations' && (
+            <AccommodationsTab
+              bookings={accommodationBookings}
+              hotels={hotels}
+              speakers={speakers}
+              isLoading={isLoadingAccommodations}
+              currentPage={accommodationsPage}
+              onPageChange={setAccommodationsPage}
+              pageSize={ITEMS_PER_PAGE}
+              searchQuery={accommodationsSearch}
+              onSearchChange={setAccommodationsSearch}
+              onCreate={(data) => accommodationCreateMutation.mutate(data)}
+              onUpdate={(id, data) => accommodationUpdateMutation.mutate({ id, data })}
+              onDelete={(id) => accommodationDeleteMutation.mutate(id)}
+              isUpdating={accommodationCreateMutation.isPending || accommodationUpdateMutation.isPending || accommodationDeleteMutation.isPending}
             />
           )}
 

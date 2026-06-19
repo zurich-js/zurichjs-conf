@@ -233,7 +233,8 @@ function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, fil
         </div>
         <div className="flex items-center gap-2 text-xs sm:text-sm flex-wrap">
           <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-green-100 text-green-800 font-medium">{tickets.filter(t => t.status === 'confirmed').length} confirmed</span>
-          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium">{tickets.filter(t => t.status === 'pending').length} pending</span>
+          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-gray-100 text-gray-800 font-medium">{tickets.filter(t => t.status === 'cancelled').length} cancelled</span>
+          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-medium">{tickets.filter(t => t.metadata?.paymentType === 'complimentary').length} complimentary</span>
         </div>
       </div>
       <div className="mt-4 flex flex-col sm:flex-row gap-3">

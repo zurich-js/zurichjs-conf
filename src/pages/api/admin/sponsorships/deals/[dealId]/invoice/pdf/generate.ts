@@ -88,6 +88,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             justification: invoice.conversion_justification ?? '',
           }
         : undefined,
+      sponsorConversion: invoice.sponsor_currency && invoice.sponsor_amount && invoice.sponsor_to_chf_rate && invoice.payable_amount_chf
+        ? {
+            sponsorCurrency: invoice.sponsor_currency as 'CHF' | 'EUR' | 'GBP' | 'USD',
+            sponsorAmount: invoice.sponsor_amount,
+            sponsorToChfRate: invoice.sponsor_to_chf_rate,
+            sponsorRateDate: invoice.sponsor_rate_date,
+            sponsorRateSource: invoice.sponsor_rate_source ?? 'frankfurter',
+            payableAmountChf: invoice.payable_amount_chf,
+          }
+        : undefined,
     };
 
     // Generate PDF

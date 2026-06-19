@@ -29,7 +29,6 @@ import {
   type ReviewInput,
 } from './scoring';
 import { computeReviewerContributionMetrics } from './reviewer-scoring';
-import { reconcileAllOverdueScheduledEmails } from './scheduled-emails';
 
 /**
  * Fetch all rows from a table by paginating with .range().
@@ -147,15 +146,6 @@ export async function getAdminSubmissions(
     pageOffset += PAGE_SIZE;
   }
 
-  // Reconcile any pending scheduled emails whose scheduled_for has passed to 'sent'
-  // so email-state filters on the list view reflect reality for both acceptance and
-  // rejection emails (Resend delivers on schedule with no webhook).
-  try {
-    await reconcileAllOverdueScheduledEmails();
-  } catch (err) {
-    console.error('[CFP Admin] reconcileAllOverdueScheduledEmails failed:', err);
-  }
-
   // Step 2: Fetch related data in parallel
   // Use paginated fetches (fetchAllRows) to bypass PostgREST max-rows cap.
   // No .in() filters to avoid URL length limits with 1000+ IDs.
@@ -173,8 +163,8 @@ export async function getAdminSubmissions(
       .from('cfp_reviewers')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true),
-    fetchAllRows<{ submission_id: string; status: string; email_type: string; created_at: string }>(
-      supabase, 'cfp_scheduled_emails', 'submission_id, status, email_type, created_at'
+    fetchAllRows<{ submission_id: string; status: string; email_type: string; created_at: string; scheduled_for: string | null }>(
+      supabase, 'cfp_scheduled_emails', 'submission_id, status, email_type, created_at, scheduled_for'
     ),
   ]);
 
@@ -186,6 +176,9 @@ export async function getAdminSubmissions(
   if (scheduledEmailsResult.error) console.error('[CFP Admin] Error fetching scheduled emails:', scheduledEmailsResult.error);
 
   // Build latest-scheduled-email-status map (picks the most recent record per submission)
+  // For list filtering, treat overdue pending emails as effectively sent without
+  // mutating records during this read-only endpoint.
+  const nowIso = new Date().toISOString();
   const latestScheduledEmailBySubmission = new Map<string, 'pending' | 'sent' | 'cancelled' | 'failed'>();
   const latestScheduledEmailCreatedAt = new Map<string, string>();
   for (const row of scheduledEmailsResult.data || []) {
@@ -193,9 +186,13 @@ export async function getAdminSubmissions(
     const prev = latestScheduledEmailCreatedAt.get(row.submission_id);
     if (!prev || row.created_at > prev) {
       latestScheduledEmailCreatedAt.set(row.submission_id, row.created_at);
+      const effectiveStatus =
+        row.status === 'pending' && row.scheduled_for && row.scheduled_for <= nowIso
+          ? 'sent'
+          : row.status;
       latestScheduledEmailBySubmission.set(
         row.submission_id,
-        row.status as 'pending' | 'sent' | 'cancelled' | 'failed'
+        effectiveStatus as 'pending' | 'sent' | 'cancelled' | 'failed'
       );
     }
   }

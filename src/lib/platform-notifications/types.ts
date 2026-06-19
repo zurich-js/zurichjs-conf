@@ -140,5 +140,5 @@ export interface VolunteerApplicationData {
   applicationId: string
   name: string
   email: string
-  roleId: string
+  roleTitle: string
 }

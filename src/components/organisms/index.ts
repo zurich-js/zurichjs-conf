@@ -15,6 +15,7 @@ export { SectionContainer } from './SectionContainer';
 export { FAQSection } from './FAQSection';
 export { SponsorsSection } from './SponsorsSection';
 export { SpeakersSection } from './SpeakersSection';
+export { BlueskyFeedSection } from './BlueskyFeedSection';
 export { DiscountContainer } from './discount';
 export {
   SponsorshipHeroSection,
@@ -29,7 +30,7 @@ export { AboutCTASection } from './AboutCTASection';
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';
 export type { SectionSplitViewProps } from './SectionSplitView';
-export type { ScheduleSectionProps, Day, Event } from './ScheduleSection';
+export type { ScheduleSectionProps, Day } from './ScheduleSection';
 export type { TicketsSectionProps, Plan, StockInfo } from './TicketsSection';
 export type { TicketsSectionWithStripeProps } from './TicketsSectionWithStripe';
 export type { TimelineSectionProps, TimelineEntry } from './TimelineSection';
@@ -39,6 +40,7 @@ export type { NavBarProps } from './NavBar';
 export type { CheckoutFormProps } from './CheckoutForm';
 export type { ShapedSectionProps } from './ShapedSection';
 export type { SponsorsSectionProps } from './SponsorsSection';
+export type { BlueskyFeedSectionProps } from './BlueskyFeedSection';
 export type { PhotoSlide, PhotoLayout } from '@/components/molecules';
 export type {
   SponsorshipHeroSectionProps,
@@ -48,4 +50,3 @@ export type {
   SponsorshipTiersSectionProps,
   SponsorshipContactSectionProps,
 } from './sponsorship';
-

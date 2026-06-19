@@ -9,7 +9,7 @@ import type { Cart, CheckoutFormData } from '@/types/cart';
 import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
-import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
+import { isTicketProduct, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Json } from '@/lib/types/database';
@@ -96,22 +96,6 @@ const sanitizeSupabaseOrValue = (value: string | undefined): string | null => {
 };
 
 type TicketCategory = 'standard' | 'vip' | 'student' | 'unemployed';
-type ProductKind = 'ticket' | 'workshop';
-
-function normalizeProductKind(value: unknown): ProductKind | 'all' | undefined {
-  if (typeof value !== 'string') return undefined;
-  const normalized = value.trim().toLowerCase();
-  if (['ticket', 'tickets', 'conference_ticket', 'conference_tickets'].includes(normalized)) {
-    return 'ticket';
-  }
-  if (['workshop', 'workshops', 'workshop_seat', 'workshop_seats'].includes(normalized)) {
-    return 'workshop';
-  }
-  if (['all', 'any', 'both'].includes(normalized)) {
-    return 'all';
-  }
-  return undefined;
-}
 
 function normalizeTicketCategory(value: unknown): TicketCategory | 'all' | undefined {
   if (typeof value !== 'string') return undefined;
@@ -161,32 +145,6 @@ function inferAllowedTicketCategoriesFromMetadata(
     ?? null;
 }
 
-function inferAllowedKindsFromMetadata(
-  coupon: Stripe.Coupon,
-  promotionCode: Stripe.PromotionCode | null
-): Set<ProductKind> | 'all' | null {
-  const metadata = {
-    ...coupon.metadata,
-    ...promotionCode?.metadata,
-  };
-
-  const explicitKind =
-    normalizeProductKind(metadata.product_type) ??
-    normalizeProductKind(metadata.product_kind) ??
-    normalizeProductKind(metadata.applies_to_product_type) ??
-    normalizeProductKind(metadata.applies_to_kind) ??
-    normalizeProductKind(metadata.kind);
-
-  if (explicitKind === 'all') return 'all';
-  if (explicitKind) return new Set([explicitKind]);
-
-  if (metadata.source === 'discount_popup' || metadata.source === 'utm_lottery') {
-    return new Set(['ticket']);
-  }
-
-  return null;
-}
-
 async function validateDiscountProductsForCheckout(
   stripe: Stripe,
   cart: Cart,
@@ -226,15 +184,12 @@ async function validateDiscountProductsForCheckout(
   );
   const priceProductIds = new Map<string, string>();
   const priceTicketCategories = new Map<string, TicketCategory>();
-  const priceKinds = new Map<string, ProductKind | 'unknown'>();
 
   for (const price of prices) {
     const product = price.product;
     const productId = typeof product === 'string' ? product : product.id;
     priceProductIds.set(price.id, productId);
-    const isWorkshop = isWorkshopPrice(price);
     const isTicket = isTicketProduct(price);
-    priceKinds.set(price.id, isWorkshop ? 'workshop' : isTicket ? 'ticket' : 'unknown');
     if (isTicket && price.lookup_key) {
       priceTicketCategories.set(price.id, parseTicketInfo(price.lookup_key).category as TicketCategory);
     }
@@ -294,24 +249,6 @@ async function validateDiscountProductsForCheckout(
       return {
         valid: false,
         error: `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`,
-      };
-    }
-  }
-
-  // Unrestricted Stripe coupons apply to the whole Checkout Session. Respect
-  // metadata-driven product-kind allowances; otherwise default unrestricted
-  // coupons to ticket-only so generic ticket promos cannot discount workshops.
-  const allowedKinds = inferAllowedKindsFromMetadata(coupon, promotionCode) ?? new Set<ProductKind>(['ticket']);
-  if (allowedKinds !== 'all') {
-    const hasDisallowedKind = Array.from(priceKinds.values()).some((kind) =>
-      kind === 'unknown' || !allowedKinds.has(kind)
-    );
-    if (hasDisallowedKind) {
-      return {
-        valid: false,
-        error: allowedKinds.has('ticket')
-          ? 'This promo code is only valid for conference tickets. Remove workshop seats before applying it.'
-          : 'This promo code is not applicable to the product type in your cart',
       };
     }
   }

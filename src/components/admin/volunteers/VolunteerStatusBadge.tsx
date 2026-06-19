@@ -9,16 +9,13 @@ import {
   getRoleStatusTone,
   APPLICATION_STATUS_LABELS,
   getApplicationStatusTone,
-  PROFILE_STATUS_LABELS,
-  getProfileStatusTone,
 } from '@/lib/volunteer/status';
 import type {
   VolunteerRoleStatus,
   VolunteerApplicationStatus,
-  VolunteerProfileStatus,
 } from '@/lib/types/volunteer';
 
-type BadgeType = 'role' | 'application' | 'profile';
+type BadgeType = 'role' | 'application';
 
 interface VolunteerStatusBadgeProps {
   status: string;
@@ -29,16 +26,12 @@ export function VolunteerStatusBadge({ status, type }: VolunteerStatusBadgeProps
   const label =
     type === 'role'
       ? ROLE_STATUS_LABELS[status as VolunteerRoleStatus] || status
-      : type === 'application'
-        ? APPLICATION_STATUS_LABELS[status as VolunteerApplicationStatus] || status
-        : PROFILE_STATUS_LABELS[status as VolunteerProfileStatus] || status;
+      : APPLICATION_STATUS_LABELS[status as VolunteerApplicationStatus] || status;
 
   const tone =
     type === 'role'
       ? getRoleStatusTone(status as VolunteerRoleStatus)
-      : type === 'application'
-        ? getApplicationStatusTone(status as VolunteerApplicationStatus)
-        : getProfileStatusTone(status as VolunteerProfileStatus);
+      : getApplicationStatusTone(status as VolunteerApplicationStatus);
 
   return <Pill tone={tone}>{label}</Pill>;
 }

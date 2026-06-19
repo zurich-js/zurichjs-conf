@@ -78,7 +78,12 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
         autocapture: false,
         disable_session_recording: false,
         session_recording: {
-          maskAllInputs: true,
+          // Keep checkout contact and billing inputs visible in replays; only
+          // credential-style fields should be masked automatically.
+          maskAllInputs: false,
+          maskInputOptions: {
+            password: true,
+          },
           maskTextSelector: '[data-mask]',
         },
         loaded: (posthogInstance) => {

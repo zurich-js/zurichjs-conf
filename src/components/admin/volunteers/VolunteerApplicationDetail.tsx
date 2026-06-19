@@ -3,14 +3,14 @@
  * Shows full application details with admin review actions
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ExternalLink, User, Mail, Phone, Linkedin, Globe } from 'lucide-react';
-import { AdminModal, AdminModalFooter } from '@/components/admin/AdminModal';
+import { AdminModal } from '@/components/admin/AdminModal';
 import { VolunteerStatusBadge } from './VolunteerStatusBadge';
 import { getAvailableApplicationTransitions, APPLICATION_STATUS_LABELS } from '@/lib/volunteer/status';
-import { useUpdateVolunteerApplicationStatus, useCreateVolunteerProfile } from '@/hooks/useVolunteer';
+import { useUpdateVolunteerApplicationStatus } from '@/hooks/useVolunteer';
 import type { VolunteerApplicationWithRole, VolunteerApplicationStatus } from '@/lib/types/volunteer';
-import { useToast, type Toast } from '@/hooks/useToast';
+import { useToast } from '@/hooks/useToast';
 
 interface VolunteerApplicationDetailProps {
   application: VolunteerApplicationWithRole | null;
@@ -29,9 +29,14 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 
 export function VolunteerApplicationDetail({ application, isOpen, onClose }: VolunteerApplicationDetailProps) {
   const updateStatus = useUpdateVolunteerApplicationStatus();
-  const createProfile = useCreateVolunteerProfile();
-  const { toasts, showToast, removeToast } = useToast();
+  const { showToast } = useToast();
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setNotes(application?.internal_notes ?? '');
+    }
+  }, [isOpen, application?.id, application?.internal_notes]);
 
   if (!application) return null;
 
@@ -42,22 +47,9 @@ export function VolunteerApplicationDetail({ application, isOpen, onClose }: Vol
       await updateStatus.mutateAsync({
         id: application.id,
         status: newStatus,
-        internal_notes: notes || undefined,
+        internal_notes: notes,
       });
       showToast(`Status updated to ${APPLICATION_STATUS_LABELS[newStatus]}`, 'success');
-
-      // If accepted, offer to create profile
-      if (newStatus === 'accepted') {
-        if (confirm('Application accepted! Create a volunteer profile from this application?')) {
-          try {
-            await createProfile.mutateAsync({ from_application_id: application.id });
-            showToast('Volunteer profile created', 'success');
-          } catch (err) {
-            showToast(err instanceof Error ? err.message : 'Failed to create profile', 'error');
-          }
-        }
-      }
-
       onClose();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to update status', 'error');
@@ -231,7 +223,7 @@ export function VolunteerApplicationDetail({ application, isOpen, onClose }: Vol
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Internal Notes</h4>
           <textarea
-            value={notes || application.internal_notes || ''}
+            value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"

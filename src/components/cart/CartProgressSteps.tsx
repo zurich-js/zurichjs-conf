@@ -46,33 +46,40 @@ export function CartProgressSteps({
   ].filter(s => s.show);
 
   return (
-    <div className="overflow-x-auto max-w-2xl mx-auto">
-      <div className="flex items-center justify-center gap-1 sm:gap-2 md:gap-3 min-w-0 py-1">
-        {steps.map((stepConfig, index) => (
-          <div key={stepConfig.step} className="flex items-center">
-            <button
-              onClick={() => onStepClick(stepConfig.step)}
-              className="flex items-center cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-              aria-label={`Go to ${stepConfig.label} step`}
-            >
-              <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
-                currentStep === stepConfig.step ? 'bg-brand-primary text-black' : 'bg-brand-gray-dark text-brand-gray-light'
-              }`}>
-                {index + 1}
-              </div>
-              <span className={`ml-1.5 sm:ml-2 md:ml-3 text-[10px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                currentStep === stepConfig.step ? 'text-brand-white' : 'text-brand-gray-light'
-              }`}>
-                {stepConfig.label}
-              </span>
-            </button>
+    <div className="max-w-2xl mx-auto">
+      <div className="flex items-center justify-center gap-1 sm:gap-2 md:gap-3 py-1">
+        {steps.map((stepConfig, index) => {
+          const isActive = currentStep === stepConfig.step;
+          return (
+            <div key={stepConfig.step} className="flex items-center min-w-0">
+              <button
+                onClick={() => onStepClick(stepConfig.step)}
+                className="flex items-center cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                aria-label={`Go to ${stepConfig.label} step`}
+              >
+                <div className={`w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold transition-colors ${
+                  isActive ? 'bg-brand-primary text-black' : 'bg-brand-gray-dark text-brand-gray-light'
+                }`}>
+                  {index + 1}
+                </div>
+                {/* On mobile, only the active step shows its label so all
+                    four circles fit. From sm+ every step shows its label. */}
+                <span
+                  className={`ml-1.5 sm:ml-2 md:ml-3 text-[11px] sm:text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                    isActive ? 'text-brand-white' : 'text-brand-gray-light hidden sm:inline'
+                  }`}
+                >
+                  {stepConfig.label}
+                </span>
+              </button>
 
-            {/* Connector (except after last step) */}
-            {index < steps.length - 1 && (
-              <div className="w-3 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-brand-gray-dark shrink-0 ml-1.5 sm:ml-2 md:ml-3" />
-            )}
-          </div>
-        ))}
+              {/* Connector (except after last step) */}
+              {index < steps.length - 1 && (
+                <div className="w-2.5 sm:w-6 md:w-10 lg:w-14 h-0.5 bg-brand-gray-dark shrink-0 ml-1.5 sm:ml-2 md:ml-3" />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

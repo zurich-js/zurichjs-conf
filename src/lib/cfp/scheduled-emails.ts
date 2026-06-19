@@ -12,7 +12,6 @@ import { getResendClient, EMAIL_CONFIG } from '@/lib/email/config';
 import { CfpAcceptanceEmail } from '@/emails/templates/CfpAcceptanceEmail';
 import { CfpRejectionEmail } from '@/emails/templates/CfpRejectionEmail';
 import { EMAIL_SCHEDULING, REJECTION_COUPON } from './config';
-import { createCfpRejectionCoupon } from './decisions';
 import type {
   CfpEmailType,
   CfpScheduledEmail,
@@ -372,6 +371,7 @@ export async function scheduleRejectionEmail(
       const validityDays = request.coupon_validity_days || REJECTION_COUPON.DEFAULT_VALIDITY_DAYS;
       couponExpiresAt = calculateCouponExpiry(validityDays);
 
+      const { createCfpRejectionCoupon } = await import('./decisions');
       const coupon = await createCfpRejectionCoupon(discountPercent, couponExpiresAt);
       couponCode = coupon.code;
 

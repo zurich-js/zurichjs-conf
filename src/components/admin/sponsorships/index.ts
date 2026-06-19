@@ -13,3 +13,4 @@ export { AddSponsorModal } from './AddSponsorModal';
 export { LineItemsEditor } from './LineItemsEditor';
 export { LogoUpload } from './LogoUpload';
 export { PerksEditor } from './PerksEditor';
+export { ProspectusManagerModal } from './ProspectusManagerModal';

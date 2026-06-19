@@ -11,4 +11,4 @@ pnpm run test:run
 pnpm run typecheck
 
 # Run build to ensure project builds successfully
-pnpm run build
+env -u NODE_ENV pnpm run build

@@ -11,6 +11,7 @@ import { analytics } from '@/lib/analytics/client';
 import type { EventProperties } from '@/lib/analytics/events';
 
 export interface TeamRequestData {
+  name: string;
   email: string;
   company: string;
   quantity: number;

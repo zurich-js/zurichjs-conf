@@ -6,14 +6,15 @@
 
 import type { SponsorQuoteCurrency, SponsorQuoteItem } from '@/lib/types/sponsor-quote';
 import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
+import { convertChfMinorToCurrency } from '@/lib/sponsorship/currency-math';
 
 // ---------------------------------------------------------------------------
 // FX conversion helper
 // ---------------------------------------------------------------------------
 
 /**
- * Convert a CHF amount in cents to another currency, rounded UP to the nearest 100 (cents).
- * e.g. CHF 1500000 at rate 0.93 → EUR 1395000 → rounds up to EUR 1395000 (13'950.00)
+ * Convert a CHF amount in cents to another currency, rounded to the nearest 100 currency units.
+ * e.g. CHF 250000 at rate 1.0252 → EUR 256300 → rounds to EUR 260000 (2'600.00)
  * For CHF, returns the amount unchanged.
  */
 export function convertCHFToCurrency(
@@ -22,11 +23,11 @@ export function convertCHFToCurrency(
   rates: ExchangeRates,
 ): number {
   if (currency === 'CHF') return chfCents;
-  const rate = rates[currency];
-  if (!rate) return chfCents; // fallback to CHF if rate unavailable
-  const converted = chfCents * rate;
-  // Round up to nearest 100 cents (= nearest 1.00 in display currency)
-  return Math.ceil(converted / 100) * 100;
+  try {
+    return convertChfMinorToCurrency(chfCents, currency, rates, 100);
+  } catch {
+    return chfCents; // fallback to CHF if rate unavailable
+  }
 }
 
 // ---------------------------------------------------------------------------

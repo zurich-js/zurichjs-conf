@@ -56,7 +56,7 @@ export function ArrivalsTab({ flights, isLoading }: ArrivalsTabProps) {
           <div>
             <h2 className="text-lg font-bold text-black">Airport Arrivals</h2>
             <p className="text-sm text-gray-500">
-              {arrivals.length} speaker{arrivals.length !== 1 ? 's' : ''} arriving on{' '}
+              {arrivals.length} traveler{arrivals.length !== 1 ? 's' : ''} arriving on{' '}
               {new Date(selectedDate + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -101,8 +101,11 @@ export function ArrivalsTab({ flights, isLoading }: ArrivalsTabProps) {
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">
-                            {flight.speaker.first_name} {flight.speaker.last_name}
+                            {flight.traveler_name || (flight.speaker ? `${flight.speaker.first_name} ${flight.speaker.last_name}` : 'Other')}
                           </div>
+                          {flight.speaker && flight.traveler_name && (
+                            <div className="text-xs text-gray-400">Linked to {flight.speaker.first_name} {flight.speaker.last_name}</div>
+                          )}
                           <div className="text-sm text-gray-500">
                             {flight.airline} {flight.flight_number}
                             <span className="mx-2">·</span>

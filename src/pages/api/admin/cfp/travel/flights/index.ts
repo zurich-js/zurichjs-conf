@@ -13,18 +13,20 @@ import { logger } from '@/lib/logger';
 const log = logger.scope('Admin Travel Flights API');
 
 const createSchema = z.object({
-  speaker_id: z.string().uuid(),
+  speaker_id: z.string().uuid().nullable().optional(),
+  traveler_name: z.string().nullable().optional(),
+  traveler_email: z.string().email().nullable().optional().or(z.literal('')),
   direction: z.enum(['inbound', 'outbound']),
-  airline: z.string().optional(),
-  flight_number: z.string().optional(),
-  departure_airport: z.string().optional(),
-  arrival_airport: z.string().optional(),
-  departure_time: z.string().optional(),
-  arrival_time: z.string().optional(),
-  booking_reference: z.string().optional(),
-  cost_amount: z.number().optional(),
-  cost_currency: z.string().optional(),
-  tracking_url: z.string().optional(),
+  airline: z.string().nullable().optional(),
+  flight_number: z.string().nullable().optional(),
+  departure_airport: z.string().nullable().optional(),
+  arrival_airport: z.string().nullable().optional(),
+  departure_time: z.string().nullable().optional(),
+  arrival_time: z.string().nullable().optional(),
+  booking_reference: z.string().nullable().optional(),
+  cost_amount: z.number().nullable().optional(),
+  cost_currency: z.string().nullable().optional(),
+  tracking_url: z.string().nullable().optional(),
   flight_status: z.enum([
     'pending', 'confirmed', 'checked_in', 'boarding',
     'departed', 'arrived', 'cancelled', 'delayed',
@@ -58,12 +60,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const { speaker_id, ...data } = parsed.data;
-      const { flight, error } = await createFlightAdmin(speaker_id, data);
+      const { flight, error } = await createFlightAdmin(speaker_id || null, {
+        ...data,
+        traveler_name: data.traveler_name || undefined,
+        traveler_email: data.traveler_email || undefined,
+      });
       if (error) {
         return res.status(400).json({ error });
       }
 
-      log.info('Flight created', { speakerId: speaker_id });
+      log.info('Flight created', { speakerId: speaker_id || null });
       return res.status(201).json({ flight });
     } catch (error) {
       log.error('Error creating flight', error);

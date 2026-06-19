@@ -7,6 +7,7 @@ export { OverviewTab } from './OverviewTab';
 export { SpeakersTab } from './SpeakersTab';
 export { FlightsTab } from './FlightsTab';
 export { ArrivalsTab } from './ArrivalsTab';
+export { AccommodationsTab } from './AccommodationsTab';
 export { InvoicesTab } from './InvoicesTab';
 export { SpeakerDetailModal } from './SpeakerDetailModal';
 export {
@@ -15,12 +16,16 @@ export {
   fetchSpeakers,
   fetchSpeakerDetails,
   fetchFlights,
+  fetchAccommodations,
   fetchInvoices,
   createFlight,
   updateFlight,
   deleteFlight,
   updateFlightStatus,
   saveAccommodation,
+  createAccommodation,
+  updateAccommodation,
+  deleteAccommodation,
   createInvoice,
   updateInvoice,
   deleteInvoice,

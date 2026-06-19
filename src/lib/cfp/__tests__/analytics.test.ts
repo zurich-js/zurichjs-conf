@@ -4,7 +4,7 @@ vi.mock('@/config/env', () => ({
   env: {
     supabase: {
       url: 'https://example.supabase.co',
-      serviceRoleKey: 'test-service-role-key',
+      secretKey: 'test-service-role-key',
     },
   },
 }));

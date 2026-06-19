@@ -19,7 +19,7 @@ export interface ShapedSectionProps {
    * - medium: Medium gray background with white text
    * - dark: black background with white text
    */
-  variant: 'light' | 'yellow' | 'gray' | 'medium' | 'dark';
+  variant: 'light' | 'yellow' | 'gray' | 'gray-light' | 'medium' | 'dark';
 
   /**
    * Whether to keep the top edge straight
@@ -48,6 +48,11 @@ export interface ShapedSectionProps {
    * Content to be rendered inside the shaped section
    */
   children: React.ReactNode;
+  /**
+   * Anchor id for the section. When set, the section becomes a deep-link
+   * target (`/page#id`) and gets a `scroll-mt` offset so it lands below the
+   * fixed nav instead of behind it.
+   */
   id?: string;
   /**
    * Reduce the top padding for tighter spacing with previous section
@@ -93,6 +98,7 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     light: 'bg-brand-white text-brand-black',
     yellow: 'bg-brand-yellow-main text-brand-black',
     gray: 'bg-brand-gray-light text-brand-black',
+    'gray-light': 'bg-brand-gray-lightest text-brand-black',
     medium: 'bg-brand-gray-darkest text-brand-white',
     dark: 'bg-brand-black text-brand-white',
   };
@@ -188,6 +194,12 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
     !dropTop && dropBottom && 'shaped-section-drop-bottom',
   ].filter(Boolean).join(' ');
 
+  // When an id is set, anchor it on the inner content rather than the outer
+  // section. The section's large clip-path top padding would otherwise push
+  // the content far below a deep-link landing spot; anchoring the content
+  // (with a scroll-mt offset to clear the fixed nav) lands `/#id` on it.
+  const anchorClass = id ? 'scroll-mt-28' : undefined;
+
   return (
     <section
       className={`
@@ -198,12 +210,17 @@ export const ShapedSection: React.FC<ShapedSectionProps> = ({
         ${dropClasses}
         ${className}
       `.trim().replace(/\s+/g, ' ')}
-      id={id}
     >
       {disableContainer ? (
-        children
+        id ? (
+          <div id={id} className={anchorClass}>
+            {children}
+          </div>
+        ) : (
+          children
+        )
       ) : (
-        <SectionContainer>
+        <SectionContainer id={id} className={anchorClass}>
           {children}
         </SectionContainer>
       )}

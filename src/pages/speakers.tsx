@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { DehydratedState } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
@@ -16,7 +16,7 @@ import { Check, ChevronDown, ArrowDownAZ, ArrowUpAZ, ArrowUpDown, Filter } from 
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import Link from "next/link";
 
-type ViewMode = 'compact' | 'default' | 'full';
+type ViewMode = 'compact' | 'full';
 type SortMode = 'none' | 'asc' | 'desc';
 
 interface SpeakersPageProps {
@@ -95,20 +95,10 @@ function TagFilter({
 }
 
 export default function SpeakersPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('default');
+  const [viewMode, setViewMode] = useState<ViewMode>('full');
   const [sortMode, setSortMode] = useState<SortMode>('none');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data, isLoading } = useQuery(publicSpeakersQueryOptions());
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    if (window.matchMedia('(max-width: 767px)').matches) {
-      setViewMode('full');
-    }
-  }, []);
 
   const speakers = data?.speakers ?? [];
   const placeholderSpeakerCount = selectedTags.length === 0
@@ -143,7 +133,7 @@ export default function SpeakersPage() {
 
   const showNoMatches = selectedTags.length > 0 && visibleSpeakers.length === 0;
   const sortLabel = sortMode === 'none' ? 'Default' : sortMode === 'asc' ? 'Name A-Z' : 'Name Z-A';
-  const cardSize = viewMode === 'compact' ? '12rem' : viewMode === 'default' ? '15rem' : '17rem';
+  const cardSize = viewMode === 'compact' ? '12rem' : '17rem';
   const gridStyle = { '--card-size': cardSize } as CSSProperties;
   const handleViewModeChange = (mode: ViewMode) => {
     if (mode === viewMode) {
@@ -190,7 +180,7 @@ export default function SpeakersPage() {
                 <div>
                   <p className="mb-2.5 px-4 text-sm">Grid view</p>
                   <div className="inline-flex rounded-full border border-brand-black bg-brand-white p-1">
-                    {(['compact', 'default', 'full'] as const).map((mode) => (
+                    {(['compact', 'full'] as const).map((mode) => (
                       <button
                         key={mode}
                         type="button"
@@ -202,7 +192,7 @@ export default function SpeakersPage() {
                             : 'text-brand-black hover:bg-brand-gray-lightest'
                         )}
                       >
-                        {mode === 'compact' ? 'Compact' : mode === 'default' ? 'Default' : 'Full'}
+                        {mode === 'compact' ? 'Compact' : 'Full'}
                       </button>
                     ))}
                   </div>
@@ -296,7 +286,7 @@ export default function SpeakersPage() {
                         avatar: speaker.profile_image_url,
                         name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
                         title: [speaker.job_title, speaker.company].filter(Boolean).join(' @'),
-                        footer: speaker.sessions?.[0]?.title || 'To be announced',
+                        footer: speaker.sessions?.[0]?.title || (speaker.speaker_role === 'mc' ? 'Master of ceremonies' : 'To be announced'),
                       };
 
                       return (
@@ -375,7 +365,7 @@ export default function SpeakersPage() {
               Want to hang out more with the speakers?
             </Heading>
             <p className="mt-6 max-w-2xl text-base leading-8 text-brand-gray-light">
-              The VIP ticket includes conference access, but you also get exclusive access to the after-party and other speaker activities.
+              The VIP ticket includes conference access, plus exclusive access to the after-party where you can hang out with the speakers.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button variant="black" asChild href="/#tickets">

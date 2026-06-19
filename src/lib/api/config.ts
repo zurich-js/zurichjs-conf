@@ -123,8 +123,6 @@ export const endpoints = {
     adminApplication: (id: string) => `/api/admin/volunteers/applications/${id}` as const,
     adminApplicationStatus: (id: string) =>
       `/api/admin/volunteers/applications/${id}/status` as const,
-    adminProfiles: () => '/api/admin/volunteers/profiles' as const,
-    adminProfile: (id: string) => `/api/admin/volunteers/profiles/${id}` as const,
     adminStats: () => '/api/admin/volunteers/stats' as const,
   },
 } as const;

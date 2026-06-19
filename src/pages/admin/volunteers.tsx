@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { BarChart3, Briefcase, FileText, Users } from 'lucide-react';
+import { BarChart3, Briefcase, FileText } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -14,17 +14,15 @@ import {
   VolunteerOverviewStats,
   VolunteerRolesTab,
   VolunteerApplicationsTab,
-  VolunteerTeamTab,
 } from '@/components/admin/volunteers';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
-type VolunteerTab = 'overview' | 'roles' | 'applications' | 'team';
+type VolunteerTab = 'overview' | 'roles' | 'applications';
 
 const TABS: AdminTab<VolunteerTab>[] = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'roles', label: 'Roles', icon: Briefcase },
   { id: 'applications', label: 'Applications', icon: FileText },
-  { id: 'team', label: 'Team', icon: Users },
 ];
 
 export default function VolunteersDashboard() {
@@ -53,7 +51,6 @@ export default function VolunteersDashboard() {
           {activeTab === 'overview' && <VolunteerOverviewStats />}
           {activeTab === 'roles' && <VolunteerRolesTab />}
           {activeTab === 'applications' && <VolunteerApplicationsTab />}
-          {activeTab === 'team' && <VolunteerTeamTab />}
         </div>
       </div>
     </div>

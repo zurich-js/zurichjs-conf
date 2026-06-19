@@ -89,7 +89,7 @@ export const ATTENDANCE_OPTIONS: AttendanceOption[] = [
   {
     id: 'all_days',
     label: 'Full experience (Workshop + VIP)',
-    sublabel: 'Sep 10th workshop · Sep 11th conference · Sep 12th VIP activities with speakers',
+    sublabel: 'Sep 10th workshop · Sep 11th conference + exclusive VIP after party',
     nights: 3,
     dates: 'Sep 9th–12th',
     hint: 'We recommend a return flight after 18:00 on Sep 12th',

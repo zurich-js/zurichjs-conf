@@ -65,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       applicationId: data.application_id,
       name: `${data.first_name} ${data.last_name}`,
       email: data.email,
-      roleId: data.role_id,
+      roleTitle,
     });
 
     log.info('Application submitted successfully', {

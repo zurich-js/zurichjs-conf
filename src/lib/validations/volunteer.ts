@@ -9,7 +9,6 @@ import {
   VOLUNTEER_ROLE_STATUSES,
   VOLUNTEER_COMMITMENT_TYPES,
   VOLUNTEER_APPLICATION_STATUSES,
-  VOLUNTEER_PROFILE_STATUSES,
 } from '@/lib/types/volunteer';
 
 // ============================================
@@ -26,7 +25,16 @@ export const volunteerApplicationSchema = z.object({
     .string()
     .min(1, 'LinkedIn profile is required')
     .transform(normalizeLinkedinUrl)
-    .refine((val) => val.includes('linkedin.com'), {
+    .refine((val) => {
+      try {
+        const url = new URL(val);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+        const host = url.hostname.toLowerCase();
+        return host === 'linkedin.com' || host.endsWith('.linkedin.com');
+      } catch {
+        return false;
+      }
+    }, {
       message: 'Please provide a valid LinkedIn URL',
     }),
   website_url: z
@@ -102,26 +110,3 @@ export const volunteerApplicationStatusSchema = z.object({
 });
 
 export type VolunteerApplicationStatusData = z.infer<typeof volunteerApplicationStatusSchema>;
-
-// ============================================
-// VOLUNTEER PROFILE (Admin Create/Edit)
-// ============================================
-
-export const volunteerProfileSchema = z.object({
-  application_id: z.string().uuid().optional().nullable(),
-  role_id: z.string().uuid().optional().nullable(),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Valid email is required'),
-  phone: z.string().optional().or(z.literal('')),
-  linkedin_url: z.string().optional().or(z.literal('')),
-  responsibilities: z.string().max(3000).optional().or(z.literal('')),
-  internal_contact: z.string().max(200).optional().or(z.literal('')),
-  availability: z.string().max(1000).optional().or(z.literal('')),
-  status: z.enum(VOLUNTEER_PROFILE_STATUSES).optional(),
-  is_public: z.boolean().optional(),
-  public_bio: z.string().max(1000).optional().or(z.literal('')),
-  photo_url: z.string().url().optional().or(z.literal('')),
-});
-
-export type VolunteerProfileFormData = z.infer<typeof volunteerProfileSchema>;

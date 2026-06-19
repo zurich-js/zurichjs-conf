@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const supabase = createCfpServiceClient();
 
-    const [rolesResult, applicationsResult, profilesResult] = await Promise.all([
+    const [rolesResult, applicationsResult] = await Promise.all([
       supabase
         .from('volunteer_roles')
         .select('*', { count: 'exact', head: true })
@@ -30,10 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       supabase
         .from('volunteer_applications')
         .select('status'),
-      supabase
-        .from('volunteer_profiles')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['pending_confirmation', 'confirmed', 'active']),
     ]);
 
     const applications = applicationsResult.data || [];
@@ -49,7 +45,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       total_applications: applications.length,
       pending_review: pendingReview,
       accepted,
-      team_size: profilesResult.count || 0,
     };
 
     return res.status(200).json({ stats });

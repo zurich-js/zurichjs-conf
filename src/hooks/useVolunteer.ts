@@ -10,12 +10,10 @@ import type {
   VolunteerRole,
   VolunteerApplication,
   VolunteerApplicationWithRole,
-  VolunteerProfile,
-  VolunteerProfileWithRole,
   VolunteerStats,
   VolunteerApplicationStatus,
 } from '@/lib/types/volunteer';
-import type { VolunteerApplicationFormData, VolunteerRoleFormData, VolunteerProfileFormData } from '@/lib/validations/volunteer';
+import type { VolunteerApplicationFormData, VolunteerRoleFormData } from '@/lib/validations/volunteer';
 
 // ============================================
 // HELPERS
@@ -205,52 +203,6 @@ export function useUpdateVolunteerApplicationStatus() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: volunteerKeys.all });
-    },
-  });
-}
-
-// ============================================
-// ADMIN: PROFILES
-// ============================================
-
-export function useVolunteerProfiles() {
-  return useQuery({
-    queryKey: volunteerKeys.profiles(),
-    queryFn: () =>
-      fetchJson<{ profiles: VolunteerProfileWithRole[] }>(
-        endpoints.volunteers.adminProfiles(),
-      ),
-    select: (data) => data.profiles,
-    staleTime: 60 * 1000,
-  });
-}
-
-export function useCreateVolunteerProfile() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: VolunteerProfileFormData | { from_application_id: string }) =>
-      fetchJson<{ profile: VolunteerProfile }>(endpoints.volunteers.adminProfiles(), {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: volunteerKeys.profiles() });
-      queryClient.invalidateQueries({ queryKey: volunteerKeys.stats() });
-    },
-  });
-}
-
-export function useUpdateVolunteerProfile() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<VolunteerProfileFormData> }) =>
-      fetchJson<{ profile: VolunteerProfile }>(endpoints.volunteers.adminProfile(id), {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: (_result, variables) => {
-      queryClient.invalidateQueries({ queryKey: volunteerKeys.profiles() });
-      queryClient.invalidateQueries({ queryKey: volunteerKeys.profile(variables.id) });
     },
   });
 }

@@ -8,6 +8,7 @@ import type { FinancialData } from './types';
 export interface CurrencyBreakdown {
   currency: string;
   ticketGross: number;
+  upgradeGross: number;
   workshopGross: number;
   sponsorPaid: number;
   sponsorPending: number;
@@ -41,7 +42,8 @@ export function formatAmount(cents: number): string {
 export function getCombinedByCurrency(
   summary: FinancialData['summary'],
   sponsorshipSummary?: FinancialData['sponsorshipSummary'],
-  workshopSummary?: FinancialData['workshopSummary']
+  workshopSummary?: FinancialData['workshopSummary'],
+  upgradeSummary?: FinancialData['upgradeSummary']
 ): CurrencyBreakdown[] {
   const currencies = new Set<string>();
   const ticketRevenue: Record<string, number> = {
@@ -49,6 +51,12 @@ export function getCombinedByCurrency(
   };
   const ticketFees: Record<string, number> = {
     ...(summary.stripeFeesByCurrency || { CHF: summary.totalStripeFees }),
+  };
+  const upgradeRevenue: Record<string, number> = {
+    ...upgradeSummary?.revenueByCurrency,
+  };
+  const upgradeFees: Record<string, number> = {
+    ...upgradeSummary?.stripeFeesByCurrency,
   };
   const workshopRevenue: Record<string, number> = {
     ...workshopSummary?.revenueByCurrency,
@@ -60,6 +68,9 @@ export function getCombinedByCurrency(
   const sponsorPending: Record<string, number> = {};
 
   for (const cur of Object.keys(ticketRevenue)) {
+    currencies.add(cur);
+  }
+  for (const cur of Object.keys(upgradeRevenue)) {
     currencies.add(cur);
   }
   for (const cur of Object.keys(workshopRevenue)) {
@@ -83,18 +94,20 @@ export function getCombinedByCurrency(
     .sort((a, b) => (a === 'CHF' ? -1 : b === 'CHF' ? 1 : a.localeCompare(b)))
     .map((cur) => {
       const tGross = ticketRevenue[cur] || 0;
+      const uGross = upgradeRevenue[cur] || 0;
       const wGross = workshopRevenue[cur] || 0;
       const sPaid = sponsorPaid[cur] || 0;
-      const f = (ticketFees[cur] || 0) + (workshopFees[cur] || 0);
+      const f = (ticketFees[cur] || 0) + (upgradeFees[cur] || 0) + (workshopFees[cur] || 0);
       return {
         currency: cur,
         ticketGross: tGross,
+        upgradeGross: uGross,
         workshopGross: wGross,
         sponsorPaid: sPaid,
         sponsorPending: sponsorPending[cur] || 0,
         fees: f,
-        combinedGross: tGross + wGross + sPaid,
-        combinedNet: tGross + wGross + sPaid - f,
+        combinedGross: tGross + uGross + wGross + sPaid,
+        combinedNet: tGross + uGross + wGross + sPaid - f,
       };
     });
 }

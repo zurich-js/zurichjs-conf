@@ -66,7 +66,7 @@ export const sampleVIPTicketData: TicketPurchaseEmailProps = {
   tierLabel: 'VIP Ticket',
   badgeLabel: undefined,
   ticketId: 'ZJS2026-VIP-789',
-  notes: 'Your VIP ticket includes access to select speaker activities and the exclusive after-party. Check your email for details closer to the event.',
+  notes: 'Your VIP ticket includes exclusive access to the after-party. Check your email for details closer to the event.',
 };
 
 /**

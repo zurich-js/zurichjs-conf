@@ -5,10 +5,11 @@
  * status field is informational only here.
  */
 
-import { ExternalLink, Search } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { ExternalLink, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pagination } from '@/components/atoms';
-import type { FlightWithSpeaker } from '@/lib/cfp/admin-travel';
+import type { FlightWithSpeaker, SpeakerWithTravel } from '@/lib/cfp/admin-travel';
+import { FlightModal } from './FlightModal';
 import { FLIGHT_STATUS_COLORS, getFlightTrackingUrl } from './types';
 
 interface FlightsTabProps {
@@ -20,9 +21,14 @@ interface FlightsTabProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   pageSize: number;
+  speakers: SpeakerWithTravel[];
   onSelectSpeaker?: (speakerId: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onCreate: (data: Record<string, unknown>) => Promise<unknown>;
+  onUpdate: (id: string, data: Record<string, unknown>) => Promise<unknown>;
+  onDelete: (id: string) => void;
+  isUpdating: boolean;
 }
 
 export function FlightsTab({
@@ -33,18 +39,28 @@ export function FlightsTab({
   currentPage,
   onPageChange,
   pageSize,
+  speakers,
   onSelectSpeaker,
   searchQuery,
   onSearchChange,
+  onCreate,
+  onUpdate,
+  onDelete,
+  isUpdating,
 }: FlightsTabProps) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [editing, setEditing] = useState<FlightWithSpeaker | null>(null);
+
   const searchedFlights = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return filteredFlights;
     return filteredFlights.filter((f) => {
       const haystack = [
-        f.speaker.first_name,
-        f.speaker.last_name,
-        f.speaker.email,
+        f.speaker?.first_name,
+        f.speaker?.last_name,
+        f.speaker?.email,
+        f.traveler_name,
+        f.traveler_email,
         f.airline,
         f.flight_number,
         f.departure_airport,
@@ -72,18 +88,28 @@ export function FlightsTab({
           <h2 className="text-lg font-bold text-black">
             Flight Tracker ({searchedFlights.length}{searchQuery ? ` of ${filteredFlights.length}` : ''})
           </h2>
-          <div className="flex gap-2">
-            {(['all', 'inbound', 'outbound'] as const).map((dir) => (
-              <button
-                key={dir}
-                onClick={() => setFlightDirection(dir)}
-                className={`px-3 py-1.5 text-sm rounded-lg transition-colors capitalize cursor-pointer ${
-                  flightDirection === dir ? 'bg-brand-primary text-black' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {dir}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2">
+              {(['all', 'inbound', 'outbound'] as const).map((dir) => (
+                <button
+                  key={dir}
+                  onClick={() => setFlightDirection(dir)}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors capitalize cursor-pointer ${
+                    flightDirection === dir ? 'bg-brand-primary text-black' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {dir}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCreating(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-brand-primary text-black hover:bg-[#e8d95e] cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add flight
+            </button>
           </div>
         </div>
         <div className="relative">
@@ -114,16 +140,16 @@ export function FlightsTab({
                   <div key={flight.id} className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        {onSelectSpeaker ? (
+                        {onSelectSpeaker && flight.speaker ? (
                           <button
-                            onClick={() => onSelectSpeaker(flight.speaker.id)}
+                            onClick={() => flight.speaker && onSelectSpeaker(flight.speaker.id)}
                             className="font-medium text-blue-600 text-sm cursor-pointer"
                           >
-                            {flight.speaker.first_name} {flight.speaker.last_name}
+                            {flight.traveler_name || `${flight.speaker.first_name} ${flight.speaker.last_name}`}
                           </button>
                         ) : (
                           <span className="font-medium text-gray-900 text-sm">
-                            {flight.speaker.first_name} {flight.speaker.last_name}
+                            {flight.traveler_name || (flight.speaker ? `${flight.speaker.first_name} ${flight.speaker.last_name}` : 'Other')}
                           </span>
                         )}
                         <div className="text-xs text-gray-500 mt-0.5">
@@ -155,6 +181,20 @@ export function FlightsTab({
                           <ExternalLink className="w-3 h-3" /> Track
                         </a>
                       )}
+                      <button type="button" onClick={() => setEditing(flight)} className="p-1 rounded hover:bg-gray-100 text-gray-500" aria-label="Edit flight">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Delete this flight?')) onDelete(flight.id);
+                        }}
+                        disabled={isUpdating}
+                        className="p-1 rounded hover:bg-red-50 text-red-600 disabled:opacity-50"
+                        aria-label="Delete flight"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
@@ -167,19 +207,20 @@ export function FlightsTab({
             <table className="w-full">
               <thead className="bg-gray-50 text-left text-sm text-gray-500">
                 <tr>
-                  <th className="px-4 py-3">Speaker</th>
+                  <th className="px-4 py-3">Traveler</th>
                   <th className="px-4 py-3">Direction</th>
                   <th className="px-4 py-3">Flight</th>
                   <th className="px-4 py-3">Route</th>
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Track</th>
+                  <th className="px-4 py-3 w-24"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedFlights.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No flights found</td>
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No flights found</td>
                   </tr>
                 ) : (
                   paginatedFlights.map((flight) => {
@@ -187,17 +228,20 @@ export function FlightsTab({
                     return (
                       <tr key={flight.id} className="hover:bg-gray-50">
                         <td className="px-4 py-4">
-                          {onSelectSpeaker ? (
+                          {onSelectSpeaker && flight.speaker ? (
                             <button
-                              onClick={() => onSelectSpeaker(flight.speaker.id)}
+                              onClick={() => flight.speaker && onSelectSpeaker(flight.speaker.id)}
                               className="font-medium text-blue-600 hover:underline cursor-pointer text-left"
                             >
-                              {flight.speaker.first_name} {flight.speaker.last_name}
+                              {flight.traveler_name || `${flight.speaker.first_name} ${flight.speaker.last_name}`}
                             </button>
                           ) : (
                             <span className="font-medium text-gray-900">
-                              {flight.speaker.first_name} {flight.speaker.last_name}
+                              {flight.traveler_name || (flight.speaker ? `${flight.speaker.first_name} ${flight.speaker.last_name}` : 'Other')}
                             </span>
+                          )}
+                          {flight.speaker && flight.traveler_name && (
+                            <div className="text-xs text-gray-400">Linked to {flight.speaker.first_name} {flight.speaker.last_name}</div>
                           )}
                         </td>
                         <td className="px-4 py-4">
@@ -231,6 +275,24 @@ export function FlightsTab({
                             <span className="text-gray-400 text-xs">-</span>
                           )}
                         </td>
+                        <td className="px-4 py-4">
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => setEditing(flight)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 cursor-pointer" aria-label="Edit flight">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('Delete this flight?')) onDelete(flight.id);
+                              }}
+                              disabled={isUpdating}
+                              className="p-2 rounded-lg hover:bg-red-50 text-red-600 disabled:opacity-50 cursor-pointer"
+                              aria-label="Delete flight"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })
@@ -248,6 +310,24 @@ export function FlightsTab({
             variant="light"
           />
         </>
+      )}
+      {(isCreating || editing) && (
+        <FlightModal
+          flight={editing}
+          speakers={speakers}
+          isSubmitting={isUpdating}
+          onClose={() => { setIsCreating(false); setEditing(null); }}
+          onSave={async (data) => {
+            try {
+              if (editing) await onUpdate(editing.id, data);
+              else await onCreate(data);
+              setIsCreating(false);
+              setEditing(null);
+            } catch {
+              // Keep modal open with form data intact so the admin can fix the error.
+            }
+          }}
+        />
       )}
     </div>
   );

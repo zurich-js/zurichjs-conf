@@ -165,6 +165,11 @@ export const sponsorshipKeys = {
    * Public sponsors (for homepage)
    */
   public: () => [...sponsorshipKeys.all, 'public'] as const,
+
+  /**
+   * Prospectus assets
+   */
+  prospectus: () => [...sponsorshipKeys.all, 'prospectus'] as const,
 } as const;
 
 /**
@@ -257,15 +262,25 @@ export const volunteerKeys = {
   application: (id: string) => [...volunteerKeys.all, 'application', id] as const,
 
   /**
-   * Profiles
-   */
-  profiles: () => [...volunteerKeys.all, 'profiles'] as const,
-  profile: (id: string) => [...volunteerKeys.profiles(), id] as const,
-
-  /**
    * Stats
    */
   stats: () => [...volunteerKeys.all, 'stats'] as const,
+} as const;
+
+/**
+ * Public Bluesky feed query keys
+ */
+export const blueskyKeys = {
+  /**
+   * Base key for all public Bluesky feed queries
+   */
+  all: ['bluesky'] as const,
+
+  /**
+   * Infinite feed pages. Includes page size so pagination settings do not share cache.
+   */
+  feed: (pageSize?: number) =>
+    [...blueskyKeys.all, 'feed', pageSize ?? 'default'] as const,
 } as const;
 
 /**
@@ -283,4 +298,5 @@ export const queryKeys = {
   program: programKeys,
   discount: discountKeys,
   volunteers: volunteerKeys,
+  bluesky: blueskyKeys,
 } as const;

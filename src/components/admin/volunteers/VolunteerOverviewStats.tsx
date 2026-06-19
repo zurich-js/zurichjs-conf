@@ -3,7 +3,7 @@
  * Dashboard stats cards for the volunteer admin overview tab
  */
 
-import { Briefcase, FileText, Clock, CheckCircle, Users } from 'lucide-react';
+import { Briefcase, FileText, Clock, CheckCircle } from 'lucide-react';
 import { useVolunteerStats } from '@/hooks/useVolunteer';
 
 interface StatCardProps {
@@ -34,8 +34,8 @@ export function VolunteerOverviewStats() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gray-100" />
@@ -53,7 +53,7 @@ export function VolunteerOverviewStats() {
   if (!stats) return null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
       <StatCard
         icon={<Briefcase className="w-5 h-5 text-blue-600" />}
         label="Open Roles"
@@ -77,12 +77,6 @@ export function VolunteerOverviewStats() {
         label="Accepted"
         value={stats.accepted}
         color="bg-green-50"
-      />
-      <StatCard
-        icon={<Users className="w-5 h-5 text-brand-blue" />}
-        label="Team Size"
-        value={stats.team_size}
-        color="bg-sky-50"
       />
     </div>
   );

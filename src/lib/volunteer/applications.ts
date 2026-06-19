@@ -133,6 +133,15 @@ export async function getApplications(filters?: {
     if (filters?.status) {
       query = query.eq('status', filters.status);
     }
+    if (filters?.search) {
+      // Strip PostgREST or() grammar chars so the term can't break the filter
+      const term = filters.search.replace(/[,()*]/g, '').trim();
+      if (term) {
+        query = query.or(
+          `first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,application_id.ilike.%${term}%`,
+        );
+      }
+    }
 
     const { data: applications, error } = await query;
 
@@ -154,7 +163,7 @@ export async function getApplications(filters?: {
 
     const roleMap = new Map((roles || []).map((r: { id: string; title: string; slug: string }) => [r.id, r]));
 
-    let result: VolunteerApplicationWithRole[] = applications.map((app: VolunteerApplication) => {
+    const result: VolunteerApplicationWithRole[] = applications.map((app: VolunteerApplication) => {
       const role = roleMap.get(app.role_id);
       return {
         ...app,
@@ -162,18 +171,6 @@ export async function getApplications(filters?: {
         role_slug: role?.slug || '',
       };
     });
-
-    // Apply search filter in-memory
-    if (filters?.search) {
-      const q = filters.search.toLowerCase();
-      result = result.filter(
-        (a) =>
-          a.first_name.toLowerCase().includes(q) ||
-          a.last_name.toLowerCase().includes(q) ||
-          a.email.toLowerCase().includes(q) ||
-          a.application_id.toLowerCase().includes(q),
-      );
-    }
 
     return { data: result, error: null };
   } catch (err) {
