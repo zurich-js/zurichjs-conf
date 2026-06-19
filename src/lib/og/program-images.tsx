@@ -1,15 +1,12 @@
-import type { NextApiResponse } from 'next';
-import { ImageResponse } from 'next/og';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { publicProgramTabs } from '@/data';
-import { fetchWithRetry } from '@/lib/retry';
+import type { SpeakerOgRow } from '@/lib/cfp/speakers';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
+export const OG_HEADER_HEIGHT = 120;
 
-const COLORS = {
+export const COLORS = {
   black: '#000000',
   white: '#FFFFFF',
   yellow: '#F1E271',
@@ -34,15 +31,7 @@ type SessionDetailOgInput = {
 };
 
 type SpeakerDetailOgInput = {
-  speaker: {
-    first_name: string;
-    last_name: string;
-    job_title: string | null;
-    company: string | null;
-    profile_image_url: string | null;
-  };
-  /** Pre-resolved avatar (e.g. a base64 data URI) — overrides profile_image_url when set. */
-  avatarSrc?: string | null;
+  speaker: SpeakerOgRow;
 };
 
 type CollectionOgInput = {
@@ -64,73 +53,17 @@ const baseTextStyle = {
   letterSpacing: '0px',
 };
 
-const figtreeFontPromises = new Map<number, Promise<ArrayBuffer>>();
-
-async function getFigtreeFont(weight: 400 | 700 | 800) {
-  if (!figtreeFontPromises.has(weight)) {
-    figtreeFontPromises.set(
-      weight,
-      readFile(path.join(process.cwd(), `public/fonts/figtree-${weight}.ttf`)).then((buffer) =>
-        buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
-      )
-    );
-  }
-
-  return figtreeFontPromises.get(weight)!;
-}
-
 function getAbsoluteImageUrl(url: string | null | undefined) {
   if (!url) {
     return null;
   }
 
-  if (url.startsWith('http') || url.startsWith('data:')) {
+  if (url.startsWith('http')) {
     return url;
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com';
   return `${baseUrl}${url}`;
-}
-
-const AVATAR_FETCH_TIMEOUT_MS = 2000;
-
-/**
- * Fetch a remote image into a base64 `data:` URI with a short timeout so the OG
- * renderer never makes its own unbounded network hop. Returns null on timeout
- * or failure, letting the renderer fall back to initials.
- */
-export async function prefetchImageDataUri(
-  src: string | null | undefined,
-  timeoutMs = AVATAR_FETCH_TIMEOUT_MS,
-): Promise<string | null> {
-  const url = getAbsoluteImageUrl(src);
-  if (!url || url.startsWith('data:')) {
-    return url ?? null;
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetchWithRetry(
-      url,
-      { signal: controller.signal },
-      { attempts: 2, baseDelayMs: 150, maxDelayMs: 600, label: 'og-avatar' },
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-    const buffer = Buffer.from(await response.arrayBuffer());
-    return `data:${contentType};base64,${buffer.toString('base64')}`;
-  } catch (error) {
-    console.error('[OG] Failed to prefetch avatar image:', error);
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 function truncateText(value: string, maxLength: number) {
@@ -146,11 +79,11 @@ function initialsFromName(name: string) {
   return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'JS';
 }
 
-function getSpeakerName(speaker: { first_name: string; last_name: string }) {
+function getSpeakerName(speaker: PublicSpeaker) {
   return [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
 }
 
-function getSpeakerRole(speaker: { job_title: string | null; company: string | null }) {
+function getSpeakerRole(speaker: PublicSpeaker) {
   return [speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || null;
 }
 
@@ -163,7 +96,7 @@ function Header({ scheduleLabel = 'Sep 11, 2026' }: { scheduleLabel?: string }) 
         top: 0,
         left: 0,
         width: OG_WIDTH,
-        height: 120,
+        height: OG_HEADER_HEIGHT,
         background: COLORS.black,
         color: COLORS.white,
         display: 'flex',
@@ -173,22 +106,14 @@ function Header({ scheduleLabel = 'Sep 11, 2026' }: { scheduleLabel?: string }) 
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            background: COLORS.yellow,
-            color: COLORS.black,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 15,
-            fontWeight: 800,
-          }}
-        >
-          JS
-        </div>
-        <div style={{ ...baseTextStyle, fontSize: 30, fontWeight: 700 }}>Zurich JS Conf</div>
+        <img
+          src={getAbsoluteImageUrl('/images/logo/zurichjs-square.png') as string}
+          alt=""
+          width={40}
+          height={40}
+          style={{ width: 40, height: 40, objectFit: 'contain' }}
+        />
+        <div style={{ ...baseTextStyle, fontSize: 30, fontWeight: 700 }}>ZurichJS Conf</div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
         <div style={{ ...baseTextStyle, fontSize: 30, fontWeight: 700 }}>{scheduleLabel}</div>
@@ -285,41 +210,158 @@ function OgShell({
   );
 }
 
-export function renderSpeakerDetailOg({ speaker, avatarSrc }: SpeakerDetailOgInput) {
-  const name = getSpeakerName(speaker);
-  const resolvedAvatar = avatarSrc ?? speaker.profile_image_url;
+const HERO_BODY_HEIGHT = OG_HEIGHT - OG_HEADER_HEIGHT;
+const HERO_LEFT_WIDTH = OG_WIDTH / 2;
+const HERO_RIGHT_WIDTH = OG_WIDTH - HERO_LEFT_WIDTH;
+
+const HERO_PILL = {
+  height: 32,
+  borderRadius: 9999,
+  transform: 'rotate(-8deg)',
+  display: 'flex',
+};
+
+export function renderSpeakerDetailOg({ speaker }: SpeakerDetailOgInput) {
+  const name = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
+  const foregroundUrl = getAbsoluteImageUrl(speaker.portrait_foreground_url);
+  const backgroundUrl = getAbsoluteImageUrl(speaker.portrait_background_url);
+  const hasForeground = Boolean(foregroundUrl);
+  const hasBackground = Boolean(backgroundUrl);
+  const hasHero = hasForeground || hasBackground;
 
   return (
     <OgShell background={COLORS.yellow}>
+      {/* Left bg panel: portrait_background_url (or fallback color) + 20% white overlay */}
       <div
         style={{
           position: 'absolute',
-          top: 120,
-          right: 0,
-          bottom: 0,
+          top: OG_HEADER_HEIGHT,
           left: 0,
+          width: HERO_LEFT_WIDTH,
+          height: HERO_BODY_HEIGHT,
+          background: hasHero ? COLORS.grayDarkest : COLORS.yellow,
           display: 'flex',
-          alignItems: 'center',
-          padding: '0 60px',
-          gap: 48,
+          overflow: 'hidden',
         }}
       >
-        <Avatar src={resolvedAvatar} name={name} size={156} />
+        {hasBackground ? (
+          <img
+            src={backgroundUrl as string}
+            alt=""
+            width={HERO_LEFT_WIDTH}
+            height={HERO_BODY_HEIGHT}
+            style={{ width: HERO_LEFT_WIDTH, height: HERO_BODY_HEIGHT, objectFit: 'cover' }}
+          />
+        ) : null}
+      </div>
+      {hasBackground ? (
         <div
           style={{
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT,
+            left: 0,
+            width: HERO_LEFT_WIDTH,
+            height: HERO_BODY_HEIGHT,
+            background: 'rgba(255,255,255,0.2)',
+            display: 'flex',
+          }}
+        />
+      ) : null}
+
+      {/* Decorative stripe pills (yellow / blue / white), behind the foreground */}
+      {hasHero ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT + Math.round(HERO_BODY_HEIGHT * 0.22),
+            left: Math.round(HERO_LEFT_WIDTH * 0.48) - 195,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
+            gap: 8,
           }}
         >
-          <div style={{ ...baseTextStyle, fontSize: 44, lineHeight: 1.08, fontWeight: 800 }}>{name}</div>
-          {speaker.job_title ? (
-            <div style={{ ...baseTextStyle, marginTop: 20, fontSize: 32, lineHeight: 1.1, fontWeight: 800 }}>{speaker.job_title}</div>
-          ) : null}
-          {speaker.company ? (
-            <div style={{ ...baseTextStyle, marginTop: 6, fontSize: 28, lineHeight: 1.1 }}>{`@${speaker.company}`}</div>
-          ) : null}
+          <div style={{ ...HERO_PILL, width: 320, background: COLORS.yellow }} />
+          <div style={{ ...HERO_PILL, width: 305, background: COLORS.blue, marginLeft: 36 }} />
+          <div style={{ ...HERO_PILL, width: 350, background: COLORS.white, marginLeft: -12 }} />
         </div>
+      ) : null}
+
+      {/* Foreground cutout (portrait_foreground_url) on top of bg + stripes */}
+      {hasForeground ? (
+        <img
+          src={foregroundUrl as string}
+          alt=""
+          width={HERO_LEFT_WIDTH}
+          height={HERO_BODY_HEIGHT}
+          style={{
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT,
+            left: 0,
+            width: HERO_LEFT_WIDTH,
+            height: HERO_BODY_HEIGHT,
+            objectFit: 'contain',
+            objectPosition: 'center bottom',
+          }}
+        />
+      ) : !hasBackground ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: OG_HEADER_HEIGHT + 40,
+            left: Math.round((HERO_LEFT_WIDTH - (HERO_BODY_HEIGHT - 80)) / 2),
+            display: 'flex',
+          }}
+        >
+          <Avatar src={speaker.profile_image_url} name={name} size={HERO_BODY_HEIGHT - 80} border />
+        </div>
+      ) : null}
+
+      {/* Right-side yellow text panel — 50% of OG width */}
+      <div
+        style={{
+          position: 'absolute',
+          top: OG_HEADER_HEIGHT,
+          right: 0,
+          width: HERO_RIGHT_WIDTH,
+          height: HERO_BODY_HEIGHT,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          textAlign: 'right',
+          padding: '0 56px',
+        }}
+      >
+        <div style={{ ...baseTextStyle, fontSize: 52, lineHeight: 1.05, fontWeight: 800, color: COLORS.black }}>
+          {truncateText(name, 28)}
+        </div>
+        {speaker.job_title ? (
+          <div
+            style={{
+              ...baseTextStyle,
+              marginTop: 20,
+              fontSize: 30,
+              lineHeight: 1.15,
+              fontWeight: 700,
+              color: COLORS.black,
+            }}
+          >
+            {truncateText(speaker.job_title, 38)}
+          </div>
+        ) : null}
+        {speaker.company ? (
+          <div
+            style={{
+              ...baseTextStyle,
+              marginTop: 10,
+              fontSize: 26,
+              lineHeight: 1.2,
+              color: COLORS.black,
+            }}
+          >
+            {`@${truncateText(speaker.company, 32)}`}
+          </div>
+        ) : null}
       </div>
     </OgShell>
   );
@@ -511,64 +553,4 @@ export function renderScheduleOg({ counts }: ScheduleOgInput = {}) {
       </div>
     </OgShell>
   );
-}
-
-/** Default OG cache policy: 5m browser / 1h CDN / 24h stale-while-revalidate. */
-export const DEFAULT_OG_CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
-
-/**
- * Longer policy for OG images that change rarely (e.g. speaker cards): 1h
- * browser / 7d CDN / 30d stale-while-revalidate. Keeps the CDN warm so crawler
- * re-fetches are served instantly.
- */
-export const LONG_OG_CACHE_CONTROL = 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=2592000';
-
-export async function sendOgImage(
-  res: NextApiResponse,
-  element: React.ReactElement,
-  cacheControl: string = DEFAULT_OG_CACHE_CONTROL,
-) {
-  const render = async (withFonts: boolean) => new ImageResponse(element, {
-    width: OG_WIDTH,
-    height: OG_HEIGHT,
-    fonts: withFonts ? [
-      {
-        name: 'Figtree',
-        data: await getFigtreeFont(400),
-        style: 'normal',
-        weight: 400,
-      },
-      {
-        name: 'Figtree',
-        data: await getFigtreeFont(700),
-        style: 'normal',
-        weight: 700,
-      },
-      {
-        name: 'Figtree',
-        data: await getFigtreeFont(800),
-        style: 'normal',
-        weight: 800,
-      },
-    ] : [],
-  });
-
-  let imageBuffer: Buffer;
-  try {
-    const response = await render(true);
-    imageBuffer = Buffer.from(await response.arrayBuffer());
-  } catch (error) {
-    console.error('[OG] Failed to render with custom fonts, retrying without fonts:', error);
-    try {
-      const response = await render(false);
-      imageBuffer = Buffer.from(await response.arrayBuffer());
-    } catch (fallbackError) {
-      console.error('[OG] Failed to render dynamic image, using static fallback:', fallbackError);
-      imageBuffer = await readFile(path.join(process.cwd(), 'public/images/og-default.png'));
-    }
-  }
-
-  res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', cacheControl);
-  res.send(imageBuffer);
 }

@@ -123,6 +123,78 @@ export async function getAcceptedSpeakers(): Promise<CfpSpeaker[]> {
   return (data || []) as CfpSpeaker[];
 }
 
+export interface SpeakerOgRow {
+  slug: string;
+  first_name: string;
+  last_name: string;
+  job_title: string | null;
+  company: string | null;
+  profile_image_url: string | null;
+  portrait_foreground_url: string | null;
+  portrait_background_url: string | null;
+  updated_at: string;
+}
+
+function computeSpeakerSlug(firstName: string, lastName: string, id: string): string {
+  const base = `${firstName} ${lastName}`
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return base || id;
+}
+
+export async function getVisibleSpeakerBySlugForOg(slug: string): Promise<SpeakerOgRow | null> {
+  const supabase = createCfpServiceClient();
+
+  const { data, error } = await supabase
+    .from('cfp_speakers')
+    .select('id, first_name, last_name, job_title, company, profile_image_url, portrait_foreground_url, portrait_background_url, updated_at')
+    .eq('is_visible', true)
+    .order('is_featured', { ascending: false })
+    .order('first_name', { ascending: true });
+
+  if (error) {
+    console.error('[CFP Speakers] OG slim fetch failed:', error.message);
+    return null;
+  }
+
+  const rows = (data ?? []) as Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    job_title: string | null;
+    company: string | null;
+    profile_image_url: string | null;
+    portrait_foreground_url: string | null;
+    portrait_background_url: string | null;
+    updated_at: string;
+  }>;
+
+  const slugCounts = new Map<string, number>();
+  for (const row of rows) {
+    const base = computeSpeakerSlug(row.first_name, row.last_name, row.id);
+    const count = slugCounts.get(base) ?? 0;
+    const resolvedSlug = count === 0 ? base : `${base}-${row.id.split('-')[0]}`;
+    slugCounts.set(base, count + 1);
+    if (resolvedSlug === slug) {
+      return {
+        slug: resolvedSlug,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        job_title: row.job_title,
+        company: row.company,
+        profile_image_url: row.profile_image_url,
+        portrait_foreground_url: row.portrait_foreground_url,
+        portrait_background_url: row.portrait_background_url,
+        updated_at: row.updated_at,
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function getProgramSpeakerCount(): Promise<number> {
   const supabase = createCfpServiceClient();
   const [speakersResult, submissionsResult] = await Promise.all([
@@ -232,89 +304,6 @@ export async function uploadSpeakerImage(
  * Returns speakers with is_visible=true and their accepted sessions
  * Featured speakers are ordered first in the result
  */
-interface SpeakerSlugRow {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
-
-/**
- * Build the public slug for a single speaker from their name, falling back to
- * the speaker id when the name produces an empty slug.
- */
-export function baseSpeakerSlug(firstName: string, lastName: string, id: string): string {
-  return `${firstName} ${lastName}`
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || id;
-}
-
-/**
- * Map speaker id -> public slug, mirroring the collision rule used everywhere
- * else: the first speaker (in the provided order) keeps the bare slug, later
- * collisions get a `${base}-${idPrefix}` suffix. Callers MUST pass rows in the
- * same order (is_featured desc, first_name asc) so suffixes stay stable.
- */
-export function buildSpeakerSlugMap(rows: SpeakerSlugRow[]): Map<string, string> {
-  const slugCounts = new Map<string, number>();
-  const slugById = new Map<string, string>();
-
-  for (const row of rows) {
-    const base = baseSpeakerSlug(row.first_name, row.last_name, row.id);
-    const existingSlugCount = slugCounts.get(base) ?? 0;
-    slugCounts.set(base, existingSlugCount + 1);
-    slugById.set(row.id, existingSlugCount === 0 ? base : `${base}-${row.id.split('-')[0]}`);
-  }
-
-  return slugById;
-}
-
-export interface SpeakerOgSummary {
-  first_name: string;
-  last_name: string;
-  job_title: string | null;
-  company: string | null;
-  profile_image_url: string | null;
-}
-
-/**
- * Lightweight speaker lookup for OG image rendering. Runs a single flat query
- * against cfp_speakers (no joins, no sessions) and resolves the slug in memory,
- * keeping the OG route fast enough that crawlers don't time out.
- */
-export async function getSpeakerOgSummaryBySlug(slug: string): Promise<SpeakerOgSummary | null> {
-  const supabase = createCfpServiceClient();
-
-  const { data, error } = await supabase
-    .from('cfp_speakers')
-    .select('id, first_name, last_name, job_title, company, profile_image_url')
-    .eq('is_visible', true)
-    .order('is_featured', { ascending: false })
-    .order('first_name', { ascending: true });
-
-  if (error) {
-    console.error('[CFP Speakers] Error fetching speaker OG summary:', error.message);
-    return null;
-  }
-
-  const rows = data ?? [];
-  const slugById = buildSpeakerSlugMap(rows);
-  const match = rows.find((row) => slugById.get(row.id) === slug);
-
-  if (!match) {
-    return null;
-  }
-
-  return {
-    first_name: match.first_name,
-    last_name: match.last_name,
-    job_title: match.job_title,
-    company: match.company,
-    profile_image_url: match.profile_image_url,
-  };
-}
-
 export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]> {
   const supabase = createCfpServiceClient();
   const sessionSlugCounts = new Map<string, number>();
@@ -444,12 +433,20 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     participantsBySubmissionId.get(participant.submission_id)!.push(participant);
   }
 
-  const slugById = buildSpeakerSlugMap(visibleSpeakerRows);
+  const slugCounts = new Map<string, number>();
   const publicSpeakersById = new Map<string, PublicSpeaker>();
   const speakerPreviewsById = new Map<string, PublicSessionSpeaker>();
 
   for (const speaker of visibleSpeakerRows) {
-    const slug = slugById.get(speaker.id)!;
+    const baseSlug = `${speaker.first_name} ${speaker.last_name}`
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || speaker.id;
+
+    const existingSlugCount = slugCounts.get(baseSlug) ?? 0;
+    slugCounts.set(baseSlug, existingSlugCount + 1);
+    const slug = existingSlugCount === 0 ? baseSlug : `${baseSlug}-${speaker.id.split('-')[0]}`;
 
     speakerPreviewsById.set(speaker.id, {
       name: [speaker.first_name, speaker.last_name].filter(Boolean).join(' '),
@@ -484,6 +481,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
         talks: false,
         workshops: false,
       },
+      updated_at: 'updated_at' in speaker ? (speaker.updated_at as string | undefined) : undefined,
       sessions: [],
     });
   }

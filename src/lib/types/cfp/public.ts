@@ -65,4 +65,5 @@ export interface PublicSpeaker {
     workshops: boolean;
   };
   sessions: PublicSession[];
+  updated_at?: string;
 }

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
-import { renderCollectionOg, sendOgImage } from '@/lib/og/program-images';
+import { renderCollectionOg } from '@/lib/og/program-images';
+import { sendOgImage } from '@/lib/og/runtime-node';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'GET') {

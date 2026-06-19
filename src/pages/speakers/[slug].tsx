@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SEO } from '@/components/SEO';
+import { SEO, generatePersonSchema, generateBreadcrumbSchema } from '@/components/SEO';
 import { Button, Heading, SocialIcon } from '@/components/atoms';
 import { DayTabs, SpeakerActionSlider } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
@@ -243,6 +243,21 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
   const [activeTab, setActiveTab] = useState<SessionTabId>(initialSessionTab);
   const currentTab = sessionTabs.find((tab) => tab.id === activeTab) ?? sessionTabs.find((tab) => !tab.disabled) ?? sessionTabs[0] ?? null;
   const profileUrl = `${BASE_URL}/speakers/${speaker.slug}`;
+  const ogVersion = speaker.updated_at?.slice(0, 10);
+  const ogImageUrl = `/api/og/speakers/${speaker.slug}${ogVersion ? `?v=${ogVersion}` : ''}`;
+  const personSchema = generatePersonSchema({
+    name: fullName,
+    jobTitle: speaker.job_title ?? undefined,
+    company: speaker.company ?? undefined,
+    image: avatarUrl ?? undefined,
+    url: profileUrl,
+    sameAs: socialLinks.map((link) => link.href),
+  });
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Speakers', url: '/speakers' },
+    { name: fullName, url: `/speakers/${speaker.slug}` },
+  ]);
   const handleDisabledTabClick = (tabId: string) => {
     try {
       analytics.getInstance().capture('speaker_session_tab_unavailable_clicked', {
@@ -271,8 +286,12 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
                 title={fullName}
                 description={speaker.bio || `${fullName} at ZurichJS Conf 2026.`}
                 canonical={`/speakers/${speaker.slug}`}
-                ogImage={`/api/og/speakers/${speaker.slug}`}
+                ogImage={ogImageUrl}
+                ogType="profile"
+                profileFirstName={speaker.first_name}
+                profileLastName={speaker.last_name}
                 keywords={`zurichjs conf speaker, ${fullName}`}
+                jsonLd={[personSchema, breadcrumbSchema]}
             />
 
             <main className="min-h-screen bg-brand-white">
@@ -472,7 +491,15 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
     );
 }
 
-export const getServerSideProps: GetServerSideProps<SpeakerDetailPageProps> = async ({ params }) => {
+export const getStaticPaths: GetStaticPaths = async () => {
+    const { speakers } = await fetchPublicSpeakers();
+    return {
+        paths: speakers.map((entry) => ({ params: { slug: entry.slug } })),
+        fallback: 'blocking',
+    };
+};
+
+export const getStaticProps: GetStaticProps<SpeakerDetailPageProps> = async ({ params }) => {
     const slug = typeof params?.slug === 'string' ? params.slug : '';
     const { speakers } = await fetchPublicSpeakers();
     const speaker = speakers.find((entry) => entry.slug === slug);
@@ -485,5 +512,6 @@ export const getServerSideProps: GetServerSideProps<SpeakerDetailPageProps> = as
         props: {
             speaker,
         },
+        revalidate: 600,
     };
 };
