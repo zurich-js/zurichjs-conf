@@ -39,6 +39,8 @@ export {
 export { LogoMarquee } from './LogoMarquee';
 export { SponsorCard } from './SponsorCard';
 export { PackedGrid } from './PackedGrid';
+export { VolunteerApplicationModal } from './VolunteerApplicationModal';
+export { VolunteerApplicationSuccess } from './VolunteerApplicationSuccess';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -82,3 +84,5 @@ export type {
 } from './AudienceStats';
 export type { LogoMarqueeProps, LogoMarqueeItem } from './LogoMarquee';
 export type { SponsorCardProps } from './SponsorCard';
+export type { VolunteerApplicationModalProps } from './VolunteerApplicationModal';
+export type { VolunteerApplicationSuccessProps } from './VolunteerApplicationSuccess';

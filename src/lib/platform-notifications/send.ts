@@ -23,6 +23,7 @@ import type {
   TicketReassignedData,
   TicketCreationErrorData,
   StudentTicketWaitlistData,
+  VolunteerApplicationData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -388,6 +389,22 @@ export function notifyStudentTicketWaitlist(data: StudentTicketWaitlistData): vo
     ]
   )
   void safeSend('student_ticket_waitlist_signup', text, blocks)
+}
+
+export function notifyVolunteerApplication(data: VolunteerApplicationData): void {
+  const text = `Volunteer application: ${data.name}`
+  const blocks = buildBlocks(
+    ':raised_hands: *New Volunteer Application*',
+    [
+      { label: 'Name', value: data.name },
+      { label: 'Email', value: data.email },
+      { label: 'Role', value: data.roleTitle },
+      { label: 'Application ID', value: data.applicationId },
+    ],
+    `${process.env.NEXT_PUBLIC_BASE_URL || 'https://conf.zurichjs.com'}/admin/volunteers`,
+    'Review in Admin'
+  )
+  void safeSend('volunteer_application_submitted', text, blocks)
 }
 
 export function notifyTicketCreationError(data: TicketCreationErrorData): void {

@@ -31,6 +31,7 @@ export type {
   CfpEmailScheduledData,
   TicketReassignedData,
   TicketCreationErrorData,
+  VolunteerApplicationData,
 } from './types'
 
 export {
@@ -47,4 +48,5 @@ export {
   notifyCfpEmailScheduled,
   notifyTicketReassigned,
   notifyTicketCreationError,
+  notifyVolunteerApplication,
 } from './send'
