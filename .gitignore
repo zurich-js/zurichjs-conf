@@ -56,3 +56,6 @@ next-env.d.ts
 supabase/.branches/
 /supabase/.temp/
 /backups/
+
+# Build-time generated OG images (regenerated on each deploy)
+/public/og/

@@ -244,7 +244,9 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
   const currentTab = sessionTabs.find((tab) => tab.id === activeTab) ?? sessionTabs.find((tab) => !tab.disabled) ?? sessionTabs[0] ?? null;
   const profileUrl = `${BASE_URL}/speakers/${speaker.slug}`;
   const ogVersion = speaker.updated_at?.slice(0, 10);
-  const ogImageUrl = `/api/og/speakers/${speaker.slug}${ogVersion ? `?v=${ogVersion}` : ''}`;
+  // Pre-generated at build time by scripts/generate-speaker-og.ts and served as
+  // a static asset. The ?v= bust changes the URL when the speaker is updated.
+  const ogImageUrl = `/og/speakers/${speaker.slug}.png${ogVersion ? `?v=${ogVersion}` : ''}`;
   const personSchema = generatePersonSchema({
     name: fullName,
     jobTitle: speaker.job_title ?? undefined,
