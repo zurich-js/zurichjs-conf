@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { renderScheduleOg, sendOgImage } from '@/lib/og/program-images';
+import { renderScheduleOg } from '@/lib/og/program-images';
+import { sendOgImage } from '@/lib/og/runtime-node';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 
