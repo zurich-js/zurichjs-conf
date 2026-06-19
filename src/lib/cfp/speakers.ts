@@ -144,7 +144,13 @@ function computeSpeakerSlug(firstName: string, lastName: string, id: string): st
   return base || id;
 }
 
-export async function getVisibleSpeakerBySlugForOg(slug: string): Promise<SpeakerOgRow | null> {
+/**
+ * Slim list of every visible speaker with the fields and resolved slug needed
+ * to pre-generate OG images. Single flat query (no joins); slugs are derived
+ * with the same ordering + collision rule as the public speaker pages so the
+ * generated filenames line up with `/speakers/{slug}`.
+ */
+export async function getVisibleSpeakersForOg(): Promise<SpeakerOgRow[]> {
   const supabase = createCfpServiceClient();
 
   const { data, error } = await supabase
@@ -155,8 +161,8 @@ export async function getVisibleSpeakerBySlugForOg(slug: string): Promise<Speake
     .order('first_name', { ascending: true });
 
   if (error) {
-    console.error('[CFP Speakers] OG slim fetch failed:', error.message);
-    return null;
+    console.error('[CFP Speakers] OG list fetch failed:', error.message);
+    return [];
   }
 
   const rows = (data ?? []) as Array<{
@@ -172,27 +178,23 @@ export async function getVisibleSpeakerBySlugForOg(slug: string): Promise<Speake
   }>;
 
   const slugCounts = new Map<string, number>();
-  for (const row of rows) {
+  return rows.map((row) => {
     const base = computeSpeakerSlug(row.first_name, row.last_name, row.id);
     const count = slugCounts.get(base) ?? 0;
-    const resolvedSlug = count === 0 ? base : `${base}-${row.id.split('-')[0]}`;
     slugCounts.set(base, count + 1);
-    if (resolvedSlug === slug) {
-      return {
-        slug: resolvedSlug,
-        first_name: row.first_name,
-        last_name: row.last_name,
-        job_title: row.job_title,
-        company: row.company,
-        profile_image_url: row.profile_image_url,
-        portrait_foreground_url: row.portrait_foreground_url,
-        portrait_background_url: row.portrait_background_url,
-        updated_at: row.updated_at,
-      };
-    }
-  }
-
-  return null;
+    const slug = count === 0 ? base : `${base}-${row.id.split('-')[0]}`;
+    return {
+      slug,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      job_title: row.job_title,
+      company: row.company,
+      profile_image_url: row.profile_image_url,
+      portrait_foreground_url: row.portrait_foreground_url,
+      portrait_background_url: row.portrait_background_url,
+      updated_at: row.updated_at,
+    };
+  });
 }
 
 export async function getProgramSpeakerCount(): Promise<number> {

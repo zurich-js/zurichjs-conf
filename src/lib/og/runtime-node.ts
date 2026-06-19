@@ -19,7 +19,13 @@ async function getFigtreeFont(weight: 400 | 700 | 800) {
   return figtreeFontPromises.get(weight)!;
 }
 
-export async function sendOgImage(res: NextApiResponse, element: React.ReactElement) {
+/**
+ * Render an OG element to a PNG buffer, with the custom font set and graceful
+ * degradation: retry without fonts, then fall back to the static default image.
+ * Shared by the HTTP handler (`sendOgImage`) and the build-time generation
+ * script (`scripts/generate-speaker-og.ts`).
+ */
+export async function renderOgToBuffer(element: React.ReactElement): Promise<Buffer> {
   const render = async (withFonts: boolean) => new ImageResponse(element, {
     width: OG_WIDTH,
     height: OG_HEIGHT,
@@ -45,20 +51,23 @@ export async function sendOgImage(res: NextApiResponse, element: React.ReactElem
     ] : [],
   });
 
-  let imageBuffer: Buffer;
   try {
     const response = await render(true);
-    imageBuffer = Buffer.from(await response.arrayBuffer());
+    return Buffer.from(await response.arrayBuffer());
   } catch (error) {
     console.error('[OG] Failed to render with custom fonts, retrying without fonts:', error);
     try {
       const response = await render(false);
-      imageBuffer = Buffer.from(await response.arrayBuffer());
+      return Buffer.from(await response.arrayBuffer());
     } catch (fallbackError) {
       console.error('[OG] Failed to render dynamic image, using static fallback:', fallbackError);
-      imageBuffer = await readFile(path.join(process.cwd(), 'public/images/og-default.png'));
+      return readFile(path.join(process.cwd(), 'public/images/og-default.png'));
     }
   }
+}
+
+export async function sendOgImage(res: NextApiResponse, element: React.ReactElement) {
+  const imageBuffer = await renderOgToBuffer(element);
 
   res.setHeader('Content-Type', 'image/png');
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
