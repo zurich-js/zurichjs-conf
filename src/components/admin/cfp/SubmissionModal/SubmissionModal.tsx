@@ -404,6 +404,7 @@ export function SubmissionModal({
             reviews={reviews}
             isLoading={isLoadingReviews}
             aggregateScores={aggregateScores}
+            submission={submission}
           />
 
           {/* Decision & Speaker Communication */}
