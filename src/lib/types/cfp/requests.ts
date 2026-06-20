@@ -29,6 +29,7 @@ export interface CreateCfpSpeakerRequest {
   twitter_handle?: string;
   bluesky_handle?: string;
   mastodon_handle?: string;
+  npm_username?: string;
 }
 
 /**
@@ -47,6 +48,7 @@ export interface UpdateCfpSpeakerRequest {
   twitter_handle?: string;
   bluesky_handle?: string;
   mastodon_handle?: string;
+  npm_username?: string;
   profile_image_url?: string;
   header_image_url?: string;
   portrait_foreground_url?: string;

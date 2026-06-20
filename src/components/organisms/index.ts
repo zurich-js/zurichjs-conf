@@ -26,6 +26,8 @@ export {
   SponsorshipContactSection,
 } from './sponsorship';
 export { AboutCTASection } from './AboutCTASection';
+export { SpeakerOpenSourceImpact } from './SpeakerOpenSourceImpact';
+export type { SpeakerOpenSourceImpactProps } from './SpeakerOpenSourceImpact';
 
 export type { HeroProps } from './Hero';
 export type { DiagonalSectionProps } from './DiagonalSection';

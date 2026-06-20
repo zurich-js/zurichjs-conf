@@ -478,6 +478,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
         twitter_handle: speaker.twitter_handle,
         bluesky_handle: speaker.bluesky_handle,
         mastodon_handle: speaker.mastodon_handle,
+        npm_username: 'npm_username' in speaker ? speaker.npm_username ?? null : null,
       },
       assigned_session_kinds: {
         talks: false,
