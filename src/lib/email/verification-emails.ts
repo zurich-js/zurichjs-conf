@@ -16,7 +16,12 @@ export async function sendVerificationRequestEmail(
   try {
     const resend = getResendClient();
 
-    const typeLabel = data.verificationType === 'student' ? 'Student' : 'Unemployed';
+    const typeLabel =
+      data.verificationType === 'student'
+        ? 'Student'
+        : data.verificationType === 'oss_maintainer'
+          ? 'OSS Maintainer'
+          : 'Unemployed';
 
     // Build user confirmation email HTML
     const emailHtml = buildUserVerificationHtml(data, typeLabel);

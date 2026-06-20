@@ -12,6 +12,7 @@ export { LinkGroup } from './LinkGroup';
 export { NewsletterForm } from './NewsletterForm';
 export { FAQAccordion } from './FAQAccordion';
 export { StudentVerificationModal } from './StudentVerificationModal';
+export { OssMaintainerApplyForm } from './OssMaintainerApplyForm';
 export { VerificationSuccessModal } from './VerificationSuccessModal';
 export { CartItem } from './CartItem';
 export { CartSummary } from './CartSummary';

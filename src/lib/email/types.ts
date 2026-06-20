@@ -31,13 +31,18 @@ export interface VerificationRequestData {
   to: string;
   name: string;
   verificationId: string;
-  verificationType: 'student' | 'unemployed';
+  verificationType: 'student' | 'unemployed' | 'oss_maintainer';
   // Student-specific fields
   university?: string;
   studentId?: string;
   // Unemployed-specific fields
   linkedInUrl?: string;
   ravRegistrationDate?: string;
+  // OSS maintainer-specific fields
+  githubUsername?: string;
+  ossRepos?: string[];
+  ossNpmPackages?: string[];
+  qualifyingTier?: 1 | 2 | 3 | 4;
   // Common optional field
   additionalInfo?: string;
 }
