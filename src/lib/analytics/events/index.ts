@@ -130,6 +130,14 @@ export type {
 // Tech stack events
 export type { TechStackDetectedEvent } from './tech-stack-events';
 
+// Survey events
+export type {
+  ExitSurveyShownEvent,
+  ExitSurveyResponseEvent,
+  ExitSurveyCtaClickedEvent,
+  ExitSurveyDismissedEvent,
+} from './survey-events';
+
 // Sponsorship events
 export type { SponsorClickedEvent, CommunityPartnerClickedEvent } from './sponsorship-events';
 
@@ -217,6 +225,12 @@ import type {
   EasterEggClaimFailedEvent,
 } from './easter-egg-events';
 import type { TechStackDetectedEvent } from './tech-stack-events';
+import type {
+  ExitSurveyShownEvent,
+  ExitSurveyResponseEvent,
+  ExitSurveyCtaClickedEvent,
+  ExitSurveyDismissedEvent,
+} from './survey-events';
 import type { SponsorClickedEvent, CommunityPartnerClickedEvent, SponsorQuoteViewedEvent } from './sponsorship-events';
 
 /**
@@ -293,6 +307,10 @@ export type AnalyticsEvent =
   | EasterEggClaimedEvent
   | EasterEggClaimFailedEvent
   | TechStackDetectedEvent
+  | ExitSurveyShownEvent
+  | ExitSurveyResponseEvent
+  | ExitSurveyCtaClickedEvent
+  | ExitSurveyDismissedEvent
   | SponsorClickedEvent
   | CommunityPartnerClickedEvent
   | SponsorQuoteViewedEvent;
