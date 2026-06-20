@@ -49,6 +49,8 @@ export interface CheckoutStepProps extends CartStepProps {
   onEmailCaptured: (email: string) => void;
   onFieldCaptured?: (fieldName: string, value: string) => void;
   savedBillingData?: Partial<CheckoutFormData>;
+  /** Email captured from checkout form — used for team detection */
+  capturedEmail?: string | null;
 }
 
 // Re-export for convenience

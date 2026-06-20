@@ -410,6 +410,7 @@ export default function CartPage() {
                 onSubmit={handleCheckoutSubmit}
                 onEmailCaptured={setCapturedEmail}
                 onFieldCaptured={handleCapturedField}
+                capturedEmail={capturedEmail}
               />
             )}
 

@@ -9,3 +9,5 @@ export { CartProgressSteps } from './CartProgressSteps';
 export { ReviewStep } from './ReviewStep';
 export { CheckoutStep } from './CheckoutStep';
 export { PaymentStep } from './PaymentStep';
+export { ColleagueBanner } from './ColleagueBanner';
+export type { ColleagueBannerProps } from './ColleagueBanner';

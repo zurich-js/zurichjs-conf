@@ -10,6 +10,8 @@ import {
 } from '@/lib/email';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
+import { isWorkEmail, getColleagueCount, extractDomain } from '@/lib/team-detection';
+import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import type { TicketCreationResult } from './tickets';
 
@@ -26,6 +28,33 @@ export async function sendTicketConfirmationEmails(
   const primaryName = primaryAttendee ? `${primaryAttendee.firstName} ${primaryAttendee.lastName}` : 'Unknown';
 
   log.info('Preparing confirmation emails', { count: ticketResults.length });
+
+  // Detect team colleagues for the primary attendee's work email
+  let teamColleagueCount: number | undefined;
+  let teamCompanyName: string | undefined;
+  const primaryEmail = primaryAttendee?.email;
+  if (primaryEmail && isWorkEmail(primaryEmail)) {
+    try {
+      const domain = extractDomain(primaryEmail);
+      if (domain) {
+        const supabase = createServiceRoleClient();
+        const result = await getColleagueCount(supabase, domain, primaryEmail);
+        if (result.count > 0) {
+          teamColleagueCount = result.count;
+          teamCompanyName = result.companyName ?? undefined;
+          log.info('Team colleagues detected for email', {
+            domain,
+            count: result.count,
+            company: result.companyName,
+          });
+        }
+      }
+    } catch (teamError) {
+      // Non-fatal: team detection failure should not block email dispatch
+      log.error('Failed to detect team colleagues', teamError, { email: primaryEmail });
+    }
+  }
+
   const emailsToSend: TicketConfirmationData[] = [];
 
   for (let i = 0; i < ticketResults.length; i++) {
@@ -117,6 +146,8 @@ export async function sendTicketConfirmationEmails(
         orderUrl,
         notes,
         pdfAttachment: pdfBuffer,
+        teamColleagueCount,
+        teamCompanyName,
       });
     } catch (error) {
       log.error('Error preparing email', error, {
