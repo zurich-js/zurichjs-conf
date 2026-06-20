@@ -130,6 +130,15 @@ export type {
 // Tech stack events
 export type { TechStackDetectedEvent } from './tech-stack-events';
 
+// Referral events
+export type {
+  ReferralCodeGeneratedEvent,
+  ReferralLinkClickedEvent,
+  ReferralCodeAppliedEvent,
+  ReferralConvertedEvent,
+  ReferralVoucherRedeemedEvent,
+} from './referral-events';
+
 // Sponsorship events
 export type { SponsorClickedEvent, CommunityPartnerClickedEvent } from './sponsorship-events';
 
@@ -217,6 +226,13 @@ import type {
   EasterEggClaimFailedEvent,
 } from './easter-egg-events';
 import type { TechStackDetectedEvent } from './tech-stack-events';
+import type {
+  ReferralCodeGeneratedEvent,
+  ReferralLinkClickedEvent,
+  ReferralCodeAppliedEvent,
+  ReferralConvertedEvent,
+  ReferralVoucherRedeemedEvent,
+} from './referral-events';
 import type { SponsorClickedEvent, CommunityPartnerClickedEvent, SponsorQuoteViewedEvent } from './sponsorship-events';
 
 /**
@@ -295,7 +311,12 @@ export type AnalyticsEvent =
   | TechStackDetectedEvent
   | SponsorClickedEvent
   | CommunityPartnerClickedEvent
-  | SponsorQuoteViewedEvent;
+  | SponsorQuoteViewedEvent
+  | ReferralCodeGeneratedEvent
+  | ReferralLinkClickedEvent
+  | ReferralCodeAppliedEvent
+  | ReferralConvertedEvent
+  | ReferralVoucherRedeemedEvent;
 
 /**
  * Extract event name from AnalyticsEvent

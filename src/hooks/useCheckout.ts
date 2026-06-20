@@ -10,6 +10,7 @@ interface CreateCheckoutSessionResponse {
 interface CreateCheckoutSessionRequest {
   cart: Cart;
   customerInfo: CheckoutFormData;
+  referralCode?: string | null;
 }
 
 /**
@@ -22,7 +23,7 @@ export const useCheckout = () => {
     Error,
     CreateCheckoutSessionRequest
   >({
-    mutationFn: async ({ cart, customerInfo }) => {
+    mutationFn: async ({ cart, customerInfo, referralCode }) => {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -31,6 +32,7 @@ export const useCheckout = () => {
         body: JSON.stringify({
           cart,
           customerInfo,
+          ...(referralCode ? { referralCode } : {}),
         }),
       });
 

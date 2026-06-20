@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
@@ -12,6 +12,7 @@ import type { EventProperties } from '@/lib/analytics/events';
 import { ApiError } from '@/lib/api';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useCart } from '@/contexts/CartContext';
+import { Copy, Check, Share2 } from 'lucide-react';
 
 /**
  * Detect if the error is a payment failure (402) vs a generic API/network error.
@@ -33,6 +34,9 @@ const SuccessPage: React.FC = () => {
   const { session_id } = router.query;
   const [savedCart] = useLocalStorage('zurichjs_cart_recovery');
   const { clearCart } = useCart();
+
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Wait for router to be ready and extract session_id
   const sessionId = router.isReady && typeof session_id === 'string' ? session_id : '';
@@ -119,6 +123,30 @@ const SuccessPage: React.FC = () => {
     } as EventProperties<'page_viewed'>);
 
   }, [router.isReady, isLoading, error, sessionDetails]);
+
+  // Fetch the referral code for the "Share & Earn" section
+  useEffect(() => {
+    if (!sessionDetails?.customer_email) return;
+    fetch('/api/referrals/status')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.referralCode) setReferralCode(data.referralCode);
+      })
+      .catch(() => { /* non-critical */ });
+  }, [sessionDetails?.customer_email]);
+
+  const referralUrl = referralCode
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/tickets?ref=${referralCode}`
+    : null;
+
+  const handleCopyReferral = async (): Promise<void> => {
+    if (!referralUrl) return;
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard API may not be available */ }
+  };
 
   return (
     <Layout
@@ -363,6 +391,33 @@ const SuccessPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Share & Earn */}
+              {referralCode && referralUrl && (
+                <div className="bg-black rounded-2xl p-8 mb-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Share2 className="w-6 h-6 text-brand-primary" aria-hidden="true" />
+                    <h2 className="text-xl font-bold text-brand-primary">Share & Earn</h2>
+                  </div>
+                  <p className="text-gray-300 mb-4">
+                    Invite friends to ZurichJS Conference! They get a discount, and you earn rewards
+                    towards VIP upgrades or workshops.
+                  </p>
+                  <div className="flex items-center gap-2 bg-gray-900 rounded-lg p-3 mb-4">
+                    <code className="flex-1 text-sm text-brand-white truncate">{referralUrl}</code>
+                    <button
+                      onClick={handleCopyReferral}
+                      className="flex-shrink-0 p-2 rounded-lg bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      aria-label="Copy referral link"
+                    >
+                      {copied ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Your referral code: <span className="font-mono text-gray-400">{referralCode}</span>
+                  </p>
+                </div>
+              )}
 
               {/* Important Information */}
               <div className="bg-black rounded-2xl p-8 mb-8">
