@@ -137,11 +137,10 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     setIsSeebadEngeModalOpen(false);
   }, []);
 
-  // Preview-only sold-out override for manual QA of the waitlist flow.
-  // Gated behind NEXT_PUBLIC_FORCE_SOLD_OUT_PREVIEW (set only in preview envs),
-  // so the `?forceSoldOut=vip|student|all` query param is inert in production.
-  // Applied in an effect so the initial (server) render is never forced — avoids
-  // a hydration mismatch when the page is statically optimized.
+  // Sold-out override for manual QA of the waitlist flow, driven by the
+  // `?forceSoldOut=vip|student|all` query param. Applied in an effect so the
+  // initial (server) render is never forced — avoids a hydration mismatch when
+  // the page is statically optimized.
   const router = useRouter();
   const [forcedSoldOut, setForcedSoldOut] = useState<{ vip: boolean; student: boolean }>({
     vip: false,
@@ -149,7 +148,6 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   });
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_FORCE_SOLD_OUT_PREVIEW !== 'true') return;
     const raw = router.query.forceSoldOut;
     const value = Array.isArray(raw) ? raw[0] : raw;
     setForcedSoldOut({
