@@ -13,6 +13,8 @@ import type {
 import { getInvoiceWithAttendees } from './invoices';
 import { validateAttendeeCount } from './attendees';
 import { createTicket } from '@/lib/tickets/createTicket';
+import { toLegacyType } from '@/lib/stripe/ticket-utils';
+import type { TicketCategory, TicketStage } from '@/lib/types/database';
 import { sendTicketConfirmationEmail } from '@/lib/email';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 
@@ -193,12 +195,16 @@ async function createTicketForAttendee(
   attendee: B2BInvoiceAttendee,
   bankTransferReference: string
 ): Promise<{ success: boolean; ticketId?: string; error?: string }> {
-  // ticketType is a legacy field that combines stage and category
-  // Use the stage as the ticketType for B2B invoices
+  const ticketCategory = invoice.ticket_category as TicketCategory;
+  const ticketStage = invoice.ticket_stage as TicketStage;
+
+  // ticket_type is a legacy enum column whose values differ from ticket_stage
+  // (it has no `general_admission`). Derive it from category + stage so the
+  // insert doesn't fail on stages like `general_admission`.
   const result = await createTicket({
-    ticketType: invoice.ticket_stage as 'blind_bird' | 'early_bird' | 'standard' | 'student' | 'unemployed' | 'late_bird' | 'vip',
-    ticketCategory: invoice.ticket_category as 'standard' | 'student' | 'unemployed' | 'vip',
-    ticketStage: invoice.ticket_stage as 'blind_bird' | 'early_bird' | 'general_admission' | 'late_bird',
+    ticketType: toLegacyType(ticketCategory, ticketStage),
+    ticketCategory,
+    ticketStage,
     firstName: attendee.first_name,
     lastName: attendee.last_name,
     email: attendee.email,
