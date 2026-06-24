@@ -34,4 +34,7 @@ export const EMAIL_CONFIG = {
   from: process.env.EMAIL_FROM || 'ZurichJS Conference <hello@zurichjs.com>',
   replyTo: process.env.EMAIL_REPLY_TO || 'hello@zurichjs.com',
   supportEmail: 'hello@zurichjs.com',
+  // Canonical production site URL for links in emails. Always the prod domain
+  // (never a Vercel preview URL), since recipients must land on the real site.
+  siteUrl: process.env.EMAIL_SITE_URL || 'https://conf.zurichjs.com',
 };
