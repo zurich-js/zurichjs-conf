@@ -40,7 +40,15 @@ export function ReviewStep({
     vipPerkStatus === 'applied'
       ? 'VIP discount applied. Your VIP ticket takes 20% off every workshop in your cart — it’s already included in the total below, and you don’t need a code.'
       : vipPerkStatus === 'add-workshop'
-        ? 'Your VIP ticket gives you 20% off all workshops. Add a workshop now and the 20% comes off automatically at checkout — no code needed. Prefer to buy workshops later? You don’t lose the discount: we’ll email you a personal discount code after checkout to use on workshops any time.'
+        ? (
+          <>
+            Your VIP ticket gives you 20% off all workshops.{' '}
+            <Link href="/workshops" className="font-bold text-brand-yellow-main hover:underline">
+              Add a workshop now
+            </Link>{' '}
+            and the 20% comes off automatically at checkout — no code needed. Prefer to buy workshops later? You don’t lose the discount: we’ll email you a personal discount code after checkout to use on workshops any time.
+          </>
+        )
         : vipPerkStatus === 'covered-by-code'
           ? 'Heads up: your promo code already discounts your workshops. Only one discount can apply per order, so we don’t add the VIP 20% on top of it.'
           : vipPerkStatus === 'blocked-by-code'
