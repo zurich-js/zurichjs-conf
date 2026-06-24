@@ -29,6 +29,19 @@ export function ReviewStep({
 
   const hasTicket = cart.items.some((item) => item.kind !== 'workshop');
   const hasWorkshop = cart.items.some((item) => item.kind === 'workshop');
+  const hasVip = cart.items.some((item) => item.kind !== 'workshop' && item.variant === 'vip');
+  const hasManualCode = !!cart.couponCode;
+
+  // VIP tickets carry a standing 20% workshop discount that we apply
+  // automatically — no emailed coupon to copy/paste. Surface what's happening so
+  // VIP buyers understand the perk and aren't tempted to split the purchase.
+  const vipPerkNote = hasVip
+    ? hasWorkshop
+      ? hasManualCode
+        ? 'A promo code is applied, so the VIP 20% workshop discount isn’t stacked on top. Remove the code to use the VIP perk instead.'
+        : 'VIP perk applied: 20% off your workshops, automatically. No coupon code needed.'
+      : 'Your VIP ticket includes 20% off all workshops. Add a workshop and the discount applies automatically at checkout.'
+    : null;
 
   return (
     <motion.div
@@ -73,6 +86,17 @@ export function ReviewStep({
             <PlusIcon size={14} /> {hasWorkshop ? 'Add another workshop' : 'Add a workshop'}
           </Link>
         </div>
+
+        {/* VIP workshop perk note — explains the auto-applied 20% workshop discount */}
+        {vipPerkNote && (
+          <div
+            className="flex items-start gap-2.5 p-3 rounded-2xl border border-brand-green/40 bg-brand-green/10"
+            role="status"
+          >
+            <InfoIcon size={16} className="mt-0.5 shrink-0 text-brand-green" aria-hidden="true" />
+            <p className="text-sm text-brand-gray-light">{vipPerkNote}</p>
+          </div>
+        )}
 
         {/* VIP Upgrade Upsell Banner */}
         {showVipUpsell && (

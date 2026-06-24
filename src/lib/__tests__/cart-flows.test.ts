@@ -63,6 +63,7 @@ describe('cart flows', () => {
     expect(getOrderSummary(cart)).toEqual({
       subtotal: 295,
       discount: 0,
+      vipWorkshopDiscount: 0,
       tax: 0,
       total: 295,
       currency: 'CHF',
@@ -145,6 +146,80 @@ describe('cart flows', () => {
       currency: 'EUR',
       totalItems: 2,
       totalPrice: 560,
+    });
+  });
+
+  describe('VIP workshop perk', () => {
+    it('auto-applies 20% off workshops when a VIP ticket shares the cart', () => {
+      const cart = cartWith([
+        { ...vipTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]);
+
+      // 20% of the 180 workshop seat = 36; ticket is untouched.
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 675,
+        vipWorkshopDiscount: 36,
+        discount: 36,
+        total: 639,
+      });
+    });
+
+    it('discounts every workshop seat but never the VIP ticket', () => {
+      const cart = cartWith([
+        { ...vipTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 2 },
+      ]);
+
+      // 20% of (180 × 2) = 72.
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 855,
+        vipWorkshopDiscount: 72,
+        discount: 72,
+        total: 783,
+      });
+    });
+
+    it('does not apply without a workshop in the cart', () => {
+      const cart = cartWith([{ ...vipTicket, quantity: 1 }]);
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 495,
+        vipWorkshopDiscount: 0,
+        discount: 0,
+        total: 495,
+      });
+    });
+
+    it('does not apply when no VIP ticket is present', () => {
+      const cart = cartWith([
+        { ...standardTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]);
+      expect(getOrderSummary(cart)).toMatchObject({
+        vipWorkshopDiscount: 0,
+        discount: 0,
+        total: 475,
+      });
+    });
+
+    it('lets a manual voucher win instead of stacking the VIP perk', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'PARTNER10',
+        'percentage',
+        10
+      );
+
+      // Manual 10% applies to the whole 675 subtotal; VIP perk is suppressed.
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 675,
+        vipWorkshopDiscount: 0,
+        discount: 67.5,
+        total: 607.5,
+      });
     });
   });
 

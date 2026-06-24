@@ -8,10 +8,12 @@ import Stripe from 'stripe';
 import type { Cart, CheckoutFormData } from '@/types/cart';
 import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
+import crypto from 'crypto';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
-import { isTicketProduct, parseTicketInfo } from '@/lib/stripe/ticket-utils';
+import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { VIP_WORKSHOP_DISCOUNT_PERCENT } from '@/lib/cart-operations';
 import type { Json } from '@/lib/types/database';
 
 const log = logger.scope('Create Checkout Session');
@@ -257,6 +259,88 @@ async function validateDiscountProductsForCheckout(
 }
 
 /**
+ * Resolve the reusable Stripe coupon that grants the standing VIP workshop
+ * discount, scoped to the given workshop products. The coupon id is derived
+ * deterministically from the product set so the same coupon is reused across
+ * checkouts instead of minting a fresh one each time. Created on first use.
+ */
+async function getOrCreateVipWorkshopCoupon(
+  stripe: Stripe,
+  workshopProductIds: string[]
+): Promise<string> {
+  const sortedIds = [...workshopProductIds].sort();
+  const hash = crypto.createHash('sha1').update(sortedIds.join('|')).digest('hex').slice(0, 16);
+  const couponId = `vipws-${VIP_WORKSHOP_DISCOUNT_PERCENT}-${hash}`;
+
+  try {
+    const existing = await stripe.coupons.retrieve(couponId);
+    if (existing && !existing.deleted) return couponId;
+  } catch {
+    // Not found — fall through to create it.
+  }
+
+  try {
+    await stripe.coupons.create({
+      id: couponId,
+      name: 'VIP Workshop Perk',
+      percent_off: VIP_WORKSHOP_DISCOUNT_PERCENT,
+      duration: 'once',
+      applies_to: { products: sortedIds },
+      metadata: { type: 'vip_workshop_auto' },
+    });
+  } catch (err) {
+    // Lost a create race with a concurrent request — the coupon now exists.
+    if ((err as Stripe.errors.StripeError)?.code === 'resource_already_exists') {
+      return couponId;
+    }
+    throw err;
+  }
+
+  return couponId;
+}
+
+/**
+ * Determine whether the cart qualifies for the automatic VIP workshop discount
+ * and, if so, return the workshop products the discount applies to. Eligibility
+ * is derived from Stripe prices (never the client-supplied cart) so it can't be
+ * spoofed. A manually-applied promo code suppresses the perk (we don't stack).
+ */
+async function deriveVipWorkshopDiscount(
+  stripe: Stripe,
+  cart: Cart,
+  priceIds: string[]
+): Promise<{ workshopProductIds: string[] } | null> {
+  // Manual code wins — Stripe allows only one discount per session.
+  if (cart.couponCode || cart.promotionCodeId) return null;
+
+  const prices = await Promise.all(
+    Array.from(new Set(priceIds)).map((priceId) =>
+      stripe.prices.retrieve(priceId, { expand: ['product'] })
+    )
+  );
+
+  let hasVipTicket = false;
+  const workshopProductIds = new Set<string>();
+
+  for (const price of prices) {
+    if (
+      isTicketProduct(price) &&
+      price.lookup_key &&
+      parseTicketInfo(price.lookup_key).category === 'vip'
+    ) {
+      hasVipTicket = true;
+    }
+    if (isWorkshopPrice(price)) {
+      const product = price.product;
+      workshopProductIds.add(typeof product === 'string' ? product : product.id);
+    }
+  }
+
+  if (!hasVipTicket || workshopProductIds.size === 0) return null;
+  return { workshopProductIds: Array.from(workshopProductIds) };
+}
+
+/**
  * API Handler
  */
 export default async function handler(
@@ -427,11 +511,27 @@ export default async function handler(
     // Prepare discounts array if coupon/promotion code was applied.
     // Promotion codes must be sent by ID so Stripe enforces active state,
     // expiry, redemption limits, and minimum amount restrictions at checkout.
-    const discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined = cart.promotionCodeId
+    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined = cart.promotionCodeId
       ? [{ promotion_code: cart.promotionCodeId }]
       : cart.couponCode
         ? [{ coupon: cart.couponCode }]
         : undefined;
+
+    // No manual code? Apply the standing VIP workshop perk: 20% off workshop
+    // line items whenever the cart pairs a VIP ticket with one or more
+    // workshops. Eligibility is derived from Stripe prices, not the client cart.
+    if (!discounts) {
+      const vipWorkshop = await deriveVipWorkshopDiscount(stripe, cart, priceIds);
+      if (vipWorkshop) {
+        const couponId = await getOrCreateVipWorkshopCoupon(stripe, vipWorkshop.workshopProductIds);
+        discounts = [{ coupon: couponId }];
+        metadata.vipWorkshopPerk = 'true';
+        log.info('Applying VIP workshop perk to checkout session', {
+          couponId,
+          workshopProductCount: vipWorkshop.workshopProductIds.length,
+        });
+      }
+    }
 
     // Create Checkout Session in embedded mode.
     // This returns a client_secret for use with Custom Checkout Elements

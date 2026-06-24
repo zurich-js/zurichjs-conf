@@ -6,6 +6,15 @@
 import type { Cart, CartItem, OrderSummary } from '@/types/cart';
 import { DEFAULT_CURRENCY, type SupportedCurrency } from '@/config/currency';
 
+/**
+ * Standing discount, in percent, that every VIP ticket grants on workshops.
+ * Advertised on the VIP ticket as "20% discount to all workshops". When a VIP
+ * ticket and a workshop share a cart, this is applied automatically to the
+ * workshop line items — both for the client-side order summary below and for
+ * the authoritative Stripe discount built in `create-checkout-session`.
+ */
+export const VIP_WORKSHOP_DISCOUNT_PERCENT = 20;
+
 // ============================================================================
 // Cart Creation
 // ============================================================================
@@ -75,6 +84,42 @@ export function calculateDiscountAmount(
 }
 
 /**
+ * Whether the cart contains at least one VIP conference ticket.
+ * Used to decide if the standing VIP workshop discount applies. This reads the
+ * client-side `variant` for display only — checkout re-derives VIP eligibility
+ * from the Stripe price server-side, so it can't be spoofed into a real charge.
+ */
+export function cartHasVipTicket(items: CartItem[]): boolean {
+  return items.some((item) => item.kind !== 'workshop' && item.variant === 'vip');
+}
+
+/**
+ * Derived VIP workshop perk: a standing 20% off all workshop line items, applied
+ * automatically when a VIP ticket and one or more workshops share the cart.
+ *
+ * A manually-applied voucher takes precedence — Stripe allows only one discount
+ * per checkout session, so we don't stack the two. When a voucher is present
+ * this returns a zero discount and the manual voucher is used instead.
+ */
+export function getVipWorkshopDiscount(cart: Cart): {
+  discount: number;
+  applicablePriceIds: string[];
+} {
+  // Manual voucher wins — never stack on top of an explicit promo code.
+  if (cart.couponCode) return { discount: 0, applicablePriceIds: [] };
+  if (!cartHasVipTicket(cart.items)) return { discount: 0, applicablePriceIds: [] };
+
+  const workshops = cart.items.filter((item) => item.kind === 'workshop');
+  if (workshops.length === 0) return { discount: 0, applicablePriceIds: [] };
+
+  const workshopSubtotal = getTotalPrice(workshops);
+  return {
+    discount: (workshopSubtotal * VIP_WORKSHOP_DISCOUNT_PERCENT) / 100,
+    applicablePriceIds: workshops.map((item) => item.priceId),
+  };
+}
+
+/**
  * Calculate complete order summary from cart
  * All values are derived, nothing stored
  * Discount is only applied to eligible items based on applicablePriceIds
@@ -83,11 +128,15 @@ export function getOrderSummary(cart: Cart): OrderSummary {
   const subtotal = getTotalPrice(cart.items);
   // Calculate discount based only on items the coupon applies to
   const discountableAmount = getDiscountableSubtotal(cart.items, cart.applicablePriceIds);
-  const discount = calculateDiscountAmount(discountableAmount, cart.discountType, cart.discountValue);
+  const voucherDiscount = calculateDiscountAmount(discountableAmount, cart.discountType, cart.discountValue);
+  // VIP workshop perk is mutually exclusive with a manual voucher (see helper).
+  const vipWorkshopDiscount = getVipWorkshopDiscount(cart).discount;
+  const discount = voucherDiscount + vipWorkshopDiscount;
 
   return {
     subtotal,
     discount,
+    vipWorkshopDiscount,
     tax: 0, // VAT already included in Swiss prices
     total: subtotal - discount,
     currency: cart.currency,

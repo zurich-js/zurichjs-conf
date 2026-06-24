@@ -143,9 +143,15 @@ export interface OrderSummary {
    */
   subtotal: number;
   /**
-   * Discount amount
+   * Discount amount (total of all discounts — voucher + VIP workshop perk)
    */
   discount: number;
+  /**
+   * Portion of `discount` attributable to the automatic VIP workshop perk
+   * (standing 20% off workshops when a VIP ticket is in the cart). Lets the UI
+   * label it distinctly from a manually-entered voucher. 0 when not applicable.
+   */
+  vipWorkshopDiscount?: number;
   /**
    * Tax amount (if applicable)
    */
