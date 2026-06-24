@@ -38,13 +38,13 @@ export function ReviewStep({
   const vipPerkStatus = getVipWorkshopPerkStatus(cart);
   const vipPerkNote =
     vipPerkStatus === 'applied'
-      ? 'VIP perk applied: 20% off your workshops, automatically. No coupon code needed.'
+      ? 'VIP discount applied. Your VIP ticket takes 20% off every workshop in your cart — it’s already included in the total below, and you don’t need a code.'
       : vipPerkStatus === 'add-workshop'
-        ? 'Your VIP ticket includes 20% off all workshops. Add a workshop and the discount applies automatically at checkout.'
+        ? 'Your VIP ticket gives you 20% off all workshops. Add a workshop now and the 20% comes off automatically at checkout — no code needed. Prefer to buy workshops later? You don’t lose the discount: we’ll email you a personal discount code after checkout to use on workshops any time.'
         : vipPerkStatus === 'covered-by-code'
-          ? 'Your promo code already covers your workshops, so the VIP 20% workshop discount isn’t added on top.'
+          ? 'Heads up: your promo code already discounts your workshops. Only one discount can apply per order, so we don’t add the VIP 20% on top of it.'
           : vipPerkStatus === 'blocked-by-code'
-            ? 'A promo code is applied to your order. Only one discount can apply per checkout, so the VIP 20% workshop discount isn’t added on top — remove the code to use the VIP perk, or buy your workshops in a separate order to use your emailed VIP coupon.'
+            ? 'Heads up: you’ve applied a promo code, and only one discount can apply per order — so your VIP 20% off workshops isn’t being added on top right now. To use the VIP discount instead, either remove the promo code above, or buy your workshops in a separate order using the VIP discount code we’ll email you after checkout.'
             : null;
   // Blocked/covered states are informational caveats; applied/add-workshop are
   // positive. Tone the box accordingly.

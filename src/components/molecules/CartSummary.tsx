@@ -100,7 +100,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         {/* VIP workshop perk — auto-applied 20% off workshops for VIP holders */}
         {hasVipWorkshopDiscount && (
           <div className="flex items-center justify-between text-base gap-2">
-            <span className="text-brand-green text-sm">VIP workshop perk (20% off workshops)</span>
+            <span className="text-brand-green text-sm">VIP discount (20% off workshops)</span>
             <span className="text-brand-green font-semibold tabular-nums shrink-0">
               <span className="mr-0.5">−</span>{formatPrice(vipWorkshopDiscount, summary.currency)}
             </span>
