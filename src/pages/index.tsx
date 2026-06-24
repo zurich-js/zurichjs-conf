@@ -150,7 +150,7 @@ export default function Home({ blueskyFeed }: HomePageProps) {
               compactTop={true}
               dropBottom={true}
           >
-              <SiteFooter />
+              <SiteFooter showContactLinks />
           </ShapedSection>
       </main>
     </>
