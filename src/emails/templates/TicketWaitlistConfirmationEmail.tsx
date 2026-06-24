@@ -27,7 +27,7 @@ export const TicketWaitlistConfirmationEmail: React.FC<TicketWaitlistConfirmatio
       <Section style={headerSectionStyle}>
         <Text style={headerTitleStyle}>You&#39;re on the waitlist! &#127881;</Text>
         <Text style={headerSubtitleStyle}>
-          {ticketTypeLabel} tickets &bull; ZurichJS Conference 2026
+          {ticketTypeLabel}{' '}tickets &bull; ZurichJS Conference 2026
         </Text>
       </Section>
 
