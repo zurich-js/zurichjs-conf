@@ -6,6 +6,15 @@
 import type { Cart, CartItem, OrderSummary } from '@/types/cart';
 import { DEFAULT_CURRENCY, type SupportedCurrency } from '@/config/currency';
 
+/**
+ * Standing discount, in percent, that every VIP ticket grants on workshops.
+ * Advertised on the VIP ticket as "20% discount to all workshops". When a VIP
+ * ticket and a workshop share a cart, this is applied automatically to the
+ * workshop line items — both for the client-side order summary below and for
+ * the authoritative Stripe discount built in `create-checkout-session`.
+ */
+export const VIP_WORKSHOP_DISCOUNT_PERCENT = 20;
+
 // ============================================================================
 // Cart Creation
 // ============================================================================
@@ -75,6 +84,84 @@ export function calculateDiscountAmount(
 }
 
 /**
+ * Whether the cart contains at least one VIP conference ticket.
+ * Used to decide if the standing VIP workshop discount applies. This reads the
+ * client-side `variant` for display only — checkout re-derives VIP eligibility
+ * from the Stripe price server-side, so it can't be spoofed into a real charge.
+ */
+export function cartHasVipTicket(items: CartItem[]): boolean {
+  return items.some((item) => item.kind !== 'workshop' && item.variant === 'vip');
+}
+
+/**
+ * Derived VIP workshop perk: a standing 20% off all workshop line items, applied
+ * automatically when a VIP ticket and one or more workshops share the cart.
+ *
+ * A manually-applied voucher takes precedence — Stripe allows only one discount
+ * per checkout session, so we don't stack the two. When a voucher is present
+ * this returns a zero discount and the manual voucher is used instead.
+ */
+export function getVipWorkshopDiscount(cart: Cart): {
+  discount: number;
+  applicablePriceIds: string[];
+} {
+  // Manual voucher wins — never stack on top of an explicit promo code.
+  if (cart.couponCode) return { discount: 0, applicablePriceIds: [] };
+  if (!cartHasVipTicket(cart.items)) return { discount: 0, applicablePriceIds: [] };
+
+  const workshops = cart.items.filter((item) => item.kind === 'workshop');
+  if (workshops.length === 0) return { discount: 0, applicablePriceIds: [] };
+
+  const workshopSubtotal = getTotalPrice(workshops);
+  return {
+    discount: (workshopSubtotal * VIP_WORKSHOP_DISCOUNT_PERCENT) / 100,
+    applicablePriceIds: workshops.map((item) => item.priceId),
+  };
+}
+
+/**
+ * Status of the VIP workshop perk for the current cart, used to drive accurate
+ * UI messaging. Note the perk and a manual voucher can never both be charged in
+ * one order — Stripe allows a single discount per checkout — so when a code is
+ * present we only distinguish *why* the perk isn't added, not whether it could.
+ *
+ * - `null`              — no VIP ticket in the cart; perk is irrelevant.
+ * - `add-workshop`      — VIP ticket but no workshop yet; perk available once added.
+ * - `applied`           — VIP + workshop, no code; 20% is applied automatically.
+ * - `covered-by-code`   — a manual code already discounts the workshops, so the
+ *                         perk isn't layered on top (no loss to the buyer).
+ * - `blocked-by-code`   — a manual code applies elsewhere (e.g. ticket-only) and
+ *                         can't coexist with the perk; the workshop isn't discounted.
+ */
+export type VipWorkshopPerkStatus =
+  | 'applied'
+  | 'add-workshop'
+  | 'covered-by-code'
+  | 'blocked-by-code'
+  | null;
+
+export function getVipWorkshopPerkStatus(cart: Cart): VipWorkshopPerkStatus {
+  if (!cartHasVipTicket(cart.items)) return null;
+
+  const workshops = cart.items.filter((item) => item.kind === 'workshop');
+  if (workshops.length === 0) return 'add-workshop';
+
+  if (!cart.couponCode) return 'applied';
+
+  // A manual code is present. It "covers" the workshops when it has no per-item
+  // restriction (applies to everything) or its applicable price IDs intersect
+  // the workshop line items. Otherwise it's discounting something else and is
+  // merely blocking the perk from also applying.
+  const workshopPriceIds = workshops.map((item) => item.priceId);
+  const coversWorkshops =
+    !cart.applicablePriceIds ||
+    cart.applicablePriceIds.length === 0 ||
+    workshopPriceIds.some((id) => cart.applicablePriceIds!.includes(id));
+
+  return coversWorkshops ? 'covered-by-code' : 'blocked-by-code';
+}
+
+/**
  * Calculate complete order summary from cart
  * All values are derived, nothing stored
  * Discount is only applied to eligible items based on applicablePriceIds
@@ -83,11 +170,15 @@ export function getOrderSummary(cart: Cart): OrderSummary {
   const subtotal = getTotalPrice(cart.items);
   // Calculate discount based only on items the coupon applies to
   const discountableAmount = getDiscountableSubtotal(cart.items, cart.applicablePriceIds);
-  const discount = calculateDiscountAmount(discountableAmount, cart.discountType, cart.discountValue);
+  const voucherDiscount = calculateDiscountAmount(discountableAmount, cart.discountType, cart.discountValue);
+  // VIP workshop perk is mutually exclusive with a manual voucher (see helper).
+  const vipWorkshopDiscount = getVipWorkshopDiscount(cart).discount;
+  const discount = voucherDiscount + vipWorkshopDiscount;
 
   return {
     subtotal,
     discount,
+    vipWorkshopDiscount,
     tax: 0, // VAT already included in Swiss prices
     total: subtotal - discount,
     currency: cart.currency,

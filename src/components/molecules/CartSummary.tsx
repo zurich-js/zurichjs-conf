@@ -62,7 +62,14 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   onRemoveVoucher,
   className = '',
 }) => {
-  const hasDiscount = showDiscount && summary.discount > 0;
+  // Split the total discount into the automatic VIP workshop perk and the
+  // manually-entered voucher so each gets its own labelled line. They are
+  // mutually exclusive today (a voucher suppresses the perk), but rendering
+  // them independently keeps the breakdown correct either way.
+  const vipWorkshopDiscount = summary.vipWorkshopDiscount ?? 0;
+  const voucherDiscount = Math.max(0, summary.discount - vipWorkshopDiscount);
+  const hasDiscount = showDiscount && voucherDiscount > 0;
+  const hasVipWorkshopDiscount = showDiscount && vipWorkshopDiscount > 0;
 
   // Generate discount label based on type and value
   const getDiscountLabel = () => {
@@ -90,12 +97,22 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
           </span>
         </div>
 
+        {/* VIP workshop perk — auto-applied 20% off workshops for VIP holders */}
+        {hasVipWorkshopDiscount && (
+          <div className="flex items-center justify-between text-base gap-2">
+            <span className="text-brand-green text-sm">VIP discount (20% off workshops)</span>
+            <span className="text-brand-green font-semibold tabular-nums shrink-0">
+              <span className="mr-0.5">−</span>{formatPrice(vipWorkshopDiscount, summary.currency)}
+            </span>
+          </div>
+        )}
+
         {/* Discount */}
         {hasDiscount && (
           <div className="flex items-center justify-between text-base gap-2">
             <span className="text-brand-green text-sm">{getDiscountLabel()}</span>
             <span className="text-brand-green font-semibold tabular-nums shrink-0">
-              <span className="mr-0.5">−</span>{formatPrice(summary.discount, summary.currency)}
+              <span className="mr-0.5">−</span>{formatPrice(voucherDiscount, summary.currency)}
             </span>
           </div>
         )}

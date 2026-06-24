@@ -121,10 +121,10 @@ export const NavBar: React.FC<NavBarProps> = ({
                 href="/cart"
                 prefetch
                 aria-label={`Cart with ${cartCount} item${cartCount === 1 ? '' : 's'}`}
-                className="relative inline-flex items-center justify-center h-8 w-8 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer"
+                className="relative inline-flex items-center justify-center size-10 rounded-full text-white hover:text-brand-yellow-main transition-colors cursor-pointer"
               >
-                <ShoppingCart size={20} />
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
+                <ShoppingCart size={24} />
+                <span className="absolute top-0 right-0 w-4 h-4 inline-flex items-center justify-center text-[10px] font-bold leading-none rounded-full bg-brand-yellow-main text-black">
                   {cartCount}
                 </span>
               </Link>

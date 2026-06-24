@@ -5,6 +5,7 @@ import {
   applyVoucher,
   createEmptyCart,
   getOrderSummary,
+  getVipWorkshopPerkStatus,
   removeVoucher,
   updateQuantity,
 } from '@/lib/cart-operations';
@@ -63,6 +64,7 @@ describe('cart flows', () => {
     expect(getOrderSummary(cart)).toEqual({
       subtotal: 295,
       discount: 0,
+      vipWorkshopDiscount: 0,
       tax: 0,
       total: 295,
       currency: 'CHF',
@@ -145,6 +147,141 @@ describe('cart flows', () => {
       currency: 'EUR',
       totalItems: 2,
       totalPrice: 560,
+    });
+  });
+
+  describe('VIP workshop perk', () => {
+    it('auto-applies 20% off workshops when a VIP ticket shares the cart', () => {
+      const cart = cartWith([
+        { ...vipTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]);
+
+      // 20% of the 180 workshop seat = 36; ticket is untouched.
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 675,
+        vipWorkshopDiscount: 36,
+        discount: 36,
+        total: 639,
+      });
+    });
+
+    it('discounts every workshop seat but never the VIP ticket', () => {
+      const cart = cartWith([
+        { ...vipTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 2 },
+      ]);
+
+      // 20% of (180 × 2) = 72.
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 855,
+        vipWorkshopDiscount: 72,
+        discount: 72,
+        total: 783,
+      });
+    });
+
+    it('does not apply without a workshop in the cart', () => {
+      const cart = cartWith([{ ...vipTicket, quantity: 1 }]);
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 495,
+        vipWorkshopDiscount: 0,
+        discount: 0,
+        total: 495,
+      });
+    });
+
+    it('does not apply when no VIP ticket is present', () => {
+      const cart = cartWith([
+        { ...standardTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]);
+      expect(getOrderSummary(cart)).toMatchObject({
+        vipWorkshopDiscount: 0,
+        discount: 0,
+        total: 475,
+      });
+    });
+
+    it('lets a manual voucher win instead of stacking the VIP perk', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'PARTNER10',
+        'percentage',
+        10
+      );
+
+      // Manual 10% applies to the whole 675 subtotal; VIP perk is suppressed.
+      expect(getOrderSummary(cart)).toMatchObject({
+        subtotal: 675,
+        vipWorkshopDiscount: 0,
+        discount: 67.5,
+        total: 607.5,
+      });
+    });
+  });
+
+  describe('VIP workshop perk status (messaging)', () => {
+    it('is null when there is no VIP ticket', () => {
+      expect(getVipWorkshopPerkStatus(cartWith([
+        { ...standardTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]))).toBeNull();
+    });
+
+    it('prompts adding a workshop when a VIP ticket is alone', () => {
+      expect(getVipWorkshopPerkStatus(cartWith([{ ...vipTicket, quantity: 1 }]))).toBe('add-workshop');
+    });
+
+    it('is applied for VIP + workshop with no code', () => {
+      expect(getVipWorkshopPerkStatus(cartWith([
+        { ...vipTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]))).toBe('applied');
+    });
+
+    it('treats an unrestricted code as covering the workshops', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'ALL10',
+        'percentage',
+        10
+      );
+      expect(getVipWorkshopPerkStatus(cart)).toBe('covered-by-code');
+    });
+
+    it('treats a code scoped to the workshop as covering it', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'WORKSHOP10',
+        'percentage',
+        10,
+        ['price_workshop_agents_chf']
+      );
+      expect(getVipWorkshopPerkStatus(cart)).toBe('covered-by-code');
+    });
+
+    it('reports blocked when a ticket-only code does not touch the workshop', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'VIPTICKET10',
+        'percentage',
+        10,
+        ['price_vip_chf']
+      );
+      expect(getVipWorkshopPerkStatus(cart)).toBe('blocked-by-code');
     });
   });
 
