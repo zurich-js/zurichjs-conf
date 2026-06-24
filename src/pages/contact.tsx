@@ -13,6 +13,7 @@ import { SEO } from '@/components/SEO';
 import { CONTACT_TYPES, type ContactType } from '@/lib/validations/contact';
 import { CheckCircle, AlertCircle, Mail, ChevronDown } from 'lucide-react';
 import { SiteFooter, ShapedSection } from '@/components/organisms';
+import { useContactForm } from '@/hooks/useContactForm';
 
 interface FormData {
   name: string;
@@ -44,9 +45,13 @@ export default function ContactPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const {
+    submit,
+    isPending: isSubmitting,
+    isSuccess,
+    error: submitError,
+    reset,
+  } = useContactForm();
 
   // Prefill the contact type from the ?type= query parameter (e.g. footer links)
   useEffect(() => {
@@ -95,13 +100,10 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitError(null);
 
     if (!validateForm()) {
       return;
     }
-
-    setIsSubmitting(true);
 
     // Capture PostHog session info (if available)
     const posthogSessionId = (() => {
@@ -119,44 +121,27 @@ export default function ContactPage() {
       }
     })();
 
+    // Errors are surfaced via the mutation's `error` state; swallow the
+    // rejection here so it doesn't bubble as an unhandled promise.
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          contactType: formData.contactType,
-          message: formData.message,
-          website: formData.website, // Honeypot
-          posthogSessionId,
-          posthogDistinctId,
-        }),
+      await submit({
+        name: formData.name,
+        email: formData.email,
+        contactType: formData.contactType,
+        message: formData.message,
+        website: formData.website, // Honeypot
+        posthogSessionId,
+        posthogDistinctId,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send message');
-      }
-
-      setIsSuccess(true);
-    } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : 'An error occurred. Please try again.'
-      );
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // no-op — `submitError` is derived from the mutation
     }
   };
 
   const handleSendAnother = () => {
     setFormData((prev) => ({ ...initialFormData, contactType: prev.contactType }));
     setErrors({});
-    setIsSuccess(false);
-    setSubmitError(null);
+    reset();
   };
 
   // Light-themed input styles
