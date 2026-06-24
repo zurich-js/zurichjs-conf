@@ -1,16 +1,18 @@
 /**
- * Student Ticket Waitlist API
- * Adds email to a dedicated Resend audience and sends a Slack notification
+ * Ticket Waitlist API
+ * Adds an email to the Resend audience for a sold-out ticket type
+ * (student/unemployed or VIP) and sends a Slack notification.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { addStudentWaitlistContact } from '@/lib/email';
-import { notifyStudentTicketWaitlist } from '@/lib/platform-notifications/send';
+import { addTicketWaitlistContact, sendTicketWaitlistConfirmationEmail } from '@/lib/email';
+import { notifyTicketWaitlist } from '@/lib/platform-notifications/send';
 import { serverAnalytics } from '@/lib/analytics/server';
 
 const schema = z.object({
   email: z.string().email('Please enter a valid email address'),
+  type: z.enum(['student', 'vip']),
 });
 
 interface WaitlistResponse {
@@ -39,9 +41,9 @@ export default async function handler(
       });
     }
 
-    const { email } = parsed.data;
+    const { email, type } = parsed.data;
 
-    const result = await addStudentWaitlistContact(email);
+    const result = await addTicketWaitlistContact(email, type);
 
     if (!result.success) {
       return res.status(500).json({
@@ -51,13 +53,17 @@ export default async function handler(
     }
 
     // Fire-and-forget Slack notification
-    notifyStudentTicketWaitlist({ email });
+    notifyTicketWaitlist({ email, ticketType: type });
+
+    // Send confirmation email. Don't fail the request if it errors — the
+    // subscriber is already on the waitlist; the email is best-effort.
+    await sendTicketWaitlistConfirmationEmail(email, type);
 
     await serverAnalytics.flush();
 
     return res.status(200).json({
       success: true,
-      message: 'Successfully joined the student ticket waitlist',
+      message: 'Successfully joined the ticket waitlist',
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -65,7 +71,7 @@ export default async function handler(
     await serverAnalytics.error('anonymous', errorMessage, {
       type: 'system',
       severity: 'high',
-      code: 'STUDENT_WAITLIST_API_ERROR',
+      code: 'TICKET_WAITLIST_API_ERROR',
     });
 
     await serverAnalytics.flush();

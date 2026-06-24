@@ -1,37 +1,73 @@
 /**
- * Student Ticket Info Modal
- * Explains the sponsor-funded wave system for student/unemployed tickets
- * and allows users to subscribe for notifications when more tickets go live
+ * Ticket Waitlist Modal
+ * Config-driven modal for sold-out ticket types. Explains the ticket type and,
+ * when sold out, collects emails so users can be notified when tickets return.
+ * Used for both student/unemployed (sponsor-funded waves) and VIP tickets.
  */
 
 import React, { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle, DialogBackdrop } from '@headlessui/react';
 import { AnimatePresence } from 'framer-motion';
-import { XIcon, HeartHandshakeIcon, BellRingIcon, CheckCircleIcon } from 'lucide-react';
+import { XIcon, BellRingIcon, CheckCircleIcon, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/atoms';
+import type { TicketWaitlistType } from '@/lib/email';
 
-export interface StudentTicketInfoModalProps {
+/**
+ * Static content describing a single ticket waitlist type.
+ */
+export interface TicketWaitlistModalConfig {
+  /** Waitlist type sent to the API / Resend audience */
+  waitlistType: TicketWaitlistType;
+  /** Header icon (lucide) */
+  icon: LucideIcon;
+  /** Modal title */
+  title: string;
+  /** Intro paragraph explaining the ticket type */
+  description: string;
+  /** Optional "how it works" section, always shown when provided */
+  infoSection?: {
+    heading: string;
+    steps: string[];
+  };
+  /** Copy shown in the sold-out callout above the subscribe form */
+  soldOut: {
+    heading: string;
+    body: string;
+  };
+  /** Label above the email input */
+  notifyLabel: string;
+  /** Confirmation message after a successful subscription */
+  successMessage: string;
+}
+
+export interface TicketWaitlistModalProps {
   /** Whether the modal is open */
   isOpen: boolean;
   /** Callback to close the modal */
   onClose: () => void;
   /** Whether tickets are currently sold out */
   isSoldOut: boolean;
+  /** Content + waitlist type for this ticket */
+  config: TicketWaitlistModalConfig;
 }
 
 /**
- * StudentTicketInfoModal component
- * Explains sponsor-funded ticket waves and collects emails for notifications
+ * TicketWaitlistModal component
+ * Explains a ticket type and collects emails for notifications when sold out
  */
-export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
+export const TicketWaitlistModal: React.FC<TicketWaitlistModalProps> = ({
   isOpen,
   onClose,
   isSoldOut,
+  config,
 }) => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const Icon = config.icon;
+  const inputId = `${config.waitlistType}-notify-email`;
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,10 +87,10 @@ export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/tickets/student-waitlist', {
+      const response = await fetch('/api/tickets/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, type: config.waitlistType }),
       });
 
       const data = await response.json();
@@ -105,49 +141,46 @@ export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
               {/* Icon */}
               <div className="flex justify-center mb-4">
                 <div className="w-14 h-14 rounded-full bg-brand-primary/15 flex items-center justify-center">
-                  <HeartHandshakeIcon size={28} className="text-brand-primary" />
+                  <Icon size={28} className="text-brand-primary" />
                 </div>
               </div>
 
               {/* Header */}
               <div className="text-center mb-6">
                 <DialogTitle className="text-xl font-bold text-brand-white mb-2">
-                  Sponsor-funded tickets
+                  {config.title}
                 </DialogTitle>
                 <p className="text-brand-gray-light text-sm leading-relaxed">
-                  Student and unemployed tickets are made possible by our amazing sponsors.
-                  We release them in waves as sponsorships come in, so availability changes over time.
+                  {config.description}
                 </p>
               </div>
 
               {/* How it works */}
-              <div className="bg-brand-gray-dark/50 rounded-xl p-4 mb-6 space-y-3">
-                <h4 className="text-sm font-semibold text-brand-white">How it works</h4>
-                <ul className="space-y-2 text-sm text-brand-gray-light">
-                  <li className="flex gap-2">
-                    <span className="text-brand-primary font-bold shrink-0">1.</span>
-                    Sponsors fund a batch of discounted tickets
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-brand-primary font-bold shrink-0">2.</span>
-                    We release them as a wave until they run out
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-brand-primary font-bold shrink-0">3.</span>
-                    When new sponsors join, we release more tickets
-                  </li>
-                </ul>
-              </div>
+              {config.infoSection && (
+                <div className="bg-brand-gray-dark/50 rounded-xl p-4 mb-6 space-y-3">
+                  <h4 className="text-sm font-semibold text-brand-white">
+                    {config.infoSection.heading}
+                  </h4>
+                  <ul className="space-y-2 text-sm text-brand-gray-light">
+                    {config.infoSection.steps.map((step, index) => (
+                      <li key={index} className="flex gap-2">
+                        <span className="text-brand-primary font-bold shrink-0">{index + 1}.</span>
+                        {step}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Subscribe form - only shown when sold out */}
               {isSoldOut && (
                 <>
                   <div className="bg-brand-primary/10 border border-brand-primary/30 rounded-xl p-4 mb-6">
                     <p className="text-sm text-brand-gray-light mb-1">
-                      <strong className="text-brand-white">Tickets are momentarily sold out.</strong>
+                      <strong className="text-brand-white">{config.soldOut.heading}</strong>
                     </p>
                     <p className="text-sm text-brand-gray-light">
-                      Subscribe below to get notified as soon as the next wave goes live.
+                      {config.soldOut.body}
                     </p>
                   </div>
 
@@ -155,18 +188,18 @@ export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
                     <div className="flex items-center gap-3 bg-green-900/30 border border-green-700/40 rounded-xl p-4 mb-4">
                       <CheckCircleIcon size={20} className="text-green-400 shrink-0" />
                       <p className="text-sm text-green-300">
-                        You&#39;re on the list! We&#39;ll email you when more tickets become available.
+                        {config.successMessage}
                       </p>
                     </div>
                   ) : (
                     <form onSubmit={handleSubscribe} className="mb-4">
-                      <label htmlFor="student-notify-email" className="flex items-center gap-1.5 text-sm font-semibold text-brand-white mb-2">
+                      <label htmlFor={inputId} className="flex items-center gap-1.5 text-sm font-semibold text-brand-white mb-2">
                         <BellRingIcon size={14} />
-                        Get notified when tickets are available
+                        {config.notifyLabel}
                       </label>
                       <div className="flex gap-2">
                         <input
-                          id="student-notify-email"
+                          id={inputId}
                           type="email"
                           value={email}
                           onChange={(e) => {
@@ -183,8 +216,9 @@ export const StudentTicketInfoModal: React.FC<StudentTicketInfoModalProps> = ({
                           size="sm"
                           loading={isSubmitting}
                           disabled={isSubmitting}
+                          className="h-10! shrink-0 min-w-[116px]"
                         >
-                          {isSubmitting ? '' : 'Subscribe'}
+                          Subscribe
                         </Button>
                       </div>
                       {error && (

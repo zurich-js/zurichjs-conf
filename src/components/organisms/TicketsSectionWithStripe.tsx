@@ -5,11 +5,12 @@
 
 import React, { useState, useCallback } from 'react';
 import { TicketsSection } from './TicketsSection';
-import { StudentVerificationModal, VerificationSuccessModal, StudentTicketInfoModal, SeebadEngeModal } from '@/components/molecules';
+import { StudentVerificationModal, VerificationSuccessModal, TicketWaitlistModal, SeebadEngeModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useStudentVerification } from '@/hooks/useStudentVerification';
 import { useCart } from '@/contexts/CartContext';
 import { createTicketDataFromStripe } from '@/data/tickets';
+import { STUDENT_WAITLIST_CONFIG, VIP_WAITLIST_CONFIG } from '@/data/ticket-waitlist';
 import { motion } from 'framer-motion';
 import {SectionContainer} from "@/components/organisms/SectionContainer";
 import { Heading, Kicker } from '@/components/atoms';
@@ -108,6 +109,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   } = useStudentVerification();
   const [isNavigating, setIsNavigating] = useState(false);
   const [isStudentInfoModalOpen, setIsStudentInfoModalOpen] = useState(false);
+  const [isVipWaitlistModalOpen, setIsVipWaitlistModalOpen] = useState(false);
   const [isSeebadEngeModalOpen, setIsSeebadEngeModalOpen] = useState(false);
 
   const openStudentInfoModal = useCallback(() => {
@@ -116,6 +118,14 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
 
   const closeStudentInfoModal = useCallback(() => {
     setIsStudentInfoModalOpen(false);
+  }, []);
+
+  const openVipWaitlistModal = useCallback(() => {
+    setIsVipWaitlistModalOpen(true);
+  }, []);
+
+  const closeVipWaitlistModal = useCallback(() => {
+    setIsVipWaitlistModalOpen(false);
   }, []);
 
   const openSeebadEngeModal = useCallback(() => {
@@ -214,7 +224,11 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
   const studentPlan = plans.find(p => p.id === 'standard_student_unemployed');
   const isStudentSoldOut = studentPlan?.stock?.soldOut ?? false;
 
-  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart, openStudentInfoModal, openSeebadEngeModal);
+  // Determine if VIP tickets are sold out (for the waitlist modal)
+  const vipPlan = plans.find(p => p.id === 'vip');
+  const isVipSoldOut = vipPlan?.stock?.soldOut ?? false;
+
+  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart, openStudentInfoModal, openSeebadEngeModal, openVipWaitlistModal);
 
   // Disable all CTAs while navigating to prevent duplicate adds
   if (isNavigating) {
@@ -241,10 +255,17 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
         email={verifiedEmail}
         verificationId={verificationId}
       />
-      <StudentTicketInfoModal
+      <TicketWaitlistModal
         isOpen={isStudentInfoModalOpen}
         onClose={closeStudentInfoModal}
         isSoldOut={isStudentSoldOut}
+        config={STUDENT_WAITLIST_CONFIG}
+      />
+      <TicketWaitlistModal
+        isOpen={isVipWaitlistModalOpen}
+        onClose={closeVipWaitlistModal}
+        isSoldOut={isVipSoldOut}
+        config={VIP_WAITLIST_CONFIG}
       />
       <SeebadEngeModal
         isOpen={isSeebadEngeModalOpen}

@@ -63,7 +63,7 @@ export interface StageConfig {
  * Global stock limits across all stages
  */
 export const GLOBAL_STOCK_LIMITS: GlobalStockLimits = {
-  vip: 25,
+  vip: 30,
   student_unemployed: 25,
 };
 
@@ -90,7 +90,7 @@ export interface StockInfo {
  *
  * Stock limits:
  * - Blind bird: 30 tickets total (standard + VIP combined)
- * - VIP: 15 tickets global (across all stages)
+ * - VIP: 30 tickets global (across all stages)
  */
 export const PRICING_STAGES: StageConfig[] = [
   {

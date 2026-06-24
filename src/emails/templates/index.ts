@@ -17,3 +17,6 @@ export type { PartnershipPackageEmailProps } from './PartnershipPackageEmail';
 
 export { VipUpgradeEmail } from './VipUpgradeEmail';
 export type { VipUpgradeEmailProps } from './VipUpgradeEmail';
+
+export { TicketWaitlistConfirmationEmail } from './TicketWaitlistConfirmationEmail';
+export type { TicketWaitlistConfirmationEmailProps } from './TicketWaitlistConfirmationEmail';
