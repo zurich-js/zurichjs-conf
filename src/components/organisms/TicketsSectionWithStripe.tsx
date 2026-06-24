@@ -3,7 +3,8 @@
  * Wrapper around TicketsSection that fetches pricing from Stripe
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { TicketsSection } from './TicketsSection';
 import { StudentVerificationModal, VerificationSuccessModal, TicketWaitlistModal, SeebadEngeModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -136,6 +137,27 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     setIsSeebadEngeModalOpen(false);
   }, []);
 
+  // Preview-only sold-out override for manual QA of the waitlist flow.
+  // Gated behind NEXT_PUBLIC_FORCE_SOLD_OUT_PREVIEW (set only in preview envs),
+  // so the `?forceSoldOut=vip|student|all` query param is inert in production.
+  // Applied in an effect so the initial (server) render is never forced — avoids
+  // a hydration mismatch when the page is statically optimized.
+  const router = useRouter();
+  const [forcedSoldOut, setForcedSoldOut] = useState<{ vip: boolean; student: boolean }>({
+    vip: false,
+    student: false,
+  });
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_FORCE_SOLD_OUT_PREVIEW !== 'true') return;
+    const raw = router.query.forceSoldOut;
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    setForcedSoldOut({
+      vip: value === 'vip' || value === 'all',
+      student: value === 'student' || value === 'all',
+    });
+  }, [router.query.forceSoldOut]);
+
   // Show loading state only when there's no data yet
   // During hydration, isLoading might be true briefly even with prefetched data
   // By checking plans.length === 0, we avoid hydration mismatch
@@ -220,15 +242,28 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
     addToCart(item, quantity);
   };
 
+  // Apply the preview-only sold-out override (no-op in production / when unset)
+  const effectivePlans =
+    forcedSoldOut.vip || forcedSoldOut.student
+      ? plans.map((plan) => {
+          const force =
+            (forcedSoldOut.vip && plan.id === 'vip') ||
+            (forcedSoldOut.student && plan.id === 'standard_student_unemployed');
+          return force
+            ? { ...plan, stock: { remaining: 0, total: plan.stock?.total ?? null, soldOut: true } }
+            : plan;
+        })
+      : plans;
+
   // Determine if student tickets are sold out (for the info modal)
-  const studentPlan = plans.find(p => p.id === 'standard_student_unemployed');
+  const studentPlan = effectivePlans.find(p => p.id === 'standard_student_unemployed');
   const isStudentSoldOut = studentPlan?.stock?.soldOut ?? false;
 
   // Determine if VIP tickets are sold out (for the waitlist modal)
-  const vipPlan = plans.find(p => p.id === 'vip');
+  const vipPlan = effectivePlans.find(p => p.id === 'vip');
   const isVipSoldOut = vipPlan?.stock?.soldOut ?? false;
 
-  const ticketData = createTicketDataFromStripe(plans, currentStage, openModal, wrappedAddToCart, navigateToCart, openStudentInfoModal, openSeebadEngeModal, openVipWaitlistModal);
+  const ticketData = createTicketDataFromStripe(effectivePlans, currentStage, openModal, wrappedAddToCart, navigateToCart, openStudentInfoModal, openSeebadEngeModal, openVipWaitlistModal);
 
   // Disable all CTAs while navigating to prevent duplicate adds
   if (isNavigating) {
@@ -242,6 +277,18 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
 
   return (
     <>
+      {(forcedSoldOut.vip || forcedSoldOut.student) && (
+        <div
+          className="mb-4 mx-auto max-w-xl rounded-full bg-brand-black/90 px-4 py-2 text-center text-xs font-semibold text-brand-primary"
+          role="status"
+        >
+          Preview mode: simulating sold-out for{' '}
+          {[forcedSoldOut.vip && 'VIP', forcedSoldOut.student && 'Student/Unemployed']
+            .filter(Boolean)
+            .join(' & ')}{' '}
+          — not real stock
+        </div>
+      )}
       <TicketsSection {...ticketData} className={className} />
       <StudentVerificationModal
         isOpen={isModalOpen}
