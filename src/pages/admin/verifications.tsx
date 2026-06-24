@@ -3,7 +3,7 @@
  * Manage student/unemployed verification requests
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import Head from 'next/head';
 import {
   ShieldCheck,
@@ -20,32 +20,17 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
-import { AdminModal, AdminModalFooter } from '@/components/admin/AdminModal';
+import { AdminModal } from '@/components/admin/AdminModal';
 import { Pill } from '@/components/admin/shared/Pill';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast, type Toast } from '@/hooks/useToast';
-
-interface VerificationRequest {
-  id: string;
-  verification_id: string;
-  name: string;
-  email: string;
-  verification_type: 'student' | 'unemployed';
-  student_id: string | null;
-  university: string | null;
-  linkedin_url: string | null;
-  rav_registration_date: string | null;
-  additional_info: string | null;
-  price_id: string;
-  country_code: string | null;
-  currency: string | null;
-  status: 'pending' | 'approved' | 'rejected';
-  stripe_payment_link_id: string | null;
-  stripe_payment_link_url: string | null;
-  stripe_session_id: string | null;
-  reviewed_at: string | null;
-  created_at: string;
-}
+import {
+  useVerifications,
+  useApproveVerification,
+  useRejectVerification,
+  type VerificationRequest,
+  type VerificationStatusFilter,
+} from '@/hooks/useVerifications';
 
 const COUNTRY_FLAGS: Record<string, string> = {
   CH: '🇨🇭', DE: '🇩🇪', AT: '🇦🇹', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸', NL: '🇳🇱', BE: '🇧🇪',
@@ -59,37 +44,22 @@ function countryFlag(code: string | null): string {
   return COUNTRY_FLAGS[code] || code;
 }
 
-type StatusFilter = '' | 'pending' | 'approved' | 'rejected';
-
 export default function VerificationsDashboard() {
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
   const { toasts, showToast, removeToast } = useToast();
 
-  const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+  const [statusFilter, setStatusFilter] = useState<VerificationStatusFilter>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVerification, setSelectedVerification] = useState<VerificationRequest | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchVerifications = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
-      const res = await fetch(`/api/admin/verifications?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setVerifications(data.verifications);
-      }
-    } catch (err) {
-      console.error('Failed to fetch verifications:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
+  const {
+    data: verifications = [],
+    isLoading: loading,
+  } = useVerifications(statusFilter, { enabled: isAuthenticated });
 
-  // Fetch on mount and when filter changes
-  useState(() => { fetchVerifications(); });
+  const approveMutation = useApproveVerification();
+  const rejectMutation = useRejectVerification();
+  const actionLoading = approveMutation.isPending || rejectMutation.isPending;
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return verifications;
@@ -102,41 +72,28 @@ export default function VerificationsDashboard() {
     );
   }, [verifications, searchQuery]);
 
-  const handleApprove = async (id: string) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/admin/verifications/${id}/approve`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
+  const handleApprove = (id: string) => {
+    approveMutation.mutate(id, {
+      onSuccess: () => {
         showToast('Verification approved and payment link sent', 'success');
         setSelectedVerification(null);
-        fetchVerifications();
-      } else {
-        showToast(data.error || 'Failed to approve', 'error');
-      }
-    } catch {
-      showToast('Error approving verification', 'error');
-    } finally {
-      setActionLoading(false);
-    }
+      },
+      onError: (err) => {
+        showToast(err instanceof Error ? err.message : 'Error approving verification', 'error');
+      },
+    });
   };
 
-  const handleReject = async (id: string) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/admin/verifications/${id}/reject`, { method: 'POST' });
-      if (res.ok) {
+  const handleReject = (id: string) => {
+    rejectMutation.mutate(id, {
+      onSuccess: () => {
         showToast('Verification rejected', 'success');
         setSelectedVerification(null);
-        fetchVerifications();
-      } else {
-        showToast('Failed to reject', 'error');
-      }
-    } catch {
-      showToast('Error rejecting verification', 'error');
-    } finally {
-      setActionLoading(false);
-    }
+      },
+      onError: (err) => {
+        showToast(err instanceof Error ? err.message : 'Error rejecting verification', 'error');
+      },
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -193,10 +150,9 @@ export default function VerificationsDashboard() {
             <select
               value={statusFilter}
               onChange={(e) => {
-                setStatusFilter(e.target.value as StatusFilter);
-                setLoading(true);
-                // Re-fetch with new filter
-                setTimeout(() => fetchVerifications(), 0);
+                // Changing the filter swaps the query key; TanStack Query
+                // refetches automatically.
+                setStatusFilter(e.target.value as VerificationStatusFilter);
               }}
               className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-brand-primary focus:border-brand-primary bg-white"
             >

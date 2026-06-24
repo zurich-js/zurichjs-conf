@@ -250,6 +250,22 @@ export const blueskyKeys = {
 } as const;
 
 /**
+ * Verification (student / unemployed discount) query keys
+ */
+export const verificationsKeys = {
+  /**
+   * Base key for all verification queries
+   */
+  all: ['verifications'] as const,
+
+  /**
+   * List of verification requests, scoped by status filter so each filter
+   * keeps its own cache entry.
+   */
+  list: (status?: string) => [...verificationsKeys.all, 'list', status ?? 'all'] as const,
+} as const;
+
+/**
  * All query keys organized by domain
  */
 export const queryKeys = {
@@ -264,4 +280,5 @@ export const queryKeys = {
   program: programKeys,
   discount: discountKeys,
   bluesky: blueskyKeys,
+  verifications: verificationsKeys,
 } as const;
