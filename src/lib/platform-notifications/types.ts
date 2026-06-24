@@ -132,6 +132,8 @@ export interface TicketCreationErrorData {
   errorMessage: string
 }
 
-export interface StudentTicketWaitlistData {
+export interface TicketWaitlistData {
   email: string
+  /** Which sold-out ticket type the user joined the waitlist for */
+  ticketType: 'student' | 'vip'
 }

@@ -25,7 +25,7 @@ Sending is orchestrated from `src/lib/email/`:
 | `lib/email/sponsorship-emails.ts` | Sponsor notifications |
 | `lib/email/vip-emails.ts` | VIP perk notifications |
 | `lib/email/newsletter.ts` | Resend newsletter list management |
-| `lib/email/student-waitlist.ts` | Waitlist add/remove |
+| `lib/email/ticket-waitlist.ts` | Sold-out ticket waitlist (student/VIP) Resend audiences |
 | `lib/email/issue-report-emails.ts` | Bug reports |
 
 Each module:

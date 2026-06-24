@@ -19,6 +19,7 @@ export {
   TICKET_METADATA,
   STAGE_COPY,
 } from './tickets';
+export { STUDENT_WAITLIST_CONFIG, VIP_WAITLIST_CONFIG } from './ticket-waitlist';
 export { timelineData } from './timeline';
 export { sponsorsData } from './sponsors';
 export { sponsorshipPageData } from './sponsorship';

@@ -280,6 +280,7 @@ export const mapStripePlanToTicketPlan = (
   navigateToCart?: () => void,
   onStudentInfoClick?: () => void,
   onAfterPartyClick?: () => void,
+  onVipWaitlistClick?: () => void,
 ): Plan => {
   const features =
     stripePlan.id === 'vip'
@@ -297,6 +298,7 @@ export const mapStripePlanToTicketPlan = (
 
   // Special handling for student/unemployed tickets - they need verification
   const isStudentUnemployed = stripePlan.id === 'standard_student_unemployed';
+  const isVip = stripePlan.id === 'vip';
 
   // Determine if sold out
   const isSoldOut = stripePlan.stock?.soldOut ?? false;
@@ -306,8 +308,10 @@ export const mapStripePlanToTicketPlan = (
     ? buildStudentBlurb(stripePlan.stock, onStudentInfoClick)
     : metadata.blurb;
 
-  // For student tickets that are sold out, replace CTA with "Get notified"
+  // For student/VIP tickets that are sold out, replace CTA with a waitlist "Get notified"
   const studentSoldOutCta = isStudentUnemployed && isSoldOut;
+  const vipSoldOutCta = isVip && isSoldOut;
+  const waitlistSoldOutCta = studentSoldOutCta || vipSoldOutCta;
 
   return {
     id: stripePlan.id,
@@ -326,6 +330,11 @@ export const mapStripePlanToTicketPlan = (
         if (studentSoldOutCta) {
           // Open the info modal which has the subscribe form
           onStudentInfoClick?.();
+          return;
+        }
+        if (vipSoldOutCta) {
+          // Open the VIP waitlist modal
+          onVipWaitlistClick?.();
           return;
         }
         if (isSoldOut) {
@@ -360,16 +369,16 @@ export const mapStripePlanToTicketPlan = (
           }
         }
       },
-      label: studentSoldOutCta
+      label: waitlistSoldOutCta
         ? 'Get notified'
         : isSoldOut
           ? 'Sold Out'
           : isStudentUnemployed
             ? 'Verify & Get Ticket'
-            : stripePlan.id === 'vip'
+            : isVip
               ? 'Get the full xp'
               : 'Get your ticket',
-      disabled: isSoldOut && !studentSoldOutCta,
+      disabled: isSoldOut && !waitlistSoldOutCta,
     },
   };
 };
@@ -392,9 +401,10 @@ export const createTicketDataFromStripe = (
   navigateToCart?: () => void,
   onStudentInfoClick?: () => void,
   onAfterPartyClick?: () => void,
+  onVipWaitlistClick?: () => void,
 ): Omit<TicketsSectionProps, 'className'> => {
   const plans = stripePlans.map((plan) =>
-    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, navigateToCart, onStudentInfoClick, onAfterPartyClick)
+    mapStripePlanToTicketPlan(plan, openVerificationModal, addToCart, navigateToCart, onStudentInfoClick, onAfterPartyClick, onVipWaitlistClick)
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 

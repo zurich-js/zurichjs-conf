@@ -44,5 +44,6 @@ export { sendVerificationApprovalEmail } from './verification-approval-emails';
 // Newsletter
 export { addNewsletterContact } from './newsletter';
 
-// Student ticket waitlist
-export { addStudentWaitlistContact } from './student-waitlist';
+// Ticket waitlist (student/unemployed, VIP)
+export { addTicketWaitlistContact } from './ticket-waitlist';
+export type { TicketWaitlistType } from './ticket-waitlist';

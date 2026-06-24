@@ -1,22 +1,35 @@
 /**
- * Student Ticket Waitlist
- * Manages a separate Resend audience for student/unemployed ticket waitlist subscribers
+ * Ticket Waitlist
+ * Manages per-type Resend audiences for sold-out ticket waitlist subscribers.
+ * Each waitlist type (student/unemployed, VIP) maps to its own Resend audience.
  */
 
 import { serverAnalytics } from '@/lib/analytics/server';
 import { getResendClient } from './config';
 
-const AUDIENCE_ID = process.env.RESEND_STUDENT_WAITLIST_AUDIENCE_ID;
+/**
+ * Ticket waitlist types. Each maps to a dedicated Resend audience.
+ */
+export type TicketWaitlistType = 'student' | 'vip';
+
+const AUDIENCE_ENV_VARS: Record<TicketWaitlistType, string> = {
+  student: 'RESEND_STUDENT_WAITLIST_AUDIENCE_ID',
+  vip: 'RESEND_VIP_WAITLIST_AUDIENCE_ID',
+};
 
 /**
- * Add a contact to the student ticket waitlist audience in Resend
+ * Add a contact to the waitlist audience for the given ticket type in Resend
  */
-export async function addStudentWaitlistContact(
-  email: string
+export async function addTicketWaitlistContact(
+  email: string,
+  type: TicketWaitlistType
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!AUDIENCE_ID) {
-      throw new Error('RESEND_STUDENT_WAITLIST_AUDIENCE_ID is not configured');
+    const envVar = AUDIENCE_ENV_VARS[type];
+    const audienceId = process.env[envVar];
+
+    if (!audienceId) {
+      throw new Error(`${envVar} is not configured`);
     }
 
     const resend = getResendClient();
@@ -24,7 +37,7 @@ export async function addStudentWaitlistContact(
     const result = await resend.contacts.create({
       email,
       unsubscribed: false,
-      audienceId: AUDIENCE_ID,
+      audienceId,
     });
 
     if ('error' in result && result.error) {
@@ -54,7 +67,7 @@ export async function addStudentWaitlistContact(
     await serverAnalytics.error(email, errorMessage, {
       type: 'system',
       severity: 'medium',
-      code: 'STUDENT_WAITLIST_SUBSCRIPTION_ERROR',
+      code: 'TICKET_WAITLIST_SUBSCRIPTION_ERROR',
     });
 
     return { success: false, error: errorMessage };
