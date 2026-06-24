@@ -120,6 +120,48 @@ export function getVipWorkshopDiscount(cart: Cart): {
 }
 
 /**
+ * Status of the VIP workshop perk for the current cart, used to drive accurate
+ * UI messaging. Note the perk and a manual voucher can never both be charged in
+ * one order — Stripe allows a single discount per checkout — so when a code is
+ * present we only distinguish *why* the perk isn't added, not whether it could.
+ *
+ * - `null`              — no VIP ticket in the cart; perk is irrelevant.
+ * - `add-workshop`      — VIP ticket but no workshop yet; perk available once added.
+ * - `applied`           — VIP + workshop, no code; 20% is applied automatically.
+ * - `covered-by-code`   — a manual code already discounts the workshops, so the
+ *                         perk isn't layered on top (no loss to the buyer).
+ * - `blocked-by-code`   — a manual code applies elsewhere (e.g. ticket-only) and
+ *                         can't coexist with the perk; the workshop isn't discounted.
+ */
+export type VipWorkshopPerkStatus =
+  | 'applied'
+  | 'add-workshop'
+  | 'covered-by-code'
+  | 'blocked-by-code'
+  | null;
+
+export function getVipWorkshopPerkStatus(cart: Cart): VipWorkshopPerkStatus {
+  if (!cartHasVipTicket(cart.items)) return null;
+
+  const workshops = cart.items.filter((item) => item.kind === 'workshop');
+  if (workshops.length === 0) return 'add-workshop';
+
+  if (!cart.couponCode) return 'applied';
+
+  // A manual code is present. It "covers" the workshops when it has no per-item
+  // restriction (applies to everything) or its applicable price IDs intersect
+  // the workshop line items. Otherwise it's discounting something else and is
+  // merely blocking the perk from also applying.
+  const workshopPriceIds = workshops.map((item) => item.priceId);
+  const coversWorkshops =
+    !cart.applicablePriceIds ||
+    cart.applicablePriceIds.length === 0 ||
+    workshopPriceIds.some((id) => cart.applicablePriceIds!.includes(id));
+
+  return coversWorkshops ? 'covered-by-code' : 'blocked-by-code';
+}
+
+/**
  * Calculate complete order summary from cart
  * All values are derived, nothing stored
  * Discount is only applied to eligible items based on applicablePriceIds

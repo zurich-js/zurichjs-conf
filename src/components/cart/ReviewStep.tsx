@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { CartItem, CartSummary, VoucherInput, SeebadEngeModal } from '@/components/molecules';
 import { Button, Heading } from '@/components/atoms';
 import type { ReviewStepProps, CartItem as CartItemType } from './types';
+import { getVipWorkshopPerkStatus } from '@/lib/cart-operations';
 import { InfoIcon, PlusIcon } from 'lucide-react';
 
 export function ReviewStep({
@@ -29,19 +30,25 @@ export function ReviewStep({
 
   const hasTicket = cart.items.some((item) => item.kind !== 'workshop');
   const hasWorkshop = cart.items.some((item) => item.kind === 'workshop');
-  const hasVip = cart.items.some((item) => item.kind !== 'workshop' && item.variant === 'vip');
-  const hasManualCode = !!cart.couponCode;
 
   // VIP tickets carry a standing 20% workshop discount that we apply
   // automatically — no emailed coupon to copy/paste. Surface what's happening so
-  // VIP buyers understand the perk and aren't tempted to split the purchase.
-  const vipPerkNote = hasVip
-    ? hasWorkshop
-      ? hasManualCode
-        ? 'A promo code is applied, so the VIP 20% workshop discount isn’t stacked on top. Remove the code to use the VIP perk instead.'
-        : 'VIP perk applied: 20% off your workshops, automatically. No coupon code needed.'
-      : 'Your VIP ticket includes 20% off all workshops. Add a workshop and the discount applies automatically at checkout.'
-    : null;
+  // VIP buyers understand the perk and aren't tempted to split the purchase. The
+  // copy is precise about why the perk may not be active when a code is applied.
+  const vipPerkStatus = getVipWorkshopPerkStatus(cart);
+  const vipPerkNote =
+    vipPerkStatus === 'applied'
+      ? 'VIP perk applied: 20% off your workshops, automatically. No coupon code needed.'
+      : vipPerkStatus === 'add-workshop'
+        ? 'Your VIP ticket includes 20% off all workshops. Add a workshop and the discount applies automatically at checkout.'
+        : vipPerkStatus === 'covered-by-code'
+          ? 'Your promo code already covers your workshops, so the VIP 20% workshop discount isn’t added on top.'
+          : vipPerkStatus === 'blocked-by-code'
+            ? 'A promo code is applied to your order. Only one discount can apply per checkout, so the VIP 20% workshop discount isn’t added on top — remove the code to use the VIP perk, or buy your workshops in a separate order to use your emailed VIP coupon.'
+            : null;
+  // Blocked/covered states are informational caveats; applied/add-workshop are
+  // positive. Tone the box accordingly.
+  const vipPerkIsCaveat = vipPerkStatus === 'covered-by-code' || vipPerkStatus === 'blocked-by-code';
 
   return (
     <motion.div
@@ -90,10 +97,18 @@ export function ReviewStep({
         {/* VIP workshop perk note — explains the auto-applied 20% workshop discount */}
         {vipPerkNote && (
           <div
-            className="flex items-start gap-2.5 p-3 rounded-2xl border border-brand-green/40 bg-brand-green/10"
+            className={`flex items-start gap-2.5 p-3 rounded-2xl border ${
+              vipPerkIsCaveat
+                ? 'border-brand-gray-medium bg-brand-gray-medium/10'
+                : 'border-brand-green/40 bg-brand-green/10'
+            }`}
             role="status"
           >
-            <InfoIcon size={16} className="mt-0.5 shrink-0 text-brand-green" aria-hidden="true" />
+            <InfoIcon
+              size={16}
+              className={`mt-0.5 shrink-0 ${vipPerkIsCaveat ? 'text-brand-gray-light' : 'text-brand-green'}`}
+              aria-hidden="true"
+            />
             <p className="text-sm text-brand-gray-light">{vipPerkNote}</p>
           </div>
         )}

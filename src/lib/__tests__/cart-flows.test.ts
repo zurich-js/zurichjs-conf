@@ -5,6 +5,7 @@ import {
   applyVoucher,
   createEmptyCart,
   getOrderSummary,
+  getVipWorkshopPerkStatus,
   removeVoucher,
   updateQuantity,
 } from '@/lib/cart-operations';
@@ -220,6 +221,67 @@ describe('cart flows', () => {
         discount: 67.5,
         total: 607.5,
       });
+    });
+  });
+
+  describe('VIP workshop perk status (messaging)', () => {
+    it('is null when there is no VIP ticket', () => {
+      expect(getVipWorkshopPerkStatus(cartWith([
+        { ...standardTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]))).toBeNull();
+    });
+
+    it('prompts adding a workshop when a VIP ticket is alone', () => {
+      expect(getVipWorkshopPerkStatus(cartWith([{ ...vipTicket, quantity: 1 }]))).toBe('add-workshop');
+    });
+
+    it('is applied for VIP + workshop with no code', () => {
+      expect(getVipWorkshopPerkStatus(cartWith([
+        { ...vipTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]))).toBe('applied');
+    });
+
+    it('treats an unrestricted code as covering the workshops', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'ALL10',
+        'percentage',
+        10
+      );
+      expect(getVipWorkshopPerkStatus(cart)).toBe('covered-by-code');
+    });
+
+    it('treats a code scoped to the workshop as covering it', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'WORKSHOP10',
+        'percentage',
+        10,
+        ['price_workshop_agents_chf']
+      );
+      expect(getVipWorkshopPerkStatus(cart)).toBe('covered-by-code');
+    });
+
+    it('reports blocked when a ticket-only code does not touch the workshop', () => {
+      const cart = applyVoucher(
+        cartWith([
+          { ...vipTicket, quantity: 1 },
+          { ...workshopSeat, quantity: 1 },
+        ]),
+        'VIPTICKET10',
+        'percentage',
+        10,
+        ['price_vip_chf']
+      );
+      expect(getVipWorkshopPerkStatus(cart)).toBe('blocked-by-code');
     });
   });
 
