@@ -6,7 +6,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { addTicketWaitlistContact } from '@/lib/email';
+import { addTicketWaitlistContact, sendTicketWaitlistConfirmationEmail } from '@/lib/email';
 import { notifyTicketWaitlist } from '@/lib/platform-notifications/send';
 import { serverAnalytics } from '@/lib/analytics/server';
 
@@ -54,6 +54,10 @@ export default async function handler(
 
     // Fire-and-forget Slack notification
     notifyTicketWaitlist({ email, ticketType: type });
+
+    // Send confirmation email. Don't fail the request if it errors — the
+    // subscriber is already on the waitlist; the email is best-effort.
+    await sendTicketWaitlistConfirmationEmail(email, type);
 
     await serverAnalytics.flush();
 

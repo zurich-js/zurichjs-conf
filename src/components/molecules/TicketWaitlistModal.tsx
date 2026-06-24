@@ -216,8 +216,9 @@ export const TicketWaitlistModal: React.FC<TicketWaitlistModalProps> = ({
                           size="sm"
                           loading={isSubmitting}
                           disabled={isSubmitting}
+                          className="h-10! shrink-0 min-w-[116px]"
                         >
-                          {isSubmitting ? '' : 'Subscribe'}
+                          Subscribe
                         </Button>
                       </div>
                       {error && (

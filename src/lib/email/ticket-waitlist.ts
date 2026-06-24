@@ -4,8 +4,11 @@
  * Each waitlist type (student/unemployed, VIP) maps to its own Resend audience.
  */
 
+import * as React from 'react';
+import { render } from '@react-email/render';
 import { serverAnalytics } from '@/lib/analytics/server';
-import { getResendClient } from './config';
+import { TicketWaitlistConfirmationEmail } from '@/emails/templates/TicketWaitlistConfirmationEmail';
+import { getResendClient, EMAIL_CONFIG, log } from './config';
 
 /**
  * Ticket waitlist types. Each maps to a dedicated Resend audience.
@@ -15,6 +18,14 @@ export type TicketWaitlistType = 'student' | 'vip';
 const AUDIENCE_ENV_VARS: Record<TicketWaitlistType, string> = {
   student: 'RESEND_STUDENT_WAITLIST_AUDIENCE_ID',
   vip: 'RESEND_VIP_WAITLIST_AUDIENCE_ID',
+};
+
+/**
+ * Human-readable label per waitlist type, used in email copy/subject.
+ */
+const WAITLIST_LABELS: Record<TicketWaitlistType, string> = {
+  student: 'Student/Unemployed',
+  vip: 'VIP',
 };
 
 /**
@@ -71,5 +82,49 @@ export async function addTicketWaitlistContact(
     });
 
     return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Send a confirmation email letting the subscriber know they're on the waitlist
+ * for the given ticket type.
+ */
+export async function sendTicketWaitlistConfirmationEmail(
+  email: string,
+  type: TicketWaitlistType
+): Promise<{ success: boolean; error?: string }> {
+  const ticketTypeLabel = WAITLIST_LABELS[type];
+
+  try {
+    const resend = getResendClient();
+
+    const html = await render(
+      React.createElement(TicketWaitlistConfirmationEmail, {
+        ticketTypeLabel,
+        supportEmail: EMAIL_CONFIG.supportEmail,
+      })
+    );
+
+    const result = await resend.emails.send({
+      from: EMAIL_CONFIG.from,
+      to: email,
+      replyTo: EMAIL_CONFIG.replyTo,
+      subject: `You're on the ${ticketTypeLabel} waitlist – ZurichJS Conference 2026`,
+      html,
+    });
+
+    if (result.error) {
+      log.error('Error sending waitlist confirmation email', new Error(result.error.message), {
+        to: email,
+        waitlistType: type,
+      });
+      return { success: false, error: result.error.message };
+    }
+
+    log.info('Waitlist confirmation email sent', { emailId: result.data?.id, to: email, waitlistType: type });
+    return { success: true };
+  } catch (error) {
+    log.error('Exception sending waitlist confirmation email', error, { to: email, waitlistType: type });
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
