@@ -12,11 +12,17 @@ import { colors, spacing, typography, radii } from '../design/tokens';
 export interface TicketWaitlistConfirmationEmailProps {
   /** Human-readable ticket type, e.g. "VIP" or "Student/Unemployed" */
   ticketTypeLabel: string;
+  /** Absolute URL to the trip-cost planner */
+  tripCostUrl: string;
+  /** Show the "buy standard now, upgrade to VIP later" path (VIP waitlist only) */
+  showStandardUpgradePath?: boolean;
   supportEmail?: string;
 }
 
 export const TicketWaitlistConfirmationEmail: React.FC<TicketWaitlistConfirmationEmailProps> = ({
   ticketTypeLabel,
+  tripCostUrl,
+  showStandardUpgradePath = false,
   supportEmail = 'hello@zurichjs.com',
 }) => {
   const preheader = `You're on the ${ticketTypeLabel} ticket waitlist for ZurichJS Conference 2026`;
@@ -48,11 +54,30 @@ export const TicketWaitlistConfirmationEmail: React.FC<TicketWaitlistConfirmatio
       <Section style={cardStyle}>
         <Text style={sectionTitleStyle}>Got questions?</Text>
         <Text style={bodyTextStyle}>
-          If you have any questions, just reach out to us at{' '}
-          <Link href={`mailto:${supportEmail}`} style={linkStyle}>
-            {supportEmail}
-          </Link>{' '}
-          and we&#39;ll be happy to help.
+          Just reply directly to this email to reach out to us &mdash; we&#39;re happy to help.
+        </Text>
+
+        <Text style={subheadingStyle}>Need to plan your trip?</Text>
+        <Text style={bodyTextStyle}>
+          Use our trip cost calculator to estimate travel, accommodation and ticket costs:{' '}
+          <Link href={tripCostUrl} style={linkStyle}>
+            /trip-cost
+          </Link>
+        </Text>
+
+        {showStandardUpgradePath && (
+          <>
+            <Text style={subheadingStyle}>Wanna come either way?</Text>
+            <Text style={bodyTextStyle}>
+              You can still get a Standard ticket and upgrade to VIP later. Just grab a Standard
+              ticket and email us &mdash; we&#39;ll manually handle your upgrade if we can squeeze
+              you in.
+            </Text>
+          </>
+        )}
+
+        <Text style={bodyTextStyle}>
+          We&#39;re here to support you every step of the way.
         </Text>
       </Section>
 
@@ -119,6 +144,14 @@ const sectionTitleStyle: React.CSSProperties = {
   fontWeight: typography.h2.fontWeight,
   color: colors.text.primary,
   margin: `0 0 ${spacing.base}px 0`,
+};
+
+const subheadingStyle: React.CSSProperties = {
+  fontSize: typography.body.fontSize,
+  lineHeight: typography.body.lineHeight,
+  fontWeight: 700,
+  color: colors.text.primary,
+  margin: `${spacing.base}px 0 ${spacing.xs}px 0`,
 };
 
 const footerSectionStyle: React.CSSProperties = {

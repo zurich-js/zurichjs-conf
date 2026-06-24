@@ -8,6 +8,7 @@ import * as React from 'react';
 import { render } from '@react-email/render';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { TicketWaitlistConfirmationEmail } from '@/emails/templates/TicketWaitlistConfirmationEmail';
+import { getBaseUrl } from '@/lib/url';
 import { getResendClient, EMAIL_CONFIG, log } from './config';
 
 /**
@@ -101,6 +102,8 @@ export async function sendTicketWaitlistConfirmationEmail(
     const html = await render(
       React.createElement(TicketWaitlistConfirmationEmail, {
         ticketTypeLabel,
+        tripCostUrl: `${getBaseUrl()}/trip-cost`,
+        showStandardUpgradePath: type === 'vip',
         supportEmail: EMAIL_CONFIG.supportEmail,
       })
     );
