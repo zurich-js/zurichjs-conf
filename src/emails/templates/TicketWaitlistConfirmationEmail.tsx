@@ -34,7 +34,7 @@ export const TicketWaitlistConfirmationEmail: React.FC<TicketWaitlistConfirmatio
       {/* Body */}
       <Section style={cardStyle}>
         <Text style={bodyTextStyle}>
-          Thanks for your interest in <strong>{ticketTypeLabel}</strong> tickets for ZurichJS
+          Thanks for your interest in <strong>{ticketTypeLabel}</strong>{' '}tickets for ZurichJS
           Conference 2026. They&#39;re currently sold out, but you&#39;ve been added to the
           waitlist.
         </Text>
@@ -78,8 +78,8 @@ export default TicketWaitlistConfirmationEmail;
 const headerSectionStyle: React.CSSProperties = {
   backgroundColor: colors.brand.yellow,
   padding: spacing['2xl'],
-  borderRadius: `${radii.card}px ${radii.card}px 0 0`,
-  marginBottom: 0,
+  borderRadius: `${radii.card}px`,
+  marginBottom: spacing.lg,
   textAlign: 'center',
 };
 
