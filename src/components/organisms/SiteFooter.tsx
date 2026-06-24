@@ -151,12 +151,12 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                             <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start h-full">
                                 <h3 className="text-brand-white font-semibold text-lg w-max">Ask us anything</h3>
                                 <p className="text-sm text-brand-gray-medium">If you have any uncertainties or burning questions, don’t hesitate to reach out.</p>
-                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="mailto:hello@zurichjs.com">Send inquiry</Button>
+                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="/contact?type=inquiry" asChild>Send inquiry</Button>
                             </motion.div>
                             <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start h-full">
                                 <h3 className="text-brand-white font-semibold text-lg w-max">Give us your feedback</h3>
                                 <p className="text-sm text-brand-gray-medium">We want to make this a great experience for everyone. If you have feedback, let us know!</p>
-                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="mailto:hello@zurichjs.com">Send feedback</Button>
+                                <Button variant="outline" size="sm" className="w-fit mt-auto" href="/contact?type=feedback" asChild>Send feedback</Button>
                             </motion.div>
                             <motion.div variants={item} className="flex flex-col justify-between gap-2.5 xl:max-w-xs 2xl:max-w-[unset] self-start h-full">
                                 <h3 className="text-brand-white font-semibold text-lg">Found a bug?</h3>

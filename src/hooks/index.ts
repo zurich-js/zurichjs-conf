@@ -21,6 +21,9 @@ export { useCartAbandonmentEmail } from './useCartAbandonmentEmail';
 
 export { useDiscount } from './useDiscount';
 
+export { useContactForm } from './useContactForm';
+export type { UseContactFormOptions, UseContactFormReturn } from './useContactForm';
+
 export { useBlueskyFeed } from './useBlueskyFeed';
 
 export { useLoadMoreOnIntersect } from './useLoadMoreOnIntersect';

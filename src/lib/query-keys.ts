@@ -87,6 +87,21 @@ export const teamRequestKeys = {
 } as const;
 
 /**
+ * Contact form query keys
+ */
+export const contactKeys = {
+  /**
+   * Base key for all contact queries
+   */
+  all: ['contact'] as const,
+
+  /**
+   * Key for contact form mutations
+   */
+  submit: () => [...contactKeys.all, 'submit'] as const,
+} as const;
+
+/**
  * CFP (Call for Papers) query keys
  */
 export const cfpKeys = {
@@ -257,6 +272,7 @@ export const queryKeys = {
   checkout: checkoutKeys,
   workshops: workshopsKeys,
   teamRequest: teamRequestKeys,
+  contact: contactKeys,
   cfp: cfpKeys,
   sponsorships: sponsorshipKeys,
   partnerships: partnershipKeys,

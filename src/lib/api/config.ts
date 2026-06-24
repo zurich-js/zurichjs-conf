@@ -86,6 +86,9 @@ export const endpoints = {
   newsletter: {
     subscribe: () => '/api/newsletter/subscribe' as const,
   },
+  contact: {
+    submit: () => '/api/contact' as const,
+  },
   // Public endpoints
   public: {
     sponsors: () => '/api/sponsors/public' as const,
@@ -122,6 +125,7 @@ export type EndpointPath = ReturnType<
   | typeof endpoints.checkout.session
   | typeof endpoints.checkout.createSession
   | typeof endpoints.newsletter.subscribe
+  | typeof endpoints.contact.submit
 >;
 
 /**

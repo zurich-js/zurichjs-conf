@@ -100,6 +100,21 @@ export interface IssueReportData {
 }
 
 /**
+ * Data structure for contact message email (general inquiries & feedback)
+ */
+export interface ContactMessageData {
+  messageId: string;
+  name: string;
+  email: string;
+  contactType: 'inquiry' | 'feedback';
+  message: string;
+  userAgent?: string;
+  submittedAt: string;
+  posthogSessionId?: string;
+  posthogDistinctId?: string;
+}
+
+/**
  * Data structure for VIP upgrade email
  */
 export interface VipUpgradeEmailData {
