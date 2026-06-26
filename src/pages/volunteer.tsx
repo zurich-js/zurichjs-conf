@@ -47,6 +47,10 @@ const VOLUNTEER_FORM_URL =
 
 const SUPPORT_EMAIL = 'hello@zurichjs.com';
 
+/** LinkedIn post announcing the OSS Awards "highest impact community" win. */
+const OSS_AWARD_POST_URL =
+  'https://www.linkedin.com/posts/farisaziz12_last-week-zurichjs-won-the-highest-impact-activity-7473961759595384833-2blE';
+
 const VOLUNTEER_BENEFITS = [
   {
     icon: Ticket,
@@ -271,6 +275,15 @@ function VolunteerLanding() {
                 We&apos;re a registered non-profit and don&apos;t make a single penny doing this. We
                 do it because we love giving back to the community.
               </p>
+              <a
+                href={OSS_AWARD_POST_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 font-semibold text-brand-black underline underline-offset-4 hover:text-brand-black/70 transition-colors"
+              >
+                Read the full story
+                <ArrowRight size={16} aria-hidden="true" />
+              </a>
             </div>
           </div>
         </ShapedSection>

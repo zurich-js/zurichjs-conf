@@ -210,11 +210,12 @@ export const TICKET_FAQ: FAQItem[] = [
     question: 'When is the best time to arrive and leave?',
     answer: (
       <>
-        It depends on your ticket and plans! Community Day on <strong>September 9th</strong> isn&apos;t
-        essential, but if you&apos;re attending a workshop on the 10th, you might as well arrive a
-        day early and enjoy the warm-up meetup. For departures, a flight on the evening of{' '}
-        <strong>September 12th</strong> or <strong>September 13th</strong> works well. If you&apos;re
-        a <strong>VIP ticket holder</strong>, note that the exclusive after party takes place on the
+        It depends on your ticket and plans! Community Day on <strong>September 9th</strong>{' '}
+        isn&apos;t essential, but if you&apos;re attending a workshop on the 10th, you might as well
+        arrive a day early and enjoy the warm-up meetup. For departures, a flight on{' '}
+        <strong>September 12th</strong> works well — there&apos;s nothing scheduled that day, so
+        you&apos;re free to head home whenever suits you. If you&apos;re a{' '}
+        <strong>VIP ticket holder</strong>, note that the exclusive after party takes place on the
         evening of September 11th, so don&apos;t book too early a departure that day!
       </>
     ),
