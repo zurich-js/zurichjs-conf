@@ -176,7 +176,7 @@ function VolunteerLanding() {
                   level="h1"
                   animate={shouldAnimate}
                   delay={0.2}
-                  className="text-2xl xs:text-3xl xl:text-4xl leading-tight mb-4 md:mb-6 lg:mb-8"
+                  className="text-base xs:text-lg xl:text-xl leading-tight mb-4 md:mb-6 lg:mb-8"
                 >
                   Help Build One of Europe&apos;s Best Community Conferences
                 </Heading>
