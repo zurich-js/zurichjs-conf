@@ -33,6 +33,7 @@ import { ShapedSection, SectionContainer, SiteFooter } from '@/components/organi
 import { SectionSplitView } from '@/components/organisms/SectionSplitView';
 import { BackgroundMedia, Countdown } from '@/components/molecules';
 import { useMotion } from '@/contexts/MotionContext';
+import { analytics } from '@/lib/analytics/client';
 
 /**
  * Application deadline for volunteering. Static ISO string (Europe/Zurich,
@@ -152,6 +153,20 @@ function VolunteerLanding() {
 
   const applicationsOpen = !mounted || !isClosed;
 
+  /**
+   * Track clicks on the "Apply to Volunteer" CTAs that link out to the
+   * external Google Form. `location` distinguishes the hero CTA from the
+   * bottom CTA so we can see which placement drives applications.
+   */
+  const trackApplyClick = (location: 'hero' | 'bottom_cta') => {
+    analytics.track('link_clicked', {
+      link_text: 'Apply to Volunteer',
+      link_url: VOLUNTEER_FORM_URL,
+      link_type: 'external',
+      link_location: `volunteer:${location}`,
+    });
+  };
+
   return (
     <>
       <SEO
@@ -209,6 +224,7 @@ function VolunteerLanding() {
                       href={VOLUNTEER_FORM_URL}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={() => trackApplyClick('hero')}
                       className="inline-flex items-center justify-center gap-2 bg-brand-yellow-main text-brand-black px-6 py-3 rounded-full font-bold hover:bg-brand-yellow-secondary transition-colors"
                     >
                       Apply to Volunteer
@@ -433,6 +449,7 @@ function VolunteerLanding() {
                   href={VOLUNTEER_FORM_URL}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackApplyClick('bottom_cta')}
                   className="inline-flex items-center justify-center gap-2 bg-brand-black text-white px-6 py-3 rounded-full font-semibold hover:bg-brand-gray-darkest transition-colors"
                 >
                   Apply to Volunteer
