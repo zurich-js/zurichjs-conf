@@ -16,7 +16,7 @@ const navLinks = [
   { label: "Speakers", href: "/speakers" },
   { label: "Workshops", href: "/workshops" },
   { label: "Volunteer", href: "/volunteer" },
-  { label: "Become a Sponsor", href: "/sponsorship" },
+  { label: "Sponsor us", href: "/sponsorship" },
 ];
 
 const socialLinks = [

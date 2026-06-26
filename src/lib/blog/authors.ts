@@ -11,6 +11,14 @@ export const authors: Record<string, BlogAuthor> = {
     name: "ZurichJS Team",
     bluesky: "https://bsky.app/profile/zurichjs.com",
   },
+  "faris-aziz": {
+    name: "Faris Aziz",
+    linkedin: "farisaziz12",
+  },
+  "bogdan-ilie": {
+    name: "Bogdan Mihai Ilie",
+    linkedin: "ilie-bogdan",
+  },
   nadja: {
     name: "Nadja",
     bluesky: "https://bsky.app/profile/nadja-hesselbjerg.bsky.social",

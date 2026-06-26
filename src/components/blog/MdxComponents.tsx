@@ -6,7 +6,7 @@ export const mdxComponents: MDXComponents = {
     <h1 className="font-bold mt-8 mb-3" {...props} />
   ),
   h2: (props) => (
-    <h2 className="font-bold mt-6 mb-3" {...props} />
+    <h2 className="text-lg font-bold mt-6 mb-3" {...props} />
   ),
   h3: (props) => (
     <h3 className="font-semibold mt-4 mb-2" {...props} />
