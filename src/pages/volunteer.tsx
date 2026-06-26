@@ -7,6 +7,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -238,13 +239,23 @@ function VolunteerLanding() {
 
         {/* Community of the year */}
         <ShapedSection shape="widen" variant="yellow" id="award">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-8">
-            <div className="flex-shrink-0">
-              <div className="w-20 h-20 rounded-2xl bg-black/10 flex items-center justify-center">
-                <Trophy className="w-10 h-10 text-brand-black" aria-hidden="true" />
+          <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12">
+            <div className="w-full lg:w-2/5 flex-shrink-0">
+              <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl shadow-lg ring-1 ring-black/10">
+                <Image
+                  src="/images/oss-award.jpg"
+                  alt="ZurichJS receiving the highest impact community globally award at the OSS Awards during JSNation"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                />
               </div>
             </div>
             <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full bg-black/10 px-3 py-1">
+                <Trophy className="w-4 h-4 text-brand-black" aria-hidden="true" />
+                <span className="text-xs font-semibold text-brand-black">OSS Awards · JSNation</span>
+              </div>
               <Kicker variant="light">Highest impact community, globally</Kicker>
               <Heading level="h2" variant="light" className="text-xl md:text-2xl leading-tight">
                 You&apos;d be joining an award-winning community
