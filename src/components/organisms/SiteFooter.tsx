@@ -33,6 +33,7 @@ const conferenceLinks = {
         { label: 'Convince Your Boss', href: '/convince-your-boss' },
         { label: 'Blog', href: '/blog' },
         { label: 'Call for Papers', href: '/cfp' },
+        { label: 'Volunteer', href: '/volunteer' },
     ],
 } as const;
 
