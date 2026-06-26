@@ -15,6 +15,7 @@ const navLinks = [
   { label: "About", href: "/about" },
   { label: "Speakers", href: "/speakers" },
   { label: "Workshops", href: "/workshops" },
+  { label: "Volunteer", href: "/volunteer" },
   { label: "Become a Sponsor", href: "/sponsorship" },
 ];
 
