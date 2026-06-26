@@ -401,11 +401,11 @@ export default function VolunteerLanding() {
                 <p className="font-semibold">Volunteer applications are now closed. Thank you!</p>
               )}
               <a
-                href="mailto:hello@zurichjs.com"
+                href="/contact?type=inquiry"
                 className="inline-flex items-center justify-center gap-2 font-semibold text-brand-black hover:underline"
               >
                 <Mail size={16} aria-hidden="true" />
-                hello@zurichjs.com
+                Ask a question
               </a>
             </div>
           </div>
