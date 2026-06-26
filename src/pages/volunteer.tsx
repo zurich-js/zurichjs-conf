@@ -402,7 +402,7 @@ function VolunteerLanding() {
         </ShapedSection>
 
         {/* CTA */}
-        <ShapedSection shape="widen" variant="yellow" id="apply">
+        <ShapedSection shape="tighten" variant="yellow" id="apply">
           <div className="text-center max-w-2xl mx-auto">
             <Kicker variant="light" className="mb-4">
               Ready to join the crew?
