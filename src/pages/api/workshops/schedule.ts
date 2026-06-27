@@ -75,13 +75,20 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<WorkshopsScheduleResponse>
 ): Promise<void> {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.status(405).json({
       items: [],
       offeringsBySubmissionId: {},
       currency: 'CHF',
       error: 'Method not allowed',
     });
+    return;
+  }
+
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+
+  if (req.method === 'HEAD') {
+    res.status(200).end();
     return;
   }
 

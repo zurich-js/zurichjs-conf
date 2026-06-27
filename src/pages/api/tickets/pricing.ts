@@ -104,13 +104,20 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<PricingResponse>
 ): Promise<void> {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.status(405).json({
       plans: [],
       currentStage: 'standard',
       stageDisplayName: 'Standard',
       error: 'Method not allowed',
     });
+    return;
+  }
+
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
+  if (req.method === 'HEAD') {
+    res.status(200).end();
     return;
   }
 

@@ -19,6 +19,7 @@ import type { PublicSpeaker } from '@/lib/types/cfp';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Speakers API');
+const PUBLIC_CFP_CACHE_CONTROL = 'public, s-maxage=21600, stale-while-revalidate=86400';
 
 interface SpeakersResponse {
   speakers: PublicSpeaker[];
@@ -33,8 +34,14 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SpeakersResponse | ErrorResponse>
 ) {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  res.setHeader('Cache-Control', PUBLIC_CFP_CACHE_CONTROL);
+
+  if (req.method === 'HEAD') {
+    return res.status(200).end();
   }
 
   try {
@@ -47,9 +54,6 @@ export default async function handler(
     if (req.query.featured === 'true') {
       speakers = speakers.filter((s) => s.is_featured);
     }
-
-    // Set cache headers for CDN caching (5 minutes)
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 
     return res.status(200).json({ speakers, programSpeakerCount });
   } catch (error) {

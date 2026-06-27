@@ -21,7 +21,9 @@ type PrefetchError = { type: 'error'; error: Error };
 type PrefetchResult<TData> = PrefetchSuccess<TData> | PrefetchError;
 
 const timeout = (ms: number) =>
-  new Promise<null>((resolve) => setTimeout(() => resolve(null), ms));
+  new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(`Prefetch timed out after ${ms}ms`)), ms);
+  });
 
 export const createPrefetch = (queryClient: QueryClient, timeoutDuration = 1000) => {
   const prefetch = async <

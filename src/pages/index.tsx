@@ -22,7 +22,7 @@ import { ticketPricingQueryOptions } from '@/lib/queries/tickets';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { BLUESKY_FEED_TIMEOUT_MS, getCachedBlueskyFeed } from '@/lib/bluesky';
 import type { BlueskyFeedResult } from '@/lib/bluesky';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticProps } from 'next';
 import React from "react";
 
 /**
@@ -166,7 +166,7 @@ export default function Home({ blueskyFeed }: HomePageProps) {
  *
  * Failures are reported to PostHog via serverAnalytics.
  */
-export const getServerSideProps: GetServerSideProps<HomePageProps> = async () => {
+export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
   const queryClient = getQueryClient();
   const { optionalQuery, dehydrate } = createPrefetch(queryClient);
 
@@ -201,5 +201,6 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
       dehydratedState: dehydrate(),
       blueskyFeed,
     },
+    revalidate: 21600,
   };
 };

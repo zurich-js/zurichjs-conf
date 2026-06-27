@@ -199,40 +199,15 @@ export async function getVisibleSpeakersForOg(): Promise<SpeakerOgRow[]> {
 
 export async function getProgramSpeakerCount(): Promise<number> {
   const supabase = createCfpServiceClient();
-  const [speakersResult, submissionsResult] = await Promise.all([
-    supabase
-      .from('cfp_speakers')
-      .select('id, is_admin_managed, is_featured, is_visible'),
-    supabase
-      .from('cfp_submissions')
-      .select('speaker_id, status'),
-  ]);
+  const { data, error } = await supabase.rpc('get_program_speaker_count');
 
-  if (speakersResult.error || submissionsResult.error) {
-    console.error(
-      '[CFP Speakers] Error fetching program speaker count:',
-      speakersResult.error?.message ?? submissionsResult.error?.message
-    );
+  if (error) {
+    console.error('[CFP Speakers] Error fetching program speaker count:', error.message);
     return 0;
   }
 
-  const acceptedSpeakerIds = new Set(
-    ((submissionsResult.data || []) as Array<{ speaker_id: string; status: string }>)
-      .filter((submission) => submission.status === 'accepted')
-      .map((submission) => submission.speaker_id)
-  );
-
-  return ((speakersResult.data || []) as Array<{
-    id: string;
-    is_admin_managed: boolean;
-    is_featured: boolean;
-    is_visible: boolean;
-  }>).filter((speaker) =>
-    speaker.is_admin_managed ||
-    speaker.is_featured ||
-    speaker.is_visible ||
-    acceptedSpeakerIds.has(speaker.id)
-  ).length;
+  const count = typeof data === 'number' ? data : Number(data);
+  return Number.isFinite(count) ? count : 0;
 }
 
 /**

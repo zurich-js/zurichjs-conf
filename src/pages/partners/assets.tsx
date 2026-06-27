@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import type { DehydratedState } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticProps } from 'next';
 import { Download, Copy, Check, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { Button } from '@/components/atoms';
@@ -525,7 +525,7 @@ export default function PartnerAssetsPage() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<PartnerAssetsPageProps> = async () => {
+export const getStaticProps: GetStaticProps<PartnerAssetsPageProps> = async () => {
   const queryClient = getQueryClient();
   const { optionalQuery, dehydrate } = createPrefetch(queryClient);
 
@@ -538,5 +538,6 @@ export const getServerSideProps: GetServerSideProps<PartnerAssetsPageProps> = as
     props: {
       dehydratedState: dehydrate(),
     },
+    revalidate: 21600,
   };
 };

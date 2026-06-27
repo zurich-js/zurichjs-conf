@@ -514,6 +514,6 @@ export const getStaticProps: GetStaticProps<SpeakerDetailPageProps> = async ({ p
         props: {
             speaker,
         },
-        revalidate: 600,
+        revalidate: 21600,
     };
 };

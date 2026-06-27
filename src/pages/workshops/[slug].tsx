@@ -102,8 +102,10 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
   );
 }
 
-export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = async ({ params }) => {
-  const slug = typeof params?.slug === 'string' ? params.slug : '';
+export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = async (ctx) => {
+  ctx.res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+
+  const slug = typeof ctx.params?.slug === 'string' ? ctx.params.slug : '';
   const { speakers } = await fetchPublicSpeakers();
   const speaker = speakers.find((entry) =>
     entry.sessions.some((session) => session.type === 'workshop' && session.slug === slug)
