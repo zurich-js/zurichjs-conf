@@ -19,7 +19,6 @@ import type { PublicSpeaker } from '@/lib/types/cfp';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Speakers API');
-const PUBLIC_CFP_CACHE_CONTROL = 'public, s-maxage=21600, stale-while-revalidate=86400';
 
 interface SpeakersResponse {
   speakers: PublicSpeaker[];
@@ -38,7 +37,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  res.setHeader('Cache-Control', PUBLIC_CFP_CACHE_CONTROL);
+  res.setHeader('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
 
   if (req.method === 'HEAD') {
     return res.status(200).end();

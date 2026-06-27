@@ -8,9 +8,6 @@ import { queryKeys } from '@/lib/query-keys';
 import { getProgramSpeakerCount, getVisibleSpeakersWithSessions } from '@/lib/cfp/speakers';
 import type { PublicSpeaker } from '@/lib/types/cfp';
 
-const PUBLIC_SPEAKERS_STALE_TIME_MS = 6 * 60 * 60 * 1000;
-const PUBLIC_SPEAKERS_GC_TIME_MS = 24 * 60 * 60 * 1000;
-
 export interface SpeakerQueryParams {
   featured?: boolean;
 }
@@ -60,7 +57,7 @@ export function publicSpeakersQueryOptions(params?: SpeakerQueryParams) {
   return queryOptions({
     queryKey: queryKeys.speakers.public(params),
     queryFn: () => fetchPublicSpeakers(params),
-    staleTime: PUBLIC_SPEAKERS_STALE_TIME_MS,
-    gcTime: PUBLIC_SPEAKERS_GC_TIME_MS,
+    staleTime: 6 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
   });
 }

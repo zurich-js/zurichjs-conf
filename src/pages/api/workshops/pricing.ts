@@ -19,7 +19,6 @@ import {
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 
 const log = logger.scope('Workshop Pricing API');
-const PUBLIC_WORKSHOP_PRICING_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600';
 
 export type WorkshopPricingItem = WorkshopOfferingSummary;
 
@@ -60,7 +59,7 @@ export default async function handler(
     return;
   }
 
-  res.setHeader('Cache-Control', PUBLIC_WORKSHOP_PRICING_CACHE_CONTROL);
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 
   if (req.method === 'HEAD') {
     res.status(200).end();
