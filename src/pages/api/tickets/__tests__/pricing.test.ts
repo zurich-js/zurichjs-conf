@@ -869,6 +869,18 @@ describe('Ticket Pricing API Handler', () => {
       expect(res._headers['Cache-Control']).toBe('public, s-maxage=60, stale-while-revalidate=300');
     });
 
+    it('should not cache failed public pricing responses at the edge', async () => {
+      mocks.mockGetTicketCounts.mockRejectedValueOnce(new Error('Ticket count lookup failed'));
+
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._status).toBe(500);
+      expect(res._headers['Cache-Control']).toBe('no-store');
+    });
+
     it('should include correct titles for categories', async () => {
       const req = createMockRequest();
       const res = createMockResponse();

@@ -5,7 +5,6 @@
 
 import { queryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-import { getProgramSpeakerCount, getVisibleSpeakersWithSessions } from '@/lib/cfp/speakers';
 import type { PublicSpeaker } from '@/lib/types/cfp';
 
 export interface SpeakerQueryParams {
@@ -29,6 +28,9 @@ export interface PublicSpeakersResponse {
  */
 export async function fetchPublicSpeakers(params?: SpeakerQueryParams): Promise<PublicSpeakersResponse> {
   if (typeof window === 'undefined') {
+    const { getProgramSpeakerCount, getVisibleSpeakersWithSessions } = await import(
+      '@/lib/cfp/speakers'
+    );
     const [visibleSpeakers, programSpeakerCount] = await Promise.all([
       getVisibleSpeakersWithSessions(),
       getProgramSpeakerCount(),

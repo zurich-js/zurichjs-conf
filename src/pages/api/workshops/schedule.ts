@@ -23,6 +23,7 @@ import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 import type { Workshop } from '@/lib/types/database';
 
 const log = logger.scope('Workshop Schedule API');
+const CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600';
 
 export interface WorkshopsScheduleResponse {
   items: PublicProgramScheduleItem[];
@@ -85,9 +86,8 @@ export default async function handler(
     return;
   }
 
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
-
   if (req.method === 'HEAD') {
+    res.setHeader('Cache-Control', CACHE_CONTROL);
     res.status(200).end();
     return;
   }
@@ -131,6 +131,7 @@ export default async function handler(
 
     const merged = mergeWorkshopScheduleItems(builtItems);
 
+    res.setHeader('Cache-Control', CACHE_CONTROL);
     res.status(200).json({
       items: merged,
       offeringsBySubmissionId,
@@ -138,6 +139,7 @@ export default async function handler(
     });
   } catch (error) {
     log.error('Error handling workshops schedule request', error);
+    res.setHeader('Cache-Control', 'no-store');
     res.status(500).json({
       items: [],
       offeringsBySubmissionId: {},

@@ -3,8 +3,8 @@ import React from 'react';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import { clsx } from 'clsx';
 import { cn } from '@/lib/utils';
-import {clsx} from "clsx";
 
 export interface ScheduleCardProps {
   id?: string;
@@ -30,7 +30,7 @@ export function ScheduleCard({
   if (!expandable) {
     return (
       <article id={id} className={className}>
-        <div className={clsx("flex items-start justify-between gap-4", trailing && 'flex-col-reverse md:flex-row')}>
+        <div className={clsx('flex items-start justify-between gap-4', trailing && 'flex-col-reverse md:flex-row')}>
           <div className="min-w-0 flex-1">{header}</div>
           {trailing ? <div className="mt-1 shrink-0">{trailing}</div> : null}
         </div>
