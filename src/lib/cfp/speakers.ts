@@ -5,6 +5,7 @@
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import { getPublicScheduleRows } from '@/lib/program/schedule';
+import { logger } from '@/lib/logger';
 import type {
   CfpSpeaker,
   CfpSubmission,
@@ -15,6 +16,8 @@ import type {
   AdminCreateSpeakerRequest,
   AdminCreateSessionRequest,
 } from '@/lib/types/cfp';
+
+const log = logger.scope('CFP Speakers');
 
 export type SpeakerImageField =
   | 'profile_image_url'
@@ -35,7 +38,7 @@ export async function getSpeakerById(speakerId: string): Promise<CfpSpeaker | nu
     .single();
 
   if (error || !data) {
-    console.error('[CFP Speakers] Error fetching speaker:', error?.message);
+    log.error('Error fetching speaker', error, { speakerId });
     return null;
   }
 
@@ -72,7 +75,7 @@ export async function updateSpeaker(
     .single();
 
   if (error) {
-    console.error('[CFP Speakers] Error updating speaker:', error.message);
+    log.error('Error updating speaker', error, { speakerId });
     return { speaker: null, error: error.message };
   }
 
@@ -91,7 +94,7 @@ export async function getAllSpeakers(): Promise<CfpSpeaker[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('[CFP Speakers] Error fetching speakers:', error.message);
+    log.error('Error fetching speakers', error);
     return [];
   }
 
@@ -116,7 +119,7 @@ export async function getAcceptedSpeakers(): Promise<CfpSpeaker[]> {
     .eq('cfp_submissions.status', 'accepted');
 
   if (error) {
-    console.error('[CFP Speakers] Error fetching accepted speakers:', error.message);
+    log.error('Error fetching accepted speakers', error);
     return [];
   }
 
@@ -161,7 +164,7 @@ export async function getVisibleSpeakersForOg(): Promise<SpeakerOgRow[]> {
     .order('first_name', { ascending: true });
 
   if (error) {
-    console.error('[CFP Speakers] OG list fetch failed:', error.message);
+    log.error('OG list fetch failed', error);
     return [];
   }
 
@@ -199,40 +202,15 @@ export async function getVisibleSpeakersForOg(): Promise<SpeakerOgRow[]> {
 
 export async function getProgramSpeakerCount(): Promise<number> {
   const supabase = createCfpServiceClient();
-  const [speakersResult, submissionsResult] = await Promise.all([
-    supabase
-      .from('cfp_speakers')
-      .select('id, is_admin_managed, is_featured, is_visible'),
-    supabase
-      .from('cfp_submissions')
-      .select('speaker_id, status'),
-  ]);
+  const { data, error } = await supabase.rpc('get_program_speaker_count');
 
-  if (speakersResult.error || submissionsResult.error) {
-    console.error(
-      '[CFP Speakers] Error fetching program speaker count:',
-      speakersResult.error?.message ?? submissionsResult.error?.message
-    );
+  if (error) {
+    log.error('Error fetching program speaker count', error);
     return 0;
   }
 
-  const acceptedSpeakerIds = new Set(
-    ((submissionsResult.data || []) as Array<{ speaker_id: string; status: string }>)
-      .filter((submission) => submission.status === 'accepted')
-      .map((submission) => submission.speaker_id)
-  );
-
-  return ((speakersResult.data || []) as Array<{
-    id: string;
-    is_admin_managed: boolean;
-    is_featured: boolean;
-    is_visible: boolean;
-  }>).filter((speaker) =>
-    speaker.is_admin_managed ||
-    speaker.is_featured ||
-    speaker.is_visible ||
-    acceptedSpeakerIds.has(speaker.id)
-  ).length;
+  const count = typeof data === 'number' ? data : Number(data);
+  return Number.isFinite(count) ? count : 0;
 }
 
 /**
@@ -247,7 +225,7 @@ export async function deleteSpeaker(speakerId: string): Promise<{ success: boole
     .eq('id', speakerId);
 
   if (error) {
-    console.error('[CFP Speakers] Error deleting speaker:', error.message);
+    log.error('Error deleting speaker', error, { speakerId });
     return { success: false, error: error.message };
   }
 
@@ -276,7 +254,7 @@ export async function uploadSpeakerImage(
     });
 
   if (uploadError) {
-    console.error('[CFP Speakers] Error uploading image:', uploadError.message);
+    log.error('Error uploading image', uploadError, { speakerId, imageField });
     return { url: null, error: uploadError.message };
   }
 
@@ -294,7 +272,7 @@ export async function uploadSpeakerImage(
     .eq('id', speakerId);
 
   if (updateError) {
-    console.error('[CFP Speakers] Error updating image URL:', updateError.message);
+    log.error('Error updating image URL', updateError, { speakerId, imageField });
     return { url: null, error: updateError.message };
   }
 
@@ -348,7 +326,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     .order('first_name', { ascending: true });
 
   if (error) {
-    console.error('[CFP Speakers] Error fetching visible speakers:', error.message);
+    log.error('Error fetching visible speakers', error);
     return [];
   }
 
@@ -416,7 +394,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     .neq('status', 'archived');
 
   if (programSessionError) {
-    console.error('[CFP Speakers] Error fetching program sessions:', programSessionError.message);
+    log.error('Error fetching program sessions', programSessionError);
   }
 
   const { data: participantRows, error: participantError } = await supabase
@@ -424,7 +402,7 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
     .select('submission_id, speaker_id, role');
 
   if (participantError) {
-    console.error('[CFP Speakers] Error fetching submission speakers:', participantError.message);
+    log.error('Error fetching submission speakers', participantError);
   }
 
   const participantsBySubmissionId = new Map<string, LegacyParticipantRow[]>();
@@ -625,7 +603,7 @@ export async function updateSpeakerVisibility(
     .eq('id', speakerId);
 
   if (error) {
-    console.error('[CFP Speakers] Error updating visibility:', error.message);
+    log.error('Error updating visibility', error, { speakerId, isVisible });
     return { success: false, error: error.message };
   }
 
@@ -680,7 +658,7 @@ export async function createSpeaker(
     .single();
 
   if (error) {
-    console.error('[CFP Speakers] Error creating speaker:', error.message);
+    log.error('Error creating speaker', error);
     return { speaker: null, error: error.message };
   }
 
@@ -735,7 +713,7 @@ export async function createSession(
     .single();
 
   if (error) {
-    console.error('[CFP Speakers] Error creating session:', error.message);
+    log.error('Error creating session', error, { speakerId: data.speaker_id });
     return { submission: null, error: error.message };
   }
 
@@ -752,7 +730,7 @@ export async function createSession(
         .insert(participantRows);
 
       if (participantError) {
-        console.error('[CFP Speakers] Error linking session speakers:', participantError.message);
+        log.error('Error linking session speakers', participantError, { submissionId: submission.id });
         return { submission: null, error: participantError.message };
       }
     }
@@ -817,7 +795,7 @@ export async function updateSessionSchedule(
     .eq('id', submissionId);
 
   if (error) {
-    console.error('[CFP Speakers] Error updating schedule:', error.message);
+    log.error('Error updating schedule', error, { submissionId });
     return { success: false, error: error.message };
   }
 

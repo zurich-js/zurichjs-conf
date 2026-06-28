@@ -177,6 +177,8 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async (ctx) => {
+  ctx.res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);

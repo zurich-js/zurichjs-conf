@@ -6,6 +6,12 @@
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { PriceStage, TicketCategory, StageStockCounts } from '@/config/pricing-stages';
 
+interface TicketCountsResult {
+  success: boolean;
+  counts?: StageStockCounts;
+  error?: string;
+}
+
 /**
  * Map database ticket_stage values to PriceStage
  */
@@ -45,11 +51,7 @@ const mapDbCategoryToCategory = (dbCategory: string): TicketCategory => {
  * Fetch ticket counts by stage and category from database
  * Only counts confirmed (paid) tickets
  */
-export async function getTicketCounts(): Promise<{
-  success: boolean;
-  counts?: StageStockCounts;
-  error?: string;
-}> {
+export async function getTicketCounts(): Promise<TicketCountsResult> {
   const supabase = createServiceRoleClient();
 
   try {

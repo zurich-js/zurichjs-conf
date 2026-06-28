@@ -114,8 +114,12 @@ interface MockRequest extends Partial<NextApiRequest> {
 interface MockResponse {
   _status: number;
   _json: unknown;
+  _ended: boolean;
+  _headers: Record<string, string>;
   status: (code: number) => MockResponse;
+  setHeader: (name: string, value: string) => MockResponse;
   json: (data: unknown) => MockResponse;
+  end: () => MockResponse;
 }
 
 function createMockRequest(overrides: Partial<MockRequest> = {}): MockRequest {
@@ -130,12 +134,22 @@ function createMockResponse(): MockResponse {
   const res: MockResponse = {
     _status: 200,
     _json: undefined,
+    _ended: false,
+    _headers: {},
     status(code: number) {
       res._status = code;
       return res;
     },
+    setHeader(name: string, value: string) {
+      res._headers[name] = value;
+      return res;
+    },
     json(data: unknown) {
       res._json = data;
+      return res;
+    },
+    end() {
+      res._ended = true;
       return res;
     },
   };
@@ -284,6 +298,20 @@ describe('Ticket Pricing API Handler', () => {
       await callHandler(req, res);
 
       expect(res._status).toBe(200);
+    });
+
+    it('should return cache headers for HEAD requests without fetching pricing', async () => {
+      const req = createMockRequest({ method: 'HEAD' });
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._status).toBe(200);
+      expect(res._ended).toBe(true);
+      expect(res._json).toBeUndefined();
+      expect(res._headers['Cache-Control']).toBe('public, s-maxage=300, stale-while-revalidate=600');
+      expect(mocks.mockGetTicketCounts).not.toHaveBeenCalled();
+      expect(mocks.mockPricesList).not.toHaveBeenCalled();
     });
   });
 
@@ -830,6 +858,27 @@ describe('Ticket Pricing API Handler', () => {
       expect(json).toHaveProperty('currentStage');
       expect(json).toHaveProperty('stageDisplayName');
       expect(Array.isArray(json.plans)).toBe(true);
+    });
+
+    it('should cache successful public pricing responses at the edge', async () => {
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._headers['Cache-Control']).toBe('public, s-maxage=300, stale-while-revalidate=600');
+    });
+
+    it('should not cache failed public pricing responses at the edge', async () => {
+      mocks.mockGetTicketCounts.mockRejectedValueOnce(new Error('Ticket count lookup failed'));
+
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      expect(res._status).toBe(500);
+      expect(res._headers['Cache-Control']).toBe('no-store');
     });
 
     it('should include correct titles for categories', async () => {

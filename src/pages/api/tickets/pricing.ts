@@ -21,6 +21,7 @@ import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
 import { serverAnalytics } from '@/lib/analytics/server';
 
 const log = logger.scope('Ticket Pricing API');
+const CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600';
 
 // Ticket categories to fetch
 const TICKET_CATEGORIES: TicketCategory[] = ['standard_student_unemployed', 'standard', 'vip'];
@@ -104,13 +105,19 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<PricingResponse>
 ): Promise<void> {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.status(405).json({
       plans: [],
       currentStage: 'standard',
       stageDisplayName: 'Standard',
       error: 'Method not allowed',
     });
+    return;
+  }
+
+  if (req.method === 'HEAD') {
+    res.setHeader('Cache-Control', CACHE_CONTROL);
+    res.status(200).end();
     return;
   }
 
@@ -218,6 +225,7 @@ export default async function handler(
       plans = await fetchPlansForCurrency('CHF');
     }
 
+    res.setHeader('Cache-Control', CACHE_CONTROL);
     res.status(200).json({
       plans,
       currentStage,
@@ -225,6 +233,7 @@ export default async function handler(
     });
   } catch (error) {
     log.error('Error fetching ticket prices', error);
+    res.setHeader('Cache-Control', 'no-store');
     res.status(500).json({
       plans: [],
       currentStage: 'standard',

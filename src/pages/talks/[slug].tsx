@@ -101,8 +101,10 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
   );
 }
 
-export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async ({ params }) => {
-  const slug = typeof params?.slug === 'string' ? params.slug : '';
+export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async (ctx) => {
+  ctx.res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+
+  const slug = typeof ctx.params?.slug === 'string' ? ctx.params.slug : '';
   const { speakers } = await fetchPublicSpeakers();
   const speaker = speakers.find((entry) =>
     entry.sessions.some((session) => (session.type === 'standard' || session.type === 'lightning') && session.slug === slug)

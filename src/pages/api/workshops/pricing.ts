@@ -19,6 +19,7 @@ import {
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 
 const log = logger.scope('Workshop Pricing API');
+const CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600';
 
 export type WorkshopPricingItem = WorkshopOfferingSummary;
 
@@ -54,8 +55,14 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<WorkshopPricingResponse>
 ): Promise<void> {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.status(405).json({ items: [], currency: 'CHF', error: 'Method not allowed' });
+    return;
+  }
+
+  if (req.method === 'HEAD') {
+    res.setHeader('Cache-Control', CACHE_CONTROL);
+    res.status(200).end();
     return;
   }
 
@@ -93,6 +100,7 @@ export default async function handler(
 
     if (error) {
       log.error('Error loading workshop offerings', error);
+      res.setHeader('Cache-Control', 'no-store');
       res.status(500).json({ items: [], currency, error: error.message });
       return;
     }
@@ -105,6 +113,7 @@ export default async function handler(
       : filterBySlug((data ?? []) as Workshop[], slugParam);
 
     if (workshops.length === 0) {
+      res.setHeader('Cache-Control', CACHE_CONTROL);
       res.status(200).json({ items: [], currency });
       return;
     }
@@ -117,9 +126,11 @@ export default async function handler(
       items = await buildOfferingSummaries(stripe, workshops, 'CHF');
     }
 
+    res.setHeader('Cache-Control', CACHE_CONTROL);
     res.status(200).json({ items, currency });
   } catch (error) {
     log.error('Error handling workshops pricing request', error);
+    res.setHeader('Cache-Control', 'no-store');
     res.status(500).json({
       items: [],
       currency: 'CHF',

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { DehydratedState } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { SpeakerCard } from '@/components/molecules';
@@ -386,7 +386,7 @@ export default function SpeakersPage() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<SpeakersPageProps> = async () => {
+export const getStaticProps: GetStaticProps<SpeakersPageProps> = async () => {
   const queryClient = getQueryClient();
   const { optionalQuery, dehydrate } = createPrefetch(queryClient);
 
@@ -396,5 +396,6 @@ export const getServerSideProps: GetServerSideProps<SpeakersPageProps> = async (
     props: {
       dehydratedState: dehydrate(),
     },
+    revalidate: 86400,
   };
 };
