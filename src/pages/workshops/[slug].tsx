@@ -103,7 +103,7 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
 }
 
 export const getServerSideProps: GetServerSideProps<WorkshopDetailPageProps> = async (ctx) => {
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  ctx.res.setHeader('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
 
   const slug = typeof ctx.params?.slug === 'string' ? ctx.params.slug : '';
   const { speakers } = await fetchPublicSpeakers();

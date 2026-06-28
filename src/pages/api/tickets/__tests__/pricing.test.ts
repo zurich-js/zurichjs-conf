@@ -309,7 +309,7 @@ describe('Ticket Pricing API Handler', () => {
       expect(res._status).toBe(200);
       expect(res._ended).toBe(true);
       expect(res._json).toBeUndefined();
-      expect(res._headers['Cache-Control']).toBe('public, s-maxage=60, stale-while-revalidate=300');
+      expect(res._headers['Cache-Control']).toBe('public, s-maxage=300, stale-while-revalidate=600');
       expect(mocks.mockGetTicketCounts).not.toHaveBeenCalled();
       expect(mocks.mockPricesList).not.toHaveBeenCalled();
     });
@@ -866,7 +866,7 @@ describe('Ticket Pricing API Handler', () => {
 
       await callHandler(req, res);
 
-      expect(res._headers['Cache-Control']).toBe('public, s-maxage=60, stale-while-revalidate=300');
+      expect(res._headers['Cache-Control']).toBe('public, s-maxage=300, stale-while-revalidate=600');
     });
 
     it('should not cache failed public pricing responses at the edge', async () => {

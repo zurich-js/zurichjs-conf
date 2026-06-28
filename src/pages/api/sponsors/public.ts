@@ -14,6 +14,7 @@ import { getPublicSponsors } from '@/lib/sponsorship';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Public Sponsors API');
+const CACHE_CONTROL = 'public, s-maxage=21600, stale-while-revalidate=86400';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -23,8 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const sponsors = await getPublicSponsors();
 
-    // Set cache headers for performance (cache for 5 minutes)
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', CACHE_CONTROL);
 
     return res.status(200).json({ sponsors });
   } catch (error) {

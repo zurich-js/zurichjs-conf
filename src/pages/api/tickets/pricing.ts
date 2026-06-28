@@ -21,7 +21,7 @@ import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
 import { serverAnalytics } from '@/lib/analytics/server';
 
 const log = logger.scope('Ticket Pricing API');
-const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300';
+const CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600';
 
 // Ticket categories to fetch
 const TICKET_CATEGORIES: TicketCategory[] = ['standard_student_unemployed', 'standard', 'vip'];

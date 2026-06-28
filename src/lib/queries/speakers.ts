@@ -59,7 +59,7 @@ export function publicSpeakersQueryOptions(params?: SpeakerQueryParams) {
   return queryOptions({
     queryKey: queryKeys.speakers.public(params),
     queryFn: () => fetchPublicSpeakers(params),
-    staleTime: 6 * 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 7 * 24 * 60 * 60 * 1000,
   });
 }

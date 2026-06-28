@@ -9,6 +9,9 @@ import { apiClient, endpoints } from '@/lib/api';
 import type { PublicSponsor } from '@/lib/types/sponsorship';
 import type { PublicCommunityPartner } from '@/lib/partnerships';
 
+const PUBLIC_PARTNER_CONTENT_STALE_TIME_MS = 6 * 60 * 60 * 1000;
+const PUBLIC_PARTNER_CONTENT_GC_TIME_MS = 24 * 60 * 60 * 1000;
+
 /**
  * API response structure for public sponsors
  */
@@ -64,8 +67,8 @@ export async function fetchCommunityPartners(): Promise<CommunityPartnersRespons
 export const publicSponsorsQueryOptions = queryOptions({
   queryKey: queryKeys.sponsorships.public(),
   queryFn: fetchPublicSponsors,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  gcTime: 10 * 60 * 1000, // 10 minutes
+  staleTime: PUBLIC_PARTNER_CONTENT_STALE_TIME_MS,
+  gcTime: PUBLIC_PARTNER_CONTENT_GC_TIME_MS,
 });
 
 /**
@@ -75,6 +78,6 @@ export const publicSponsorsQueryOptions = queryOptions({
 export const communityPartnersQueryOptions = queryOptions({
   queryKey: queryKeys.partnerships.community(),
   queryFn: fetchCommunityPartners,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  gcTime: 10 * 60 * 1000, // 10 minutes
+  staleTime: PUBLIC_PARTNER_CONTENT_STALE_TIME_MS,
+  gcTime: PUBLIC_PARTNER_CONTENT_GC_TIME_MS,
 });

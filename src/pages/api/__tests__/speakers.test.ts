@@ -80,7 +80,7 @@ describe('/api/speakers', () => {
 
     expect(res._status).toBe(200);
     expect(res._ended).toBe(true);
-    expect(res._headers['Cache-Control']).toBe('public, s-maxage=21600, stale-while-revalidate=86400');
+    expect(res._headers['Cache-Control']).toBe('public, s-maxage=86400, stale-while-revalidate=604800');
     expect(mocks.getVisibleSpeakersWithSessions).not.toHaveBeenCalled();
     expect(mocks.getProgramSpeakerCount).not.toHaveBeenCalled();
   });
@@ -90,7 +90,7 @@ describe('/api/speakers', () => {
 
     expect(res._status).toBe(200);
     expect(res._json).toEqual({ speakers: [], programSpeakerCount: 0 });
-    expect(res._headers['Cache-Control']).toBe('public, s-maxage=21600, stale-while-revalidate=86400');
+    expect(res._headers['Cache-Control']).toBe('public, s-maxage=86400, stale-while-revalidate=604800');
   });
 
   it('does not cache failed public speaker responses at the edge', async () => {

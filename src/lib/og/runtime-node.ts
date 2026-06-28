@@ -70,6 +70,6 @@ export async function sendOgImage(res: NextApiResponse, element: React.ReactElem
   const imageBuffer = await renderOgToBuffer(element);
 
   res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=21600, stale-while-revalidate=86400');
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
   res.send(imageBuffer);
 }

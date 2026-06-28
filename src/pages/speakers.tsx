@@ -396,6 +396,6 @@ export const getStaticProps: GetStaticProps<SpeakersPageProps> = async () => {
     props: {
       dehydratedState: dehydrate(),
     },
-    revalidate: 21600,
+    revalidate: 86400,
   };
 };
