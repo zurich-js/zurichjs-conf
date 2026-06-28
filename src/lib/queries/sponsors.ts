@@ -9,8 +9,8 @@ import { apiClient, endpoints } from '@/lib/api';
 import type { PublicSponsor } from '@/lib/types/sponsorship';
 import type { PublicCommunityPartner } from '@/lib/partnerships';
 
-const PUBLIC_PARTNER_CONTENT_STALE_TIME_MS = 6 * 60 * 60 * 1000;
-const PUBLIC_PARTNER_CONTENT_GC_TIME_MS = 24 * 60 * 60 * 1000;
+const PUBLIC_PARTNER_CONTENT_STALE_TIME_MS = 24 * 60 * 60 * 1000;
+const PUBLIC_PARTNER_CONTENT_GC_TIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * API response structure for public sponsors

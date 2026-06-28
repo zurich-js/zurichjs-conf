@@ -14,7 +14,7 @@ import { getPublicSponsors } from '@/lib/sponsorship';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Public Sponsors API');
-const CACHE_CONTROL = 'public, s-maxage=21600, stale-while-revalidate=86400';
+const CACHE_CONTROL = 'public, s-maxage=86400, stale-while-revalidate=604800';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {

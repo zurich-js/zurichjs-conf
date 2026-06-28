@@ -102,7 +102,7 @@ export default function TalkDetailPage({ session, speaker }: TalkDetailPageProps
 }
 
 export const getServerSideProps: GetServerSideProps<TalkDetailPageProps> = async (ctx) => {
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
+  ctx.res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
 
   const slug = typeof ctx.params?.slug === 'string' ? ctx.params.slug : '';
   const { speakers } = await fetchPublicSpeakers();

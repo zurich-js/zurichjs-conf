@@ -201,6 +201,6 @@ export const getStaticProps: GetStaticProps<HomePageProps> = async () => {
       dehydratedState: dehydrate(),
       blueskyFeed,
     },
-    revalidate: 21600,
+    revalidate: 86400,
   };
 };

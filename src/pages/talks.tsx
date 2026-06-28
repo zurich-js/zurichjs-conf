@@ -99,7 +99,7 @@ export const getStaticProps: GetStaticProps<TalksPageProps> = async () => {
         destination: '/speakers',
         permanent: false,
       },
-      revalidate: 21600,
+      revalidate: 86400,
     };
   }
 
@@ -107,6 +107,6 @@ export const getStaticProps: GetStaticProps<TalksPageProps> = async () => {
     props: {
       items,
     },
-    revalidate: 21600,
+    revalidate: 86400,
   };
 };

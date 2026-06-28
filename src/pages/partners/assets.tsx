@@ -538,6 +538,5 @@ export const getStaticProps: GetStaticProps<PartnerAssetsPageProps> = async () =
     props: {
       dehydratedState: dehydrate(),
     },
-    revalidate: 21600,
   };
 };
