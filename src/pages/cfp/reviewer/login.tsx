@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import type { GetServerSideProps } from 'next';
@@ -71,7 +72,7 @@ function ReviewerLoginPage() {
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-10 w-10" />
+              <Image src="/images/logo/zurichjs-square.png" alt="ZurichJS" width={40} height={40} className="h-10 w-10" />
               <span className="text-white font-semibold">CFP Reviewer</span>
             </Link>
             <Link

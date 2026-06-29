@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Plus, Users } from 'lucide-react';
 import { ToggleButton, Pill } from '@/components/admin/shared';
 import { getSessionScheduleCount, getSessionSpeakers } from './utils';
@@ -89,7 +90,7 @@ export function ProgramSpeakersTab({
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 items-start gap-3">
-                  {speaker.profile_image_url ? <img src={speaker.profile_image_url} alt="" className="size-12 rounded-full object-cover" /> : <div className="flex size-12 items-center justify-center rounded-full bg-gray-100"><Users className="size-5 text-gray-400" /></div>}
+                  {speaker.profile_image_url ? <Image src={speaker.profile_image_url} alt="" width={48} height={48} className="size-12 rounded-full object-cover" /> : <div className="flex size-12 items-center justify-center rounded-full bg-gray-100"><Users className="size-5 text-gray-400" /></div>}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-gray-950">{speaker.first_name} {speaker.last_name}</p>
                     <p className="truncate text-sm text-gray-600">{[speaker.job_title, speaker.company].filter(Boolean).join(' @ ') || speaker.email}</p>
