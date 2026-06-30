@@ -126,7 +126,7 @@ export default async function handler(
     if (!emailResult.success) {
       return res.status(500).json({
         success: false,
-        error: 'Failed to send your submission. Please use the Google Form fallback.',
+        error: 'Failed to send your submission.',
         fallbackUrl: namespaceStudentSponsorshipGoogleFormUrl,
         remaining: rateLimit.remaining,
       });
@@ -150,7 +150,7 @@ export default async function handler(
 
     return res.status(500).json({
       success: false,
-      error: 'An unexpected error occurred. Please use the Google Form fallback.',
+      error: 'An unexpected error occurred.',
       fallbackUrl: namespaceStudentSponsorshipGoogleFormUrl,
     });
   }

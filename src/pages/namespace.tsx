@@ -1,12 +1,15 @@
 import React from 'react';
+import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { SEO } from '@/components/SEO';
+import { Countdown } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { NamespaceStudentSponsorshipForm } from '@/components/organisms/namespace';
 
 const googleFormFallbackUrl =
   'https://docs.google.com/forms/d/e/1FAIpQLScpq-Orha6BeQ4SCSQ5XSeowrFybb-jg8Q7Xh1oh8hZnxc0-w/viewform';
+const submissionDeadline = '2026-07-19T23:59:59+02:00';
 
 const namespaceFeatures = [
   {
@@ -65,25 +68,33 @@ export default function NamespacePage() {
               variant="light"
               className="max-w-4xl text-[3rem] leading-tight sm:text-2xl lg:text-3xl"
             >
-              Win a free ZurichJS Conf ticket
+              Win a ZurichJS Conf ticket
             </Heading>
-            <p className="mt-6 max-w-3xl text-base leading-relaxed text-gray-700 md:text-md">
-              Namespace, our Platinum Sponsor, is helping students join ZurichJS
-              Conf 2026. Share a project you built for a chance to receive a
-              sponsored conference ticket.
+            <p className="mt-6 max-w-3xl text-base leading-relaxed text-brand-gray-dark md:text-md">
+              Namespace, our Platinum Sponsor, are giving away a limited number of tickets for ZurichJS Conf 2026
+              to university students graduating in 2026 who impress them most with their code.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button href="#apply" asChild variant="blue">
-                Participate
-              </Button>
-            </div>
+            <div className="mt-8 flex flex-col-reverse items-center gap-6 lg:flex-row lg:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button href="#apply" asChild variant="blue">
+                  Participate
+                </Button>
+              </div>
 
+              <div className="lg:shrink-0 lg:pb-1 xl:mr-4">
+                <Countdown
+                  targetDate={submissionDeadline}
+                  kicker="Submissions close in"
+                  variant="light"
+                />
+              </div>
+            </div>
           </div>
         </ShapedSection>
 
         <ShapedSection shape="tighten" variant="gray-light" id="namespace">
-          <div className="grid gap-10 md:grid-cols-[0.95fr_1.05fr] md:items-start">
+          <div className="grid gap-10 md:grid-cols-[0.9fr_1.1fr] md:items-start">
             <div>
               <Kicker variant="light" className="mb-4">
                 Platinum sponsor
@@ -91,32 +102,38 @@ export default function NamespacePage() {
               <Heading level="h2" variant="light" className="text-xl font-bold">
                 What Namespace does
               </Heading>
-              <p className="mt-5 text-base leading-relaxed text-gray-700">
-                Namespace builds developer infrastructure for teams that need fast,
-                repeatable feedback from their tools.
+              <p className="mt-5 text-base leading-relaxed text-brand-gray-dark">
+                Namespace is a fast-growing US startup with presence in Zurich.
               </p>
-              <p className="mt-4 text-base leading-relaxed text-gray-700">
-                In practice, that means faster CI runners, cloud development
-                environments, and build infrastructure that helps engineering teams
-                spend less time waiting.
+              <p className="mt-5 text-base leading-relaxed text-brand-gray-dark">
+                They are the compute and code primitive layer for AI-first companies, redefining modern developer infrastructure.
               </p>
-              <Button
-                href="https://namespace.so"
-                asChild
-                variant="black"
-                size="sm"
-                className="mt-7"
-              >
-                Visit Namespace
-                <ExternalLink className="size-3" aria-hidden="true" />
-              </Button>
+              <div className="flex gap-6 items-center mt-7">
+                <Image
+                    src="/images/namespace-logo.svg"
+                    alt="Namespace"
+                    width={180}
+                    height={42}
+                    className="h-auto w-44"
+                />
+                <Button
+                    href="https://namespace.so"
+                    asChild
+                    variant="ghost"
+                    forceDark={true}
+                    size="sm"
+                >
+                  Visit Namespace
+                  <ExternalLink className="size-3" aria-hidden="true" />
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-6 md:border-l md:border-gray-300 md:pl-10">
+            <div className="space-y-6 mt-12 md:border-l md:border-black/15 md:pl-10">
               {namespaceFeatures.map((feature) => (
                 <section key={feature.title}>
                   <h3 className="text-md font-bold text-brand-black">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                  <p className="mt-2 text-sm leading-relaxed text-brand-gray-dark">
                     {feature.description}
                   </p>
                 </section>
@@ -134,7 +151,7 @@ export default function NamespacePage() {
               <Heading level="h2" variant="light" className="text-xl font-bold">
                 Submit a project you are proud of
               </Heading>
-              <p className="mt-5 text-base leading-relaxed text-gray-700">
+              <p className="mt-5 text-base leading-relaxed text-brand-gray-dark">
                 <strong className="font-bold text-brand-black">
                   Are you graduating in 2026?
                 </strong>
@@ -144,9 +161,9 @@ export default function NamespacePage() {
                 review.
               </p>
 
-              <dl className="mt-8 grid gap-5 border-t border-gray-200 pt-5 sm:grid-cols-2">
+              <dl className="mt-8 grid gap-5 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xxs font-semibold uppercase tracking-widest text-gray-500">
+                  <dt className="text-xxs font-semibold uppercase tracking-widest text-brand-gray-medium">
                     Deadline
                   </dt>
                   <dd className="mt-1 text-sm font-bold text-brand-black">
@@ -154,7 +171,7 @@ export default function NamespacePage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xxs font-semibold uppercase tracking-widest text-gray-500">
+                  <dt className="text-xxs font-semibold uppercase tracking-widest text-brand-gray-medium">
                     Winners notified
                   </dt>
                   <dd className="mt-1 text-sm font-bold text-brand-black">
@@ -164,7 +181,7 @@ export default function NamespacePage() {
               </dl>
             </div>
 
-            <ol className="space-y-6 md:border-l md:border-gray-200 md:pl-10">
+            <ol className="space-y-6 mt-12 md:border-l md:border-black/15 md:pl-10">
               {participationSteps.map((criterion, index) => (
                 <li key={criterion.title} className="grid grid-cols-[2.5rem_1fr] gap-4">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-black text-sm font-bold text-white">
@@ -172,7 +189,7 @@ export default function NamespacePage() {
                   </span>
                   <div>
                     <h3 className="text-md font-bold text-brand-black">{criterion.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                    <p className="mt-2 text-sm leading-relaxed text-brand-gray-dark">
                       {criterion.description}
                     </p>
                   </div>

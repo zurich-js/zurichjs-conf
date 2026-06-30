@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import posthog from 'posthog-js';
-import { AlertCircle, CheckCircle, ExternalLink, Send } from 'lucide-react';
+import { AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { useNamespaceStudentSponsorshipForm } from '@/hooks/useNamespaceStudentSponsorshipForm';
 import type { NamespaceStudentSponsorshipSubmitRequest } from '@/lib/api/namespace';
+import {
+  namespaceStudentSponsorshipSchema,
+  type NamespaceStudentSponsorshipFormData,
+} from '@/lib/validations/namespace';
 
 const googleFormFallbackUrl =
   'https://docs.google.com/forms/d/e/1FAIpQLScpq-Orha6BeQ4SCSQ5XSeowrFybb-jg8Q7Xh1oh8hZnxc0-w/viewform';
@@ -27,6 +31,7 @@ interface FormState {
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
+type ValidatedField = Exclude<keyof FormState, 'website'>;
 
 const initialFormState: FormState = {
   fullName: '',
@@ -108,15 +113,6 @@ const textAreaFields = [
   },
 ] as const;
 
-function isValidUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
 export function NamespaceStudentSponsorshipForm({
   fallbackUrl = googleFormFallbackUrl,
 }: NamespaceStudentSponsorshipFormProps) {
@@ -144,48 +140,52 @@ export function NamespaceStudentSponsorshipForm({
     }
   };
 
-  const validateForm = (): boolean => {
-    const nextErrors: FormErrors = {};
+  const setFieldError = (field: ValidatedField, message?: string) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) {
+        next[field] = message;
+      } else {
+        delete next[field];
+      }
+      return next;
+    });
+  };
 
-    for (const field of textFields) {
-      const value = formData[field.id].trim();
-      if (!value) {
-        nextErrors[field.id] = `${field.label} is required`;
+  const validateField = (field: ValidatedField) => {
+    const result = namespaceStudentSponsorshipSchema.shape[field].safeParse(
+      formData[field]
+    );
+
+    setFieldError(field, result.success ? undefined : result.error.issues[0]?.message);
+  };
+
+  const validateForm = (): NamespaceStudentSponsorshipFormData | null => {
+    const result = namespaceStudentSponsorshipSchema.safeParse(formData);
+
+    if (result.success) {
+      setErrors({});
+      return result.data;
+    }
+
+    const nextErrors: FormErrors = {};
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as keyof FormState | undefined;
+      if (field && field in formData && !nextErrors[field]) {
+        nextErrors[field] = issue.message;
       }
     }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      nextErrors.email = 'Enter a valid email address';
-    }
-
-    if (formData.githubUrl && !isValidUrl(formData.githubUrl)) {
-      nextErrors.githubUrl = 'Enter a valid GitHub page URL';
-    }
-
-    if (formData.codeUrl && !isValidUrl(formData.codeUrl)) {
-      nextErrors.codeUrl = 'Enter a valid code link URL';
-    }
-
-    if (formData.setupInstructions.trim().length < 20) {
-      nextErrors.setupInstructions = 'Add at least 20 characters of setup instructions';
-    }
-
-    if (formData.prideExplanation.trim().length < 20) {
-      nextErrors.prideExplanation = 'Add at least 20 characters explaining the project';
-    }
-
-    if (!formData.eligibilityConfirmed) {
-      nextErrors.eligibilityConfirmed = 'Confirm eligibility before submitting';
-    }
-
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    return null;
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!validateForm()) {
+    const validatedData = validateForm();
+
+    if (!validatedData) {
       return;
     }
 
@@ -205,17 +205,17 @@ export function NamespaceStudentSponsorshipForm({
     })();
 
     const payload: NamespaceStudentSponsorshipSubmitRequest = {
-      fullName: formData.fullName,
-      email: formData.email,
-      universityName: formData.universityName,
-      degreeName: formData.degreeName,
-      githubUrl: formData.githubUrl,
-      codeUrl: formData.codeUrl,
-      setupInstructions: formData.setupInstructions,
-      prideExplanation: formData.prideExplanation,
-      anythingElse: formData.anythingElse || undefined,
-      eligibilityConfirmed: formData.eligibilityConfirmed,
-      website: formData.website,
+      fullName: validatedData.fullName,
+      email: validatedData.email,
+      universityName: validatedData.universityName,
+      degreeName: validatedData.degreeName,
+      githubUrl: validatedData.githubUrl,
+      codeUrl: validatedData.codeUrl,
+      setupInstructions: validatedData.setupInstructions,
+      prideExplanation: validatedData.prideExplanation,
+      anythingElse: validatedData.anythingElse || undefined,
+      eligibilityConfirmed: validatedData.eligibilityConfirmed,
+      website: validatedData.website,
       posthogSessionId,
       posthogDistinctId,
     };
@@ -270,23 +270,24 @@ export function NamespaceStudentSponsorshipForm({
           Submit your project
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-gray-600">
-          This goes directly to the Namespace Student Sponsorship reviewers. If
-          anything fails, use the Google Form fallback.
+          This goes directly to the Namespace Student Sponsorship reviewers.
         </p>
       </div>
 
       {submitError && (
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-error/30 bg-red-50 p-4">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-error" aria-hidden="true" />
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-error/30 bg-red-50 p-4">
+          <AlertCircle className="size-4 shrink-0 text-error" aria-hidden="true" />
           <div>
-            <p className="font-semibold text-red-800">{submitError}</p>
-            <a
-              href={fallbackUrl}
-              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-blue-primary underline"
-            >
-              Use the Google Form fallback
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            </a>
+            <p className="font-semibold text-red-800">
+              {submitError}{" "}
+              <a
+                  href={fallbackUrl}
+                  className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-blue-primary underline"
+              >
+                Use the Google Form fallback
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              </a>
+            </p>
           </div>
         </div>
       )}
@@ -308,6 +309,7 @@ export function NamespaceStudentSponsorshipForm({
                 autoComplete={field.autoComplete}
                 value={formData[field.id]}
                 onChange={(event) => updateField(field.id, event.target.value)}
+                onBlur={() => validateField(field.id)}
                 placeholder={field.placeholder}
                 className={`${inputBaseStyles} ${fieldError ? inputErrorStyles : ''}`}
                 aria-required="true"
@@ -341,6 +343,7 @@ export function NamespaceStudentSponsorshipForm({
                 rows={field.rows}
                 value={formData[field.id]}
                 onChange={(event) => updateField(field.id, event.target.value)}
+                onBlur={() => validateField(field.id)}
                 placeholder={field.placeholder}
                 className={`${inputBaseStyles} resize-y ${fieldError ? inputErrorStyles : ''}`}
                 aria-required={isRequired}
@@ -360,12 +363,13 @@ export function NamespaceStudentSponsorshipForm({
         })}
       </div>
 
-      <div className="mt-6 rounded-lg border border-blue-primary/20 bg-blue-primary/5 p-4">
+      <div className="mt-5">
         <label className="flex gap-3 text-sm leading-relaxed text-gray-700">
           <input
             type="checkbox"
             checked={formData.eligibilityConfirmed}
             onChange={(event) => updateField('eligibilityConfirmed', event.target.checked)}
+            onBlur={() => validateField('eligibilityConfirmed')}
             className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-primary focus:ring-blue-primary"
             aria-describedby={errors.eligibilityConfirmed ? 'eligibility-error' : undefined}
           />
