@@ -6,8 +6,9 @@ import {
 } from '@/emails/templates/NamespaceStudentSponsorshipEmail';
 import { getResendClient, EMAIL_CONFIG, log } from './config';
 
-export const NAMESPACE_STUDENT_SPONSORSHIP_TO = 'bogdan@zurichjs.com';
-export const NAMESPACE_STUDENT_SPONSORSHIP_CC = 'hello@zurichjs.com';
+export const NAMESPACE_STUDENT_SPONSORSHIP_TO =
+  process.env.NAMESPACE_STUDENT_SPONSORSHIP_TO || 'bogdan@zurichjs.com';
+export const NAMESPACE_STUDENT_SPONSORSHIP_BCC = 'hello@zurichjs.com';
 
 export type NamespaceStudentSponsorshipEmailData =
   NamespaceStudentSponsorshipEmailProps;
@@ -28,7 +29,7 @@ export async function sendNamespaceStudentSponsorshipEmail(
     const result = await resend.emails.send({
       from: EMAIL_CONFIG.from,
       to: NAMESPACE_STUDENT_SPONSORSHIP_TO,
-      cc: NAMESPACE_STUDENT_SPONSORSHIP_CC,
+      bcc: NAMESPACE_STUDENT_SPONSORSHIP_BCC,
       replyTo: data.email,
       subject: `[Namespace Student Sponsorship] ${data.fullName}`,
       html,
