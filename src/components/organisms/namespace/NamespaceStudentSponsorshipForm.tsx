@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import posthog from 'posthog-js';
 import { AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/atoms';
@@ -280,6 +280,17 @@ export function NamespaceStudentSponsorshipForm({
     'w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 transition-colors focus:border-blue-primary focus:outline-none focus:ring-2 focus:ring-blue-primary/30';
   const inputErrorStyles = 'border-error focus:border-error focus:ring-error/30';
 
+  useEffect(() => {
+    if (!isSuccess) {
+      return;
+    }
+
+    document.querySelector('#apply')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [isSuccess]);
+
   if (isSuccess) {
     return (
       <div className="text-center">
@@ -293,9 +304,6 @@ export function NamespaceStudentSponsorshipForm({
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <Button variant="blue" onClick={resetForm}>
             Submit another project
-          </Button>
-          <Button variant="dark" href={fallbackUrl} asChild>
-            Form doesn't work? Click here
           </Button>
         </div>
       </div>

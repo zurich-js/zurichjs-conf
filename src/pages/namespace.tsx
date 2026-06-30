@@ -114,7 +114,7 @@ export default function NamespacePage() {
               <p className="mt-5 text-base leading-relaxed text-brand-gray-dark">
                 They are the compute and code primitive layer for AI-first companies, redefining modern developer infrastructure.
               </p>
-              <div className="flex gap-6 items-center mt-7">
+              <div className="flex flex-col sm:flex-row gap-6 items-center mt-7">
                 <Image
                     src="/images/namespace-logo.svg"
                     alt="Namespace"
