@@ -13,6 +13,18 @@ export interface NamespaceStudentSponsorshipSubmitResponse {
   remaining?: number;
 }
 
+export interface NamespaceStudentSponsorshipLeadRequest {
+  email: string;
+  posthogSessionId?: string;
+  posthogDistinctId?: string;
+}
+
+export interface NamespaceStudentSponsorshipLeadResponse {
+  success: boolean;
+  error?: string;
+  remaining?: number;
+}
+
 export async function submitNamespaceStudentSponsorship(
   data: NamespaceStudentSponsorshipSubmitRequest
 ): Promise<NamespaceStudentSponsorshipSubmitResponse> {
@@ -20,4 +32,13 @@ export async function submitNamespaceStudentSponsorship(
     NamespaceStudentSponsorshipSubmitResponse,
     NamespaceStudentSponsorshipSubmitRequest
   >(endpoints.namespace.studentSponsorship(), data);
+}
+
+export async function captureNamespaceStudentSponsorshipLead(
+  data: NamespaceStudentSponsorshipLeadRequest
+): Promise<NamespaceStudentSponsorshipLeadResponse> {
+  return apiClient.post<
+    NamespaceStudentSponsorshipLeadResponse,
+    NamespaceStudentSponsorshipLeadRequest
+  >(endpoints.namespace.studentSponsorshipLead(), data);
 }

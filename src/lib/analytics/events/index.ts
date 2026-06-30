@@ -69,6 +69,7 @@ export type {
   ButtonClickedEvent,
   FormSubmittedEvent,
   FormErrorEvent,
+  NamespaceStudentSponsorshipEmailCapturedEvent,
   LinkClickedEvent,
   SearchPerformedEvent,
   FilterAppliedEvent,
@@ -173,6 +174,7 @@ import type {
   ButtonClickedEvent,
   FormSubmittedEvent,
   FormErrorEvent,
+  NamespaceStudentSponsorshipEmailCapturedEvent,
   LinkClickedEvent,
   SearchPerformedEvent,
   FilterAppliedEvent,
@@ -257,6 +259,7 @@ export type AnalyticsEvent =
   | ButtonClickedEvent
   | FormSubmittedEvent
   | FormErrorEvent
+  | NamespaceStudentSponsorshipEmailCapturedEvent
   | LinkClickedEvent
   | SearchPerformedEvent
   | FilterAppliedEvent

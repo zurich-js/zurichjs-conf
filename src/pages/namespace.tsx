@@ -65,7 +65,7 @@ export default function NamespacePage() {
           id="hero"
           className="bg-[url('/images/namespace-bkg.png')] bg-cover bg-center"
         >
-          <div className="pt-24 md:pt-32 lg:pt-36">
+          <div className="pt-24 md:pt-32 lg:pt-36 max-w-3xl">
             <Kicker variant="light" className="mb-4">
               Namespace Student Sponsorship
             </Kicker>

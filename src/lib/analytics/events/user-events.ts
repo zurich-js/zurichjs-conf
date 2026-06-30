@@ -35,6 +35,17 @@ export interface FormErrorEvent {
     };
 }
 
+export interface NamespaceStudentSponsorshipEmailCapturedEvent {
+  event: 'namespace_student_sponsorship_email_captured';
+  properties: BaseEventProperties & {
+    email: string;
+    form_name: 'namespace_student_sponsorship';
+    capture_source: 'email_blur';
+    posthog_session_id?: string;
+    posthog_distinct_id?: string;
+  };
+}
+
 export interface LinkClickedEvent {
   event: 'link_clicked';
   properties: BaseEventProperties & {

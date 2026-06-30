@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import posthog from 'posthog-js';
 import { AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { useNamespaceStudentSponsorshipForm } from '@/hooks/useNamespaceStudentSponsorshipForm';
+import { captureNamespaceStudentSponsorshipLead } from '@/lib/api/namespace';
 import type { NamespaceStudentSponsorshipSubmitRequest } from '@/lib/api/namespace';
 import {
   namespaceStudentSponsorshipSchema,
@@ -118,6 +119,7 @@ export function NamespaceStudentSponsorshipForm({
 }: NamespaceStudentSponsorshipFormProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
+  const capturedLeadEmails = useRef(new Set<string>());
   const {
     submit,
     isPending: isSubmitting,
@@ -152,12 +154,66 @@ export function NamespaceStudentSponsorshipForm({
     });
   };
 
+  const getPosthogIds = () => {
+    const posthogSessionId = (() => {
+      try {
+        return posthog.get_session_id() || undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+    const posthogDistinctId = (() => {
+      try {
+        return posthog.get_distinct_id() || undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    return { posthogSessionId, posthogDistinctId };
+  };
+
+  const captureEmailLead = async (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (capturedLeadEmails.current.has(normalizedEmail)) {
+      return;
+    }
+
+    capturedLeadEmails.current.add(normalizedEmail);
+
+    try {
+      await captureNamespaceStudentSponsorshipLead({
+        email: normalizedEmail,
+        ...getPosthogIds(),
+      });
+    } catch {
+      capturedLeadEmails.current.delete(normalizedEmail);
+    }
+  };
+
   const validateField = (field: ValidatedField) => {
     const result = namespaceStudentSponsorshipSchema.shape[field].safeParse(
       formData[field]
     );
 
     setFieldError(field, result.success ? undefined : result.error.issues[0]?.message);
+
+    return result;
+  };
+
+  const handleFieldBlur = (field: ValidatedField) => {
+    const result = validateField(field);
+
+    if (field === 'email' && result.success) {
+      const emailResult = namespaceStudentSponsorshipSchema.shape.email.safeParse(
+        formData.email
+      );
+
+      if (emailResult.success) {
+        void captureEmailLead(emailResult.data);
+      }
+    }
   };
 
   const validateForm = (): NamespaceStudentSponsorshipFormData | null => {
@@ -189,20 +245,7 @@ export function NamespaceStudentSponsorshipForm({
       return;
     }
 
-    const posthogSessionId = (() => {
-      try {
-        return posthog.get_session_id() || undefined;
-      } catch {
-        return undefined;
-      }
-    })();
-    const posthogDistinctId = (() => {
-      try {
-        return posthog.get_distinct_id() || undefined;
-      } catch {
-        return undefined;
-      }
-    })();
+    const { posthogSessionId, posthogDistinctId } = getPosthogIds();
 
     const payload: NamespaceStudentSponsorshipSubmitRequest = {
       fullName: validatedData.fullName,
@@ -309,7 +352,7 @@ export function NamespaceStudentSponsorshipForm({
                 autoComplete={field.autoComplete}
                 value={formData[field.id]}
                 onChange={(event) => updateField(field.id, event.target.value)}
-                onBlur={() => validateField(field.id)}
+                onBlur={() => handleFieldBlur(field.id)}
                 placeholder={field.placeholder}
                 className={`${inputBaseStyles} ${fieldError ? inputErrorStyles : ''}`}
                 aria-required="true"
@@ -343,7 +386,7 @@ export function NamespaceStudentSponsorshipForm({
                 rows={field.rows}
                 value={formData[field.id]}
                 onChange={(event) => updateField(field.id, event.target.value)}
-                onBlur={() => validateField(field.id)}
+                onBlur={() => handleFieldBlur(field.id)}
                 placeholder={field.placeholder}
                 className={`${inputBaseStyles} resize-y ${fieldError ? inputErrorStyles : ''}`}
                 aria-required={isRequired}
@@ -369,7 +412,7 @@ export function NamespaceStudentSponsorshipForm({
             type="checkbox"
             checked={formData.eligibilityConfirmed}
             onChange={(event) => updateField('eligibilityConfirmed', event.target.checked)}
-            onBlur={() => validateField('eligibilityConfirmed')}
+            onBlur={() => handleFieldBlur('eligibilityConfirmed')}
             className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-primary focus:ring-blue-primary"
             aria-describedby={errors.eligibilityConfirmed ? 'eligibility-error' : undefined}
           />
