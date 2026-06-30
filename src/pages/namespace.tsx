@@ -58,7 +58,13 @@ export default function NamespacePage() {
       />
 
       <main className="min-h-screen">
-        <ShapedSection shape="down" variant="light" dropTop id="hero">
+        <ShapedSection
+          shape="down"
+          variant="light"
+          dropTop
+          id="hero"
+          className="bg-[url('/images/namespace-bkg.png')] bg-cover bg-center"
+        >
           <div className="pt-24 md:pt-32 lg:pt-36">
             <Kicker variant="light" className="mb-4">
               Namespace Student Sponsorship
