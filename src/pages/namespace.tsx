@@ -77,7 +77,7 @@ export default function NamespacePage() {
               Win a ZurichJS Conf ticket
             </Heading>
             <p className="mt-6 max-w-3xl text-base leading-relaxed text-brand-gray-dark md:text-md">
-              Namespace, our Platinum Sponsor, are giving away a limited number of tickets for ZurichJS Conf 2026
+              Namespace, our Platinum Sponsor, is giving away a limited number of tickets for ZurichJS Conf 2026
               to university students graduating in 2026 who impress them most with their code.
             </p>
 
