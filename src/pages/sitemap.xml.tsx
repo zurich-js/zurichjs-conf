@@ -58,6 +58,12 @@ const generateSitemap = async (baseUrl: string): Promise<string> => {
       changefreq: 'monthly',
       priority: '0.7',
     },
+    {
+      loc: `${baseUrl}/namespace`,
+      lastmod: currentDate,
+      changefreq: 'monthly',
+      priority: '0.7',
+    },
     // Contact page
     {
       loc: `${baseUrl}/contact`,

@@ -89,6 +89,9 @@ export const endpoints = {
   contact: {
     submit: () => '/api/contact' as const,
   },
+  namespace: {
+    studentSponsorship: () => '/api/namespace/student-sponsorship' as const,
+  },
   // Public endpoints
   public: {
     sponsors: () => '/api/sponsors/public' as const,
@@ -126,6 +129,7 @@ export type EndpointPath = ReturnType<
   | typeof endpoints.checkout.createSession
   | typeof endpoints.newsletter.subscribe
   | typeof endpoints.contact.submit
+  | typeof endpoints.namespace.studentSponsorship
 >;
 
 /**
@@ -134,5 +138,4 @@ export type EndpointPath = ReturnType<
 export function buildUrl(endpoint: string, config: ApiConfig = defaultApiConfig): string {
   return `${config.baseUrl}${endpoint}`;
 }
-
 
