@@ -10,6 +10,7 @@ export interface CountdownProps {
   kicker?: string;
   kickerClassName?: string;
   className?: string;
+  variant?: 'dark' | 'light';
 }
 
 /**
@@ -21,11 +22,13 @@ export const Countdown: React.FC<CountdownProps> = ({
   targetDate,
   kicker = 'Time remaining',
   kickerClassName = '',
-  className = ''
+  className = '',
+  variant = 'dark'
 }) => {
   const timeRemaining = useCountdown(targetDate);
   const { shouldAnimate } = useMotion();
   const [isMounted, setIsMounted] = useState(false);
+  const isLight = variant === 'light';
 
   // Prevent hydration mismatch by only showing live countdown after mount
   useEffect(() => {
@@ -35,7 +38,7 @@ export const Countdown: React.FC<CountdownProps> = ({
   if (timeRemaining.isComplete) {
     return (
       <div
-        className={`text-brand-white text-center ${className}`}
+        className={`${isLight ? 'text-brand-black' : 'text-brand-white'} text-center ${className}`}
         role="status"
         aria-live="polite"
       >
@@ -53,7 +56,7 @@ export const Countdown: React.FC<CountdownProps> = ({
 
   return (
     <motion.div
-      className={`flex flex-col items-start`}
+      className={`flex flex-col items-start ${className}`}
       role="timer"
       aria-live={isMounted ? "polite" : "off"}
       aria-label={isMounted ? `Time until event: ${timeRemaining.days} days, ${timeRemaining.hours} hours, ${timeRemaining.minutes} minutes, ${timeRemaining.seconds} seconds` : "Time until event"}
@@ -66,7 +69,7 @@ export const Countdown: React.FC<CountdownProps> = ({
       }}
     >
       {/* Header */}
-      <Kicker className={`mt-2 ${kickerClassName}`}>
+      <Kicker variant={variant} className={`mt-2 ${kickerClassName}`}>
         {kicker}
       </Kicker>
 
@@ -77,19 +80,22 @@ export const Countdown: React.FC<CountdownProps> = ({
             {/* Unit Display */}
             <div className="flex flex-col items-center">
               <div
-                className="text-md font-normal text-brand-white tabular-nums"
+                className={`text-md font-normal tabular-nums ${isLight ? 'text-brand-black' : 'text-brand-white'}`}
                 suppressHydrationWarning
               >
                 {unit.padded ? padZero(unit.value) : unit.value}
               </div>
-              <div className="text-sm text-brand-gray-medium tracking-wide">
+              <div className={`text-sm tracking-wide ${isLight ? 'text-brand-gray-dark' : 'text-brand-gray-medium'}`}>
                 {unit.label}
               </div>
             </div>
 
             {/* Divider */}
             {index < units.length - 1 && (
-              <div className="h-6 w-px bg-brand-gray-medium" aria-hidden="true" />
+              <div
+                className={`h-6 w-px ${isLight ? 'bg-brand-gray-medium/60' : 'bg-brand-gray-medium'}`}
+                aria-hidden="true"
+              />
             )}
           </React.Fragment>
         ))}
@@ -97,4 +103,3 @@ export const Countdown: React.FC<CountdownProps> = ({
     </motion.div>
   );
 };
-

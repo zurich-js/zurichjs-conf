@@ -102,6 +102,16 @@ export const contactKeys = {
 } as const;
 
 /**
+ * Namespace student sponsorship query keys
+ */
+export const namespaceKeys = {
+  all: ['namespace'] as const,
+  studentSponsorship: () => [...namespaceKeys.all, 'student-sponsorship'] as const,
+  submitStudentSponsorship: () =>
+    [...namespaceKeys.studentSponsorship(), 'submit'] as const,
+} as const;
+
+/**
  * CFP (Call for Papers) query keys
  */
 export const cfpKeys = {
