@@ -158,6 +158,23 @@ describe('/api/namespace/student-sponsorship', () => {
     }));
   });
 
+  it('returns fallback guidance without sending email when persistence fails', async () => {
+    mocks.persistApplication.mockResolvedValueOnce({
+      application: null,
+      error: 'database unavailable',
+    });
+
+    const res = await callHandler(requestWithIp('203.0.113.33'));
+
+    expect(res._status).toBe(500);
+    expect(res._json).toEqual(expect.objectContaining({
+      success: false,
+      error: 'Failed to save your submission.',
+      fallbackUrl: googleFormFallbackUrl,
+    }));
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+
   it('rate limits repeated submissions from the same IP', async () => {
     for (let index = 0; index < 6; index += 1) {
       expect((await callHandler(requestWithIp('203.0.113.4')))._status).toBe(200);

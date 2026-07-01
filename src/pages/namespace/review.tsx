@@ -6,10 +6,6 @@ import { Check, ChevronDown, ChevronRight, Copy, ExternalLink } from 'lucide-rea
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Modal, ModalBody } from '@/components/atoms';
 import { createSupabaseServerClient } from '@/lib/cfp/auth';
-import {
-  isNamespaceStudentSponsorshipReviewer,
-  listNamespaceStudentSponsorshipApplications,
-} from '@/lib/namespace/student-sponsorship-persistence';
 import type { NamespaceStudentSponsorshipApplication } from '@/lib/types/namespace';
 
 interface NamespaceStudentSponsorshipApplicationRow
@@ -658,6 +654,10 @@ export default function NamespaceReviewPage({
 }
 
 export const getServerSideProps: GetServerSideProps<NamespaceReviewPageProps> = async (ctx) => {
+  const {
+    isNamespaceStudentSponsorshipReviewer,
+    listNamespaceStudentSponsorshipApplications,
+  } = await import('@/lib/namespace/student-sponsorship-persistence');
   const supabase = createSupabaseServerClient(ctx);
   const { data: { session } } = await supabase.auth.getSession();
   const email = session?.user.email ?? null;

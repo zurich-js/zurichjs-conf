@@ -93,34 +93,13 @@ export async function persistNamespaceStudentSponsorshipApplication(
       .from('namespace_student_sponsorship_applications')
       .update(payload)
       .eq('id', input.applicationId)
+      .eq('email', payload.email)
       .select('*')
       .single();
 
     if (!error && data) {
-      return { application: data };
+      return { application: data as NamespaceStudentSponsorshipApplication };
     }
-  }
-
-  const { data: existing } = await supabase
-    .from('namespace_student_sponsorship_applications')
-    .select('*')
-    .eq('email', payload.email)
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    const { data, error } = await supabase
-      .from('namespace_student_sponsorship_applications')
-      .update(payload)
-      .eq('id', existing.id)
-      .select('*')
-      .single();
-
-    return {
-      application: data,
-      error: error?.message,
-    };
   }
 
   const { data, error } = await supabase
@@ -130,7 +109,7 @@ export async function persistNamespaceStudentSponsorshipApplication(
     .single();
 
   return {
-    application: data,
+    application: data as NamespaceStudentSponsorshipApplication | null,
     error: error?.message,
   };
 }
@@ -146,7 +125,7 @@ export async function listNamespaceStudentSponsorshipApplications(): Promise<{
     .order('updated_at', { ascending: false });
 
   return {
-    applications: data ?? [],
+    applications: (data ?? []) as NamespaceStudentSponsorshipApplication[],
     error: error?.message,
   };
 }

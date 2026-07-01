@@ -15,7 +15,7 @@ export interface NamespaceStudentSponsorshipApplication {
   pride_explanation: string | null;
   anything_else: string | null;
   processing_consent: boolean;
-  status: string;
+  status: NamespaceStudentSponsorshipStatus;
   posthog_session_id: string | null;
   posthog_distinct_id: string | null;
   user_agent: string | null;
