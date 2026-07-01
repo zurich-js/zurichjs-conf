@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { z } from 'zod';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { persistNamespaceStudentSponsorshipApplication } from '@/lib/namespace/student-sponsorship-persistence';
+import { namespaceStudentSponsorshipLeadSchema } from '@/lib/validations/namespace';
 
 const log = logger.scope('Namespace Student Sponsorship Lead API');
 
@@ -11,20 +12,9 @@ const rateLimiter = createRateLimiter({
   maxRequests: 20,
 });
 
-const leadSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, 'Email is required')
-    .email('Enter a valid email address')
-    .max(254, 'Email must be 254 characters or less'),
-  posthogSessionId: z.string().max(500).optional(),
-  posthogDistinctId: z.string().max(500).optional(),
-});
-
 interface NamespaceStudentSponsorshipLeadResponse {
   success: boolean;
+  applicationId?: string;
   error?: string;
   remaining?: number;
 }
@@ -53,7 +43,7 @@ export default async function handler(
       });
     }
 
-    const parseResult = leadSchema.safeParse(req.body);
+    const parseResult = namespaceStudentSponsorshipLeadSchema.safeParse(req.body);
 
     if (!parseResult.success) {
       return res.status(400).json({
@@ -63,7 +53,36 @@ export default async function handler(
       });
     }
 
-    const data = parseResult.data;
+    const data = {
+      ...parseResult.data,
+      email: parseResult.data.email.trim().toLowerCase(),
+    };
+    const persistence = await persistNamespaceStudentSponsorshipApplication({
+      applicationId: data.applicationId,
+      email: data.email,
+      fullName: data.fullName,
+      universityName: data.universityName,
+      degreeName: data.degreeName,
+      githubUrl: data.githubUrl,
+      codeUrl: data.codeUrl,
+      setupInstructions: data.setupInstructions,
+      prideExplanation: data.prideExplanation,
+      anythingElse: data.anythingElse,
+      processingConsent: data.processingConsent,
+      status: 'partial',
+      posthogSessionId: data.posthogSessionId,
+      posthogDistinctId: data.posthogDistinctId,
+      userAgent: req.headers['user-agent'],
+    });
+
+    if (!persistence.application) {
+      log.error('Failed to persist Namespace student sponsorship lead', persistence.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to save your application progress.',
+        remaining: rateLimit.remaining,
+      });
+    }
 
     await serverAnalytics.identify(data.email, {
       email: data.email,
@@ -85,6 +104,7 @@ export default async function handler(
 
     return res.status(200).json({
       success: true,
+      applicationId: persistence.application.id,
       remaining: rateLimit.remaining,
     });
   } catch (error) {

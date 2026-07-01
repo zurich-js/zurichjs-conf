@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { sendNamespaceStudentSponsorshipEmail } from '@/lib/email/namespace-student-sponsorship';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { persistNamespaceStudentSponsorshipApplication } from '@/lib/namespace/student-sponsorship-persistence';
 import { namespaceStudentSponsorshipSchema } from '@/lib/validations/namespace';
 
 const log = logger.scope('Namespace Student Sponsorship API');
@@ -101,6 +102,37 @@ export default async function handler(
       return res.status(200).json({
         success: true,
         submissionId,
+        fallbackUrl: namespaceStudentSponsorshipGoogleFormUrl,
+        remaining: rateLimit.remaining,
+      });
+    }
+
+    const persisted = await persistNamespaceStudentSponsorshipApplication({
+      applicationId: data.applicationId,
+      email: data.email,
+      fullName: data.fullName,
+      universityName: data.universityName,
+      degreeName: data.degreeName,
+      githubUrl: data.githubUrl,
+      codeUrl: data.codeUrl,
+      setupInstructions: data.setupInstructions,
+      prideExplanation: data.prideExplanation,
+      anythingElse: data.anythingElse || undefined,
+      processingConsent: data.processingConsent,
+      status: 'submitted',
+      posthogSessionId: data.posthogSessionId,
+      posthogDistinctId: data.posthogDistinctId,
+      userAgent: req.headers['user-agent'],
+    });
+
+    if (!persisted.application) {
+      log.error('Failed to persist Namespace student sponsorship submission', persisted.error, {
+        submissionId,
+      });
+
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to save your submission.',
         fallbackUrl: namespaceStudentSponsorshipGoogleFormUrl,
         remaining: rateLimit.remaining,
       });

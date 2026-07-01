@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   flush: vi.fn(),
   loggerWarn: vi.fn(),
   loggerError: vi.fn(),
+  persistApplication: vi.fn(),
 }));
 
 vi.mock('@/lib/analytics/server', () => ({
@@ -26,6 +27,10 @@ vi.mock('@/lib/logger', () => ({
       debug: vi.fn(),
     })),
   },
+}));
+
+vi.mock('@/lib/namespace/student-sponsorship-persistence', () => ({
+  persistNamespaceStudentSponsorshipApplication: mocks.persistApplication,
 }));
 
 import handler from '../student-sponsorship-lead';
@@ -59,7 +64,10 @@ async function callHandler(req: Partial<NextApiRequest>) {
   return res;
 }
 
-function requestWithIp(ip: string, body: unknown = { email: 'ada@example.com' }) {
+function requestWithIp(
+  ip: string,
+  body: unknown = { email: 'ada@example.com', processingConsent: true }
+) {
   return {
     method: 'POST',
     headers: {
@@ -72,6 +80,11 @@ function requestWithIp(ip: string, body: unknown = { email: 'ada@example.com' })
 describe('/api/namespace/student-sponsorship-lead', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.persistApplication.mockResolvedValue({
+      application: {
+        id: 'application-1',
+      },
+    });
   });
 
   it('rejects unsupported methods and invalid emails', async () => {
@@ -93,12 +106,21 @@ describe('/api/namespace/student-sponsorship-lead', () => {
   it('identifies and tracks a valid email lead', async () => {
     const res = await callHandler(requestWithIp('203.0.113.22', {
       email: ' Ada@Example.com ',
+      processingConsent: true,
       posthogSessionId: 'session-123',
       posthogDistinctId: 'distinct-123',
     }));
 
     expect(res._status).toBe(200);
-    expect(res._json).toEqual(expect.objectContaining({ success: true }));
+    expect(res._json).toEqual(expect.objectContaining({
+      success: true,
+      applicationId: 'application-1',
+    }));
+    expect(mocks.persistApplication).toHaveBeenCalledWith(expect.objectContaining({
+      email: 'ada@example.com',
+      processingConsent: true,
+      status: 'partial',
+    }));
     expect(mocks.identify).toHaveBeenCalledWith('ada@example.com', expect.objectContaining({
       email: 'ada@example.com',
       namespace_student_sponsorship_lead: true,

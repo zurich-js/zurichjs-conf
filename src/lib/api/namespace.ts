@@ -14,13 +14,24 @@ export interface NamespaceStudentSponsorshipSubmitResponse {
 }
 
 export interface NamespaceStudentSponsorshipLeadRequest {
+  applicationId?: string;
   email: string;
+  fullName?: string;
+  universityName?: string;
+  degreeName?: string;
+  githubUrl?: string;
+  codeUrl?: string;
+  setupInstructions?: string;
+  prideExplanation?: string;
+  anythingElse?: string;
+  processingConsent: boolean;
   posthogSessionId?: string;
   posthogDistinctId?: string;
 }
 
 export interface NamespaceStudentSponsorshipLeadResponse {
   success: boolean;
+  applicationId?: string;
   error?: string;
   remaining?: number;
 }

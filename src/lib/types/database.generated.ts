@@ -9,6 +9,132 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accommodation_booking_rooms: {
+        Row: {
+          booking_id: string
+          check_in_date: string | null
+          check_out_date: string | null
+          created_at: string
+          hotel_id: string
+          id: string
+          metadata: Json
+          nightly_rate: number
+          people_count: number
+          room_name: string
+          room_type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          check_in_date?: string | null
+          check_out_date?: string | null
+          created_at?: string
+          hotel_id: string
+          id?: string
+          metadata?: Json
+          nightly_rate?: number
+          people_count?: number
+          room_name: string
+          room_type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          check_in_date?: string | null
+          check_out_date?: string | null
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          metadata?: Json
+          nightly_rate?: number
+          people_count?: number
+          room_name?: string
+          room_type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accommodation_booking_rooms_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "accommodation_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accommodation_booking_rooms_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accommodation_booking_rooms_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accommodation_bookings: {
+        Row: {
+          admin_notes: string | null
+          booking_group_id: string
+          conference_amount: number
+          created_at: string
+          guest_amount: number
+          guest_email: string | null
+          guest_name: string
+          id: string
+          metadata: Json
+          related_speaker_id: string | null
+          reservation_confirmation_url: string | null
+          reservation_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          booking_group_id?: string
+          conference_amount?: number
+          created_at?: string
+          guest_amount?: number
+          guest_email?: string | null
+          guest_name: string
+          id?: string
+          metadata?: Json
+          related_speaker_id?: string | null
+          reservation_confirmation_url?: string | null
+          reservation_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          booking_group_id?: string
+          conference_amount?: number
+          created_at?: string
+          guest_amount?: number
+          guest_email?: string | null
+          guest_name?: string
+          id?: string
+          metadata?: Json
+          related_speaker_id?: string | null
+          reservation_confirmation_url?: string | null
+          reservation_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accommodation_bookings_related_speaker_id_fkey"
+            columns: ["related_speaker_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_speakers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       b2b_invoice_attendees: {
         Row: {
           company: string | null
@@ -580,17 +706,14 @@ export type Database = {
       }
       cfp_speaker_flights: {
         Row: {
-          admin_notes: string | null
           airline: string | null
           arrival_airport: string | null
-          arrival_label: string | null
           arrival_time: string | null
           booking_reference: string | null
           cost_amount: number | null
           cost_currency: string | null
           created_at: string
           departure_airport: string | null
-          departure_label: string | null
           departure_time: string | null
           direction: Database["public"]["Enums"]["cfp_flight_direction"]
           flight_number: string | null
@@ -598,27 +721,21 @@ export type Database = {
           id: string
           last_status_update: string | null
           metadata: Json | null
-          provider: string | null
-          reference_code: string | null
-          speaker_id: string
+          speaker_id: string | null
           tracking_url: string | null
-          transport_link_url: string | null
-          transport_mode: Database["public"]["Enums"]["cfp_transport_mode"]
-          transport_status: Database["public"]["Enums"]["cfp_transport_status"]
+          traveler_email: string | null
+          traveler_name: string | null
           updated_at: string
         }
         Insert: {
-          admin_notes?: string | null
           airline?: string | null
           arrival_airport?: string | null
-          arrival_label?: string | null
           arrival_time?: string | null
           booking_reference?: string | null
           cost_amount?: number | null
           cost_currency?: string | null
           created_at?: string
           departure_airport?: string | null
-          departure_label?: string | null
           departure_time?: string | null
           direction: Database["public"]["Enums"]["cfp_flight_direction"]
           flight_number?: string | null
@@ -628,27 +745,21 @@ export type Database = {
           id?: string
           last_status_update?: string | null
           metadata?: Json | null
-          provider?: string | null
-          reference_code?: string | null
-          speaker_id: string
+          speaker_id?: string | null
           tracking_url?: string | null
-          transport_link_url?: string | null
-          transport_mode?: Database["public"]["Enums"]["cfp_transport_mode"]
-          transport_status?: Database["public"]["Enums"]["cfp_transport_status"]
+          traveler_email?: string | null
+          traveler_name?: string | null
           updated_at?: string
         }
         Update: {
-          admin_notes?: string | null
           airline?: string | null
           arrival_airport?: string | null
-          arrival_label?: string | null
           arrival_time?: string | null
           booking_reference?: string | null
           cost_amount?: number | null
           cost_currency?: string | null
           created_at?: string
           departure_airport?: string | null
-          departure_label?: string | null
           departure_time?: string | null
           direction?: Database["public"]["Enums"]["cfp_flight_direction"]
           flight_number?: string | null
@@ -658,13 +769,10 @@ export type Database = {
           id?: string
           last_status_update?: string | null
           metadata?: Json | null
-          provider?: string | null
-          reference_code?: string | null
-          speaker_id?: string
+          speaker_id?: string | null
           tracking_url?: string | null
-          transport_link_url?: string | null
-          transport_mode?: Database["public"]["Enums"]["cfp_transport_mode"]
-          transport_status?: Database["public"]["Enums"]["cfp_transport_status"]
+          traveler_email?: string | null
+          traveler_name?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1193,6 +1301,170 @@ export type Database = {
           expires_at?: string
           stripe_session_id?: string
           workshop_attendees?: Json
+        }
+        Relationships: []
+      }
+      hotel_room_types: {
+        Row: {
+          created_at: string
+          default_nightly_rate: number | null
+          default_occupancy: number | null
+          hotel_id: string
+          id: string
+          is_active: boolean
+          max_occupancy: number | null
+          metadata: Json
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_nightly_rate?: number | null
+          default_occupancy?: number | null
+          hotel_id: string
+          id?: string
+          is_active?: boolean
+          max_occupancy?: number | null
+          metadata?: Json
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_nightly_rate?: number | null
+          default_occupancy?: number | null
+          hotel_id?: string
+          id?: string
+          is_active?: boolean
+          max_occupancy?: number | null
+          metadata?: Json
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotel_room_types_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hotels: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          metadata: Json
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      namespace_student_sponsorship_applications: {
+        Row: {
+          anything_else: string | null
+          code_url: string | null
+          created_at: string
+          degree_name: string | null
+          email: string
+          full_name: string | null
+          github_url: string | null
+          id: string
+          posthog_distinct_id: string | null
+          posthog_session_id: string | null
+          pride_explanation: string | null
+          processing_consent: boolean
+          setup_instructions: string | null
+          status: string
+          submitted_at: string | null
+          university_name: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          anything_else?: string | null
+          code_url?: string | null
+          created_at?: string
+          degree_name?: string | null
+          email: string
+          full_name?: string | null
+          github_url?: string | null
+          id?: string
+          posthog_distinct_id?: string | null
+          posthog_session_id?: string | null
+          pride_explanation?: string | null
+          processing_consent?: boolean
+          setup_instructions?: string | null
+          status?: string
+          submitted_at?: string | null
+          university_name?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          anything_else?: string | null
+          code_url?: string | null
+          created_at?: string
+          degree_name?: string | null
+          email?: string
+          full_name?: string | null
+          github_url?: string | null
+          id?: string
+          posthog_distinct_id?: string | null
+          posthog_session_id?: string | null
+          pride_explanation?: string | null
+          processing_consent?: boolean
+          setup_instructions?: string | null
+          status?: string
+          submitted_at?: string | null
+          university_name?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      namespace_student_sponsorship_reviewers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
         }
         Relationships: []
       }
@@ -1823,7 +2095,14 @@ export type Database = {
           invoice_pdf_uploaded_at: string | null
           invoice_pdf_url: string | null
           issue_date: string
+          payable_amount_chf: number | null
           payable_currency: string | null
+          payable_rounding: string | null
+          sponsor_amount: number | null
+          sponsor_currency: string | null
+          sponsor_rate_date: string | null
+          sponsor_rate_source: string | null
+          sponsor_to_chf_rate: number | null
           subtotal: number
           total_amount: number
           updated_at: string
@@ -1852,7 +2131,14 @@ export type Database = {
           invoice_pdf_uploaded_at?: string | null
           invoice_pdf_url?: string | null
           issue_date?: string
+          payable_amount_chf?: number | null
           payable_currency?: string | null
+          payable_rounding?: string | null
+          sponsor_amount?: number | null
+          sponsor_currency?: string | null
+          sponsor_rate_date?: string | null
+          sponsor_rate_source?: string | null
+          sponsor_to_chf_rate?: number | null
           subtotal: number
           total_amount: number
           updated_at?: string
@@ -1881,7 +2167,14 @@ export type Database = {
           invoice_pdf_uploaded_at?: string | null
           invoice_pdf_url?: string | null
           issue_date?: string
+          payable_amount_chf?: number | null
           payable_currency?: string | null
+          payable_rounding?: string | null
+          sponsor_amount?: number | null
+          sponsor_currency?: string | null
+          sponsor_rate_date?: string | null
+          sponsor_rate_source?: string | null
+          sponsor_to_chf_rate?: number | null
           subtotal?: number
           total_amount?: number
           updated_at?: string
@@ -2196,6 +2489,206 @@ export type Database = {
           },
         ]
       }
+      tickets: {
+        Row: {
+          amount_paid: number
+          checked_in: boolean | null
+          checked_in_at: string | null
+          company: string | null
+          coupon_code: string | null
+          created_at: string
+          currency: string
+          discount_amount: number | null
+          email: string
+          first_name: string
+          id: string
+          job_title: string | null
+          last_name: string
+          metadata: Json | null
+          partnership_coupon_id: string | null
+          partnership_id: string | null
+          partnership_voucher_id: string | null
+          qr_code_url: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          stripe_customer_id: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string
+          ticket_category: string
+          ticket_stage: string
+          ticket_type: Database["public"]["Enums"]["ticket_type"]
+          transferred_at: string | null
+          transferred_from_email: string | null
+          transferred_from_name: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid: number
+          checked_in?: boolean | null
+          checked_in_at?: string | null
+          company?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          email: string
+          first_name: string
+          id?: string
+          job_title?: string | null
+          last_name: string
+          metadata?: Json | null
+          partnership_coupon_id?: string | null
+          partnership_id?: string | null
+          partnership_voucher_id?: string | null
+          qr_code_url?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_customer_id: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id: string
+          ticket_category: string
+          ticket_stage: string
+          ticket_type: Database["public"]["Enums"]["ticket_type"]
+          transferred_at?: string | null
+          transferred_from_email?: string | null
+          transferred_from_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          checked_in?: boolean | null
+          checked_in_at?: string | null
+          company?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          email?: string
+          first_name?: string
+          id?: string
+          job_title?: string | null
+          last_name?: string
+          metadata?: Json | null
+          partnership_coupon_id?: string | null
+          partnership_id?: string | null
+          partnership_voucher_id?: string | null
+          qr_code_url?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_customer_id?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string
+          ticket_category?: string
+          ticket_stage?: string
+          ticket_type?: Database["public"]["Enums"]["ticket_type"]
+          transferred_at?: string | null
+          transferred_from_email?: string | null
+          transferred_from_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_partnership_coupon_id_fkey"
+            columns: ["partnership_coupon_id"]
+            isOneToOne: false
+            referencedRelation: "partnership_coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_partnership_voucher_id_fkey"
+            columns: ["partnership_voucher_id"]
+            isOneToOne: false
+            referencedRelation: "partnership_vouchers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verification_requests: {
+        Row: {
+          additional_info: string | null
+          country_code: string | null
+          created_at: string
+          currency: string | null
+          email: string
+          id: string
+          linkedin_url: string | null
+          name: string
+          price_id: string
+          rav_registration_date: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          stripe_payment_link_id: string | null
+          stripe_payment_link_url: string | null
+          stripe_session_id: string | null
+          student_id: string | null
+          university: string | null
+          updated_at: string
+          verification_id: string
+          verification_type: string
+        }
+        Insert: {
+          additional_info?: string | null
+          country_code?: string | null
+          created_at?: string
+          currency?: string | null
+          email: string
+          id?: string
+          linkedin_url?: string | null
+          name: string
+          price_id: string
+          rav_registration_date?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_payment_link_id?: string | null
+          stripe_payment_link_url?: string | null
+          stripe_session_id?: string | null
+          student_id?: string | null
+          university?: string | null
+          updated_at?: string
+          verification_id: string
+          verification_type: string
+        }
+        Update: {
+          additional_info?: string | null
+          country_code?: string | null
+          created_at?: string
+          currency?: string | null
+          email?: string
+          id?: string
+          linkedin_url?: string | null
+          name?: string
+          price_id?: string
+          rav_registration_date?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_payment_link_id?: string | null
+          stripe_payment_link_url?: string | null
+          stripe_session_id?: string | null
+          student_id?: string | null
+          university?: string | null
+          updated_at?: string
+          verification_id?: string
+          verification_type?: string
+        }
+        Relationships: []
+      }
       vip_perk_config: {
         Row: {
           auto_send_email: boolean
@@ -2342,133 +2835,247 @@ export type Database = {
           },
         ]
       }
-      tickets: {
+      volunteer_applications: {
         Row: {
-          amount_paid: number
-          checked_in: boolean | null
-          checked_in_at: string | null
-          company: string | null
-          coupon_code: string | null
-          created_at: string
-          currency: string
-          discount_amount: number | null
+          affiliation: string | null
+          application_id: string
+          availability: string
+          commitment_confirmed: boolean | null
+          contact_consent_confirmed: boolean | null
           email: string
+          exclusions_confirmed: boolean | null
           first_name: string
           id: string
-          job_title: string | null
+          internal_notes: string | null
           last_name: string
-          metadata: Json | null
-          partnership_coupon_id: string | null
-          partnership_id: string | null
-          partnership_voucher_id: string | null
-          qr_code_url: string | null
-          status: Database["public"]["Enums"]["payment_status"]
-          stripe_customer_id: string
-          stripe_payment_intent_id: string | null
-          stripe_session_id: string
-          ticket_category: string
-          ticket_stage: string
-          ticket_type: Database["public"]["Enums"]["ticket_type"]
-          transferred_at: string | null
-          transferred_from_email: string | null
-          transferred_from_name: string | null
+          linkedin_url: string
+          location: string | null
+          motivation: string
+          notes: string | null
+          phone: string | null
+          relevant_experience: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role_id: string
+          status: string
+          submitted_at: string
           updated_at: string
-          user_id: string | null
+          website_url: string | null
         }
         Insert: {
-          amount_paid: number
-          checked_in?: boolean | null
-          checked_in_at?: string | null
-          company?: string | null
-          coupon_code?: string | null
-          created_at?: string
-          currency?: string
-          discount_amount?: number | null
+          affiliation?: string | null
+          application_id: string
+          availability: string
+          commitment_confirmed?: boolean | null
+          contact_consent_confirmed?: boolean | null
           email: string
+          exclusions_confirmed?: boolean | null
           first_name: string
           id?: string
-          job_title?: string | null
+          internal_notes?: string | null
           last_name: string
-          metadata?: Json | null
-          partnership_coupon_id?: string | null
-          partnership_id?: string | null
-          partnership_voucher_id?: string | null
-          qr_code_url?: string | null
-          status?: Database["public"]["Enums"]["payment_status"]
-          stripe_customer_id: string
-          stripe_payment_intent_id?: string | null
-          stripe_session_id: string
-          ticket_category: string
-          ticket_stage: string
-          ticket_type: Database["public"]["Enums"]["ticket_type"]
-          transferred_at?: string | null
-          transferred_from_email?: string | null
-          transferred_from_name?: string | null
+          linkedin_url: string
+          location?: string | null
+          motivation: string
+          notes?: string | null
+          phone?: string | null
+          relevant_experience: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_id: string
+          status?: string
+          submitted_at?: string
           updated_at?: string
-          user_id?: string | null
+          website_url?: string | null
         }
         Update: {
-          amount_paid?: number
-          checked_in?: boolean | null
-          checked_in_at?: string | null
-          company?: string | null
-          coupon_code?: string | null
-          created_at?: string
-          currency?: string
-          discount_amount?: number | null
+          affiliation?: string | null
+          application_id?: string
+          availability?: string
+          commitment_confirmed?: boolean | null
+          contact_consent_confirmed?: boolean | null
           email?: string
+          exclusions_confirmed?: boolean | null
           first_name?: string
           id?: string
-          job_title?: string | null
+          internal_notes?: string | null
           last_name?: string
-          metadata?: Json | null
-          partnership_coupon_id?: string | null
-          partnership_id?: string | null
-          partnership_voucher_id?: string | null
-          qr_code_url?: string | null
-          status?: Database["public"]["Enums"]["payment_status"]
-          stripe_customer_id?: string
-          stripe_payment_intent_id?: string | null
-          stripe_session_id?: string
-          ticket_category?: string
-          ticket_stage?: string
-          ticket_type?: Database["public"]["Enums"]["ticket_type"]
-          transferred_at?: string | null
-          transferred_from_email?: string | null
-          transferred_from_name?: string | null
+          linkedin_url?: string
+          location?: string | null
+          motivation?: string
+          notes?: string | null
+          phone?: string | null
+          relevant_experience?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_id?: string
+          status?: string
+          submitted_at?: string
           updated_at?: string
-          user_id?: string | null
+          website_url?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "tickets_partnership_coupon_id_fkey"
-            columns: ["partnership_coupon_id"]
+            foreignKeyName: "volunteer_applications_role_id_fkey"
+            columns: ["role_id"]
             isOneToOne: false
-            referencedRelation: "partnership_coupons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tickets_partnership_id_fkey"
-            columns: ["partnership_id"]
-            isOneToOne: false
-            referencedRelation: "partnerships"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tickets_partnership_voucher_id_fkey"
-            columns: ["partnership_voucher_id"]
-            isOneToOne: false
-            referencedRelation: "partnership_vouchers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tickets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "volunteer_roles"
             referencedColumns: ["id"]
           },
         ]
+      }
+      volunteer_profiles: {
+        Row: {
+          application_id: string | null
+          availability: string | null
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          internal_contact: string | null
+          is_public: boolean | null
+          last_name: string
+          linkedin_url: string | null
+          phone: string | null
+          photo_url: string | null
+          public_bio: string | null
+          responsibilities: string | null
+          role_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id?: string | null
+          availability?: string | null
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          internal_contact?: string | null
+          is_public?: boolean | null
+          last_name: string
+          linkedin_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          public_bio?: string | null
+          responsibilities?: string | null
+          role_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string | null
+          availability?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          internal_contact?: string | null
+          is_public?: boolean | null
+          last_name?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          public_bio?: string | null
+          responsibilities?: string | null
+          role_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_profiles_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "volunteer_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_profiles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "volunteer_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      volunteer_roles: {
+        Row: {
+          application_deadline: string | null
+          availability_requirements: string | null
+          benefits: string | null
+          commitment_type: string
+          created_at: string
+          description: string | null
+          excluded_benefits: string | null
+          id: string
+          included_benefits: string | null
+          internal_notes: string | null
+          is_public: boolean | null
+          location_context: string | null
+          nice_to_haves: string | null
+          requirements: string | null
+          responsibilities: string | null
+          show_spots_publicly: boolean | null
+          slug: string
+          sort_order: number | null
+          spots_available: number | null
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_deadline?: string | null
+          availability_requirements?: string | null
+          benefits?: string | null
+          commitment_type: string
+          created_at?: string
+          description?: string | null
+          excluded_benefits?: string | null
+          id?: string
+          included_benefits?: string | null
+          internal_notes?: string | null
+          is_public?: boolean | null
+          location_context?: string | null
+          nice_to_haves?: string | null
+          requirements?: string | null
+          responsibilities?: string | null
+          show_spots_publicly?: boolean | null
+          slug: string
+          sort_order?: number | null
+          spots_available?: number | null
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_deadline?: string | null
+          availability_requirements?: string | null
+          benefits?: string | null
+          commitment_type?: string
+          created_at?: string
+          description?: string | null
+          excluded_benefits?: string | null
+          id?: string
+          included_benefits?: string | null
+          internal_notes?: string | null
+          is_public?: boolean | null
+          location_context?: string | null
+          nice_to_haves?: string | null
+          requirements?: string | null
+          responsibilities?: string | null
+          show_spots_publicly?: boolean | null
+          slug?: string
+          sort_order?: number | null
+          spots_available?: number | null
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       workshop_registrations: {
         Row: {
@@ -2590,78 +3197,6 @@ export type Database = {
           },
         ]
       }
-      verification_requests: {
-        Row: {
-          additional_info: string | null
-          country_code: string | null
-          created_at: string
-          currency: string | null
-          email: string
-          id: string
-          linkedin_url: string | null
-          name: string
-          price_id: string
-          rav_registration_date: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          stripe_payment_link_id: string | null
-          stripe_payment_link_url: string | null
-          stripe_session_id: string | null
-          student_id: string | null
-          university: string | null
-          updated_at: string
-          verification_id: string
-          verification_type: string
-        }
-        Insert: {
-          additional_info?: string | null
-          country_code?: string | null
-          created_at?: string
-          currency?: string | null
-          email: string
-          id?: string
-          linkedin_url?: string | null
-          name: string
-          price_id: string
-          rav_registration_date?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          stripe_payment_link_id?: string | null
-          stripe_payment_link_url?: string | null
-          stripe_session_id?: string | null
-          student_id?: string | null
-          university?: string | null
-          updated_at?: string
-          verification_id: string
-          verification_type: string
-        }
-        Update: {
-          additional_info?: string | null
-          country_code?: string | null
-          created_at?: string
-          currency?: string | null
-          email?: string
-          id?: string
-          linkedin_url?: string | null
-          name?: string
-          price_id?: string
-          rav_registration_date?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          stripe_payment_link_id?: string | null
-          stripe_payment_link_url?: string | null
-          stripe_session_id?: string | null
-          student_id?: string | null
-          university?: string | null
-          updated_at?: string
-          verification_id?: string
-          verification_type?: string
-        }
-        Relationships: []
-      }
       workshops: {
         Row: {
           capacity: number
@@ -2761,6 +3296,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_program_speaker_count: { Args: never; Returns: number }
       insert_workshop_registration_atomic: {
         Args: {
           p_amount_paid: number
@@ -2828,8 +3364,6 @@ export type Database = {
         | "withdrawn"
       cfp_submission_type: "lightning" | "standard" | "workshop" | "panel"
       cfp_talk_level: "beginner" | "intermediate" | "advanced"
-      cfp_transport_mode: "flight" | "train" | "link_only" | "none"
-      cfp_transport_status: "scheduled" | "delayed" | "canceled" | "complete"
       coupon_type: "percentage" | "fixed_amount"
       partnership_status: "active" | "inactive" | "pending" | "expired"
       partnership_type: "community" | "individual" | "company" | "sponsor"
@@ -3048,8 +3582,6 @@ export const Constants = {
       ],
       cfp_submission_type: ["lightning", "standard", "workshop", "panel"],
       cfp_talk_level: ["beginner", "intermediate", "advanced"],
-      cfp_transport_mode: ["flight", "train", "link_only", "none"],
-      cfp_transport_status: ["scheduled", "delayed", "canceled", "complete"],
       coupon_type: ["percentage", "fixed_amount"],
       partnership_status: ["active", "inactive", "pending", "expired"],
       partnership_type: ["community", "individual", "company", "sponsor"],
@@ -3107,3 +3639,4 @@ export const Constants = {
     },
   },
 } as const
+

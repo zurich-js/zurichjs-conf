@@ -18,6 +18,7 @@ export interface NamespaceStudentSponsorshipFormProps {
 }
 
 interface FormState {
+  applicationId: string;
   fullName: string;
   email: string;
   universityName: string;
@@ -28,6 +29,7 @@ interface FormState {
   prideExplanation: string;
   anythingElse: string;
   eligibilityConfirmed: boolean;
+  processingConsent: boolean;
   website: string;
 }
 
@@ -35,6 +37,7 @@ type FormErrors = Partial<Record<keyof FormState, string>>;
 type ValidatedField = Exclude<keyof FormState, 'website'>;
 
 const initialFormState: FormState = {
+  applicationId: '',
   fullName: '',
   email: '',
   universityName: '',
@@ -45,6 +48,7 @@ const initialFormState: FormState = {
   prideExplanation: '',
   anythingElse: '',
   eligibilityConfirmed: false,
+  processingConsent: false,
   website: '',
 };
 
@@ -119,7 +123,7 @@ export function NamespaceStudentSponsorshipForm({
 }: NamespaceStudentSponsorshipFormProps) {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
-  const capturedLeadEmails = useRef(new Set<string>());
+  const savedLeadSnapshots = useRef(new Set<string>());
   const {
     submit,
     isPending: isSubmitting,
@@ -140,6 +144,15 @@ export function NamespaceStudentSponsorshipForm({
         return next;
       });
     }
+  };
+
+  const updateFieldAndSave = <Key extends keyof FormState>(
+    field: Key,
+    value: FormState[Key]
+  ) => {
+    const nextData = { ...formData, [field]: value };
+    updateField(field, value);
+    void saveApplicationProgress(nextData);
   };
 
   const setFieldError = (field: ValidatedField, message?: string) => {
@@ -173,22 +186,47 @@ export function NamespaceStudentSponsorshipForm({
     return { posthogSessionId, posthogDistinctId };
   };
 
-  const captureEmailLead = async (email: string) => {
-    const normalizedEmail = email.trim().toLowerCase();
+  const saveApplicationProgress = async (data: FormState) => {
+    const emailResult = namespaceStudentSponsorshipSchema.shape.email.safeParse(data.email);
 
-    if (capturedLeadEmails.current.has(normalizedEmail)) {
+    if (!emailResult.success || !data.processingConsent) {
       return;
     }
 
-    capturedLeadEmails.current.add(normalizedEmail);
+    const payload = {
+      applicationId: data.applicationId || undefined,
+      email: emailResult.data,
+      fullName: data.fullName,
+      universityName: data.universityName,
+      degreeName: data.degreeName,
+      githubUrl: data.githubUrl,
+      codeUrl: data.codeUrl,
+      setupInstructions: data.setupInstructions,
+      prideExplanation: data.prideExplanation,
+      anythingElse: data.anythingElse,
+      processingConsent: data.processingConsent,
+      ...getPosthogIds(),
+    };
+    const snapshot = JSON.stringify(payload);
+
+    if (savedLeadSnapshots.current.has(snapshot)) {
+      return;
+    }
+
+    savedLeadSnapshots.current.add(snapshot);
 
     try {
-      await captureNamespaceStudentSponsorshipLead({
-        email: normalizedEmail,
-        ...getPosthogIds(),
-      });
+      const response = await captureNamespaceStudentSponsorshipLead(payload);
+
+      if (response.applicationId && response.applicationId !== data.applicationId) {
+        setFormData((prev) => ({ ...prev, applicationId: response.applicationId || '' }));
+        window.localStorage.setItem(
+          'namespaceStudentSponsorshipApplicationId',
+          response.applicationId
+        );
+      }
     } catch {
-      capturedLeadEmails.current.delete(normalizedEmail);
+      savedLeadSnapshots.current.delete(snapshot);
     }
   };
 
@@ -206,14 +244,11 @@ export function NamespaceStudentSponsorshipForm({
     const result = validateField(field);
 
     if (field === 'email' && result.success) {
-      const emailResult = namespaceStudentSponsorshipSchema.shape.email.safeParse(
-        formData.email
-      );
-
-      if (emailResult.success) {
-        void captureEmailLead(emailResult.data);
-      }
+      void saveApplicationProgress(formData);
+      return;
     }
+
+    void saveApplicationProgress(formData);
   };
 
   const validateForm = (): NamespaceStudentSponsorshipFormData | null => {
@@ -248,6 +283,7 @@ export function NamespaceStudentSponsorshipForm({
     const { posthogSessionId, posthogDistinctId } = getPosthogIds();
 
     const payload: NamespaceStudentSponsorshipSubmitRequest = {
+      applicationId: validatedData.applicationId,
       fullName: validatedData.fullName,
       email: validatedData.email,
       universityName: validatedData.universityName,
@@ -258,6 +294,7 @@ export function NamespaceStudentSponsorshipForm({
       prideExplanation: validatedData.prideExplanation,
       anythingElse: validatedData.anythingElse || undefined,
       eligibilityConfirmed: validatedData.eligibilityConfirmed,
+      processingConsent: validatedData.processingConsent,
       website: validatedData.website,
       posthogSessionId,
       posthogDistinctId,
@@ -273,6 +310,7 @@ export function NamespaceStudentSponsorshipForm({
   const resetForm = () => {
     setFormData(initialFormState);
     setErrors({});
+    window.localStorage.removeItem('namespaceStudentSponsorshipApplicationId');
     reset();
   };
 
@@ -290,6 +328,16 @@ export function NamespaceStudentSponsorshipForm({
       block: 'start',
     });
   }, [isSuccess]);
+
+  useEffect(() => {
+    const applicationId = window.localStorage.getItem(
+      'namespaceStudentSponsorshipApplicationId'
+    );
+
+    if (applicationId) {
+      setFormData((prev) => ({ ...prev, applicationId }));
+    }
+  }, []);
 
   if (isSuccess) {
     return (
@@ -432,6 +480,28 @@ export function NamespaceStudentSponsorshipForm({
         {errors.eligibilityConfirmed && (
           <p id="eligibility-error" className="mt-2 text-sm text-error" role="alert">
             {errors.eligibilityConfirmed}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-5">
+        <label className="flex gap-3 text-sm leading-relaxed text-gray-700">
+          <input
+            type="checkbox"
+            checked={formData.processingConsent}
+            onChange={(event) => updateFieldAndSave('processingConsent', event.target.checked)}
+            onBlur={() => handleFieldBlur('processingConsent')}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-primary focus:ring-blue-primary"
+            aria-describedby={errors.processingConsent ? 'processing-consent-error' : undefined}
+          />
+          <span>
+            I agree that ZurichJS may process my application details and send them to
+            Namespace to manage the student sponsorship application.
+          </span>
+        </label>
+        {errors.processingConsent && (
+          <p id="processing-consent-error" className="mt-2 text-sm text-error" role="alert">
+            {errors.processingConsent}
           </p>
         )}
       </div>

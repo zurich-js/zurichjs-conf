@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   loggerInfo: vi.fn(),
   loggerWarn: vi.fn(),
   loggerError: vi.fn(),
+  persistApplication: vi.fn(),
 }));
 
 vi.mock('@/lib/email/namespace-student-sponsorship', () => ({
@@ -21,6 +22,10 @@ vi.mock('@/lib/logger', () => ({
       debug: vi.fn(),
     })),
   },
+}));
+
+vi.mock('@/lib/namespace/student-sponsorship-persistence', () => ({
+  persistNamespaceStudentSponsorshipApplication: mocks.persistApplication,
 }));
 
 import handler from '../student-sponsorship';
@@ -80,6 +85,7 @@ const validBody = {
     'I built this to understand compiler pipelines and learned how to keep a small parser testable.',
   anythingElse: 'Happy to share more details.',
   eligibilityConfirmed: true,
+  processingConsent: true,
   website: '',
 };
 
@@ -89,6 +95,11 @@ describe('/api/namespace/student-sponsorship', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-29T10:00:00.000Z'));
     mocks.sendEmail.mockResolvedValue({ success: true });
+    mocks.persistApplication.mockResolvedValue({
+      application: {
+        id: 'application-1',
+      },
+    });
   });
 
   afterEach(() => {
