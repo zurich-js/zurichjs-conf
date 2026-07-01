@@ -68,6 +68,7 @@ export default async function handler(
       },
     });
     const redirectTo = `${getBaseUrl(req)}/namespace/review/callback`;
+    log.info('Namespace review login requested', { email, redirectTo });
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {

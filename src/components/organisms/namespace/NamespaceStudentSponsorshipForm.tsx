@@ -88,7 +88,7 @@ const textFields = [
   {
     id: 'codeUrl',
     label: 'Code link',
-    placeholder: 'https://github.com/your-handle/project',
+    placeholder: 'URL to your repository',
     autoComplete: 'url',
     type: 'url',
   },

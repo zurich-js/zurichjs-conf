@@ -61,6 +61,8 @@ function normalizeUserAgent(userAgent: string | string[] | undefined): string | 
 }
 
 function buildPayload(input: PersistNamespaceStudentSponsorshipInput) {
+  const hasSubmitted = input.status === 'submission_failed' || input.status === 'email_sent';
+
   return {
     email: normalizeEmail(input.email),
     full_name: cleanOptional(input.fullName),
@@ -76,7 +78,7 @@ function buildPayload(input: PersistNamespaceStudentSponsorshipInput) {
     posthog_session_id: cleanOptional(input.posthogSessionId),
     posthog_distinct_id: cleanOptional(input.posthogDistinctId),
     user_agent: normalizeUserAgent(input.userAgent),
-    submitted_at: input.status === 'submitted' ? new Date().toISOString() : undefined,
+    submitted_at: hasSubmitted ? new Date().toISOString() : undefined,
   };
 }
 
@@ -154,7 +156,7 @@ export async function isNamespaceStudentSponsorshipReviewer(email: string): Prom
   const { data } = await supabase
     .from('namespace_student_sponsorship_reviewers')
     .select('id')
-    .eq('email', normalizeEmail(email))
+    .ilike('email', normalizeEmail(email))
     .maybeSingle();
 
   return !!data;

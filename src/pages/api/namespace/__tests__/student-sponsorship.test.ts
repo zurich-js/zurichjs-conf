@@ -149,6 +149,13 @@ describe('/api/namespace/student-sponsorship', () => {
       submittedAt: expect.any(String),
       userAgent: 'vitest',
     }));
+    expect(mocks.persistApplication).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      status: 'submission_failed',
+    }));
+    expect(mocks.persistApplication).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      applicationId: 'application-1',
+      status: 'email_sent',
+    }));
   });
 
   it('rate limits repeated submissions from the same IP', async () => {
@@ -187,6 +194,10 @@ describe('/api/namespace/student-sponsorship', () => {
     expect(res._json).toEqual(expect.objectContaining({
       success: false,
       fallbackUrl: googleFormFallbackUrl,
+    }));
+    expect(mocks.persistApplication).toHaveBeenCalledTimes(1);
+    expect(mocks.persistApplication).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'submission_failed',
     }));
   });
 });

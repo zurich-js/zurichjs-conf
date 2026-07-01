@@ -1,4 +1,7 @@
-export type NamespaceStudentSponsorshipStatus = 'partial' | 'submitted';
+export type NamespaceStudentSponsorshipStatus =
+  | 'partial'
+  | 'submission_failed'
+  | 'email_sent';
 
 export interface NamespaceStudentSponsorshipApplication {
   id: string;

@@ -119,7 +119,7 @@ export default async function handler(
       prideExplanation: data.prideExplanation,
       anythingElse: data.anythingElse || undefined,
       processingConsent: data.processingConsent,
-      status: 'submitted',
+      status: 'submission_failed',
       posthogSessionId: data.posthogSessionId,
       posthogDistinctId: data.posthogDistinctId,
       userAgent: req.headers['user-agent'],
@@ -156,6 +156,11 @@ export default async function handler(
     });
 
     if (!emailResult.success) {
+      log.error('Failed to send Namespace student sponsorship submission email', emailResult.error, {
+        applicationId: persisted.application.id,
+        submissionId,
+      });
+
       return res.status(500).json({
         success: false,
         error: 'Failed to send your submission.',
@@ -164,7 +169,33 @@ export default async function handler(
       });
     }
 
+    const emailSentPersistence = await persistNamespaceStudentSponsorshipApplication({
+      applicationId: persisted.application.id,
+      email: data.email,
+      fullName: data.fullName,
+      universityName: data.universityName,
+      degreeName: data.degreeName,
+      githubUrl: data.githubUrl,
+      codeUrl: data.codeUrl,
+      setupInstructions: data.setupInstructions,
+      prideExplanation: data.prideExplanation,
+      anythingElse: data.anythingElse || undefined,
+      processingConsent: data.processingConsent,
+      status: 'email_sent',
+      posthogSessionId: data.posthogSessionId,
+      posthogDistinctId: data.posthogDistinctId,
+      userAgent: req.headers['user-agent'],
+    });
+
+    if (!emailSentPersistence.application) {
+      log.error('Failed to mark Namespace student sponsorship email as sent', emailSentPersistence.error, {
+        applicationId: persisted.application.id,
+        submissionId,
+      });
+    }
+
     log.info('Namespace student sponsorship submitted', {
+      applicationId: persisted.application.id,
       submissionId,
       hasPosthogSession: !!data.posthogSessionId,
     });
