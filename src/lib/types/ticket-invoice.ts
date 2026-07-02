@@ -8,16 +8,24 @@ import type { Ticket } from './database';
 export type TicketInvoicePDFSource = 'generated' | 'uploaded';
 
 /**
+ * Distinguishes what a line item represents on the invoice.
+ * Absent is treated as `'ticket'` for backward compatibility with older records.
+ */
+export type TicketInvoiceLineItemKind = 'ticket' | 'workshop';
+
+/**
  * A single line item on a ticket invoice.
- * Tickets are grouped by category + stage for cleaner invoices.
+ * Tickets are grouped by category + stage and workshops by workshop for cleaner invoices.
  */
 export interface TicketInvoiceLineItem {
   description: string;    // e.g. "ZurichJS Conference 2026 – Early Bird Standard Ticket"
   quantity: number;
-  unitAmount: number;     // cents, per ticket
+  unitAmount: number;     // cents, per unit
   totalAmount: number;    // cents, quantity * unitAmount
-  ticketCategory: string;
-  ticketStage: string;
+  kind?: TicketInvoiceLineItemKind;  // 'ticket' (default) | 'workshop'
+  ticketCategory?: string;           // ticket line items only
+  ticketStage?: string;              // ticket line items only
+  workshopId?: string;               // workshop line items only
 }
 
 /**
@@ -82,6 +90,7 @@ export interface TicketOrderContext {
   subtotalAmount: number;         // cents, totalAmount + discountAmount
   currency: string;
   ticketCount: number;
+  workshopCount: number;          // number of workshop seats purchased in this order
   lineItems: TicketInvoiceLineItem[];
   existingInvoice: TicketInvoice | null;
   canGenerateInvoice: boolean;    // false for B2B-sourced tickets
