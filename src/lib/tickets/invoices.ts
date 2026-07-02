@@ -335,33 +335,62 @@ export async function resolveOrderContext(ticketId: string): Promise<TicketOrder
   const ticketTotal = allTickets.reduce((sum, t) => sum + t.amount_paid, 0);
   const ticketDiscount = allTickets.reduce((sum, t) => sum + (t.discount_amount ?? 0), 0);
 
-  // 6. Fetch workshops purchased in the same checkout session. An invoice maps to
-  //    a single Stripe payment, so we only include workshops bought in this order.
-  const { data: workshopRegsRaw, error: workshopError } = await supabase
-    .from('workshop_registrations')
-    .select('workshop_id, amount_paid, discount_amount, currency, workshops(title)')
-    .eq('stripe_session_id', stripeSessionId)
-    .eq('status', 'confirmed')
-    .order('created_at', { ascending: true });
+  // 6. Fetch workshops this attendee purchased. Workshops are frequently bought in
+  //    a separate checkout from the ticket, so matching on the ticket's Stripe
+  //    session alone misses them. Match by ticket_id AND by email (mirroring the
+  //    admin spend-breakdown), then dedupe — this is how the attendee's workshops
+  //    are reliably discovered regardless of which session they were bought in.
+  const workshopSelect =
+    'id, workshop_id, amount_paid, discount_amount, currency, workshops(title)';
+  const ticketIds = allTickets.map((t) => t.id);
+  const emails = Array.from(
+    new Set(allTickets.map((t) => t.email).filter((e): e is string => Boolean(e)))
+  );
+
+  const [byTicketId, byEmail] = await Promise.all([
+    supabase
+      .from('workshop_registrations')
+      .select(workshopSelect)
+      .in('ticket_id', ticketIds)
+      .eq('status', 'confirmed')
+      .order('created_at', { ascending: true }),
+    emails.length > 0
+      ? supabase
+          .from('workshop_registrations')
+          .select(workshopSelect)
+          .in('email', emails)
+          .eq('status', 'confirmed')
+          .order('created_at', { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
   let workshopLineItems: TicketInvoiceLineItem[] = [];
   let workshopTotal = 0;
   let workshopDiscount = 0;
   let workshopCount = 0;
 
+  const workshopError = byTicketId.error ?? byEmail.error;
   if (workshopError) {
     // Non-fatal: an invoice with tickets only is still valid. Log and continue.
-    log.error('Failed to fetch workshop registrations for invoice', workshopError, { stripeSessionId });
-  } else if (workshopRegsRaw && workshopRegsRaw.length > 0) {
-    const workshopRegs = workshopRegsRaw as unknown as WorkshopRegistrationForInvoice[];
+    log.error('Failed to fetch workshop registrations for invoice', workshopError, {
+      stripeSessionId,
+    });
+  } else {
+    // Dedupe registrations returned by both queries.
+    const seen = new Set<string>();
+    const rows = [...(byTicketId.data ?? []), ...(byEmail.data ?? [])].filter((r) => {
+      const row = r as { id?: string };
+      if (!row.id || seen.has(row.id)) return false;
+      seen.add(row.id);
+      return true;
+    }) as unknown as WorkshopRegistrationForInvoice[];
 
-    // An invoice carries a single currency. Same-session registrations should match
-    // the ticket currency; guard against (and log) any that don't rather than
-    // silently summing across currencies.
-    const matching = workshopRegs.filter(
+    // An invoice carries a single currency. Registrations should match the ticket
+    // currency; skip (and log) any that don't rather than summing across currencies.
+    const matching = rows.filter(
       (r) => (r.currency ?? currency).toUpperCase() === currency.toUpperCase()
     );
-    const skipped = workshopRegs.length - matching.length;
+    const skipped = rows.length - matching.length;
     if (skipped > 0) {
       log.warn('Skipped workshop registrations with mismatched currency on invoice', {
         stripeSessionId,

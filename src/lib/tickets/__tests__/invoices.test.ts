@@ -167,6 +167,7 @@ function buildSupabaseMock(resolvedValues: Array<{ data: unknown; error: unknown
   const chain: Record<string, unknown> = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
     order,
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
@@ -176,6 +177,7 @@ function buildSupabaseMock(resolvedValues: Array<{ data: unknown; error: unknown
   // Make chain return itself for all builder methods
   (chain.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
   (chain.eq as ReturnType<typeof vi.fn>).mockReturnValue(chain);
+  (chain.in as ReturnType<typeof vi.fn>).mockReturnValue(chain);
   (chain.insert as ReturnType<typeof vi.fn>).mockReturnValue(chain);
   (chain.update as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
@@ -467,7 +469,8 @@ describe('resolveOrderContext', () => {
     buildSupabaseMock([
       { data: ticket, error: null },       // fetch ticket by ID
       { data: [ticket], error: null },     // fetch all tickets for session
-      { data: [], error: null },           // workshop registrations for session (none)
+      { data: [], error: null },           // workshops by ticket_id (none)
+      { data: [], error: null },           // workshops by email (none)
       { data: null, error: { code: 'PGRST116' } }, // getInvoiceBySessionId → not found
     ]);
 
@@ -486,7 +489,8 @@ describe('resolveOrderContext', () => {
     buildSupabaseMock([
       { data: t1, error: null },           // fetch ticket by ID
       { data: [t1, t2], error: null },     // fetch all tickets for session
-      { data: [], error: null },           // workshop registrations for session (none)
+      { data: [], error: null },           // workshops by ticket_id (none)
+      { data: [], error: null },           // workshops by email (none)
       { data: null, error: { code: 'PGRST116' } }, // getInvoiceBySessionId → not found
     ]);
 
@@ -510,7 +514,8 @@ describe('resolveOrderContext', () => {
     buildSupabaseMock([
       { data: t1, error: null },
       { data: [t1, t2], error: null },
-      { data: [], error: null },           // workshop registrations for session (none)
+      { data: [], error: null },           // workshops by ticket_id (none)
+      { data: [], error: null },           // workshops by email (none)
       { data: null, error: { code: 'PGRST116' } },
     ]);
 
@@ -518,7 +523,7 @@ describe('resolveOrderContext', () => {
     expect(ctx.purchaserInfo.name).toBe('Primary Purchaser');
   });
 
-  it('includes workshops from the same session in line items and totals', async () => {
+  it('includes workshops (bought in a separate session) in line items and totals', async () => {
     const ticket = makeTicket({ id: 'ticket-001', stripe_session_id: 'cs_test_ws', amount_paid: 9900, discount_amount: 0, currency: 'chf' });
 
     buildSupabaseMock([
@@ -526,10 +531,11 @@ describe('resolveOrderContext', () => {
       { data: [ticket], error: null },     // fetch all tickets for session
       {
         data: [
-          { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 1000, currency: 'chf', workshops: { title: 'Deep Dive' } },
+          { id: 'reg-1', workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 1000, currency: 'chf', workshops: { title: 'Deep Dive' } },
         ],
         error: null,
-      },                                    // workshop registrations for session
+      },                                    // workshops by ticket_id
+      { data: [], error: null },            // workshops by email (none extra)
       { data: null, error: { code: 'PGRST116' } }, // getInvoiceBySessionId → not found
     ]);
 
@@ -546,6 +552,24 @@ describe('resolveOrderContext', () => {
     expect(ctx.subtotalAmount).toBe(9900 + 15000 + 1000);
   });
 
+  it('dedupes a workshop returned by both the ticket_id and email queries', async () => {
+    const ticket = makeTicket({ id: 'ticket-001', stripe_session_id: 'cs_test_ws_dupe', amount_paid: 9900, currency: 'chf' });
+    const reg = { id: 'reg-1', workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'chf', workshops: { title: 'Deep Dive' } };
+
+    buildSupabaseMock([
+      { data: ticket, error: null },
+      { data: [ticket], error: null },
+      { data: [reg], error: null },         // workshops by ticket_id
+      { data: [reg], error: null },         // workshops by email (same registration)
+      { data: null, error: { code: 'PGRST116' } },
+    ]);
+
+    const ctx = await resolveOrderContext('ticket-001');
+
+    expect(ctx.workshopCount).toBe(1);
+    expect(ctx.totalAmount).toBe(9900 + 15000);
+  });
+
   it('excludes workshops with a mismatched currency from the invoice', async () => {
     const ticket = makeTicket({ id: 'ticket-001', stripe_session_id: 'cs_test_ws2', amount_paid: 9900, currency: 'chf' });
 
@@ -554,10 +578,11 @@ describe('resolveOrderContext', () => {
       { data: [ticket], error: null },
       {
         data: [
-          { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'eur', workshops: { title: 'EUR Workshop' } },
+          { id: 'reg-1', workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'eur', workshops: { title: 'EUR Workshop' } },
         ],
         error: null,
-      },
+      },                                    // workshops by ticket_id
+      { data: [], error: null },            // workshops by email
       { data: null, error: { code: 'PGRST116' } },
     ]);
 
