@@ -24,7 +24,9 @@ port = 54323
 site_url = "http://localhost:3000"
 additional_redirect_urls = [
   "http://localhost:3000/cfp/auth/callback",
-  "http://localhost:3000/cfp/reviewer/auth/callback"
+  "http://localhost:3000/cfp/reviewer/auth/callback",
+  "http://localhost:3000/namespace/review/callback",
+  "http://localhost:3003/namespace/review/callback"
 ]
 jwt_expiry = 3600
 enable_signup = true

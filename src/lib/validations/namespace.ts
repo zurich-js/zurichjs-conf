@@ -9,6 +9,7 @@ const urlField = (label: string) =>
     .url(`Enter a valid ${label.toLowerCase()} URL`);
 
 export const namespaceStudentSponsorshipSchema = z.object({
+  applicationId: z.uuid().optional().or(z.literal('')),
   fullName: z
     .string()
     .trim()
@@ -52,11 +53,53 @@ export const namespaceStudentSponsorshipSchema = z.object({
     .refine((value) => value, {
       message: 'Confirm that you are eligible for the student sponsorship',
     }),
+  processingConsent: z
+    .boolean()
+    .refine((value) => value, {
+      message: 'Confirm that ZurichJS may process and share your application with Namespace',
+    }),
   website: z.string().max(200, 'Invalid submission').optional(),
+  posthogSessionId: z.string().max(500).optional(),
+  posthogDistinctId: z.string().max(500).optional(),
+});
+
+const optionalUrlField = (label: string) =>
+  z
+    .string()
+    .trim()
+    .max(500, `${label} must be 500 characters or less`)
+    .url(`Enter a valid ${label.toLowerCase()} URL`)
+    .optional()
+    .or(z.literal(''));
+
+const optionalTextField = (label: string, maxLength: number) =>
+  z
+    .string()
+    .trim()
+    .max(maxLength, `${label} must be ${maxLength} characters or less`)
+    .optional()
+    .or(z.literal(''));
+
+export const namespaceStudentSponsorshipLeadSchema = z.object({
+  applicationId: z.uuid().optional().or(z.literal('')),
+  email: namespaceStudentSponsorshipSchema.shape.email,
+  fullName: optionalTextField('Full name', 100),
+  universityName: optionalTextField('University name', 160),
+  degreeName: optionalTextField('Degree name', 160),
+  githubUrl: optionalUrlField('GitHub page'),
+  codeUrl: optionalUrlField('Code link'),
+  setupInstructions: optionalTextField('Setup instructions', 4000),
+  prideExplanation: optionalTextField('Explanation', 3000),
+  anythingElse: optionalTextField('Additional notes', 2000),
+  processingConsent: namespaceStudentSponsorshipSchema.shape.processingConsent,
   posthogSessionId: z.string().max(500).optional(),
   posthogDistinctId: z.string().max(500).optional(),
 });
 
 export type NamespaceStudentSponsorshipFormData = z.infer<
   typeof namespaceStudentSponsorshipSchema
+>;
+
+export type NamespaceStudentSponsorshipLeadData = z.infer<
+  typeof namespaceStudentSponsorshipLeadSchema
 >;

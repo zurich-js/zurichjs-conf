@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { sendNamespaceStudentSponsorshipEmail } from '@/lib/email/namespace-student-sponsorship';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { persistNamespaceStudentSponsorshipApplication } from '@/lib/namespace/student-sponsorship-persistence';
 import { namespaceStudentSponsorshipSchema } from '@/lib/validations/namespace';
 
 const log = logger.scope('Namespace Student Sponsorship API');
@@ -106,6 +107,37 @@ export default async function handler(
       });
     }
 
+    const persisted = await persistNamespaceStudentSponsorshipApplication({
+      applicationId: data.applicationId,
+      email: data.email,
+      fullName: data.fullName,
+      universityName: data.universityName,
+      degreeName: data.degreeName,
+      githubUrl: data.githubUrl,
+      codeUrl: data.codeUrl,
+      setupInstructions: data.setupInstructions,
+      prideExplanation: data.prideExplanation,
+      anythingElse: data.anythingElse || undefined,
+      processingConsent: data.processingConsent,
+      status: 'submission_failed',
+      posthogSessionId: data.posthogSessionId,
+      posthogDistinctId: data.posthogDistinctId,
+      userAgent: req.headers['user-agent'],
+    });
+
+    if (!persisted.application) {
+      log.error('Failed to persist Namespace student sponsorship submission', persisted.error, {
+        submissionId,
+      });
+
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to save your submission.',
+        fallbackUrl: namespaceStudentSponsorshipGoogleFormUrl,
+        remaining: rateLimit.remaining,
+      });
+    }
+
     const emailResult = await sendNamespaceStudentSponsorshipEmail({
       submissionId,
       fullName: data.fullName,
@@ -124,6 +156,11 @@ export default async function handler(
     });
 
     if (!emailResult.success) {
+      log.error('Failed to send Namespace student sponsorship submission email', emailResult.error, {
+        applicationId: persisted.application.id,
+        submissionId,
+      });
+
       return res.status(500).json({
         success: false,
         error: 'Failed to send your submission.',
@@ -132,7 +169,33 @@ export default async function handler(
       });
     }
 
+    const emailSentPersistence = await persistNamespaceStudentSponsorshipApplication({
+      applicationId: persisted.application.id,
+      email: data.email,
+      fullName: data.fullName,
+      universityName: data.universityName,
+      degreeName: data.degreeName,
+      githubUrl: data.githubUrl,
+      codeUrl: data.codeUrl,
+      setupInstructions: data.setupInstructions,
+      prideExplanation: data.prideExplanation,
+      anythingElse: data.anythingElse || undefined,
+      processingConsent: data.processingConsent,
+      status: 'email_sent',
+      posthogSessionId: data.posthogSessionId,
+      posthogDistinctId: data.posthogDistinctId,
+      userAgent: req.headers['user-agent'],
+    });
+
+    if (!emailSentPersistence.application) {
+      log.error('Failed to mark Namespace student sponsorship email as sent', emailSentPersistence.error, {
+        applicationId: persisted.application.id,
+        submissionId,
+      });
+    }
+
     log.info('Namespace student sponsorship submitted', {
+      applicationId: persisted.application.id,
       submissionId,
       hasPosthogSession: !!data.posthogSessionId,
     });
