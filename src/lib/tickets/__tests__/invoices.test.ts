@@ -61,6 +61,7 @@ vi.mock('@/lib/logger', () => ({
 import {
   extractPurchaserInfo,
   buildLineItems,
+  buildWorkshopLineItems,
   resolveOrderContext,
   createTicketInvoice,
 } from '../invoices';
@@ -381,6 +382,59 @@ describe('buildLineItems', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 2b. buildWorkshopLineItems
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('buildWorkshopLineItems', () => {
+  it('single registration → 1 workshop line item with kind=workshop', () => {
+    const items = buildWorkshopLineItems([
+      { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'chf', workshops: { title: 'Testing with Vitest' } },
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0].kind).toBe('workshop');
+    expect(items[0].workshopId).toBe('ws-1');
+    expect(items[0].description).toBe('ZurichJS Workshop – Testing with Vitest');
+    expect(items[0].quantity).toBe(1);
+    expect(items[0].unitAmount).toBe(15000);
+    expect(items[0].totalAmount).toBe(15000);
+  });
+
+  it('two seats of the same workshop → grouped into 1 line item with qty=2', () => {
+    const items = buildWorkshopLineItems([
+      { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'chf', workshops: { title: 'A' } },
+      { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'chf', workshops: { title: 'A' } },
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(2);
+    expect(items[0].totalAmount).toBe(30000);
+    expect(items[0].unitAmount).toBe(15000);
+  });
+
+  it('different workshops → separate line items', () => {
+    const items = buildWorkshopLineItems([
+      { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'chf', workshops: { title: 'A' } },
+      { workshop_id: 'ws-2', amount_paid: 20000, discount_amount: 0, currency: 'chf', workshops: { title: 'B' } },
+    ]);
+    expect(items).toHaveLength(2);
+    expect(items.map((i) => i.workshopId).sort()).toEqual(['ws-1', 'ws-2']);
+  });
+
+  it('handles the embedded workshop being returned as an array', () => {
+    const items = buildWorkshopLineItems([
+      { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'chf', workshops: [{ title: 'Array Shape' }] },
+    ]);
+    expect(items[0].description).toBe('ZurichJS Workshop – Array Shape');
+  });
+
+  it('falls back to "Workshop" when title is missing', () => {
+    const items = buildWorkshopLineItems([
+      { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'chf', workshops: null },
+    ]);
+    expect(items[0].description).toBe('ZurichJS Workshop – Workshop');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 3. resolveOrderContext
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -413,12 +467,14 @@ describe('resolveOrderContext', () => {
     buildSupabaseMock([
       { data: ticket, error: null },       // fetch ticket by ID
       { data: [ticket], error: null },     // fetch all tickets for session
+      { data: [], error: null },           // workshop registrations for session (none)
       { data: null, error: { code: 'PGRST116' } }, // getInvoiceBySessionId → not found
     ]);
 
     const ctx = await resolveOrderContext('ticket-001');
     expect(ctx.isGroupPurchase).toBe(false);
     expect(ctx.ticketCount).toBe(1);
+    expect(ctx.workshopCount).toBe(0);
     expect(ctx.canGenerateInvoice).toBe(true);
     expect(ctx.existingInvoice).toBeNull();
   });
@@ -430,6 +486,7 @@ describe('resolveOrderContext', () => {
     buildSupabaseMock([
       { data: t1, error: null },           // fetch ticket by ID
       { data: [t1, t2], error: null },     // fetch all tickets for session
+      { data: [], error: null },           // workshop registrations for session (none)
       { data: null, error: { code: 'PGRST116' } }, // getInvoiceBySessionId → not found
     ]);
 
@@ -453,11 +510,62 @@ describe('resolveOrderContext', () => {
     buildSupabaseMock([
       { data: t1, error: null },
       { data: [t1, t2], error: null },
+      { data: [], error: null },           // workshop registrations for session (none)
       { data: null, error: { code: 'PGRST116' } },
     ]);
 
     const ctx = await resolveOrderContext('ticket-001');
     expect(ctx.purchaserInfo.name).toBe('Primary Purchaser');
+  });
+
+  it('includes workshops from the same session in line items and totals', async () => {
+    const ticket = makeTicket({ id: 'ticket-001', stripe_session_id: 'cs_test_ws', amount_paid: 9900, discount_amount: 0, currency: 'chf' });
+
+    buildSupabaseMock([
+      { data: ticket, error: null },       // fetch ticket by ID
+      { data: [ticket], error: null },     // fetch all tickets for session
+      {
+        data: [
+          { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 1000, currency: 'chf', workshops: { title: 'Deep Dive' } },
+        ],
+        error: null,
+      },                                    // workshop registrations for session
+      { data: null, error: { code: 'PGRST116' } }, // getInvoiceBySessionId → not found
+    ]);
+
+    const ctx = await resolveOrderContext('ticket-001');
+
+    expect(ctx.workshopCount).toBe(1);
+    // 1 ticket line item + 1 workshop line item
+    expect(ctx.lineItems).toHaveLength(2);
+    const workshopItem = ctx.lineItems.find((i) => i.kind === 'workshop');
+    expect(workshopItem?.description).toBe('ZurichJS Workshop – Deep Dive');
+    // Totals fold ticket + workshop
+    expect(ctx.totalAmount).toBe(9900 + 15000);
+    expect(ctx.discountAmount).toBe(0 + 1000);
+    expect(ctx.subtotalAmount).toBe(9900 + 15000 + 1000);
+  });
+
+  it('excludes workshops with a mismatched currency from the invoice', async () => {
+    const ticket = makeTicket({ id: 'ticket-001', stripe_session_id: 'cs_test_ws2', amount_paid: 9900, currency: 'chf' });
+
+    buildSupabaseMock([
+      { data: ticket, error: null },
+      { data: [ticket], error: null },
+      {
+        data: [
+          { workshop_id: 'ws-1', amount_paid: 15000, discount_amount: 0, currency: 'eur', workshops: { title: 'EUR Workshop' } },
+        ],
+        error: null,
+      },
+      { data: null, error: { code: 'PGRST116' } },
+    ]);
+
+    const ctx = await resolveOrderContext('ticket-001');
+
+    expect(ctx.workshopCount).toBe(0);
+    expect(ctx.lineItems.every((i) => i.kind !== 'workshop')).toBe(true);
+    expect(ctx.totalAmount).toBe(9900);
   });
 
   it('throws when ticket is not found', async () => {
@@ -491,6 +599,7 @@ describe('createTicketInvoice', () => {
       subtotalAmount: 9900,
       currency: 'chf',
       ticketCount: 1,
+      workshopCount: 0,
       lineItems: buildLineItems([ticket]),
       existingInvoice: null,
       canGenerateInvoice: true,

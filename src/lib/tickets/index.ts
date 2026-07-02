@@ -18,4 +18,6 @@ export {
   updateTicketInvoicePDF,
   extractPurchaserInfo,
   buildLineItems,
+  buildWorkshopLineItems,
 } from './invoices';
+export type { WorkshopRegistrationForInvoice } from './invoices';

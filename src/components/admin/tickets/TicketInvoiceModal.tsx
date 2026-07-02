@@ -105,6 +105,14 @@ export function TicketInvoiceModal({ ticketId, onClose }: TicketInvoiceModalProp
                       </span>
                     )}
                   </div>
+                  {orderContext.workshopCount > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500">Workshops</span>
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700">
+                        {orderContext.workshopCount} seat{orderContext.workshopCount > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500">Total Paid</span>
                     <span className="text-sm font-bold text-black">

@@ -146,8 +146,65 @@ export function buildLineItems(tickets: Ticket[]): TicketInvoiceLineItem[] {
       quantity,
       unitAmount,
       totalAmount,
+      kind: 'ticket',
       ticketCategory: category,
       ticketStage: stage,
+    });
+  }
+
+  return lineItems;
+}
+
+// ─── buildWorkshopLineItems ──────────────────────────────────────────────────
+
+/**
+ * Minimal shape of a workshop registration needed to build an invoice line item.
+ * One row represents a single purchased seat.
+ */
+export interface WorkshopRegistrationForInvoice {
+  workshop_id: string;
+  amount_paid: number;
+  discount_amount: number | null;
+  currency: string;
+  // Supabase embeds the related workshop as an object (or array, depending on the
+  // inferred relationship cardinality) — handle both.
+  workshops: { title: string | null } | { title: string | null }[] | null;
+}
+
+/**
+ * Group workshop registrations by workshop and produce invoice line items.
+ * Seats of the same workshop collapse into one line item with a quantity.
+ */
+export function buildWorkshopLineItems(
+  registrations: WorkshopRegistrationForInvoice[]
+): TicketInvoiceLineItem[] {
+  const groups = new Map<string, { rows: WorkshopRegistrationForInvoice[]; title: string }>();
+
+  for (const reg of registrations) {
+    const workshop = Array.isArray(reg.workshops) ? reg.workshops[0] : reg.workshops;
+    const title = workshop?.title?.trim() || 'Workshop';
+    const existing = groups.get(reg.workshop_id);
+    if (existing) {
+      existing.rows.push(reg);
+    } else {
+      groups.set(reg.workshop_id, { rows: [reg], title });
+    }
+  }
+
+  const lineItems: TicketInvoiceLineItem[] = [];
+
+  for (const [workshopId, { rows, title }] of groups) {
+    const quantity = rows.length;
+    const totalAmount = rows.reduce((sum, r) => sum + r.amount_paid, 0);
+    const unitAmount = Math.round(totalAmount / quantity);
+
+    lineItems.push({
+      description: `ZurichJS Workshop – ${title}`,
+      quantity,
+      unitAmount,
+      totalAmount,
+      kind: 'workshop',
+      workshopId,
     });
   }
 
@@ -241,6 +298,7 @@ export async function resolveOrderContext(ticketId: string): Promise<TicketOrder
       subtotalAmount: primaryTicket.amount_paid + (primaryTicket.discount_amount ?? 0),
       currency: primaryTicket.currency,
       ticketCount: 1,
+      workshopCount: 0,
       lineItems: buildLineItems([primaryTicket]),
       existingInvoice: null,
       canGenerateInvoice: false,
@@ -272,13 +330,59 @@ export async function resolveOrderContext(ticketId: string): Promise<TicketOrder
   const primaryTicket: Ticket =
     allTickets.find((t) => t.metadata?.isPrimary === true) ?? allTickets[0];
 
-  // 5. Build aggregates
-  const totalAmount = allTickets.reduce((sum, t) => sum + t.amount_paid, 0);
-  const discountAmount = allTickets.reduce((sum, t) => sum + (t.discount_amount ?? 0), 0);
-  const subtotalAmount = totalAmount + discountAmount;
+  // 5. Build ticket aggregates
   const currency = primaryTicket.currency;
+  const ticketTotal = allTickets.reduce((sum, t) => sum + t.amount_paid, 0);
+  const ticketDiscount = allTickets.reduce((sum, t) => sum + (t.discount_amount ?? 0), 0);
 
-  // 6. Check for existing invoice
+  // 6. Fetch workshops purchased in the same checkout session. An invoice maps to
+  //    a single Stripe payment, so we only include workshops bought in this order.
+  const { data: workshopRegsRaw, error: workshopError } = await supabase
+    .from('workshop_registrations')
+    .select('workshop_id, amount_paid, discount_amount, currency, workshops(title)')
+    .eq('stripe_session_id', stripeSessionId)
+    .eq('status', 'confirmed')
+    .order('created_at', { ascending: true });
+
+  let workshopLineItems: TicketInvoiceLineItem[] = [];
+  let workshopTotal = 0;
+  let workshopDiscount = 0;
+  let workshopCount = 0;
+
+  if (workshopError) {
+    // Non-fatal: an invoice with tickets only is still valid. Log and continue.
+    log.error('Failed to fetch workshop registrations for invoice', workshopError, { stripeSessionId });
+  } else if (workshopRegsRaw && workshopRegsRaw.length > 0) {
+    const workshopRegs = workshopRegsRaw as unknown as WorkshopRegistrationForInvoice[];
+
+    // An invoice carries a single currency. Same-session registrations should match
+    // the ticket currency; guard against (and log) any that don't rather than
+    // silently summing across currencies.
+    const matching = workshopRegs.filter(
+      (r) => (r.currency ?? currency).toUpperCase() === currency.toUpperCase()
+    );
+    const skipped = workshopRegs.length - matching.length;
+    if (skipped > 0) {
+      log.warn('Skipped workshop registrations with mismatched currency on invoice', {
+        stripeSessionId,
+        skipped,
+        invoiceCurrency: currency,
+      });
+    }
+
+    workshopLineItems = buildWorkshopLineItems(matching);
+    workshopTotal = matching.reduce((sum, r) => sum + r.amount_paid, 0);
+    workshopDiscount = matching.reduce((sum, r) => sum + (r.discount_amount ?? 0), 0);
+    workshopCount = matching.length;
+  }
+
+  // 7. Combine tickets + workshops into order totals and line items
+  const totalAmount = ticketTotal + workshopTotal;
+  const discountAmount = ticketDiscount + workshopDiscount;
+  const subtotalAmount = totalAmount + discountAmount;
+  const lineItems = [...buildLineItems(allTickets), ...workshopLineItems];
+
+  // 8. Check for existing invoice
   const existingInvoice = await getInvoiceBySessionId(stripeSessionId);
 
   return {
@@ -292,7 +396,8 @@ export async function resolveOrderContext(ticketId: string): Promise<TicketOrder
     subtotalAmount,
     currency,
     ticketCount: allTickets.length,
-    lineItems: buildLineItems(allTickets),
+    workshopCount,
+    lineItems,
     existingInvoice,
     canGenerateInvoice: true,
   };

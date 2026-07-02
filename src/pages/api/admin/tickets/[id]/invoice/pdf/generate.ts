@@ -42,22 +42,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 2. Create invoice record (idempotent — returns existing if already exists)
     const invoice = await createTicketInvoice(orderContext);
 
-    // 3. Refresh stored snapshot with full order data (group purchases may have been
-    //    auto-created with only one ticket before other tickets in the session existed).
+    // 3. Refresh stored snapshot with full order data. Invoices auto-created on the
+    //    Stripe webhook capture only the initiating ticket — additional tickets in a
+    //    group purchase and any workshops bought in the same checkout may not have
+    //    existed yet. Always resync from the freshly resolved order context so the
+    //    persisted record matches the generated PDF (tickets + workshops).
     const supabase = createServiceRoleClient();
-    if (orderContext.allTickets.length > 1 || invoice.ticket_ids.length < orderContext.allTickets.length) {
-      await (supabase as any)
-        .from('ticket_invoices')
-        .update({
-          ticket_ids: orderContext.allTickets.map((t) => t.id),
-          line_items: orderContext.lineItems,
-          subtotal_amount: orderContext.subtotalAmount,
-          discount_amount: orderContext.discountAmount,
-          total_amount: orderContext.totalAmount,
-          primary_ticket_id: orderContext.primaryTicket.id,
-        })
-        .eq('id', invoice.id);
-    }
+    await (supabase as any)
+      .from('ticket_invoices')
+      .update({
+        ticket_ids: orderContext.allTickets.map((t) => t.id),
+        line_items: orderContext.lineItems,
+        subtotal_amount: orderContext.subtotalAmount,
+        discount_amount: orderContext.discountAmount,
+        total_amount: orderContext.totalAmount,
+        primary_ticket_id: orderContext.primaryTicket.id,
+      })
+      .eq('id', invoice.id);
 
     // 4. Build PDF props — always use fresh orderContext amounts and line items
     const pdfProps: TicketInvoicePDFProps = {
