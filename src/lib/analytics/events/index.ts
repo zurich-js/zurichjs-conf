@@ -134,6 +134,14 @@ export type { TechStackDetectedEvent } from './tech-stack-events';
 // Sponsorship events
 export type { SponsorClickedEvent, CommunityPartnerClickedEvent } from './sponsorship-events';
 
+// Agent / Markdown-for-Agents events
+export type {
+  AgentMarkdownRequestedEvent,
+  AgentMarkdownErroredEvent,
+  AgentResource,
+  AgentBotCategory,
+} from './agent-events';
+
 // Import all event types for the union
 import type { PageViewedEvent, UserIdentifiedEvent } from './base';
 import type {
@@ -220,6 +228,7 @@ import type {
 } from './easter-egg-events';
 import type { TechStackDetectedEvent } from './tech-stack-events';
 import type { SponsorClickedEvent, CommunityPartnerClickedEvent, SponsorQuoteViewedEvent } from './sponsorship-events';
+import type { AgentMarkdownRequestedEvent, AgentMarkdownErroredEvent } from './agent-events';
 
 /**
  * Union of all possible analytics events.
@@ -298,7 +307,9 @@ export type AnalyticsEvent =
   | TechStackDetectedEvent
   | SponsorClickedEvent
   | CommunityPartnerClickedEvent
-  | SponsorQuoteViewedEvent;
+  | SponsorQuoteViewedEvent
+  | AgentMarkdownRequestedEvent
+  | AgentMarkdownErroredEvent;
 
 /**
  * Extract event name from AnalyticsEvent

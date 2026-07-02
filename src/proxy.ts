@@ -1,39 +1,48 @@
 /**
- * Next.js Middleware
+ * Next.js Proxy (formerly middleware)
  *
- * Enforces read-only access for API-key-authenticated bot requests:
- * - Blocks non-GET methods on /api/admin/* when using Bearer token auth
- * - Blocks dangerous admin paths (logout, login) for bots
- * - Passes through all cookie-authenticated (human) requests unchanged
+ * Two responsibilities, both edge-resident:
+ * 1. Enforce read-only access for API-key-authenticated bot requests on
+ *    `/api/admin/*` — blocks non-GET and dangerous paths.
+ * 2. Content negotiation for AI agents — rewrites allowlisted public pages
+ *    to `/api/agent/<path>` when the client prefers `text/markdown`, so the
+ *    catch-all can render markdown directly from typed data (no HTML→md
+ *    conversion).
+ *
+ * Tracking for (2) happens in the catch-all (Node runtime), not here, since
+ * the edge runtime can't load the PostHog Node SDK.
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
+import { prefersMarkdown } from '@/lib/markdown-for-agents/content-negotiation';
+import { isAgentReadyPath } from '@/lib/markdown-for-agents/resources';
 
-/** Admin paths that bots must never access (even via GET) */
-const BLOCKED_BOT_PATHS = [
-  '/api/admin/login',
-  '/api/admin/logout',
-];
+const BLOCKED_BOT_PATHS = ['/api/admin/login', '/api/admin/logout'];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only apply to admin API routes
-  if (!pathname.startsWith('/api/admin')) {
-    return NextResponse.next();
+  if (pathname.startsWith('/api/admin')) {
+    return enforceAdminBotAccess(request, pathname);
   }
 
+  if (isAgentReadyPath(pathname) && prefersMarkdown(request.headers.get('accept'))) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/api/agent${pathname.replace(/\/$/, '')}`;
+    return NextResponse.rewrite(url);
+  }
+
+  return NextResponse.next();
+}
+
+function enforceAdminBotAccess(request: NextRequest, pathname: string) {
   const authHeader = request.headers.get('authorization');
   const isBotRequest = authHeader?.startsWith('Bearer ');
 
   if (!isBotRequest) {
-    // Cookie-based human request — pass through
     return NextResponse.next();
   }
 
-  // --- Bot request enforcement ---
-
-  // Block non-GET methods at the edge (defense-in-depth, bot-auth.ts also blocks)
   if (request.method !== 'GET') {
     return NextResponse.json(
       { error: 'Read-only access: only GET requests are allowed with API key authentication' },
@@ -41,7 +50,6 @@ export function proxy(request: NextRequest) {
     );
   }
 
-  // Block dangerous paths even for GET
   if (BLOCKED_BOT_PATHS.some((p) => pathname === p)) {
     return NextResponse.json(
       { error: 'This endpoint is not available for bot access' },
@@ -53,5 +61,15 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/admin/:path*',
+  matcher: [
+    '/api/admin/:path*',
+    '/schedule',
+    '/schedule/',
+    '/speakers',
+    '/speakers/',
+    '/speakers/:slug',
+    '/talks',
+    '/talks/',
+    '/talks/:slug',
+  ],
 };
