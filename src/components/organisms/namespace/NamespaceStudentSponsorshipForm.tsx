@@ -220,7 +220,7 @@ export function NamespaceStudentSponsorshipForm({
 
       if (response.applicationId && response.applicationId !== data.applicationId) {
         setFormData((prev) => ({ ...prev, applicationId: response.applicationId || '' }));
-        window.localStorage.setItem(
+        window.sessionStorage.setItem(
           'namespaceStudentSponsorshipApplicationId',
           response.applicationId
         );
@@ -310,7 +310,7 @@ export function NamespaceStudentSponsorshipForm({
   const resetForm = () => {
     setFormData(initialFormState);
     setErrors({});
-    window.localStorage.removeItem('namespaceStudentSponsorshipApplicationId');
+    window.sessionStorage.removeItem('namespaceStudentSponsorshipApplicationId');
     reset();
   };
 
@@ -330,7 +330,7 @@ export function NamespaceStudentSponsorshipForm({
   }, [isSuccess]);
 
   useEffect(() => {
-    const applicationId = window.localStorage.getItem(
+    const applicationId = window.sessionStorage.getItem(
       'namespaceStudentSponsorshipApplicationId'
     );
 
