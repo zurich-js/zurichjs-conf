@@ -49,8 +49,8 @@ export default function NamespacePage() {
   return (
     <>
       <SEO
-        title="Win a ZurichJS Conf Ticket with Namespace"
-        description="Namespace is sponsoring students at ZurichJS Conf 2026. Submit a project you are proud of for a chance to win a free conference ticket."
+        title="Namespace Student Sponsorship"
+        description="Namespace is sponsoring student tickets for ZurichJS Conf 2026. Submit a project you are proud of for a chance to win a free conference ticket."
         canonical="/namespace"
         ogImage="/images/og/namespace-student-sponsorship.png"
         ogType="website"
@@ -123,7 +123,7 @@ export default function NamespacePage() {
                     className="h-auto w-44"
                 />
                 <Button
-                    href="https://namespace.so"
+                    href="https://namespace.so?utm_source=website&utm_medium=referral&utm_campaign=zurichjs"
                     asChild
                     variant="ghost"
                     forceDark={true}
