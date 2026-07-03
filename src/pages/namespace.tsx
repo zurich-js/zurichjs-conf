@@ -159,10 +159,10 @@ export default function NamespacePage() {
               </Heading>
               <p className="mt-5 text-base leading-relaxed text-brand-gray-dark">
                 <strong className="font-bold text-brand-black">
-                  Are you graduating in 2026?
+                  To win a ticket to ZurichJS Conf,
                 </strong>
                 {' '}
-                Send a public link to something you built and a short explanation.
+                send a public link to something you built and a short explanation.
                 It does not need to be polished; it needs to be yours and easy to
                 review.
               </p>
