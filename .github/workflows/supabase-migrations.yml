@@ -24,8 +24,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Setup Supabase CLI
-        # TODO: pin to a commit SHA like the other workflows once resolved
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
         with:
           version: latest
 
@@ -70,8 +69,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Setup Supabase CLI
-        # TODO: pin to a commit SHA like the other workflows once resolved
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
         with:
           version: latest
 
