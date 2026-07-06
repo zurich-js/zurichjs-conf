@@ -1,5 +1,10 @@
 name: Supabase Migrations
 
+# The workflow only reads the repo; deploys authenticate to Supabase via
+# secrets, never with the GITHUB_TOKEN.
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches: [main]
