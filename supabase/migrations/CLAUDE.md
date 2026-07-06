@@ -79,6 +79,16 @@ add `storage.objects` policies for reads/writes.
 2. Run `pnpm typecheck` to surface anything broken by the schema change.
 3. Commit the regenerated types in the same PR as the migration.
 
+## CI (`.github/workflows/supabase-migrations.yml`)
+
+- **On PRs touching migrations:** all migrations are applied from scratch to a
+  fresh local database, `supabase db lint` runs, and the committed
+  `database.generated.ts` is diffed against freshly generated types — the PR
+  fails if they drift.
+- **On merge to main:** `supabase db push` deploys pending migrations to the
+  hosted project. Requires the `SUPABASE_ACCESS_TOKEN` and
+  `SUPABASE_DB_PASSWORD` repository secrets.
+
 ## Seeding
 
 Phase-based seeds live in `supabase/seeds/` (with a README). Run with:

@@ -1,0 +1,85 @@
+name: Supabase Migrations
+
+# The workflow only reads the repo; deploys authenticate to Supabase via
+# secrets, never with the GITHUB_TOKEN.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'src/lib/types/database.generated.ts'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate migrations (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: latest
+
+      # Starts a fresh local Postgres and applies every migration from
+      # scratch — fails on broken SQL, bad ordering, or missing objects.
+      - name: Apply all migrations to a fresh database
+        run: supabase db start
+
+      - name: Lint database
+        run: supabase db lint --level error
+
+      # The repo rule is that database.generated.ts is regenerated and
+      # committed alongside every migration. Fail the PR when the committed
+      # types drift from what the migrated schema actually generates.
+      - name: Verify generated types are up to date
+        run: |
+          supabase gen types typescript --local > /tmp/database.generated.ts
+          if ! diff -u src/lib/types/database.generated.ts /tmp/database.generated.ts; then
+            echo ""
+            echo "::error::src/lib/types/database.generated.ts is out of date."
+            echo "Run scripts/regen-db-types.sh --local (with the migration applied) and commit the result."
+            exit 1
+          fi
+
+  deploy:
+    name: Deploy migrations (main)
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # Never run two pushes against the project at once; queue instead.
+    concurrency:
+      group: supabase-migrations-deploy
+      cancel-in-progress: false
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # Project ref of the hosted Supabase project (matches supabase/config.toml)
+      SUPABASE_PROJECT_ID: svkbzhlrjujeteqjrckv
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Push migrations
+        run: supabase db push

@@ -8,11 +8,15 @@ import type { TablesUpdate } from '@/lib/types/database.generated';
 import type {
   B2BInvoice,
   B2BInvoiceWithAttendees,
+  B2BInvoiceAttendeeWithWorkshops,
+  B2BInvoiceWorkshopItem,
   B2BInvoiceStatus,
   CreateB2BInvoiceRequest,
   UpdateB2BInvoiceRequest,
+  WorkshopItemInput,
   ListInvoicesQuery,
 } from '@/lib/types/b2b';
+import { computeInvoiceTotals } from './invoice-calculations';
 
 /**
  * Create a new B2B invoice
@@ -24,11 +28,14 @@ import type {
 export async function createInvoice(data: CreateB2BInvoiceRequest): Promise<B2BInvoice> {
   const supabase = createServiceRoleClient();
 
-  // Calculate totals
-  const subtotal = data.unitPrice * data.ticketQuantity;
+  // Calculate totals (tickets + workshop seats)
   const vatRate = data.vatRate ?? 0;
-  const vatAmount = Math.round(subtotal * (vatRate / 100));
-  const totalAmount = subtotal + vatAmount;
+  const { subtotal, vatAmount, totalAmount } = computeInvoiceTotals({
+    unitPrice: data.unitPrice,
+    ticketQuantity: data.ticketQuantity,
+    workshopItems: data.workshopItems,
+    vatRate,
+  });
 
   const { data: invoice, error } = await supabase
     .from('b2b_invoices')
@@ -78,7 +85,46 @@ export async function createInvoice(data: CreateB2BInvoiceRequest): Promise<B2BI
     throw new Error(`Failed to create invoice: ${error.message}`);
   }
 
+  // Insert workshop line items, rolling the invoice back on failure so we
+  // never leave an invoice whose stored totals include missing lines.
+  if (data.workshopItems && data.workshopItems.length > 0) {
+    const { error: itemsError } = await supabase.from('b2b_invoice_workshop_items').insert(
+      data.workshopItems.map((item) => ({
+        invoice_id: invoice.id,
+        workshop_id: item.workshopId,
+        workshop_title: item.title,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+      }))
+    );
+
+    if (itemsError) {
+      console.error('Error creating invoice workshop items:', itemsError);
+      await supabase.from('b2b_invoices').delete().eq('id', invoice.id);
+      throw new Error(`Failed to create invoice workshop items: ${itemsError.message}`);
+    }
+  }
+
   return invoice as B2BInvoice;
+}
+
+/**
+ * Get all workshop line items for an invoice
+ */
+export async function getWorkshopItems(invoiceId: string): Promise<B2BInvoiceWorkshopItem[]> {
+  const supabase = createServiceRoleClient();
+
+  const { data, error } = await supabase
+    .from('b2b_invoice_workshop_items')
+    .select('*')
+    .eq('invoice_id', invoiceId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch invoice workshop items: ${error.message}`);
+  }
+
+  return (data || []) as B2BInvoiceWorkshopItem[];
 }
 
 /**
@@ -143,9 +189,41 @@ export async function getInvoiceWithAttendees(
     throw new Error(`Failed to fetch attendees: ${attendeesError.message}`);
   }
 
+  // Fetch workshop line items + seat assignments
+  const workshopItems = await getWorkshopItems(invoiceId);
+
+  const itemIdsByAttendee = new Map<string, string[]>();
+  if (workshopItems.length > 0) {
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('b2b_invoice_attendee_workshops')
+      .select('attendee_id, workshop_item_id')
+      .in(
+        'workshop_item_id',
+        workshopItems.map((item) => item.id)
+      );
+
+    if (assignmentsError) {
+      throw new Error(`Failed to fetch workshop assignments: ${assignmentsError.message}`);
+    }
+
+    for (const assignment of assignments || []) {
+      const list = itemIdsByAttendee.get(assignment.attendee_id) ?? [];
+      list.push(assignment.workshop_item_id);
+      itemIdsByAttendee.set(assignment.attendee_id, list);
+    }
+  }
+
+  const attendeesWithWorkshops: B2BInvoiceAttendeeWithWorkshops[] = (attendees || []).map(
+    (attendee) => ({
+      ...attendee,
+      workshop_item_ids: itemIdsByAttendee.get(attendee.id) ?? [],
+    })
+  ) as B2BInvoiceAttendeeWithWorkshops[];
+
   return {
     ...invoice,
-    attendees: attendees || [],
+    attendees: attendeesWithWorkshops,
+    workshop_items: workshopItems,
   } as B2BInvoiceWithAttendees;
 }
 
@@ -250,7 +328,13 @@ export async function updateInvoice(
     }
   }
 
-  // Recalculate totals if pricing fields changed
+  // Replace workshop line items when provided (full replacement). Deleting
+  // the old items cascades to any attendee seat assignments on them.
+  if (data.workshopItems !== undefined) {
+    await replaceWorkshopItems(invoiceId, data.workshopItems);
+  }
+
+  // Recalculate totals if any pricing input changed
   const unitPrice = data.unitPrice ?? existing.unit_price;
   const ticketQuantity = data.ticketQuantity ?? existing.ticket_quantity;
   const vatRate = data.vatRate ?? existing.vat_rate;
@@ -258,18 +342,30 @@ export async function updateInvoice(
   if (
     data.unitPrice !== undefined ||
     data.ticketQuantity !== undefined ||
-    data.vatRate !== undefined
+    data.vatRate !== undefined ||
+    data.workshopItems !== undefined
   ) {
     updateData.unit_price = unitPrice;
     updateData.ticket_quantity = ticketQuantity;
     updateData.vat_rate = vatRate;
 
-    const subtotal = unitPrice * ticketQuantity;
-    const vatAmount = Math.round(subtotal * (vatRate / 100));
+    const workshopLines =
+      data.workshopItems ??
+      (await getWorkshopItems(invoiceId)).map((item) => ({
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+      }));
 
-    updateData.subtotal = subtotal;
-    updateData.vat_amount = vatAmount;
-    updateData.total_amount = subtotal + vatAmount;
+    const totals = computeInvoiceTotals({
+      unitPrice,
+      ticketQuantity,
+      workshopItems: workshopLines,
+      vatRate,
+    });
+
+    updateData.subtotal = totals.subtotal;
+    updateData.vat_amount = totals.vatAmount;
+    updateData.total_amount = totals.totalAmount;
   }
 
   const { data: updated, error } = await supabase
@@ -285,6 +381,97 @@ export async function updateInvoice(
   }
 
   return updated as B2BInvoice;
+}
+
+/**
+ * Replace the workshop line items on an invoice
+ * Lines for workshops that stay on the invoice are updated in place so their
+ * attendee seat assignments survive; removed lines cascade-delete theirs.
+ */
+async function replaceWorkshopItems(
+  invoiceId: string,
+  items: WorkshopItemInput[]
+): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  const existing = await getWorkshopItems(invoiceId);
+  const existingByWorkshopId = new Map(existing.map((item) => [item.workshop_id, item]));
+  const nextWorkshopIds = new Set(items.map((item) => item.workshopId));
+
+  // Remove lines whose workshop is no longer on the invoice
+  const removedIds = existing
+    .filter((item) => !nextWorkshopIds.has(item.workshop_id))
+    .map((item) => item.id);
+
+  if (removedIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('b2b_invoice_workshop_items')
+      .delete()
+      .in('id', removedIds);
+
+    if (deleteError) {
+      throw new Error(`Failed to update invoice workshop items: ${deleteError.message}`);
+    }
+  }
+
+  for (const item of items) {
+    const current = existingByWorkshopId.get(item.workshopId);
+
+    if (!current) {
+      const { error: insertError } = await supabase.from('b2b_invoice_workshop_items').insert({
+        invoice_id: invoiceId,
+        workshop_id: item.workshopId,
+        workshop_title: item.title,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+      });
+
+      if (insertError) {
+        throw new Error(`Failed to update invoice workshop items: ${insertError.message}`);
+      }
+      continue;
+    }
+
+    if (
+      current.quantity === item.quantity &&
+      current.unit_price === item.unitPrice &&
+      current.workshop_title === item.title
+    ) {
+      continue;
+    }
+
+    // Don't let the seat count drop below what's already assigned to attendees
+    if (item.quantity < current.quantity) {
+      const { count: assignedCount, error: countError } = await supabase
+        .from('b2b_invoice_attendee_workshops')
+        .select('*', { count: 'exact', head: true })
+        .eq('workshop_item_id', current.id);
+
+      if (countError) {
+        throw new Error(`Failed to update invoice workshop items: ${countError.message}`);
+      }
+
+      if ((assignedCount || 0) > item.quantity) {
+        throw new Error(
+          `Cannot reduce "${current.workshop_title}" to ${item.quantity} seat(s): ` +
+            `${assignedCount} attendee(s) are already assigned. Unassign attendees first.`
+        );
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from('b2b_invoice_workshop_items')
+      .update({
+        workshop_title: item.title,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+      })
+      .eq('id', current.id);
+
+    if (updateError) {
+      throw new Error(`Failed to update invoice workshop items: ${updateError.message}`);
+    }
+  }
 }
 
 /**

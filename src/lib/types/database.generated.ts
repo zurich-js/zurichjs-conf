@@ -135,6 +135,52 @@ export type Database = {
           },
         ]
       }
+      b2b_invoice_attendee_workshops: {
+        Row: {
+          attendee_id: string
+          created_at: string
+          id: string
+          registration_id: string | null
+          workshop_item_id: string
+        }
+        Insert: {
+          attendee_id: string
+          created_at?: string
+          id?: string
+          registration_id?: string | null
+          workshop_item_id: string
+        }
+        Update: {
+          attendee_id?: string
+          created_at?: string
+          id?: string
+          registration_id?: string | null
+          workshop_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_invoice_attendee_workshops_attendee_id_fkey"
+            columns: ["attendee_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoice_attendees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_invoice_attendee_workshops_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_invoice_attendee_workshops_workshop_item_id_fkey"
+            columns: ["workshop_item_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoice_workshop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       b2b_invoice_attendees: {
         Row: {
           company: string | null
@@ -191,6 +237,54 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_invoice_workshop_items: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          quantity: number
+          unit_price: number
+          updated_at: string
+          workshop_id: string
+          workshop_title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          quantity: number
+          unit_price: number
+          updated_at?: string
+          workshop_id: string
+          workshop_title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          unit_price?: number
+          updated_at?: string
+          workshop_id?: string
+          workshop_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_invoice_workshop_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_invoice_workshop_items_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "workshops"
             referencedColumns: ["id"]
           },
         ]
