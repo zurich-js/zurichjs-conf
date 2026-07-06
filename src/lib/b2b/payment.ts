@@ -16,6 +16,10 @@ import { getInvoiceWithAttendees } from './invoices';
 import { validateAttendeeCount, validateWorkshopAssignments } from './attendees';
 import { createTicket } from '@/lib/tickets/createTicket';
 import { createWorkshopRegistration } from '@/lib/workshops/createRegistration';
+import {
+  sendB2BWorkshopConfirmationEmails,
+  type B2BWorkshopEmailTarget,
+} from './workshop-emails';
 import { toLegacyType } from '@/lib/stripe/ticket-utils';
 import type { TicketCategory, TicketStage } from '@/lib/types/database';
 import { sendTicketConfirmationEmail } from '@/lib/email';
@@ -158,7 +162,7 @@ export async function markInvoiceAsPaidAndCreateTickets(
   }
 
   // Step 5b: Create workshop registrations for assigned seats
-  const workshopRegistrationsCreated = await createWorkshopRegistrations(
+  const workshopRegistrations = await createWorkshopRegistrations(
     invoice,
     attendees,
     invoice.workshop_items,
@@ -183,17 +187,21 @@ export async function markInvoiceAsPaidAndCreateTickets(
     );
   }
 
-  // Step 7: Send confirmation emails if requested
+  // Step 7: Send confirmation emails if requested (ticket + workshop seat)
   let emailsSent = 0;
   let emailsFailed = 0;
   let emailFailures: MarkPaidResult['emailFailures'] = undefined;
 
   if (request.sendConfirmationEmails) {
     const emailResult = await sendConfirmationEmails(invoiceId, ticketResults);
-    emailsSent = emailResult.emailsSent;
-    emailsFailed = emailResult.emailsFailed;
-    if (emailResult.failures.length > 0) {
-      emailFailures = emailResult.failures;
+    const workshopEmailResult = await sendB2BWorkshopConfirmationEmails(workshopRegistrations);
+
+    emailsSent = emailResult.emailsSent + workshopEmailResult.emailsSent;
+    emailsFailed = emailResult.emailsFailed + workshopEmailResult.emailsFailed;
+
+    const allFailures = [...emailResult.failures, ...workshopEmailResult.failures];
+    if (allFailures.length > 0) {
+      emailFailures = allFailures;
     }
   }
 
@@ -202,7 +210,7 @@ export async function markInvoiceAsPaidAndCreateTickets(
     invoiceId,
     invoiceNumber: invoice.invoice_number,
     ticketsCreated: ticketResults.length,
-    workshopRegistrationsCreated,
+    workshopRegistrationsCreated: workshopRegistrations.length,
     emailsSent,
     emailsFailed,
     tickets: ticketResults,
@@ -257,7 +265,8 @@ async function assertWorkshopCapacity(items: B2BInvoiceWorkshopItem[]): Promise<
  * Registrations reuse the ticket's B2B session identifier, so the atomic
  * insert's idempotency check makes retries safe.
  *
- * @returns Number of registrations created (or already existing on retry)
+ * @returns Created registrations (including pre-existing ones on retry),
+ *          shaped for the workshop confirmation email sender
  */
 async function createWorkshopRegistrations(
   invoice: B2BInvoice,
@@ -265,13 +274,13 @@ async function createWorkshopRegistrations(
   items: B2BInvoiceWorkshopItem[],
   ticketIdByAttendee: Map<string, string>,
   bankTransferReference: string
-): Promise<number> {
-  if (items.length === 0) return 0;
+): Promise<B2BWorkshopEmailTarget[]> {
+  if (items.length === 0) return [];
 
   const supabase = createServiceRoleClient();
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const failures: string[] = [];
-  let created = 0;
+  const created: B2BWorkshopEmailTarget[] = [];
 
   for (const attendee of attendees) {
     for (const itemId of attendee.workshop_item_ids) {
@@ -301,7 +310,12 @@ async function createWorkshopRegistrations(
       });
 
       if (result.success && result.registration) {
-        created++;
+        created.push({
+          registrationId: result.registration.id,
+          workshopId: item.workshop_id,
+          attendeeName: `${attendee.first_name} ${attendee.last_name}`,
+          attendeeEmail: attendee.email,
+        });
         await supabase
           .from('b2b_invoice_attendee_workshops')
           .update({ registration_id: result.registration.id })
@@ -322,7 +336,7 @@ async function createWorkshopRegistrations(
     throw new Error(
       `Failed to create ${failures.length} workshop registration(s):\n` +
         failures.join('\n') +
-        `\n\nAll conference tickets and ${created} workshop registration(s) were created. ` +
+        `\n\nAll conference tickets and ${created.length} workshop registration(s) were created. ` +
         `The invoice was NOT marked as paid — fix the issue and retry (already-created items are deduplicated).`
     );
   }

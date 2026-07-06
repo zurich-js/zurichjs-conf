@@ -217,7 +217,10 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
             <label htmlFor="sendEmails" className="text-sm text-gray-900 cursor-pointer">
               <span className="font-medium">Send confirmation emails</span>
               <p className="text-gray-600 mt-0.5">
-                Each attendee will receive their ticket with a QR code via email.
+                Each attendee will receive their ticket with a QR code via email
+                {invoice.workshop_items.length > 0 &&
+                  ', plus a separate confirmation for each assigned workshop seat'}
+                .
               </p>
             </label>
           </div>
