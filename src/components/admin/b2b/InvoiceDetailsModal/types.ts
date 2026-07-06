@@ -2,7 +2,7 @@
  * Invoice Details Modal - Shared types
  */
 
-import type { B2BInvoiceWithAttendees, B2BInvoiceStatus } from '@/lib/types/b2b';
+import type { B2BInvoiceWithAttendees, B2BInvoiceStatus, WorkshopItemInput } from '@/lib/types/b2b';
 
 export interface InvoiceDetailsModalProps {
   invoice: B2BInvoiceWithAttendees;
@@ -26,6 +26,7 @@ export interface EditFormData {
   invoiceNotes: string;
   ticketQuantity: number;
   unitPrice: number;
+  workshopItems: WorkshopItemInput[];
 }
 
 export interface AttendeeFormData {
@@ -51,6 +52,12 @@ export function getFormValuesFromInvoice(invoice: B2BInvoiceWithAttendees): Edit
     invoiceNotes: invoice.invoice_notes || '',
     ticketQuantity: invoice.ticket_quantity,
     unitPrice: invoice.unit_price,
+    workshopItems: invoice.workshop_items.map((item) => ({
+      workshopId: item.workshop_id,
+      title: item.workshop_title,
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+    })),
   };
 }
 

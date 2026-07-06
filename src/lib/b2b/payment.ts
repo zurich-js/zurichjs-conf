@@ -7,12 +7,15 @@ import { createServiceRoleClient } from '@/lib/supabase';
 import type {
   B2BInvoice,
   B2BInvoiceAttendee,
+  B2BInvoiceAttendeeWithWorkshops,
+  B2BInvoiceWorkshopItem,
   MarkPaidRequest,
   MarkPaidResult,
 } from '@/lib/types/b2b';
 import { getInvoiceWithAttendees } from './invoices';
-import { validateAttendeeCount } from './attendees';
+import { validateAttendeeCount, validateWorkshopAssignments } from './attendees';
 import { createTicket } from '@/lib/tickets/createTicket';
+import { createWorkshopRegistration } from '@/lib/workshops/createRegistration';
 import { toLegacyType } from '@/lib/stripe/ticket-utils';
 import type { TicketCategory, TicketStage } from '@/lib/types/database';
 import { sendTicketConfirmationEmail } from '@/lib/email';
@@ -101,6 +104,20 @@ export async function markInvoiceAsPaidAndCreateTickets(
     );
   }
 
+  // Step 4b: Validate workshop seat assignments + remaining capacity before
+  // creating anything, so a full workshop fails fast instead of halfway.
+  if (invoice.workshop_items.length > 0) {
+    const workshopValidation = await validateWorkshopAssignments(invoiceId);
+    if (!workshopValidation.isValid) {
+      throw new Error(
+        `Cannot mark invoice as paid: workshop seats not fully assigned — ${workshopValidation.message}. ` +
+          `Please assign every purchased workshop seat to an attendee before confirming payment.`
+      );
+    }
+
+    await assertWorkshopCapacity(invoice.workshop_items);
+  }
+
   // Step 5: Create tickets for each attendee
   const ticketResults: MarkPaidResult['tickets'] = [];
   const failedAttendees: string[] = [];
@@ -140,6 +157,15 @@ export async function markInvoiceAsPaidAndCreateTickets(
     );
   }
 
+  // Step 5b: Create workshop registrations for assigned seats
+  const workshopRegistrationsCreated = await createWorkshopRegistrations(
+    invoice,
+    attendees,
+    invoice.workshop_items,
+    new Map(ticketResults.map((t) => [t.attendeeId, t.ticketId])),
+    request.bankTransferReference
+  );
+
   // Step 6: Update invoice status to paid
   const { error: updateError } = await supabase
     .from('b2b_invoices')
@@ -176,11 +202,132 @@ export async function markInvoiceAsPaidAndCreateTickets(
     invoiceId,
     invoiceNumber: invoice.invoice_number,
     ticketsCreated: ticketResults.length,
+    workshopRegistrationsCreated,
     emailsSent,
     emailsFailed,
     tickets: ticketResults,
     emailFailures,
   };
+}
+
+/**
+ * Verify every workshop line still has enough free capacity for its seats.
+ * The atomic registration insert enforces this too, but checking up front
+ * fails the whole operation before any tickets are created.
+ */
+async function assertWorkshopCapacity(items: B2BInvoiceWorkshopItem[]): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  const { data: workshops, error } = await supabase
+    .from('workshops')
+    .select('id, title, capacity, enrolled_count')
+    .in(
+      'id',
+      items.map((item) => item.workshop_id)
+    );
+
+  if (error) {
+    throw new Error(`Failed to check workshop capacity: ${error.message}`);
+  }
+
+  const workshopById = new Map((workshops || []).map((w) => [w.id, w]));
+  const insufficient: string[] = [];
+
+  for (const item of items) {
+    const workshop = workshopById.get(item.workshop_id);
+    if (!workshop) {
+      insufficient.push(`"${item.workshop_title}": workshop no longer exists`);
+      continue;
+    }
+    const remaining = Math.max(0, (workshop.capacity ?? 0) - (workshop.enrolled_count ?? 0));
+    if (remaining < item.quantity) {
+      insufficient.push(
+        `"${item.workshop_title}": ${item.quantity} seat(s) needed but only ${remaining} remaining`
+      );
+    }
+  }
+
+  if (insufficient.length > 0) {
+    throw new Error(`Cannot mark invoice as paid: ${insufficient.join('; ')}`);
+  }
+}
+
+/**
+ * Create workshop registrations for every assigned seat on a paid invoice.
+ * Registrations reuse the ticket's B2B session identifier, so the atomic
+ * insert's idempotency check makes retries safe.
+ *
+ * @returns Number of registrations created (or already existing on retry)
+ */
+async function createWorkshopRegistrations(
+  invoice: B2BInvoice,
+  attendees: B2BInvoiceAttendeeWithWorkshops[],
+  items: B2BInvoiceWorkshopItem[],
+  ticketIdByAttendee: Map<string, string>,
+  bankTransferReference: string
+): Promise<number> {
+  if (items.length === 0) return 0;
+
+  const supabase = createServiceRoleClient();
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+  const failures: string[] = [];
+  let created = 0;
+
+  for (const attendee of attendees) {
+    for (const itemId of attendee.workshop_item_ids) {
+      const item = itemsById.get(itemId);
+      if (!item) continue;
+
+      const result = await createWorkshopRegistration({
+        workshopId: item.workshop_id,
+        ticketId: ticketIdByAttendee.get(attendee.id),
+        stripeSessionId: `b2b_${invoice.id}_${attendee.id}`,
+        amountPaid: item.unit_price,
+        currency: invoice.currency,
+        status: 'confirmed',
+        firstName: attendee.first_name,
+        lastName: attendee.last_name,
+        email: attendee.email,
+        company: attendee.company || invoice.company_name,
+        jobTitle: attendee.job_title,
+        metadata: {
+          isB2B: true,
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoice_number,
+          companyName: invoice.company_name,
+          paymentType: 'bank_transfer',
+          bankTransferReference,
+        },
+      });
+
+      if (result.success && result.registration) {
+        created++;
+        await supabase
+          .from('b2b_invoice_attendee_workshops')
+          .update({ registration_id: result.registration.id })
+          .eq('attendee_id', attendee.id)
+          .eq('workshop_item_id', item.id);
+      } else {
+        const reason = result.oversold
+          ? 'workshop is at full capacity'
+          : result.error || 'unknown error';
+        failures.push(
+          `${attendee.first_name} ${attendee.last_name} (${attendee.email}) → "${item.workshop_title}": ${reason}`
+        );
+      }
+    }
+  }
+
+  if (failures.length > 0) {
+    throw new Error(
+      `Failed to create ${failures.length} workshop registration(s):\n` +
+        failures.join('\n') +
+        `\n\nAll conference tickets and ${created} workshop registration(s) were created. ` +
+        `The invoice was NOT marked as paid — fix the issue and retry (already-created items are deduplicated).`
+    );
+  }
+
+  return created;
 }
 
 /**
@@ -417,6 +564,12 @@ export async function getPaymentSummary(invoiceId: string): Promise<{
   } else if (attendees.length !== invoiceWithAttendees.ticket_quantity) {
     canMarkAsPaid = false;
     canMarkAsPaidReason = `Missing attendees: ${attendees.length} of ${invoiceWithAttendees.ticket_quantity} provided`;
+  } else if (invoiceWithAttendees.workshop_items.length > 0) {
+    const workshopValidation = await validateWorkshopAssignments(invoiceId);
+    if (!workshopValidation.isValid) {
+      canMarkAsPaid = false;
+      canMarkAsPaidReason = `Workshop seats not fully assigned: ${workshopValidation.message}`;
+    }
   }
 
   return {

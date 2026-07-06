@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import type { B2BInvoiceWithAttendees } from '@/lib/types/b2b';
 import { formatAmount, formatDate } from '../types';
+import { WorkshopItemsEditor } from '../WorkshopItemsEditor';
 import { getFormValuesFromInvoice, type EditFormData } from './types';
 
 interface DetailsSectionProps {
@@ -47,6 +48,7 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
           invoiceNotes: editFormData.invoiceNotes,
           ticketQuantity: editFormData.ticketQuantity,
           unitPrice: editFormData.unitPrice,
+          workshopItems: editFormData.workshopItems,
         }),
       });
 
@@ -161,6 +163,12 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
             <div className="flex justify-between"><span>Issue Date</span><span>{formatDate(invoice.issue_date)}</span></div>
             <div className="flex justify-between"><span>Due Date</span><span>{formatDate(invoice.due_date)}</span></div>
             <div className="flex justify-between"><span>Tickets</span><span>{invoice.ticket_quantity}x {invoice.ticket_category}</span></div>
+            {invoice.workshop_items.map((item) => (
+              <div key={item.id} className="flex justify-between">
+                <span>Workshop</span>
+                <span className="text-right">{item.quantity}x {item.workshop_title}</span>
+              </div>
+            ))}
             <div className="flex justify-between"><span>Payment Method</span><span className="capitalize">{invoice.payment_method === 'bank_transfer' ? 'Bank Transfer' : 'Stripe'}</span></div>
           </div>
         </div>
@@ -209,7 +217,17 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
       {/* Totals */}
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="space-y-2 text-sm text-gray-900">
-          <div className="flex justify-between"><span>Subtotal</span><span>{formatAmount(invoice.subtotal, invoice.currency)}</span></div>
+          <div className="flex justify-between text-gray-700">
+            <span>{invoice.ticket_quantity}x conference ticket</span>
+            <span>{formatAmount(invoice.unit_price * invoice.ticket_quantity, invoice.currency)}</span>
+          </div>
+          {invoice.workshop_items.map((item) => (
+            <div key={item.id} className="flex justify-between text-gray-700">
+              <span>{item.quantity}x {item.workshop_title}</span>
+              <span>{formatAmount(item.unit_price * item.quantity, invoice.currency)}</span>
+            </div>
+          ))}
+          <div className="flex justify-between pt-2 border-t border-gray-200"><span>Subtotal</span><span>{formatAmount(invoice.subtotal, invoice.currency)}</span></div>
           {invoice.vat_rate > 0 && <div className="flex justify-between"><span>VAT ({invoice.vat_rate}%)</span><span>{formatAmount(invoice.vat_amount, invoice.currency)}</span></div>}
           <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-300"><span>Total</span><span>{formatAmount(invoice.total_amount, invoice.currency)}</span></div>
         </div>
@@ -294,7 +312,22 @@ function EditForm({ formData, setFormData, onSave, onCancel, loading }: {
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-1">Unit Price (CHF)</label>
           <input type="number" min={0} step={0.01} value={formData.unitPrice / 100} onChange={(e) => update('unitPrice', Math.round(parseFloat(e.target.value) * 100) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
-          <p className="mt-1 text-xs text-gray-600">Total: {formatAmount(formData.unitPrice * formData.ticketQuantity)}</p>
+          <p className="mt-1 text-xs text-gray-600">
+            Total: {formatAmount(
+              formData.unitPrice * formData.ticketQuantity +
+                formData.workshopItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+            )}
+          </p>
+        </div>
+        <div className="col-span-1 sm:col-span-2">
+          <label className="block text-sm font-medium text-gray-900 mb-1">Workshop Seats</label>
+          <p className="mb-2 text-xs text-gray-600">
+            Changing workshops resets any attendee seat assignments for removed lines.
+          </p>
+          <WorkshopItemsEditor
+            items={formData.workshopItems}
+            onChange={(items) => update('workshopItems', items)}
+          />
         </div>
         <div className="col-span-1 sm:col-span-2">
           <label className="block text-sm font-medium text-gray-900 mb-1">Internal Notes <span className="text-gray-500 font-normal ml-1">(admin only)</span></label>

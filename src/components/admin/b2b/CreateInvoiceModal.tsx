@@ -3,7 +3,9 @@
  */
 
 import { useState } from 'react';
+import type { WorkshopItemInput } from '@/lib/types/b2b';
 import { formatAmount } from './types';
+import { WorkshopItemsEditor } from './WorkshopItemsEditor';
 
 interface CreateInvoiceModalProps {
   onClose: () => void;
@@ -50,10 +52,16 @@ const initialFormData: FormData = {
 
 export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [workshopItems, setWorkshopItems] = useState<WorkshopItemInput[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const total = formData.unitPrice * formData.ticketQuantity;
+  const ticketsTotal = formData.unitPrice * formData.ticketQuantity;
+  const workshopsTotal = workshopItems.reduce(
+    (sum, item) => sum + item.unitPrice * item.quantity,
+    0
+  );
+  const total = ticketsTotal + workshopsTotal;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +91,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
           ticketStage: formData.ticketStage,
           ticketQuantity: formData.ticketQuantity,
           unitPrice: formData.unitPrice,
+          workshopItems: workshopItems.length > 0 ? workshopItems : undefined,
         }),
       });
 
@@ -202,6 +211,11 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
             </div>
           </FormSection>
 
+          {/* Workshop Seats */}
+          <FormSection title="Workshop Seats">
+            <WorkshopItemsEditor items={workshopItems} onChange={setWorkshopItems} />
+          </FormSection>
+
           {/* Invoice Settings */}
           <FormSection title="Invoice Settings">
             <div className="grid grid-cols-2 gap-4">
@@ -239,8 +253,20 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
           {/* Total Preview */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-2">Invoice Total</h4>
-            <div className="flex justify-between font-bold text-lg text-gray-900">
-              <span>Total ({formData.ticketQuantity} tickets)</span>
+            <div className="space-y-1 text-sm text-gray-900">
+              <div className="flex justify-between">
+                <span>{formData.ticketQuantity}x conference ticket</span>
+                <span>{formatAmount(ticketsTotal)}</span>
+              </div>
+              {workshopItems.map((item) => (
+                <div key={item.workshopId} className="flex justify-between">
+                  <span>{item.quantity}x {item.title}</span>
+                  <span>{formatAmount(item.unitPrice * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between font-bold text-lg text-gray-900 pt-2 mt-2 border-t border-gray-300">
+              <span>Total</span>
               <span>{formatAmount(total)}</span>
             </div>
           </div>

@@ -8,6 +8,7 @@ export {
   createInvoice,
   getInvoice,
   getInvoiceWithAttendees,
+  getWorkshopItems,
   listInvoices,
   updateInvoice,
   updateInvoiceStatus,
@@ -16,16 +17,21 @@ export {
   removeInvoicePDF,
 } from './invoices';
 
+// Invoice totals calculation
+export { computeInvoiceTotals } from './invoice-calculations';
+
 // Attendee management
 export {
   addAttendees,
   getAttendees,
   getAttendee,
   updateAttendee,
+  setAttendeeWorkshops,
   deleteAttendee,
   deleteAllAttendees,
   parseAttendeesFromCSV,
   validateAttendeeCount,
+  validateWorkshopAssignments,
   type ParseCSVResult,
 } from './attendees';
 

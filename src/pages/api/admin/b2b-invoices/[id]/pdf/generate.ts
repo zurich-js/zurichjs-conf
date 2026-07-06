@@ -8,7 +8,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { getInvoice, updateInvoicePDF } from '@/lib/b2b';
+import { getInvoice, getWorkshopItems, updateInvoicePDF } from '@/lib/b2b';
 import { generateInvoicePDF } from '@/lib/pdf';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { InvoicePDFProps } from '@/lib/types/b2b';
@@ -55,6 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const ticketDescription = `ZurichJS Conference 2026 - ${categoryLabels[invoice.ticket_category] || invoice.ticket_category} Ticket (${stageLabels[invoice.ticket_stage] || invoice.ticket_stage})`;
 
+    // Workshop seat line items
+    const workshopItems = await getWorkshopItems(id);
+
     // Build PDF props
     // Bank details are hardcoded in the PDF template (PostFinance)
     const pdfProps: InvoicePDFProps = {
@@ -76,8 +79,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           description: ticketDescription,
           quantity: invoice.ticket_quantity,
           unitPrice: invoice.unit_price,
-          total: invoice.subtotal,
+          total: invoice.unit_price * invoice.ticket_quantity,
         },
+        ...workshopItems.map((item) => ({
+          description: `Workshop: ${item.workshop_title}`,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          total: item.unit_price * item.quantity,
+        })),
       ],
       subtotal: invoice.subtotal,
       vatRate: invoice.vat_rate,

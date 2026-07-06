@@ -121,10 +121,33 @@ export interface B2BInvoiceAttendee {
 }
 
 /**
+ * B2B Invoice Workshop Item - Workshop seat line item on an invoice
+ */
+export interface B2BInvoiceWorkshopItem {
+  id: string;
+  invoice_id: string;
+  workshop_id: string;
+  workshop_title: string; // snapshot at the time the line was added
+  quantity: number; // number of seats
+  unit_price: number; // per seat, in cents
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Attendee with their assigned workshop seats
+ * workshop_item_ids reference B2BInvoiceWorkshopItem.id
+ */
+export interface B2BInvoiceAttendeeWithWorkshops extends B2BInvoiceAttendee {
+  workshop_item_ids: string[];
+}
+
+/**
  * Invoice with attendees - Combined view for API responses
  */
 export interface B2BInvoiceWithAttendees extends B2BInvoice {
-  attendees: B2BInvoiceAttendee[];
+  attendees: B2BInvoiceAttendeeWithWorkshops[];
+  workshop_items: B2BInvoiceWorkshopItem[];
 }
 
 // ============================================================================
@@ -156,11 +179,24 @@ export interface CreateB2BInvoiceRequest {
   ticketQuantity: number;
   unitPrice: number; // in cents
 
+  // Workshop seat line items (optional)
+  workshopItems?: WorkshopItemInput[];
+
   // VAT (optional, defaults to 0 for B2B)
   vatRate?: number; // percentage
 
   // Initial attendees (optional - can be added later)
   attendees?: AttendeeInput[];
+}
+
+/**
+ * Input for a workshop seat line item on an invoice
+ */
+export interface WorkshopItemInput {
+  workshopId: string;
+  title: string;
+  quantity: number; // seats, >= 1
+  unitPrice: number; // per seat, in cents
 }
 
 /**
@@ -182,6 +218,8 @@ export interface UpdateB2BInvoiceRequest {
   ticketQuantity?: number;
   unitPrice?: number;
   vatRate?: number;
+  /** Full replacement of the invoice's workshop line items when provided */
+  workshopItems?: WorkshopItemInput[];
 }
 
 /**
@@ -211,6 +249,8 @@ export interface UpdateAttendeeRequest {
   email?: string;
   company?: string;
   jobTitle?: string;
+  /** Full replacement of the attendee's workshop seat assignments when provided */
+  workshopItemIds?: string[];
 }
 
 /**
@@ -236,6 +276,8 @@ export interface MarkPaidResult {
   invoiceId: string;
   invoiceNumber: string;
   ticketsCreated: number;
+  /** Workshop registrations created from purchased seats */
+  workshopRegistrationsCreated: number;
   emailsSent: number;
   emailsFailed: number;
   tickets: Array<{

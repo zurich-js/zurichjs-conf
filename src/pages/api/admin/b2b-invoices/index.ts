@@ -100,6 +100,35 @@ async function handleCreate(req: NextApiRequest, res: NextApiResponse) {
       return res.status(400).json({ error: 'unitPrice cannot be negative' });
     }
 
+    // Validate workshop line items
+    if (data.workshopItems !== undefined) {
+      if (!Array.isArray(data.workshopItems)) {
+        return res.status(400).json({ error: 'workshopItems must be an array' });
+      }
+      for (let i = 0; i < data.workshopItems.length; i++) {
+        const item = data.workshopItems[i];
+        if (!item.workshopId || !item.title) {
+          return res.status(400).json({
+            error: `Workshop item ${i + 1}: workshopId and title are required`,
+          });
+        }
+        if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+          return res.status(400).json({
+            error: `Workshop item ${i + 1}: quantity must be at least 1`,
+          });
+        }
+        if (typeof item.unitPrice !== 'number' || item.unitPrice < 0) {
+          return res.status(400).json({
+            error: `Workshop item ${i + 1}: unitPrice cannot be negative`,
+          });
+        }
+      }
+      const workshopIds = new Set(data.workshopItems.map((item) => item.workshopId));
+      if (workshopIds.size !== data.workshopItems.length) {
+        return res.status(400).json({ error: 'Duplicate workshop in workshopItems' });
+      }
+    }
+
     const invoice = await createInvoice(data);
 
     return res.status(201).json(invoice);

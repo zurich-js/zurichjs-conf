@@ -10,7 +10,7 @@ import type {
   AttendeeInput,
   UpdateAttendeeRequest,
 } from '@/lib/types/b2b';
-import { getInvoice } from './invoices';
+import { getInvoice, getWorkshopItems } from './invoices';
 
 /**
  * Add attendees to an invoice
@@ -151,6 +151,11 @@ export async function updateAttendee(
     throw new Error(`Cannot update attendee on invoice with status: ${invoice.status}`);
   }
 
+  // Replace workshop seat assignments when provided
+  if (data.workshopItemIds !== undefined) {
+    await setAttendeeWorkshops(attendeeId, data.workshopItemIds);
+  }
+
   // Build update object
   const updateData: TablesUpdate<'b2b_invoice_attendees'> = {};
   if (data.firstName !== undefined) updateData.first_name = data.firstName;
@@ -158,6 +163,10 @@ export async function updateAttendee(
   if (data.email !== undefined) updateData.email = data.email;
   if (data.company !== undefined) updateData.company = data.company || null;
   if (data.jobTitle !== undefined) updateData.job_title = data.jobTitle || null;
+
+  if (Object.keys(updateData).length === 0) {
+    return attendee;
+  }
 
   const { data: updated, error } = await supabase
     .from('b2b_invoice_attendees')
@@ -172,6 +181,152 @@ export async function updateAttendee(
   }
 
   return updated as B2BInvoiceAttendee;
+}
+
+/**
+ * Replace an attendee's workshop seat assignments
+ * Validates that every item belongs to the attendee's invoice and that no
+ * workshop line ends up with more attendees than purchased seats.
+ *
+ * @param attendeeId - UUID of the attendee
+ * @param workshopItemIds - Workshop item IDs the attendee should occupy a seat in
+ * @throws Error if invoice is paid/cancelled, an item is unknown, or seats are full
+ */
+export async function setAttendeeWorkshops(
+  attendeeId: string,
+  workshopItemIds: string[]
+): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  const attendee = await getAttendee(attendeeId);
+  if (!attendee) {
+    throw new Error('Attendee not found');
+  }
+
+  const invoice = await getInvoice(attendee.invoice_id);
+  if (!invoice) {
+    throw new Error('Invoice not found');
+  }
+
+  if (invoice.status === 'paid' || invoice.status === 'cancelled') {
+    throw new Error(`Cannot update workshop assignments on invoice with status: ${invoice.status}`);
+  }
+
+  const items = await getWorkshopItems(attendee.invoice_id);
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+
+  const uniqueIds = [...new Set(workshopItemIds)];
+  for (const itemId of uniqueIds) {
+    if (!itemsById.has(itemId)) {
+      throw new Error('Workshop item does not belong to this invoice');
+    }
+  }
+
+  // Seat capacity check: other attendees' assignments + this attendee must
+  // not exceed the purchased seat count of any workshop line.
+  if (uniqueIds.length > 0) {
+    const { data: existingAssignments, error: assignmentsError } = await supabase
+      .from('b2b_invoice_attendee_workshops')
+      .select('attendee_id, workshop_item_id')
+      .in('workshop_item_id', uniqueIds);
+
+    if (assignmentsError) {
+      throw new Error(`Failed to check workshop seat usage: ${assignmentsError.message}`);
+    }
+
+    for (const itemId of uniqueIds) {
+      const item = itemsById.get(itemId)!;
+      const takenByOthers = (existingAssignments || []).filter(
+        (a) => a.workshop_item_id === itemId && a.attendee_id !== attendeeId
+      ).length;
+
+      if (takenByOthers + 1 > item.quantity) {
+        throw new Error(
+          `All ${item.quantity} purchased seat(s) for "${item.workshop_title}" are already assigned`
+        );
+      }
+    }
+  }
+
+  // Replace assignments
+  const { error: deleteError } = await supabase
+    .from('b2b_invoice_attendee_workshops')
+    .delete()
+    .eq('attendee_id', attendeeId);
+
+  if (deleteError) {
+    throw new Error(`Failed to update workshop assignments: ${deleteError.message}`);
+  }
+
+  if (uniqueIds.length > 0) {
+    const { error: insertError } = await supabase.from('b2b_invoice_attendee_workshops').insert(
+      uniqueIds.map((itemId) => ({
+        attendee_id: attendeeId,
+        workshop_item_id: itemId,
+      }))
+    );
+
+    if (insertError) {
+      throw new Error(`Failed to update workshop assignments: ${insertError.message}`);
+    }
+  }
+}
+
+/**
+ * Validate that every purchased workshop seat is assigned to an attendee
+ * Used as a pre-flight check before marking an invoice as paid.
+ *
+ * @param invoiceId - UUID of the invoice
+ */
+export async function validateWorkshopAssignments(invoiceId: string): Promise<{
+  isValid: boolean;
+  message: string;
+}> {
+  const supabase = createServiceRoleClient();
+
+  const items = await getWorkshopItems(invoiceId);
+  if (items.length === 0) {
+    return { isValid: true, message: 'No workshop seats on this invoice' };
+  }
+
+  const { data: assignments, error } = await supabase
+    .from('b2b_invoice_attendee_workshops')
+    .select('workshop_item_id')
+    .in(
+      'workshop_item_id',
+      items.map((item) => item.id)
+    );
+
+  if (error) {
+    throw new Error(`Failed to fetch workshop assignments: ${error.message}`);
+  }
+
+  const assignedCounts = new Map<string, number>();
+  for (const assignment of assignments || []) {
+    assignedCounts.set(
+      assignment.workshop_item_id,
+      (assignedCounts.get(assignment.workshop_item_id) ?? 0) + 1
+    );
+  }
+
+  const incomplete = items
+    .map((item) => ({
+      title: item.workshop_title,
+      assigned: assignedCounts.get(item.id) ?? 0,
+      quantity: item.quantity,
+    }))
+    .filter((item) => item.assigned !== item.quantity);
+
+  if (incomplete.length === 0) {
+    return { isValid: true, message: 'All workshop seats assigned' };
+  }
+
+  return {
+    isValid: false,
+    message: incomplete
+      .map((item) => `"${item.title}": ${item.assigned} of ${item.quantity} seats assigned`)
+      .join('; '),
+  };
 }
 
 /**

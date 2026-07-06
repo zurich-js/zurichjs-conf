@@ -7,7 +7,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { getInvoice } from '@/lib/b2b';
+import { getInvoice, getWorkshopItems } from '@/lib/b2b';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getStripeClient } from '@/lib/stripe/client';
 import { logger } from '@/lib/logger';
@@ -72,10 +72,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const ticketDescription = `ZurichJS Conference 2026 - ${categoryLabels[invoice.ticket_category] || invoice.ticket_category} Ticket (${stageLabels[invoice.ticket_stage] || invoice.ticket_stage})`;
 
+    const workshopItems = await getWorkshopItems(id);
+    const workshopSeatCount = workshopItems.reduce((sum, item) => sum + item.quantity, 0);
+    const lineSummary =
+      `${invoice.ticket_quantity}x tickets` +
+      (workshopSeatCount > 0 ? ` + ${workshopSeatCount}x workshop seats` : '');
+
     // Create a Stripe Product for this invoice
     const product = await stripe.products.create({
       name: `${invoice.invoice_number} - ${ticketDescription}`,
-      description: `B2B Invoice ${invoice.invoice_number} for ${invoice.company_name} - ${invoice.ticket_quantity}x tickets`,
+      description: `B2B Invoice ${invoice.invoice_number} for ${invoice.company_name} - ${lineSummary}`,
       metadata: {
         invoice_id: invoice.id,
         invoice_number: invoice.invoice_number,

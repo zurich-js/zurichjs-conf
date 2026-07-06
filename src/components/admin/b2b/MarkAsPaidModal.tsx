@@ -15,6 +15,7 @@ interface MarkAsPaidModalProps {
 interface MarkAsPaidResult {
   success: boolean;
   ticketsCreated: number;
+  workshopRegistrationsCreated: number;
   emailsSent: number;
   emailsFailed: number;
   tickets: Array<{ attendeeName: string; attendeeEmail: string; ticketId: string }>;
@@ -81,6 +82,12 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="text-gray-600">Tickets Created:</div>
                 <div className="font-medium text-gray-900">{result.ticketsCreated}</div>
+                {result.workshopRegistrationsCreated > 0 && (
+                  <>
+                    <div className="text-gray-600">Workshop Registrations:</div>
+                    <div className="font-medium text-gray-900">{result.workshopRegistrationsCreated}</div>
+                  </>
+                )}
                 <div className="text-gray-600">Emails Sent:</div>
                 <div className="font-medium text-gray-900">{result.emailsSent}</div>
                 {result.emailsFailed > 0 && (
@@ -169,6 +176,12 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               <div className="font-medium text-gray-900">{formatAmount(invoice.total_amount, invoice.currency)}</div>
               <div className="text-gray-600">Tickets:</div>
               <div className="font-medium text-gray-900">{invoice.ticket_quantity}x {invoice.ticket_category}</div>
+              {invoice.workshop_items.map((item) => (
+                <div key={item.id} className="contents">
+                  <div className="text-gray-600">Workshop:</div>
+                  <div className="font-medium text-gray-900">{item.quantity}x {item.workshop_title}</div>
+                </div>
+              ))}
               <div className="text-gray-600">Attendees:</div>
               <div className="font-medium text-gray-900">{invoice.attendees.length} registered</div>
             </div>
@@ -219,6 +232,12 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
                 <p className="font-medium text-amber-800">This action will:</p>
                 <ul className="mt-1 text-amber-700 list-disc list-inside space-y-0.5">
                   <li>Create {invoice.ticket_quantity} tickets in the system</li>
+                  {invoice.workshop_items.length > 0 && (
+                    <li>
+                      Create {invoice.workshop_items.reduce((sum, item) => sum + item.quantity, 0)} workshop
+                      registration(s) for assigned attendees
+                    </li>
+                  )}
                   <li>Mark the invoice as paid</li>
                   {sendEmails && <li>Send confirmation emails to all attendees</li>}
                 </ul>
