@@ -196,13 +196,17 @@ export const TICKET_FAQ: FAQItem[] = [
           Trip Cost Calculator
         </Link>{' '}
         to estimate your total trip cost (ticket + travel + hotel) and compare options across
-        travel regions and hotel types. We&apos;re also working on hotel partnerships that will
-        be announced soon – reach out to us at{' '}
+        travel regions and hotel types. We&apos;ve found suitable accommodation options at a range
+        of price points, all listed on the{' '}
+        <Link href="/trip-cost" className="underline">
+          Trip Cost Calculator
+        </Link>{' '}
+        page. Feel free to get in touch at{' '}
         <a href="mailto:hello@zurichjs.com" className="underline">
           hello@zurichjs.com
         </a>{' '}
-        to join the waitlist, and feel free to get in touch if we can help you navigate how to
-        plan the trip – whether that&apos;s accommodation, transport, or affordable places to eat.
+        if we can help you navigate how to plan the trip – whether that&apos;s accommodation,
+        transport, or affordable places to eat.
       </>
     ),
   },
