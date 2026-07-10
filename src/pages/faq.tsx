@@ -214,7 +214,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        'We\'re also working on hotel partnerships that will be announced soon. Email <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> to join the waitlist — and feel free to reach out if we can help you navigate how to plan the trip, whether that\'s accommodation, transport, or affordable places to eat.',
+        'We\'ve found suitable accommodation options at a range of price points, all listed on the <strong><a href="/trip-cost">Trip Cost Calculator</a></strong> page. Feel free to reach out at <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> if we can help you navigate how to plan the trip, whether that\'s accommodation, transport, or affordable places to eat.',
     },
     {
       type: "heading",
@@ -224,12 +224,12 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Yes, we will be offering discounted rates at selected partner hotels for conference attendees. We are currently finalizing these arrangements and will publish the details as soon as possible.",
+        'We\'ve curated suitable accommodation options at a range of price points, all listed on the <strong><a href="/trip-cost">Trip Cost Calculator</a></strong> page so you can compare and book what works for your budget.',
     },
     {
       type: "paragraph",
       content:
-        'In the meantime, if you want to go ahead and book your stay there are two hotels located directly opposite the venue: <strong><a href="https://all.accor.com/booking/en/novotel/hotel/2731?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">Novotel Zurich City West</a></strong> and <strong><a href="https://all.accor.com/booking/en/ibis/hotel/3184?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">ibis Budget Zurich City West</a></strong>.',
+        'If you\'d like to stay right by the venue, there are two hotels located directly opposite it: <strong><a href="https://all.accor.com/booking/en/novotel/hotel/2731?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">Novotel Zurich City West</a></strong> and <strong><a href="https://all.accor.com/booking/en/ibis/hotel/3184?destination=zurich-switzerland" target="_blank" rel="noopener noreferrer">ibis Budget Zurich City West</a></strong>.',
     },
     {
       type: "heading",
