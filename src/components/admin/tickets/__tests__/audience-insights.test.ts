@@ -60,10 +60,11 @@ describe('audience insights', () => {
     expect(rolesForClipboard(tickets)).toBe('Principal Engineer (2)');
   });
 
-  it('builds a targeted, encoded research search', () => {
+  it('builds a plain, encoded name-and-company research search', () => {
     const url = personResearchUrl(ticket());
     expect(url).toMatch(/^https:\/\/www\.google\.com\/search\?q=/);
-    expect(decodeURIComponent(url)).toContain('"Ada Lovelace"');
-    expect(decodeURIComponent(url)).toContain('open source maintainer');
+    expect(decodeURIComponent(url)).toContain('Ada Lovelace Analytical Engines, Inc.');
+    expect(decodeURIComponent(url)).not.toContain('"');
+    expect(decodeURIComponent(url)).not.toContain('maintainer');
   });
 });

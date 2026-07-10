@@ -129,6 +129,6 @@ export function rolesForClipboard(tickets: Ticket[]): string {
 export function personResearchUrl(ticket: Ticket): string {
   const name = `${ticket.first_name} ${ticket.last_name}`.trim();
   const company = getTicketCompany(ticket);
-  const query = `"${name}"${company ? ` "${company}"` : ''} (conference speaker OR open source maintainer)`;
+  const query = [name, company].filter(Boolean).join(' ');
   return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }

@@ -59,7 +59,7 @@ function DimensionList({ items, emptyText }: { items: AudienceDimension[]; empty
   if (items.length === 0) return <p className="py-4 text-sm text-gray-500">{emptyText}</p>;
 
   return (
-    <div className="space-y-3">
+    <div className="max-h-80 space-y-3 overflow-y-auto overscroll-contain pr-2">
       {items.map((item) => (
         <div key={item.label}>
           <div className="mb-1 flex items-center justify-between gap-4 text-sm">
@@ -242,7 +242,7 @@ export function AudienceInsightsModal({ tickets, onClose }: AudienceInsightsModa
               Copy role list
             </button>
           </div>
-          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid max-h-80 gap-x-6 gap-y-3 overflow-y-auto overscroll-contain pr-2 sm:grid-cols-2 lg:grid-cols-3">
             {insights.roles.map((role) => (
               <div key={role.label} className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 text-sm">
                 <span className="truncate text-black" title={role.label}>{role.label}</span>
