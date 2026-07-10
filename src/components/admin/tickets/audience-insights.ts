@@ -43,8 +43,8 @@ export function getTicketCompany(ticket: Ticket): string | null {
   return cleanValue(ticket.company) ?? cleanValue(ticket.metadata?.session_metadata?.company);
 }
 
-export function getTicketType(ticket: Ticket): string {
-  return cleanValue(ticket.ticket_category) ?? cleanValue(ticket.ticket_type) ?? EMPTY_VALUE;
+export function getTicketType(ticket: Ticket): string | null {
+  return cleanValue(ticket.ticket_category) ?? cleanValue(ticket.ticket_type);
 }
 
 export function getAudienceTickets(tickets: Ticket[], scope: AudienceScope): Ticket[] {
@@ -75,7 +75,7 @@ export function buildAudienceInsights(tickets: Ticket[]): AudienceInsights {
   const roles = collate(tickets.map(getTicketRole), tickets.length);
   const ticketTypes = collate(tickets.map(getTicketType), tickets.length);
   const companies = collate(tickets.map(getTicketCompany), tickets.length);
-  const isVip = (ticket: Ticket) => getTicketType(ticket).toLocaleLowerCase().includes('vip');
+  const isVip = (ticket: Ticket) => getTicketType(ticket)?.toLocaleLowerCase().includes('vip');
 
   return {
     attendeeCount: tickets.length,

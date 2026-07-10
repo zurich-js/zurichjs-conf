@@ -78,6 +78,8 @@ function DimensionList({ items, emptyText }: { items: AudienceDimension[]; empty
 export function AudienceInsightsModal({ tickets, onClose }: AudienceInsightsModalProps) {
   const [scope, setScope] = useState<AudienceScope>('confirmed');
   const [peopleSearch, setPeopleSearch] = useState('');
+  const [countryFilter, setCountryFilter] = useState('');
+  const [ticketTypeFilter, setTicketTypeFilter] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
   const audienceTickets = useMemo(() => getAudienceTickets(tickets, scope), [tickets, scope]);
   const insights = useMemo(() => buildAudienceInsights(audienceTickets), [audienceTickets]);
@@ -85,17 +87,29 @@ export function AudienceInsightsModal({ tickets, onClose }: AudienceInsightsModa
 
   const visiblePeople = useMemo(() => {
     const query = peopleSearch.trim().toLocaleLowerCase();
-    if (!query) return audienceTickets;
     return audienceTickets.filter((ticket) => [
-      ticket.first_name,
-      ticket.last_name,
-      ticket.email,
-      getTicketCompany(ticket),
-      getTicketRole(ticket),
-      getTicketCountry(ticket),
-      getTicketType(ticket),
-    ].some((value) => value?.toLocaleLowerCase().includes(query)));
-  }, [audienceTickets, peopleSearch]);
+      !countryFilter || getTicketCountry(ticket) === countryFilter,
+      !ticketTypeFilter || getTicketType(ticket) === ticketTypeFilter,
+      !query || [
+        ticket.first_name,
+        ticket.last_name,
+        ticket.email,
+        getTicketCompany(ticket),
+        getTicketRole(ticket),
+        getTicketCountry(ticket),
+        getTicketType(ticket),
+      ].some((value) => value?.toLocaleLowerCase().includes(query)),
+    ].every(Boolean));
+  }, [audienceTickets, countryFilter, peopleSearch, ticketTypeFilter]);
+
+  const countryOptions = useMemo(
+    () => [...new Set(audienceTickets.map(getTicketCountry).filter((value): value is string => Boolean(value)))].sort(),
+    [audienceTickets],
+  );
+  const ticketTypeOptions = useMemo(
+    () => [...new Set(audienceTickets.map(getTicketType).filter((value): value is string => Boolean(value)))].sort(),
+    [audienceTickets],
+  );
 
   const showFeedback = (message: string) => {
     setFeedback(message);
@@ -168,14 +182,14 @@ export function AudienceInsightsModal({ tickets, onClose }: AudienceInsightsModa
           <div className="flex shrink-0 rounded-lg border border-gray-300 bg-white p-1" aria-label="Audience scope">
             <button
               type="button"
-              onClick={() => setScope('confirmed')}
+              onClick={() => { setScope('confirmed'); setCountryFilter(''); setTicketTypeFilter(''); }}
               className={`cursor-pointer rounded-md px-3 py-2 text-sm font-medium ${scope === 'confirmed' ? 'bg-brand-primary text-black' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               Confirmed ({tickets.length - excludedCount})
             </button>
             <button
               type="button"
-              onClick={() => setScope('all')}
+              onClick={() => { setScope('all'); setCountryFilter(''); setTicketTypeFilter(''); }}
               className={`cursor-pointer rounded-md px-3 py-2 text-sm font-medium ${scope === 'all' ? 'bg-brand-primary text-black' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               All records ({tickets.length})
@@ -278,17 +292,37 @@ export function AudienceInsightsModal({ tickets, onClose }: AudienceInsightsModa
             </div>
           </div>
 
-          <label className="relative block">
-            <span className="sr-only">Search attendees</span>
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
-            <input
-              type="search"
-              value={peopleSearch}
-              onChange={(event) => setPeopleSearch(event.target.value)}
-              placeholder="Search name, email, company, role, country, or ticket type"
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm text-black placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            />
-          </label>
+          <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_12rem_12rem]">
+            <label className="relative block">
+              <span className="sr-only">Search attendees</span>
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+              <input
+                type="search"
+                value={peopleSearch}
+                onChange={(event) => setPeopleSearch(event.target.value)}
+                placeholder="Search name, email, company, role, country, or ticket type"
+                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm text-black placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              />
+            </label>
+            <select
+              aria-label="Filter attendees by country"
+              value={countryFilter}
+              onChange={(event) => setCountryFilter(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            >
+              <option value="">All countries</option>
+              {countryOptions.map((country) => <option key={country} value={country}>{country}</option>)}
+            </select>
+            <select
+              aria-label="Filter attendees by ticket type"
+              value={ticketTypeFilter}
+              onChange={(event) => setTicketTypeFilter(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            >
+              <option value="">All ticket types</option>
+              {ticketTypeOptions.map((ticketType) => <option key={ticketType} value={ticketType}>{ticketType}</option>)}
+            </select>
+          </div>
 
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -309,11 +343,11 @@ export function AudienceInsightsModal({ tickets, onClose }: AudienceInsightsModa
                       <p className="text-xs text-gray-500">{ticket.email}</p>
                     </td>
                     <td className="px-3 py-3 text-gray-700">
-                      <p>{getTicketRole(ticket) ?? 'Role not provided'}</p>
-                      <p className="text-xs text-gray-500">{getTicketCompany(ticket) ?? 'Company not provided'}</p>
+                      <p>{getTicketRole(ticket) ?? ''}</p>
+                      <p className="text-xs text-gray-500">{getTicketCompany(ticket) ?? ''}</p>
                     </td>
-                    <td className="px-3 py-3 text-gray-700">{getTicketCountry(ticket) ?? 'Not provided'}</td>
-                    <td className="px-3 py-3 capitalize text-gray-700">{getTicketType(ticket)}</td>
+                    <td className="px-3 py-3 text-gray-700">{getTicketCountry(ticket) ?? ''}</td>
+                    <td className="px-3 py-3 capitalize text-gray-700">{getTicketType(ticket) ?? ''}</td>
                     <td className="px-3 py-3 text-right">
                       <a
                         href={personResearchUrl(ticket)}
