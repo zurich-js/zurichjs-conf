@@ -191,17 +191,13 @@ export const TICKET_FAQ: FAQItem[] = [
     answer: (
       <>
         Switzerland has the perception of being pricey, but there are many ways to make a trip
-        here affordable – some accommodation options come out at under €100 per night. Use our{' '}
+        here affordable – some accommodation options come out at under €100 per night. We&apos;ve
+        found suitable places to stay at a range of price points, all listed on our{' '}
         <Link href="/trip-cost" className="underline">
           Trip Cost Calculator
-        </Link>{' '}
-        to estimate your total trip cost (ticket + travel + hotel) and compare options across
-        travel regions and hotel types. We&apos;ve found suitable accommodation options at a range
-        of price points, all listed on the{' '}
-        <Link href="/trip-cost" className="underline">
-          Trip Cost Calculator
-        </Link>{' '}
-        page. Feel free to get in touch at{' '}
+        </Link>
+        , where you can also estimate your total trip cost (ticket + travel + hotel) and compare
+        options across travel regions and hotel types. Feel free to get in touch at{' '}
         <a href="mailto:hello@zurichjs.com" className="underline">
           hello@zurichjs.com
         </a>{' '}

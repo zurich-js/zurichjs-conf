@@ -51,7 +51,7 @@ const faqSchemaData = [
   },
   {
     question: "Switzerland is expensive – I'm on a budget, what are my options?",
-    answer: "Switzerland has the perception of being pricey, but there are many ways to make a trip here affordable — some accommodation options come out at under €100 per night. We've found suitable accommodation options at a range of price points, all listed on our Trip Cost Calculator at /trip-cost, where you can also estimate your total trip cost (ticket + travel + hotel). Feel free to email hello@zurichjs.com if we can help you navigate how to plan the trip (accommodation, transport, or affordable places to eat).",
+    answer: "Switzerland has the perception of being pricey, but there are many ways to make a trip here affordable — some accommodation options come out at under €100 per night. We've found suitable places to stay at a range of price points, all listed on our Trip Cost Calculator at /trip-cost, where you can also estimate your total trip cost (ticket + travel + hotel) and compare options across travel regions and hotel types. Feel free to email hello@zurichjs.com if we can help you navigate how to plan the trip (accommodation, transport, or affordable places to eat).",
   },
   {
     question: "When is the best time to arrive and leave?",

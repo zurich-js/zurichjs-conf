@@ -201,20 +201,21 @@ const faqPage: InfoPage = {
         <p>
           Switzerland has the perception of being pricey, but there are many
           ways to make a trip here affordable — some accommodation options come
-          out at under €100 per night. Use our{" "}
+          out at under €100 per night. We&apos;ve found suitable places to stay
+          at a range of price points, all listed on our{" "}
           <Link href="/trip-cost" className="font-semibold underline">
             Trip Cost Calculator
-          </Link>{" "}
-          to estimate your total trip cost (ticket + travel + hotel) in your
-          preferred currency, and to compare options across travel regions and
-          hotel types.
+          </Link>
+          , where you can also estimate your total trip cost (ticket + travel +
+          hotel) in your preferred currency and compare options across travel
+          regions and hotel types.
         </p>
       ),
     },
     {
       type: "paragraph",
       content:
-        'We\'ve found suitable accommodation options at a range of price points, all listed on the <strong><a href="/trip-cost">Trip Cost Calculator</a></strong> page. Feel free to reach out at <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> if we can help you navigate how to plan the trip, whether that\'s accommodation, transport, or affordable places to eat.',
+        'Feel free to reach out at <strong><a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a></strong> if we can help you navigate how to plan the trip, whether that\'s accommodation, transport, or affordable places to eat.',
     },
     {
       type: "heading",
@@ -224,7 +225,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        'We\'ve curated suitable accommodation options at a range of price points, all listed on the <strong><a href="/trip-cost">Trip Cost Calculator</a></strong> page so you can compare and book what works for your budget.',
+        'We don\'t hold formal room blocks, but we\'ve gathered a range of vetted places to stay across different price points on the <strong><a href="/trip-cost">Trip Cost Calculator</a></strong>, so you can compare and book what works for your budget.',
     },
     {
       type: "paragraph",
