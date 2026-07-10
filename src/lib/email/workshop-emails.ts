@@ -17,9 +17,6 @@ export interface WorkshopConfirmationData {
   workshopDescription?: string | null;
   instructorName?: string | null;
   date?: string | null;
-  startTime?: string | null;
-  endTime?: string | null;
-  room?: string | null;
   amountPaid: number;
   currency: string;
   seatIndex: number;
@@ -52,9 +49,6 @@ export async function sendWorkshopConfirmationEmail(
       workshopDescription: data.workshopDescription,
       instructorName: data.instructorName,
       date: data.date,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      room: data.room,
       amountPaid: data.amountPaid,
       currency: data.currency,
       seatLabel,

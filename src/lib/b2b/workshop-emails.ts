@@ -27,12 +27,20 @@ export interface B2BWorkshopEmailResult {
   failures: Array<{ attendeeEmail: string; attendeeName: string; reason: string }>;
 }
 
+interface WorkshopSessionInfo {
+  instructorName: string | null;
+  slug: string | null;
+}
+
 /**
- * Resolve instructor names for a set of workshops from the public speaker
- * lineup. Best-effort — email sending proceeds without a name on failure.
+ * Resolve instructor names and public workshop page slugs for a set of
+ * workshops from the public speaker lineup. Best-effort — email sending
+ * proceeds without them on failure.
  */
-async function resolveInstructorNames(workshops: Workshop[]): Promise<Map<string, string>> {
-  const instructorByWorkshopId = new Map<string, string>();
+async function resolveWorkshopSessionInfo(
+  workshops: Workshop[]
+): Promise<Map<string, WorkshopSessionInfo>> {
+  const infoByWorkshopId = new Map<string, WorkshopSessionInfo>();
 
   try {
     const { speakers } = await fetchPublicSpeakers();
@@ -47,18 +55,21 @@ async function resolveInstructorNames(workshops: Workshop[]): Promise<Map<string
         );
         if (match) {
           const name = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
-          if (name) instructorByWorkshopId.set(workshop.id, name);
+          infoByWorkshopId.set(workshop.id, {
+            instructorName: name || null,
+            slug: match.type === 'workshop' ? match.slug : null,
+          });
           break;
         }
       }
     }
   } catch (error) {
-    log.warn('Failed to resolve workshop instructor names', {
+    log.warn('Failed to resolve workshop session info', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 
-  return instructorByWorkshopId;
+  return infoByWorkshopId;
 }
 
 /**
@@ -95,7 +106,7 @@ export async function sendB2BWorkshopConfirmationEmails(
 
   const workshops = (workshopRows || []) as Workshop[];
   const workshopById = new Map(workshops.map((w) => [w.id, w]));
-  const instructorByWorkshopId = await resolveInstructorNames(workshops);
+  const sessionInfoByWorkshopId = await resolveWorkshopSessionInfo(workshops);
 
   for (const target of targets) {
     const workshop = workshopById.get(target.workshopId);
@@ -116,7 +127,8 @@ export async function sendB2BWorkshopConfirmationEmails(
       }
 
       const reg = registration as WorkshopRegistration;
-      const instructorName = instructorByWorkshopId.get(workshop.id) ?? null;
+      const sessionInfo = sessionInfoByWorkshopId.get(workshop.id);
+      const instructorName = sessionInfo?.instructorName ?? null;
 
       // PDF attachment is best-effort — the email still carries the QR code
       let pdfAttachment: Buffer | undefined;
@@ -126,11 +138,6 @@ export async function sendB2BWorkshopConfirmationEmails(
             ? reg.qr_code_url
             : await imageUrlToDataUrl(reg.qr_code_url);
 
-          const timeRange =
-            workshop.start_time && workshop.end_time
-              ? `${workshop.start_time.slice(0, 5)} – ${workshop.end_time.slice(0, 5)}`
-              : workshop.start_time?.slice(0, 5) ?? null;
-
           pdfAttachment = await generateWorkshopPDF({
             registrationId: reg.id,
             attendeeName: target.attendeeName,
@@ -138,8 +145,6 @@ export async function sendB2BWorkshopConfirmationEmails(
             workshopTitle: workshop.title,
             instructorName,
             workshopDate: workshop.date ?? 'September 10, 2026',
-            workshopTime: timeRange,
-            room: workshop.room,
             amountPaid: reg.amount_paid,
             currency: reg.currency,
             qrCodeDataUrl: qrDataUrl,
@@ -159,14 +164,11 @@ export async function sendB2BWorkshopConfirmationEmails(
         workshopDescription: workshop.description,
         instructorName,
         date: workshop.date,
-        startTime: workshop.start_time,
-        endTime: workshop.end_time,
-        room: workshop.room,
         amountPaid: reg.amount_paid,
         currency: reg.currency,
         seatIndex: reg.seat_index ?? 0,
         totalSeats: 1,
-        workshopSlug: null,
+        workshopSlug: sessionInfo?.slug ?? null,
         qrCodeUrl: reg.qr_code_url,
         pdfAttachment,
       });

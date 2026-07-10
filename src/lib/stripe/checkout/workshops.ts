@@ -273,10 +273,6 @@ export async function processWorkshops(
                 .join(' ')
             : null;
 
-          const timeRange = workshop.start_time && workshop.end_time
-            ? `${workshop.start_time.slice(0, 5)} – ${workshop.end_time.slice(0, 5)}`
-            : workshop.start_time?.slice(0, 5) ?? null;
-
           // Generate PDF attachment
           let pdfBuffer: Buffer | undefined;
           const qrUrl = result.registration?.qr_code_url;
@@ -292,8 +288,6 @@ export async function processWorkshops(
                 workshopTitle: workshop.title,
                 instructorName: resolvedInstructor,
                 workshopDate: workshop.date ?? 'September 10, 2026',
-                workshopTime: timeRange,
-                room: workshop.room,
                 amountPaid: amountPaidPerSeat,
                 currency,
                 qrCodeDataUrl: qrDataUrl,
@@ -313,9 +307,6 @@ export async function processWorkshops(
             workshopDescription: workshop.description,
             instructorName: resolvedInstructor,
             date: workshop.date,
-            startTime: workshop.start_time,
-            endTime: workshop.end_time,
-            room: workshop.room,
             amountPaid: amountPaidPerSeat,
             currency,
             seatIndex,
