@@ -54,14 +54,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Workshop not found' });
     }
 
-    // Resolve instructor name
+    // Resolve instructor name + public workshop page slug
     let instructorName: string | null = null;
+    let workshopSlug: string | null = null;
     if (workshop.cfp_submission_id) {
       const { speakers } = await fetchPublicSpeakers();
       for (const speaker of speakers) {
         const match = speaker.sessions.find((s) => s.id === workshop.cfp_submission_id);
         if (match) {
           instructorName = [speaker.first_name, speaker.last_name].filter(Boolean).join(' ');
+          if (match.type === 'workshop') workshopSlug = match.slug;
           break;
         }
       }
@@ -79,10 +81,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const timeRange = workshop.start_time && workshop.end_time
-      ? `${workshop.start_time.slice(0, 5)} – ${workshop.end_time.slice(0, 5)}`
-      : workshop.start_time?.slice(0, 5) ?? null;
-
     let pdfAttachment: Buffer | undefined;
     if (qrCodeUrl) {
       try {
@@ -97,8 +95,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           workshopTitle: workshop.title,
           instructorName,
           workshopDate: workshop.date ?? 'September 10, 2026',
-          workshopTime: timeRange,
-          room: workshop.room,
           amountPaid: registration.amount_paid,
           currency: registration.currency,
           qrCodeDataUrl: qrDataUrl,
@@ -115,14 +111,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       workshopDescription: workshop.description,
       instructorName,
       date: workshop.date,
-      startTime: workshop.start_time,
-      endTime: workshop.end_time,
-      room: workshop.room,
       amountPaid: registration.amount_paid,
       currency: registration.currency,
       seatIndex: registration.seat_index ?? 0,
       totalSeats: 1,
-      workshopSlug: null,
+      workshopSlug,
       qrCodeUrl,
       pdfAttachment,
     });

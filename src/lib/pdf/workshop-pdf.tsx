@@ -114,8 +114,6 @@ export interface WorkshopPDFProps {
   workshopTitle: string;
   instructorName?: string | null;
   workshopDate: string;
-  workshopTime?: string | null;
-  room?: string | null;
   amountPaid: number;
   currency: string;
   qrCodeDataUrl: string;
@@ -128,8 +126,6 @@ export const WorkshopPDF: React.FC<WorkshopPDFProps> = ({
   workshopTitle,
   instructorName,
   workshopDate,
-  workshopTime,
-  room,
   amountPaid,
   currency,
   qrCodeDataUrl,
@@ -175,18 +171,6 @@ export const WorkshopPDF: React.FC<WorkshopPDFProps> = ({
             <Text style={styles.label}>Date</Text>
             <Text style={styles.value}>{workshopDate}</Text>
           </View>
-          {workshopTime && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Time</Text>
-              <Text style={styles.value}>{workshopTime}</Text>
-            </View>
-          )}
-          {room && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Room</Text>
-              <Text style={styles.value}>{room}</Text>
-            </View>
-          )}
         </View>
 
         {/* Registration Details */}
@@ -217,7 +201,8 @@ export const WorkshopPDF: React.FC<WorkshopPDFProps> = ({
         <View style={styles.importantNote}>
           <Text style={styles.importantNoteText}>
             IMPORTANT: Please bring this registration (printed or on your mobile device) to the
-            workshop. Arrive early to get settled in before the session starts.
+            workshop. Arrive early to get settled in before the session starts. Find the workshop
+            time and room on the workshop page at conf.zurichjs.com.
           </Text>
         </View>
 

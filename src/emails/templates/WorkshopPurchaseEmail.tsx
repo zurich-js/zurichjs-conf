@@ -16,9 +16,6 @@ export interface WorkshopPurchaseEmailProps {
   workshopDescription?: string | null;
   instructorName?: string | null;
   date?: string | null;
-  startTime?: string | null;
-  endTime?: string | null;
-  room?: string | null;
   amountPaid: number;
   currency: string;
   seatLabel?: string | null;
@@ -34,9 +31,6 @@ export const WorkshopPurchaseEmail: React.FC<WorkshopPurchaseEmailProps> = ({
   workshopDescription,
   instructorName,
   date,
-  startTime,
-  endTime,
-  room,
   amountPaid,
   currency,
   seatLabel,
@@ -46,8 +40,6 @@ export const WorkshopPurchaseEmail: React.FC<WorkshopPurchaseEmailProps> = ({
   supportEmail = 'hello@zurichjs.com',
 }) => {
   const preheader = `Your seat at ${workshopTitle} is confirmed`;
-  const timeRange =
-    startTime && endTime ? `${startTime.slice(0, 5)} – ${endTime.slice(0, 5)}` : startTime?.slice(0, 5) ?? null;
 
   const formattedDate = date
     ? formatDate(date + 'T00:00:00', 'en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -71,10 +63,18 @@ export const WorkshopPurchaseEmail: React.FC<WorkshopPurchaseEmailProps> = ({
         <div style={{ marginTop: spacing.base }}>
           {instructorName && <InfoBlock label="Instructor" value={instructorName} />}
           {formattedDate && <InfoBlock label="Date" value={formattedDate} />}
-          {timeRange && <InfoBlock label="Time" value={timeRange} />}
-          {room && <InfoBlock label="Room" value={room} />}
           <InfoBlock label="Amount paid" value={`${(amountPaid / 100).toFixed(2)} ${currency}`} />
         </div>
+
+        {workshopUrl && (
+          <Text style={detailsHintStyle}>
+            Find the time, room, and full agenda on the{' '}
+            <Link href={workshopUrl} style={linkStyle}>
+              workshop detail page
+            </Link>
+            .
+          </Text>
+        )}
 
         {qrSrc && (
           <div style={{ textAlign: 'center' as const, marginTop: spacing.xl }}>
@@ -181,6 +181,13 @@ const cardBodyStyle: React.CSSProperties = {
   lineHeight: typography.body.lineHeight,
   color: colors.text.muted,
   margin: `0 0 ${spacing.sm}px 0`,
+};
+
+const detailsHintStyle: React.CSSProperties = {
+  fontSize: typography.body.fontSize,
+  lineHeight: typography.body.lineHeight,
+  color: colors.text.muted,
+  margin: `${spacing.base}px 0 0 0`,
 };
 
 const actionsSectionStyle: React.CSSProperties = {
