@@ -213,7 +213,7 @@ export const TICKET_FAQ: FAQItem[] = [
         It depends on your ticket and plans! Community Day on <strong>September 9th</strong>{' '}
         isn&apos;t essential, but if you&apos;re attending a workshop on the 10th, you might as well
         arrive a day early and enjoy the warm-up meetup. For departures, a flight on{' '}
-        <strong>September 12th</strong> works well — there&apos;s nothing scheduled that day, so
+        <strong>September 12th</strong>{' '}works well — there&apos;s nothing scheduled that day, so
         you&apos;re free to head home whenever suits you. If you&apos;re a{' '}
         <strong>VIP ticket holder</strong>, note that the exclusive after party takes place on the
         evening of September 11th, so don&apos;t book too early a departure that day!
