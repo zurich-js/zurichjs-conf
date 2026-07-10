@@ -5,3 +5,5 @@
 
 export { UpgradeToVipModal } from './UpgradeToVipModal';
 export { TicketInvoiceModal } from './TicketInvoiceModal';
+export { AudienceInsightsModal } from './AudienceInsightsModal';
+export type { AudienceInsightsModalProps } from './AudienceInsightsModal';
