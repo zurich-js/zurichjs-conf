@@ -191,18 +191,18 @@ export const TICKET_FAQ: FAQItem[] = [
     answer: (
       <>
         Switzerland has the perception of being pricey, but there are many ways to make a trip
-        here affordable – some accommodation options come out at under €100 per night. Use our{' '}
+        here affordable – some accommodation options come out at under €100 per night. We&apos;ve
+        found suitable places to stay at a range of price points, all listed on our{' '}
         <Link href="/trip-cost" className="underline">
           Trip Cost Calculator
-        </Link>{' '}
-        to estimate your total trip cost (ticket + travel + hotel) and compare options across
-        travel regions and hotel types. We&apos;re also working on hotel partnerships that will
-        be announced soon – reach out to us at{' '}
+        </Link>
+        , where you can also estimate your total trip cost (ticket + travel + hotel) and compare
+        options across travel regions and hotel types. Feel free to get in touch at{' '}
         <a href="mailto:hello@zurichjs.com" className="underline">
           hello@zurichjs.com
         </a>{' '}
-        to join the waitlist, and feel free to get in touch if we can help you navigate how to
-        plan the trip – whether that&apos;s accommodation, transport, or affordable places to eat.
+        if we can help you navigate how to plan the trip – whether that&apos;s accommodation,
+        transport, or affordable places to eat.
       </>
     ),
   },
@@ -213,7 +213,7 @@ export const TICKET_FAQ: FAQItem[] = [
         It depends on your ticket and plans! Community Day on <strong>September 9th</strong>{' '}
         isn&apos;t essential, but if you&apos;re attending a workshop on the 10th, you might as well
         arrive a day early and enjoy the warm-up meetup. For departures, a flight on{' '}
-        <strong>September 12th</strong> works well — there&apos;s nothing scheduled that day, so
+        <strong>September 12th</strong>{' '}works well — there&apos;s nothing scheduled that day, so
         you&apos;re free to head home whenever suits you. If you&apos;re a{' '}
         <strong>VIP ticket holder</strong>, note that the exclusive after party takes place on the
         evening of September 11th, so don&apos;t book too early a departure that day!
