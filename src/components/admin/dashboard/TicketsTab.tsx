@@ -4,8 +4,8 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { BarChart3 } from 'lucide-react';
-import { AudienceInsightsModal, UpgradeToVipModal } from '@/components/admin/tickets';
+import type { ReactNode } from 'react';
+import { AudienceInsights, UpgradeToVipModal } from '@/components/admin/tickets';
 import { TicketDetailsModal } from './TicketDetailsModal';
 import { ReassignModal } from './ReassignModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -24,7 +24,6 @@ export function TicketsTab() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showAudienceInsights, setShowAudienceInsights] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('created_at');
@@ -146,16 +145,13 @@ export function TicketsTab() {
     <>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
       <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} onOpenInsights={() => setShowAudienceInsights(true)} />
+        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} headerAction={<AudienceInsights tickets={tickets} />} />
         <DesktopTable tickets={paginatedTickets} sortField={sortField} sortDirection={sortDirection} onSort={handleSort} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <MobileCards tickets={paginatedTickets} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredAndSortedTickets.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
       </div>
 
       {/* Modals */}
-      {showAudienceInsights && (
-        <AudienceInsightsModal tickets={tickets} onClose={() => setShowAudienceInsights(false)} />
-      )}
       {showDetailsModal && selectedTicket && (
         <TicketDetailsModal ticket={selectedTicket}
           onClose={() => { setShowDetailsModal(false); setSelectedTicket(null); }}
@@ -228,7 +224,7 @@ function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDismiss: ()
   );
 }
 
-function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, filterNonSwiss, setFilterNonSwiss, onOpenInsights }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void; filterNonSwiss: boolean; setFilterNonSwiss: (v: boolean) => void; onOpenInsights: () => void }) {
+function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, filterNonSwiss, setFilterNonSwiss, headerAction }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void; filterNonSwiss: boolean; setFilterNonSwiss: (v: boolean) => void; headerAction: ReactNode }) {
   return (
     <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -255,14 +251,7 @@ function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, fil
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onOpenInsights}
-          className="flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-brand-primary px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-brand-primary/80"
-        >
-          <BarChart3 className="size-4" aria-hidden="true" />
-          Audience insights
-        </button>
+        {headerAction}
         <button
           onClick={() => setFilterNonSwiss(!filterNonSwiss)}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
