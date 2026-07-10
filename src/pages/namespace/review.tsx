@@ -25,6 +25,9 @@ type LoginState = 'idle' | 'loading' | 'success' | 'error';
 type StatusFilter = 'all' | 'email_sent' | 'submission_failed' | 'partial';
 type CopyState = 'idle' | 'copied' | 'error';
 
+const reviewPageTitle = 'Namespace Review Dashboard';
+const reviewPageDescription = 'Review Namespace Student Sponsorship applications for ZurichJS Conf 2026.';
+
 const statusFilterOptions: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'All statuses' },
   { value: 'email_sent', label: 'Email sent' },
@@ -383,7 +386,8 @@ export default function NamespaceReviewPage({
       <>
         <SEO
           title="Namespace Review"
-          description="Review Namespace Student Sponsorship applications"
+          description={reviewPageDescription}
+          canonical="/namespace/review"
           noindex
         />
         <main className="flex min-h-screen items-center justify-center bg-brand-gray-lightest px-4">
@@ -428,7 +432,12 @@ export default function NamespaceReviewPage({
   if (!authorized) {
     return (
       <>
-        <SEO title="Unauthorized | Namespace Review" description="Unauthorized" noindex />
+        <SEO
+          title="Unauthorized | Namespace Review"
+          description={reviewPageDescription}
+          canonical="/namespace/review"
+          noindex
+        />
         <main className="flex min-h-screen items-center justify-center bg-brand-gray-lightest px-4">
           <div className="max-w-md text-center">
             <Heading level="h1" variant="light" className="mb-3 text-xl font-bold">
@@ -471,6 +480,12 @@ export default function NamespaceReviewPage({
 
   return (
     <>
+      <SEO
+        title={reviewPageTitle}
+        description={reviewPageDescription}
+        canonical="/namespace/review"
+        noindex
+      />
       <main className="min-h-screen bg-brand-gray-lightest px-4 py-8">
         <div className="mx-auto max-w-7xl mt-10 md:mt-20">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
