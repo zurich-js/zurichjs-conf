@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { UpgradeToVipModal } from '@/components/admin/tickets';
+import type { ReactNode } from 'react';
+import { AudienceInsights, UpgradeToVipModal } from '@/components/admin/tickets';
 import { TicketDetailsModal } from './TicketDetailsModal';
 import { ReassignModal } from './ReassignModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -84,7 +85,7 @@ export function TicketsTab() {
     try {
       const res = await fetch('/api/admin/tickets');
       if (res.ok) { const data = await res.json(); setTickets(data.tickets); }
-    } catch (err) { console.error('Failed to fetch tickets:', err); }
+    } catch { showToast('error', 'Failed to fetch tickets'); }
     finally { setLoading(false); }
   };
 
@@ -144,7 +145,7 @@ export function TicketsTab() {
     <>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
       <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} />
+        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} headerAction={<AudienceInsights tickets={tickets} />} />
         <DesktopTable tickets={paginatedTickets} sortField={sortField} sortDirection={sortDirection} onSort={handleSort} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <MobileCards tickets={paginatedTickets} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredAndSortedTickets.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
@@ -223,7 +224,7 @@ function Toast({ toast, onDismiss }: { toast: ToastMessage | null; onDismiss: ()
   );
 }
 
-function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, filterNonSwiss, setFilterNonSwiss }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void; filterNonSwiss: boolean; setFilterNonSwiss: (v: boolean) => void }) {
+function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, filterNonSwiss, setFilterNonSwiss, headerAction }: { tickets: Ticket[]; filteredCount: number; searchQuery: string; setSearchQuery: (q: string) => void; filterNonSwiss: boolean; setFilterNonSwiss: (v: boolean) => void; headerAction: ReactNode }) {
   return (
     <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -250,6 +251,7 @@ function TicketHeader({ tickets, filteredCount, searchQuery, setSearchQuery, fil
             </button>
           )}
         </div>
+        {headerAction}
         <button
           onClick={() => setFilterNonSwiss(!filterNonSwiss)}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
