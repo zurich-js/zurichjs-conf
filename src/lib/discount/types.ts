@@ -18,6 +18,12 @@ export interface DiscountConfig {
   forceShow: boolean;
 }
 
+/** Offer parameters resolved server-side for one experiment variant */
+export interface DiscountVariantConfig {
+  percentOff: number;
+  durationMinutes: number;
+}
+
 export interface GenerateDiscountResponse {
   code: string;
   expiresAt: string;

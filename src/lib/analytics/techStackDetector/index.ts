@@ -48,6 +48,7 @@
 import { detect } from './scoring';
 import {
   allowNextDetection,
+  getStoredTraits,
   hasTraitsChanged,
   markDetectionComplete,
   resetDetectionState,
@@ -70,6 +71,13 @@ export type {
 } from './types';
 
 export { DETECTOR_VERSION, SESSION_STORAGE_KEY } from './types';
+
+/**
+ * Returns the traits detected earlier this session without re-running
+ * detection (null when detection hasn't completed yet).
+ * Safe to call from any client-side code — never touches PostHog.
+ */
+export { getStoredTraits as getDetectedTraits } from './dedupe';
 
 
 /** Check if we're in production */
@@ -118,14 +126,16 @@ export async function detectTechStack(
   // Check if already detected (unless force is enabled)
   if (!ctx?.force && shouldSkipDetection()) {
     debugLog(debug, 'Skipping - already detected this session');
-    // Return a minimal unknown result
-    return {
-      framework_primary: 'unknown',
-      state_management: [],
-      data_layer: [],
-      confidence: 'none',
-      version: DETECTOR_VERSION,
-    };
+    // Reuse this session's stored traits; fall back to a minimal unknown result
+    return (
+      getStoredTraits() ?? {
+        framework_primary: 'unknown',
+        state_management: [],
+        data_layer: [],
+        confidence: 'none',
+        version: DETECTOR_VERSION,
+      }
+    );
   }
 
   debugLog(debug, 'Starting detection...');

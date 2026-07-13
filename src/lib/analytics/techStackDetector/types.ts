@@ -15,7 +15,7 @@
  * Current version of the tech stack detector.
  * Increment when adding new signals or changing detection logic.
  */
-export const DETECTOR_VERSION = '1.1.0';
+export const DETECTOR_VERSION = '1.2.0';
 
 /**
  * Primary frontend framework detected via DevTools extension.
@@ -25,6 +25,7 @@ export const DETECTOR_VERSION = '1.1.0';
  */
 export type FrameworkPrimary =
   | 'react'
+  | 'preact'
   | 'vue'
   | 'angular'
   | 'svelte'
@@ -157,11 +158,13 @@ export interface DetectionContext {
   /** Window object reference (may be undefined in SSR) */
   window?: Window & {
     __REACT_DEVTOOLS_GLOBAL_HOOK__?: unknown;
+    __PREACT_DEVTOOLS__?: unknown;
     __VUE_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __ANGULAR_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __SVELTE_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __SOLID_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __REDUX_DEVTOOLS_EXTENSION__?: unknown;
+    __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: unknown;
     __MOBX_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __APOLLO_DEVTOOLS_GLOBAL_HOOK__?: unknown;
     __URQL_DEVTOOLS__?: unknown;
@@ -218,6 +221,13 @@ export interface SessionStorageData {
 
   /** Stable hash of traits payload */
   traits_hash: string;
+
+  /**
+   * Full traits from the last detection, so in-app consumers (e.g. discount
+   * popup personalization) can reuse them without re-running detection.
+   * Optional for backwards compatibility with pre-1.2.0 stored payloads.
+   */
+  traits?: TechStackTraits;
 }
 
 /**

@@ -12,11 +12,13 @@ import { motion } from 'framer-motion';
 import { X, Copy, Check } from 'lucide-react';
 import { padZero } from '@/hooks/useCountdown';
 import type { DiscountData } from '@/lib/discount/types';
+import type { DiscountPersonalization } from '@/lib/discount/personalization';
 import type { TimeRemaining } from '@/hooks/useCountdown';
 
 interface DiscountModalProps {
   data: DiscountData;
   countdown: TimeRemaining;
+  personalization?: DiscountPersonalization | null;
   onDismiss: () => void;
   onCopyCode: () => Promise<void>;
 }
@@ -25,7 +27,12 @@ function formatCountdown(countdown: TimeRemaining): string {
   return `${countdown.hours}:${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`;
 }
 
-export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: DiscountModalProps) {
+function formatSpeakerNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? '';
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+export function DiscountModal({ data, countdown, personalization, onDismiss, onCopyCode }: DiscountModalProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -76,8 +83,23 @@ export function DiscountModal({ data, countdown, onDismiss, onCopyCode }: Discou
 
             {/* Heading */}
             <h2 className="mb-3 text-lg font-bold text-white sm:text-xl">
-              We got you a discount!
+              {personalization
+                ? `We got ${personalization.stackDisplayName} folks a discount!`
+                : 'We got you a discount!'}
             </h2>
+
+            {/* Tech-stack personalization: relevant speakers */}
+            {personalization && personalization.speakerNames.length > 0 && (
+              <p className="mb-3 text-sm text-white/70 sm:text-base">
+                <span className="font-semibold text-white">
+                  {formatSpeakerNames(personalization.speakerNames)}
+                </span>
+                {personalization.matchCount > personalization.speakerNames.length
+                  ? ` and other ${personalization.stackDisplayName} speakers`
+                  : ''}{' '}
+                will be on stage — come meet them.
+              </p>
+            )}
 
             {/* Subtext with time */}
             <p className="mb-6 text-sm text-white/70 sm:text-base">

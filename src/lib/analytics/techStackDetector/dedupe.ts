@@ -19,6 +19,9 @@ let memoryGuard = false;
 /** In-memory cache of the traits hash */
 let cachedHash: string | null = null;
 
+/** In-memory cache of the full traits from the last detection */
+let cachedTraits: TechStackTraits | null = null;
+
 /**
  * Generates a stable hash from traits for comparison.
  * Uses a simple deterministic string hash.
@@ -78,6 +81,7 @@ export function shouldSkipDetection(): boolean {
       const data: SessionStorageData = JSON.parse(stored);
       if (data.detected_at && data.traits_hash) {
         cachedHash = data.traits_hash;
+        cachedTraits = data.traits ?? cachedTraits;
         return true;
       }
     }
@@ -86,6 +90,38 @@ export function shouldSkipDetection(): boolean {
   }
 
   return false;
+}
+
+/**
+ * Returns the traits from the last completed detection this session,
+ * or null if detection hasn't run (or storage was unavailable).
+ *
+ * Lets in-app consumers (e.g. popup personalization) reuse detection
+ * results without re-running signals or waiting on PostHog.
+ */
+export function getStoredTraits(): TechStackTraits | null {
+  if (cachedTraits) {
+    return cachedTraits;
+  }
+
+  if (typeof sessionStorage === 'undefined') {
+    return null;
+  }
+
+  try {
+    const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) {
+      const data: SessionStorageData = JSON.parse(stored);
+      if (data.traits) {
+        cachedTraits = data.traits;
+        return cachedTraits;
+      }
+    }
+  } catch {
+    // sessionStorage unavailable or corrupt data
+  }
+
+  return null;
 }
 
 /**
@@ -123,6 +159,10 @@ export function markDetectionComplete(traits: TechStackTraits): void {
   const hash = generateTraitsHash(traits);
   cachedHash = hash;
 
+  // Persist without debug_signals — those are dev-only and never stored/sent
+  const { debug_signals: _debugSignals, ...persistableTraits } = traits;
+  cachedTraits = persistableTraits;
+
   if (typeof sessionStorage === 'undefined') {
     return;
   }
@@ -131,6 +171,7 @@ export function markDetectionComplete(traits: TechStackTraits): void {
     const data: SessionStorageData = {
       detected_at: new Date().toISOString(),
       traits_hash: hash,
+      traits: persistableTraits,
     };
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
   } catch {
@@ -148,6 +189,7 @@ export function markDetectionComplete(traits: TechStackTraits): void {
 export function resetDetectionState(): void {
   memoryGuard = false;
   cachedHash = null;
+  cachedTraits = null;
 
   if (typeof sessionStorage !== 'undefined') {
     try {

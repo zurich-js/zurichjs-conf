@@ -25,6 +25,7 @@ import {
 } from '../scoring';
 import {
   generateTraitsHash,
+  getStoredTraits,
   shouldSkipDetection,
   markDetectionComplete,
   resetDetectionState,
@@ -307,6 +308,39 @@ describe('Dedupe', () => {
 
       markDetectionComplete(traits);
       expect(shouldSkipDetection()).toBe(true);
+    });
+  });
+
+  describe('getStoredTraits', () => {
+    it('should return null before any detection', () => {
+      expect(getStoredTraits()).toBeNull();
+    });
+
+    it('should return traits after markDetectionComplete', () => {
+      const traits: TechStackTraits = {
+        framework_primary: 'vue',
+        state_management: ['mobx'],
+        data_layer: [],
+        confidence: 'high',
+        version: DETECTOR_VERSION,
+      };
+
+      markDetectionComplete(traits);
+      expect(getStoredTraits()).toEqual(traits);
+    });
+
+    it('should strip debug_signals from stored traits', () => {
+      const traits: TechStackTraits = {
+        framework_primary: 'react',
+        state_management: [],
+        data_layer: [],
+        confidence: 'low',
+        version: DETECTOR_VERSION,
+        debug_signals: ['react-devtools:5'],
+      };
+
+      markDetectionComplete(traits);
+      expect(getStoredTraits()).not.toHaveProperty('debug_signals');
     });
   });
 });
