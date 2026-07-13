@@ -25,7 +25,7 @@ export const infoPages: Record<string, InfoPage> = {
     title: "Terms of Service",
     description: "Terms and conditions for attending ZurichJS Conference 2026",
     kicker: "Legal",
-    lastUpdated: "November 25, 2025",
+    lastUpdated: "July 13, 2026",
     sections: [
       {
         type: "paragraph",
@@ -86,6 +86,11 @@ export const infoPages: Record<string, InfoPage> = {
             type: "paragraph",
             content:
               "<strong>2.5 Group / Team Tickets:</strong> If you can no longer attend, you may request to transfer your ticket to another person. Please contact us at <a href='mailto:hello@zurichjs.com', class=' hover:underline font-semibold'> hello@zurichjs.com </a> , and we will do our best to find a solution.Transfers are subject to organizer approval and may require verification.",
+          },
+          {
+            type: "paragraph",
+            content:
+              "<strong>2.6 VIP Perks and Discounts:</strong> VIP ticket holders may receive exclusive perks, including personal discount codes (e.g. for workshops). These perks and discount codes are strictly personal to the VIP ticket holder and are <strong>non-transferable</strong>: they may not be shared with, given to, or used by anyone who does not hold a VIP ticket. Their use operates on an honor system. If we determine that a VIP perk or discount code has been shared with or used by a non-VIP ticket holder, we reserve the right to cancel the affected tickets and any purchases made with the perk or discount code, without refund.",
           },
         ],
       },

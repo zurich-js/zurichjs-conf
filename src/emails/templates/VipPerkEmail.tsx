@@ -16,6 +16,7 @@ export interface VipPerkEmailProps {
   customMessage?: string;
   expiresAt?: string;
   supportEmail?: string;
+  termsUrl?: string;
 }
 
 export const VipPerkEmail: React.FC<VipPerkEmailProps> = ({
@@ -26,6 +27,7 @@ export const VipPerkEmail: React.FC<VipPerkEmailProps> = ({
   customMessage,
   expiresAt,
   supportEmail = 'hello@zurichjs.com',
+  termsUrl = 'https://conf.zurichjs.com/info/terms-of-service',
 }) => {
   const preheader = `Your exclusive VIP perk: ${discountPercent}% off workshops at ZurichJS Conference 2026`;
 
@@ -75,7 +77,15 @@ export const VipPerkEmail: React.FC<VipPerkEmailProps> = ({
           )}
         </div>
         <Text style={codeNoteStyle}>
-          This code is single-use and tied to your VIP ticket.
+          This code is single-use and tied to your VIP ticket.{' '}
+          <strong>It is personal to you and must not be shared with non-VIP ticket
+          holders.</strong>{' '}
+          <em>Sharing your code may result in the cancellation of the associated
+          tickets — see our{' '}
+          <Link href={termsUrl} style={linkStyle}>
+            Terms of Service
+          </Link>
+          .</em>
         </Text>
       </Section>
 
