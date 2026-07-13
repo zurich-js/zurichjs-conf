@@ -45,3 +45,39 @@ export function formatDuration(durationMinutes: number | null | undefined) {
 
   return `${hours}h${minutes ? `${minutes}m` : ''}`;
 }
+
+/** Seats-remaining threshold below which we flag a workshop as running low. */
+export const WORKSHOP_LOW_SEATS_THRESHOLD = 5;
+
+export interface WorkshopAvailability {
+  /** Human-readable seats label, e.g. "12 of 30 seats left". */
+  label: string;
+  /** True when the offering is sold out. */
+  soldOut: boolean;
+  /** True when seats are running low (but not sold out) — use for scarcity emphasis. */
+  isLow: boolean;
+}
+
+/**
+ * Build a seats-remaining label for a published workshop offering. Always shows
+ * how many seats are left (out of the total capacity) so attendees can gauge
+ * availability at a glance, with a "sold out" state once capacity is reached.
+ */
+export function formatWorkshopAvailability(offering: {
+  soldOut: boolean;
+  capacity: number;
+  capacityRemaining: number;
+}): WorkshopAvailability {
+  if (offering.soldOut) {
+    return { label: 'Sold out', soldOut: true, isLow: false };
+  }
+
+  const { capacityRemaining, capacity } = offering;
+  const isLow = capacityRemaining <= WORKSHOP_LOW_SEATS_THRESHOLD;
+  const suffix = capacityRemaining === 1 ? 'seat left' : 'seats left';
+  const label = capacity > 0
+    ? `${capacityRemaining} of ${capacity} ${suffix}`
+    : `${capacityRemaining} ${suffix}`;
+
+  return { label, soldOut: false, isLow };
+}

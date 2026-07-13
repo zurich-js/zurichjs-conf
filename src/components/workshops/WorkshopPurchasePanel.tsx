@@ -15,7 +15,8 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { useToast } from '@/contexts/ToastContext';
 import { createWorkshopPricingQueryOptions } from '@/lib/queries/workshops';
 import { formatPrice } from '@/lib/cart';
-import { formatDuration } from '@/components/scheduling/utils';
+import { formatDuration, formatWorkshopAvailability } from '@/components/scheduling/utils';
+import { cn } from '@/lib/utils';
 
 interface WorkshopPurchasePanelProps {
   /** Program session id — preferred match for post-CFP workshop offerings. */
@@ -106,14 +107,20 @@ export function WorkshopPurchasePanel({
                     <MapPin size={14} /> {offering.room}
                   </span>
                 ) : null}
-                <span className="inline-flex items-center gap-1.5">
-                  <Users size={14} />
-                  {offering.soldOut
-                    ? 'Sold out'
-                    : offering.capacityRemaining <= 5
-                      ? `${offering.capacityRemaining} seats left`
-                      : `${offering.capacity} seats`}
-                </span>
+                {(() => {
+                  const availability = formatWorkshopAvailability(offering);
+                  return (
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5',
+                        (availability.soldOut || availability.isLow) && 'font-semibold text-brand-red'
+                      )}
+                    >
+                      <Users size={14} aria-hidden="true" />
+                      {availability.label}
+                    </span>
+                  );
+                })()}
               </div>
             )}
           </div>
