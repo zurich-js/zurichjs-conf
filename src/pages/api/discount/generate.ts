@@ -4,18 +4,30 @@
  * Sets httpOnly cookies for the discount code and expiry.
  * Idempotent — if httpOnly cookies already present, returns existing data.
  *
- * Accepts optional `percentOff` in request body for UTM lottery discounts.
+ * Accepts optional `percentOff` in request body for UTM lottery discounts, and
+ * an optional `variant` (A/B experiment key). Only the variant *key* is trusted:
+ * the percentage and duration for each variant are resolved server-side.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
 import { getStripeClient } from '@/lib/stripe/client';
 import { getServerConfig } from '@/lib/discount/config';
+import {
+  DISCOUNT_VARIANTS,
+  getVariantServerConfig,
+} from '@/lib/discount/experiment';
 import { isValidLotteryPercent } from '@/lib/discount/utm-lottery';
 import { logger } from '@/lib/logger';
 import type { GenerateDiscountResponse } from '@/lib/discount/types';
 import { randomBytes } from 'crypto';
 
 const log = logger.scope('DiscountGenerate');
+
+const bodySchema = z.object({
+  percentOff: z.number().optional(),
+  variant: z.enum(DISCOUNT_VARIANTS).optional(),
+});
 
 function generateUniqueCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -38,9 +50,13 @@ export default async function handler(
   }
 
   try {
-    // Parse optional lottery percentOff from body
-    const bodyPercentOff = req.body?.percentOff;
-    const isLotteryDiscount = isValidLotteryPercent(bodyPercentOff);
+    const result = bodySchema.safeParse(
+      typeof req.body === 'object' && req.body !== null ? req.body : {}
+    );
+    const body = result.success ? result.data : {};
+
+    const isLotteryDiscount = isValidLotteryPercent(body.percentOff);
+    const variant = !isLotteryDiscount ? body.variant : undefined;
 
     // Check if a discount already exists in httpOnly cookies
     const existingCode = req.cookies.discount_code;
@@ -63,11 +79,21 @@ export default async function handler(
     const config = getServerConfig();
     const stripe = getStripeClient();
     const code = generateUniqueCode();
-    const expiresAt = new Date(Date.now() + config.durationMinutes * 60 * 1000);
+
+    // Resolve the offer: lottery percentage wins, then experiment variant,
+    // then the default (control) config. Duration always comes from the server.
+    const offer = variant
+      ? getVariantServerConfig(variant)
+      : { percentOff: config.percentOff, durationMinutes: config.durationMinutes };
+    const percentOff = isLotteryDiscount ? body.percentOff! : offer.percentOff;
+    const durationMinutes = isLotteryDiscount
+      ? config.durationMinutes
+      : offer.durationMinutes;
+
+    const expiresAt = new Date(Date.now() + durationMinutes * 60 * 1000);
     const redeemBy = Math.floor(expiresAt.getTime() / 1000);
 
-    // Use lottery percentage if valid, otherwise default config
-    const percentOff = isLotteryDiscount ? bodyPercentOff : config.percentOff;
+    const source = isLotteryDiscount ? 'utm_lottery' : 'discount_popup';
 
     // Create Stripe coupon
     const coupon = await stripe.coupons.create({
@@ -77,7 +103,8 @@ export default async function handler(
       redeem_by: redeemBy,
       name: `${isLotteryDiscount ? 'UTM Lottery' : 'Discount Popup'}: ${code}`,
       metadata: {
-        source: isLotteryDiscount ? 'utm_lottery' : 'discount_popup',
+        source,
+        ...(variant ? { experiment_variant: variant } : {}),
         generated_at: new Date().toISOString(),
       },
     });
@@ -91,7 +118,8 @@ export default async function handler(
         max_redemptions: 1,
         expires_at: redeemBy,
         metadata: {
-          source: isLotteryDiscount ? 'utm_lottery' : 'discount_popup',
+          source,
+          ...(variant ? { experiment_variant: variant } : {}),
         },
       });
     } catch (err) {
@@ -107,10 +135,11 @@ export default async function handler(
       expiresAt: expiresAt.toISOString(),
       percentOff,
       isLottery: isLotteryDiscount,
+      experimentVariant: variant,
     });
 
     const expiresAtISO = expiresAt.toISOString();
-    const maxAgeSeconds = config.durationMinutes * 60;
+    const maxAgeSeconds = durationMinutes * 60;
     const isSecure = process.env.NODE_ENV === 'production';
     const commonCookieAttributes = `Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${isSecure ? '; Secure' : ''}`;
 

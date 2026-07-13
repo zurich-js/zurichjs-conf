@@ -12,6 +12,7 @@ import type { EventProperties } from '@/lib/analytics/events';
 import { ApiError } from '@/lib/api';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useCart } from '@/contexts/CartContext';
+import { markTicketHolder } from '@/lib/discount/ticket-holder';
 
 /**
  * Detect if the error is a payment failure (402) vs a generic API/network error.
@@ -79,6 +80,10 @@ const SuccessPage: React.FC = () => {
         name: sessionDetails.customer_name || undefined,
       });
     }
+
+    // Suppress the discount popup for this buyer from now on (localStorage
+    // marker + is_ticket_holder person property for flag targeting)
+    markTicketHolder();
 
     // Track checkout completion on client-side
     // This complements the server-side webhook tracking and enables client-side funnel analysis

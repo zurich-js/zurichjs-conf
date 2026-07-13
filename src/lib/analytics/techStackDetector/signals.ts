@@ -7,7 +7,7 @@
  * framework or tool.
  *
  * Currently detected extensions:
- * - Frameworks: React, Vue, Angular, Svelte, Solid
+ * - Frameworks: React, Preact, Vue, Angular, Svelte, Solid
  * - State management: Redux, MobX
  * - Data layer: Apollo, URQL, TanStack Query
  *
@@ -26,6 +26,15 @@ function hasGlobal(ctx: DetectionContext, key: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Helper to check several alias globals for the same extension.
+ * Aliases are OR-ed inside one signal so a single extension exposing
+ * multiple globals doesn't double-count toward score or confidence.
+ */
+function hasAnyGlobal(ctx: DetectionContext, keys: string[]): boolean {
+  return keys.some((key) => hasGlobal(ctx, key));
 }
 
 /**
@@ -90,18 +99,33 @@ export const SIGNALS: Signal[] = [
     check: (ctx) => hasGlobal(ctx, '__SOLID_DEVTOOLS_GLOBAL_HOOK__'),
   },
 
+  // Preact DevTools extension injects this hook into every page
+  {
+    id: 'preact-devtools',
+    category: 'framework',
+    label: 'preact',
+    weight: 5,
+    prodSafe: true,
+    check: (ctx) => hasGlobal(ctx, '__PREACT_DEVTOOLS__'),
+  },
+
   // ============================================================================
   // STATE MANAGEMENT SIGNALS - Based on DevTools extensions
   // ============================================================================
 
-  // Redux DevTools extension - very popular
+  // Redux DevTools extension - very popular. The extension exposes two
+  // globals; either one alone is a positive match.
   {
     id: 'redux-devtools',
     category: 'state',
     label: 'redux',
     weight: 5,
     prodSafe: true,
-    check: (ctx) => hasGlobal(ctx, '__REDUX_DEVTOOLS_EXTENSION__'),
+    check: (ctx) =>
+      hasAnyGlobal(ctx, [
+        '__REDUX_DEVTOOLS_EXTENSION__',
+        '__REDUX_DEVTOOLS_EXTENSION_COMPOSE__',
+      ]),
   },
 
   // MobX DevTools extension

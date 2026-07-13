@@ -13,6 +13,12 @@ export interface DiscountPopupShownEvent {
     expires_at: string;
     is_lottery: boolean;
     lottery_source?: string;
+    /** A/B experiment variant ('control' | 'aggressive-20'); absent when not enrolled */
+    experiment_variant?: string;
+    /** Whether the popup copy was personalized to the visitor's tech stack */
+    personalized?: boolean;
+    /** Detected framework used for personalization, e.g. 'react' */
+    detected_stack?: string;
   };
 }
 
@@ -21,6 +27,7 @@ export interface DiscountPopupDismissedEvent {
   properties: BaseEventProperties & {
     discount_code: string;
     time_remaining_seconds: number;
+    experiment_variant?: string;
   };
 }
 
@@ -29,6 +36,7 @@ export interface DiscountCodeCopiedEvent {
   properties: BaseEventProperties & {
     discount_code: string;
     time_remaining_seconds: number;
+    experiment_variant?: string;
   };
 }
 
@@ -45,6 +53,7 @@ export interface DiscountExpiredEvent {
   properties: BaseEventProperties & {
     discount_code: string;
     was_copied: boolean;
+    experiment_variant?: string;
   };
 }
 
@@ -54,5 +63,7 @@ export interface DiscountEligibilityCheckedEvent {
     was_eligible: boolean;
     had_cooldown: boolean;
     was_force_shown: boolean;
+    /** Popup permanently suppressed because this browser bought a ticket */
+    is_known_ticket_holder?: boolean;
   };
 }
