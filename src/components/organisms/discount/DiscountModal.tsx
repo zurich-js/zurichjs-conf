@@ -27,11 +27,6 @@ function formatCountdown(countdown: TimeRemaining): string {
   return `${countdown.hours}:${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`;
 }
 
-function formatSpeakerNames(names: string[]): string {
-  if (names.length <= 1) return names[0] ?? '';
-  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
-}
-
 export function DiscountModal({ data, countdown, personalization, onDismiss, onCopyCode }: DiscountModalProps) {
   const [copied, setCopied] = useState(false);
 
@@ -88,16 +83,13 @@ export function DiscountModal({ data, countdown, personalization, onDismiss, onC
                 : 'We got you a discount!'}
             </h2>
 
-            {/* Tech-stack personalization: relevant speakers */}
-            {personalization && personalization.speakerNames.length > 0 && (
+            {/* Tech-stack personalization: relevant speakers (no names) */}
+            {personalization && (
               <p className="mb-3 text-sm text-white/70 sm:text-base">
-                <span className="font-semibold text-white">
-                  {formatSpeakerNames(personalization.speakerNames)}
-                </span>
-                {personalization.matchCount > personalization.speakerNames.length
-                  ? ` and other ${personalization.stackDisplayName} speakers`
-                  : ''}{' '}
-                will be on stage — come meet them.
+                {personalization.matchCount === 1
+                  ? `A ${personalization.stackDisplayName} speaker is`
+                  : `${personalization.matchCount} ${personalization.stackDisplayName} speakers are`}{' '}
+                on the lineup — come meet them.
               </p>
             )}
 
