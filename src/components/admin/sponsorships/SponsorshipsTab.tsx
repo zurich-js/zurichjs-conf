@@ -27,6 +27,14 @@ import { DEAL_STATUS_CONFIG } from '@/lib/types/sponsorship';
 import type { SponsorshipSortDirection, SponsorshipSortField } from './SponsorshipsList';
 
 const ITEMS_PER_PAGE = 10;
+const TIER_SORT_ORDER = new Map([
+  ['diamond', 0],
+  ['platinum', 1],
+  ['gold', 2],
+  ['silver', 3],
+  ['bronze', 4],
+  ['supporter', 5],
+]);
 
 interface SponsorshipsTabProps {
   onManageProspectus?: () => void;
@@ -203,6 +211,20 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
     };
 
     return [...deals].sort((a, b) => {
+      if (sortField === 'tier') {
+        const aRank = TIER_SORT_ORDER.get(a.tier?.name.toLowerCase() ?? '');
+        const bRank = TIER_SORT_ORDER.get(b.tier?.name.toLowerCase() ?? '');
+
+        if (aRank === undefined && bRank === undefined) {
+          return (a.tier?.name ?? a.tier_id).localeCompare(b.tier?.name ?? b.tier_id);
+        }
+        if (aRank === undefined) return 1;
+        if (bRank === undefined) return -1;
+
+        const tierComparison = aRank - bRank;
+        return sortDirection === 'asc' ? tierComparison : -tierComparison;
+      }
+
       const aValue = getSortValue(a);
       const bValue = getSortValue(b);
       const comparison = typeof aValue === 'number' && typeof bValue === 'number'
