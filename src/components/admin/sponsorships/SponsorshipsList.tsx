@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Eye, Building2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Eye, Building2 } from 'lucide-react';
 import Image from 'next/image';
 import { StatusBadge } from './StatusBadge';
 import type { SponsorshipDealListItem } from './types';
@@ -13,9 +13,52 @@ interface SponsorshipsListProps {
   deals: SponsorshipDealListItem[];
   isLoading?: boolean;
   onSelectDeal: (dealId: string) => void;
+  sortField: SponsorshipSortField;
+  sortDirection: SponsorshipSortDirection;
+  onSort: (field: SponsorshipSortField) => void;
 }
 
-export function SponsorshipsList({ deals, isLoading, onSelectDeal }: SponsorshipsListProps) {
+export type SponsorshipSortField = 'sponsor' | 'dealNumber' | 'tier' | 'amount' | 'status' | 'createdAt';
+export type SponsorshipSortDirection = 'asc' | 'desc';
+
+interface SortableHeaderProps {
+  field: Exclude<SponsorshipSortField, 'createdAt'>;
+  label: string;
+  sortField: SponsorshipSortField;
+  sortDirection: SponsorshipSortDirection;
+  onSort: (field: SponsorshipSortField) => void;
+}
+
+function SortableHeader({ field, label, sortField, sortDirection, onSort }: SortableHeaderProps) {
+  const isActive = field === sortField;
+  const ariaSort = isActive ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none';
+  const Icon = isActive ? (sortDirection === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+
+  return (
+    <th
+      aria-sort={ariaSort}
+      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className="inline-flex items-center gap-1.5 rounded-sm hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </th>
+  );
+}
+
+export function SponsorshipsList({
+  deals,
+  isLoading,
+  onSelectDeal,
+  sortField,
+  sortDirection,
+  onSort,
+}: SponsorshipsListProps) {
   // Format currency for display with comma delimiters
   const formatAmount = (cents: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -62,21 +105,11 @@ export function SponsorshipsList({ deals, isLoading, onSelectDeal }: Sponsorship
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Sponsor
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Deal #
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tier
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
+              <SortableHeader field="sponsor" label="Sponsor" sortField={sortField} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHeader field="dealNumber" label="Deal #" sortField={sortField} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHeader field="tier" label="Tier" sortField={sortField} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHeader field="amount" label="Amount" sortField={sortField} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHeader field="status" label="Status" sortField={sortField} sortDirection={sortDirection} onSort={onSort} />
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
