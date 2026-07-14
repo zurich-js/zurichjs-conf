@@ -24,6 +24,7 @@ import type {
   CreateDealFormData,
 } from './types';
 import { DEAL_STATUS_CONFIG } from '@/lib/types/sponsorship';
+import type { SponsorshipSortDirection, SponsorshipSortField } from './SponsorshipsList';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -47,15 +48,16 @@ async function fetchStats(): Promise<SponsorshipStats> {
 
 async function fetchDeals(filters: {
   status?: string;
-  tier?: string;
+  tierId?: string;
   currency?: string;
   search?: string;
 }): Promise<SponsorshipDealListItem[]> {
   const params = new URLSearchParams();
   if (filters.search) params.append('search', filters.search);
   if (filters.status && filters.status !== 'all') params.append('status', filters.status);
-  if (filters.tier && filters.tier !== 'all') params.append('tier', filters.tier);
+  if (filters.tierId && filters.tierId !== 'all') params.append('tierId', filters.tierId);
   if (filters.currency && filters.currency !== 'all') params.append('currency', filters.currency);
+  params.append('limit', '1000');
 
   const response = await fetch(`/api/admin/sponsorships/deals?${params.toString()}`);
   if (!response.ok) throw new Error('Failed to fetch deals');
@@ -126,6 +128,8 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
   const [statusFilter, setStatusFilter] = useState<SponsorshipDealStatus | 'all'>('all');
   const [tierFilter, setTierFilter] = useState<string | 'all'>('all');
   const [currencyFilter, setCurrencyFilter] = useState<SponsorshipCurrency | 'all'>('all');
+  const [sortField, setSortField] = useState<SponsorshipSortField>('createdAt');
+  const [sortDirection, setSortDirection] = useState<SponsorshipSortDirection>('desc');
 
   // Query: Tiers
   const { data: tiers = [] } = useQuery({
@@ -144,7 +148,7 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
   // Query: Deals
   const filters = useMemo(() => ({
     status: statusFilter !== 'all' ? statusFilter : undefined,
-    tier: tierFilter !== 'all' ? tierFilter : undefined,
+    tierId: tierFilter !== 'all' ? tierFilter : undefined,
     currency: currencyFilter !== 'all' ? currencyFilter : undefined,
     search: searchQuery || undefined,
   }), [statusFilter, tierFilter, currencyFilter, searchQuery]);
@@ -180,15 +184,57 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
   });
 
   // Pagination
-  const totalPages = Math.ceil(deals.length / ITEMS_PER_PAGE);
+  const sortedDeals = useMemo(() => {
+    const getSortValue = (deal: SponsorshipDealListItem): string | number => {
+      switch (sortField) {
+        case 'sponsor':
+          return deal.sponsor?.company_name ?? '';
+        case 'dealNumber':
+          return deal.deal_number;
+        case 'tier':
+          return deal.tier?.name ?? deal.tier_id;
+        case 'amount':
+          return deal.invoice?.total_amount ?? -1;
+        case 'status':
+          return DEAL_STATUS_CONFIG[deal.status]?.label ?? deal.status;
+        case 'createdAt':
+          return deal.created_at;
+      }
+    };
+
+    return [...deals].sort((a, b) => {
+      const aValue = getSortValue(a);
+      const bValue = getSortValue(b);
+      const comparison = typeof aValue === 'number' && typeof bValue === 'number'
+        ? aValue - bValue
+        : String(aValue).localeCompare(String(bValue), undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          });
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [deals, sortDirection, sortField]);
+
+  const totalPages = Math.ceil(sortedDeals.length / ITEMS_PER_PAGE);
   const paginatedDeals = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return deals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [deals, currentPage]);
+    return sortedDeals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [sortedDeals, currentPage]);
 
   // Reset page when filters change
   const handleFilterChange = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value);
+    setCurrentPage(1);
+  };
+
+  const handleSort = (field: SponsorshipSortField) => {
+    if (sortField === field) {
+      setSortDirection((direction) => direction === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
     setCurrentPage(1);
   };
 
@@ -281,6 +327,7 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
+              aria-label="Search sponsorships"
               type="text"
               placeholder="Search by company name or deal number..."
               value={searchQuery}
@@ -298,6 +345,7 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
 
             {/* Status filter */}
             <select
+              aria-label="Filter sponsorships by status"
               value={statusFilter}
               onChange={(e) => handleFilterChange(setStatusFilter)(e.target.value as SponsorshipDealStatus | 'all')}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-gray-900 text-sm"
@@ -312,6 +360,7 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
 
             {/* Tier filter */}
             <select
+              aria-label="Filter sponsorships by tier"
               value={tierFilter}
               onChange={(e) => handleFilterChange(setTierFilter)(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-gray-900 text-sm"
@@ -326,6 +375,7 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
 
             {/* Currency filter */}
             <select
+              aria-label="Filter sponsorships by currency"
               value={currencyFilter}
               onChange={(e) => handleFilterChange(setCurrencyFilter)(e.target.value as SponsorshipCurrency | 'all')}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-gray-900 text-sm"
@@ -360,16 +410,19 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
         deals={paginatedDeals}
         isLoading={isLoadingDeals}
         onSelectDeal={handleSelectDeal}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
 
       {/* Pagination */}
-      {!isLoadingDeals && deals.length > ITEMS_PER_PAGE && (
+      {!isLoadingDeals && sortedDeals.length > ITEMS_PER_PAGE && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           pageSize={ITEMS_PER_PAGE}
-          totalItems={deals.length}
+          totalItems={sortedDeals.length}
           variant="light"
         />
       )}

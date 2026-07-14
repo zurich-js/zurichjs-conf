@@ -176,7 +176,7 @@ export const sponsorshipKeys = {
   /**
    * Deals
    */
-  deals: (filters?: { status?: string; tier?: string; currency?: string; search?: string }) =>
+  deals: (filters?: { status?: string; tierId?: string; currency?: string; search?: string }) =>
     [...sponsorshipKeys.all, 'deals', filters] as const,
   deal: (id: string) => [...sponsorshipKeys.all, 'deal', id] as const,
 
