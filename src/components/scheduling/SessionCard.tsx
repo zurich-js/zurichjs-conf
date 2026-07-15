@@ -15,7 +15,7 @@ import {
   shareSession,
   type SessionCalendarProvider,
 } from './session-actions';
-import { formatDuration, formatTimeRange } from './utils';
+import { formatDuration, formatTimeRange, formatWorkshopAvailability } from './utils';
 
 type SessionCardSpeaker = {
   name: string;
@@ -90,13 +90,7 @@ export function SessionCard({
     await shareSession(session, resolvedId);
   };
 
-  const availability = offering
-    ? offering.soldOut
-      ? 'Sold out'
-      : offering.capacityRemaining <= 5
-        ? `${offering.capacityRemaining} of ${offering.capacity} seats left`
-        : `${offering.capacity} seats`
-    : null;
+  const availability = offering ? formatWorkshopAvailability(offering) : null;
   const compact = expandable && actionMode === 'schedule';
 
   const header = (
@@ -127,9 +121,17 @@ export function SessionCard({
         {isWorkshop && availability ? <span className="hidden sm:inline text-brand-gray-medium">&bull;</span> : null}
         {isWorkshop && availability ? (
           <span className="inline-flex items-center gap-1">
-            <Users className="size-3.5" />
-            <strong>Capacity:</strong>{' '}
-            <span className="text-brand-gray-medium">{availability}</span>
+            <Users className="size-3.5" aria-hidden="true" />
+            <strong>Seats:</strong>{' '}
+            <span
+              className={cn(
+                availability.soldOut || availability.isLow
+                  ? 'font-semibold text-brand-red'
+                  : 'text-brand-gray-medium'
+              )}
+            >
+              {availability.label}
+            </span>
           </span>
         ) : null}
       </div>
