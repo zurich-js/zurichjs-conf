@@ -18,10 +18,10 @@ export {
   type GatedVariant,
 } from './experiment';
 export {
-  LOW_INCOME_COUNTRIES,
+  LOWER_INCOME_EUROPEAN_COUNTRIES,
   PRICE_SENSITIVE_MIN_VISITS,
   PRICE_SENSITIVITY_REASONS,
-  isLowIncomeCountry,
+  isLowerIncomeEuropeanCountry,
   getPriceSensitivityEligibility,
   getClientDetectedCountry,
   type PriceSensitivityReason,

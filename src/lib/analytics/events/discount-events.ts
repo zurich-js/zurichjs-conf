@@ -17,7 +17,7 @@ export interface DiscountPopupShownEvent {
     experiment_variant?: string;
     /** True when PostHog assigned price-sensitive-30 to an ineligible visitor (served control instead) */
     variant_downgraded?: boolean;
-    /** Why the visitor qualified for price-sensitive-30 ('low_income_country' | 'recurring_visitor') */
+    /** Why the visitor qualified for price-sensitive-30 ('low_income_country' = lower-income European country | 'recurring_visitor') */
     price_sensitivity_reason?: string;
     /** Whether the popup copy was personalized to the visitor's tech stack */
     personalized?: boolean;

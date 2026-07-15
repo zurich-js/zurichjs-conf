@@ -3,8 +3,9 @@
  *
  * The `price-sensitive-30` variant is only offered to visitors who are likely
  * price-sensitive. A visitor qualifies when EITHER:
- * 1. Their detected country is a low-income economy (purchasing-power gap
- *    makes the standard CHF price a much bigger ask), OR
+ * 1. Their detected country is a lower-income European economy relative to
+ *    Switzerland (e.g. Serbia, North Macedonia, Portugal — the CHF ticket
+ *    price is a much bigger ask on local wages), OR
  * 2. They are a recurring visitor — at least their 3rd visit — who still has
  *    not converted (interest is proven, price is the likely blocker).
  *
@@ -20,27 +21,32 @@ import { getCookie } from './cookies';
 export const PRICE_SENSITIVE_MIN_VISITS = 3;
 
 /**
- * Low-income and lower-middle-income economies (World Bank classification),
- * ISO 3166-1 alpha-2. Comprehensively sanctioned countries where Stripe
- * cannot process payments anyway (KP, IR, SY) are intentionally omitted.
- * Tune the list as the classification changes — it is an experiment input,
- * not a legal boundary.
+ * European economies with incomes far below Switzerland's — roughly one third
+ * or less of Swiss GDP per capita (nominal). This is where the conference
+ * actually draws price-sensitive attendees from, unlike a global World Bank
+ * cut. ISO 3166-1 alpha-2 (XK = Kosovo, the code geo APIs return).
+ * Russia and Belarus are intentionally omitted (payment restrictions make the
+ * offer unusable there). Tune as income levels shift — it is an experiment
+ * input, not a legal boundary.
  */
-export const LOW_INCOME_COUNTRIES: ReadonlySet<string> = new Set([
-  // Low-income economies
-  'AF', 'BF', 'BI', 'CF', 'TD', 'CD', 'ER', 'ET', 'GM', 'GW', 'LR', 'MG',
-  'MW', 'ML', 'MZ', 'NE', 'RW', 'SL', 'SO', 'SS', 'SD', 'TG', 'UG', 'YE',
-  // Lower-middle-income economies
-  'AO', 'BD', 'BJ', 'BT', 'BO', 'CV', 'KH', 'CM', 'KM', 'CG', 'CI', 'DJ',
-  'EG', 'SZ', 'GH', 'GN', 'HT', 'HN', 'IN', 'JO', 'KE', 'KI', 'KG', 'LA',
-  'LB', 'LS', 'MR', 'FM', 'MN', 'MA', 'MM', 'NP', 'NI', 'NG', 'PK', 'PG',
-  'PH', 'WS', 'ST', 'SN', 'SB', 'LK', 'TJ', 'TZ', 'TL', 'TN', 'UZ', 'VU',
-  'VN', 'ZM', 'ZW',
+export const LOWER_INCOME_EUROPEAN_COUNTRIES: ReadonlySet<string> = new Set([
+  // Western Balkans
+  'AL', 'BA', 'ME', 'MK', 'RS', 'XK',
+  // Eastern Europe
+  'BG', 'MD', 'RO', 'UA',
+  // Central Europe & Baltics
+  'HR', 'HU', 'LT', 'LV', 'PL', 'SK',
+  // Southern Europe
+  'GR', 'PT',
+  // Transcontinental, large European population share
+  'TR',
 ]);
 
-export function isLowIncomeCountry(countryCode: string | null | undefined): boolean {
+export function isLowerIncomeEuropeanCountry(
+  countryCode: string | null | undefined
+): boolean {
   if (!countryCode) return false;
-  return LOW_INCOME_COUNTRIES.has(countryCode.toUpperCase());
+  return LOWER_INCOME_EUROPEAN_COUNTRIES.has(countryCode.toUpperCase());
 }
 
 export type PriceSensitivityReason = 'low_income_country' | 'recurring_visitor';
@@ -64,7 +70,7 @@ export function getPriceSensitivityEligibility(params: {
   countryCode: string | null;
   visitCount: number;
 }): PriceSensitivityEligibility {
-  if (isLowIncomeCountry(params.countryCode)) {
+  if (isLowerIncomeEuropeanCountry(params.countryCode)) {
     return { eligible: true, reason: 'low_income_country' };
   }
   if (params.visitCount >= PRICE_SENSITIVE_MIN_VISITS) {

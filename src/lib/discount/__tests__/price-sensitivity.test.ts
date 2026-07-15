@@ -4,40 +4,47 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  LOW_INCOME_COUNTRIES,
+  LOWER_INCOME_EUROPEAN_COUNTRIES,
   PRICE_SENSITIVE_MIN_VISITS,
-  isLowIncomeCountry,
+  isLowerIncomeEuropeanCountry,
   getPriceSensitivityEligibility,
 } from '../price-sensitivity';
 
-describe('isLowIncomeCountry', () => {
+describe('isLowerIncomeEuropeanCountry', () => {
   it('matches countries on the list, case-insensitively', () => {
-    expect(isLowIncomeCountry('IN')).toBe(true);
-    expect(isLowIncomeCountry('in')).toBe(true);
-    expect(isLowIncomeCountry('NG')).toBe(true);
+    expect(isLowerIncomeEuropeanCountry('RS')).toBe(true); // Serbia
+    expect(isLowerIncomeEuropeanCountry('MK')).toBe(true); // North Macedonia
+    expect(isLowerIncomeEuropeanCountry('PT')).toBe(true); // Portugal
+    expect(isLowerIncomeEuropeanCountry('pt')).toBe(true);
   });
 
-  it('rejects high-income countries and missing values', () => {
-    expect(isLowIncomeCountry('CH')).toBe(false);
-    expect(isLowIncomeCountry('US')).toBe(false);
-    expect(isLowIncomeCountry(null)).toBe(false);
-    expect(isLowIncomeCountry(undefined)).toBe(false);
-    expect(isLowIncomeCountry('')).toBe(false);
+  it('rejects wealthy European neighbors and missing values', () => {
+    expect(isLowerIncomeEuropeanCountry('CH')).toBe(false);
+    expect(isLowerIncomeEuropeanCountry('DE')).toBe(false);
+    expect(isLowerIncomeEuropeanCountry('FR')).toBe(false);
+    expect(isLowerIncomeEuropeanCountry('GB')).toBe(false);
+    expect(isLowerIncomeEuropeanCountry(null)).toBe(false);
+    expect(isLowerIncomeEuropeanCountry(undefined)).toBe(false);
+    expect(isLowerIncomeEuropeanCountry('')).toBe(false);
   });
 
-  it('the list holds only ISO alpha-2 codes and excludes sanctioned countries', () => {
-    for (const code of LOW_INCOME_COUNTRIES) {
+  it('rejects non-European lower-income countries — the gate is Europe-focused', () => {
+    expect(isLowerIncomeEuropeanCountry('IN')).toBe(false);
+    expect(isLowerIncomeEuropeanCountry('NG')).toBe(false);
+  });
+
+  it('the list holds only alpha-2 codes and excludes payment-restricted countries', () => {
+    for (const code of LOWER_INCOME_EUROPEAN_COUNTRIES) {
       expect(code).toMatch(/^[A-Z]{2}$/);
     }
-    expect(LOW_INCOME_COUNTRIES.has('KP')).toBe(false);
-    expect(LOW_INCOME_COUNTRIES.has('IR')).toBe(false);
-    expect(LOW_INCOME_COUNTRIES.has('SY')).toBe(false);
+    expect(LOWER_INCOME_EUROPEAN_COUNTRIES.has('RU')).toBe(false);
+    expect(LOWER_INCOME_EUROPEAN_COUNTRIES.has('BY')).toBe(false);
   });
 });
 
 describe('getPriceSensitivityEligibility', () => {
-  it('qualifies visitors from low-income countries regardless of visit count', () => {
-    expect(getPriceSensitivityEligibility({ countryCode: 'IN', visitCount: 1 })).toEqual({
+  it('qualifies visitors from lower-income European countries regardless of visit count', () => {
+    expect(getPriceSensitivityEligibility({ countryCode: 'RS', visitCount: 1 })).toEqual({
       eligible: true,
       reason: 'low_income_country',
     });
@@ -60,7 +67,7 @@ describe('getPriceSensitivityEligibility', () => {
   });
 
   it('country reason wins when both conditions hold', () => {
-    expect(getPriceSensitivityEligibility({ countryCode: 'NG', visitCount: 7 })).toEqual({
+    expect(getPriceSensitivityEligibility({ countryCode: 'MK', visitCount: 7 })).toEqual({
       eligible: true,
       reason: 'low_income_country',
     });

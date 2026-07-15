@@ -8,8 +8,8 @@
  * `discount-popup-offer` (control 10%/2h vs aggressive-20 20%/1h vs
  * price-sensitive-30 30%/30min) at trigger time. Known ticket holders are
  * excluded before enrollment. The price-sensitive-30 variant is gated to
- * visitors in low-income countries or recurring (3rd+ visit) non-converted
- * visitors — see @/lib/discount/price-sensitivity.
+ * visitors in lower-income European countries (relative to CH) or recurring
+ * (3rd+ visit) non-converted visitors — see @/lib/discount/price-sensitivity.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';

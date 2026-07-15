@@ -6,8 +6,9 @@
  * - `control`            → 10% off, valid 2h (existing behavior, env-configurable)
  * - `aggressive-20`      → 20% off, valid 1h (env-configurable)
  * - `price-sensitive-30` → 30% off, valid 30min (env-configurable) — only for
- *   visitors in low-income countries OR recurring (3rd+ visit) visitors who
- *   have not converted. See `price-sensitivity.ts` for the eligibility rules.
+ *   visitors in lower-income European countries (relative to Switzerland,
+ *   e.g. Serbia, North Macedonia, Portugal) OR recurring (3rd+ visit)
+ *   visitors who have not converted. See `price-sensitivity.ts`.
  *
  * The client only ever sends the *variant key* to the API — the actual
  * percentage and duration are resolved server-side so clients cannot mint
