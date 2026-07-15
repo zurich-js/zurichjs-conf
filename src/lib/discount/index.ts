@@ -13,8 +13,21 @@ export {
   DISCOUNT_VARIANTS,
   isDiscountVariant,
   getVariantServerConfig,
+  applyPriceSensitivityGate,
   type DiscountVariant,
+  type GatedVariant,
 } from './experiment';
+export {
+  LOW_INCOME_COUNTRIES,
+  PRICE_SENSITIVE_MIN_VISITS,
+  PRICE_SENSITIVITY_REASONS,
+  isLowIncomeCountry,
+  getPriceSensitivityEligibility,
+  getClientDetectedCountry,
+  type PriceSensitivityReason,
+  type PriceSensitivityEligibility,
+} from './price-sensitivity';
+export { recordVisit, getVisitCount, VISIT_SESSION_GAP_MS } from './visit-tracker';
 export { isKnownTicketHolder, markTicketHolder } from './ticket-holder';
 export {
   buildDiscountPersonalization,

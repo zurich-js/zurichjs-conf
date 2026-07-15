@@ -1,5 +1,5 @@
 /**
- * Tests for the discount popup A/B experiment helpers.
+ * Tests for the discount popup A/B/C experiment helpers.
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
@@ -8,6 +8,7 @@ import {
   DISCOUNT_VARIANTS,
   isDiscountVariant,
   getVariantServerConfig,
+  applyPriceSensitivityGate,
 } from '../experiment';
 
 afterEach(() => {
@@ -56,6 +57,48 @@ describe('getVariantServerConfig', () => {
 
     const config = getVariantServerConfig('aggressive-20');
     expect(config).toEqual({ percentOff: 25, durationMinutes: 30 });
+  });
+
+  it('price-sensitive-30 defaults to 30% off for 30 minutes', () => {
+    const config = getVariantServerConfig('price-sensitive-30');
+    expect(config).toEqual({ percentOff: 30, durationMinutes: 30 });
+  });
+
+  it('price-sensitive-30 follows DISCOUNT_ABC_* env overrides', () => {
+    vi.stubEnv('DISCOUNT_ABC_PERCENT_OFF', '35');
+    vi.stubEnv('DISCOUNT_ABC_DURATION_MINUTES', '20');
+
+    const config = getVariantServerConfig('price-sensitive-30');
+    expect(config).toEqual({ percentOff: 35, durationMinutes: 20 });
+  });
+});
+
+describe('applyPriceSensitivityGate', () => {
+  it('passes price-sensitive-30 through for eligible visitors', () => {
+    expect(applyPriceSensitivityGate('price-sensitive-30', true)).toEqual({
+      variant: 'price-sensitive-30',
+      downgraded: false,
+    });
+  });
+
+  it('downgrades price-sensitive-30 to control for ineligible visitors', () => {
+    expect(applyPriceSensitivityGate('price-sensitive-30', false)).toEqual({
+      variant: 'control',
+      downgraded: true,
+    });
+  });
+
+  it('never touches the other variants regardless of eligibility', () => {
+    for (const eligible of [true, false]) {
+      expect(applyPriceSensitivityGate('control', eligible)).toEqual({
+        variant: 'control',
+        downgraded: false,
+      });
+      expect(applyPriceSensitivityGate('aggressive-20', eligible)).toEqual({
+        variant: 'aggressive-20',
+        downgraded: false,
+      });
+    }
   });
 });
 

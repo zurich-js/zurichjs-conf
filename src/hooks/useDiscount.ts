@@ -5,8 +5,11 @@
  * Uses TanStack Query for API calls and usehooks-ts for utilities.
  *
  * Experiment: eligible visitors are enrolled in the PostHog experiment
- * `discount-popup-offer` (control 10%/2h vs aggressive-20 20%/1h) at trigger
- * time. Known ticket holders are excluded before enrollment.
+ * `discount-popup-offer` (control 10%/2h vs aggressive-20 20%/1h vs
+ * price-sensitive-30 30%/30min) at trigger time. Known ticket holders are
+ * excluded before enrollment. The price-sensitive-30 variant is gated to
+ * visitors in low-income countries or recurring (3rd+ visit) non-converted
+ * visitors — see @/lib/discount/price-sensitivity.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -28,7 +31,13 @@ import {
   buildDiscountPersonalization,
   DISCOUNT_EXPERIMENT_FLAG,
   isDiscountVariant,
+  applyPriceSensitivityGate,
+  getPriceSensitivityEligibility,
+  getClientDetectedCountry,
+  recordVisit,
+  getVisitCount,
   type DiscountVariant,
+  type PriceSensitivityEligibility,
 } from '@/lib/discount';
 import {
   evaluateUtmLottery,
@@ -53,13 +62,19 @@ const EMPTY_COUNTDOWN: TimeRemaining = {
 interface GenerateDiscountParams {
   lotteryPercentOff?: number;
   variant?: DiscountVariant;
+  priceSensitivityReason?: PriceSensitivityEligibility['reason'];
 }
 
 // API call
-async function generateDiscount({ lotteryPercentOff, variant }: GenerateDiscountParams): Promise<DiscountData> {
+async function generateDiscount({
+  lotteryPercentOff,
+  variant,
+  priceSensitivityReason,
+}: GenerateDiscountParams): Promise<DiscountData> {
   const payload: Record<string, unknown> = {};
   if (lotteryPercentOff) payload.percentOff = lotteryPercentOff;
   if (variant) payload.variant = variant;
+  if (priceSensitivityReason) payload.priceSensitivityReason = priceSensitivityReason;
 
   const hasBody = Object.keys(payload).length > 0;
   const res = await fetch('/api/discount/generate', {
@@ -78,9 +93,19 @@ async function generateDiscount({ lotteryPercentOff, variant }: GenerateDiscount
  *   (release conditions exclude this person, e.g. identified ticket holders).
  * - Returns undefined when flags are unavailable (blocked/not loaded) —
  *   the visitor gets control behavior without polluting the experiment.
+ *
+ * `priceSensitiveEligible` is reported to PostHog as a flag-evaluation person
+ * property so the experiment can target the price-sensitive-30 variant to
+ * eligible visitors only (see experiment.ts for the PostHog setup).
  */
-function resolveExperimentVariant(): DiscountVariant | 'excluded' | undefined {
+function resolveExperimentVariant(
+  priceSensitiveEligible: boolean
+): DiscountVariant | 'excluded' | undefined {
   try {
+    posthog.setPersonPropertiesForFlags(
+      { price_sensitive_eligible: priceSensitiveEligible },
+      false // don't force an extra flag reload — getFeatureFlag evaluates below
+    );
     // Also reports flag exposure ($feature_flag_called) to PostHog
     const value = posthog.getFeatureFlag(DISCOUNT_EXPERIMENT_FLAG);
     if (value === false) return 'excluded';
@@ -103,6 +128,8 @@ export function useDiscount() {
   const isEligible = useRef(false);
   const lotteryResult = useRef<LotteryResult | null>(null);
   const experimentVariant = useRef<DiscountVariant | null>(null);
+  const priceSensitivity = useRef<PriceSensitivityEligibility | null>(null);
+  const variantDowngraded = useRef(false);
   const [isLotteryReady, setIsLotteryReady] = useState(false);
 
   // Clipboard
@@ -151,12 +178,28 @@ export function useDiscount() {
     if (!isClient || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
 
+    // Count this visit so the experiment can tell recurring visitors apart,
+    // and pre-report price-sensitivity eligibility to PostHog so the flag's
+    // variant targeting has reloaded by the time the popup triggers (15s).
+    const visitCount = recordVisit();
+    const earlyEligibility = getPriceSensitivityEligibility({
+      countryCode: getClientDetectedCountry(),
+      visitCount,
+    });
+    try {
+      posthog.setPersonPropertiesForFlags({
+        price_sensitive_eligible: earlyEligibility.eligible,
+      });
+    } catch {
+      // PostHog unavailable — the local hard gate still applies.
+    }
+
     const trackEligibility = (props: {
       was_eligible: boolean;
       had_cooldown: boolean;
       was_force_shown: boolean;
       is_known_ticket_holder?: boolean;
-    }) => analytics.track('discount_eligibility_checked', props);
+    }) => analytics.track('discount_eligibility_checked', { ...props, visit_count: visitCount });
 
     // Check UTM lottery first (overrides normal flow)
     const utmParams = parseUtmParams(window.location.search);
@@ -232,12 +275,29 @@ export function useDiscount() {
       return;
     }
 
-    // Enroll in the A/B experiment at trigger time (counts as flag exposure)
-    const variant = resolveExperimentVariant();
-    if (variant === 'excluded') return; // e.g. ticket holder identified in PostHog
+    // Recompute price-sensitivity eligibility fresh at trigger time — the
+    // country cookie (set async by CurrencyContext via /api/geo/detect) is
+    // normally present by now even on a first visit.
+    const eligibility = getPriceSensitivityEligibility({
+      countryCode: getClientDetectedCountry(),
+      visitCount: getVisitCount(),
+    });
+    priceSensitivity.current = eligibility;
 
-    experimentVariant.current = variant ?? null;
-    mutate({ variant });
+    // Enroll in the A/B/C experiment at trigger time (counts as flag exposure)
+    const assigned = resolveExperimentVariant(eligibility.eligible);
+    if (assigned === 'excluded') return; // e.g. ticket holder identified in PostHog
+
+    // Hard guard: never serve the price-sensitive offer to an ineligible visitor
+    const gated = assigned ? applyPriceSensitivityGate(assigned, eligibility.eligible) : null;
+    variantDowngraded.current = gated?.downgraded ?? false;
+
+    experimentVariant.current = gated?.variant ?? null;
+    mutate({
+      variant: gated?.variant,
+      priceSensitivityReason:
+        gated?.variant === 'price-sensitive-30' ? eligibility.reason : null,
+    });
   }, shouldTrigger ? delayMs : null);
 
   // Track analytics when modal opens
@@ -251,6 +311,8 @@ export function useDiscount() {
       is_lottery: lotteryResult.current?.eligible ?? false,
       lottery_source: lotteryResult.current?.source,
       experiment_variant: experimentVariant.current ?? undefined,
+      variant_downgraded: variantDowngraded.current || undefined,
+      price_sensitivity_reason: priceSensitivity.current?.reason ?? undefined,
       personalized: personalization !== null,
       detected_stack: personalization?.stack,
     });

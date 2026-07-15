@@ -5,7 +5,8 @@
  * Idempotent — if httpOnly cookies already present, returns existing data.
  *
  * Accepts optional `percentOff` in request body for UTM lottery discounts, and
- * an optional `variant` (A/B experiment key). Only the variant *key* is trusted:
+ * an optional `variant` (A/B/C experiment key) plus a `priceSensitivityReason`
+ * (stored as Stripe metadata for analysis). Only the variant *key* is trusted:
  * the percentage and duration for each variant are resolved server-side.
  */
 
@@ -17,6 +18,7 @@ import {
   DISCOUNT_VARIANTS,
   getVariantServerConfig,
 } from '@/lib/discount/experiment';
+import { PRICE_SENSITIVITY_REASONS } from '@/lib/discount/price-sensitivity';
 import { isValidLotteryPercent } from '@/lib/discount/utm-lottery';
 import { logger } from '@/lib/logger';
 import type { GenerateDiscountResponse } from '@/lib/discount/types';
@@ -27,6 +29,8 @@ const log = logger.scope('DiscountGenerate');
 const bodySchema = z.object({
   percentOff: z.number().optional(),
   variant: z.enum(DISCOUNT_VARIANTS).optional(),
+  /** Why the visitor qualified for price-sensitive-30 (metadata only) */
+  priceSensitivityReason: z.enum(PRICE_SENSITIVITY_REASONS).nullish(),
 });
 
 function generateUniqueCode(): string {
@@ -57,6 +61,8 @@ export default async function handler(
 
     const isLotteryDiscount = isValidLotteryPercent(body.percentOff);
     const variant = !isLotteryDiscount ? body.variant : undefined;
+    const priceSensitivityReason =
+      variant === 'price-sensitive-30' ? body.priceSensitivityReason ?? undefined : undefined;
 
     // Check if a discount already exists in httpOnly cookies
     const existingCode = req.cookies.discount_code;
@@ -105,6 +111,9 @@ export default async function handler(
       metadata: {
         source,
         ...(variant ? { experiment_variant: variant } : {}),
+        ...(priceSensitivityReason
+          ? { price_sensitivity_reason: priceSensitivityReason }
+          : {}),
         generated_at: new Date().toISOString(),
       },
     });
@@ -120,6 +129,9 @@ export default async function handler(
         metadata: {
           source,
           ...(variant ? { experiment_variant: variant } : {}),
+          ...(priceSensitivityReason
+            ? { price_sensitivity_reason: priceSensitivityReason }
+            : {}),
         },
       });
     } catch (err) {
@@ -136,6 +148,7 @@ export default async function handler(
       percentOff,
       isLottery: isLotteryDiscount,
       experimentVariant: variant,
+      priceSensitivityReason,
     });
 
     const expiresAtISO = expiresAt.toISOString();
