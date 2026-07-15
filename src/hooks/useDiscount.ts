@@ -17,7 +17,10 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useCopyToClipboard, useTimeout, useIsClient } from 'usehooks-ts';
 import posthog from 'posthog-js';
 import { analytics } from '@/lib/analytics/client';
-import { discountStatusQueryOptions } from '@/lib/queries/discount';
+import {
+  discountStatusQueryOptions,
+  discountClientConfigQueryOptions,
+} from '@/lib/queries/discount';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { getClientConfig } from '@/lib/discount/config';
 import type { DiscountState, DiscountData } from '@/lib/discount/types';
@@ -49,7 +52,8 @@ import { useCountdown, type TimeRemaining } from './useCountdown';
 
 // Constants
 const POPUP_DELAY_MS = 15_000; // 15 seconds
-const COOLDOWN_HOURS = 24;
+/** Used only when the config API fails and we run on env fallbacks */
+const FALLBACK_COOLDOWN_HOURS = 24;
 const EMPTY_COUNTDOWN: TimeRemaining = {
   days: 0,
   hours: 0,
@@ -117,8 +121,6 @@ function resolveExperimentVariant(
 
 export function useDiscount() {
   const isClient = useIsClient();
-  const config = getClientConfig();
-
   // Core state
   const [state, setState] = useState<DiscountState>('idle');
   const [data, setData] = useState<DiscountData | null>(null);
@@ -140,6 +142,20 @@ export function useDiscount() {
     ...discountStatusQueryOptions,
     enabled: isClient,
   });
+
+  // Admin-managed popup config (probability, force show, cooldown). Falls
+  // back to env-based defaults if the API fails so the popup still works.
+  const configQuery = useQuery({
+    ...discountClientConfigQueryOptions,
+    enabled: isClient,
+  });
+  const config = useMemo(() => {
+    if (configQuery.data) return configQuery.data;
+    if (configQuery.isError) {
+      return { ...getClientConfig(), cooldownHours: FALLBACK_COOLDOWN_HOURS };
+    }
+    return null; // still loading — eligibility check waits
+  }, [configQuery.data, configQuery.isError]);
 
   // Speaker lineup for tech-stack personalization. On the homepage (the only
   // place the popup mounts) this is already in the hydrated SSR cache.
@@ -173,9 +189,9 @@ export function useDiscount() {
   const fallbackExpiry = useRef(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
   const countdown = useCountdown(data?.expiresAt ?? fallbackExpiry.current);
 
-  // Determine eligibility once on mount
+  // Determine eligibility once the admin-managed config has resolved
   useEffect(() => {
-    if (!isClient || flags.current.eligibilityChecked) return;
+    if (!isClient || !config || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
 
     // Count this visit so the experiment can tell recurring visitors apart,
@@ -240,7 +256,7 @@ export function useDiscount() {
     isEligible.current = Math.random() < config.showProbability;
 
     if (!isEligible.current) {
-      setCooldownCookie(COOLDOWN_HOURS);
+      setCooldownCookie(config.cooldownHours);
     }
 
     trackEligibility({
@@ -248,7 +264,7 @@ export function useDiscount() {
       had_cooldown: false,
       was_force_shown: false,
     });
-  }, [isClient, config.forceShow, config.showProbability]);
+  }, [isClient, config]);
 
   // Restore minimized state from existing discount
   useEffect(() => {
@@ -262,8 +278,11 @@ export function useDiscount() {
     setState('minimized');
   }, [statusData, data]);
 
-  // Show popup after delay if eligible (lottery shows immediately, normal has 15s delay)
-  const shouldTrigger = isClient && !isLoading && state === 'idle' && !statusData?.active && !hasDismissedCookie();
+  // Show popup after delay if eligible (lottery shows immediately, normal has
+  // 15s delay). Waits for the config to resolve so the eligibility check has
+  // run before the timer fires.
+  const shouldTrigger =
+    isClient && !isLoading && config !== null && state === 'idle' && !statusData?.active && !hasDismissedCookie();
   const delayMs = isLotteryReady ? 0 : POPUP_DELAY_MS;
 
   useTimeout(() => {

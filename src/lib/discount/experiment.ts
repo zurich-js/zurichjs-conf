@@ -2,10 +2,12 @@
  * Discount Popup A/B/C Experiment
  *
  * PostHog-driven experiment comparing the standard popup offer against a more
- * aggressive short-lived one, plus a price-sensitivity variant:
- * - `control`            → 10% off, valid 2h (existing behavior, env-configurable)
- * - `aggressive-20`      → 20% off, valid 1h (env-configurable)
- * - `price-sensitive-30` → 30% off, valid 30min (env-configurable) — only for
+ * aggressive short-lived one, plus a price-sensitivity variant. All offers are
+ * admin-configurable via the discount_config table (Admin → Discount tab),
+ * with env vars as fallback:
+ * - `control`            → 10% off, valid 2h (existing behavior)
+ * - `aggressive-20`      → 20% off, valid 1h
+ * - `price-sensitive-30` → 30% off, valid 30min — only for
  *   visitors in lower-income European countries (relative to Switzerland,
  *   e.g. Serbia, North Macedonia, Portugal) OR recurring (3rd+ visit)
  *   visitors who have not converted. See `price-sensitivity.ts`.
@@ -27,8 +29,7 @@
  *    so misconfigured targeting can't leak the 30% offer.
  */
 
-import type { DiscountVariantConfig } from './types';
-import { getServerConfig } from './config';
+import type { DiscountVariantConfig, ResolvedDiscountConfig } from './types';
 
 /** PostHog feature flag key for the discount popup experiment. */
 export const DISCOUNT_EXPERIMENT_FLAG = 'discount-popup-offer';
@@ -49,38 +50,31 @@ export function isDiscountVariant(value: unknown): value is DiscountVariant {
 }
 
 /**
- * Resolves the offer for a variant server-side.
- * Control mirrors the standard env-driven config; the other variants have
- * sensible defaults and can be tuned via env without a deploy.
+ * Resolves the offer for a variant from the resolved runtime config
+ * (admin-editable discount_config row, or the env fallback — see
+ * config-server.ts). Pure so it's trivially testable.
  */
 export function getVariantServerConfig(
-  variant: DiscountVariant
+  variant: DiscountVariant,
+  config: ResolvedDiscountConfig
 ): DiscountVariantConfig {
-  const base = getServerConfig();
-
   if (variant === 'aggressive-20') {
     return {
-      percentOff: parseInt(process.env.DISCOUNT_AB_PERCENT_OFF || '20', 10),
-      durationMinutes: parseInt(
-        process.env.DISCOUNT_AB_DURATION_MINUTES || '60',
-        10
-      ),
+      percentOff: config.abPercentOff,
+      durationMinutes: config.abDurationMinutes,
     };
   }
 
   if (variant === 'price-sensitive-30') {
     return {
-      percentOff: parseInt(process.env.DISCOUNT_ABC_PERCENT_OFF || '30', 10),
-      durationMinutes: parseInt(
-        process.env.DISCOUNT_ABC_DURATION_MINUTES || '30',
-        10
-      ),
+      percentOff: config.abcPercentOff,
+      durationMinutes: config.abcDurationMinutes,
     };
   }
 
   return {
-    percentOff: base.percentOff,
-    durationMinutes: base.durationMinutes,
+    percentOff: config.percentOff,
+    durationMinutes: config.durationMinutes,
   };
 }
 

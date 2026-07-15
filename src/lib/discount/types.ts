@@ -18,6 +18,27 @@ export interface DiscountConfig {
   forceShow: boolean;
 }
 
+/**
+ * Full runtime config including the experiment variant offers.
+ * Resolved from the admin-editable `discount_config` table (see
+ * config-server.ts), falling back to env vars when the DB is unreachable.
+ */
+export interface ResolvedDiscountConfig extends DiscountConfig {
+  abPercentOff: number;
+  abDurationMinutes: number;
+  abcPercentOff: number;
+  abcDurationMinutes: number;
+  /** Where this config came from — 'env' means the DB fallback path was used */
+  source: 'database' | 'env';
+}
+
+/** Client-safe subset served by GET /api/discount/config */
+export interface DiscountClientConfigResponse {
+  showProbability: number;
+  forceShow: boolean;
+  cooldownHours: number;
+}
+
 /** Offer parameters resolved server-side for one experiment variant */
 export interface DiscountVariantConfig {
   percentOff: number;

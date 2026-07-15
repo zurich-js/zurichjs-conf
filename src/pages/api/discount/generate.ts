@@ -13,7 +13,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { getStripeClient } from '@/lib/stripe/client';
-import { getServerConfig } from '@/lib/discount/config';
+import { getDiscountConfig } from '@/lib/discount/config-server';
 import {
   DISCOUNT_VARIANTS,
   getVariantServerConfig,
@@ -73,7 +73,7 @@ export default async function handler(
       const expiresAt = existingExpires;
       if (new Date(expiresAt) > new Date()) {
         log.info('Returning existing discount code', { code: existingCode });
-        const config = getServerConfig();
+        const config = await getDiscountConfig();
         return res.status(200).json({
           code: existingCode,
           expiresAt,
@@ -82,14 +82,14 @@ export default async function handler(
       }
     }
 
-    const config = getServerConfig();
+    const config = await getDiscountConfig();
     const stripe = getStripeClient();
     const code = generateUniqueCode();
 
     // Resolve the offer: lottery percentage wins, then experiment variant,
     // then the default (control) config. Duration always comes from the server.
     const offer = variant
-      ? getVariantServerConfig(variant)
+      ? getVariantServerConfig(variant, config)
       : { percentOff: config.percentOff, durationMinutes: config.durationMinutes };
     const percentOff = isLotteryDiscount ? body.percentOff! : offer.percentOff;
     const durationMinutes = isLotteryDiscount

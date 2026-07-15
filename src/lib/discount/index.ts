@@ -2,10 +2,14 @@ export type {
   DiscountState,
   DiscountData,
   DiscountConfig,
+  ResolvedDiscountConfig,
+  DiscountClientConfigResponse,
   DiscountVariantConfig,
   GenerateDiscountResponse,
   DiscountStatusResponse,
 } from './types';
+// NOTE: config-server.ts is deliberately NOT exported here — it pulls in the
+// service-role Supabase client and must never reach a client bundle.
 
 export { COOKIE_NAMES, getClientConfig, getServerConfig } from './config';
 export {
