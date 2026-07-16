@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown } from 'lucide-react';
+import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown, Percent } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -13,6 +13,7 @@ import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
 import { TicketsTab, IssueTicketTab, FinancialsTab, type Tab } from '@/components/admin/dashboard';
 import { WorkshopsRegistrantsTab } from '@/components/admin/workshops-registrants';
 import { VipPerksTab } from '@/components/admin/vip-perks';
+import { DiscountConfigTab } from '@/components/admin/discount';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const TABS: AdminTab<Tab>[] = [
@@ -21,6 +22,7 @@ const TABS: AdminTab<Tab>[] = [
   { id: 'issue', label: 'Issue', icon: PlusCircle },
   { id: 'financials', label: 'Financials', icon: DollarSign },
   { id: 'vip-perks', label: 'VIP Perks', icon: Crown },
+  { id: 'discount', label: 'Discount', icon: Percent },
 ];
 
 export default function AdminDashboard() {
@@ -43,6 +45,7 @@ export default function AdminDashboard() {
             {activeTab === 'issue' && <IssueTicketTab />}
             {activeTab === 'financials' && <FinancialsTab />}
             {activeTab === 'vip-perks' && <VipPerksTab />}
+            {activeTab === 'discount' && <DiscountConfigTab />}
           </div>
         </div>
       </div>

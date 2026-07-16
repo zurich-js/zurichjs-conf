@@ -5,10 +5,10 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerConfig } from '@/lib/discount/config';
+import { getDiscountConfig } from '@/lib/discount/config-server';
 import type { DiscountStatusResponse } from '@/lib/discount/types';
 
-export default function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<DiscountStatusResponse | { error: string }>
 ) {
@@ -35,7 +35,7 @@ export default function handler(
     return res.status(200).json({ active: false });
   }
 
-  const config = getServerConfig();
+  const config = await getDiscountConfig();
   // Use stored percentOff if available (for lottery discounts), otherwise fall back to config
   const percentOff = percentOffCookie ? parseInt(percentOffCookie, 10) : config.percentOff;
 

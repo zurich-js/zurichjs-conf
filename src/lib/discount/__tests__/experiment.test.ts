@@ -1,5 +1,5 @@
 /**
- * Tests for the discount popup A/B experiment helpers.
+ * Tests for the discount popup A/B/C experiment helpers.
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
@@ -8,7 +8,24 @@ import {
   DISCOUNT_VARIANTS,
   isDiscountVariant,
   getVariantServerConfig,
+  applyPriceSensitivityGate,
 } from '../experiment';
+import { getServerConfig } from '../config';
+import type { ResolvedDiscountConfig } from '../types';
+
+/** Resolved config as the admin DB row would produce it */
+const BASE_CONFIG: ResolvedDiscountConfig = {
+  showProbability: 0.25,
+  percentOff: 10,
+  durationMinutes: 120,
+  cooldownHours: 24,
+  forceShow: false,
+  abPercentOff: 20,
+  abDurationMinutes: 60,
+  abcPercentOff: 30,
+  abcDurationMinutes: 30,
+  source: 'database',
+};
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -32,30 +49,96 @@ describe('isDiscountVariant', () => {
 });
 
 describe('getVariantServerConfig', () => {
-  it('control mirrors the standard server config defaults', () => {
-    const config = getVariantServerConfig('control');
+  it('control mirrors the base offer', () => {
+    const config = getVariantServerConfig('control', BASE_CONFIG);
     expect(config).toEqual({ percentOff: 10, durationMinutes: 120 });
   });
 
-  it('control follows DISCOUNT_PERCENT_OFF / DISCOUNT_DURATION_MINUTES env', () => {
+  it('aggressive-20 uses the AB offer fields', () => {
+    const config = getVariantServerConfig('aggressive-20', {
+      ...BASE_CONFIG,
+      abPercentOff: 25,
+      abDurationMinutes: 45,
+    });
+    expect(config).toEqual({ percentOff: 25, durationMinutes: 45 });
+  });
+
+  it('price-sensitive-30 uses the ABC offer fields', () => {
+    const config = getVariantServerConfig('price-sensitive-30', {
+      ...BASE_CONFIG,
+      abcPercentOff: 35,
+      abcDurationMinutes: 20,
+    });
+    expect(config).toEqual({ percentOff: 35, durationMinutes: 20 });
+  });
+});
+
+describe('getServerConfig (env fallback)', () => {
+  it('provides the documented defaults when no env is set', () => {
+    expect(getServerConfig()).toEqual({
+      showProbability: 0.25,
+      percentOff: 10,
+      durationMinutes: 120,
+      cooldownHours: 24,
+      forceShow: false,
+      abPercentOff: 20,
+      abDurationMinutes: 60,
+      abcPercentOff: 30,
+      abcDurationMinutes: 30,
+      source: 'env',
+    });
+  });
+
+  it('follows DISCOUNT_* env overrides for all variants', () => {
     vi.stubEnv('DISCOUNT_PERCENT_OFF', '12');
     vi.stubEnv('DISCOUNT_DURATION_MINUTES', '90');
-
-    const config = getVariantServerConfig('control');
-    expect(config).toEqual({ percentOff: 12, durationMinutes: 90 });
-  });
-
-  it('aggressive-20 defaults to 20% off for 60 minutes', () => {
-    const config = getVariantServerConfig('aggressive-20');
-    expect(config).toEqual({ percentOff: 20, durationMinutes: 60 });
-  });
-
-  it('aggressive-20 follows DISCOUNT_AB_* env overrides', () => {
     vi.stubEnv('DISCOUNT_AB_PERCENT_OFF', '25');
     vi.stubEnv('DISCOUNT_AB_DURATION_MINUTES', '30');
+    vi.stubEnv('DISCOUNT_ABC_PERCENT_OFF', '35');
+    vi.stubEnv('DISCOUNT_ABC_DURATION_MINUTES', '20');
 
-    const config = getVariantServerConfig('aggressive-20');
-    expect(config).toEqual({ percentOff: 25, durationMinutes: 30 });
+    const config = getServerConfig();
+    expect(getVariantServerConfig('control', config)).toEqual({
+      percentOff: 12,
+      durationMinutes: 90,
+    });
+    expect(getVariantServerConfig('aggressive-20', config)).toEqual({
+      percentOff: 25,
+      durationMinutes: 30,
+    });
+    expect(getVariantServerConfig('price-sensitive-30', config)).toEqual({
+      percentOff: 35,
+      durationMinutes: 20,
+    });
+  });
+});
+
+describe('applyPriceSensitivityGate', () => {
+  it('passes price-sensitive-30 through for eligible visitors', () => {
+    expect(applyPriceSensitivityGate('price-sensitive-30', true)).toEqual({
+      variant: 'price-sensitive-30',
+      downgraded: false,
+    });
+  });
+
+  it('downgrades price-sensitive-30 to control for ineligible visitors', () => {
+    expect(applyPriceSensitivityGate('price-sensitive-30', false)).toEqual({
+      variant: 'control',
+      downgraded: true,
+    });
+  });
+
+  it('never touches the other variants regardless of eligibility', () => {
+    for (const eligible of [true, false]) {
+      expect(applyPriceSensitivityGate('control', eligible)).toEqual({
+        variant: 'control',
+        downgraded: false,
+      });
+      expect(applyPriceSensitivityGate('aggressive-20', eligible)).toEqual({
+        variant: 'aggressive-20',
+        downgraded: false,
+      });
+    }
   });
 });
 

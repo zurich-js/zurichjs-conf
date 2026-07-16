@@ -1398,6 +1398,51 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_config: {
+        Row: {
+          ab_duration_minutes: number
+          ab_percent_off: number
+          abc_duration_minutes: number
+          abc_percent_off: number
+          cooldown_hours: number
+          duration_minutes: number
+          force_show: boolean
+          id: string
+          percent_off: number
+          show_probability: number
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          ab_duration_minutes?: number
+          ab_percent_off?: number
+          abc_duration_minutes?: number
+          abc_percent_off?: number
+          cooldown_hours?: number
+          duration_minutes?: number
+          force_show?: boolean
+          id?: string
+          percent_off?: number
+          show_probability?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ab_duration_minutes?: number
+          ab_percent_off?: number
+          abc_duration_minutes?: number
+          abc_percent_off?: number
+          cooldown_hours?: number
+          duration_minutes?: number
+          force_show?: boolean
+          id?: string
+          percent_off?: number
+          show_probability?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hotel_room_types: {
         Row: {
           created_at: string

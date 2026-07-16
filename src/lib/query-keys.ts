@@ -256,6 +256,16 @@ export const discountKeys = {
    * Key for discount status
    */
   status: () => [...discountKeys.all, 'status'] as const,
+
+  /**
+   * Key for the public client config (show probability, force show, cooldown)
+   */
+  config: () => [...discountKeys.all, 'config'] as const,
+
+  /**
+   * Key for the admin config row (full discount_config)
+   */
+  adminConfig: () => [...discountKeys.all, 'admin-config'] as const,
 } as const;
 
 /**

@@ -13,8 +13,12 @@ export interface DiscountPopupShownEvent {
     expires_at: string;
     is_lottery: boolean;
     lottery_source?: string;
-    /** A/B experiment variant ('control' | 'aggressive-20'); absent when not enrolled */
+    /** Experiment variant ('control' | 'aggressive-20' | 'price-sensitive-30'); absent when not enrolled */
     experiment_variant?: string;
+    /** True when PostHog assigned price-sensitive-30 to an ineligible visitor (served control instead) */
+    variant_downgraded?: boolean;
+    /** Why the visitor qualified for price-sensitive-30 ('low_income_country' = lower-income European country | 'recurring_visitor') */
+    price_sensitivity_reason?: string;
     /** Whether the popup copy was personalized to the visitor's tech stack */
     personalized?: boolean;
     /** Detected framework used for personalization, e.g. 'react' */
@@ -65,5 +69,7 @@ export interface DiscountEligibilityCheckedEvent {
     was_force_shown: boolean;
     /** Popup permanently suppressed because this browser bought a ticket */
     is_known_ticket_holder?: boolean;
+    /** Running visit count for this browser (localStorage-based) */
+    visit_count?: number;
   };
 }

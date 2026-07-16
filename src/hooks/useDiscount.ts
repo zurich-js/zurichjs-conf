@@ -5,8 +5,11 @@
  * Uses TanStack Query for API calls and usehooks-ts for utilities.
  *
  * Experiment: eligible visitors are enrolled in the PostHog experiment
- * `discount-popup-offer` (control 10%/2h vs aggressive-20 20%/1h) at trigger
- * time. Known ticket holders are excluded before enrollment.
+ * `discount-popup-offer` (control 10%/2h vs aggressive-20 20%/1h vs
+ * price-sensitive-30 30%/30min) at trigger time. Known ticket holders are
+ * excluded before enrollment. The price-sensitive-30 variant is gated to
+ * visitors in lower-income European countries (relative to CH) or recurring
+ * (3rd+ visit) non-converted visitors — see @/lib/discount/price-sensitivity.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -14,7 +17,10 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useCopyToClipboard, useTimeout, useIsClient } from 'usehooks-ts';
 import posthog from 'posthog-js';
 import { analytics } from '@/lib/analytics/client';
-import { discountStatusQueryOptions } from '@/lib/queries/discount';
+import {
+  discountStatusQueryOptions,
+  discountClientConfigQueryOptions,
+} from '@/lib/queries/discount';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import { getClientConfig } from '@/lib/discount/config';
 import type { DiscountState, DiscountData } from '@/lib/discount/types';
@@ -28,7 +34,13 @@ import {
   buildDiscountPersonalization,
   DISCOUNT_EXPERIMENT_FLAG,
   isDiscountVariant,
+  applyPriceSensitivityGate,
+  getPriceSensitivityEligibility,
+  getClientDetectedCountry,
+  recordVisit,
+  getVisitCount,
   type DiscountVariant,
+  type PriceSensitivityEligibility,
 } from '@/lib/discount';
 import {
   evaluateUtmLottery,
@@ -40,7 +52,8 @@ import { useCountdown, type TimeRemaining } from './useCountdown';
 
 // Constants
 const POPUP_DELAY_MS = 15_000; // 15 seconds
-const COOLDOWN_HOURS = 24;
+/** Used only when the config API fails and we run on env fallbacks */
+const FALLBACK_COOLDOWN_HOURS = 24;
 const EMPTY_COUNTDOWN: TimeRemaining = {
   days: 0,
   hours: 0,
@@ -53,13 +66,19 @@ const EMPTY_COUNTDOWN: TimeRemaining = {
 interface GenerateDiscountParams {
   lotteryPercentOff?: number;
   variant?: DiscountVariant;
+  priceSensitivityReason?: PriceSensitivityEligibility['reason'];
 }
 
 // API call
-async function generateDiscount({ lotteryPercentOff, variant }: GenerateDiscountParams): Promise<DiscountData> {
+async function generateDiscount({
+  lotteryPercentOff,
+  variant,
+  priceSensitivityReason,
+}: GenerateDiscountParams): Promise<DiscountData> {
   const payload: Record<string, unknown> = {};
   if (lotteryPercentOff) payload.percentOff = lotteryPercentOff;
   if (variant) payload.variant = variant;
+  if (priceSensitivityReason) payload.priceSensitivityReason = priceSensitivityReason;
 
   const hasBody = Object.keys(payload).length > 0;
   const res = await fetch('/api/discount/generate', {
@@ -78,9 +97,19 @@ async function generateDiscount({ lotteryPercentOff, variant }: GenerateDiscount
  *   (release conditions exclude this person, e.g. identified ticket holders).
  * - Returns undefined when flags are unavailable (blocked/not loaded) —
  *   the visitor gets control behavior without polluting the experiment.
+ *
+ * `priceSensitiveEligible` is reported to PostHog as a flag-evaluation person
+ * property so the experiment can target the price-sensitive-30 variant to
+ * eligible visitors only (see experiment.ts for the PostHog setup).
  */
-function resolveExperimentVariant(): DiscountVariant | 'excluded' | undefined {
+function resolveExperimentVariant(
+  priceSensitiveEligible: boolean
+): DiscountVariant | 'excluded' | undefined {
   try {
+    posthog.setPersonPropertiesForFlags(
+      { price_sensitive_eligible: priceSensitiveEligible },
+      false // don't force an extra flag reload — getFeatureFlag evaluates below
+    );
     // Also reports flag exposure ($feature_flag_called) to PostHog
     const value = posthog.getFeatureFlag(DISCOUNT_EXPERIMENT_FLAG);
     if (value === false) return 'excluded';
@@ -92,8 +121,6 @@ function resolveExperimentVariant(): DiscountVariant | 'excluded' | undefined {
 
 export function useDiscount() {
   const isClient = useIsClient();
-  const config = getClientConfig();
-
   // Core state
   const [state, setState] = useState<DiscountState>('idle');
   const [data, setData] = useState<DiscountData | null>(null);
@@ -103,6 +130,8 @@ export function useDiscount() {
   const isEligible = useRef(false);
   const lotteryResult = useRef<LotteryResult | null>(null);
   const experimentVariant = useRef<DiscountVariant | null>(null);
+  const priceSensitivity = useRef<PriceSensitivityEligibility | null>(null);
+  const variantDowngraded = useRef(false);
   const [isLotteryReady, setIsLotteryReady] = useState(false);
 
   // Clipboard
@@ -113,6 +142,20 @@ export function useDiscount() {
     ...discountStatusQueryOptions,
     enabled: isClient,
   });
+
+  // Admin-managed popup config (probability, force show, cooldown). Falls
+  // back to env-based defaults if the API fails so the popup still works.
+  const configQuery = useQuery({
+    ...discountClientConfigQueryOptions,
+    enabled: isClient,
+  });
+  const config = useMemo(() => {
+    if (configQuery.data) return configQuery.data;
+    if (configQuery.isError) {
+      return { ...getClientConfig(), cooldownHours: FALLBACK_COOLDOWN_HOURS };
+    }
+    return null; // still loading — eligibility check waits
+  }, [configQuery.data, configQuery.isError]);
 
   // Speaker lineup for tech-stack personalization. On the homepage (the only
   // place the popup mounts) this is already in the hydrated SSR cache.
@@ -146,17 +189,33 @@ export function useDiscount() {
   const fallbackExpiry = useRef(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
   const countdown = useCountdown(data?.expiresAt ?? fallbackExpiry.current);
 
-  // Determine eligibility once on mount
+  // Determine eligibility once the admin-managed config has resolved
   useEffect(() => {
-    if (!isClient || flags.current.eligibilityChecked) return;
+    if (!isClient || !config || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
+
+    // Count this visit so the experiment can tell recurring visitors apart,
+    // and pre-report price-sensitivity eligibility to PostHog so the flag's
+    // variant targeting has reloaded by the time the popup triggers (15s).
+    const visitCount = recordVisit();
+    const earlyEligibility = getPriceSensitivityEligibility({
+      countryCode: getClientDetectedCountry(),
+      visitCount,
+    });
+    try {
+      posthog.setPersonPropertiesForFlags({
+        price_sensitive_eligible: earlyEligibility.eligible,
+      });
+    } catch {
+      // PostHog unavailable — the local hard gate still applies.
+    }
 
     const trackEligibility = (props: {
       was_eligible: boolean;
       had_cooldown: boolean;
       was_force_shown: boolean;
       is_known_ticket_holder?: boolean;
-    }) => analytics.track('discount_eligibility_checked', props);
+    }) => analytics.track('discount_eligibility_checked', { ...props, visit_count: visitCount });
 
     // Check UTM lottery first (overrides normal flow)
     const utmParams = parseUtmParams(window.location.search);
@@ -197,7 +256,7 @@ export function useDiscount() {
     isEligible.current = Math.random() < config.showProbability;
 
     if (!isEligible.current) {
-      setCooldownCookie(COOLDOWN_HOURS);
+      setCooldownCookie(config.cooldownHours);
     }
 
     trackEligibility({
@@ -205,7 +264,7 @@ export function useDiscount() {
       had_cooldown: false,
       was_force_shown: false,
     });
-  }, [isClient, config.forceShow, config.showProbability]);
+  }, [isClient, config]);
 
   // Restore minimized state from existing discount
   useEffect(() => {
@@ -219,8 +278,11 @@ export function useDiscount() {
     setState('minimized');
   }, [statusData, data]);
 
-  // Show popup after delay if eligible (lottery shows immediately, normal has 15s delay)
-  const shouldTrigger = isClient && !isLoading && state === 'idle' && !statusData?.active && !hasDismissedCookie();
+  // Show popup after delay if eligible (lottery shows immediately, normal has
+  // 15s delay). Waits for the config to resolve so the eligibility check has
+  // run before the timer fires.
+  const shouldTrigger =
+    isClient && !isLoading && config !== null && state === 'idle' && !statusData?.active && !hasDismissedCookie();
   const delayMs = isLotteryReady ? 0 : POPUP_DELAY_MS;
 
   useTimeout(() => {
@@ -232,12 +294,29 @@ export function useDiscount() {
       return;
     }
 
-    // Enroll in the A/B experiment at trigger time (counts as flag exposure)
-    const variant = resolveExperimentVariant();
-    if (variant === 'excluded') return; // e.g. ticket holder identified in PostHog
+    // Recompute price-sensitivity eligibility fresh at trigger time — the
+    // country cookie (set async by CurrencyContext via /api/geo/detect) is
+    // normally present by now even on a first visit.
+    const eligibility = getPriceSensitivityEligibility({
+      countryCode: getClientDetectedCountry(),
+      visitCount: getVisitCount(),
+    });
+    priceSensitivity.current = eligibility;
 
-    experimentVariant.current = variant ?? null;
-    mutate({ variant });
+    // Enroll in the A/B/C experiment at trigger time (counts as flag exposure)
+    const assigned = resolveExperimentVariant(eligibility.eligible);
+    if (assigned === 'excluded') return; // e.g. ticket holder identified in PostHog
+
+    // Hard guard: never serve the price-sensitive offer to an ineligible visitor
+    const gated = assigned ? applyPriceSensitivityGate(assigned, eligibility.eligible) : null;
+    variantDowngraded.current = gated?.downgraded ?? false;
+
+    experimentVariant.current = gated?.variant ?? null;
+    mutate({
+      variant: gated?.variant,
+      priceSensitivityReason:
+        gated?.variant === 'price-sensitive-30' ? eligibility.reason : null,
+    });
   }, shouldTrigger ? delayMs : null);
 
   // Track analytics when modal opens
@@ -251,6 +330,8 @@ export function useDiscount() {
       is_lottery: lotteryResult.current?.eligible ?? false,
       lottery_source: lotteryResult.current?.source,
       experiment_variant: experimentVariant.current ?? undefined,
+      variant_downgraded: variantDowngraded.current || undefined,
+      price_sensitivity_reason: priceSensitivity.current?.reason ?? undefined,
       personalized: personalization !== null,
       detected_stack: personalization?.stack,
     });
