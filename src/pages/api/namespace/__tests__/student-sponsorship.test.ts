@@ -190,7 +190,7 @@ describe('/api/namespace/student-sponsorship', () => {
   });
 
   it('rejects submissions after the challenge deadline', async () => {
-    vi.setSystemTime(new Date('2026-07-20T10:00:00.000Z'));
+    vi.setSystemTime(new Date('2026-08-16T10:00:00.000Z'));
 
     const res = await callHandler(requestWithIp('203.0.113.5'));
 

@@ -9,7 +9,7 @@ import { NamespaceStudentSponsorshipForm } from '@/components/organisms/namespac
 
 const googleFormFallbackUrl =
   'https://docs.google.com/forms/d/e/1FAIpQLScpq-Orha6BeQ4SCSQ5XSeowrFybb-jg8Q7Xh1oh8hZnxc0-w/viewform';
-const submissionDeadline = '2026-07-19T23:59:59+02:00';
+const submissionDeadline = '2026-08-15T23:59:59+02:00';
 
 const namespaceFeatures = [
   {
@@ -173,7 +173,7 @@ export default function NamespacePage() {
                     Deadline
                   </dt>
                   <dd className="mt-1 text-sm font-bold text-brand-black">
-                    July 19, 2026
+                    August 15, 2026
                   </dd>
                 </div>
                 <div>
@@ -181,7 +181,7 @@ export default function NamespacePage() {
                     Winners notified
                   </dt>
                   <dd className="mt-1 text-sm font-bold text-brand-black">
-                    July 27, 2026
+                    August 31, 2026
                   </dd>
                 </div>
               </dl>
