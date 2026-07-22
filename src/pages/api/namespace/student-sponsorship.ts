@@ -9,7 +9,7 @@ import { namespaceStudentSponsorshipSchema } from '@/lib/validations/namespace';
 const log = logger.scope('Namespace Student Sponsorship API');
 const namespaceStudentSponsorshipGoogleFormUrl =
   'https://docs.google.com/forms/d/e/1FAIpQLScpq-Orha6BeQ4SCSQ5XSeowrFybb-jg8Q7Xh1oh8hZnxc0-w/viewform';
-const namespaceStudentSponsorshipClosesAt = '2026-07-19T21:59:59.999Z';
+const namespaceStudentSponsorshipClosesAt = '2026-08-15T21:59:59.999Z';
 
 const rateLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
