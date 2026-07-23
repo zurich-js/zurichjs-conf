@@ -66,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       after_completion: {
         type: 'redirect',
-        redirect: { url: `${siteUrl}/tickets/success` },
+        redirect: { url: `${siteUrl}/success?session_id={CHECKOUT_SESSION_ID}` },
       },
       billing_address_collection: 'required',
       customer_creation: 'always',
