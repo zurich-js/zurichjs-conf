@@ -23,6 +23,7 @@ import {
   categorizeLineItems,
   cancelAbandonmentEmails,
   getOrCreateStripeCustomer,
+  linkVerificationPurchase,
 } from './checkout';
 
 /**
@@ -168,6 +169,10 @@ export async function handleCheckoutSessionCompleted(
   // STEP 6: Process tickets (slow path - DB + PDF generation + emails)
   // ─────────────────────────────────────────────────────────────────────────────
   await processTickets(tickets, session, stripeCustomerId, customerEmail, firstName, lastName, log);
+
+  // Record the session on the verification request when this purchase came
+  // from an approved student/unemployed payment link (non-fatal).
+  await linkVerificationPurchase(session, log);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // STEP 7: Process workshop registrations (runs after tickets so ticket_id can

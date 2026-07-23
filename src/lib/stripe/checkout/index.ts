@@ -16,3 +16,4 @@ export {
   type PartnershipDiscountInfo,
 } from './helpers';
 export { sendTicketConfirmationEmails } from './ticket-emails';
+export { linkVerificationPurchase } from './verification';
