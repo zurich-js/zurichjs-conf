@@ -29,6 +29,11 @@ const wordCount = (text: string): number =>
 export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] as const;
 
 /**
+ * Available hoodie sizes
+ */
+export const HOODIE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'] as const;
+
+/**
  * Assistance types for travel/accommodation
  */
 export const ASSISTANCE_TYPES = ['travel', 'accommodation', 'both'] as const;
@@ -109,6 +114,7 @@ export const speakerProfileSchema = z.object({
   bluesky_handle: z.string().transform(normalizeHandle).optional(),
   mastodon_handle: z.string().transform(normalizeHandle).optional(),
   tshirt_size: z.enum(TSHIRT_SIZES).nullable(),
+  hoodie_size: z.enum(HOODIE_SIZES).optional().nullable(),
   travel_option: z.enum(TRAVEL_OPTIONS).optional().nullable(),
   travel_assistance_required: z.boolean().optional().nullable(),
   assistance_type: z.enum(ASSISTANCE_TYPES).optional().nullable(),

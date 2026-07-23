@@ -84,6 +84,11 @@ export type CfpReimbursementType = 'flight' | 'accommodation' | 'transport' | 'o
 export type CfpTshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL';
 
 /**
+ * Hoodie sizes available for speakers
+ */
+export type CfpHoodieSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL' | '4XL';
+
+/**
  * Type of travel/accommodation assistance needed
  */
 export type CfpAssistanceType = 'travel' | 'accommodation' | 'both' | null;

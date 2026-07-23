@@ -19,6 +19,7 @@ interface SpeakerInfo {
   mastodon_handle?: string | null;
   profile_image_url?: string | null;
   tshirt_size?: string | null;
+  hoodie_size?: string | null;
   company_interested_in_sponsoring?: boolean | null;
   city?: string | null;
   country?: string | null;
@@ -199,6 +200,12 @@ export function SpeakerInfoSection({ speaker }: SpeakerInfoSectionProps) {
               <div>
                 <p className="text-xs text-gray-500">T-Shirt Size</p>
                 <p className="text-sm font-medium text-black">{speaker.tshirt_size}</p>
+              </div>
+            )}
+            {speaker.hoodie_size && (
+              <div>
+                <p className="text-xs text-gray-500">Hoodie Size</p>
+                <p className="text-sm font-medium text-black">{speaker.hoodie_size}</p>
               </div>
             )}
             {speaker.company_interested_in_sponsoring && (

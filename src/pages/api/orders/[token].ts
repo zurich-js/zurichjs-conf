@@ -31,6 +31,10 @@ export interface OrderDetailsResponse {
     bankTransferDueDate: string | null;
     createdAt: string;
   };
+  apparelPreferences?: {
+    tshirtSize: string | null;
+    hoodieSize: string | null;
+  };
 }
 
 export default async function handler(
@@ -106,6 +110,20 @@ export default async function handler(
         bankTransferReference: pendingUpgrade.bank_transfer_reference,
         bankTransferDueDate: pendingUpgrade.bank_transfer_due_date,
         createdAt: pendingUpgrade.created_at,
+      };
+    }
+
+    // Include saved apparel preferences if any
+    const { data: apparelPreferences } = await supabase
+      .from('ticket_apparel_preferences')
+      .select('tshirt_size, hoodie_size')
+      .eq('ticket_id', ticketId)
+      .maybeSingle();
+
+    if (apparelPreferences) {
+      response.apparelPreferences = {
+        tshirtSize: apparelPreferences.tshirt_size,
+        hoodieSize: apparelPreferences.hoodie_size,
       };
     }
 
