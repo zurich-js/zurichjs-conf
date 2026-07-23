@@ -2669,6 +2669,7 @@ export type Database = {
       tickets: {
         Row: {
           amount_paid: number
+          apparel_reminder_sent_at: string | null
           checked_in: boolean | null
           checked_in_at: string | null
           company: string | null
@@ -2701,6 +2702,7 @@ export type Database = {
         }
         Insert: {
           amount_paid: number
+          apparel_reminder_sent_at?: string | null
           checked_in?: boolean | null
           checked_in_at?: string | null
           company?: string | null
@@ -2733,6 +2735,7 @@ export type Database = {
         }
         Update: {
           amount_paid?: number
+          apparel_reminder_sent_at?: string | null
           checked_in?: boolean | null
           checked_in_at?: string | null
           company?: string | null
