@@ -10,7 +10,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
-import { TicketsTab, IssueTicketTab, FinancialsTab, type Tab } from '@/components/admin/dashboard';
+import { TicketsTab, IssueTab, FinancialsTab, type Tab } from '@/components/admin/dashboard';
 import { WorkshopsRegistrantsTab } from '@/components/admin/workshops-registrants';
 import { VipPerksTab } from '@/components/admin/vip-perks';
 import { DiscountConfigTab } from '@/components/admin/discount';
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
           <div className="pb-12">
             {activeTab === 'tickets' && <TicketsTab />}
             {activeTab === 'workshops' && <WorkshopsRegistrantsTab />}
-            {activeTab === 'issue' && <IssueTicketTab />}
+            {activeTab === 'issue' && <IssueTab />}
             {activeTab === 'financials' && <FinancialsTab />}
             {activeTab === 'vip-perks' && <VipPerksTab />}
             {activeTab === 'discount' && <DiscountConfigTab />}

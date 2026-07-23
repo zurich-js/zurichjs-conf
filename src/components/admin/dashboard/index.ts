@@ -17,6 +17,8 @@ export { TicketDetailsModal } from './TicketDetailsModal';
 export type { TicketDetailsModalProps } from './TicketDetailsModal';
 
 // Tabs
+export { IssueTab } from './IssueTab';
 export { IssueTicketTab } from './IssueTicketTab';
+export { IssueWorkshopTicketTab } from './IssueWorkshopTicketTab';
 export { TicketsTab } from './TicketsTab';
 export { FinancialsTab } from './FinancialsTab';
