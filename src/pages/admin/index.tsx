@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown, Percent, Shirt } from 'lucide-react';
+import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown, Percent, Shirt, Link2 } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -15,6 +15,7 @@ import { WorkshopsRegistrantsTab } from '@/components/admin/workshops-registrant
 import { VipPerksTab } from '@/components/admin/vip-perks';
 import { ApparelTab } from '@/components/admin/apparel';
 import { DiscountConfigTab } from '@/components/admin/discount';
+import { CartBuilderTab } from '@/components/admin/cart-builder';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const TABS: AdminTab<Tab>[] = [
@@ -25,6 +26,7 @@ const TABS: AdminTab<Tab>[] = [
   { id: 'vip-perks', label: 'VIP Perks', icon: Crown },
   { id: 'apparel', label: 'Apparel', icon: Shirt },
   { id: 'discount', label: 'Discount', icon: Percent },
+  { id: 'cart-builder', label: 'Cart Link', icon: Link2 },
 ];
 
 export default function AdminDashboard() {
@@ -49,6 +51,7 @@ export default function AdminDashboard() {
             {activeTab === 'vip-perks' && <VipPerksTab />}
             {activeTab === 'apparel' && <ApparelTab />}
             {activeTab === 'discount' && <DiscountConfigTab />}
+            {activeTab === 'cart-builder' && <CartBuilderTab />}
           </div>
         </div>
       </div>

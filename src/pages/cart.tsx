@@ -28,7 +28,7 @@ import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
 import { calculateOrderSummary } from '@/lib/cart';
 import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
-import { getCurrencyFromCountry } from '@/config/currency';
+import { getCurrencyFromCountry, isSupportedCurrency } from '@/config/currency';
 
 import { ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm } from '@/components/molecules';
 import { SectionContainer } from '@/components/organisms';
@@ -471,16 +471,20 @@ export const getServerSideProps: GetServerSideProps = async ({ query, req }) => 
   const detectedCurrency = getCurrencyFromCountry(countryCode);
 
   const encodedCart = typeof query.cart === 'string' ? query.cart : undefined;
-  let initialCart = encodedCart ? decodeCartState(encodedCart) : createEmptyCart(detectedCurrency);
+  const sharedCart = encodedCart ? decodeCartState(encodedCart) : null;
 
-  if (initialCart && initialCart.currency !== detectedCurrency) {
-    initialCart = { ...initialCart, currency: detectedCurrency };
-  }
+  // A shared cart's currency wins over geo-detection: its items carry priceIds
+  // in that currency (e.g. an admin-built cart link with a deliberately chosen
+  // currency), so forcing the visitor's local currency would mislabel prices.
+  const currency =
+    sharedCart && sharedCart.items.length > 0 && isSupportedCurrency(sharedCart.currency)
+      ? sharedCart.currency
+      : detectedCurrency;
 
   return {
     props: {
-      initialCart: initialCart ?? createEmptyCart(detectedCurrency),
-      detectedCurrency,
+      initialCart: sharedCart ?? createEmptyCart(currency),
+      detectedCurrency: currency,
     },
   };
 };
