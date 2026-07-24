@@ -5,6 +5,7 @@
 
 export { TicketQRCard } from './TicketQRCard';
 export { TicketDetailsCard } from './TicketDetailsCard';
+export { SectionNav, MANAGE_ORDER_SECTIONS } from './SectionNav';
 export { VipPerksCard } from './VipPerksCard';
 export { PendingUpgradeCard } from './PendingUpgradeCard';
 export { UpgradeCta } from './UpgradeCta';

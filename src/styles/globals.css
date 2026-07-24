@@ -194,6 +194,8 @@
 @layer base {
     html {
         font-size: 16px;
+        /* Smooth anchor scrolling — the prefers-reduced-motion block below forces this back to auto */
+        scroll-behavior: smooth;
     }
 
     @media screen and (min-width: 2560px) {
