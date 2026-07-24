@@ -218,6 +218,12 @@
     #__next>div {
         font-family: var(--font-figtree), sans-serif;
     }
+
+    /* Tailwind v4 defaults buttons to cursor: default — restore pointer for all enabled buttons */
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
 }
 
 /**
