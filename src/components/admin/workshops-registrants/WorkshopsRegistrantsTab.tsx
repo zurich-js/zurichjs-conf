@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   ChevronDown,
@@ -21,6 +21,9 @@ import { ConfirmModal } from '@/components/admin/dashboard/ConfirmModal';
 import { RegistrantReassignModal } from './RegistrantReassignModal';
 import { RegistrantEditModal } from './RegistrantEditModal';
 import type { WorkshopRegistrantRow } from '@/lib/workshops/getRegistrations';
+import type { AdminWorkshopListItem } from '@/pages/api/admin/workshops';
+import { adminFetch, AdminApiError } from '@/lib/admin/api-fetch';
+import { adminKeys } from '@/lib/admin/query-keys';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -46,19 +49,6 @@ interface WorkshopOfferingSummary {
   } | null;
 }
 
-interface AdminWorkshopListItem {
-  cfpSubmissionId: string;
-  submissionTitle: string;
-  submissionAbstract: string;
-  submissionStatus: string;
-  speakerName: string | null;
-  cfpDurationHours: number | null;
-  sessionSlug: string | null;
-  offering: WorkshopOfferingSummary | null;
-  registrantCount: number;
-  revenueByCurrency: Array<{ currency: string; grossCents: number; registrations: number }>;
-}
-
 interface WorkshopCardModel {
   cfpSubmissionId: string;
   title: string;
@@ -75,9 +65,10 @@ interface WorkshopCardModel {
 type SortField = 'created_at' | 'name' | 'email' | 'amount_paid' | 'status';
 type SortDirection = 'asc' | 'desc';
 type ModalAction = 'refund' | 'cancel' | 'reassign' | 'edit' | null;
+type SimpleAction = 'refund' | 'cancel' | 'resend';
 
 const ITEMS_PER_PAGE = 10;
-const ACTION_SUCCESS_LABELS: Record<'refund' | 'cancel' | 'resend', string> = {
+const ACTION_SUCCESS_LABELS: Record<SimpleAction, string> = {
   refund: 'refunded',
   cancel: 'cancelled',
   resend: 'email resent',
@@ -85,37 +76,53 @@ const ACTION_SUCCESS_LABELS: Record<'refund' | 'cancel' | 'resend', string> = {
 
 // ── Data fetchers ──────────────────────────────────────────────────────────────
 
-async function fetchWorkshops(): Promise<WorkshopCardModel[]> {
-  const res = await fetch('/api/admin/workshops');
-  if (!res.ok) throw new Error('Failed to load workshops');
-  const data = await res.json();
-  const rows = (data.items ?? data.workshops ?? data) as Array<AdminWorkshopListItem | Record<string, unknown>>;
+/**
+ * Canonical fetcher for the shared `adminKeys.workshopList()` cache entry.
+ * Must stay in sync with the other consumers of that key
+ * (WorkshopsDashboard, IssueWorkshopTicketTab): the cached value is always
+ * the raw `AdminWorkshopListItem[]` from the API; view shapes are derived
+ * per-component via the `select` option.
+ */
+async function fetchWorkshops(signal?: AbortSignal): Promise<AdminWorkshopListItem[]> {
+  const data = await adminFetch<{ items: AdminWorkshopListItem[] }>('/api/admin/workshops', {
+    signal,
+  });
+  return data.items;
+}
 
-  return rows.map((row) => {
-    const item = row as AdminWorkshopListItem;
-    const flatOffering = row as unknown as WorkshopOfferingSummary;
-    const offering = item.offering ?? (flatOffering.id ? flatOffering : null);
+function toCardModels(items: AdminWorkshopListItem[]): WorkshopCardModel[] {
+  return items.map((item) => {
+    const offering: WorkshopOfferingSummary | null = item.offering
+      ? {
+          ...item.offering,
+          metadata: item.offering.metadata as WorkshopOfferingSummary['metadata'],
+        }
+      : null;
 
     return {
-      cfpSubmissionId: item.cfpSubmissionId ?? offering?.id ?? '',
-      title: offering?.title ?? item.submissionTitle ?? 'Untitled workshop',
+      cfpSubmissionId: item.cfpSubmissionId,
+      title: offering?.title ?? item.submissionTitle,
       description: offering?.description ?? item.submissionAbstract ?? null,
-      speakerName: item.speakerName ?? null,
-      submissionStatus: item.submissionStatus ?? offering?.status ?? 'unknown',
-      cfpDurationHours: item.cfpDurationHours ?? null,
-      sessionSlug: item.sessionSlug ?? null,
+      speakerName: item.speakerName,
+      submissionStatus: item.submissionStatus,
+      cfpDurationHours: item.cfpDurationHours,
+      sessionSlug: item.sessionSlug,
       offering,
-      registrantCount: item.registrantCount ?? offering?.enrolled_count ?? 0,
-      revenueByCurrency: item.revenueByCurrency ?? [],
+      registrantCount: item.registrantCount,
+      revenueByCurrency: item.revenueByCurrency,
     };
   });
 }
 
-async function fetchRegistrants(workshopId: string): Promise<WorkshopRegistrantRow[]> {
-  const res = await fetch(`/api/admin/workshops/${workshopId}/registrants`);
-  if (!res.ok) throw new Error('Failed to load registrants');
-  const data = await res.json();
-  return data.registrants as WorkshopRegistrantRow[];
+async function fetchRegistrants(
+  workshopId: string,
+  signal?: AbortSignal
+): Promise<WorkshopRegistrantRow[]> {
+  const data = await adminFetch<{ registrants: WorkshopRegistrantRow[] }>(
+    `/api/admin/workshops/${workshopId}/registrants`,
+    { signal }
+  );
+  return data.registrants;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -211,8 +218,10 @@ export function WorkshopsRegistrantsTab() {
   const selectedWorkshopId = activeWorkshop?.offering?.id ?? '';
 
   const { data: workshops, isLoading: workshopsLoading, error: workshopsError } = useQuery({
-    queryKey: ['admin', 'workshops-list'],
-    queryFn: fetchWorkshops,
+    queryKey: adminKeys.workshopList(),
+    queryFn: ({ signal }) => fetchWorkshops(signal),
+    select: toCardModels,
+    staleTime: 60_000,
   });
 
   const filteredWorkshops = useMemo(() => {
@@ -235,11 +244,12 @@ export function WorkshopsRegistrantsTab() {
     };
   }, [workshops]);
 
-  const registrantsKey = ['admin', 'workshops', 'registrants', selectedWorkshopId];
   const { data: registrants, isLoading: registrantsLoading } = useQuery({
-    queryKey: registrantsKey,
-    queryFn: () => fetchRegistrants(selectedWorkshopId),
+    queryKey: adminKeys.workshopRegistrants(selectedWorkshopId),
+    queryFn: ({ signal }) => fetchRegistrants(selectedWorkshopId, signal),
     enabled: !!selectedWorkshopId,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -248,7 +258,6 @@ export function WorkshopsRegistrantsTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalAction, setModalAction] = useState<ModalAction>(null);
   const [selectedRegistrant, setSelectedRegistrant] = useState<WorkshopRegistrantRow | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const showToast = (type: 'success' | 'error', text: string) => {
@@ -319,10 +328,9 @@ export function WorkshopsRegistrantsTab() {
   }, [registrants]);
 
   const refreshData = () => {
-    if (selectedWorkshopId) {
-      void queryClient.invalidateQueries({ queryKey: registrantsKey });
-    }
-    void queryClient.invalidateQueries({ queryKey: ['admin', 'workshops-list'] });
+    // Single prefix invalidation covers both the workshop list and every
+    // per-workshop registrants query.
+    void queryClient.invalidateQueries({ queryKey: adminKeys.workshops() });
     setModalAction(null);
     setSelectedRegistrant(null);
   };
@@ -332,29 +340,31 @@ export function WorkshopsRegistrantsTab() {
     setModalAction(action);
   };
 
-  const executeSimpleAction = async (
-    action: 'refund' | 'cancel' | 'resend',
+  const simpleActionMutation = useMutation({
+    mutationFn: ({ action, registrationId }: { action: SimpleAction; registrationId: string }) =>
+      adminFetch(
+        `/api/admin/workshops/${selectedWorkshopId}/registrants/${registrationId}/${action}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+      ),
+    onSuccess: (_data, { action }) => {
+      showToast('success', `Registration ${ACTION_SUCCESS_LABELS[action]} successfully!`);
+      refreshData();
+    },
+    onError: (error, { action }) => {
+      showToast(
+        'error',
+        error instanceof AdminApiError ? error.message : `Error performing ${action}`
+      );
+    },
+  });
+  const actionLoading = simpleActionMutation.isPending;
+
+  const executeSimpleAction = (
+    action: SimpleAction,
     row: WorkshopRegistrantRow | null = selectedRegistrant
   ) => {
     if (!row || !selectedWorkshopId) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(
-        `/api/admin/workshops/${selectedWorkshopId}/registrants/${row.id}/${action}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' } }
-      );
-      if (res.ok) {
-        showToast('success', `Registration ${ACTION_SUCCESS_LABELS[action]} successfully!`);
-        refreshData();
-      } else {
-        const data = await res.json();
-        showToast('error', data.error || `Failed to ${action}`);
-      }
-    } catch {
-      showToast('error', `Error performing ${action}`);
-    } finally {
-      setActionLoading(false);
-    }
+    simpleActionMutation.mutate({ action, registrationId: row.id });
   };
 
   const toggleSort = (field: SortField) => {
@@ -493,7 +503,7 @@ export function WorkshopsRegistrantsTab() {
                             <td className="px-4 py-3 text-gray-500 text-xs">{new Date(row.created_at).toLocaleDateString()}</td>
                             <td className="px-4 py-3 text-gray-500 text-xs">{discountCode(row) ?? '—'}</td>
                             <td className="px-4 py-3 text-right">
-                              <ActionMenu row={row} onAction={handleAction} onResend={(r) => void executeSimpleAction('resend', r)} />
+                              <ActionMenu row={row} onAction={handleAction} onResend={(r) => executeSimpleAction('resend', r)} />
                             </td>
                           </tr>
                         ))}
@@ -522,7 +532,7 @@ export function WorkshopsRegistrantsTab() {
                           <MobileActionButton onClick={() => handleAction('reassign', row)} tone="purple">
                             Reassign
                           </MobileActionButton>
-                          <MobileActionButton onClick={() => void executeSimpleAction('resend', row)}>
+                          <MobileActionButton onClick={() => executeSimpleAction('resend', row)}>
                             Resend
                           </MobileActionButton>
                           {row.status === 'confirmed' && (
@@ -586,7 +596,7 @@ export function WorkshopsRegistrantsTab() {
           ]}
           confirmText={actionLoading ? 'Processing...' : 'Process Refund'}
           confirmColor="red"
-          onConfirm={() => void executeSimpleAction('refund')}
+          onConfirm={() => executeSimpleAction('refund')}
           onCancel={() => { setModalAction(null); setSelectedRegistrant(null); }}
         />
       )}
@@ -606,7 +616,7 @@ export function WorkshopsRegistrantsTab() {
           ]}
           confirmText={actionLoading ? 'Cancelling...' : 'Cancel Registration'}
           confirmColor="gray"
-          onConfirm={() => void executeSimpleAction('cancel')}
+          onConfirm={() => executeSimpleAction('cancel')}
           onCancel={() => { setModalAction(null); setSelectedRegistrant(null); }}
         />
       )}

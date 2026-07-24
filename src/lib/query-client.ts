@@ -5,6 +5,25 @@
 import { QueryClient } from '@tanstack/react-query';
 
 /**
+ * Non-transient HTTP client errors (auth, validation, not-found) should not
+ * be retried — a retry just repeats the same failing DB/API work. 408
+ * (timeout) and 429 (rate limit) are excluded because they can succeed on a
+ * later attempt. Applies to any thrown error carrying a numeric `status`
+ * (e.g. `AdminApiError` from `@/lib/admin/api-fetch`).
+ */
+function isNonRetryableClientError(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('status' in error)) return false;
+  const status = (error as { status: unknown }).status;
+  return (
+    typeof status === 'number' &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 408 &&
+    status !== 429
+  );
+}
+
+/**
  * Default query client configuration
  */
 export const defaultQueryClientConfig = {
@@ -13,7 +32,8 @@ export const defaultQueryClientConfig = {
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: (failureCount: number, error: unknown) =>
+        !isNonRetryableClientError(error) && failureCount < 1,
     },
   },
 };

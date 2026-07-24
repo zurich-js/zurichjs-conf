@@ -3,6 +3,7 @@
  * Client-side API functions for VIP perk management
  */
 
+import { adminKeys } from '@/lib/admin/query-keys';
 import type { VipPerkWithTicket, VipPerksStats, VipPerkConfig, BackfillVipPerksResponse, StripeProductInfo } from './types';
 
 export interface VipPerksListResponse {
@@ -10,20 +11,20 @@ export interface VipPerksListResponse {
   stats: VipPerksStats;
 }
 
-export async function fetchVipPerks(): Promise<VipPerksListResponse> {
-  const res = await fetch('/api/admin/vip-perks');
+export async function fetchVipPerks(signal?: AbortSignal): Promise<VipPerksListResponse> {
+  const res = await fetch('/api/admin/vip-perks', { signal });
   if (!res.ok) throw new Error('Failed to fetch VIP perks');
   return res.json();
 }
 
-export async function fetchVipPerkConfig(): Promise<VipPerkConfig> {
-  const res = await fetch('/api/admin/vip-perks/config');
+export async function fetchVipPerkConfig(signal?: AbortSignal): Promise<VipPerkConfig> {
+  const res = await fetch('/api/admin/vip-perks/config', { signal });
   if (!res.ok) throw new Error('Failed to fetch VIP perk config');
   return res.json();
 }
 
-export async function fetchVipPerkProducts(): Promise<StripeProductInfo[]> {
-  const res = await fetch('/api/admin/vip-perks/products');
+export async function fetchVipPerkProducts(signal?: AbortSignal): Promise<StripeProductInfo[]> {
+  const res = await fetch('/api/admin/vip-perks/products', { signal });
   if (!res.ok) throw new Error('Failed to fetch products');
   return res.json();
 }
@@ -105,9 +106,14 @@ export async function deactivateVipPerkApi(perkId: string): Promise<void> {
   }
 }
 
+/**
+ * Query keys — built on the shared admin factory (root `['admin', 'vip-perks']`)
+ * so VIP perk caches live under the `['admin']` family. The list endpoint
+ * returns perks + stats together, so both are cached under `list()`.
+ */
 export const vipPerkQueryKeys = {
-  all: ['vip-perks'] as const,
-  list: () => [...vipPerkQueryKeys.all, 'list'] as const,
-  config: () => [...vipPerkQueryKeys.all, 'config'] as const,
-  products: () => [...vipPerkQueryKeys.all, 'products'] as const,
-};
+  all: adminKeys.vipPerks(),
+  list: adminKeys.vipPerkList,
+  config: adminKeys.vipPerkConfig,
+  products: adminKeys.vipPerkProducts,
+} as const;

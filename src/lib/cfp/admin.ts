@@ -920,23 +920,27 @@ export async function getReviewerActivity(
     return { activities: [], total: 0 };
   }
 
-  // Fetch submission titles without .in() to avoid URL length limits on large reviewer histories
-  const submissionIds = new Set(reviews.map((r) => r.submission_id).filter(Boolean));
-  const { data: allSubmissions, error: submissionsError } = await fetchAllRows<{ id: string; title: string }>(
-    supabase,
-    'cfp_submissions',
-    'id, title'
-  );
+  // Fetch only the reviewed submissions' titles. `.in()` is chunked so large
+  // reviewer histories can't overflow URL length limits, while avoiding the
+  // full-table scan this lookup previously performed.
+  const submissionIds = [...new Set(reviews.map((r) => r.submission_id).filter(Boolean))];
+  const submissionMap = new Map<string, string>();
+  const idChunkSize = 200;
+  for (let i = 0; i < submissionIds.length; i += idChunkSize) {
+    const chunk = submissionIds.slice(i, i + idChunkSize);
+    const { data: chunkSubmissions, error: submissionsError } = await supabase
+      .from('cfp_submissions')
+      .select('id, title')
+      .in('id', chunk);
 
-  if (submissionsError) {
-    console.error('[CFP Admin] Error fetching submissions for reviewer activity:', submissionsError);
+    if (submissionsError) {
+      console.error('[CFP Admin] Error fetching submissions for reviewer activity:', submissionsError);
+      continue;
+    }
+    for (const s of chunkSubmissions || []) {
+      submissionMap.set(s.id, s.title);
+    }
   }
-
-  const submissionMap = new Map(
-    (allSubmissions || [])
-      .filter((s) => submissionIds.has(s.id))
-      .map((s) => [s.id, s.title])
-  );
 
   // Build activity list
   const activities: CfpReviewerActivity[] = reviews.map((review) => ({

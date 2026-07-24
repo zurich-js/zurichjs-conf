@@ -3,7 +3,7 @@
  * Manage submissions, reviewers, and speakers
  */
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
@@ -204,6 +204,24 @@ export default function CfpAdminDashboard() {
     staleTime: 30 * 1000,
     placeholderData: keepPreviousData,
   });
+
+  // Prefetch the next submissions page once the current one settles, so
+  // pagination is instant. Same key + fetcher as the live query, so the
+  // prefetched entry is exactly what the next page mount will read.
+  useEffect(() => {
+    if (isAuthenticated !== true || activeTab !== 'submissions' || !submissionsData) return;
+    const totalPages = Math.ceil(submissionsData.total / ITEMS_PER_PAGE);
+    if (currentPage >= totalPages) return;
+    const nextPageParams: SubmissionQueryParams = {
+      ...submissionQueryParams,
+      offset: currentPage * ITEMS_PER_PAGE,
+    };
+    queryClient.prefetchQuery({
+      queryKey: cfpQueryKeys.submissions(nextPageParams),
+      queryFn: () => fetchSubmissions(nextPageParams),
+      staleTime: 30 * 1000,
+    });
+  }, [isAuthenticated, activeTab, submissionsData, currentPage, submissionQueryParams, queryClient]);
 
   const { data: speakersData, isLoading: isLoadingSpeakers } = useQuery({
     queryKey: cfpQueryKeys.speakers,
