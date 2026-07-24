@@ -8,6 +8,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
@@ -88,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Synthetic session id — the registration's idempotency key. Same pattern
     // as manual conference tickets (issue-ticket.ts).
-    const manualSessionId = `manual_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const manualSessionId = `manual_${Date.now()}_${randomUUID()}`;
 
     const registrationResult = await createWorkshopRegistration({
       workshopId: workshop.id,
