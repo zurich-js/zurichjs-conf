@@ -11,6 +11,8 @@ import { Heading, Kicker, Button } from '@/components/atoms';
 import { PageHeader } from '@/components/organisms';
 import Link from 'next/link';
 import {
+  SectionNav,
+  MANAGE_ORDER_SECTIONS,
   TicketQRCard,
   TicketDetailsCard,
   VipPerksCard,
@@ -119,30 +121,59 @@ const ManageOrderPage: React.FC = () => {
 
               {orderDetails.transferInfo && <TransferNotice transferInfo={orderDetails.transferInfo} />}
 
-              <TicketQRCard qrCodeUrl={orderDetails.ticket.qr_code_url} />
-              <TicketDetailsCard ticket={orderDetails.ticket} />
-              <VipPerksCard isVip={orderDetails.ticket.ticket_category === 'vip'} />
-              <ApparelPreferencesCard
+              <SectionNav
                 isVip={orderDetails.ticket.ticket_category === 'vip'}
-                preferences={orderDetails.apparelPreferences}
-                mutation={apparelMutation}
+                hasPendingUpgrade={!!orderDetails.pendingUpgrade}
               />
 
-              {orderDetails.pendingUpgrade && <PendingUpgradeCard upgrade={orderDetails.pendingUpgrade} />}
-
-              {orderDetails.ticket.ticket_category !== 'vip' && !orderDetails.pendingUpgrade && (
-                <UpgradeCta
-                  ticketId={orderDetails.ticket.id}
-                  firstName={orderDetails.ticket.first_name}
-                  lastName={orderDetails.ticket.last_name}
-                  email={orderDetails.ticket.email}
+              <div id={MANAGE_ORDER_SECTIONS.entryPass} className="scroll-mt-28">
+                <TicketQRCard qrCodeUrl={orderDetails.ticket.qr_code_url} />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.ticketDetails} className="scroll-mt-28">
+                <TicketDetailsCard ticket={orderDetails.ticket} />
+              </div>
+              {orderDetails.ticket.ticket_category === 'vip' && (
+                <div id={MANAGE_ORDER_SECTIONS.vipBenefits} className="scroll-mt-28">
+                  <VipPerksCard isVip vipPerk={orderDetails.vipPerk} />
+                </div>
+              )}
+              <div id={MANAGE_ORDER_SECTIONS.apparel} className="scroll-mt-28">
+                <ApparelPreferencesCard
+                  isVip={orderDetails.ticket.ticket_category === 'vip'}
+                  preferences={orderDetails.apparelPreferences}
+                  mutation={apparelMutation}
                 />
+              </div>
+
+              {orderDetails.pendingUpgrade && (
+                <div id={MANAGE_ORDER_SECTIONS.vipUpgrade} className="scroll-mt-28">
+                  <PendingUpgradeCard upgrade={orderDetails.pendingUpgrade} />
+                </div>
               )}
 
-              <EventInfoCard />
-              <QuickActionsCard ticketId={orderDetails.ticket.id} />
-              <TransferSection onTransferClick={() => setShowReassignModal(true)} />
-              <ImportantInfoCard />
+              {orderDetails.ticket.ticket_category !== 'vip' && !orderDetails.pendingUpgrade && (
+                <div id={MANAGE_ORDER_SECTIONS.vipUpgrade} className="scroll-mt-28">
+                  <UpgradeCta
+                    ticketId={orderDetails.ticket.id}
+                    firstName={orderDetails.ticket.first_name}
+                    lastName={orderDetails.ticket.last_name}
+                    email={orderDetails.ticket.email}
+                  />
+                </div>
+              )}
+
+              <div id={MANAGE_ORDER_SECTIONS.eventInfo} className="scroll-mt-28">
+                <EventInfoCard />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.quickActions} className="scroll-mt-28">
+                <QuickActionsCard ticketId={orderDetails.ticket.id} />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.transfer} className="scroll-mt-28">
+                <TransferSection onTransferClick={() => setShowReassignModal(true)} />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.importantInfo} className="scroll-mt-28">
+                <ImportantInfoCard />
+              </div>
 
               <div className="flex justify-center">
                 <Link href="/">

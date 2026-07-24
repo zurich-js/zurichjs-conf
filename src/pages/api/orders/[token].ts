@@ -35,6 +35,13 @@ export interface OrderDetailsResponse {
     tshirtSize: string | null;
     hoodieSize: string | null;
   };
+  /** Workshop discount voucher — present only for VIP tickets with an issued, active voucher */
+  vipPerk?: {
+    code: string;
+    discountPercent: number;
+    expiresAt: string | null;
+    isRedeemed: boolean;
+  };
 }
 
 export default async function handler(
@@ -111,6 +118,28 @@ export default async function handler(
         bankTransferDueDate: pendingUpgrade.bank_transfer_due_date,
         createdAt: pendingUpgrade.created_at,
       };
+    }
+
+    // Include the workshop discount voucher for VIP tickets
+    if (ticket.ticket_category === 'vip') {
+      const { data: vipPerk, error: vipPerkError } = await supabase
+        .from('vip_perks')
+        .select('code, discount_percent, expires_at, max_redemptions, current_redemptions')
+        .eq('ticket_id', ticketId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (vipPerkError) {
+        // Non-fatal — the page still works without the voucher block
+        log.error('Error fetching VIP perk for order', vipPerkError, { ticketId });
+      } else if (vipPerk) {
+        response.vipPerk = {
+          code: vipPerk.code,
+          discountPercent: vipPerk.discount_percent,
+          expiresAt: vipPerk.expires_at,
+          isRedeemed: vipPerk.max_redemptions != null && vipPerk.current_redemptions >= vipPerk.max_redemptions,
+        };
+      }
     }
 
     // Include saved apparel preferences if any
