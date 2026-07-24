@@ -106,7 +106,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           <p
             key={index}
             id={paragraphId}
-            className="text-gray-700 leading-relaxed scroll-mt-24"
+            className="text-gray-700 leading-relaxed scroll-mt-24 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
             dangerouslySetInnerHTML={{ __html: section.content || "" }}
           />
         );
@@ -115,7 +115,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
         return (
           <ul
             key={index}
-            className="list-disc list-inside space-y-2 text-gray-700 ml-4"
+            className="list-disc list-inside space-y-2 text-gray-700 ml-4 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
           >
             {section.items?.map((item, i) => (
               <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
