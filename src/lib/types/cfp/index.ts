@@ -19,6 +19,7 @@ export type {
   CfpReimbursementStatus,
   CfpReimbursementType,
   CfpTshirtSize,
+  CfpHoodieSize,
   CfpAssistanceType,
   CfpTravelOption,
 } from './base';

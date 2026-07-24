@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/router';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
 import { PageHeader } from '@/components/organisms';
@@ -17,17 +17,20 @@ import {
   PendingUpgradeCard,
   UpgradeCta,
   ReassignModal,
+  ApparelPreferencesCard,
   EventInfoCard,
   QuickActionsCard,
   TransferSection,
   ImportantInfoCard,
   formatDate,
   type ReassignData,
+  type ApparelPreferencesData,
   type OrderDetailsResponse,
 } from '@/components/manage-order';
 
 const ManageOrderPage: React.FC = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { token } = router.query;
   const [showReassignModal, setShowReassignModal] = React.useState(false);
   const [reassignData, setReassignData] = React.useState<ReassignData>({ email: '', firstName: '', lastName: '' });
@@ -78,6 +81,26 @@ const ManageOrderPage: React.FC = () => {
     },
   });
 
+  // Mutation for apparel size preferences
+  const apparelMutation = useMutation({
+    mutationFn: async (data: ApparelPreferencesData) => {
+      if (!orderDetails?.ticket.id) throw new Error('No ticket ID');
+      const response = await fetch(`/api/tickets/${orderDetails.ticket.id}/apparel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: orderToken, ...data }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save apparel preferences');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', orderToken] });
+    },
+  });
+
   return (
     <Layout title="Manage Your Ticket | ZurichJS Conference 2026" description="View and manage your ZurichJS Conference 2026 ticket.">
       <PageHeader />
@@ -99,6 +122,11 @@ const ManageOrderPage: React.FC = () => {
               <TicketQRCard qrCodeUrl={orderDetails.ticket.qr_code_url} />
               <TicketDetailsCard ticket={orderDetails.ticket} />
               <VipPerksCard isVip={orderDetails.ticket.ticket_category === 'vip'} />
+              <ApparelPreferencesCard
+                isVip={orderDetails.ticket.ticket_category === 'vip'}
+                preferences={orderDetails.apparelPreferences}
+                mutation={apparelMutation}
+              />
 
               {orderDetails.pendingUpgrade && <PendingUpgradeCard upgrade={orderDetails.pendingUpgrade} />}
 

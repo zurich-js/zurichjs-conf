@@ -27,6 +27,12 @@ export const TICKET_STAGES: readonly TicketStage[] = [
 ] as const;
 
 /**
+ * Apparel sizes offered to ticket holders (t-shirt for everyone, hoodie for VIPs)
+ */
+export const APPAREL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'] as const;
+export type ApparelSize = typeof APPAREL_SIZES[number];
+
+/**
  * Valid lookup key stage names (used in Stripe price lookup keys)
  * Maps from lookup key stage names to TicketStage values
  */

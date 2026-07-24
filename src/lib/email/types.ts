@@ -132,6 +132,20 @@ export interface VipUpgradeEmailData {
 }
 
 /**
+ * Data structure for apparel size reminder email
+ */
+export interface ApparelReminderData {
+  to: string;
+  firstName: string;
+  ticketId: string;
+  manageTicketUrl: string;
+  isVip: boolean;
+  missingTshirt: boolean;
+  missingHoodie: boolean;
+  customMessage?: string;
+}
+
+/**
  * Data structure for CFP feedback request email
  * Sent to organizers when a rejected speaker requests feedback
  */

@@ -8,6 +8,7 @@ import type {
   CfpTalkLevel,
   CfpSubmissionStatus,
   CfpTshirtSize,
+  CfpHoodieSize,
   CfpAssistanceType,
   CfpTravelOption,
   CfpSpeakerRole,
@@ -38,6 +39,7 @@ export interface CfpSpeaker {
   portrait_foreground_url?: string | null;
   portrait_background_url?: string | null;
   tshirt_size: CfpTshirtSize | null;
+  hoodie_size: CfpHoodieSize | null;
   travel_option: CfpTravelOption | null; // Which travel arrangement: employer_covers, self_managed, need_assistance
   travel_assistance_required: boolean | null; // Whether speaker needs travel/accommodation covered
   assistance_type: CfpAssistanceType; // What type of assistance: travel, accommodation, or both

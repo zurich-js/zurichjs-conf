@@ -136,4 +136,4 @@ export interface ToastMessage {
 
 export type SortField = 'created_at' | 'first_name' | 'email' | 'amount_paid' | 'status' | 'ticket_category';
 export type SortDirection = 'asc' | 'desc';
-export type Tab = 'tickets' | 'issue' | 'financials' | 'workshops' | 'vip-perks' | 'discount';
+export type Tab = 'tickets' | 'issue' | 'financials' | 'workshops' | 'vip-perks' | 'apparel' | 'discount';

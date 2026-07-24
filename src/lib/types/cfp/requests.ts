@@ -7,6 +7,7 @@ import type {
   CfpSubmissionType,
   CfpTalkLevel,
   CfpTshirtSize,
+  CfpHoodieSize,
   CfpAssistanceType,
   CfpSpeakerRole,
   CfpFlightDirection,
@@ -52,6 +53,7 @@ export interface UpdateCfpSpeakerRequest {
   portrait_foreground_url?: string;
   portrait_background_url?: string;
   tshirt_size?: CfpTshirtSize | null;
+  hoodie_size?: CfpHoodieSize | null;
   travel_option?: string | null;
   travel_assistance_required?: boolean | null;
   assistance_type?: CfpAssistanceType;

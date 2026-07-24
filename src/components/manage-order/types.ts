@@ -42,3 +42,13 @@ export interface ReassignData {
   firstName: string;
   lastName: string;
 }
+
+export interface ApparelPreferences {
+  tshirtSize: string | null;
+  hoodieSize: string | null;
+}
+
+export interface ApparelPreferencesData {
+  tshirtSize: string | null;
+  hoodieSize: string | null;
+}

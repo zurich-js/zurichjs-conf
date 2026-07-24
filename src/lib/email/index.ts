@@ -11,6 +11,7 @@ export type {
   SponsorshipInquiryData,
   VipUpgradeEmailData,
   CfpFeedbackRequestData,
+  ApparelReminderData,
 } from './types';
 
 // Config (for internal use or testing)
@@ -21,6 +22,12 @@ export {
   sendTicketConfirmationEmail,
   sendTicketConfirmationEmailsQueued,
 } from './ticket-emails';
+
+// Apparel reminder emails
+export {
+  sendApparelReminderEmail,
+  sendApparelReminderEmailsQueued,
+} from './apparel-emails';
 
 // Workshop emails
 export { sendWorkshopConfirmationEmail } from './workshop-emails';

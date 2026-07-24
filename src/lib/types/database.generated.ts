@@ -1037,6 +1037,7 @@ export type Database = {
           first_name: string
           github_url: string | null
           header_image_url: string | null
+          hoodie_size: string | null
           id: string
           is_admin_managed: boolean
           is_featured: boolean
@@ -1071,6 +1072,7 @@ export type Database = {
           first_name: string
           github_url?: string | null
           header_image_url?: string | null
+          hoodie_size?: string | null
           id?: string
           is_admin_managed?: boolean
           is_featured?: boolean
@@ -1105,6 +1107,7 @@ export type Database = {
           first_name?: string
           github_url?: string | null
           header_image_url?: string | null
+          hoodie_size?: string | null
           id?: string
           is_admin_managed?: boolean
           is_featured?: boolean
@@ -2464,6 +2467,41 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_apparel_preferences: {
+        Row: {
+          created_at: string
+          hoodie_size: string | null
+          id: string
+          ticket_id: string
+          tshirt_size: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hoodie_size?: string | null
+          id?: string
+          ticket_id: string
+          tshirt_size?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hoodie_size?: string | null
+          id?: string
+          ticket_id?: string
+          tshirt_size?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_apparel_preferences_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_invoices: {
         Row: {
           billing_address_line1: string | null
@@ -2631,6 +2669,7 @@ export type Database = {
       tickets: {
         Row: {
           amount_paid: number
+          apparel_reminder_sent_at: string | null
           checked_in: boolean | null
           checked_in_at: string | null
           company: string | null
@@ -2663,6 +2702,7 @@ export type Database = {
         }
         Insert: {
           amount_paid: number
+          apparel_reminder_sent_at?: string | null
           checked_in?: boolean | null
           checked_in_at?: string | null
           company?: string | null
@@ -2695,6 +2735,7 @@ export type Database = {
         }
         Update: {
           amount_paid?: number
+          apparel_reminder_sent_at?: string | null
           checked_in?: boolean | null
           checked_in_at?: string | null
           company?: string | null

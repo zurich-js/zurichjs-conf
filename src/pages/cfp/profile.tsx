@@ -69,6 +69,7 @@ export default function CfpProfile({
     bluesky_handle: speaker.bluesky_handle || '',
     mastodon_handle: speaker.mastodon_handle || '',
     tshirt_size: speaker.tshirt_size || null,
+    hoodie_size: speaker.hoodie_size || null,
     travel_option: speaker.travel_option || null,
     travel_assistance_required: speaker.travel_assistance_required || false,
     assistance_type: speaker.assistance_type || null,
