@@ -12,20 +12,48 @@ import { logger } from '@/lib/logger';
 const log = logger.scope('Admin Financials API');
 
 /**
+ * Stripe fees for settled charges never change, so remember them across
+ * requests (per warm serverless instance). Without this, every dashboard
+ * view re-issues 2 Stripe API calls per payment intent. Only successful
+ * lookups are cached — a PI whose balance transaction isn't available yet
+ * will be retried on the next request.
+ */
+const stripeFeeCache = new Map<string, number>();
+
+/**
+ * A completed checkout session's payment intent is immutable too.
+ */
+const upgradeSessionPiCache = new Map<string, string>();
+
+/**
  * Fetch Stripe fees for a list of payment intent IDs
  * Returns a map of payment_intent_id -> fee (in cents)
  */
-async function getStripeFees(paymentIntentIds: string[]): Promise<Map<string, number>> {
+async function getStripeFees(
+  paymentIntentIds: string[],
+): Promise<{ feeMap: Map<string, number>; lookups: number; cacheHits: number }> {
   const stripe = getStripeClient();
   const feeMap = new Map<string, number>();
 
-  // Filter out empty/null IDs
-  const validIds = paymentIntentIds.filter((id) => id && id.trim() !== '');
+  // Filter out empty/null IDs, deduplicate (multi-ticket checkouts share a PI),
+  // and serve immutable fees from cache
+  const uncachedIds: string[] = [];
+  let cacheHits = 0;
+  for (const id of new Set(paymentIntentIds)) {
+    if (!id || id.trim() === '') continue;
+    const cached = stripeFeeCache.get(id);
+    if (cached !== undefined) {
+      feeMap.set(id, cached);
+      cacheHits += 1;
+    } else {
+      uncachedIds.push(id);
+    }
+  }
 
   // Process in batches to avoid rate limits
   const batchSize = 10;
-  for (let i = 0; i < validIds.length; i += batchSize) {
-    const batch = validIds.slice(i, i + batchSize);
+  for (let i = 0; i < uncachedIds.length; i += batchSize) {
+    const batch = uncachedIds.slice(i, i + batchSize);
 
     await Promise.all(
       batch.map(async (paymentIntentId) => {
@@ -46,6 +74,7 @@ async function getStripeFees(paymentIntentIds: string[]): Promise<Map<string, nu
             const balanceTransaction =
               await stripe.balanceTransactions.retrieve(balanceTransactionId);
             feeMap.set(paymentIntentId, balanceTransaction.fee);
+            stripeFeeCache.set(paymentIntentId, balanceTransaction.fee);
           }
         } catch (err) {
           // Log but don't fail - some payments might not have fees (e.g., complimentary)
@@ -55,7 +84,7 @@ async function getStripeFees(paymentIntentIds: string[]): Promise<Map<string, nu
     );
   }
 
-  return feeMap;
+  return { feeMap, lookups: uncachedIds.length, cacheHits };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -70,12 +99,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const startedAt = Date.now();
     const supabase = createServiceRoleClient();
 
-    // Get all tickets
+    // Get all tickets (only the columns the aggregations below read)
     const { data: tickets, error } = await supabase
       .from('tickets')
-      .select('*')
+      .select(
+        'status, amount_paid, currency, ticket_type, ticket_category, ticket_stage, stripe_payment_intent_id, stripe_session_id, metadata, created_at'
+      )
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -114,9 +146,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .map(u => u.stripe_checkout_session_id)
         .filter((id): id is string => !!id);
 
+      // Completed sessions map to an immutable payment intent — serve from cache
+      const uncachedSessionIds: string[] = [];
+      for (const sessionId of sessionIds) {
+        const cachedPi = upgradeSessionPiCache.get(sessionId);
+        if (cachedPi) {
+          upgradePaymentIntentIds.push(cachedPi);
+          upgradeSessionToPi.set(sessionId, cachedPi);
+        } else {
+          uncachedSessionIds.push(sessionId);
+        }
+      }
+
       const batchSize = 10;
-      for (let i = 0; i < sessionIds.length; i += batchSize) {
-        const batch = sessionIds.slice(i, i + batchSize);
+      for (let i = 0; i < uncachedSessionIds.length; i += batchSize) {
+        const batch = uncachedSessionIds.slice(i, i + batchSize);
         await Promise.all(
           batch.map(async (sessionId) => {
             try {
@@ -124,6 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               if (session.payment_intent && typeof session.payment_intent === 'string') {
                 upgradePaymentIntentIds.push(session.payment_intent);
                 upgradeSessionToPi.set(sessionId, session.payment_intent);
+                upgradeSessionPiCache.set(sessionId, session.payment_intent);
               }
             } catch (err) {
               log.warn('Could not retrieve checkout session for upgrade fee', { sessionId, error: err });
@@ -145,7 +190,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ];
 
     // Fetch actual Stripe fees
-    const stripeFees = await getStripeFees(confirmedPaymentIntentIds);
+    const { feeMap: stripeFees, lookups: stripeLookups, cacheHits: stripeCacheHits } =
+      await getStripeFees(confirmedPaymentIntentIds);
 
     // Calculate financial statistics, grouped by currency
     // Track which payment intents we've already counted fees for
@@ -461,6 +507,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         []
       );
+
+    log.info('Financials computed', {
+      durationMs: Date.now() - startedAt,
+      ticketCount: tickets.length,
+      stripeLookups,
+      stripeCacheHits,
+    });
 
     return res.status(200).json({
       summary: {

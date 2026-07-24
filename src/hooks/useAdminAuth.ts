@@ -5,8 +5,9 @@
 
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
+import { adminKeys } from '@/lib/admin/query-keys';
 
-const ADMIN_AUTH_QUERY_KEY = ['admin', 'auth'] as const;
+const ADMIN_AUTH_QUERY_KEY = adminKeys.auth();
 
 export function useAdminAuth() {
   const queryClient = useQueryClient();

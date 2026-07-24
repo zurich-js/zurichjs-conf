@@ -31,7 +31,11 @@ export function useCreatePartnership() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.all });
+      // A new partnership affects the list, the aggregate stats, and the
+      // partner email export (which is derived from the partnerships table).
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.emailsAll() });
       toast.success('Partnership Created', 'The partnership has been created successfully');
     },
     onError: (error: Error) => {
@@ -49,8 +53,13 @@ export function useDeletePartnership() {
       const res = await fetch(`/api/admin/partnerships/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete partnership');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.all });
+    onSuccess: (_data, id) => {
+      // Removing a partnership affects the list, the aggregate stats, and the
+      // partner email export. Drop the (now dangling) detail cache entry too.
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.emailsAll() });
+      queryClient.removeQueries({ queryKey: partnershipQueryKeys.detail(id) });
       toast.success('Partnership Deleted', 'The partnership has been deleted');
     },
     onError: () => {
@@ -87,8 +96,11 @@ export function useCreateCoupon() {
       }
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.all });
+    onSuccess: (_data, { partnershipId }) => {
+      // Coupons live on the partnership detail; stats include coupon counts.
+      // The list endpoint returns no coupon data, so the list is unaffected.
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.detail(partnershipId) });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.stats() });
       toast.success('Coupon Created', 'The coupon has been created in Stripe');
     },
     onError: (error: Error) => {
@@ -110,8 +122,9 @@ export function useDeleteCoupon() {
       });
       if (!res.ok) throw new Error('Failed to delete coupon');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.all });
+    onSuccess: (_data, { partnershipId }) => {
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.detail(partnershipId) });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.stats() });
       toast.success('Coupon Deleted', 'The coupon has been deleted');
     },
     onError: () => {
@@ -146,8 +159,11 @@ export function useCreateVouchers() {
       }
       return res.json();
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.all });
+    onSuccess: (data, { partnershipId }) => {
+      // Vouchers live on the partnership detail; stats include voucher counts.
+      // The list endpoint returns no voucher data, so the list is unaffected.
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.detail(partnershipId) });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.stats() });
       const count = data.vouchers?.length || 1;
       toast.success('Vouchers Created', `${count} voucher${count > 1 ? 's' : ''} created in Stripe`);
     },
@@ -170,8 +186,9 @@ export function useDeleteVoucher() {
       });
       if (!res.ok) throw new Error('Failed to delete voucher');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.all });
+    onSuccess: (_data, { partnershipId }) => {
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.detail(partnershipId) });
+      queryClient.invalidateQueries({ queryKey: partnershipQueryKeys.stats() });
       toast.success('Voucher Deleted', 'The voucher has been deleted');
     },
     onError: () => {

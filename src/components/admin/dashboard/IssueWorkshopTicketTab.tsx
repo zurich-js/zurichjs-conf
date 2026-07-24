@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { GraduationCap } from 'lucide-react';
 import type { AdminWorkshopListItem } from '@/pages/api/admin/workshops';
+import { adminFetch } from '@/lib/admin/api-fetch';
+import { adminKeys } from '@/lib/admin/query-keys';
 import {
   AttendeeDetails,
   BankTransferDetails,
@@ -32,11 +34,20 @@ interface WorkshopOption {
   status: string;
 }
 
-async function fetchWorkshopOptions(): Promise<WorkshopOption[]> {
-  const res = await fetch('/api/admin/workshops');
-  if (!res.ok) throw new Error('Failed to load workshops');
-  const data = await res.json();
-  const items = (data.items ?? []) as AdminWorkshopListItem[];
+/**
+ * Canonical fetcher for the shared `adminKeys.workshopList()` cache entry.
+ * The cached value is always the raw `AdminWorkshopListItem[]` from the API
+ * (same as WorkshopsDashboard / WorkshopsRegistrantsTab); the narrower
+ * `WorkshopOption` view is derived via the `select` option.
+ */
+async function fetchWorkshopList(signal?: AbortSignal): Promise<AdminWorkshopListItem[]> {
+  const data = await adminFetch<{ items: AdminWorkshopListItem[] }>('/api/admin/workshops', {
+    signal,
+  });
+  return data.items;
+}
+
+function toWorkshopOptions(items: AdminWorkshopListItem[]): WorkshopOption[] {
   return items.flatMap((item) => {
     const offering = item.offering;
     if (!offering) return [];
@@ -70,8 +81,9 @@ export function IssueWorkshopTicketTab() {
   const [submitError, setSubmitError] = useState('');
 
   const { data: workshops, isLoading: workshopsLoading, error: workshopsError } = useQuery({
-    queryKey: ['admin', 'workshops-list'],
-    queryFn: fetchWorkshopOptions,
+    queryKey: adminKeys.workshopList(),
+    queryFn: ({ signal }) => fetchWorkshopList(signal),
+    select: toWorkshopOptions,
     staleTime: 60_000,
   });
 

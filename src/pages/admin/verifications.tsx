@@ -3,8 +3,9 @@
  * Manage student/unemployed verification requests
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import Head from 'next/head';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   ShieldCheck,
   Search,
@@ -20,10 +21,12 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
-import { AdminModal, AdminModalFooter } from '@/components/admin/AdminModal';
+import { AdminModal } from '@/components/admin/AdminModal';
 import { Pill } from '@/components/admin/shared/Pill';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast, type Toast } from '@/hooks/useToast';
+import { adminKeys } from '@/lib/admin/query-keys';
+import { adminFetch } from '@/lib/admin/api-fetch';
 
 interface VerificationRequest {
   id: string;
@@ -61,35 +64,35 @@ function countryFlag(code: string | null): string {
 
 type StatusFilter = '' | 'pending' | 'approved' | 'rejected';
 
+async function fetchVerifications(
+  status: StatusFilter,
+  signal?: AbortSignal,
+): Promise<VerificationRequest[]> {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  const data = await adminFetch<{ verifications: VerificationRequest[] }>(
+    `/api/admin/verifications?${params}`,
+    { signal },
+  );
+  return data.verifications;
+}
+
 export default function VerificationsDashboard() {
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
   const { toasts, showToast, removeToast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVerification, setSelectedVerification] = useState<VerificationRequest | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchVerifications = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
-      const res = await fetch(`/api/admin/verifications?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setVerifications(data.verifications);
-      }
-    } catch (err) {
-      console.error('Failed to fetch verifications:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
-
-  // Fetch on mount and when filter changes
-  useState(() => { fetchVerifications(); });
+  const { data: verifications = [], isPending: loading } = useQuery({
+    queryKey: adminKeys.verificationList({ status: statusFilter }),
+    queryFn: ({ signal }) => fetchVerifications(statusFilter, signal),
+    enabled: isAuthenticated,
+    staleTime: 30 * 1000,
+    placeholderData: keepPreviousData,
+  });
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return verifications;
@@ -102,42 +105,35 @@ export default function VerificationsDashboard() {
     );
   }, [verifications, searchQuery]);
 
-  const handleApprove = async (id: string) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/admin/verifications/${id}/approve`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        showToast('Verification approved and payment link sent', 'success');
-        setSelectedVerification(null);
-        fetchVerifications();
-      } else {
-        showToast(data.error || 'Failed to approve', 'error');
-      }
-    } catch {
-      showToast('Error approving verification', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const approveMutation = useMutation({
+    mutationFn: (id: string) =>
+      adminFetch(`/api/admin/verifications/${id}/approve`, { method: 'POST' }),
+    onSuccess: () => {
+      showToast('Verification approved and payment link sent', 'success');
+      setSelectedVerification(null);
+      queryClient.invalidateQueries({ queryKey: adminKeys.verifications() });
+    },
+    onError: (err) => {
+      showToast(err instanceof Error && err.message ? err.message : 'Failed to approve', 'error');
+    },
+  });
 
-  const handleReject = async (id: string) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/admin/verifications/${id}/reject`, { method: 'POST' });
-      if (res.ok) {
-        showToast('Verification rejected', 'success');
-        setSelectedVerification(null);
-        fetchVerifications();
-      } else {
-        showToast('Failed to reject', 'error');
-      }
-    } catch {
-      showToast('Error rejecting verification', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const rejectMutation = useMutation({
+    mutationFn: (id: string) =>
+      adminFetch(`/api/admin/verifications/${id}/reject`, { method: 'POST' }),
+    onSuccess: () => {
+      showToast('Verification rejected', 'success');
+      setSelectedVerification(null);
+      queryClient.invalidateQueries({ queryKey: adminKeys.verifications() });
+    },
+    onError: (err) => {
+      showToast(err instanceof Error && err.message ? err.message : 'Failed to reject', 'error');
+    },
+  });
+
+  const actionLoading = approveMutation.isPending || rejectMutation.isPending;
+  const handleApprove = (id: string) => approveMutation.mutate(id);
+  const handleReject = (id: string) => rejectMutation.mutate(id);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -192,12 +188,7 @@ export default function VerificationsDashboard() {
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as StatusFilter);
-                setLoading(true);
-                // Re-fetch with new filter
-                setTimeout(() => fetchVerifications(), 0);
-              }}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
               className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-brand-primary focus:border-brand-primary bg-white"
             >
               <option value="">All statuses</option>

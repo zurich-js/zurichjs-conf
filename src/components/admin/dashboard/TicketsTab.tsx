@@ -5,7 +5,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AudienceInsights, UpgradeToVipModal } from '@/components/admin/tickets';
+import { adminKeys } from '@/lib/admin/query-keys';
+import { adminFetch, AdminApiError } from '@/lib/admin/api-fetch';
 import { TicketDetailsModal } from './TicketDetailsModal';
 import { ReassignModal } from './ReassignModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -13,9 +16,13 @@ import type { Ticket, ToastMessage, SortField, SortDirection } from './types';
 
 const ITEMS_PER_PAGE = 10;
 
+async function fetchTickets(signal?: AbortSignal): Promise<Ticket[]> {
+  const data = await adminFetch<{ tickets: Ticket[] }>('/api/admin/tickets', { signal });
+  return data.tickets;
+}
+
 export function TicketsTab() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
@@ -34,6 +41,16 @@ export function TicketsTab() {
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 5000);
+  };
+
+  const { data: tickets = [], isPending: loading, isError } = useQuery({
+    queryKey: adminKeys.ticketList(),
+    queryFn: ({ signal }) => fetchTickets(signal),
+    staleTime: 60_000,
+  });
+
+  const invalidateTickets = () => {
+    queryClient.invalidateQueries({ queryKey: adminKeys.tickets() });
   };
 
   const filteredAndSortedTickets = useMemo(() => {
@@ -79,58 +96,79 @@ export function TicketsTab() {
   }, [filteredAndSortedTickets, currentPage]);
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery]);
-  useEffect(() => { fetchTickets(); }, []);
-
-  const fetchTickets = async () => {
-    try {
-      const res = await fetch('/api/admin/tickets');
-      if (res.ok) { const data = await res.json(); setTickets(data.tickets); }
-    } catch { showToast('error', 'Failed to fetch tickets'); }
-    finally { setLoading(false); }
-  };
+  useEffect(() => {
+    if (isError) showToast('error', 'Failed to fetch tickets');
+    // showToast is a stable-enough local helper; only react to error transitions
+  }, [isError]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     else { setSortField(field); setSortDirection('asc'); }
   };
 
-  const handleResend = async () => {
-    if (!selectedTicket) return;
-    try {
-      const res = await fetch(`/api/admin/tickets/${selectedTicket.id}/resend`, { method: 'POST' });
-      if (res.ok) { showToast('success', 'Ticket email resent successfully!'); setShowResendConfirm(false); setSelectedTicket(null); }
-      else showToast('error', 'Failed to resend ticket email');
-    } catch { showToast('error', 'Error resending ticket email'); }
-  };
+  const resendMutation = useMutation({
+    mutationFn: (ticketId: string) =>
+      adminFetch<{ success: boolean }>(`/api/admin/tickets/${ticketId}/resend`, { method: 'POST' }),
+    onSuccess: () => {
+      showToast('success', 'Ticket email resent successfully!');
+      invalidateTickets();
+      setShowResendConfirm(false);
+      setSelectedTicket(null);
+    },
+    onError: (err) => {
+      showToast('error', err instanceof AdminApiError ? 'Failed to resend ticket email' : 'Error resending ticket email');
+    },
+  });
 
-  const handleRefund = async () => {
-    if (!selectedTicket) return;
-    try {
-      const res = await fetch(`/api/admin/tickets/${selectedTicket.id}/refund`, {
+  const refundMutation = useMutation({
+    mutationFn: (ticketId: string) =>
+      adminFetch<{ success: boolean }>(`/api/admin/tickets/${ticketId}/refund`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'requested_by_customer' }),
-      });
-      if (res.ok) { showToast('success', 'Ticket refunded successfully!'); fetchTickets(); setShowRefundConfirm(false); setSelectedTicket(null); }
-      else { const data = await res.json(); showToast('error', `Failed to refund ticket: ${data.error}`); }
-    } catch { showToast('error', 'Error refunding ticket'); }
-  };
+      }),
+    onSuccess: () => {
+      showToast('success', 'Ticket refunded successfully!');
+      invalidateTickets();
+      setShowRefundConfirm(false);
+      setSelectedTicket(null);
+    },
+    onError: (err) => {
+      showToast('error', err instanceof AdminApiError ? `Failed to refund ticket: ${err.message}` : 'Error refunding ticket');
+    },
+  });
 
-  const handleCancel = async () => {
-    if (!selectedTicket) return;
-    try {
-      const res = await fetch(`/api/admin/tickets/${selectedTicket.id}/cancel`, { method: 'POST' });
-      if (res.ok) { showToast('success', 'Ticket cancelled successfully!'); fetchTickets(); setShowCancelConfirm(false); setSelectedTicket(null); }
-      else showToast('error', 'Failed to cancel ticket');
-    } catch { showToast('error', 'Error cancelling ticket'); }
-  };
+  const cancelMutation = useMutation({
+    mutationFn: (ticketId: string) =>
+      adminFetch<{ success: boolean }>(`/api/admin/tickets/${ticketId}/cancel`, { method: 'POST' }),
+    onSuccess: () => {
+      showToast('success', 'Ticket cancelled successfully!');
+      invalidateTickets();
+      setShowCancelConfirm(false);
+      setSelectedTicket(null);
+    },
+    onError: (err) => {
+      showToast('error', err instanceof AdminApiError ? 'Failed to cancel ticket' : 'Error cancelling ticket');
+    },
+  });
 
-  const handleDelete = async () => {
-    if (!selectedTicket) return;
-    try {
-      const res = await fetch(`/api/admin/tickets/${selectedTicket.id}`, { method: 'DELETE' });
-      if (res.ok) { showToast('success', 'Ticket deleted successfully!'); fetchTickets(); setShowDeleteConfirm(false); setShowDetailsModal(false); setSelectedTicket(null); }
-      else { const data = await res.json(); showToast('error', `Failed to delete ticket: ${data.error}`); }
-    } catch { showToast('error', 'Error deleting ticket'); }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (ticketId: string) =>
+      adminFetch<{ success: boolean }>(`/api/admin/tickets/${ticketId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      showToast('success', 'Ticket deleted successfully!');
+      invalidateTickets();
+      setShowDeleteConfirm(false);
+      setShowDetailsModal(false);
+      setSelectedTicket(null);
+    },
+    onError: (err) => {
+      showToast('error', err instanceof AdminApiError ? `Failed to delete ticket: ${err.message}` : 'Error deleting ticket');
+    },
+  });
+
+  const handleResend = () => { if (selectedTicket) resendMutation.mutate(selectedTicket.id); };
+  const handleRefund = () => { if (selectedTicket) refundMutation.mutate(selectedTicket.id); };
+  const handleCancel = () => { if (selectedTicket) cancelMutation.mutate(selectedTicket.id); };
+  const handleDelete = () => { if (selectedTicket) deleteMutation.mutate(selectedTicket.id); };
 
   if (loading) {
     return (
@@ -158,7 +196,7 @@ export function TicketsTab() {
           onResend={() => { setShowDetailsModal(false); setShowResendConfirm(true); }}
           onReassign={() => { setShowDetailsModal(false); setShowReassignModal(true); }}
           onRefund={() => { setShowDetailsModal(false); setShowRefundConfirm(true); }}
-          onTicketUpdate={() => { fetchTickets(); setShowDetailsModal(false); setSelectedTicket(null); }}
+          onTicketUpdate={() => { invalidateTickets(); setShowDetailsModal(false); setSelectedTicket(null); }}
           onCancel={() => { setShowDetailsModal(false); setShowCancelConfirm(true); }}
           onDelete={() => { setShowDetailsModal(false); setShowDeleteConfirm(true); }}
           onUpgrade={() => { setShowDetailsModal(false); setShowUpgradeModal(true); }}
@@ -167,7 +205,7 @@ export function TicketsTab() {
       {showReassignModal && selectedTicket && (
         <ReassignModal ticket={selectedTicket}
           onClose={() => { setShowReassignModal(false); setSelectedTicket(null); }}
-          onSuccess={() => { fetchTickets(); setShowReassignModal(false); setSelectedTicket(null); }}
+          onSuccess={() => { invalidateTickets(); setShowReassignModal(false); setSelectedTicket(null); }}
           showToast={showToast}
         />
       )}
@@ -199,7 +237,7 @@ export function TicketsTab() {
         <UpgradeToVipModal isOpen={showUpgradeModal}
           onClose={() => { setShowUpgradeModal(false); setSelectedTicket(null); }}
           ticket={{ id: selectedTicket.id, firstName: selectedTicket.first_name, lastName: selectedTicket.last_name, email: selectedTicket.email, company: selectedTicket.company, ticketCategory: selectedTicket.ticket_category, ticketStage: selectedTicket.ticket_stage }}
-          onSuccess={() => { fetchTickets(); showToast('success', 'Ticket upgraded to VIP successfully!'); }}
+          onSuccess={() => { invalidateTickets(); showToast('success', 'Ticket upgraded to VIP successfully!'); }}
         />
       )}
     </>

@@ -13,6 +13,7 @@ import { encodeCartState } from '@/lib/cart-url-state';
 import type { Cart, CartItem } from '@/types/cart';
 import type { SupportedCurrency } from '@/config/currency';
 import { AdminErrorState } from '@/components/admin/AdminErrorState';
+import { adminKeys } from '@/lib/admin/query-keys';
 
 const CURRENCIES: SupportedCurrency[] = ['CHF', 'EUR', 'GBP', 'USD'];
 
@@ -55,8 +56,11 @@ interface CartBuilderCatalog {
   error?: string;
 }
 
-const fetchCatalog = async (currency: SupportedCurrency): Promise<CartBuilderCatalog> => {
-  const response = await fetch(`/api/admin/cart-builder/catalog?currency=${currency}`);
+const fetchCatalog = async (
+  currency: SupportedCurrency,
+  signal?: AbortSignal
+): Promise<CartBuilderCatalog> => {
+  const response = await fetch(`/api/admin/cart-builder/catalog?currency=${currency}`, { signal });
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || 'Failed to load catalog');
@@ -74,9 +78,10 @@ export function CartBuilderTab() {
   const [copied, setCopied] = useState(false);
 
   const { data: catalog, isLoading, error, refetch } = useQuery({
-    queryKey: ['admin', 'cart-builder-catalog', currency],
-    queryFn: () => fetchCatalog(currency),
-    staleTime: 60_000,
+    queryKey: adminKeys.cartBuilderCatalog(currency),
+    queryFn: ({ signal }) => fetchCatalog(currency, signal),
+    // Stripe prices + published workshops are stable reference data.
+    staleTime: 5 * 60_000,
   });
 
   const setQuantity = (key: string, quantity: number) => {

@@ -230,15 +230,17 @@ export function useDeleteScheduleItem() {
   });
 }
 
+export async function fetchWorkshopOffering(sessionId: string): Promise<Workshop | null> {
+  const response = await fetch(`/api/admin/program/workshop-offerings/${sessionId}`, { credentials: 'include' });
+  const data = await readJson<{ offering: Workshop | null }>(response, 'Failed to load workshop offering');
+  return data.offering;
+}
+
 export function useWorkshopOffering(sessionId: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.program.workshopOffering(sessionId ?? ''),
     enabled: Boolean(sessionId),
-    queryFn: async () => {
-      const response = await fetch(`/api/admin/program/workshop-offerings/${sessionId}`, { credentials: 'include' });
-      const data = await readJson<{ offering: Workshop | null }>(response, 'Failed to load workshop offering');
-      return data.offering;
-    },
+    queryFn: () => fetchWorkshopOffering(sessionId as string),
   });
 }
 

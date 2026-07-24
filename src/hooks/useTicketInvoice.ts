@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminKeys } from '@/lib/admin/query-keys';
 import type { TicketOrderContext } from '@/lib/types/ticket-invoice';
-
-const ticketInvoiceKey = (ticketId: string) => ['admin', 'ticket-invoice', ticketId] as const;
 
 async function fetchOrderContext(ticketId: string): Promise<TicketOrderContext> {
   const res = await fetch(`/api/admin/tickets/${ticketId}/invoice`);
@@ -35,7 +34,8 @@ async function generateInvoicePDF(ticketId: string): Promise<{ pdfUrl: string; i
 
 export function useTicketOrderContext(ticketId: string | null) {
   return useQuery({
-    queryKey: ticketId ? ticketInvoiceKey(ticketId) : ['ticket-invoice-disabled'],
+    // 'disabled' sentinel keeps the key shape stable while the query is off
+    queryKey: adminKeys.ticketInvoice(ticketId ?? 'disabled'),
     queryFn: () => fetchOrderContext(ticketId!),
     enabled: !!ticketId,
     staleTime: 30 * 1000,
@@ -53,7 +53,7 @@ export function useDeleteTicketInvoice(ticketId: string | null) {
     },
     onSuccess: () => {
       if (ticketId) {
-        void queryClient.invalidateQueries({ queryKey: ticketInvoiceKey(ticketId) });
+        void queryClient.invalidateQueries({ queryKey: adminKeys.ticketInvoice(ticketId) });
       }
     },
   });
@@ -69,7 +69,7 @@ export function useGenerateTicketInvoice(ticketId: string | null) {
     },
     onSuccess: () => {
       if (ticketId) {
-        void queryClient.invalidateQueries({ queryKey: ticketInvoiceKey(ticketId) });
+        void queryClient.invalidateQueries({ queryKey: adminKeys.ticketInvoice(ticketId) });
       }
     },
   });
