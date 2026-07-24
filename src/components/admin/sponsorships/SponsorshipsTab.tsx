@@ -5,9 +5,10 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, Plus, Search, Filter, RefreshCw } from 'lucide-react';
 import { Pagination } from '@/components/atoms';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { StatsCards } from './StatsCards';
 import { SponsorshipsList } from './SponsorshipsList';
 import { SponsorDetailModal } from './SponsorDetailModal';
@@ -133,6 +134,7 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 400);
   const [statusFilter, setStatusFilter] = useState<SponsorshipDealStatus | 'all'>('all');
   const [tierFilter, setTierFilter] = useState<string | 'all'>('all');
   const [currencyFilter, setCurrencyFilter] = useState<SponsorshipCurrency | 'all'>('all');
@@ -158,12 +160,14 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
     status: statusFilter !== 'all' ? statusFilter : undefined,
     tierId: tierFilter !== 'all' ? tierFilter : undefined,
     currency: currencyFilter !== 'all' ? currencyFilter : undefined,
-    search: searchQuery || undefined,
-  }), [statusFilter, tierFilter, currencyFilter, searchQuery]);
+    search: debouncedSearchQuery || undefined,
+  }), [statusFilter, tierFilter, currencyFilter, debouncedSearchQuery]);
 
   const { data: deals = [], isLoading: isLoadingDeals, error: dealsError } = useQuery({
     queryKey: sponsorshipKeys.deals(filters),
     queryFn: () => fetchDeals(filters),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 
   // Query: Selected Deal

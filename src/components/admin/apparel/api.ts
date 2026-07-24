@@ -3,6 +3,7 @@
  * Client-side API functions for the apparel overview tab
  */
 
+import { adminKeys } from '@/lib/admin/query-keys';
 import type { ApparelOverviewResponse, SendApparelRemindersResponse } from './types';
 
 const REMIND_BATCH_SIZE = 200; // matches the API's max ticketIds per request
@@ -48,7 +49,11 @@ export async function sendApparelRemindersApi(
   return totals;
 }
 
+/**
+ * Query keys — built on the shared admin factory (root `['admin', 'apparel']`)
+ * so apparel caches live under the `['admin']` family.
+ */
 export const apparelQueryKeys = {
-  all: ['admin-apparel'] as const,
-  overview: () => [...apparelQueryKeys.all, 'overview'] as const,
-};
+  all: adminKeys.apparel(),
+  overview: adminKeys.apparelOverview,
+} as const;

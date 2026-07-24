@@ -5,12 +5,13 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
-import { fetchApparelOverview, sendApparelRemindersApi, apparelQueryKeys } from './api';
+import { adminKeys } from '@/lib/admin/query-keys';
+import { fetchApparelOverview, sendApparelRemindersApi } from './api';
 import type { SendApparelRemindersResponse } from './types';
 
 export function useApparelOverview() {
   return useQuery({
-    queryKey: apparelQueryKeys.overview(),
+    queryKey: adminKeys.apparelOverview(),
     queryFn: fetchApparelOverview,
   });
 }
@@ -23,7 +24,7 @@ export function useSendApparelReminders() {
     mutationFn: ({ ticketIds, customMessage }: { ticketIds: string[]; customMessage?: string }) =>
       sendApparelRemindersApi(ticketIds, customMessage),
     onSuccess: (result: SendApparelRemindersResponse) => {
-      queryClient.invalidateQueries({ queryKey: apparelQueryKeys.overview() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.apparelOverview() });
       if (result.failed > 0) {
         toast.error(
           'Reminders Partially Sent',

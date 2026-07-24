@@ -3,6 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { adminKeys } from '@/lib/admin/query-keys';
 import type { TicketUpgrade } from '@/lib/types/ticket-upgrade';
 
 export interface WorkshopBooking {
@@ -34,8 +35,6 @@ export interface TicketSpendData {
   spendBreakdown: SpendBreakdown;
 }
 
-const spendBreakdownKey = (ticketId: string) => ['admin', 'ticket-spend', ticketId] as const;
-
 async function fetchSpendBreakdown(ticketId: string): Promise<TicketSpendData> {
   const res = await fetch(`/api/admin/tickets/${ticketId}/spend-breakdown`);
   if (!res.ok) {
@@ -48,7 +47,8 @@ async function fetchSpendBreakdown(ticketId: string): Promise<TicketSpendData> {
 
 export function useTicketSpendBreakdown(ticketId: string | null) {
   return useQuery({
-    queryKey: ticketId ? spendBreakdownKey(ticketId) : ['ticket-spend-disabled'],
+    // 'disabled' sentinel keeps the key shape stable while the query is off
+    queryKey: adminKeys.ticketSpend(ticketId ?? 'disabled'),
     queryFn: () => fetchSpendBreakdown(ticketId!),
     enabled: !!ticketId,
     staleTime: 30 * 1000,
