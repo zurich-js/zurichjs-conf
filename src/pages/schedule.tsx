@@ -6,7 +6,7 @@ import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
-import { publicProgramTabs } from '@/data';
+import { communityDayMeetup, publicProgramTabs } from '@/data';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
@@ -87,6 +87,26 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
               className="pt-0"
             />
 
+            {activeTab === 'community' && (
+              <div className="mt-8 rounded-lg bg-brand-gray-lightest p-6">
+                <Heading level="h3" variant="light" className="text-base font-bold leading-tight">
+                  ZurichJS September Meetup
+                </Heading>
+                <p className="mt-3 max-w-2xl text-base leading-relaxed text-brand-gray-medium">
+                  Community Day kicks off with the ZurichJS meetup on September 9 — free and open to
+                  everyone. Check out the agenda and RSVP to save your spot.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Button variant="primary" asChild href={communityDayMeetup.agendaUrl}>
+                    View the agenda
+                  </Button>
+                  <Button variant="blue" asChild href={communityDayMeetup.rsvpUrl}>
+                    RSVP on Meetup
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="mt-8 flex flex-col gap-4">
               {visibleItems.length > 0 ? (
                 visibleItems.map((item, index) => (
@@ -98,7 +118,7 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
                     expandableSessions
                   />
                 ))
-              ) : (
+              ) : activeTab === 'community' ? null : (
                 <PlaceholderCard
                   id={`schedule-${activeScheduleTab.id}-tba`}
                   title="To be announced"

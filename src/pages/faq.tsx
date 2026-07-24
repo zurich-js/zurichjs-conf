@@ -9,7 +9,7 @@ const faqPage: InfoPage = {
   description:
     "Find answers to common questions about ZurichJS Conference 2026, including tickets, the venue, schedule, and more.",
   kicker: "FAQ",
-  lastUpdated: "January 28, 2026",
+  lastUpdated: "July 23, 2026",
   sections: [
     // General
     { type: "heading", level: "h2", content: "General" },
@@ -22,7 +22,7 @@ const faqPage: InfoPage = {
     {
       type: "list",
       items: [
-        "Community Day – September 9",
+        'Community Day – September 9 (<a href="https://zurichjs.com/events/sep-2026" target="_blank" rel="noopener noreferrer"><strong>agenda</strong></a> · <a href="https://www.meetup.com/zurich-js/events/315488367/" target="_blank" rel="noopener noreferrer"><strong>RSVP</strong></a>)',
         "Zurich Engineering Day (Workshops &amp; Warm-up) – September 10",
         "Conference Day – September 11",
       ],
@@ -46,7 +46,7 @@ const faqPage: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Yes. Community Day (September 9) is dedicated to <strong>local JavaScript user groups and informal meetups</strong>, and the Zurich Engineering Day (September 10) includes workshops as well as social and networking activities to meet other attendees before the main conference day.",
+        'Yes. Community Day (September 9) is dedicated to <strong>local JavaScript user groups and informal meetups</strong> — check out the <strong><a href="https://zurichjs.com/events/sep-2026" target="_blank" rel="noopener noreferrer">meetup agenda</a></strong> and <strong><a href="https://www.meetup.com/zurich-js/events/315488367/" target="_blank" rel="noopener noreferrer">RSVP on Meetup</a></strong>. The Zurich Engineering Day (September 10) includes workshops as well as social and networking activities to meet other attendees before the main conference day.',
     },
     { type: "heading", level: "h3", content: "Who should attend?" },
     {

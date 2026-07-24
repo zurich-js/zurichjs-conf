@@ -40,7 +40,7 @@ ZurichJS Conf 2026 is a full-day JavaScript conference organized by ZurichJS, Sw
 
 ### Pre-Conference Events
 
-- **September 9th, 2026**: Community Day - informal meetup (free)
+- **September 9th, 2026**: Community Day - informal meetup (free). Agenda: https://zurichjs.com/events/sep-2026 — RSVP: https://www.meetup.com/zurich-js/events/315488367/
 - **September 10th, 2026**: Workshop Day - hands-on workshops (separate tickets)
 
 ### Main Conference Day - September 11th, 2026

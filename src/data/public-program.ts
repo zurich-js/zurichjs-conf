@@ -1,3 +1,8 @@
+export const communityDayMeetup = {
+  agendaUrl: 'https://zurichjs.com/events/sep-2026',
+  rsvpUrl: 'https://www.meetup.com/zurich-js/events/315488367/',
+} as const;
+
 export const publicProgramTabs = [
   { id: 'community', label: 'Community day', date: 'September 9, 2026', sessionDate: null },
   { id: 'warmup', label: 'Workshop day', date: 'September 10, 2026', sessionDate: '2026-09-10' },

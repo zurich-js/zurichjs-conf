@@ -6,6 +6,7 @@
 export { heroData } from './hero';
 export { scheduleData } from './schedule';
 export {
+  communityDayMeetup,
   publicProgramTabs,
   workshopProgramSections,
   workshopSlotCount,
