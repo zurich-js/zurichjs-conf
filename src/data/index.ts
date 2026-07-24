@@ -21,6 +21,8 @@ export {
   STAGE_COPY,
 } from './tickets';
 export { STUDENT_WAITLIST_CONFIG, VIP_WAITLIST_CONFIG } from './ticket-waitlist';
+export { VIP_BENEFITS } from './vip-benefits';
+export type { VipBenefit, VipBenefitId } from './vip-benefits';
 export { timelineData } from './timeline';
 export { sponsorsData } from './sponsors';
 export { sponsorshipPageData } from './sponsorship';

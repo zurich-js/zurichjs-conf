@@ -121,7 +121,7 @@ const ManageOrderPage: React.FC = () => {
 
               <TicketQRCard qrCodeUrl={orderDetails.ticket.qr_code_url} />
               <TicketDetailsCard ticket={orderDetails.ticket} />
-              <VipPerksCard isVip={orderDetails.ticket.ticket_category === 'vip'} />
+              <VipPerksCard isVip={orderDetails.ticket.ticket_category === 'vip'} vipPerk={orderDetails.vipPerk} />
               <ApparelPreferencesCard
                 isVip={orderDetails.ticket.ticket_category === 'vip'}
                 preferences={orderDetails.apparelPreferences}

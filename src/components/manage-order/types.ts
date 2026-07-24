@@ -31,6 +31,13 @@ export interface PendingUpgrade {
   bankTransferDueDate?: string | null;
 }
 
+export interface VipPerkSummary {
+  code: string;
+  discountPercent: number;
+  expiresAt: string | null;
+  isRedeemed: boolean;
+}
+
 export interface TransferInfo {
   transferredFrom: string;
   transferredFromEmail: string;
