@@ -68,6 +68,11 @@ export const speakerGuide: InfoPage = {
           sublabel: "Main station · ~10 min by S-Bahn or tram",
           href: "https://www.google.com/maps/dir/?api=1&origin=Z%C3%BCrich+HB&destination=Novotel+Z%C3%BCrich+City+West&travelmode=transit",
         },
+        {
+          label: "Speaker hotel → Ziegelhütte",
+          sublabel: "Speaker dinner · Thu Sept 10th evening",
+          href: "https://www.google.com/maps/dir/?api=1&origin=Novotel+Z%C3%BCrich+City+West&destination=Restaurant+Ziegelh%C3%BCtte+Z%C3%BCrich&travelmode=transit",
+        },
       ],
     },
     {
@@ -78,13 +83,14 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Community Day Wed Sept 9th (evening, from 18:00) · Workshops Thu Sept 10th · Conference Fri Sept 11th at Technopark · After party Fri 19:00–23:00 · Speaker day out Sat Sept 12th, 10:00–16:00.",
+        "Community Day Wed Sept 9th (evening, from 18:00) · Workshops Thu Sept 10th · Speaker dinner Thu 18:30–22:00 at Ziegelhütte · Conference Fri Sept 11th at Technopark · After party Fri 19:00–23:00 · Speaker day out Sat Sept 12th, 10:00–16:00.",
     },
     {
       type: "list",
       items: [
         "<strong>Wednesday, September 9th:</strong> Community Day — evening only, from <strong>18:00</strong>: a relaxed ZurichJS meetup to warm up and meet the community. Optional, but lovely if you're in town. Check the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>meetup agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
         "<strong>Thursday, September 10th:</strong> Workshop Day — workshops run across Zurich (locations confirmed to instructors in advance).",
+        "<strong>Thursday, September 10th, 18:30–22:00:</strong> Speaker dinner at Ziegelhütte — dinner and a round of bowling with your fellow speakers. Guides will take you there.",
         "<strong>Friday, September 11th:</strong> Conference Day at Technopark Zürich — doors open at 07:00; the full agenda is on the <a href='/schedule'>schedule page</a>.",
         "<strong>Friday, September 11th, 19:00–23:00:</strong> After party at Seebad Enge on Lake Zürich.",
         "<strong>Saturday, September 12th, 10:00–16:00:</strong> Speaker day out — we're planning activities with everyone's departure flights in mind: perhaps a light hike or a tour of Zurich. Details TBD, but pencil in 10:00–16:00.",
@@ -139,7 +145,7 @@ export const speakerGuide: InfoPage = {
       items: [
         "Buy tickets at the machines, or use the <a href='https://www.sbb.ch/en' target='_blank' rel='noopener noreferrer'><strong>SBB</strong></a> Mobile app (easiest — supports international cards and plans door-to-door routes).",
         "A regular ticket from the airport into the city covers all onward trams and buses within its zones for its validity window.",
-        "Taxis are available but expensive (expect CHF 60–70 to the city center) — the train is by far the better option.",
+        "Taxis are available but expensive (expect CHF 60–70 to the city center). <strong>Uber operates in Zurich</strong> too and is usually a bit cheaper than a taxi — but the train still wins.",
       ],
     },
     {
@@ -178,12 +184,12 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "One ticket covers trams, buses, S-Bahn, and boats. Always carry a valid ticket — inspections are random but real.",
+        "One ticket covers trams, buses, S-Bahn, and boats. Always carry a valid ticket — inspections are random but real. Uber works here too.",
     },
     {
       type: "paragraph",
       content:
-        "Zurich's public transport (ZVV) is frequent, punctual, and safe at all hours — trams, buses, S-Bahn trains, and even boats run on one ticket system. Nobody checks tickets at the door; roaming inspections happen instead, so always travel with a valid ticket. The SBB Mobile or ZVV app will route you anywhere door to door. Most places in the city are also within a pleasant 20–30 minute walk of each other.",
+        "Zurich's public transport (ZVV) is frequent, punctual, and safe at all hours — trams, buses, S-Bahn trains, and even boats run on one ticket system. Nobody checks tickets at the door; roaming inspections happen instead, so always travel with a valid ticket. The SBB Mobile or ZVV app will route you anywhere door to door. Most places in the city are also within a pleasant 20–30 minute walk of each other. And if you'd rather not think at all, <strong>Uber works in Zurich</strong> — handy late at night or with luggage, though public transport is cheaper and often just as fast.",
     },
     {
       type: "heading",
@@ -245,7 +251,22 @@ export const speakerGuide: InfoPage = {
     {
       type: "heading",
       level: "h2",
-      content: "Speaker Information Form",
+      content: "Speaker Dinner at Ziegelhütte",
+    },
+    {
+      type: "tldr",
+      content:
+        "Thu Sept 10th, 18:30–22:00 at Ziegelhütte — dinner and bowling with the other speakers. Guides will take you there, so don't stress the route.",
+    },
+    {
+      type: "paragraph",
+      content:
+        "On workshop day evening — <strong>Thursday, September 10th, 18:30–22:00</strong> — we're hosting a speaker dinner at <a href='https://www.google.com/maps/search/?api=1&amp;query=Restaurant+Ziegelh%C3%BCtte+Z%C3%BCrich' target='_blank' rel='noopener noreferrer'><strong>Ziegelhütte</strong></a>. Expect good food, good company, and yes — <strong>bowling</strong>. It's the perfect way to meet your fellow speakers properly before conference day.",
+    },
+    {
+      type: "paragraph",
+      content:
+        "<strong>Getting there:</strong> it's an easy public transport ride — here's the <a href='https://www.google.com/maps/dir/?api=1&amp;origin=Novotel+Z%C3%BCrich+City+West&amp;destination=Restaurant+Ziegelh%C3%BCtte+Z%C3%BCrich&amp;travelmode=transit' target='_blank' rel='noopener noreferrer'>route from the speaker hotel</a>. But you won't need to navigate it yourself: <strong>guides will pick you up and travel with you</strong>, and an Uber is always a fallback if you're running late.",
     },
     {
       type: "tldr",
