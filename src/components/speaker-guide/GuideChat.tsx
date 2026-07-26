@@ -49,10 +49,10 @@ const getLanguageModel = (): LanguageModelStatic | null => {
 };
 
 const SYSTEM_PROMPT =
-  "You are Sherpa, the ZurichJS Conf 2026 speaker guide assistant. Answer questions from speakers using ONLY the guide excerpts provided with each question. Be brief and friendly. If the excerpts don't contain the answer, say you don't know and suggest asking in the speakers group chat or emailing hello@zurichjs.com. Never invent dates, prices, names, or logistics.";
+  "You are Faru, the ZurichJS Conf 2026 speaker guide assistant. Answer questions from speakers using ONLY the guide excerpts provided with each question. Be brief and friendly. If the excerpts don't contain the answer, say you don't know and suggest asking in the speakers group chat or emailing hello@zurichjs.com. Never invent dates, prices, names, or logistics.";
 
 const GREETING =
-  "Hey! 👋 I'm Sherpa, your speaker guide companion. Ask me about arrival, the venues, your slides, the after party — anything from the guide.";
+  "Hey! 👋 I'm Faru, your speaker guide companion. Ask me about arrival, the venues, your slides, the after party — anything from the guide.";
 
 const SUGGESTIONS = [
   "How do I get to the after party?",
@@ -162,14 +162,14 @@ const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 const TypingDots: React.FC = () => (
-  <span className="inline-flex items-center gap-1" aria-label="Sherpa is typing">
+  <span className="inline-flex items-center gap-1" aria-label="Faru is typing">
     <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.3s]" />
     <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.15s]" />
     <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" />
   </span>
 );
 
-const SherpaAvatar: React.FC = () => (
+const FaruAvatar: React.FC = () => (
   <span
     className="w-7 h-7 rounded-full bg-brand-yellow-main flex items-center justify-center flex-shrink-0"
     aria-hidden="true"
@@ -336,7 +336,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
         <p className="text-xs text-gray-500">
           {aiAvailable
             ? "Answers are generated on your device (Chrome built-in AI) from the guide only — nothing leaves your browser."
-            : "Sherpa finds the right guide sections for you, right in your browser. (In Chrome with built-in AI, it answers conversationally.)"}
+            : "Faru finds the right guide sections for you, right in your browser. (In Chrome with built-in AI, it answers conversationally.)"}
         </p>
         {messages.length > 1 && (
           <button
@@ -366,7 +366,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
             </div>
           ) : (
             <div key={index} className="flex gap-2.5">
-              <SherpaAvatar />
+              <FaruAvatar />
               <div className="min-w-0 max-w-[85%]">
                 <div className="rounded-2xl rounded-bl-md bg-gray-50 border border-gray-200 px-4 py-2.5 text-sm text-gray-800 whitespace-pre-wrap">
                   {message.text}
@@ -404,7 +404,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
 
         {showTypingIndicator && (
           <div className="flex gap-2.5">
-            <SherpaAvatar />
+            <FaruAvatar />
             <span className="rounded-2xl rounded-bl-md bg-gray-50 border border-gray-200 px-4 py-3">
               <TypingDots />
             </span>
@@ -435,7 +435,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
         className="flex gap-2"
       >
         <label htmlFor="guide-chat-input" className="sr-only">
-          Ask Sherpa a question about the speaker guide
+          Ask Faru a question about the speaker guide
         </label>
         <input
           id="guide-chat-input"
