@@ -28,16 +28,16 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Community Day Wed Sept 9 · Workshops Thu Sept 10 · Conference Fri Sept 11 at Technopark · After party Fri 19:00–23:00 · Speaker day out Sat Sept 12, 10:00–16:00.",
+        "Community Day Wed Sept 9th (evening, from 18:00) · Workshops Thu Sept 10th · Conference Fri Sept 11th at Technopark · After party Fri 19:00–23:00 · Speaker day out Sat Sept 12th, 10:00–16:00.",
     },
     {
       type: "list",
       items: [
-        "<strong>Wednesday, September 9:</strong> Community Day — a relaxed ZurichJS meetup to warm up and meet the community. Optional, but lovely if you're in town. Check the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>meetup agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
-        "<strong>Thursday, September 10:</strong> Workshop Day — workshops run across Zurich (locations confirmed to instructors in advance).",
-        "<strong>Friday, September 11:</strong> Conference Day at Technopark Zürich — doors open at 07:00; the full agenda is on the <a href='/schedule'>schedule page</a>.",
-        "<strong>Friday, September 11, 19:00–23:00:</strong> After party at Seebad Enge on Lake Zürich.",
-        "<strong>Saturday, September 12, 10:00–16:00:</strong> Speaker day out — we're planning activities with everyone's departure flights in mind: perhaps a light hike or a tour of Zurich. Details TBD, but pencil in 10:00–16:00.",
+        "<strong>Wednesday, September 9th:</strong> Community Day — evening only, from <strong>18:00</strong>: a relaxed ZurichJS meetup to warm up and meet the community. Optional, but lovely if you're in town. Check the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>meetup agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
+        "<strong>Thursday, September 10th:</strong> Workshop Day — workshops run across Zurich (locations confirmed to instructors in advance).",
+        "<strong>Friday, September 11th:</strong> Conference Day at Technopark Zürich — doors open at 07:00; the full agenda is on the <a href='/schedule'>schedule page</a>.",
+        "<strong>Friday, September 11th, 19:00–23:00:</strong> After party at Seebad Enge on Lake Zürich.",
+        "<strong>Saturday, September 12th, 10:00–16:00:</strong> Speaker day out — we're planning activities with everyone's departure flights in mind: perhaps a light hike or a tour of Zurich. Details TBD, but pencil in 10:00–16:00.",
       ],
     },
     {
@@ -148,7 +148,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "The main conference day (September 11) takes place at <strong>Technopark Zürich, Technoparkstrasse 1, 8005 Zürich</strong> — Switzerland's largest technology center, in Zurich's innovation district (Zürich-West).",
+        "The main conference day (September 11th) takes place at <strong>Technopark Zürich, Technoparkstrasse 1, 8005 Zürich</strong> — Switzerland's largest technology center, in Zurich's innovation district (Zürich-West).",
     },
     {
       type: "list",
@@ -173,7 +173,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "If you're running a workshop on September 10, two things are handled on a fixed timeline so you're never guessing:",
+        "If you're running a workshop on September 10th, two things are handled on a fixed timeline so you're never guessing:",
     },
     {
       type: "list",
@@ -294,7 +294,7 @@ export const speakerGuide: InfoPage = {
       items: [
         "<strong>Morning of conference day:</strong> come by the stage when you arrive (before doors open) for a full run: display output, resolution, clicker, and mic.",
         "<strong>The break before your session:</strong> the A/V crew does a final connect-and-confirm with you so the handover between talks is seamless.",
-        "<strong>Workshop instructors:</strong> your assigned point of contact will arrange the room and A/V check with you directly — typically right before your workshop starts on September 10.",
+        "<strong>Workshop instructors:</strong> your assigned point of contact will arrange the room and A/V check with you directly — typically right before your workshop starts on September 10th.",
       ],
     },
     {
@@ -305,12 +305,12 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Seebad Enge, Fri Sept 11, 19:00–23:00 — drinks &amp; apéro included. Bring a bathing suit if you fancy a swim (optional). ~15 min from Technopark (S-Bahn Hardbrücke → Bahnhof Enge). Guides will lead groups over.",
+        "Seebad Enge, Fri Sept 11th, 19:00–23:00 — drinks &amp; apéro included. Bring a bathing suit if you fancy a swim (optional). ~15 min from Technopark (S-Bahn Hardbrücke → Bahnhof Enge). Guides will lead groups over.",
     },
     {
       type: "paragraph",
       content:
-        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue right on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11. Drinks and apéro are included, the September sunset over the Alps is free, and you'll be able to swim in the lake — so <strong>pack a bathing suit</strong> (entirely optional, but you'll be glad you did). There'll also be a <strong>photobooth</strong> — come grab a memento with your fellow speakers. Speakers have full access, of course.",
+        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue right on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11th. Drinks and apéro are included, the September sunset over the Alps is free, and you'll be able to swim in the lake — so <strong>pack a bathing suit</strong> (entirely optional, but you'll be glad you did). There'll also be a <strong>photobooth</strong> — come grab a memento with your fellow speakers. Speakers have full access, of course.",
     },
     {
       type: "paragraph",
