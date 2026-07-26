@@ -58,11 +58,24 @@ const SUGGESTIONS = [
   "Where is the speaker hotel?",
 ];
 
+const HTML_ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&nbsp;": " ",
+};
+
 const stripHtml = (html: string): string =>
   html
     .replace(/<[^>]*>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
+    // Single-pass decode so replacements can never form new entities that a
+    // later pass would unescape again (CodeQL: double-unescaping).
+    .replace(
+      /&(?:amp|lt|gt|quot|#39|nbsp);/g,
+      (entity) => HTML_ENTITIES[entity] ?? entity
+    )
     .replace(/\s+/g, " ")
     .trim();
 
