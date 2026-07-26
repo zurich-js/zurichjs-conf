@@ -382,7 +382,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "English works everywhere. Pay by card in CHF, drink the tap water, expect shops closed on Sundays — and the city is safe at all hours.",
+        "English works everywhere. Pay by card in CHF, drink the tap water, and note things close early (shops shut Sundays) — plan dinner ahead. Zurich is pricey, but we've got you covered most of the time; ask us for budget-friendly tips.",
     },
     {
       type: "paragraph",
@@ -414,8 +414,24 @@ export const speakerGuide: InfoPage = {
         "Currency is the <strong>Swiss franc (CHF)</strong> — cards and Apple/Google Pay are accepted almost everywhere.",
         "Tap water is excellent — refill your bottle at any of the 1,200+ public fountains.",
         "Tipping is not expected; rounding up for good service is a kind gesture.",
-        "Most shops are <strong>closed on Sundays</strong> — the shops at the main station and airport are the exception.",
+        "Most shops are <strong>closed on Sundays</strong> — the shops at the main station and airport are the exception. In general, things also <strong>close early</strong> here (many shops by 19:00–20:00, plenty of kitchens by 21:30–22:00), so it's good to plan in advance where you're heading for dinner or a late-night drink rather than wandering and hoping.",
         "Zurich is very safe, including at night and on public transport.",
+      ],
+    },
+    {
+      type: "paragraph",
+      content:
+        "<strong>A word on prices:</strong> Zurich can be super pricey at times. Don't stress — <strong>we'll be sorting you out most of the time</strong> (meals, the after party, and so on), so this only matters for your own extra plans. If you want budget-friendly recommendations for anything, just ask us — we know the good cheap spots. For orientation, typical prices look like this:",
+    },
+    {
+      type: "list",
+      items: [
+        "Coffee or cappuccino: <strong>CHF 5–6</strong>",
+        "Beer in a bar (0.5L): <strong>CHF 7–9</strong>; a glass of wine: <strong>CHF 8–10</strong>",
+        "Street food / kebab / quick lunch: <strong>CHF 12–20</strong>",
+        "Main course at a regular restaurant: <strong>CHF 25–40</strong>",
+        "Single public transport ticket in the city: <strong>~CHF 5</strong>",
+        "Bottle of water at a kiosk: <strong>CHF 3–4</strong> (or free from any fountain — bring a bottle)",
       ],
     },
     {
