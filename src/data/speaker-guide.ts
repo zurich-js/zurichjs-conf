@@ -157,6 +157,7 @@ export const speakerGuide: InfoPage = {
         "<strong>Getting there:</strong> your hotel is a 1–2 minute walk away — otherwise tram lines 4 and 13 stop directly at the <em>Technopark</em> stop, and the S-Bahn station <em>Hardbrücke</em> is a ~7 minute walk away.",
         "<strong>Schedule:</strong> the up-to-date program (including your slot) lives on the <a href='/schedule'>schedule page</a>. You should also receive a <strong>Google Calendar invite</strong> for your slot up to a week before the conference — if it hasn't landed by then, ping us in the group chat or at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
         "<strong>On arrival:</strong> check in at the registration desk and let a volunteer know you're a speaker — we'll take it from there, including a tech check before your talk.",
+        "<strong>Speakers room:</strong> there's a dedicated room for speakers to work, prep, or just decompress away from the crowd. If you need any accommodations beyond that for work or meetings, let us know and we'll sort something out.",
       ],
     },
     {
@@ -341,7 +342,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Things happen — if you fall ill or can't make your slot, <strong>tell us as early as you can</strong> via the speakers group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> so we can adjust the schedule. No guilt, no drama; your health comes first. For medical emergencies in Switzerland dial <strong>144</strong> (ambulance) or <strong>112</strong> (general emergency); pharmacies (\"Apotheke\") are plentiful and staff speak English.",
+        "Things happen — if you fall ill or can't make your slot, <strong>tell us as early as you can</strong> via the speakers group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> so we can adjust the schedule. No guilt, no drama; your health comes first. And <strong>feel free to message any of us privately</strong> — we've all dealt with health stuff, we're here to support you, and we can guide you to pharmacies (\"Apotheke\" — plentiful, and staff speak English) or whatever else you need. For medical emergencies in Switzerland dial <strong>144</strong> (ambulance) or <strong>112</strong> (general emergency).",
     },
     {
       type: "heading",
