@@ -61,7 +61,7 @@ const SpeakerGuidePage: React.FC = () => {
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="block font-bold text-gray-900">
-                      Don&apos;t want to read all this? Chat with Sherpa
+                      Don&apos;t want to read all this? Chat with Faru
                     </span>
                     <span className="block text-sm text-gray-600 mt-0.5">
                       Ask questions and get answers straight from this guide —
