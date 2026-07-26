@@ -309,7 +309,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue right on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11. Drinks and apéro are included, the September sunset over the Alps is free, and if you fancy it you can even swim in the lake. Speakers have full access, of course.",
+        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue right on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11. Drinks and apéro are included, the September sunset over the Alps is free, and if you fancy it you can even swim in the lake. There'll also be a <strong>photobooth</strong> — come grab a memento with your fellow speakers. Speakers have full access, of course.",
     },
     {
       type: "paragraph",
