@@ -28,7 +28,7 @@ const SpeakerGuideChatPage: React.FC = () => {
                 Faru
               </Heading>
               <span className="text-sm text-gray-500 hidden sm:inline">
-                · your speaker guide chat
+                · your speaker guide chat (named after tiny Faris, true story)
               </span>
             </div>
             <Link
