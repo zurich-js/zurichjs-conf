@@ -71,7 +71,7 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
               >
                 <button
                   onClick={() => handleClick(item.id)}
-                  className="group relative flex items-center gap-3 w-full text-left"
+                  className="group relative flex items-center gap-3 w-full text-left cursor-pointer"
                   aria-label={`Go to ${item.label}`}
                   aria-current={isActive ? 'location' : undefined}
                 >
