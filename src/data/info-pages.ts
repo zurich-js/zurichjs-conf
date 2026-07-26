@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export interface ContentSection {
-  type: "heading" | "paragraph" | "list" | "subsection" | "node";
+  type: "heading" | "paragraph" | "list" | "subsection" | "node" | "tldr";
   content?: string;
   level?: "h1" | "h2" | "h3";
   items?: string[];
