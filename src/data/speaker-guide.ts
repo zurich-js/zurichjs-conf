@@ -167,7 +167,7 @@ export const speakerGuide: InfoPage = {
       items: [
         "<strong>From the airport (~35–40 min):</strong> train to Zürich HB, then an S-Bahn one stop to <em>Hardbrücke</em> — the hotel is a few minutes' walk from the station. Here's the <a href='https://www.google.com/maps/dir/?api=1&amp;origin=Zurich+Airport&amp;destination=Novotel+Z%C3%BCrich+City+West&amp;travelmode=transit' target='_blank' rel='noopener noreferrer'>step-by-step route on Google Maps</a>, or plan it live on <a href='https://www.sbb.ch/en' target='_blank' rel='noopener noreferrer'>SBB</a>.",
         "<strong>To Technopark:</strong> 1–2 minutes on foot — no transport needed on conference morning, and an easy escape hatch when you want a quiet moment.",
-        "<strong>Escort included:</strong> as above, a volunteer can meet you at the airport with a ZurichJS sign and ride the route with you, so you never have to puzzle out the Swiss transit system jet-lagged.",
+        "<strong>We'll come get you:</strong> as above, a volunteer can meet you at the airport with a ZurichJS sign and ride the route with you, so you never have to puzzle out the Swiss transit system jet-lagged.",
       ],
     },
     {
