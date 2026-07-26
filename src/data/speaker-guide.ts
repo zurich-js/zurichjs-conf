@@ -26,19 +26,29 @@ export const speakerGuide: InfoPage = {
       content: "Key Dates at a Glance",
     },
     {
+      type: "tldr",
+      content:
+        "Community Day Wed Sept 9 · Workshops Thu Sept 10 · Conference Fri Sept 11 at Technopark · After party Fri 19:00–23:00 · Speaker day out Sat Sept 12, 10:00–16:00.",
+    },
+    {
       type: "list",
       items: [
-        "<strong>Tuesday, September 9:</strong> Community Day — a relaxed ZurichJS meetup to warm up and meet the community. Optional, but lovely if you're in town. Check the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>meetup agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
-        "<strong>Wednesday, September 10:</strong> Workshop Day — workshops run across Zurich (locations confirmed to instructors in advance).",
-        "<strong>Thursday, September 11:</strong> Conference Day at Technopark Zürich — doors open in the morning; the full agenda is on the <a href='/schedule'>schedule page</a>.",
-        "<strong>Thursday, September 11, 19:00–23:00:</strong> After party at Seebad Enge on Lake Zürich.",
-        "<strong>Friday, September 12:</strong> Nothing scheduled — travel home whenever suits you.",
+        "<strong>Wednesday, September 9:</strong> Community Day — a relaxed ZurichJS meetup to warm up and meet the community. Optional, but lovely if you're in town. Check the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>meetup agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
+        "<strong>Thursday, September 10:</strong> Workshop Day — workshops run across Zurich (locations confirmed to instructors in advance).",
+        "<strong>Friday, September 11:</strong> Conference Day at Technopark Zürich — doors open at 07:00; the full agenda is on the <a href='/schedule'>schedule page</a>.",
+        "<strong>Friday, September 11, 19:00–23:00:</strong> After party at Seebad Enge on Lake Zürich.",
+        "<strong>Saturday, September 12, 10:00–16:00:</strong> Speaker day out — we're planning activities with everyone's departure flights in mind: perhaps a light hike or a tour of Zurich. Details TBD, but pencil in 10:00–16:00.",
       ],
     },
     {
       type: "heading",
       level: "h2",
       content: "Key Contacts",
+    },
+    {
+      type: "tldr",
+      content:
+        "Your people: Faris, Bogdan, Nadja &amp; Colin. Fastest channel is the speakers group chat; otherwise <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
     },
     {
       type: "paragraph",
@@ -65,6 +75,11 @@ export const speakerGuide: InfoPage = {
       content: "Arriving via Zurich Airport",
     },
     {
+      type: "tldr",
+      content:
+        "Train from the airport to Zürich HB every few minutes (~12 min) — use the <a href='https://www.sbb.ch/en' target='_blank' rel='noopener noreferrer'>SBB</a> app, skip taxis. A volunteer with a ZurichJS sign can meet you and ride with you.",
+    },
+    {
       type: "paragraph",
       content:
         "Most speakers fly into <strong>Zurich Airport (ZRH)</strong>. The airport is exceptionally well connected: the train station sits directly beneath the terminal, and trains to Zürich Hauptbahnhof (main station, \"Zürich HB\") run every few minutes and take about 10–15 minutes. Tram 10 also runs from the airport into the city if you prefer a slower, scenic ride.",
@@ -72,15 +87,48 @@ export const speakerGuide: InfoPage = {
     {
       type: "list",
       items: [
-        "Buy tickets at the machines, or use the <strong>SBB Mobile</strong> app (easiest — supports international cards).",
+        "Buy tickets at the machines, or use the <a href='https://www.sbb.ch/en' target='_blank' rel='noopener noreferrer'><strong>SBB</strong></a> Mobile app (easiest — supports international cards and plans door-to-door routes).",
         "A regular ticket from the airport into the city covers all onward trams and buses within its zones for its validity window.",
-        "Taxis are available but expensive (expect CHF 60–70 to the city center) — the train is genuinely the better option.",
+        "Taxis are available but expensive (expect CHF 60–70 to the city center) — the train is by far the better option.",
+      ],
+    },
+    {
+      type: "paragraph",
+      content:
+        "And here's the best part: <strong>you don't have to navigate your arrival alone</strong>. We'll assign volunteers and support to come pick you up — look for the person holding a <strong>ZurichJS sign</strong> — and they'll guide you on public transport all the way to your hotel. Your arrival details are part of the speaker information form, so make sure we have your flight times.",
+    },
+    {
+      type: "heading",
+      level: "h2",
+      content: "Speaker Hotel",
+    },
+    {
+      type: "tldr",
+      content:
+        "Novotel Zürich City West, Schiffbaustrasse 13 — a 1–2 minute walk from Technopark. From the airport: train to Zürich HB, then S-Bahn to Hardbrücke (~35–40 min total).",
+    },
+    {
+      type: "paragraph",
+      content:
+        "Speakers stay at the <a href='https://www.google.com/maps/search/?api=1&amp;query=Novotel+Z%C3%BCrich+City+West' target='_blank' rel='noopener noreferrer'><strong>Novotel Zürich City West</strong></a> (Schiffbaustrasse 13, 8005 Zürich) — right in Zürich-West, just a <strong>1–2 minute walk from Technopark</strong>, surrounded by restaurants and bars. We picked it for convenience: you can slip back to your room between sessions whenever you need a breather.",
+    },
+    {
+      type: "list",
+      items: [
+        "<strong>From the airport (~35–40 min):</strong> train to Zürich HB, then an S-Bahn one stop to <em>Hardbrücke</em> — the hotel is a few minutes' walk from the station. Here's the <a href='https://www.google.com/maps/dir/?api=1&amp;origin=Zurich+Airport&amp;destination=Novotel+Z%C3%BCrich+City+West&amp;travelmode=transit' target='_blank' rel='noopener noreferrer'>step-by-step route on Google Maps</a>, or plan it live on <a href='https://www.sbb.ch/en' target='_blank' rel='noopener noreferrer'>SBB</a>.",
+        "<strong>To Technopark:</strong> 1–2 minutes on foot — no transport needed on conference morning, and an easy escape hatch when you want a quiet moment.",
+        "<strong>Escort included:</strong> as above, a volunteer can meet you at the airport with a ZurichJS sign and ride the route with you, so you never have to puzzle out the Swiss transit system jet-lagged.",
       ],
     },
     {
       type: "heading",
       level: "h2",
       content: "Getting Around Zurich",
+    },
+    {
+      type: "tldr",
+      content:
+        "One ticket covers trams, buses, S-Bahn, and boats. Always carry a valid ticket — inspections are random but real.",
     },
     {
       type: "paragraph",
@@ -93,6 +141,11 @@ export const speakerGuide: InfoPage = {
       content: "Conference Day at Technopark",
     },
     {
+      type: "tldr",
+      content:
+        "Technoparkstrasse 1, 8005 Zürich — 1–2 min walk from your hotel; doors open at 07:00. Check in at registration and tell a volunteer you're a speaker. Full agenda on the <a href='/schedule'>schedule page</a>.",
+    },
+    {
       type: "paragraph",
       content:
         "The main conference day (September 11) takes place at <strong>Technopark Zürich, Technoparkstrasse 1, 8005 Zürich</strong> — Switzerland's largest technology center, in Zurich's innovation district (Zürich-West).",
@@ -100,8 +153,9 @@ export const speakerGuide: InfoPage = {
     {
       type: "list",
       items: [
-        "<strong>Getting there:</strong> tram lines 4 and 13 stop directly at the <em>Technopark</em> stop; the S-Bahn station <em>Hardbrücke</em> is a ~7 minute walk away.",
-        "<strong>Schedule:</strong> the up-to-date program (including your slot) lives on the <a href='/schedule'>schedule page</a>.",
+        "<strong>Doors open at 07:00:</strong> the Swiss like their early mornings — and the crew will already be there. Come as early as you like; it's the calmest time for a tech check and a coffee.",
+        "<strong>Getting there:</strong> your hotel is a 1–2 minute walk away — otherwise tram lines 4 and 13 stop directly at the <em>Technopark</em> stop, and the S-Bahn station <em>Hardbrücke</em> is a ~7 minute walk away.",
+        "<strong>Schedule:</strong> the up-to-date program (including your slot) lives on the <a href='/schedule'>schedule page</a>. You should also receive a <strong>Google Calendar invite</strong> for your slot up to a week before the conference — if it hasn't landed by then, ping us in the group chat or at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
         "<strong>On arrival:</strong> check in at the registration desk and let a volunteer know you're a speaker — we'll take it from there, including a tech check before your talk.",
       ],
     },
@@ -109,6 +163,11 @@ export const speakerGuide: InfoPage = {
       type: "heading",
       level: "h2",
       content: "Workshop Instructors",
+    },
+    {
+      type: "tldr",
+      content:
+        "Location confirmed 2 weeks out; your point of contact assigned 1 week out. Lunch provided 13:00–14:00; breakfast at your hotel. Until then, ask Faris.",
     },
     {
       type: "paragraph",
@@ -125,12 +184,22 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
+        "And don't worry about food: whether you're a morning or afternoon instructor, <strong>lunch is provided</strong> during the <strong>13:00–14:00</strong> lunch break. Best to grab breakfast beforehand — it's included at your hotel.",
+    },
+    {
+      type: "paragraph",
+      content:
         "Until your point of contact is assigned, direct workshop questions to Faris or the speakers group chat.",
     },
     {
       type: "heading",
       level: "h2",
       content: "Speaker Information Form",
+    },
+    {
+      type: "tldr",
+      content:
+        "A short form is coming your way — fill it in promptly: dietary needs, plus one, flight times.",
     },
     {
       type: "paragraph",
@@ -143,6 +212,11 @@ export const speakerGuide: InfoPage = {
       content: "Plus Ones",
     },
     {
+      type: "tldr",
+      content:
+        "Plus ones are welcome — but tell us in advance. No surprise guests on the day.",
+    },
+    {
       type: "paragraph",
       content:
         "Plus ones are welcome! The only rule: <strong>tell us in advance</strong> — via the speaker information form or by contacting us directly — so we can plan catering, badges, and after-party capacity. Please don't bring someone unannounced on the day.",
@@ -151,6 +225,11 @@ export const speakerGuide: InfoPage = {
       type: "heading",
       level: "h2",
       content: "Your Slides",
+    },
+    {
+      type: "tldr",
+      content:
+        "16:9 at 1920×1080, dark theme, big text (24pt+ body, 18pt+ code). Send your deck to us before the conference.",
     },
     {
       type: "paragraph",
@@ -176,6 +255,11 @@ export const speakerGuide: InfoPage = {
       content: "On Stage: A/V, Podium & Cabling",
     },
     {
+      type: "tldr",
+      content:
+        "HDMI at the podium; adapters and a clicker are provided — bring anything exotic yourself, plus your charger. You'll be miked, so roam freely.",
+    },
+    {
       type: "list",
       items: [
         "<strong>Cabling:</strong> the stage connection is <strong>HDMI</strong>. We'll have USB-C and other common adapters on hand, but if your machine needs anything unusual, please bring your own adapter — and your charger; there's power at the podium.",
@@ -188,6 +272,11 @@ export const speakerGuide: InfoPage = {
       type: "heading",
       level: "h2",
       content: "Tech Checks",
+    },
+    {
+      type: "tldr",
+      content:
+        "Full check the morning of conference day (before doors open), plus a final connect in the break before your session. Workshops: via your point of contact.",
     },
     {
       type: "paragraph",
@@ -206,6 +295,11 @@ export const speakerGuide: InfoPage = {
       type: "heading",
       level: "h2",
       content: "After Party at Seebad Enge",
+    },
+    {
+      type: "tldr",
+      content:
+        "Seebad Enge, Fri Sept 11, 19:00–23:00 — drinks &amp; apéro included. ~15 min from Technopark (S-Bahn Hardbrücke → Bahnhof Enge). Guides will lead groups over.",
     },
     {
       type: "paragraph",
@@ -235,6 +329,11 @@ export const speakerGuide: InfoPage = {
       content: "If You Fall Sick",
     },
     {
+      type: "tldr",
+      content:
+        "Tell us as early as possible via the group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. Emergencies: 144 (ambulance), 112 (general).",
+    },
+    {
       type: "paragraph",
       content:
         "Things happen — if you fall ill or can't make your slot, <strong>tell us as early as you can</strong> via the speakers group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> so we can adjust the schedule. No guilt, no drama; your health comes first. For medical emergencies in Switzerland dial <strong>144</strong> (ambulance) or <strong>112</strong> (general emergency); pharmacies (\"Apotheke\") are plentiful and staff speak English.",
@@ -243,6 +342,11 @@ export const speakerGuide: InfoPage = {
       type: "heading",
       level: "h2",
       content: "Speakers Group Chat",
+    },
+    {
+      type: "tldr",
+      content:
+        "Not in the chat yet? Ping Faris, Bogdan, or Nadja and you'll be added right away.",
     },
     {
       type: "paragraph",
@@ -255,14 +359,24 @@ export const speakerGuide: InfoPage = {
       content: "Promoting the Conference",
     },
     {
+      type: "tldr",
+      content:
+        "Promote your talk! Grab logos &amp; blurbs from the <a href='/partners/assets'>assets page</a> and tag <strong>@zurichjs</strong>.",
+    },
+    {
       type: "paragraph",
       content:
-        "Please promote your talk and the conference as much as you can — it genuinely helps a community-run, non-profit event, and it fills the room for <em>your</em> session. Ready-made logos, blurbs, key facts, and imagery are on our <a href='/partners/assets'>assets page</a> — grab whatever you need for posts, newsletters, or your company's channels, and tag <strong>@zurichjs</strong> so we can amplify you.",
+        "Please promote your talk and the conference as much as you can — it makes a real difference to a community-run, non-profit event, and it fills the room for <em>your</em> session. Ready-made logos, blurbs, key facts, and imagery are on our <a href='/partners/assets'>assets page</a> — grab whatever you need for posts, newsletters, or your company's channels, and tag <strong>@zurichjs</strong> so we can amplify you.",
     },
     {
       type: "heading",
       level: "h2",
       content: "Zurich Essentials",
+    },
+    {
+      type: "tldr",
+      content:
+        "English works everywhere. Pay by card in CHF, drink the tap water, expect shops closed on Sundays — and the city is safe at all hours.",
     },
     {
       type: "paragraph",

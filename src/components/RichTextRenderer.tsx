@@ -132,6 +132,22 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           </div>
         );
 
+      case "tldr":
+        return (
+          <div
+            key={index}
+            className="rounded-xl border border-brand-yellow-main/60 bg-brand-yellow-main/10 px-4 py-3"
+          >
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-1">
+              TL;DR
+            </p>
+            <p
+              className="text-sm text-gray-800 leading-relaxed [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+              dangerouslySetInnerHTML={{ __html: section.content || "" }}
+            />
+          </div>
+        );
+
       case "node":
         return (
           <div key={index} className="text-gray-700 leading-relaxed">
