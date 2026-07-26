@@ -23,6 +23,51 @@ export const speakerGuide: InfoPage = {
     {
       type: "heading",
       level: "h2",
+      content: "Quick Directions",
+    },
+    {
+      type: "paragraph",
+      content:
+        "One-tap Google Maps routes between the places you'll actually go:",
+    },
+    {
+      type: "quicklinks",
+      links: [
+        {
+          label: "Zurich Airport → Speaker hotel",
+          sublabel: "Novotel Zürich City West · ~35–40 min by train",
+          href: "https://www.google.com/maps/dir/?api=1&origin=Zurich+Airport&destination=Novotel+Z%C3%BCrich+City+West&travelmode=transit",
+        },
+        {
+          label: "Zurich Airport → Technopark",
+          sublabel: "Conference venue · ~35–40 min by train",
+          href: "https://www.google.com/maps/dir/?api=1&origin=Zurich+Airport&destination=Technopark+Z%C3%BCrich&travelmode=transit",
+        },
+        {
+          label: "Speaker hotel → Technopark",
+          sublabel: "1–2 min walk",
+          href: "https://www.google.com/maps/dir/?api=1&origin=Novotel+Z%C3%BCrich+City+West&destination=Technopark+Z%C3%BCrich&travelmode=walking",
+        },
+        {
+          label: "Technopark → Seebad Enge",
+          sublabel: "After party · ~15 min by S-Bahn",
+          href: "https://www.google.com/maps/dir/?api=1&origin=Technopark+Z%C3%BCrich&destination=Seebad+Enge&travelmode=transit",
+        },
+        {
+          label: "Speaker hotel → Seebad Enge",
+          sublabel: "After party · ~20 min by public transport",
+          href: "https://www.google.com/maps/dir/?api=1&origin=Novotel+Z%C3%BCrich+City+West&destination=Seebad+Enge&travelmode=transit",
+        },
+        {
+          label: "Zürich HB → Speaker hotel",
+          sublabel: "Main station · ~10 min by S-Bahn or tram",
+          href: "https://www.google.com/maps/dir/?api=1&origin=Z%C3%BCrich+HB&destination=Novotel+Z%C3%BCrich+City+West&travelmode=transit",
+        },
+      ],
+    },
+    {
+      type: "heading",
+      level: "h2",
       content: "Key Dates at a Glance",
     },
     {
@@ -447,6 +492,56 @@ export const speakerGuide: InfoPage = {
         "<strong>Uetliberg</strong> — Zurich's local mountain, 20 minutes by train, panoramic views",
         "<strong>Zürich-West</strong> — the neighborhood around Technopark: Frau Gerolds Garten, Im Viadukt, street food and design shops",
         "<strong>Kunsthaus</strong> — one of Switzerland's finest art museums",
+      ],
+    },
+    {
+      type: "heading",
+      level: "h2",
+      content: "FAQ",
+    },
+    {
+      type: "subsection",
+      subsections: [
+        {
+          type: "paragraph",
+          content:
+            "<strong>Do I need a ticket as a speaker?</strong><br />No — you're covered. Just check in at registration on arrival and tell a volunteer you're a speaker.",
+        },
+        {
+          type: "paragraph",
+          content:
+            "<strong>When exactly is my talk?</strong><br />It's on the <a href='/schedule'>schedule page</a>, and you'll get a Google Calendar invite up to a week before the conference. If it hasn't arrived by then, ping us.",
+        },
+        {
+          type: "paragraph",
+          content:
+            "<strong>Can my plus one join the after party?</strong><br />Yes — as long as you've told us in advance so we can plan seats, food, and capacity. See <a href='#plus-ones'>Plus Ones</a>.",
+        },
+        {
+          type: "paragraph",
+          content:
+            "<strong>Where do I send my slides?</strong><br />The speakers group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> — before the conference, please. See <a href='#your-slides'>Your Slides</a>.",
+        },
+        {
+          type: "paragraph",
+          content:
+            "<strong>I missed the morning tech check — what now?</strong><br />No stress: grab the A/V crew during any break. There's a final connect-and-confirm in the break before your session anyway.",
+        },
+        {
+          type: "paragraph",
+          content:
+            "<strong>I can't make Community Day / the workshops — is that a problem?</strong><br />Not at all. Everything except your own slot is optional. Come for what you can, skip what you can't.",
+        },
+        {
+          type: "paragraph",
+          content:
+            "<strong>Is there somewhere quiet to work or take a meeting?</strong><br />Yes — the dedicated speakers room at Technopark. Need more than that? Let us know and we'll sort something out.",
+        },
+        {
+          type: "paragraph",
+          content:
+            "<strong>Something urgent came up on the day — who do I contact?</strong><br />The speakers group chat is fastest. Otherwise grab any volunteer on site, or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
+        },
       ],
     },
     {

@@ -1,11 +1,26 @@
 import type { ReactNode } from "react";
 
+export interface QuickLink {
+  label: string;
+  sublabel?: string;
+  href: string;
+}
+
 export interface ContentSection {
-  type: "heading" | "paragraph" | "list" | "subsection" | "node" | "tldr";
+  type:
+    | "heading"
+    | "paragraph"
+    | "list"
+    | "subsection"
+    | "node"
+    | "tldr"
+    | "quicklinks";
   content?: string;
   level?: "h1" | "h2" | "h3";
   items?: string[];
   subsections?: ContentSection[];
+  /** Rendered as a grid of link cards when `type === "quicklinks"`. */
+  links?: QuickLink[];
   /** Rendered as-is when `type === "node"`. Use for paragraphs that need React components (e.g. Next/Link). */
   node?: ReactNode;
 }

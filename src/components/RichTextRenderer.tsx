@@ -1,4 +1,5 @@
 import React from "react";
+import { ArrowUpRight, MapPin } from "lucide-react";
 import { Heading } from "@/components/atoms";
 import type { ContentSection } from "@/data/info-pages";
 
@@ -145,6 +146,40 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
               className="text-sm text-gray-800 leading-relaxed [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
               dangerouslySetInnerHTML={{ __html: section.content || "" }}
             />
+          </div>
+        );
+
+      case "quicklinks":
+        return (
+          <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {section.links?.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-start gap-3 rounded-xl border border-gray-200 p-4 transition-colors hover:border-gray-400 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow-main"
+              >
+                <MapPin
+                  className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-gray-900">
+                    {link.label}
+                  </span>
+                  {link.sublabel && (
+                    <span className="block text-xs text-gray-500 mt-0.5">
+                      {link.sublabel}
+                    </span>
+                  )}
+                </span>
+                <ArrowUpRight
+                  className="w-4 h-4 text-gray-400 flex-shrink-0 transition-colors group-hover:text-gray-700"
+                  aria-hidden="true"
+                />
+              </a>
+            ))}
           </div>
         );
 
