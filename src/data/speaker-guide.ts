@@ -158,6 +158,51 @@ export const speakerGuide: InfoPage = {
         "Please send us your slides <strong>before the conference</strong> — it lets us verify formats and resolutions on the venue hardware and have a backup ready if your laptop misbehaves. Share them in the speakers group chat or email them to <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. If your talk includes live demos, mention it so we can plan the tech check accordingly.",
     },
     {
+      type: "paragraph",
+      content: "A few guidelines so your deck looks great on the big screen:",
+    },
+    {
+      type: "list",
+      items: [
+        "<strong>Aspect ratio:</strong> build your deck in <strong>16:9</strong>. The stage output is Full HD (1920×1080) — 16:9 decks fill the screen edge to edge, while 4:3 decks get letterboxed and shrink.",
+        "<strong>Dark mode:</strong> we recommend <strong>dark backgrounds with light, high-contrast text</strong> — dark slides read far better under stage lighting and are much easier on the audience's eyes than a glowing white wall.",
+        "<strong>Type size:</strong> keep body text at ~24pt or larger and code samples at 18pt+ with a high-contrast syntax theme. Rule of thumb: if you can read it standing three meters behind your laptop, the back row can read it too.",
+        "<strong>Videos &amp; audio:</strong> embed media in the deck rather than relying on streaming, and tell us in advance if your talk needs sound so the A/V crew can wire it up.",
+      ],
+    },
+    {
+      type: "heading",
+      level: "h2",
+      content: "On Stage: A/V, Podium & Cabling",
+    },
+    {
+      type: "list",
+      items: [
+        "<strong>Cabling:</strong> the stage connection is <strong>HDMI</strong>. We'll have USB-C and other common adapters on hand, but if your machine needs anything unusual, please bring your own adapter — and your charger; there's power at the podium.",
+        "<strong>Clicker:</strong> a presenter remote is provided, and you're welcome to bring your own if you prefer it.",
+        "<strong>Podium:</strong> the podium sits to the side of the stage with the main screen beside you, so you never block the audience's view of your slides. You're not chained to it — you'll be miked up, so feel free to use the whole stage.",
+        "<strong>Backup:</strong> because you sent your slides in advance (see above), a backup machine is standing by if your laptop refuses to cooperate on the day.",
+      ],
+    },
+    {
+      type: "heading",
+      level: "h2",
+      content: "Tech Checks",
+    },
+    {
+      type: "paragraph",
+      content:
+        "Every speaker gets a tech check before going on stage — you will not be plugging in cold in front of the audience:",
+    },
+    {
+      type: "list",
+      items: [
+        "<strong>Morning of conference day:</strong> come by the stage when you arrive (before doors open) for a full run: display output, resolution, clicker, and mic.",
+        "<strong>The break before your session:</strong> the A/V crew does a final connect-and-confirm with you so the handover between talks is seamless.",
+        "<strong>Workshop instructors:</strong> your assigned point of contact will arrange the room and A/V check with you directly — typically right before your workshop starts on September 10.",
+      ],
+    },
+    {
       type: "heading",
       level: "h2",
       content: "After Party at Seebad Enge",
