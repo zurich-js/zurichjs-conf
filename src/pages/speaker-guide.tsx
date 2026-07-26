@@ -6,6 +6,7 @@ import {
 } from "@/components/RichTextRenderer";
 import { PageNavigation } from "@/components/PageNavigation";
 import { SEO } from "@/components/SEO";
+import { GuideChat } from "@/components/speaker-guide";
 import { speakerGuide } from "@/data/speaker-guide";
 import { ShapedSection, SiteFooter } from "@/components/organisms";
 
@@ -15,7 +16,10 @@ import { ShapedSection, SiteFooter } from "@/components/organisms";
  * robots.txt, and served with noindex.
  */
 const SpeakerGuidePage: React.FC = () => {
-  const navigationItems = extractNavigationItems(speakerGuide.sections);
+  const navigationItems = [
+    ...extractNavigationItems(speakerGuide.sections),
+    { id: "ask-the-guide", label: "Ask the Guide" },
+  ];
 
   return (
     <>
@@ -68,6 +72,7 @@ const SpeakerGuidePage: React.FC = () => {
                   </ul>
                 </nav>
                 <RichTextRenderer sections={speakerGuide.sections} />
+                <GuideChat sections={speakerGuide.sections} />
               </div>
               <aside className="lg:block hidden print:hidden">
                 <PageNavigation items={navigationItems} />
