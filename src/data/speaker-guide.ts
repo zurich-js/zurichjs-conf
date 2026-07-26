@@ -214,12 +214,17 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Plus ones are welcome — but tell us in advance. No surprise guests on the day.",
+        "Plus ones are welcome — loved ones make a conference better. Just tell us in advance so we can plan seats, food, and capacity. No surprise guests on the day.",
     },
     {
       type: "paragraph",
       content:
-        "Plus ones are welcome! The only rule: <strong>tell us in advance</strong> — via the speaker information form or by contacting us directly — so we can plan catering, badges, and after-party capacity. Please don't bring someone unannounced on the day.",
+        "Plus ones are welcome! We believe a conference is more fun with your loved ones and friends around, and we want to accommodate them. The only rule: <strong>tell us in advance</strong> — via the speaker information form or by contacting us directly.",
+    },
+    {
+      type: "paragraph",
+      content:
+        "Why the notice? An accurate headcount matters for <strong>safety and venue capacity limits</strong>, and especially for ordering food. We don't want waste — or worse, someone we lost count of standing without a seat or a plate. Zurich can be a bit tight on space and expensive per head, so knowing your numbers early lets us take proper care of everyone. Please don't bring someone unannounced on the day.",
     },
     {
       type: "heading",
