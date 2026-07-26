@@ -304,12 +304,12 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Seebad Enge, Fri Sept 11, 19:00–23:00 — drinks &amp; apéro included. ~15 min from Technopark (S-Bahn Hardbrücke → Bahnhof Enge). Guides will lead groups over.",
+        "Seebad Enge, Fri Sept 11, 19:00–23:00 — drinks &amp; apéro included. Bring a bathing suit if you fancy a swim (optional). ~15 min from Technopark (S-Bahn Hardbrücke → Bahnhof Enge). Guides will lead groups over.",
     },
     {
       type: "paragraph",
       content:
-        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue right on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11. Drinks and apéro are included, the September sunset over the Alps is free, and if you fancy it you can even swim in the lake. There'll also be a <strong>photobooth</strong> — come grab a memento with your fellow speakers. Speakers have full access, of course.",
+        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue right on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11. Drinks and apéro are included, the September sunset over the Alps is free, and you'll be able to swim in the lake — so <strong>pack a bathing suit</strong> (entirely optional, but you'll be glad you did). There'll also be a <strong>photobooth</strong> — come grab a memento with your fellow speakers. Speakers have full access, of course.",
     },
     {
       type: "paragraph",
