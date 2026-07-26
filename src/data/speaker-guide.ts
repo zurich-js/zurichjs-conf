@@ -21,6 +21,11 @@ export const speakerGuide: InfoPage = {
         "Welcome aboard — we're thrilled to have you speaking at ZurichJS Conf 2026! This guide collects everything you need before and during the conference. Skim the table of contents, and if anything is unclear, just ask in the speakers group chat or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. You will never be on your own: our team, volunteers, and guides will be around at every step.",
     },
     {
+      type: "paragraph",
+      content:
+        "One ask from us: <strong>we'd love for you to stick around as much as possible</strong>. Attendees are flying in from across the world — Singapore, Australia, Sweden, the UK, Germany, Austria, France — and they're coming for <em>you</em>. Having you around beyond your talk means the world to them (and to us). That said, of course we want you to enjoy Switzerland too — balance it however feels right.",
+    },
+    {
       type: "heading",
       level: "h2",
       content: "Quick Directions",
