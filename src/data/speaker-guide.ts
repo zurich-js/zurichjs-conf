@@ -59,16 +59,6 @@ export const speakerGuide: InfoPage = {
           href: "https://www.google.com/maps/dir/?api=1&origin=Technopark+Z%C3%BCrich&destination=Seebad+Enge&travelmode=transit",
         },
         {
-          label: "Speaker hotel → Seebad Enge",
-          sublabel: "After party · ~20 min by public transport",
-          href: "https://www.google.com/maps/dir/?api=1&origin=Novotel+Z%C3%BCrich+City+West&destination=Seebad+Enge&travelmode=transit",
-        },
-        {
-          label: "Zürich HB → Speaker hotel",
-          sublabel: "Main station · ~10 min by S-Bahn or tram",
-          href: "https://www.google.com/maps/dir/?api=1&origin=Z%C3%BCrich+HB&destination=Novotel+Z%C3%BCrich+City+West&travelmode=transit",
-        },
-        {
           label: "Speaker hotel → Ziegelhütte",
           sublabel: "Speaker dinner · Thu Sept 10th evening",
           href: "https://www.google.com/maps/dir/?api=1&origin=Novotel+Z%C3%BCrich+City+West&destination=Restaurant+Ziegelh%C3%BCtte+Z%C3%BCrich&travelmode=transit",
@@ -126,6 +116,11 @@ export const speakerGuide: InfoPage = {
         "On the days themselves you'll also be supported by our volunteer crew — they'll be clearly identifiable at the venues and can always route you to the right person.",
     },
     {
+      type: "paragraph",
+      content:
+        "There's also a dedicated <strong>speakers group chat</strong> — announcements and coordination live there, and it's the fastest way to reach us. <strong>Not in it yet? Contact Faris, Bogdan, or Nadja</strong> and we'll add you right away.",
+    },
+    {
       type: "heading",
       level: "h2",
       content: "Arriving via Zurich Airport",
@@ -144,7 +139,7 @@ export const speakerGuide: InfoPage = {
       type: "list",
       items: [
         "Buy tickets at the machines, or use the <a href='https://www.sbb.ch/en' target='_blank' rel='noopener noreferrer'><strong>SBB</strong></a> Mobile app (easiest — supports international cards and plans door-to-door routes).",
-        "A regular ticket from the airport into the city covers all onward trams and buses within its zones for its validity window.",
+        "A regular ticket from the airport into the city covers all onward trams and buses within its zones for its validity window. One ticket system covers trams, buses, S-Bahn, and boats city-wide — nobody checks at the door, but roaming inspections are real, so always carry a valid ticket.",
         "Taxis are available but expensive (expect CHF 60–70 to the city center). <strong>Uber operates in Zurich</strong> too and is usually a bit cheaper than a taxi — but the train still wins.",
       ],
     },
@@ -175,21 +170,6 @@ export const speakerGuide: InfoPage = {
         "<strong>To Technopark:</strong> 1–2 minutes on foot — no transport needed on conference morning, and an easy escape hatch when you want a quiet moment.",
         "<strong>We'll come get you:</strong> as above, a volunteer can meet you at the airport with a ZurichJS sign and ride the route with you, so you never have to puzzle out the Swiss transit system jet-lagged.",
       ],
-    },
-    {
-      type: "heading",
-      level: "h2",
-      content: "Getting Around Zurich",
-    },
-    {
-      type: "tldr",
-      content:
-        "One ticket covers trams, buses, S-Bahn, and boats. Always carry a valid ticket — inspections are random but real. Uber works here too.",
-    },
-    {
-      type: "paragraph",
-      content:
-        "Zurich's public transport (ZVV) is frequent, punctual, and safe at all hours — trams, buses, S-Bahn trains, and even boats run on one ticket system. Nobody checks tickets at the door; roaming inspections happen instead, so always travel with a valid ticket. The SBB Mobile or ZVV app will route you anywhere door to door. Most places in the city are also within a pleasant 20–30 minute walk of each other. And if you'd rather not think at all, <strong>Uber works in Zurich</strong> — handy late at night or with luggage, though public transport is cheaper and often just as fast.",
     },
     {
       type: "heading",
@@ -269,9 +249,14 @@ export const speakerGuide: InfoPage = {
         "<strong>Getting there:</strong> it's an easy public transport ride — here's the <a href='https://www.google.com/maps/dir/?api=1&amp;origin=Novotel+Z%C3%BCrich+City+West&amp;destination=Restaurant+Ziegelh%C3%BCtte+Z%C3%BCrich&amp;travelmode=transit' target='_blank' rel='noopener noreferrer'>route from the speaker hotel</a>. But you won't need to navigate it yourself: <strong>guides will pick you up and travel with you</strong>, and an Uber is always a fallback if you're running late.",
     },
     {
+      type: "heading",
+      level: "h2",
+      content: "Speaker Info Form & Plus Ones",
+    },
+    {
       type: "tldr",
       content:
-        "A short form is coming your way — fill it in promptly: dietary needs, plus one, flight times.",
+        "A short form is coming — fill it in promptly: dietary needs, plus one, flight times. Plus ones are welcome, just tell us in advance — no surprise guests on the day.",
     },
     {
       type: "paragraph",
@@ -279,34 +264,19 @@ export const speakerGuide: InfoPage = {
         "Ahead of the conference you'll receive a short form to fill out. Please complete it promptly — it's how we capture <strong>dietary restrictions</strong>, whether you're bringing a <strong>plus one</strong>, and other practical details we need to take proper care of you. If the form hasn't reached you and the conference is getting close, ping us in the group chat or at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
     },
     {
-      type: "heading",
-      level: "h2",
-      content: "Plus Ones",
-    },
-    {
-      type: "tldr",
-      content:
-        "Plus ones are welcome — loved ones make a conference better. Just tell us in advance so we can plan seats, food, and capacity. No surprise guests on the day.",
-    },
-    {
       type: "paragraph",
       content:
-        "Plus ones are welcome! We believe a conference is more fun with your loved ones and friends around, and we want to accommodate them. The only rule: <strong>tell us in advance</strong> — via the speaker information form or by contacting us directly.",
-    },
-    {
-      type: "paragraph",
-      content:
-        "Why the notice? An accurate headcount matters for <strong>safety and venue capacity limits</strong>, and especially for ordering food. We don't want waste — or worse, someone we lost count of standing without a seat or a plate. Zurich can be a bit tight on space and expensive per head, so knowing your numbers early lets us take proper care of everyone. Please don't bring someone unannounced on the day.",
+        "<strong>Plus ones are welcome!</strong> A conference is more fun with your loved ones and friends around, and we want to accommodate them. Just <strong>tell us in advance</strong> — via the form or directly — so we can plan seats, food, and capacity (Zurich is tight on space and pricey per head). Please don't bring someone unannounced on the day.",
     },
     {
       type: "heading",
       level: "h2",
-      content: "Your Slides",
+      content: "Your Talk: Slides, Stage & Tech",
     },
     {
       type: "tldr",
       content:
-        "16:9 at 1920×1080, dark theme, big text (24pt+ body, 18pt+ code). Send your deck to us before the conference.",
+        "16:9 at 1920×1080, dark theme, big text. Send slides before the conference. HDMI + clicker at the podium. Tech checks: conference morning + the break before your session.",
     },
     {
       type: "paragraph",
@@ -327,14 +297,8 @@ export const speakerGuide: InfoPage = {
       ],
     },
     {
-      type: "heading",
-      level: "h2",
-      content: "On Stage: A/V, Podium & Cabling",
-    },
-    {
-      type: "tldr",
-      content:
-        "HDMI at the podium; adapters and a clicker are provided — bring anything exotic yourself, plus your charger. You'll be miked, so roam freely.",
+      type: "paragraph",
+      content: "<strong>On stage</strong>, here's what's waiting for you:",
     },
     {
       type: "list",
@@ -346,19 +310,9 @@ export const speakerGuide: InfoPage = {
       ],
     },
     {
-      type: "heading",
-      level: "h2",
-      content: "Tech Checks",
-    },
-    {
-      type: "tldr",
-      content:
-        "Full check the morning of conference day (before doors open), plus a final connect in the break before your session. Workshops: via your point of contact.",
-    },
-    {
       type: "paragraph",
       content:
-        "Every speaker gets a tech check before going on stage — you will not be plugging in cold in front of the audience:",
+        "And every speaker gets a <strong>tech check</strong> before going on stage — you will not be plugging in cold in front of the audience:",
     },
     {
       type: "list",
@@ -418,21 +372,6 @@ export const speakerGuide: InfoPage = {
     {
       type: "heading",
       level: "h2",
-      content: "Speakers Group Chat",
-    },
-    {
-      type: "tldr",
-      content:
-        "Not in the chat yet? Ping Faris, Bogdan, or Nadja and you'll be added right away.",
-    },
-    {
-      type: "paragraph",
-      content:
-        "There's a dedicated group chat for all speakers — announcements, coordination, and fellow-speaker banter live there, and it's the fastest way to reach the organizers. <strong>If you haven't been invited yet, contact Faris, Bogdan, or Nadja</strong> (or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>) and we'll add you right away.",
-    },
-    {
-      type: "heading",
-      level: "h2",
       content: "Promoting the Conference",
     },
     {
@@ -469,10 +408,7 @@ export const speakerGuide: InfoPage = {
       items: [
         "<strong>Grüezi</strong> — hello (the classic Swiss greeting)",
         "<strong>Merci vilmal</strong> — thank you very much",
-        "<strong>Exgüsi</strong> — excuse me",
-        "<strong>En Guete</strong> — enjoy your meal",
         "<strong>Proscht</strong> — cheers (make eye contact when clinking!)",
-        "<strong>Ade</strong> — goodbye",
       ],
     },
     {
@@ -514,10 +450,8 @@ export const speakerGuide: InfoPage = {
       items: [
         "<strong>Old Town &amp; Niederdorf</strong> — cobbled lanes, cafés, and the Grossmünster church",
         "<strong>Lake Zürich promenade</strong> — or a short boat ride from Bürkliplatz",
-        "<strong>Lindenhof</strong> — a quiet hilltop with the best free view of the old town",
         "<strong>Uetliberg</strong> — Zurich's local mountain, 20 minutes by train, panoramic views",
         "<strong>Zürich-West</strong> — the neighborhood around Technopark: Frau Gerolds Garten, Im Viadukt, street food and design shops",
-        "<strong>Kunsthaus</strong> — one of Switzerland's finest art museums",
       ],
     },
     {
@@ -541,16 +475,6 @@ export const speakerGuide: InfoPage = {
         {
           type: "paragraph",
           content:
-            "<strong>Can my plus one join the after party?</strong><br />Yes — as long as you've told us in advance so we can plan seats, food, and capacity. See <a href='#plus-ones'>Plus Ones</a>.",
-        },
-        {
-          type: "paragraph",
-          content:
-            "<strong>Where do I send my slides?</strong><br />The speakers group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> — before the conference, please. See <a href='#your-slides'>Your Slides</a>.",
-        },
-        {
-          type: "paragraph",
-          content:
             "<strong>I missed the morning tech check — what now?</strong><br />No stress: grab the A/V crew during any break. There's a final connect-and-confirm in the break before your session anyway.",
         },
         {
@@ -562,11 +486,6 @@ export const speakerGuide: InfoPage = {
           type: "paragraph",
           content:
             "<strong>Is there somewhere quiet to work or take a meeting?</strong><br />Yes — the dedicated speakers room at Technopark. Need more than that? Let us know and we'll sort something out.",
-        },
-        {
-          type: "paragraph",
-          content:
-            "<strong>Something urgent came up on the day — who do I contact?</strong><br />The speakers group chat is fastest. Otherwise grab any volunteer on site, or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
         },
       ],
     },
