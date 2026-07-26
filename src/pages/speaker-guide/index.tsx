@@ -1,4 +1,6 @@
 import React from "react";
+import Link from "next/link";
+import { ArrowRight, Bot } from "lucide-react";
 import { Kicker, Heading } from "@/components/atoms";
 import {
   RichTextRenderer,
@@ -6,7 +8,6 @@ import {
 } from "@/components/RichTextRenderer";
 import { PageNavigation } from "@/components/PageNavigation";
 import { SEO } from "@/components/SEO";
-import { GuideChat } from "@/components/speaker-guide";
 import { speakerGuide } from "@/data/speaker-guide";
 import { ShapedSection, SiteFooter } from "@/components/organisms";
 
@@ -16,10 +17,7 @@ import { ShapedSection, SiteFooter } from "@/components/organisms";
  * robots.txt, and served with noindex.
  */
 const SpeakerGuidePage: React.FC = () => {
-  const navigationItems = [
-    ...extractNavigationItems(speakerGuide.sections),
-    { id: "ask-the-guide", label: "Ask the Guide" },
-  ];
+  const navigationItems = extractNavigationItems(speakerGuide.sections);
 
   return (
     <>
@@ -51,6 +49,30 @@ const SpeakerGuidePage: React.FC = () => {
                     Last updated: {speakerGuide.lastUpdated}
                   </p>
                 </div>
+                <Link
+                  href="/speaker-guide/chat"
+                  className="group flex items-center gap-4 rounded-2xl border-2 border-brand-yellow-main/60 bg-brand-yellow-main/10 p-5 mb-12 transition-colors hover:bg-brand-yellow-main/20 print:hidden"
+                >
+                  <span
+                    className="w-11 h-11 rounded-full bg-brand-yellow-main flex items-center justify-center flex-shrink-0"
+                    aria-hidden="true"
+                  >
+                    <Bot className="w-6 h-6 text-gray-900" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-bold text-gray-900">
+                      Don&apos;t want to read all this? Chat with Sherpa
+                    </span>
+                    <span className="block text-sm text-gray-600 mt-0.5">
+                      Ask questions and get answers straight from this guide —
+                      right in your browser.
+                    </span>
+                  </span>
+                  <ArrowRight
+                    className="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  />
+                </Link>
                 <nav
                   aria-label="Table of contents"
                   className="lg:hidden mb-12 rounded-2xl border border-gray-200 p-5 print:hidden"
@@ -72,7 +94,6 @@ const SpeakerGuidePage: React.FC = () => {
                   </ul>
                 </nav>
                 <RichTextRenderer sections={speakerGuide.sections} />
-                <GuideChat sections={speakerGuide.sections} />
               </div>
               <aside className="lg:block hidden print:hidden">
                 <PageNavigation items={navigationItems} />

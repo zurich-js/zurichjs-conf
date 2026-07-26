@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Loader2, Send, Sparkles, User } from "lucide-react";
-import { Heading } from "@/components/atoms";
+import { Bot, RotateCcw, Send } from "lucide-react";
 import { slugify } from "@/components/RichTextRenderer";
 import type { ContentSection } from "@/data/info-pages";
 
@@ -18,6 +17,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   sources?: GuideChunk[];
+  streaming?: boolean;
 }
 
 /**
@@ -49,7 +49,10 @@ const getLanguageModel = (): LanguageModelStatic | null => {
 };
 
 const SYSTEM_PROMPT =
-  "You are the ZurichJS Conf 2026 speaker guide assistant. Answer questions from speakers using ONLY the guide excerpts provided with each question. Be brief and friendly. If the excerpts don't contain the answer, say you don't know and suggest asking in the speakers group chat or emailing hello@zurichjs.com. Never invent dates, prices, names, or logistics.";
+  "You are Sherpa, the ZurichJS Conf 2026 speaker guide assistant. Answer questions from speakers using ONLY the guide excerpts provided with each question. Be brief and friendly. If the excerpts don't contain the answer, say you don't know and suggest asking in the speakers group chat or emailing hello@zurichjs.com. Never invent dates, prices, names, or logistics.";
+
+const GREETING =
+  "Hey! 👋 I'm Sherpa, your speaker guide companion. Ask me about arrival, the venues, your slides, the after party — anything from the guide.";
 
 const SUGGESTIONS = [
   "How do I get to the after party?",
@@ -152,41 +155,107 @@ const retrieve = (question: string, chunks: GuideChunk[]): GuideChunk[] => {
     .map((entry) => entry.chunk);
 };
 
-const excerpt = (text: string, maxLength = 220): string =>
+const excerpt = (text: string, maxLength = 200): string =>
   text.length <= maxLength ? text : `${text.slice(0, maxLength).trimEnd()}…`;
 
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const TypingDots: React.FC = () => (
+  <span className="inline-flex items-center gap-1" aria-label="Sherpa is typing">
+    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.3s]" />
+    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.15s]" />
+    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" />
+  </span>
+);
+
+const SherpaAvatar: React.FC = () => (
+  <span
+    className="w-7 h-7 rounded-full bg-brand-yellow-main flex items-center justify-center flex-shrink-0"
+    aria-hidden="true"
+  >
+    <Bot className="w-4 h-4 text-gray-900" />
+  </span>
+);
+
+/**
+ * Full-page chat over the speaker guide. Retrieval runs in the browser; when
+ * Chrome's built-in Prompt API (on-device Gemini Nano) is available, answers
+ * are generated on-device from the retrieved guide sections.
+ */
 export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
   const [mounted, setMounted] = useState(false);
   const [aiAvailable, setAiAvailable] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", text: GREETING },
+  ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const sessionRef = useRef<LanguageModelSession | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const aliveRef = useRef(true);
 
   const chunks = useMemo(() => buildChunks(sections), [sections]);
 
   useEffect(() => {
     setMounted(true);
+    aliveRef.current = true;
     const model = getLanguageModel();
-    if (!model) return;
-    let cancelled = false;
-    model
-      .availability()
-      .then((state) => {
-        if (!cancelled && state === "available") setAiAvailable(true);
-      })
-      .catch(() => {
-        /* Treat probe failures as "no on-device model". */
-      });
+    if (model) {
+      model
+        .availability()
+        .then((state) => {
+          if (aliveRef.current && state === "available") setAiAvailable(true);
+        })
+        .catch(() => {
+          /* Treat probe failures as "no on-device model". */
+        });
+    }
     return () => {
-      cancelled = true;
+      aliveRef.current = false;
     };
   }, []);
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [messages, busy]);
+
+  /** Reveal an assistant reply word by word so it reads like a live answer. */
+  const streamReply = async (
+    fullText: string,
+    sources?: GuideChunk[]
+  ): Promise<void> => {
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", text: "", streaming: true },
+    ]);
+    const parts = fullText.split(/(\s+)/);
+    let revealed = "";
+    for (const part of parts) {
+      if (!aliveRef.current) return;
+      revealed += part;
+      if (part.trim()) {
+        const snapshot = revealed;
+        setMessages((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = {
+            role: "assistant",
+            text: snapshot,
+            streaming: true,
+          };
+          return next;
+        });
+        await sleep(26);
+      }
+    }
+    if (!aliveRef.current) return;
+    setMessages((prev) => {
+      const next = [...prev];
+      next[next.length - 1] = { role: "assistant", text: fullText, sources };
+      return next;
+    });
+  };
 
   const answerWithModel = async (
     question: string,
@@ -216,98 +285,107 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
     setBusy(true);
 
     const sources = retrieve(question, chunks);
-    let reply: ChatMessage;
 
     if (sources.length === 0) {
-      reply = {
-        role: "assistant",
-        text: "I couldn't find that in the guide. Ask in the speakers group chat or email hello@zurichjs.com — a human will know!",
-      };
+      await sleep(700);
+      await streamReply(
+        "Hmm, I couldn't find that in the guide. Ask in the speakers group chat or email hello@zurichjs.com — a human will know!"
+      );
     } else if (aiAvailable) {
       try {
         const text = await answerWithModel(question, sources);
-        reply = { role: "assistant", text: text.trim(), sources };
+        await streamReply(text.trim(), sources);
       } catch {
-        reply = {
-          role: "assistant",
-          text: "The on-device model hiccuped, but here's what the guide says:",
-          sources,
-        };
+        await sleep(500);
+        await streamReply(
+          "My on-device model hiccuped, but here's what the guide says:",
+          sources
+        );
       }
     } else {
-      reply = {
-        role: "assistant",
-        text: "Here's what the guide says about that:",
-        sources,
-      };
+      await sleep(700);
+      await streamReply("Here's what the guide says about that:", sources);
     }
 
-    setMessages((prev) => [...prev, reply]);
+    if (!aliveRef.current) return;
     setBusy(false);
+    inputRef.current?.focus();
   };
 
-  if (!mounted) return null;
+  const reset = (): void => {
+    if (busy) return;
+    setMessages([{ role: "assistant", text: GREETING }]);
+    inputRef.current?.focus();
+  };
+
+  if (!mounted) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-sm text-gray-400">
+        Loading chat…
+      </div>
+    );
+  }
+
+  const lastMessage = messages[messages.length - 1];
+  const showTypingIndicator = busy && lastMessage?.role === "user";
+  const showSuggestions = messages.length <= 1;
 
   return (
-    <section
-      id="ask-the-guide"
-      aria-label="Ask the guide"
-      className="scroll-mt-24 mt-16 rounded-2xl border border-gray-200 p-5 md:p-6 print:hidden"
-    >
-      <div className="flex items-center gap-2 mb-1">
-        <Sparkles className="w-5 h-5 text-gray-700" aria-hidden="true" />
-        <Heading level="h2" variant="light" className="text-lg font-bold">
-          Ask the Guide
-        </Heading>
+    <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-xs text-gray-500">
+          {aiAvailable
+            ? "Answers are generated on your device (Chrome built-in AI) from the guide only — nothing leaves your browser."
+            : "Sherpa finds the right guide sections for you, right in your browser. (In Chrome with built-in AI, it answers conversationally.)"}
+        </p>
+        {messages.length > 1 && (
+          <button
+            type="button"
+            onClick={reset}
+            className="flex items-center gap-1.5 text-xs text-gray-500 flex-shrink-0 cursor-pointer transition-colors hover:text-gray-800"
+          >
+            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            Start over
+          </button>
+        )}
       </div>
-      <p className="text-sm text-gray-600 mb-4">
-        {aiAvailable
-          ? "Answers are generated on your device (Chrome built-in AI) from this guide only — nothing leaves your browser."
-          : "Ask a question and I'll pull up the matching guide sections — everything runs in your browser. (In Chrome with built-in AI, you get full conversational answers.)"}
-      </p>
 
-      {messages.length === 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {SUGGESTIONS.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => void ask(suggestion)}
-              className="text-xs rounded-full border border-gray-300 px-3 py-1.5 text-gray-700 cursor-pointer transition-colors hover:border-gray-500 hover:bg-gray-50"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {messages.length > 0 && (
-        <div
-          ref={logRef}
-          role="log"
-          aria-live="polite"
-          className="space-y-4 max-h-96 overflow-y-auto mb-4 pr-1"
-        >
-          {messages.map((message, index) => (
+      <div
+        ref={logRef}
+        role="log"
+        aria-live="polite"
+        aria-busy={busy}
+        className="flex-1 min-h-0 rounded-2xl border border-gray-200 bg-white p-3 md:p-4 overflow-y-auto space-y-4 mb-3"
+      >
+        {messages.map((message, index) =>
+          message.role === "user" ? (
+            <div key={index} className="flex justify-end">
+              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-gray-900 text-white px-4 py-2.5 text-sm whitespace-pre-wrap">
+                {message.text}
+              </p>
+            </div>
+          ) : (
             <div key={index} className="flex gap-2.5">
-              {message.role === "assistant" ? (
-                <Bot className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
-              ) : (
-                <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">
+              <SherpaAvatar />
+              <div className="min-w-0 max-w-[85%]">
+                <div className="rounded-2xl rounded-bl-md bg-gray-50 border border-gray-200 px-4 py-2.5 text-sm text-gray-800 whitespace-pre-wrap">
                   {message.text}
-                </p>
+                  {message.streaming && (
+                    <span
+                      className="inline-block w-1.5 h-4 ml-0.5 align-text-bottom bg-gray-400 animate-pulse"
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
                 {message.sources && message.sources.length > 0 && (
                   <ul className="mt-2 space-y-2">
                     {message.sources.map((source) => (
                       <li
                         key={source.id}
-                        className="rounded-lg bg-gray-50 border border-gray-200 p-3"
+                        className="rounded-xl bg-white border border-gray-200 p-3"
                       >
                         <a
-                          href={`#${source.id}`}
+                          href={`/speaker-guide#${source.id}`}
                           className="text-sm font-semibold text-blue-primary underline"
                         >
                           {source.title}
@@ -321,13 +399,31 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
                 )}
               </div>
             </div>
+          )
+        )}
+
+        {showTypingIndicator && (
+          <div className="flex gap-2.5">
+            <SherpaAvatar />
+            <span className="rounded-2xl rounded-bl-md bg-gray-50 border border-gray-200 px-4 py-3">
+              <TypingDots />
+            </span>
+          </div>
+        )}
+      </div>
+
+      {showSuggestions && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {SUGGESTIONS.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => void ask(suggestion)}
+              className="text-xs rounded-full border border-gray-300 bg-white px-3 py-1.5 text-gray-700 cursor-pointer transition-colors hover:border-gray-500 hover:bg-gray-50"
+            >
+              {suggestion}
+            </button>
           ))}
-          {busy && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-              Thinking…
-            </div>
-          )}
         </div>
       )}
 
@@ -339,15 +435,16 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
         className="flex gap-2"
       >
         <label htmlFor="guide-chat-input" className="sr-only">
-          Ask a question about the speaker guide
+          Ask Sherpa a question about the speaker guide
         </label>
         <input
           id="guide-chat-input"
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(event) => setInput(event.target.value)}
           placeholder="e.g. What time do doors open?"
-          className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-2 focus:outline-brand-yellow-main"
+          className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-2 focus:outline-brand-yellow-main"
         />
         <button
           type="submit"
@@ -358,6 +455,6 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
           <Send className="w-4 h-4" aria-hidden="true" />
         </button>
       </form>
-    </section>
+    </div>
   );
 };
