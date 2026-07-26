@@ -13,6 +13,9 @@ Disallow: /success
 Disallow: /manage-order
 Disallow: /validate/
 
+# Unlisted pages shared by direct link only
+Disallow: /speaker-guide
+
 # ============================================
 # AI Crawler Rules - Explicitly Allow for Discoverability
 # These rules ensure AI systems like ChatGPT, Claude, and others
