@@ -28,7 +28,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "list",
       items: [
-        "<strong>Tuesday, September 9:</strong> Community Day — a relaxed ZurichJS meetup to warm up and meet the community. Optional, but lovely if you're in town.",
+        "<strong>Tuesday, September 9:</strong> Community Day — a relaxed ZurichJS meetup to warm up and meet the community. Optional, but lovely if you're in town. Check the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>meetup agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
         "<strong>Wednesday, September 10:</strong> Workshop Day — workshops run across Zurich (locations confirmed to instructors in advance).",
         "<strong>Thursday, September 11:</strong> Conference Day at Technopark Zürich — doors open in the morning; the full agenda is on the <a href='/schedule'>schedule page</a>.",
         "<strong>Thursday, September 11, 19:00–23:00:</strong> After party at Seebad Enge on Lake Zürich.",
