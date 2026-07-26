@@ -15,7 +15,7 @@ export interface NavigationItem {
 /**
  * Generate a URL-friendly ID from text
  */
-const slugify = (text: string): string => {
+export const slugify = (text: string): string => {
   return text
     .toLowerCase()
     .replace(/<[^>]*>/g, "") // Remove HTML tags
