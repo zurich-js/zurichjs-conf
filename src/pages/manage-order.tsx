@@ -11,6 +11,8 @@ import { Heading, Kicker, Button } from '@/components/atoms';
 import { PageHeader } from '@/components/organisms';
 import Link from 'next/link';
 import {
+  SectionNav,
+  MANAGE_ORDER_SECTIONS,
   TicketQRCard,
   TicketDetailsCard,
   VipPerksCard,
@@ -28,6 +30,8 @@ import {
   type OrderDetailsResponse,
 } from '@/components/manage-order';
 
+type FetchError = Error & { status?: number };
+
 const ManageOrderPage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -42,19 +46,50 @@ const ManageOrderPage: React.FC = () => {
     data: orderDetails,
     isLoading,
     error,
-  } = useQuery<OrderDetailsResponse>({
+  } = useQuery<OrderDetailsResponse, FetchError>({
     queryKey: ['order', orderToken],
     queryFn: async () => {
       if (!orderToken) throw new Error('No token provided');
       const response = await fetch(`/api/orders/${orderToken}`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch ticket details');
+        const fetchError: FetchError = new Error(errorData.error || 'Failed to fetch ticket details');
+        fetchError.status = response.status;
+        throw fetchError;
       }
       return response.json();
     },
     enabled: !!orderToken,
   });
+
+  // Mutation for requesting a freshly signed link when the token no longer verifies
+  const recoverLinkMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/orders/recover-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: orderToken }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to request a new link');
+      }
+      return response.json();
+    },
+  });
+
+  // A 401 means the link's signature no longer verifies (e.g. it predates a
+  // secret rotation) — automatically email a fresh ticket email so the visitor
+  // doesn't have to figure out what went wrong. The server dedupes per ticket.
+  const isInvalidToken = error?.status === 401;
+  const { mutate: requestNewLink } = recoverLinkMutation;
+  const autoRequestFired = React.useRef(false);
+  React.useEffect(() => {
+    if (isInvalidToken && orderToken && !autoRequestFired.current) {
+      autoRequestFired.current = true;
+      requestNewLink();
+    }
+  }, [isInvalidToken, orderToken, requestNewLink]);
 
   // Mutation for ticket reassignment
   const reassignMutation = useMutation({
@@ -110,7 +145,14 @@ const ManageOrderPage: React.FC = () => {
           {(!router.isReady || isLoading) && <LoadingState />}
 
           {/* Error State */}
-          {router.isReady && (!orderToken || error) && <ErrorState orderToken={orderToken} error={error} />}
+          {router.isReady && (!orderToken || error) && (
+            <ErrorState
+              orderToken={orderToken}
+              error={error}
+              isInvalidToken={!!isInvalidToken}
+              recoverLinkMutation={recoverLinkMutation}
+            />
+          )}
 
           {/* Success State */}
           {router.isReady && !isLoading && !error && orderDetails && (
@@ -119,30 +161,59 @@ const ManageOrderPage: React.FC = () => {
 
               {orderDetails.transferInfo && <TransferNotice transferInfo={orderDetails.transferInfo} />}
 
-              <TicketQRCard qrCodeUrl={orderDetails.ticket.qr_code_url} />
-              <TicketDetailsCard ticket={orderDetails.ticket} />
-              <VipPerksCard isVip={orderDetails.ticket.ticket_category === 'vip'} />
-              <ApparelPreferencesCard
+              <SectionNav
                 isVip={orderDetails.ticket.ticket_category === 'vip'}
-                preferences={orderDetails.apparelPreferences}
-                mutation={apparelMutation}
+                hasPendingUpgrade={!!orderDetails.pendingUpgrade}
               />
 
-              {orderDetails.pendingUpgrade && <PendingUpgradeCard upgrade={orderDetails.pendingUpgrade} />}
-
-              {orderDetails.ticket.ticket_category !== 'vip' && !orderDetails.pendingUpgrade && (
-                <UpgradeCta
-                  ticketId={orderDetails.ticket.id}
-                  firstName={orderDetails.ticket.first_name}
-                  lastName={orderDetails.ticket.last_name}
-                  email={orderDetails.ticket.email}
+              <div id={MANAGE_ORDER_SECTIONS.entryPass} className="scroll-mt-28">
+                <TicketQRCard qrCodeUrl={orderDetails.ticket.qr_code_url} />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.ticketDetails} className="scroll-mt-28">
+                <TicketDetailsCard ticket={orderDetails.ticket} />
+              </div>
+              {orderDetails.ticket.ticket_category === 'vip' && (
+                <div id={MANAGE_ORDER_SECTIONS.vipBenefits} className="scroll-mt-28">
+                  <VipPerksCard isVip vipPerk={orderDetails.vipPerk} />
+                </div>
+              )}
+              <div id={MANAGE_ORDER_SECTIONS.apparel} className="scroll-mt-28">
+                <ApparelPreferencesCard
+                  isVip={orderDetails.ticket.ticket_category === 'vip'}
+                  preferences={orderDetails.apparelPreferences}
+                  mutation={apparelMutation}
                 />
+              </div>
+
+              {orderDetails.pendingUpgrade && (
+                <div id={MANAGE_ORDER_SECTIONS.vipUpgrade} className="scroll-mt-28">
+                  <PendingUpgradeCard upgrade={orderDetails.pendingUpgrade} />
+                </div>
               )}
 
-              <EventInfoCard />
-              <QuickActionsCard ticketId={orderDetails.ticket.id} />
-              <TransferSection onTransferClick={() => setShowReassignModal(true)} />
-              <ImportantInfoCard />
+              {orderDetails.ticket.ticket_category !== 'vip' && !orderDetails.pendingUpgrade && (
+                <div id={MANAGE_ORDER_SECTIONS.vipUpgrade} className="scroll-mt-28">
+                  <UpgradeCta
+                    ticketId={orderDetails.ticket.id}
+                    firstName={orderDetails.ticket.first_name}
+                    lastName={orderDetails.ticket.last_name}
+                    email={orderDetails.ticket.email}
+                  />
+                </div>
+              )}
+
+              <div id={MANAGE_ORDER_SECTIONS.eventInfo} className="scroll-mt-28">
+                <EventInfoCard />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.quickActions} className="scroll-mt-28">
+                <QuickActionsCard ticketId={orderDetails.ticket.id} />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.transfer} className="scroll-mt-28">
+                <TransferSection onTransferClick={() => setShowReassignModal(true)} />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.importantInfo} className="scroll-mt-28">
+                <ImportantInfoCard />
+              </div>
 
               <div className="flex justify-center">
                 <Link href="/">
@@ -178,7 +249,65 @@ function LoadingState() {
   );
 }
 
-function ErrorState({ orderToken, error }: { orderToken: string; error: Error | null }) {
+interface ErrorStateProps {
+  orderToken: string;
+  error: Error | null;
+  isInvalidToken: boolean;
+  recoverLinkMutation: {
+    mutate: () => void;
+    isPending: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: Error | null;
+  };
+}
+
+function ErrorState({ orderToken, error, isInvalidToken, recoverLinkMutation }: ErrorStateProps) {
+  // A stale-but-well-formed link triggers an automatic resend of the ticket
+  // email — present that as the main event, not as an access failure
+  if (orderToken && isInvalidToken && !recoverLinkMutation.isError) {
+    return (
+      <div className="text-center">
+        <div className="mb-8">
+          <div className="text-6xl mb-4">📮</div>
+          <Kicker variant="light" className="mb-4">
+            Link Update
+          </Kicker>
+          <Heading level="h1" variant="light" className="mb-6 text-black">
+            {recoverLinkMutation.isSuccess ? 'Check Your Inbox' : 'Updating Your Link…'}
+          </Heading>
+          <div className="max-w-xl mx-auto">
+            {recoverLinkMutation.isSuccess ? (
+              <p className="text-lg text-black/80 mb-4" role="status">
+                To keep your ticket secure, we validate every manage-order link — and this one is out of date. We&apos;ve
+                sent a fresh ticket email to the address on file with your QR code and a new manage-order link. Open
+                that email and click <strong className="text-black">Manage Order</strong> again to view or change your
+                details.
+              </p>
+            ) : (
+              <p className="text-lg text-black/80 mb-4" role="status">
+                To keep your ticket secure, we validate every manage-order link — and this one is out of date.
+                We&apos;re emailing you a fresh one right now…
+              </p>
+            )}
+            <p className="text-black/70 mb-8">
+              Nothing arrived after a few minutes? Check your spam folder or contact us at{' '}
+              <a href="mailto:hello@zurichjs.com" className="text-black hover:underline font-bold">
+                hello@zurichjs.com
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+        <Link href="/">
+          <Button variant="dark" size="lg">
+            Return to Homepage
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="text-center">
       <div className="mb-8">
@@ -214,6 +343,25 @@ function ErrorState({ orderToken, error }: { orderToken: string; error: Error | 
               </li>
             </ul>
           </div>
+          {orderToken && (
+            <div className="mb-8">
+              <Button
+                variant="dark"
+                size="lg"
+                onClick={() => recoverLinkMutation.mutate()}
+                disabled={recoverLinkMutation.isPending}
+              >
+                {recoverLinkMutation.isPending ? 'Sending…' : 'Email Me a New Ticket Email'}
+              </Button>
+              {recoverLinkMutation.isError && (
+                <p className="text-red-700 mt-3" role="alert">
+                  {recoverLinkMutation.error instanceof Error
+                    ? recoverLinkMutation.error.message
+                    : 'Something went wrong. Please try again.'}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <Link href="/">
