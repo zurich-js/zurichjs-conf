@@ -25,6 +25,18 @@ const stripeFeeCache = new Map<string, number>();
  */
 const upgradeSessionPiCache = new Map<string, string>();
 
+/** Keeps the memo caches from growing without bound on long-lived instances. */
+const MEMO_CACHE_MAX_ENTRIES = 20_000;
+
+function setWithCap<V>(cache: Map<string, V>, key: string, value: V): void {
+  if (cache.size >= MEMO_CACHE_MAX_ENTRIES && !cache.has(key)) {
+    // Map iterates in insertion order, so this evicts the oldest entry
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey !== undefined) cache.delete(oldestKey);
+  }
+  cache.set(key, value);
+}
+
 /**
  * Fetch Stripe fees for a list of payment intent IDs
  * Returns a map of payment_intent_id -> fee (in cents)
@@ -74,7 +86,7 @@ async function getStripeFees(
             const balanceTransaction =
               await stripe.balanceTransactions.retrieve(balanceTransactionId);
             feeMap.set(paymentIntentId, balanceTransaction.fee);
-            stripeFeeCache.set(paymentIntentId, balanceTransaction.fee);
+            setWithCap(stripeFeeCache, paymentIntentId, balanceTransaction.fee);
           }
         } catch (err) {
           // Log but don't fail - some payments might not have fees (e.g., complimentary)
@@ -168,7 +180,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               if (session.payment_intent && typeof session.payment_intent === 'string') {
                 upgradePaymentIntentIds.push(session.payment_intent);
                 upgradeSessionToPi.set(sessionId, session.payment_intent);
-                upgradeSessionPiCache.set(sessionId, session.payment_intent);
+                setWithCap(upgradeSessionPiCache, sessionId, session.payment_intent);
               }
             } catch (err) {
               log.warn('Could not retrieve checkout session for upgrade fee', { sessionId, error: err });

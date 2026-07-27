@@ -934,8 +934,10 @@ export async function getReviewerActivity(
       .in('id', chunk);
 
     if (submissionsError) {
+      // Fail loudly rather than returning activities with 'Unknown' titles —
+      // the API handler turns this into a 500 the admin can see and retry.
       console.error('[CFP Admin] Error fetching submissions for reviewer activity:', submissionsError);
-      continue;
+      throw submissionsError;
     }
     for (const s of chunkSubmissions || []) {
       submissionMap.set(s.id, s.title);

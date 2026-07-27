@@ -122,7 +122,7 @@ export function TicketsTab() {
       setSelectedTicket(null);
     },
     onError: (err) => {
-      showToast('error', err instanceof AdminApiError ? 'Failed to resend ticket email' : 'Error resending ticket email');
+      showToast('error', err instanceof AdminApiError ? err.message : 'Error resending ticket email');
     },
   });
 
@@ -152,7 +152,7 @@ export function TicketsTab() {
       setSelectedTicket(null);
     },
     onError: (err) => {
-      showToast('error', err instanceof AdminApiError ? 'Failed to cancel ticket' : 'Error cancelling ticket');
+      showToast('error', err instanceof AdminApiError ? err.message : 'Error cancelling ticket');
     },
   });
 

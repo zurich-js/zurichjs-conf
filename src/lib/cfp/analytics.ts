@@ -4,6 +4,7 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { logger } from '@/lib/logger';
 import type {
   CfpAnalytics,
   CfpFunnelData,
@@ -16,6 +17,11 @@ import type {
   CfpTagCount,
   CfpContentInsights,
 } from '../types/cfp-analytics';
+
+const log = logger.scope('CFP Analytics');
+
+/** Per-table row cap for the analytics snapshot; a hit is logged as a warning. */
+const FETCH_LIMIT = 10000;
 
 interface ReviewActivityCounts {
   totalReviews: number;
@@ -39,7 +45,11 @@ const SCORE_RANGES = [
 export async function getCfpAnalytics(): Promise<CfpAnalytics> {
   const supabase = createCfpServiceClient();
 
-  // Fetch all data in parallel
+  // Fetch all data in parallel. Every aggregate below (including review
+  // activity counts) is computed from these rows, so all of them share the
+  // same FETCH_LIMIT assumption — a cap hit means the analytics are
+  // undercounting and the limit needs raising (or a move to DB-side
+  // aggregation).
   const [
     submissionsResult,
     speakersResult,
@@ -47,12 +57,26 @@ export async function getCfpAnalytics(): Promise<CfpAnalytics> {
     tagJoinsResult,
     tagsResult,
   ] = await Promise.all([
-    supabase.from('cfp_submissions').select('id, status, submission_type, talk_level, speaker_id, created_at, submitted_at, title, abstract, additional_notes, outline, slides_url, previous_recording_url').limit(10000),
-    supabase.from('cfp_speakers').select('id, first_name, last_name, company, country, city, bio, profile_image_url, travel_assistance_required, assistance_type, departure_airport, special_requirements, company_interested_in_sponsoring').limit(10000),
-    supabase.from('cfp_reviews').select('id, submission_id, score_overall, created_at').limit(10000),
-    supabase.from('cfp_submission_tags').select('submission_id, tag_id').limit(10000),
-    supabase.from('cfp_tags').select('id, name').limit(10000),
+    supabase.from('cfp_submissions').select('id, status, submission_type, talk_level, speaker_id, created_at, submitted_at, title, abstract, additional_notes, outline, slides_url, previous_recording_url').limit(FETCH_LIMIT),
+    supabase.from('cfp_speakers').select('id, first_name, last_name, company, country, city, bio, profile_image_url, travel_assistance_required, assistance_type, departure_airport, special_requirements, company_interested_in_sponsoring').limit(FETCH_LIMIT),
+    supabase.from('cfp_reviews').select('id, submission_id, score_overall, created_at').limit(FETCH_LIMIT),
+    supabase.from('cfp_submission_tags').select('submission_id, tag_id').limit(FETCH_LIMIT),
+    supabase.from('cfp_tags').select('id, name').limit(FETCH_LIMIT),
   ]);
+
+  for (const [table, result] of [
+    ['cfp_submissions', submissionsResult],
+    ['cfp_speakers', speakersResult],
+    ['cfp_reviews', reviewsResult],
+    ['cfp_submission_tags', tagJoinsResult],
+  ] as const) {
+    if ((result.data?.length ?? 0) >= FETCH_LIMIT) {
+      log.warn('CFP analytics fetch hit its row limit; aggregates may undercount', {
+        table,
+        limit: FETCH_LIMIT,
+      });
+    }
+  }
 
   const submissions = (submissionsResult.data || []) as Array<{
     id: string;
