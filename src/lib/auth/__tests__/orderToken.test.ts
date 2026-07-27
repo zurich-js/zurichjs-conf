@@ -24,7 +24,6 @@ describe('orderToken', () => {
   beforeEach(() => {
     vi.stubEnv('ORDER_TOKEN_SECRET', '');
     vi.stubEnv('NEXTAUTH_SECRET', '');
-    vi.stubEnv('ORDER_TOKEN_SECRET_FALLBACKS', '');
   });
 
   afterEach(() => {
@@ -41,9 +40,9 @@ describe('orderToken', () => {
       expect(verifyOrderToken(token)).toBe(TICKET_ID);
     });
 
-    it('signs with ORDER_TOKEN_SECRET, not a fallback secret', () => {
+    it('signs with ORDER_TOKEN_SECRET when set', () => {
       vi.stubEnv('ORDER_TOKEN_SECRET', 'current-secret');
-      vi.stubEnv('ORDER_TOKEN_SECRET_FALLBACKS', 'old-secret');
+      vi.stubEnv('NEXTAUTH_SECRET', 'nextauth-secret');
 
       expect(generateOrderToken(TICKET_ID)).toBe(signWith(TICKET_ID, 'current-secret'));
     });
@@ -87,42 +86,22 @@ describe('orderToken', () => {
       expect(verifyOrderToken(signWith(TICKET_ID, 'any-secret'))).toBeNull();
     });
 
-    describe('backward compatibility', () => {
-      it('accepts tokens signed with NEXTAUTH_SECRET after ORDER_TOKEN_SECRET is introduced', () => {
-        // Link emailed when only NEXTAUTH_SECRET existed
-        const oldToken = signWith(TICKET_ID, 'nextauth-secret');
+    it('rejects tokens signed with NEXTAUTH_SECRET once ORDER_TOKEN_SECRET is set', () => {
+      // Link emailed when only NEXTAUTH_SECRET existed
+      const oldToken = signWith(TICKET_ID, 'nextauth-secret');
 
-        // ORDER_TOKEN_SECRET added later
-        vi.stubEnv('ORDER_TOKEN_SECRET', 'new-dedicated-secret');
-        vi.stubEnv('NEXTAUTH_SECRET', 'nextauth-secret');
+      // ORDER_TOKEN_SECRET added later — only it verifies now; stale links
+      // go through the recovery flow instead
+      vi.stubEnv('ORDER_TOKEN_SECRET', 'new-dedicated-secret');
+      vi.stubEnv('NEXTAUTH_SECRET', 'nextauth-secret');
 
-        expect(verifyOrderToken(oldToken)).toBe(TICKET_ID);
-      });
+      expect(verifyOrderToken(oldToken)).toBeNull();
+    });
 
-      it('accepts tokens signed with a rotated-out secret listed in ORDER_TOKEN_SECRET_FALLBACKS', () => {
-        const oldToken = signWith(TICKET_ID, 'rotated-out-secret');
+    it('verifies against NEXTAUTH_SECRET when ORDER_TOKEN_SECRET is unset', () => {
+      vi.stubEnv('NEXTAUTH_SECRET', 'nextauth-secret');
 
-        vi.stubEnv('ORDER_TOKEN_SECRET', 'current-secret');
-        vi.stubEnv('ORDER_TOKEN_SECRET_FALLBACKS', 'rotated-out-secret');
-
-        expect(verifyOrderToken(oldToken)).toBe(TICKET_ID);
-      });
-
-      it('accepts tokens from any of several comma-separated fallback secrets', () => {
-        vi.stubEnv('ORDER_TOKEN_SECRET', 'current-secret');
-        vi.stubEnv('ORDER_TOKEN_SECRET_FALLBACKS', ' first-old , second-old ');
-
-        expect(verifyOrderToken(signWith(TICKET_ID, 'first-old'))).toBe(TICKET_ID);
-        expect(verifyOrderToken(signWith(TICKET_ID, 'second-old'))).toBe(TICKET_ID);
-        expect(verifyOrderToken(signWith(TICKET_ID, 'never-used'))).toBeNull();
-      });
-
-      it('still verifies current-secret tokens when fallbacks are configured', () => {
-        vi.stubEnv('ORDER_TOKEN_SECRET', 'current-secret');
-        vi.stubEnv('ORDER_TOKEN_SECRET_FALLBACKS', 'old-secret');
-
-        expect(verifyOrderToken(generateOrderToken(TICKET_ID))).toBe(TICKET_ID);
-      });
+      expect(verifyOrderToken(signWith(TICKET_ID, 'nextauth-secret'))).toBe(TICKET_ID);
     });
   });
 

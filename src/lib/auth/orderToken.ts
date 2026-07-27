@@ -22,34 +22,6 @@ function getSigningSecret(): string {
   return secret;
 }
 
-/**
- * All secrets accepted when verifying tokens, in priority order:
- * 1. The current signing secret (ORDER_TOKEN_SECRET, else NEXTAUTH_SECRET)
- * 2. NEXTAUTH_SECRET — links emailed before ORDER_TOKEN_SECRET was introduced
- *    were signed with it via the fallback in getSigningSecret()
- * 3. ORDER_TOKEN_SECRET_FALLBACKS — comma-separated rotated-out secrets, so
- *    previously emailed links survive a secret rotation
- */
-function getVerificationSecrets(): string[] {
-  const secrets: string[] = [];
-
-  const current = process.env.ORDER_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
-  if (current) {
-    secrets.push(current);
-  }
-
-  if (process.env.NEXTAUTH_SECRET) {
-    secrets.push(process.env.NEXTAUTH_SECRET);
-  }
-
-  const fallbacks = process.env.ORDER_TOKEN_SECRET_FALLBACKS;
-  if (fallbacks) {
-    secrets.push(...fallbacks.split(',').map((s) => s.trim()).filter(Boolean));
-  }
-
-  return [...new Set(secrets)];
-}
-
 function computeSignature(ticketId: string, secret: string): string {
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(ticketId);
@@ -83,14 +55,15 @@ export function generateOrderToken(ticketId: string): string {
  * Verify an order token and extract the ticket ID
  * Returns the ticket ID if valid, null if invalid
  *
- * Tokens signed with a previous secret (see getVerificationSecrets) remain
- * valid, so emailed links survive secret rotation.
+ * Tokens signed with a rotated-out secret will not verify — the recovery
+ * flow (POST /api/orders/recover-link) handles those by emailing a freshly
+ * signed link to the address on the ticket.
  */
 export function verifyOrderToken(token: string): string | null {
   try {
-    const secrets = getVerificationSecrets();
+    const secret = process.env.ORDER_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
 
-    if (secrets.length === 0) {
+    if (!secret) {
       log.error('No order token secret configured', undefined, {
         expected: 'ORDER_TOKEN_SECRET or NEXTAUTH_SECRET',
       });
@@ -105,13 +78,7 @@ export function verifyOrderToken(token: string): string | null {
 
     const [ticketId, providedSignature] = parts;
 
-    for (const secret of secrets) {
-      if (signatureMatches(ticketId, providedSignature, secret)) {
-        return ticketId;
-      }
-    }
-
-    return null;
+    return signatureMatches(ticketId, providedSignature, secret) ? ticketId : null;
   } catch (error) {
     log.error('Error verifying order token', error);
     return null;
