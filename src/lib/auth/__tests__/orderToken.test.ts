@@ -6,7 +6,12 @@ vi.mock('@/lib/url', () => ({
   getBaseUrl: () => 'http://localhost:3000',
 }));
 
-import { generateOrderToken, verifyOrderToken, generateOrderUrl } from '@/lib/auth/orderToken';
+import {
+  generateOrderToken,
+  verifyOrderToken,
+  generateOrderUrl,
+  extractTicketIdUnverified,
+} from '@/lib/auth/orderToken';
 
 const TICKET_ID = 'fdd332be-86c9-4842-912c-e5c1c0968606';
 
@@ -118,6 +123,22 @@ describe('orderToken', () => {
 
         expect(verifyOrderToken(generateOrderToken(TICKET_ID))).toBe(TICKET_ID);
       });
+    });
+  });
+
+  describe('extractTicketIdUnverified', () => {
+    it('extracts the ticket ID from a token regardless of signature validity', () => {
+      expect(extractTicketIdUnverified(`${TICKET_ID}.completely-bogus-signature`)).toBe(TICKET_ID);
+    });
+
+    it('accepts a bare ticket ID with no signature', () => {
+      expect(extractTicketIdUnverified(TICKET_ID)).toBe(TICKET_ID);
+    });
+
+    it('rejects values that are not UUID-shaped', () => {
+      expect(extractTicketIdUnverified('not-a-uuid.sig')).toBeNull();
+      expect(extractTicketIdUnverified('')).toBeNull();
+      expect(extractTicketIdUnverified('.sig-only')).toBeNull();
     });
   });
 

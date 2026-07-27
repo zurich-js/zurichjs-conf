@@ -56,6 +56,22 @@ const ManageOrderPage: React.FC = () => {
     enabled: !!orderToken,
   });
 
+  // Mutation for requesting a freshly signed link when the token no longer verifies
+  const recoverLinkMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/orders/recover-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: orderToken }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to request a new link');
+      }
+      return response.json();
+    },
+  });
+
   // Mutation for ticket reassignment
   const reassignMutation = useMutation({
     mutationFn: async (data: ReassignData) => {
@@ -110,7 +126,9 @@ const ManageOrderPage: React.FC = () => {
           {(!router.isReady || isLoading) && <LoadingState />}
 
           {/* Error State */}
-          {router.isReady && (!orderToken || error) && <ErrorState orderToken={orderToken} error={error} />}
+          {router.isReady && (!orderToken || error) && (
+            <ErrorState orderToken={orderToken} error={error} recoverLinkMutation={recoverLinkMutation} />
+          )}
 
           {/* Success State */}
           {router.isReady && !isLoading && !error && orderDetails && (
@@ -178,7 +196,19 @@ function LoadingState() {
   );
 }
 
-function ErrorState({ orderToken, error }: { orderToken: string; error: Error | null }) {
+interface ErrorStateProps {
+  orderToken: string;
+  error: Error | null;
+  recoverLinkMutation: {
+    mutate: () => void;
+    isPending: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error: Error | null;
+  };
+}
+
+function ErrorState({ orderToken, error, recoverLinkMutation }: ErrorStateProps) {
   return (
     <div className="text-center">
       <div className="mb-8">
@@ -214,6 +244,36 @@ function ErrorState({ orderToken, error }: { orderToken: string; error: Error | 
               </li>
             </ul>
           </div>
+          {orderToken && (
+            <div className="mb-8">
+              {recoverLinkMutation.isSuccess ? (
+                <p className="text-lg text-black font-semibold" role="status">
+                  ✓ If this ticket exists, a new link is on its way to the email address on file. Check your inbox.
+                </p>
+              ) : (
+                <>
+                  <p className="text-black/80 mb-4">
+                    Your link may have been issued with an older version of our system. We can email you a fresh one:
+                  </p>
+                  <Button
+                    variant="dark"
+                    size="lg"
+                    onClick={() => recoverLinkMutation.mutate()}
+                    disabled={recoverLinkMutation.isPending}
+                  >
+                    {recoverLinkMutation.isPending ? 'Sending…' : 'Email Me a New Link'}
+                  </Button>
+                  {recoverLinkMutation.isError && (
+                    <p className="text-red-700 mt-3" role="alert">
+                      {recoverLinkMutation.error instanceof Error
+                        ? recoverLinkMutation.error.message
+                        : 'Something went wrong. Please try again.'}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <Link href="/">

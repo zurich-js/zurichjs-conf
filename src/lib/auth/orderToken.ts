@@ -119,6 +119,21 @@ export function verifyOrderToken(token: string): string | null {
 }
 
 /**
+ * Extract the ticket ID from a token WITHOUT verifying its signature.
+ *
+ * Only for recovery flows where the signature can no longer be verified
+ * (e.g. the signing secret was rotated out and lost) and the ticket ID is
+ * needed to email a freshly signed link to the address on file. The result
+ * MUST NOT be used to grant access to anything.
+ */
+export function extractTicketIdUnverified(token: string): string | null {
+  const ticketId = token.split('.')[0];
+
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidPattern.test(ticketId) ? ticketId : null;
+}
+
+/**
  * Generate order URL for a ticket
  */
 export function generateOrderUrl(ticketId: string, baseUrl?: string): string {
