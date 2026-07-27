@@ -24,7 +24,6 @@ import type {
   TicketCreationErrorData,
   TicketWaitlistData,
   SpeakerLogisticsSubmittedData,
-  SpeakerLogisticsChangedData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -411,31 +410,6 @@ export function notifySpeakerLogisticsSubmitted(data: SpeakerLogisticsSubmittedD
   }
   const blocks = buildBlocks(':clipboard: *Speaker Logistics Submitted*', fields, data.adminUrl, 'View Logistics')
   void safeSend('speaker_logistics_submitted', text, blocks)
-}
-
-export function notifySpeakerLogisticsChanged(data: SpeakerLogisticsChangedData): void {
-  const hasCancellations = data.cancellations.length > 0
-  const emoji = hasCancellations ? ':rotating_light:' : ':pencil2:'
-  const title = hasCancellations
-    ? 'Speaker Logistics CANCELLATION'
-    : 'Speaker Logistics Updated'
-  const text = hasCancellations
-    ? `Speaker logistics cancellation: ${data.speakerName} — ${data.cancellations.join(', ')}`
-    : `Speaker logistics updated: ${data.speakerName}`
-
-  const fields = [
-    { label: 'Speaker', value: data.speakerName },
-    { label: 'Email', value: data.speakerEmail },
-  ]
-  if (hasCancellations) {
-    fields.push({ label: 'Cancelled', value: truncate(data.cancellations.join('\n'), 300) })
-  }
-  if (data.otherChanges.length > 0) {
-    fields.push({ label: 'Other changes', value: truncate(data.otherChanges.join('\n'), 300) })
-  }
-
-  const blocks = buildBlocks(`${emoji} *${title}*`, fields, data.adminUrl, 'View Logistics')
-  void safeSend('speaker_logistics_changed', text, blocks)
 }
 
 export function notifyTicketCreationError(data: TicketCreationErrorData): void {

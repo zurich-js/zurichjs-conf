@@ -42,22 +42,10 @@ export const EMPTY_LOGISTICS_FORM_STATE: LogisticsFormState = {
   tshirt_size: '',
 };
 
-/** Seed the form from previously saved answers */
+/** Seed a fresh form, prefilling only what we already know about the speaker */
 export function formStateFromResponse(response: SpeakerLogisticsFormResponse): LogisticsFormState {
-  const answers = response.logistics;
   return {
-    attending_warmup: answers?.attending_warmup ?? null,
-    attending_speakers_dinner: answers?.attending_speakers_dinner ?? null,
-    attending_after_party: answers?.attending_after_party ?? null,
-    attending_speaker_hangout: answers?.attending_speaker_hangout ?? null,
-    dietary_restrictions: answers?.dietary_restrictions ?? '',
-    dinner_plus_one: answers?.dinner_plus_one ?? false,
-    dinner_plus_one_dietary_restrictions: answers?.dinner_plus_one_dietary_restrictions ?? '',
-    after_party_plus_one: answers?.after_party_plus_one ?? false,
-    after_party_plus_one_first_name: answers?.after_party_plus_one_first_name ?? '',
-    after_party_plus_one_last_name: answers?.after_party_plus_one_last_name ?? '',
-    after_party_plus_one_email: answers?.after_party_plus_one_email ?? '',
-    talk_special_accommodations: answers?.talk_special_accommodations ?? '',
+    ...EMPTY_LOGISTICS_FORM_STATE,
     tshirt_size: response.speaker.tshirtSize ?? '',
   };
 }

@@ -894,7 +894,6 @@ export type Database = {
           dinner_plus_one: boolean | null
           dinner_plus_one_dietary_restrictions: string | null
           id: string
-          request_sent_at: string | null
           speaker_id: string
           submitted_at: string | null
           talk_special_accommodations: string | null
@@ -914,7 +913,6 @@ export type Database = {
           dinner_plus_one?: boolean | null
           dinner_plus_one_dietary_restrictions?: string | null
           id?: string
-          request_sent_at?: string | null
           speaker_id: string
           submitted_at?: string | null
           talk_special_accommodations?: string | null
@@ -934,7 +932,6 @@ export type Database = {
           dinner_plus_one?: boolean | null
           dinner_plus_one_dietary_restrictions?: string | null
           id?: string
-          request_sent_at?: string | null
           speaker_id?: string
           submitted_at?: string | null
           talk_special_accommodations?: string | null

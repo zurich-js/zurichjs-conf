@@ -147,14 +147,3 @@ export interface SpeakerLogisticsSubmittedData {
   dietaryRestrictions?: string | null
   adminUrl?: string
 }
-
-export interface SpeakerLogisticsChangedData {
-  speakerId: string
-  speakerName: string
-  speakerEmail: string
-  /** Attendance/plus-one answers flipped to "no" after the initial submission */
-  cancellations: string[]
-  /** Other answers that changed (new RSVPs, dietary updates, plus-one details) */
-  otherChanges: string[]
-  adminUrl?: string
-}

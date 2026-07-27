@@ -1,9 +1,9 @@
 -- Migration: Add speaker event logistics reconciliation
 -- Created: 2026-07-27
 --
--- Speakers receive a unique (HMAC token) link where they confirm which
--- conference-week events they will attend and provide the logistics details
--- we need to plan catering and capacity:
+-- Speakers receive a unique (HMAC token) link — shared with them manually by
+-- the team — where they confirm which conference-week events they will attend
+-- and provide the logistics details we need to plan catering and capacity:
 --   - Warm-up meetup (Sep 9), speakers dinner (Sep 10, ~18:30-22:00),
 --     VIP after party (Sep 11), speaker hangout activities (Sep 12)
 --   - Dietary restrictions / allergies for the dinner and after party
@@ -42,12 +42,9 @@ CREATE TABLE IF NOT EXISTS cfp_speaker_logistics (
   -- Special accommodations for their talk or workshop (AV, accessibility, ...)
   talk_special_accommodations TEXT,
 
-  -- Set on the speaker's first form submission; later edits keep it and only
-  -- bump updated_at (changes after submission trigger cancellation alerts)
+  -- Set on submission; the speaker's unique link is single-use and expires
+  -- once this is set (changes afterwards go through the team directly)
   submitted_at TIMESTAMPTZ,
-
-  -- When we last emailed this speaker their unique logistics link
-  request_sent_at TIMESTAMPTZ,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -69,8 +66,7 @@ COMMENT ON COLUMN cfp_speaker_logistics.dinner_plus_one_dietary_restrictions IS 
 COMMENT ON COLUMN cfp_speaker_logistics.after_party_plus_one IS 'Whether the speaker brings a plus one to the VIP after party (Sep 11)';
 COMMENT ON COLUMN cfp_speaker_logistics.after_party_plus_one_email IS 'After-party plus one email - used to issue their VIP ticket (includes 20% workshop discount)';
 COMMENT ON COLUMN cfp_speaker_logistics.talk_special_accommodations IS 'Special accommodations the speaker needs for their talk or workshop';
-COMMENT ON COLUMN cfp_speaker_logistics.submitted_at IS 'First form submission time; later edits only bump updated_at';
-COMMENT ON COLUMN cfp_speaker_logistics.request_sent_at IS 'When the logistics request email with the unique link was last sent';
+COMMENT ON COLUMN cfp_speaker_logistics.submitted_at IS 'Submission time; the unique link expires once set (single-submission for security)';
 
 -- RLS (service role bypasses RLS; the logistics form is token-authenticated
 -- and goes through the service role client, matching ticket_apparel_preferences)

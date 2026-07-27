@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Check, Loader2, PartyPopper, Shirt } from 'lucide-react';
+import { AlertTriangle, Check, Loader2, LockKeyhole, PartyPopper, Shirt } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Button, Select } from '@/components/atoms';
 import {
@@ -158,7 +158,6 @@ const SpeakerLogisticsPage: React.FC = () => {
     saveMutation.mutate(formState);
   };
 
-  const hasSubmittedBefore = !!data?.logistics?.submitted_at;
   const showDietaryInDinner = formState.attending_speakers_dinner === true;
   const showDietaryInAfterParty = !showDietaryInDinner && formState.attending_after_party === true;
 
@@ -180,7 +179,7 @@ const SpeakerLogisticsPage: React.FC = () => {
       title="Your Speaker Week Plans | ZurichJS Conference 2026"
       description="Tell us which speaker week events you'll attend so we can plan food and capacity."
     >
-      <div className="min-h-screen bg-brand-primary py-16 md:py-24 px-6">
+      <div className="min-h-screen bg-brand-primary pt-32 pb-16 md:pt-40 md:pb-24 px-6">
         <div className="max-w-2xl mx-auto">
           {isLoading || !router.isReady ? (
             <div className="flex justify-center py-24" role="status">
@@ -203,6 +202,26 @@ const SpeakerLogisticsPage: React.FC = () => {
                 </a>
               </p>
             </div>
+          ) : data.hasSubmitted ? (
+            <div className="bg-black rounded-2xl p-8 text-center">
+              <Check className="w-10 h-10 text-brand-primary mx-auto mb-4" aria-hidden="true" />
+              <h1 className="text-2xl font-bold text-white mb-3">
+                {showSuccess
+                  ? `Thank you, ${data.speaker.firstName} — your plans are saved!`
+                  : `You've already sent us your plans, ${data.speaker.firstName}`}
+              </h1>
+              <p className="text-gray-300">
+                For security reasons this personal link expires after submission, so your answers can&apos;t be
+                changed here anymore.
+              </p>
+              <p className="text-gray-300 mt-3">
+                Need to change something? Email{' '}
+                <a href="mailto:hello@zurichjs.com" className="text-brand-primary underline">
+                  hello@zurichjs.com
+                </a>
+                , ask in the speaker group chat, or message Faris, Nadja, or Bogdan directly.
+              </p>
+            </div>
           ) : (
             <>
               <header className="mb-8">
@@ -211,23 +230,9 @@ const SpeakerLogisticsPage: React.FC = () => {
                 </h1>
                 <p className="mt-3 text-black/80 leading-relaxed">
                   We&apos;re organizing a few events around ZurichJS Conference 2026 especially for our speakers.
-                  Tell us what you&apos;ll join so we can book the right amount of food, seats, and fun. You can
-                  come back to this page and update your answers any time using the same link.
+                  Tell us what you&apos;ll join so we can book the right amount of food, seats, and fun.
                 </p>
               </header>
-
-              {showSuccess && (
-                <div
-                  className="mb-6 flex items-start gap-3 rounded-xl border border-green-600 bg-green-950 px-4 py-3 text-green-300"
-                  role="status"
-                >
-                  <Check className="w-5 h-5 mt-0.5 shrink-0" aria-hidden="true" />
-                  <p className="text-sm">
-                    Your plans are saved — thank you! If anything changes (especially last minute), please come
-                    back and update this form so we can adjust food and capacity.
-                  </p>
-                </div>
-              )}
 
               <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 <EventRsvpCard
@@ -401,16 +406,19 @@ const SpeakerLogisticsPage: React.FC = () => {
 
                 <div className="bg-black rounded-2xl p-6 md:p-8">
                   <Button type="submit" variant="primary" size="lg" loading={saveMutation.isPending} className="w-full">
-                    {hasSubmittedBefore ? 'Update My Plans' : 'Save My Plans'}
+                    Save My Plans
                   </Button>
-                  <p className="text-gray-400 text-sm mt-4 text-center">
-                    We order food and book capacity based on your answers — if your plans change, please update
-                    this form or email{' '}
-                    <a href="mailto:hello@zurichjs.com" className="text-brand-primary underline">
-                      hello@zurichjs.com
-                    </a>
-                    .
-                  </p>
+                  <div className="mt-4 flex items-start gap-2 text-gray-400 text-sm">
+                    <LockKeyhole className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+                    <p>
+                      For security reasons, this link expires once you submit — so double-check your answers
+                      before saving. Need to change something afterwards? Email{' '}
+                      <a href="mailto:hello@zurichjs.com" className="text-brand-primary underline">
+                        hello@zurichjs.com
+                      </a>
+                      , ask in the speaker group chat, or message Faris, Nadja, or Bogdan directly.
+                    </p>
+                  </div>
                 </div>
               </form>
             </>

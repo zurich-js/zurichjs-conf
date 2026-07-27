@@ -44,9 +44,7 @@ export function SpeakerLogisticsStatsCards({ stats }: SpeakerLogisticsStatsCards
             {stats.submitted}
             <span className="ml-1 text-sm font-normal text-gray-500">of {stats.totalSpeakers} speakers</span>
           </p>
-          <p className="mt-1 text-xs text-gray-500">
-            {stats.requested} link(s) sent awaiting answers · {stats.notRequested} not contacted yet
-          </p>
+          <p className="mt-1 text-xs text-gray-500">{stats.pending} still pending</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm text-gray-500">

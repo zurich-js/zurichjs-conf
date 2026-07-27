@@ -10,17 +10,7 @@ export type SpeakerLogisticsRow = Database['public']['Tables']['cfp_speaker_logi
 export type SpeakerLogisticsInsert = Database['public']['Tables']['cfp_speaker_logistics']['Insert'];
 export type SpeakerLogisticsUpdate = Database['public']['Tables']['cfp_speaker_logistics']['Update'];
 
-/** The RSVP answer fields on a logistics row */
-export const SPEAKER_LOGISTICS_ATTENDANCE_FIELDS = [
-  'attending_warmup',
-  'attending_speakers_dinner',
-  'attending_after_party',
-  'attending_speaker_hangout',
-] as const;
-
-export type SpeakerLogisticsAttendanceField = (typeof SPEAKER_LOGISTICS_ATTENDANCE_FIELDS)[number];
-
-/** The answers a speaker can edit through the logistics form */
+/** The answers a speaker submits through the logistics form */
 export interface SpeakerLogisticsAnswers {
   attending_warmup: boolean | null;
   attending_speakers_dinner: boolean | null;

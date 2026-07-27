@@ -15,7 +15,7 @@ import type { SpeakerLogisticsRow } from '@/lib/types/speaker-logistics';
 
 const log = logger.scope('Admin Speaker Logistics API');
 
-export type SpeakerLogisticsStatus = 'not_requested' | 'requested' | 'submitted';
+export type SpeakerLogisticsStatus = 'pending' | 'submitted';
 
 export interface SpeakerLogisticsAdminRow {
   speaker_id: string;
@@ -26,10 +26,9 @@ export interface SpeakerLogisticsAdminRow {
   tshirt_size: string | null;
   /** Whether the speaker has an accepted workshop (accommodations context) */
   has_workshop: boolean;
-  /** Unique form link — omitted for read-only bot clients */
+  /** Unique form link (shared with the speaker manually) — omitted for read-only bot clients */
   logistics_url: string | null;
   status: SpeakerLogisticsStatus;
-  request_sent_at: string | null;
   submitted_at: string | null;
   /** Last time the speaker changed their answers */
   updated_at: string | null;
@@ -61,8 +60,7 @@ export interface SpeakerLogisticsEventStats {
 export interface SpeakerLogisticsStats {
   totalSpeakers: number;
   submitted: number;
-  requested: number;
-  notRequested: number;
+  pending: number;
   warmup: SpeakerLogisticsEventStats;
   speakersDinner: SpeakerLogisticsEventStats;
   afterParty: SpeakerLogisticsEventStats;
@@ -127,8 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const stats: SpeakerLogisticsStats = {
       totalSpeakers: speakers.length,
       submitted: 0,
-      requested: 0,
-      notRequested: 0,
+      pending: 0,
       warmup: emptyEventStats(),
       speakersDinner: emptyEventStats(),
       afterParty: emptyEventStats(),
@@ -141,15 +138,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const rows: SpeakerLogisticsAdminRow[] = speakers.map((speaker) => {
       const logistics = logisticsBySpeaker.get(speaker.id) ?? null;
       const submitted = !!logistics?.submitted_at;
-      const status: SpeakerLogisticsStatus = submitted
-        ? 'submitted'
-        : logistics?.request_sent_at
-          ? 'requested'
-          : 'not_requested';
+      const status: SpeakerLogisticsStatus = submitted ? 'submitted' : 'pending';
 
-      if (status === 'submitted') stats.submitted += 1;
-      else if (status === 'requested') stats.requested += 1;
-      else stats.notRequested += 1;
+      if (submitted) stats.submitted += 1;
+      else stats.pending += 1;
 
       const answers = submitted && logistics
         ? {
@@ -196,7 +188,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Unique speaker-level write access — never hand it to the read-only bot
         logistics_url: isBot ? null : generateSpeakerLogisticsUrl(speaker.id),
         status,
-        request_sent_at: logistics?.request_sent_at ?? null,
         submitted_at: logistics?.submitted_at ?? null,
         updated_at: logistics?.updated_at ?? null,
         answers,

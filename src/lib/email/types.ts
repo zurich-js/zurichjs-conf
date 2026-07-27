@@ -146,19 +146,6 @@ export interface ApparelReminderData {
 }
 
 /**
- * Data structure for speaker logistics request email
- */
-export interface SpeakerLogisticsRequestData {
-  to: string;
-  firstName: string;
-  speakerId: string;
-  logisticsUrl: string;
-  /** Whether the speaker already submitted the form once (reminder wording) */
-  hasSubmitted?: boolean;
-  customMessage?: string;
-}
-
-/**
  * Data structure for CFP feedback request email
  * Sent to organizers when a rejected speaker requests feedback
  */

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeAnswers, diffAnswers, buildAttendanceSummary } from '@/lib/speaker-logistics';
-import type { SpeakerLogisticsAnswers } from '@/lib/types/speaker-logistics';
+import { normalizeAnswers, buildAttendanceSummary } from '@/lib/speaker-logistics';
 import type { SpeakerLogisticsFormData } from '@/lib/validations/speaker-logistics';
 
 const baseForm: SpeakerLogisticsFormData = {
@@ -19,14 +18,14 @@ const baseForm: SpeakerLogisticsFormData = {
   tshirt_size: 'M',
 };
 
-const baseAnswers: SpeakerLogisticsAnswers = normalizeAnswers(baseForm);
-
 describe('normalizeAnswers', () => {
   it('keeps plus-one details when attending with a plus one', () => {
-    expect(baseAnswers.dinner_plus_one).toBe(true);
-    expect(baseAnswers.dinner_plus_one_dietary_restrictions).toBe('Vegan');
-    expect(baseAnswers.after_party_plus_one).toBe(true);
-    expect(baseAnswers.after_party_plus_one_email).toBe('alex@example.com');
+    const answers = normalizeAnswers(baseForm);
+
+    expect(answers.dinner_plus_one).toBe(true);
+    expect(answers.dinner_plus_one_dietary_restrictions).toBe('Vegan');
+    expect(answers.after_party_plus_one).toBe(true);
+    expect(answers.after_party_plus_one_email).toBe('alex@example.com');
   });
 
   it('drops plus-one data when the speaker is not attending the event', () => {
@@ -92,64 +91,9 @@ describe('normalizeAnswers', () => {
   });
 });
 
-describe('diffAnswers', () => {
-  it('reports no changes for identical answers', () => {
-    const diff = diffAnswers(baseAnswers, { ...baseAnswers });
-
-    expect(diff.hasChanges).toBe(false);
-    expect(diff.cancellations).toEqual([]);
-    expect(diff.otherChanges).toEqual([]);
-  });
-
-  it('flags yes → no RSVP flips as cancellations', () => {
-    const diff = diffAnswers(
-      baseAnswers,
-      normalizeAnswers({ ...baseForm, attending_speakers_dinner: false })
-    );
-
-    expect(diff.hasChanges).toBe(true);
-    expect(diff.cancellations).toContain('Speakers Dinner (Sep 10)');
-    // Dropping the dinner also cancels its plus one
-    expect(diff.cancellations).toContain('Dinner plus one (Sep 10)');
-  });
-
-  it('flags a withdrawn plus one as a cancellation', () => {
-    const diff = diffAnswers(baseAnswers, normalizeAnswers({ ...baseForm, after_party_plus_one: false }));
-
-    expect(diff.cancellations).toEqual(['After-party plus one (Sep 11)']);
-  });
-
-  it('reports new attendance as a non-cancellation change', () => {
-    const diff = diffAnswers(baseAnswers, normalizeAnswers({ ...baseForm, attending_speaker_hangout: true }));
-
-    expect(diff.cancellations).toEqual([]);
-    expect(diff.otherChanges).toEqual(['Now attending: Speaker Hangout (Sep 12)']);
-  });
-
-  it('collapses plus-one contact field edits into one change entry', () => {
-    const diff = diffAnswers(
-      baseAnswers,
-      normalizeAnswers({
-        ...baseForm,
-        after_party_plus_one_first_name: 'Sam',
-        after_party_plus_one_email: 'sam@example.com',
-      })
-    );
-
-    expect(diff.otherChanges).toEqual(['After-party plus-one contact updated']);
-  });
-
-  it('reports dietary updates', () => {
-    const diff = diffAnswers(baseAnswers, normalizeAnswers({ ...baseForm, dietary_restrictions: 'Halal' }));
-
-    expect(diff.cancellations).toEqual([]);
-    expect(diff.otherChanges).toEqual(['Dietary restrictions updated']);
-  });
-});
-
 describe('buildAttendanceSummary', () => {
   it('summarizes RSVPs with plus-one markers', () => {
-    expect(buildAttendanceSummary(baseAnswers)).toBe(
+    expect(buildAttendanceSummary(normalizeAnswers(baseForm))).toBe(
       'Warm-Up Meetup (Sep 9): yes · Speakers Dinner (Sep 10): yes +1 · VIP After Party (Sep 11): yes +1 · Speaker Hangout (Sep 12): no'
     );
   });

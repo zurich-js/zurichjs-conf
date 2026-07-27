@@ -1,16 +1,17 @@
 /**
  * Speaker Logistics Tab
  * Reconcile speaker event attendance: who answered, headcounts per event,
- * dietary needs, plus ones (incl. VIP tickets to issue), and bulk-sending
- * each speaker their unique form link
+ * dietary needs, plus ones (incl. VIP tickets to issue), and each speaker's
+ * unique form link (copied and shared with them manually)
  */
 
 import React, { useMemo, useState } from 'react';
-import { Loader2, Mail, Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { SpeakerLogisticsStatsCards } from './SpeakerLogisticsStatsCards';
 import { SpeakerLogisticsTable } from './SpeakerLogisticsTable';
-import { useSpeakerLogisticsOverview, useSendSpeakerLogisticsRequests } from './hooks';
+import { SpeakerLogisticsCardList } from './SpeakerLogisticsCardList';
+import { useSpeakerLogisticsOverview } from './hooks';
 import type { SpeakerLogisticsAdminRow, SpeakerLogisticsFilter } from './types';
 
 const FILTERS: Array<{ id: SpeakerLogisticsFilter; label: string }> = [
@@ -39,11 +40,9 @@ function matchesFilter(row: SpeakerLogisticsAdminRow, filter: SpeakerLogisticsFi
 export function SpeakerLogisticsTab() {
   const toast = useToast();
   const { data, isLoading, error } = useSpeakerLogisticsOverview();
-  const sendRequests = useSendSpeakerLogisticsRequests();
 
   const [filter, setFilter] = useState<SpeakerLogisticsFilter>('all');
   const [search, setSearch] = useState('');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const filteredSpeakers = useMemo(() => {
     const speakers = data?.speakers ?? [];
@@ -58,52 +57,13 @@ export function SpeakerLogisticsTab() {
     });
   }, [data?.speakers, filter, search]);
 
-  const toggleSelection = (speakerId: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(speakerId)) next.delete(speakerId);
-      else next.add(speakerId);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    setSelectedIds((prev) => {
-      const allVisible = filteredSpeakers.every((row) => prev.has(row.speaker_id));
-      if (allVisible) return new Set();
-      return new Set(filteredSpeakers.map((row) => row.speaker_id));
-    });
-  };
-
-  const selectAllPending = () => {
-    const pendingIds = (data?.speakers ?? [])
-      .filter((row) => row.status !== 'submitted')
-      .map((row) => row.speaker_id);
-    setSelectedIds(new Set(pendingIds));
-  };
-
-  const handleSendRequests = async () => {
-    const speakerIds = Array.from(selectedIds);
-    if (speakerIds.length === 0) return;
-    if (
-      !confirm(
-        `Email ${speakerIds.length} speaker(s) their unique logistics form link? ` +
-          'Speakers who already submitted get a "please review your plans" version.'
-      )
-    ) {
-      return;
-    }
-    await sendRequests.mutateAsync({ speakerIds });
-    setSelectedIds(new Set());
-  };
-
   const handleCopyLink = async (row: SpeakerLogisticsAdminRow) => {
     if (!row.logistics_url) return;
     try {
       await navigator.clipboard.writeText(row.logistics_url);
       toast.success('Link copied', `Unique logistics link for ${row.first_name} ${row.last_name} copied to clipboard.`);
     } catch {
-      toast.error('Copy failed', 'Could not access the clipboard — copy the link manually from the API response.');
+      toast.error('Copy failed', 'Could not access the clipboard.');
     }
   };
 
@@ -128,7 +88,7 @@ export function SpeakerLogisticsTab() {
     <div className="space-y-6">
       <SpeakerLogisticsStatsCards stats={data.stats} />
 
-      {/* Filters + bulk actions */}
+      {/* Filters + search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex flex-wrap rounded-lg border border-gray-200 bg-white p-1" role="group" aria-label="Filter speakers">
           {FILTERS.map((item) => (
@@ -155,41 +115,21 @@ export function SpeakerLogisticsTab() {
             className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary"
           />
         </div>
-
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <button
-            onClick={selectAllPending}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Select all pending ({(data.speakers ?? []).filter((row) => row.status !== 'submitted').length})
-          </button>
-          <button
-            onClick={handleSendRequests}
-            disabled={selectedIds.size === 0 || sendRequests.isPending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {sendRequests.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Mail className="h-4 w-4" aria-hidden="true" />
-            )}
-            {sendRequests.isPending ? 'Sending...' : `Send links (${selectedIds.size})`}
-          </button>
-        </div>
       </div>
 
-      <SpeakerLogisticsTable
-        speakers={filteredSpeakers}
-        selectedIds={selectedIds}
-        onToggleSelection={toggleSelection}
-        onToggleSelectAll={toggleSelectAll}
-        onCopyLink={handleCopyLink}
-      />
+      {/* Desktop table / mobile progressive-disclosure cards */}
+      <div className="hidden lg:block">
+        <SpeakerLogisticsTable speakers={filteredSpeakers} onCopyLink={handleCopyLink} />
+      </div>
+      <div className="lg:hidden">
+        <SpeakerLogisticsCardList speakers={filteredSpeakers} onCopyLink={handleCopyLink} />
+      </div>
 
       <p className="text-xs text-gray-500">
-        Each speaker gets a unique link — no login needed. Changes speakers make after submitting (especially
-        cancellations) are posted to the platform notifications Slack channel so you can adjust food orders and
-        capacity. After-party plus ones need a VIP ticket issued manually (with 20% off workshops).
+        Each speaker gets a unique link — copy it here and send it to them yourself (no login needed on their
+        side). For security the link expires once they submit; speakers are told to email hello@zurichjs.com or
+        message Faris, Nadja, or Bogdan for any later changes (especially cancellations). After-party plus ones
+        need a VIP ticket issued manually (with 20% off workshops).
       </p>
     </div>
   );

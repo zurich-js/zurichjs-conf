@@ -1,25 +1,22 @@
 /**
  * Speaker Logistics Form API (speaker-facing, token-authenticated)
- * GET /api/speaker-logistics/[token] - Load the speaker's context + saved answers
- * PUT /api/speaker-logistics/[token] - Save the speaker's event RSVPs and details
+ * GET /api/speaker-logistics/[token] - Load the speaker's context for the form
+ * PUT /api/speaker-logistics/[token] - Submit the speaker's event RSVPs (once)
  *
  * The token is a stateless HMAC minted per speaker (no login required).
- * Changes made after the first submission fire Slack alerts so the team hears
- * about last-minute cancellations before the food order does.
+ * A link is single-submission: once the speaker submits, the link is expired
+ * for security (it travels by email and the answers include third-party
+ * contact details). Later changes go through the team directly.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifySpeakerLogisticsToken } from '@/lib/auth/speakerLogisticsToken';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { speakerLogisticsSchema } from '@/lib/validations/speaker-logistics';
-import { normalizeAnswers, diffAnswers, buildAttendanceSummary } from '@/lib/speaker-logistics';
-import {
-  notifySpeakerLogisticsSubmitted,
-  notifySpeakerLogisticsChanged,
-} from '@/lib/platform-notifications';
+import { normalizeAnswers, buildAttendanceSummary } from '@/lib/speaker-logistics';
+import { notifySpeakerLogisticsSubmitted } from '@/lib/platform-notifications';
 import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
-import type { SpeakerLogisticsAnswers } from '@/lib/types/speaker-logistics';
 import type { CfpTshirtSize } from '@/lib/types/cfp';
 
 const log = logger.scope('Speaker Logistics API');
@@ -33,12 +30,9 @@ export interface SpeakerLogisticsSpeakerInfo {
 
 export interface SpeakerLogisticsFormResponse {
   speaker: SpeakerLogisticsSpeakerInfo;
-  logistics: (SpeakerLogisticsAnswers & { submitted_at: string | null }) | null;
+  /** Once true the link is expired — the form can no longer be used */
+  hasSubmitted: boolean;
 }
-
-// Kept as a single literal so the Supabase client can infer the row type
-const ANSWER_COLUMNS =
-  'attending_warmup, attending_speakers_dinner, attending_after_party, attending_speaker_hangout, dietary_restrictions, dinner_plus_one, dinner_plus_one_dietary_restrictions, after_party_plus_one, after_party_plus_one_first_name, after_party_plus_one_last_name, after_party_plus_one_email, talk_special_accommodations, submitted_at' as const;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET' && req.method !== 'PUT') {
@@ -71,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { data: existing, error: existingError } = await supabase
       .from('cfp_speaker_logistics')
-      .select(ANSWER_COLUMNS)
+      .select('submitted_at')
       .eq('speaker_id', speakerId)
       .maybeSingle();
 
@@ -87,15 +81,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tshirtSize: (speaker.tshirt_size as CfpTshirtSize | null) ?? null,
     };
 
+    const hasSubmitted = !!existing?.submitted_at;
+
     if (req.method === 'GET') {
       const response: SpeakerLogisticsFormResponse = {
         speaker: speakerInfo,
-        logistics: existing ?? null,
+        hasSubmitted,
       };
       return res.status(200).json(response);
     }
 
-    // PUT — save answers
+    // PUT — one-shot submission; the link is expired afterwards for security
+    if (hasSubmitted) {
+      return res.status(410).json({
+        error:
+          'This link has already been used and is now expired for security reasons. To change your plans, email hello@zurichjs.com or message Faris, Nadja, or Bogdan.',
+      });
+    }
+
     const result = speakerLogisticsSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({
@@ -105,23 +108,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const answers = normalizeAnswers(result.data);
-    const isFirstSubmission = !existing?.submitted_at;
-    const submittedAt = existing?.submitted_at ?? new Date().toISOString();
 
-    const { data: saved, error: upsertError } = await supabase
+    const { error: upsertError } = await supabase
       .from('cfp_speaker_logistics')
       .upsert(
         {
           speaker_id: speakerId,
           ...answers,
-          submitted_at: submittedAt,
+          submitted_at: new Date().toISOString(),
         },
         { onConflict: 'speaker_id' }
-      )
-      .select(ANSWER_COLUMNS)
-      .single();
+      );
 
-    if (upsertError || !saved) {
+    if (upsertError) {
       log.error('Error saving speaker logistics', upsertError, { speakerId });
       return res.status(500).json({ error: 'Failed to save your details' });
     }
@@ -141,35 +140,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const speakerName = `${speaker.first_name} ${speaker.last_name}`.trim();
-    const adminUrl = `${getBaseUrl()}/admin/speakers`;
-
-    if (isFirstSubmission) {
-      notifySpeakerLogisticsSubmitted({
-        speakerId,
-        speakerName,
-        speakerEmail: speaker.email,
-        attendanceSummary: buildAttendanceSummary(answers),
-        dietaryRestrictions: answers.dietary_restrictions,
-        adminUrl,
-      });
-    } else if (existing) {
-      const diff = diffAnswers(existing, answers);
-      if (diff.hasChanges) {
-        notifySpeakerLogisticsChanged({
-          speakerId,
-          speakerName,
-          speakerEmail: speaker.email,
-          cancellations: diff.cancellations,
-          otherChanges: diff.otherChanges,
-          adminUrl,
-        });
-      }
-    }
+    notifySpeakerLogisticsSubmitted({
+      speakerId,
+      speakerName: `${speaker.first_name} ${speaker.last_name}`.trim(),
+      speakerEmail: speaker.email,
+      attendanceSummary: buildAttendanceSummary(answers),
+      dietaryRestrictions: answers.dietary_restrictions,
+      adminUrl: `${getBaseUrl()}/admin/speakers`,
+    });
 
     const response: SpeakerLogisticsFormResponse = {
       speaker: speakerInfo,
-      logistics: saved,
+      hasSubmitted: true,
     };
     return res.status(200).json(response);
   } catch (error) {
