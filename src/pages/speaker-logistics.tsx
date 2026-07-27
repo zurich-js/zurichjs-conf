@@ -411,8 +411,8 @@ const SpeakerLogisticsPage: React.FC = () => {
                   <div className="mt-4 flex items-start gap-2 text-gray-400 text-sm">
                     <LockKeyhole className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
                     <p>
-                      For security reasons, this link expires once you submit — so double-check your answers
-                      before saving. Need to change something afterwards? Email{' '}
+                      For security reasons, this link expires once you submit, so we can protect your data —
+                      double-check your answers before saving. Need to change something afterwards? Email{' '}
                       <a href="mailto:hello@zurichjs.com" className="text-brand-primary underline">
                         hello@zurichjs.com
                       </a>
