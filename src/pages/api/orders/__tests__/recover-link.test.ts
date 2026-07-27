@@ -25,18 +25,23 @@ vi.mock('@/lib/email', () => ({
 
 import handler from '../recover-link';
 
+// Each test uses its own ticket ID — the per-ticket send limiter is
+// module-level state shared across tests
 const TICKET_ID = 'fdd332be-86c9-4842-912c-e5c1c0968606';
-const TICKET_ROW = {
-  id: TICKET_ID,
-  email: 'attendee@example.com',
-  first_name: 'Ada',
-  last_name: 'Lovelace',
-  ticket_category: 'standard',
-  ticket_stage: 'early_bird',
-  amount_paid: 250,
-  currency: 'CHF',
-  qr_code_url: 'https://example.com/qr.png',
-};
+
+function makeTicket(id: string) {
+  return {
+    id,
+    email: 'attendee@example.com',
+    first_name: 'Ada',
+    last_name: 'Lovelace',
+    ticket_category: 'standard',
+    ticket_stage: 'early_bird',
+    amount_paid: 250,
+    currency: 'CHF',
+    qr_code_url: 'https://example.com/qr.png',
+  };
+}
 
 let ipCounter = 0;
 
@@ -94,7 +99,7 @@ describe('POST /api/orders/recover-link', () => {
   });
 
   it('emails a freshly signed link to the address on the ticket', async () => {
-    mockSingle.mockResolvedValue({ data: TICKET_ROW, error: null });
+    mockSingle.mockResolvedValue({ data: makeTicket(TICKET_ID), error: null });
 
     const res = makeRes();
     // Stale token: signature no longer verifies, but the ticket ID is intact
@@ -108,11 +113,24 @@ describe('POST /api/orders/recover-link', () => {
     expect(emailData.orderUrl).toContain(`/manage-order?token=${TICKET_ID}.`);
   });
 
+  it('sends at most one email per ticket per window, even from different IPs', async () => {
+    const ticketId = '11111111-2222-4333-8444-555555555555';
+    mockSingle.mockResolvedValue({ data: makeTicket(ticketId), error: null });
+
+    for (let i = 0; i < 2; i++) {
+      const res = makeRes();
+      await handler(makeReq({ token: `${ticketId}.stale` }), res);
+      expect(res.statusCode).toBe(200);
+    }
+
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+  });
+
   it('returns the generic response without emailing when the ticket does not exist', async () => {
     mockSingle.mockResolvedValue({ data: null, error: { message: 'not found' } });
 
     const res = makeRes();
-    await handler(makeReq({ token: `${TICKET_ID}.whatever` }), res);
+    await handler(makeReq({ token: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.whatever' }), res);
 
     expect(res.statusCode).toBe(200);
     expect(mockSendEmail).not.toHaveBeenCalled();
@@ -128,21 +146,23 @@ describe('POST /api/orders/recover-link', () => {
   });
 
   it('returns 500 when the email fails to send', async () => {
-    mockSingle.mockResolvedValue({ data: TICKET_ROW, error: null });
+    const ticketId = '99999999-8888-4777-8666-555555555544';
+    mockSingle.mockResolvedValue({ data: makeTicket(ticketId), error: null });
     mockSendEmail.mockResolvedValue({ success: false, error: 'resend down' });
 
     const res = makeRes();
-    await handler(makeReq({ token: `${TICKET_ID}.sig` }), res);
+    await handler(makeReq({ token: `${ticketId}.sig` }), res);
 
     expect(res.statusCode).toBe(500);
   });
 
   it('rate limits repeated requests from the same IP', async () => {
-    mockSingle.mockResolvedValue({ data: TICKET_ROW, error: null });
+    const ticketId = '12121212-3434-4565-8787-909090909090';
+    mockSingle.mockResolvedValue({ data: makeTicket(ticketId), error: null });
     const sameIpReq = () =>
       ({
         method: 'POST',
-        body: { token: `${TICKET_ID}.sig` },
+        body: { token: `${ticketId}.sig` },
         headers: { 'x-forwarded-for': '192.168.1.99' },
         query: {},
       }) as unknown as NextApiRequest;

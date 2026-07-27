@@ -23,6 +23,11 @@ const log = logger.scope('Order Link Recovery API');
 // Sends email — keep this tight to prevent abuse
 const limiter = createRateLimiter({ windowMs: 15 * 60_000, maxRequests: 3 });
 
+// The recovery email is triggered automatically when a stale link is opened,
+// so also cap sends per ticket: repeat visits within the window skip the send
+// (the link is deterministic — a resend would contain the identical URL)
+const ticketLimiter = createRateLimiter({ windowMs: 15 * 60_000, maxRequests: 1 });
+
 const bodySchema = z.object({
   token: z.string().min(1).max(200),
 });
@@ -72,6 +77,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(GENERIC_RESPONSE);
     }
 
+    if (!ticketLimiter.check(ticket.id).allowed) {
+      // An identical email went out moments ago — report success without resending
+      return res.status(200).json(GENERIC_RESPONSE);
+    }
+
     const orderUrl = generateOrderUrl(ticket.id);
 
     const emailResult = await sendTicketConfirmationEmail({
@@ -87,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ticketId: ticket.id,
       qrCodeUrl: ticket.qr_code_url || undefined,
       orderUrl,
-      notes: 'You requested a new ticket management link. Older links may no longer work — please use the button in this email from now on.',
+      notes: 'This email replaces your previous ticket confirmation. Older links no longer work — please manage your ticket from this email going forward.',
     });
 
     if (!emailResult.success) {

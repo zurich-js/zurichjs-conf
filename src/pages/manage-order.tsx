@@ -28,6 +28,8 @@ import {
   type OrderDetailsResponse,
 } from '@/components/manage-order';
 
+type FetchError = Error & { status?: number };
+
 const ManageOrderPage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -42,14 +44,16 @@ const ManageOrderPage: React.FC = () => {
     data: orderDetails,
     isLoading,
     error,
-  } = useQuery<OrderDetailsResponse>({
+  } = useQuery<OrderDetailsResponse, FetchError>({
     queryKey: ['order', orderToken],
     queryFn: async () => {
       if (!orderToken) throw new Error('No token provided');
       const response = await fetch(`/api/orders/${orderToken}`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch ticket details');
+        const fetchError: FetchError = new Error(errorData.error || 'Failed to fetch ticket details');
+        fetchError.status = response.status;
+        throw fetchError;
       }
       return response.json();
     },
@@ -71,6 +75,19 @@ const ManageOrderPage: React.FC = () => {
       return response.json();
     },
   });
+
+  // A 401 means the link's signature no longer verifies (e.g. it predates a
+  // secret rotation) — automatically email a fresh ticket email so the visitor
+  // doesn't have to figure out what went wrong. The server dedupes per ticket.
+  const isInvalidToken = error?.status === 401;
+  const { mutate: requestNewLink } = recoverLinkMutation;
+  const autoRequestFired = React.useRef(false);
+  React.useEffect(() => {
+    if (isInvalidToken && orderToken && !autoRequestFired.current) {
+      autoRequestFired.current = true;
+      requestNewLink();
+    }
+  }, [isInvalidToken, orderToken, requestNewLink]);
 
   // Mutation for ticket reassignment
   const reassignMutation = useMutation({
@@ -127,7 +144,12 @@ const ManageOrderPage: React.FC = () => {
 
           {/* Error State */}
           {router.isReady && (!orderToken || error) && (
-            <ErrorState orderToken={orderToken} error={error} recoverLinkMutation={recoverLinkMutation} />
+            <ErrorState
+              orderToken={orderToken}
+              error={error}
+              isInvalidToken={!!isInvalidToken}
+              recoverLinkMutation={recoverLinkMutation}
+            />
           )}
 
           {/* Success State */}
@@ -199,6 +221,7 @@ function LoadingState() {
 interface ErrorStateProps {
   orderToken: string;
   error: Error | null;
+  isInvalidToken: boolean;
   recoverLinkMutation: {
     mutate: () => void;
     isPending: boolean;
@@ -208,7 +231,52 @@ interface ErrorStateProps {
   };
 }
 
-function ErrorState({ orderToken, error, recoverLinkMutation }: ErrorStateProps) {
+function ErrorState({ orderToken, error, isInvalidToken, recoverLinkMutation }: ErrorStateProps) {
+  // A stale-but-well-formed link triggers an automatic resend of the ticket
+  // email — present that as the main event, not as an access failure
+  if (orderToken && isInvalidToken && !recoverLinkMutation.isError) {
+    return (
+      <div className="text-center">
+        <div className="mb-8">
+          <div className="text-6xl mb-4">📮</div>
+          <Kicker variant="light" className="mb-4">
+            Link Update
+          </Kicker>
+          <Heading level="h1" variant="light" className="mb-6 text-black">
+            {recoverLinkMutation.isSuccess ? 'Check Your Inbox' : 'Updating Your Link…'}
+          </Heading>
+          <div className="max-w-xl mx-auto">
+            {recoverLinkMutation.isSuccess ? (
+              <p className="text-lg text-black/80 mb-4" role="status">
+                To keep your ticket secure, we validate every manage-order link — and this one is out of date. We&apos;ve
+                sent a fresh ticket email to the address on file with your QR code and a new manage-order link. Open
+                that email and click <strong className="text-black">Manage Order</strong> again to view or change your
+                details.
+              </p>
+            ) : (
+              <p className="text-lg text-black/80 mb-4" role="status">
+                To keep your ticket secure, we validate every manage-order link — and this one is out of date.
+                We&apos;re emailing you a fresh one right now…
+              </p>
+            )}
+            <p className="text-black/70 mb-8">
+              Nothing arrived after a few minutes? Check your spam folder or contact us at{' '}
+              <a href="mailto:hello@zurichjs.com" className="text-black hover:underline font-bold">
+                hello@zurichjs.com
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+        <Link href="/">
+          <Button variant="dark" size="lg">
+            Return to Homepage
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="text-center">
       <div className="mb-8">
@@ -246,31 +314,20 @@ function ErrorState({ orderToken, error, recoverLinkMutation }: ErrorStateProps)
           </div>
           {orderToken && (
             <div className="mb-8">
-              {recoverLinkMutation.isSuccess ? (
-                <p className="text-lg text-black font-semibold" role="status">
-                  ✓ If this ticket exists, a new link is on its way to the email address on file. Check your inbox.
+              <Button
+                variant="dark"
+                size="lg"
+                onClick={() => recoverLinkMutation.mutate()}
+                disabled={recoverLinkMutation.isPending}
+              >
+                {recoverLinkMutation.isPending ? 'Sending…' : 'Email Me a New Ticket Email'}
+              </Button>
+              {recoverLinkMutation.isError && (
+                <p className="text-red-700 mt-3" role="alert">
+                  {recoverLinkMutation.error instanceof Error
+                    ? recoverLinkMutation.error.message
+                    : 'Something went wrong. Please try again.'}
                 </p>
-              ) : (
-                <>
-                  <p className="text-black/80 mb-4">
-                    Your link may have been issued with an older version of our system. We can email you a fresh one:
-                  </p>
-                  <Button
-                    variant="dark"
-                    size="lg"
-                    onClick={() => recoverLinkMutation.mutate()}
-                    disabled={recoverLinkMutation.isPending}
-                  >
-                    {recoverLinkMutation.isPending ? 'Sending…' : 'Email Me a New Link'}
-                  </Button>
-                  {recoverLinkMutation.isError && (
-                    <p className="text-red-700 mt-3" role="alert">
-                      {recoverLinkMutation.error instanceof Error
-                        ? recoverLinkMutation.error.message
-                        : 'Something went wrong. Please try again.'}
-                    </p>
-                  )}
-                </>
               )}
             </div>
           )}
