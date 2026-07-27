@@ -206,7 +206,7 @@ const SpeakerLogisticsPage: React.FC = () => {
           ) : (
             <>
               <header className="mb-8">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-black">
+                <h1 className="text-base md:text-lg font-extrabold text-black">
                   Hi {data.speaker.firstName}, plan your speaker week
                 </h1>
                 <p className="mt-3 text-black/80 leading-relaxed">
