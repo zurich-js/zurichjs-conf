@@ -879,6 +879,77 @@ export type Database = {
           },
         ]
       }
+      cfp_speaker_logistics: {
+        Row: {
+          after_party_plus_one: boolean | null
+          after_party_plus_one_email: string | null
+          after_party_plus_one_first_name: string | null
+          after_party_plus_one_last_name: string | null
+          attending_after_party: boolean | null
+          attending_speaker_hangout: boolean | null
+          attending_speakers_dinner: boolean | null
+          attending_warmup: boolean | null
+          created_at: string
+          dietary_restrictions: string | null
+          dinner_plus_one: boolean | null
+          dinner_plus_one_dietary_restrictions: string | null
+          id: string
+          request_sent_at: string | null
+          speaker_id: string
+          submitted_at: string | null
+          talk_special_accommodations: string | null
+          updated_at: string
+        }
+        Insert: {
+          after_party_plus_one?: boolean | null
+          after_party_plus_one_email?: string | null
+          after_party_plus_one_first_name?: string | null
+          after_party_plus_one_last_name?: string | null
+          attending_after_party?: boolean | null
+          attending_speaker_hangout?: boolean | null
+          attending_speakers_dinner?: boolean | null
+          attending_warmup?: boolean | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          dinner_plus_one?: boolean | null
+          dinner_plus_one_dietary_restrictions?: string | null
+          id?: string
+          request_sent_at?: string | null
+          speaker_id: string
+          submitted_at?: string | null
+          talk_special_accommodations?: string | null
+          updated_at?: string
+        }
+        Update: {
+          after_party_plus_one?: boolean | null
+          after_party_plus_one_email?: string | null
+          after_party_plus_one_first_name?: string | null
+          after_party_plus_one_last_name?: string | null
+          attending_after_party?: boolean | null
+          attending_speaker_hangout?: boolean | null
+          attending_speakers_dinner?: boolean | null
+          attending_warmup?: boolean | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          dinner_plus_one?: boolean | null
+          dinner_plus_one_dietary_restrictions?: string | null
+          id?: string
+          request_sent_at?: string | null
+          speaker_id?: string
+          submitted_at?: string | null
+          talk_special_accommodations?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cfp_speaker_logistics_speaker_id_fkey"
+            columns: ["speaker_id"]
+            isOneToOne: true
+            referencedRelation: "cfp_speakers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cfp_speaker_reimbursements: {
         Row: {
           admin_notes: string | null

@@ -31,6 +31,8 @@ export type {
   CfpEmailScheduledData,
   TicketReassignedData,
   TicketCreationErrorData,
+  SpeakerLogisticsSubmittedData,
+  SpeakerLogisticsChangedData,
 } from './types'
 
 export {
@@ -47,4 +49,6 @@ export {
   notifyCfpEmailScheduled,
   notifyTicketReassigned,
   notifyTicketCreationError,
+  notifySpeakerLogisticsSubmitted,
+  notifySpeakerLogisticsChanged,
 } from './send'

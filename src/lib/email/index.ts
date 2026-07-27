@@ -12,6 +12,7 @@ export type {
   VipUpgradeEmailData,
   CfpFeedbackRequestData,
   ApparelReminderData,
+  SpeakerLogisticsRequestData,
 } from './types';
 
 // Config (for internal use or testing)
@@ -28,6 +29,12 @@ export {
   sendApparelReminderEmail,
   sendApparelReminderEmailsQueued,
 } from './apparel-emails';
+
+// Speaker logistics request emails
+export {
+  sendSpeakerLogisticsRequestEmail,
+  sendSpeakerLogisticsRequestEmailsQueued,
+} from './speaker-logistics-emails';
 
 // Workshop emails
 export { sendWorkshopConfirmationEmail } from './workshop-emails';
