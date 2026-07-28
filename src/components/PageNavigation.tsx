@@ -3,9 +3,14 @@ import type { NavigationItem } from '@/components/RichTextRenderer';
 
 export interface PageNavigationProps {
   items: NavigationItem[];
+  /** Called when a navigation item is clicked (e.g. for analytics). */
+  onItemClick?: (item: NavigationItem) => void;
 }
 
-export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
+export const PageNavigation: React.FC<PageNavigationProps> = ({
+  items,
+  onItemClick,
+}) => {
   const [activeId, setActiveId] = useState<string>('');
 
   useEffect(() => {
@@ -70,7 +75,10 @@ export const PageNavigation: React.FC<PageNavigationProps> = ({ items }) => {
                 key={item.id}
               >
                 <button
-                  onClick={() => handleClick(item.id)}
+                  onClick={() => {
+                    onItemClick?.(item);
+                    handleClick(item.id);
+                  }}
                   className="group relative flex items-center gap-3 w-full text-left cursor-pointer"
                   aria-label={`Go to ${item.label}`}
                   aria-current={isActive ? 'location' : undefined}

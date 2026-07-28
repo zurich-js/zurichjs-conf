@@ -8,6 +8,7 @@ import {
 } from "@/components/RichTextRenderer";
 import { PageNavigation } from "@/components/PageNavigation";
 import { SEO } from "@/components/SEO";
+import { analytics } from "@/lib/analytics/client";
 import { speakerGuide } from "@/data/speaker-guide";
 import { ShapedSection, SiteFooter } from "@/components/organisms";
 
@@ -51,6 +52,9 @@ const SpeakerGuidePage: React.FC = () => {
                 </div>
                 <Link
                   href="/speaker-guide/chat"
+                  onClick={() =>
+                    analytics.track("speaker_guide_chat_banner_clicked", {})
+                  }
                   className="group flex items-center gap-4 rounded-2xl border-2 border-brand-yellow-main/60 bg-brand-yellow-main/10 p-5 mb-12 transition-colors hover:bg-brand-yellow-main/20 print:hidden"
                 >
                   <span
@@ -85,6 +89,13 @@ const SpeakerGuidePage: React.FC = () => {
                       <li key={item.id}>
                         <a
                           href={`#${item.id}`}
+                          onClick={() =>
+                            analytics.track("speaker_guide_toc_clicked", {
+                              section_id: item.id,
+                              section_label: item.label,
+                              toc_variant: "inline",
+                            })
+                          }
                           className="text-sm text-gray-700 underline hover:text-gray-900"
                         >
                           {item.label}
@@ -93,10 +104,28 @@ const SpeakerGuidePage: React.FC = () => {
                     ))}
                   </ul>
                 </nav>
-                <RichTextRenderer sections={speakerGuide.sections} />
+                <RichTextRenderer
+                  sections={speakerGuide.sections}
+                  onQuickLinkClick={(link) =>
+                    analytics.track("speaker_guide_quicklink_clicked", {
+                      link_label: link.label,
+                      link_sublabel: link.sublabel,
+                      link_url: link.href,
+                    })
+                  }
+                />
               </div>
               <aside className="lg:block hidden print:hidden">
-                <PageNavigation items={navigationItems} />
+                <PageNavigation
+                  items={navigationItems}
+                  onItemClick={(item) =>
+                    analytics.track("speaker_guide_toc_clicked", {
+                      section_id: item.id,
+                      section_label: item.label,
+                      toc_variant: "sidebar",
+                    })
+                  }
+                />
               </aside>
             </div>
           </div>
