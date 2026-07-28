@@ -146,7 +146,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "<strong>You don't have to navigate your arrival alone.</strong> We'll assign volunteers to pick you up — look for the <strong>ZurichJS sign</strong> — and ride with you on public transport to your hotel. Your arrival details are part of the speaker information form, so make sure we have your flight times.",
+        "<strong>You don't have to navigate your arrival alone.</strong> We'll assign volunteers to pick you up — look for the <strong>ZurichJS sign</strong> — and ride with you on public transport to your hotel. Your arrival details are part of the speaker intake form, so make sure we have your flight times.",
     },
     {
       type: "heading",
@@ -255,17 +255,17 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "A short form is coming — fill it in promptly: dietary needs, plus one, flight times. Plus ones are welcome, just tell us in advance — no surprise guests on the day.",
+        "You'll have received a speaker intake form — fill it in promptly: dietary needs, flight times, plus one. Plus ones are welcome and get a VIP ticket with 20% off workshops, but they do need a ticket — tell us in advance.",
     },
     {
       type: "paragraph",
       content:
-        "Ahead of the conference you'll receive a short form to fill out. Please complete it promptly — it's how we capture <strong>dietary restrictions</strong>, whether you're bringing a <strong>plus one</strong>, and other practical details we need to take proper care of you. If the form hasn't reached you and the conference is getting close, ping us in the group chat or at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
+        "You'll have received a <strong>speaker intake form</strong> — please fill it out promptly. It's how we capture <strong>dietary restrictions</strong>, your <strong>flight times</strong>, and whether you're bringing a <strong>plus one</strong>, and it's how we get your plus one sorted with a ticket. If it hasn't reached you, ping us in the group chat or at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
     },
     {
       type: "paragraph",
       content:
-        "<strong>Plus ones are welcome.</strong> A conference is more fun with your loved ones and friends around, and we want to accommodate them. Just <strong>tell us in advance</strong> — via the form or directly — so we can plan seats, food, and capacity (Zurich is tight on space and pricey per head). Please don't bring someone unannounced on the day.",
+        "<strong>Plus ones are welcome.</strong> A conference is more fun with your loved ones and friends around, and we want to accommodate them. They <strong>do need a ticket</strong>: once you've flagged them in the intake form, we'll set them up with a <strong>VIP ticket</strong> that includes <strong>20% off workshops</strong>. Just <strong>tell us in advance</strong> — via the form or directly — so we can plan seats, food, and capacity (Zurich is tight on space and pricey per head). Please don't bring someone unannounced on the day.",
     },
     {
       type: "heading",
