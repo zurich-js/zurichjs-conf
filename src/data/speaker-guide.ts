@@ -86,7 +86,7 @@ export const speakerGuide: InfoPage = {
         "<strong>Wednesday, September 9th:</strong> Community Day — evening only, from <strong>18:00</strong>: a relaxed ZurichJS meetup to warm up and meet the community. Optional, and a good warm-up if you're in town. Check the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>meetup agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
         "<strong>Thursday, September 10th:</strong> Workshop Day — workshops run across Zurich (locations confirmed to instructors in advance).",
         "<strong>Thursday, September 10th, 18:30–22:00:</strong> Speaker dinner at Ziegelhütte — dinner and a round of bowling with your fellow speakers. Guides will take you there.",
-        "<strong>Friday, September 11th:</strong> Conference Day at Technopark Zürich — doors open at 07:00; the full agenda is on the <a href='/schedule'>schedule page</a>.",
+        "<strong>Friday, September 11th:</strong> Conference Day at Technopark Zürich — we're at the venue from 07:30; the full agenda is on the <a href='/schedule'>schedule page</a>.",
         "<strong>Friday, September 11th, 19:00–23:00:</strong> After party at Seebad Enge on Lake Zürich.",
         "<strong>Saturday, September 12th, 10:00–16:00:</strong> Speaker day out — activities planned around everyone's departure flights, such as a light hike or a tour of Zurich. Details follow; reserve 10:00–16:00.",
       ],
@@ -183,7 +183,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Technoparkstrasse 1, 8005 Zürich — 1–2 min walk from your hotel; doors open at 07:00. Check in at registration and tell a volunteer you're a speaker. Lunch in two waves, 12:40–14:00. Full agenda on the <a href='/schedule'>schedule page</a>.",
+        "Technoparkstrasse 1, 8005 Zürich — 1–2 min walk from your hotel; we're at the venue from 07:30. Check in at registration and tell a volunteer you're a speaker. Lunch in two waves, 12:40–14:00. Full agenda on the <a href='/schedule'>schedule page</a>.",
     },
     {
       type: "paragraph",
@@ -193,7 +193,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "list",
       items: [
-        "<strong>Doors open at 07:00:</strong> the Swiss start early, and so do we. The crew will already be on site, and early morning is the calmest time for a tech check and a coffee.",
+        "<strong>We're at the venue from 07:30:</strong> the Swiss start early, and so do we. Come as early as suits you; early morning is the calmest time for a tech check and a coffee.",
         "<strong>Getting there:</strong> your hotel is a 1–2 minute walk away — otherwise tram lines 4 and 13 stop directly at the <em>Technopark</em> stop, and the S-Bahn station <em>Hardbrücke</em> is a ~7 minute walk away.",
         "<strong>Schedule:</strong> the up-to-date program (including your slot) lives on the <a href='/schedule'>schedule page</a>. You should also receive a <strong>Google Calendar invite</strong> for your slot up to a week before the conference. If it hasn't landed by then, message us in the group chat or at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
         "<strong>On arrival:</strong> check in at the registration desk and let a volunteer know you're a speaker; we'll take it from there, including a tech check before your talk.",
