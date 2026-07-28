@@ -431,29 +431,41 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
         </summary>
         <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2 pl-4.5">
           <p>
-            No AI model, no servers, no API keys — Faru is a few dozen lines of
-            plain JavaScript running entirely in your browser:
+            Faru doesn&apos;t use an AI model and never talks to a server.
+            It&apos;s a small piece of plain JavaScript that runs in your
+            browser:
           </p>
           <ol className="list-decimal list-inside space-y-1">
             <li>
-              On page load, the guide is split into one text chunk per section.
+              When the page loads, the guide is split into one text chunk per
+              section.
             </li>
             <li>
-              Your question is tokenized, and filler words (&quot;the&quot;,
-              &quot;when&quot;, &quot;can&quot;…) are dropped.
+              Your question is broken into keywords, and filler words like
+              &quot;the&quot; and &quot;when&quot; are dropped.
             </li>
             <li>
-              Every section is scored by keyword overlap — matches in section
-              titles count triple.
+              Each section gets a score based on how many of your keywords it
+              contains. Matches in section titles count triple.
             </li>
             <li>
-              The best-matching sentences from the top sections are quoted back,
-              with links to the full sections below.
+              The best-matching sentences from the top sections are quoted
+              back, with links to the full sections.
             </li>
           </ol>
           <p>
-            The typing effect is pure theatre — the actual &quot;thinking&quot;
-            takes about a millisecond. Nothing you type ever leaves this page.
+            This is a simplified version of the term-frequency scoring that
+            classic search engines use. If you want to go deeper, read up on{" "}
+            <a
+              href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-primary underline"
+            >
+              tf&ndash;idf
+            </a>
+            . The typing effect is just pacing for readability; the actual
+            lookup takes about a millisecond. Nothing you type leaves the page.
           </p>
         </div>
       </details>
