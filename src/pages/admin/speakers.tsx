@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, ListChecks, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, ListChecks, Users } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -11,16 +11,18 @@ import {
   ProgramSessionsTab,
   ProgramSpeakersTab,
 } from '@/components/admin/program/ProgramAdminTabs';
+import { SpeakerLogisticsTab } from '@/components/admin/speaker-logistics';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useProgramScheduleItems, useProgramSessions } from '@/hooks/useProgram';
 import { useToast } from '@/contexts/ToastContext';
 
-type ProgramAdminTab = 'sessions' | 'schedule' | 'speakers';
+type ProgramAdminTab = 'sessions' | 'schedule' | 'speakers' | 'logistics';
 
 const TABS: Array<{ id: ProgramAdminTab; label: string; icon: typeof ListChecks }> = [
   { id: 'sessions', label: 'Sessions', icon: ListChecks },
   { id: 'schedule', label: 'Schedule', icon: CalendarDays },
   { id: 'speakers', label: 'Speakers', icon: Users },
+  { id: 'logistics', label: 'Logistics', icon: ClipboardList },
 ];
 
 async function fetchSpeakers(): Promise<{ speakers: SpeakerWithSessions[] }> {
@@ -147,7 +149,7 @@ export default function ProgramAdminPage() {
           </div>
 
           <div className="mb-6">
-            <div className="grid grid-cols-3 gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm sm:inline-flex sm:grid-cols-none">
+            <div className="grid grid-cols-4 gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm sm:inline-flex sm:grid-cols-none">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -214,6 +216,8 @@ export default function ProgramAdminPage() {
               onRefresh={refreshProgram}
               onToast={showToast}
             />
+          ) : activeTab === 'logistics' ? (
+            <SpeakerLogisticsTab />
           ) : null}
         </main>
 

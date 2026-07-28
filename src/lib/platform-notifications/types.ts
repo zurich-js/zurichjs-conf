@@ -137,3 +137,13 @@ export interface TicketWaitlistData {
   /** Which sold-out ticket type the user joined the waitlist for */
   ticketType: 'student' | 'vip'
 }
+
+export interface SpeakerLogisticsSubmittedData {
+  speakerId: string
+  speakerName: string
+  speakerEmail: string
+  /** Human-readable RSVP summary, e.g. "Warm-Up: yes · Dinner: yes (+1) · ..." */
+  attendanceSummary: string
+  dietaryRestrictions?: string | null
+  adminUrl?: string
+}

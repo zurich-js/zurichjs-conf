@@ -23,6 +23,7 @@ import type {
   TicketReassignedData,
   TicketCreationErrorData,
   TicketWaitlistData,
+  SpeakerLogisticsSubmittedData,
 } from './types'
 
 const log = logger.scope('PlatformNotifications')
@@ -395,6 +396,20 @@ export function notifyTicketWaitlist(data: TicketWaitlistData): void {
     ]
   )
   void safeSend(`${data.ticketType}_ticket_waitlist_signup`, text, blocks)
+}
+
+export function notifySpeakerLogisticsSubmitted(data: SpeakerLogisticsSubmittedData): void {
+  const text = `Speaker logistics submitted: ${data.speakerName}`
+  const fields = [
+    { label: 'Speaker', value: data.speakerName },
+    { label: 'Email', value: data.speakerEmail },
+    { label: 'Attendance', value: data.attendanceSummary },
+  ]
+  if (data.dietaryRestrictions) {
+    fields.push({ label: 'Dietary', value: truncate(data.dietaryRestrictions, 200) })
+  }
+  const blocks = buildBlocks(':clipboard: *Speaker Logistics Submitted*', fields, data.adminUrl, 'View Logistics')
+  void safeSend('speaker_logistics_submitted', text, blocks)
 }
 
 export function notifyTicketCreationError(data: TicketCreationErrorData): void {
