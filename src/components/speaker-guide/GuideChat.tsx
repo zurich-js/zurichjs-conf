@@ -125,37 +125,89 @@ const retrieve = (question: string, chunks: GuideChunk[]): GuideChunk[] => {
     .map((entry) => entry.chunk);
 };
 
+/** Split chunk text into quotable fragments — sentences AND the "·"-separated
+ * summary fragments, so a TL;DR line is never quoted whole. */
+const splitSentences = (text: string): string[] =>
+  text
+    .split(/(?<=[.!?])\s+|\s+·\s+/)
+    .map((raw) => raw.replace(/^·\s*|\s*·$/g, "").trim())
+    .filter((sentence) => sentence.length >= 15 && sentence.length <= 280);
+
+/** Fraction of the shorter fragment's tokens also present in the longer one. */
+const tokenOverlap = (a: string, b: string): number => {
+  const tokensA = new Set(tokenize(a));
+  const tokensB = new Set(tokenize(b));
+  const [small, large] =
+    tokensA.size <= tokensB.size ? [tokensA, tokensB] : [tokensB, tokensA];
+  if (small.size === 0) return 0;
+  let shared = 0;
+  small.forEach((token) => {
+    if (large.has(token)) shared += 1;
+  });
+  return shared / small.size;
+};
+
+interface ExtractedAnswer {
+  text: string;
+  chunks: GuideChunk[];
+}
+
 /**
- * Pull the best-matching sentences out of the retrieved sections so Faru can
- * quote an actual answer instead of only linking the sections.
+ * Pull the best-matching fragments out of the retrieved sections so Faru can
+ * quote an actual answer. Fragments from higher-ranked sections get a boost,
+ * near-duplicates are dropped (keeping the more informative one), and only
+ * the sections that contributed to the answer are returned as sources.
  */
 const extractAnswer = (
   question: string,
-  sources: GuideChunk[]
-): string | null => {
+  rankedChunks: GuideChunk[]
+): ExtractedAnswer | null => {
   const tokens = tokenize(question);
-  if (tokens.length === 0) return null;
+  if (tokens.length === 0 || rankedChunks.length === 0) return null;
 
-  const scored: Array<{ text: string; score: number }> = [];
-  sources.forEach((source) => {
-    source.text.split(/(?<=[.!?])\s+/).forEach((raw) => {
-      const sentence = raw.trim();
-      if (sentence.length < 15) return;
+  const candidates: Array<{ chunk: GuideChunk; text: string; score: number }> =
+    [];
+  rankedChunks.forEach((chunk, rank) => {
+    const rankBonus = Math.max(0, 2 - rank);
+    splitSentences(chunk.text).forEach((sentence) => {
       const lower = sentence.toLowerCase();
-      let score = 0;
+      let matches = 0;
       tokens.forEach((token) => {
-        if (lower.includes(token)) score += 1;
+        if (lower.includes(token)) matches += 1;
       });
-      if (score > 0) scored.push({ text: sentence, score });
+      if (matches > 0) {
+        candidates.push({ chunk, text: sentence, score: matches * 2 + rankBonus });
+      }
     });
   });
 
-  if (scored.length === 0) return null;
-  scored.sort((a, b) => b.score - a.score);
-  return scored
-    .slice(0, 2)
-    .map((sentence) => `“${sentence.text}”`)
-    .join("\n\n");
+  if (candidates.length === 0) {
+    const lead = splitSentences(rankedChunks[0].text)[0];
+    return lead
+      ? { text: `“${lead}”`, chunks: [rankedChunks[0]] }
+      : null;
+  }
+
+  candidates.sort((a, b) => b.score - a.score || b.text.length - a.text.length);
+
+  const selected: Array<{ chunk: GuideChunk; text: string }> = [];
+  for (const candidate of candidates) {
+    if (selected.length >= 2) break;
+    if (selected.some((prior) => tokenOverlap(prior.text, candidate.text) >= 0.7)) {
+      continue;
+    }
+    selected.push(candidate);
+  }
+
+  const chunks: GuideChunk[] = [];
+  selected.forEach((entry) => {
+    if (!chunks.includes(entry.chunk)) chunks.push(entry.chunk);
+  });
+
+  return {
+    text: selected.map((entry) => `“${entry.text}”`).join("\n\n"),
+    chunks,
+  };
 };
 
 const excerpt = (text: string, maxLength = 200): string =>
@@ -267,9 +319,9 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
       const answer = extractAnswer(question, sources);
       await streamReply(
         answer
-          ? `Here's what the guide says:\n\n${answer}`
+          ? `Here's what the guide says:\n\n${answer.text}`
           : "Here's what the guide says about that:",
-        sources
+        answer ? answer.chunks : sources
       );
     }
 
