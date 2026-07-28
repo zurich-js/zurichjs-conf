@@ -64,9 +64,9 @@ const buildChunks = (sections: ContentSection[]): GuideChunk[] => {
       return (section.subsections ?? []).map(textOf).join(" ");
     }
     if (section.type === "quicklinks") {
-      return (section.links ?? [])
-        .map((link) => `${link.label} ${link.sublabel ?? ""}`)
-        .join(" ");
+      // Navigation labels, not prose — they concatenate into unquotable
+      // fragments and duplicate facts that live in real sections.
+      return "";
     }
     return section.content ? stripHtml(section.content) : "";
   };
@@ -91,7 +91,7 @@ const STOPWORDS = new Set([
   "you", "your", "to", "of", "in", "on", "at", "for", "and", "or", "what",
   "when", "where", "how", "who", "can", "will", "there", "it", "be", "with",
   "whats", "happening", "someone", "anyone", "something", "anything", "up",
-  "out", "down", "off", "if", "that", "this", "was", "get",
+  "out", "down", "off", "if", "that", "this", "was",
 ]);
 
 const tokenize = (text: string): string[] =>
@@ -100,10 +100,14 @@ const tokenize = (text: string): string[] =>
     .split(/[^a-z0-9äöüéèà]+/)
     .filter((token) => token.length > 1 && !STOPWORDS.has(token));
 
-/** Whole-word match with light prefix stemming for longer tokens, so "pick"
- * matches "picks" but "up" can never match inside "backup" or "group". */
+/** Whole-word match with light prefix stemming: "pick" matches "picks" and
+ * "get" matches "getting", but "up" can never match inside "backup" or
+ * "group", and short tokens can't reach into much longer words. */
 const matchesToken = (word: string, token: string): boolean =>
-  word === token || (token.length >= 4 && word.startsWith(token));
+  word === token ||
+  (token.length >= 3 &&
+    word.startsWith(token) &&
+    word.length - token.length <= 4);
 
 const countTokenMatches = (words: string[], token: string): number => {
   let count = 0;
@@ -111,6 +115,25 @@ const countTokenMatches = (words: string[], token: string): number => {
     if (matchesToken(word, token)) count += 1;
   });
   return count;
+};
+
+/** Inverse document frequency per query token, computed over all sections:
+ * rare terms ("pick", "getting") weigh more than ubiquitous ones ("speaker"). */
+const computeIdf = (
+  tokens: string[],
+  chunks: GuideChunk[]
+): Map<string, number> => {
+  const idf = new Map<string, number>();
+  const tokenLists = chunks.map(
+    (chunk) => tokenize(chunk.text).concat(tokenize(chunk.title))
+  );
+  tokens.forEach((token) => {
+    const df = tokenLists.filter((words) =>
+      words.some((word) => matchesToken(word, token))
+    ).length;
+    if (df > 0) idf.set(token, Math.log(1 + chunks.length / df));
+  });
+  return idf;
 };
 
 /**
@@ -123,32 +146,20 @@ const retrieve = (question: string, chunks: GuideChunk[]): GuideChunk[] => {
   const tokens = tokenize(question);
   if (tokens.length === 0) return [];
 
-  const indexed = chunks.map((chunk) => ({
-    chunk,
-    words: tokenize(chunk.text),
-    titleWords: tokenize(chunk.title),
-  }));
+  const idf = computeIdf(tokens, chunks);
 
-  const idf = new Map<string, number>();
-  tokens.forEach((token) => {
-    const df = indexed.filter(
-      (entry) =>
-        entry.words.some((word) => matchesToken(word, token)) ||
-        entry.titleWords.some((word) => matchesToken(word, token))
-    ).length;
-    if (df > 0) idf.set(token, Math.log(1 + chunks.length / df));
-  });
-
-  return indexed
-    .map((entry) => {
+  return chunks
+    .map((chunk) => {
+      const words = tokenize(chunk.text);
+      const titleWords = tokenize(chunk.title);
       let score = 0;
       idf.forEach((weight, token) => {
-        score += countTokenMatches(entry.words, token) * weight;
-        if (entry.titleWords.some((word) => matchesToken(word, token))) {
+        score += countTokenMatches(words, token) * weight;
+        if (titleWords.some((word) => matchesToken(word, token))) {
           score += 3 * weight;
         }
       });
-      return { chunk: entry.chunk, score };
+      return { chunk, score };
     })
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -191,10 +202,13 @@ interface ExtractedAnswer {
  */
 const extractAnswer = (
   question: string,
-  rankedChunks: GuideChunk[]
+  rankedChunks: GuideChunk[],
+  allChunks: GuideChunk[]
 ): ExtractedAnswer | null => {
   const tokens = tokenize(question);
   if (tokens.length === 0 || rankedChunks.length === 0) return null;
+
+  const idf = computeIdf(tokens, allChunks);
 
   const candidates: Array<{ chunk: GuideChunk; text: string; score: number }> =
     [];
@@ -202,12 +216,18 @@ const extractAnswer = (
     const rankBonus = Math.max(0, 2 - rank);
     splitSentences(chunk.text).forEach((sentence) => {
       const words = tokenize(sentence);
-      let matches = 0;
-      tokens.forEach((token) => {
-        if (words.some((word) => matchesToken(word, token))) matches += 1;
+      let matchWeight = 0;
+      idf.forEach((weight, token) => {
+        if (words.some((word) => matchesToken(word, token))) {
+          matchWeight += weight;
+        }
       });
-      if (matches > 0) {
-        candidates.push({ chunk, text: sentence, score: matches * 2 + rankBonus });
+      if (matchWeight > 0) {
+        candidates.push({
+          chunk,
+          text: sentence,
+          score: matchWeight * 2 + rankBonus,
+        });
       }
     });
   });
@@ -347,7 +367,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
       );
     } else {
       await sleep(600);
-      const answer = extractAnswer(question, sources);
+      const answer = extractAnswer(question, sources, chunks);
       await streamReply(
         answer
           ? `Here's what the guide says:\n\n${answer.text}`
