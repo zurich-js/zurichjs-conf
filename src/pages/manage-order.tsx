@@ -75,7 +75,9 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
   } = useQuery<OrderDetailsResponse, FetchError>({
     queryKey: ['order', token],
     queryFn: async () => {
-      const response = await fetch(`/api/orders/${token}`);
+      // The token comes from the URL — encode it so a crafted value can't
+      // change the request path (flagged by CodeQL as request forgery)
+      const response = await fetch(`/api/orders/${encodeURIComponent(token)}`);
       if (!response.ok) {
         const fetchError: FetchError = new Error(
           await extractErrorMessage(response, 'Failed to fetch ticket details')
