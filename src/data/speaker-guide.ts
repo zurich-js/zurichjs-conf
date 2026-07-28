@@ -18,7 +18,12 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Welcome. We're glad to have you speaking at ZurichJS Conf 2026. This guide covers everything you need before and during the conference. We support every speaker individually, so if anything here doesn't answer your question, ask in the speakers group chat or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. You won't be on your own at any point: our team, volunteers, and guides are around at every step.",
+        "Welcome! Having you speak at ZurichJS Conf 2026 means the world to us. This conference is built on volunteered time, late nights, and a lot of love for this community, and your talk is one of the reasons it exists: our CFP received <strong>436 submissions</strong>, and yours is one of the few we chose to build the day around. We can't wait to see it on stage.",
+    },
+    {
+      type: "paragraph",
+      content:
+        "This guide covers everything you need before and during the conference. We support every speaker individually, so if anything here doesn't answer your question, ask in the speakers group chat or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. You won't be on your own at any point: our team, volunteers, and guides are around at every step.",
     },
     {
       type: "paragraph",
