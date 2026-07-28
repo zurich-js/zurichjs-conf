@@ -1,14 +1,23 @@
 /**
  * Manage Ticket Page
- * Allows attendees to view and manage their ticket using a secure token from email
+ * Allows attendees to view and manage their ticket using a secure token from email.
+ *
+ * Server-rendered: the token is verified and the order details are fetched in
+ * getServerSideProps and hydrated into TanStack Query, so the first paint
+ * already contains the ticket (or a real error state). This also keeps the
+ * page meaningful in contexts where JavaScript never runs, e.g. sandboxed
+ * email-client preview iframes that block script execution.
  */
 
 import React from 'react';
+import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, dehydrate, type DehydratedState } from '@tanstack/react-query';
+import { Ticket as TicketIcon, Lock, MailCheck, ArrowRightLeft } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Heading, Kicker, Button } from '@/components/atoms';
 import { PageHeader } from '@/components/organisms';
+import { useToast } from '@/contexts/ToastContext';
 import Link from 'next/link';
 import {
   SectionNav,
@@ -24,6 +33,7 @@ import {
   QuickActionsCard,
   TransferSection,
   ImportantInfoCard,
+  extractErrorMessage,
   formatDate,
   type ReassignData,
   type ApparelPreferencesData,
@@ -32,34 +42,52 @@ import {
 
 type FetchError = Error & { status?: number };
 
-const ManageOrderPage: React.FC = () => {
+/**
+ * Outcome of the server-side token check:
+ * - `ok`        — token verified, order details hydrated into the query cache
+ * - `missing`   — no token in the URL
+ * - `invalid`   — signature no longer verifies (predates a secret rotation)
+ * - `not-found` — token verified but the ticket no longer exists
+ * - `error`     — transient server-side failure; the client retries via the API
+ */
+type TokenStatus = 'ok' | 'missing' | 'invalid' | 'not-found' | 'error';
+
+interface ManageOrderPageProps {
+  token: string;
+  tokenStatus: TokenStatus;
+  dehydratedState?: DehydratedState;
+}
+
+const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { token } = router.query;
+  const toast = useToast();
   const [showReassignModal, setShowReassignModal] = React.useState(false);
   const [reassignData, setReassignData] = React.useState<ReassignData>({ email: '', firstName: '', lastName: '' });
 
-  const orderToken = router.isReady && typeof token === 'string' ? token : '';
-
-  // Fetch ticket details
+  // Fetch ticket details — hydrated from the server on first render, so this
+  // only hits the API for refetches (e.g. after saving apparel preferences)
+  // or as a recovery path when SSR failed transiently.
   const {
     data: orderDetails,
     isLoading,
     error,
   } = useQuery<OrderDetailsResponse, FetchError>({
-    queryKey: ['order', orderToken],
+    queryKey: ['order', token],
     queryFn: async () => {
-      if (!orderToken) throw new Error('No token provided');
-      const response = await fetch(`/api/orders/${orderToken}`);
+      // The token comes from the URL — encode it so a crafted value can't
+      // change the request path (flagged by CodeQL as request forgery)
+      const response = await fetch(`/api/orders/${encodeURIComponent(token)}`);
       if (!response.ok) {
-        const errorData = await response.json();
-        const fetchError: FetchError = new Error(errorData.error || 'Failed to fetch ticket details');
+        const fetchError: FetchError = new Error(
+          await extractErrorMessage(response, 'Failed to fetch ticket details')
+        );
         fetchError.status = response.status;
         throw fetchError;
       }
       return response.json();
     },
-    enabled: !!orderToken,
+    enabled: !!token && (tokenStatus === 'ok' || tokenStatus === 'error'),
   });
 
   // Mutation for requesting a freshly signed link when the token no longer verifies
@@ -68,28 +96,27 @@ const ManageOrderPage: React.FC = () => {
       const response = await fetch('/api/orders/recover-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: orderToken }),
+        body: JSON.stringify({ token }),
       });
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to request a new link');
+        throw new Error(await extractErrorMessage(response, 'Failed to request a new link'));
       }
       return response.json();
     },
   });
 
-  // A 401 means the link's signature no longer verifies (e.g. it predates a
-  // secret rotation) — automatically email a fresh ticket email so the visitor
-  // doesn't have to figure out what went wrong. The server dedupes per ticket.
-  const isInvalidToken = error?.status === 401;
+  // An invalid signature means the link predates a secret rotation —
+  // automatically email a fresh ticket email so the visitor doesn't have to
+  // figure out what went wrong. The server dedupes per ticket.
+  const isInvalidToken = tokenStatus === 'invalid' || error?.status === 401;
   const { mutate: requestNewLink } = recoverLinkMutation;
   const autoRequestFired = React.useRef(false);
   React.useEffect(() => {
-    if (isInvalidToken && orderToken && !autoRequestFired.current) {
+    if (isInvalidToken && token && !autoRequestFired.current) {
       autoRequestFired.current = true;
       requestNewLink();
     }
-  }, [isInvalidToken, orderToken, requestNewLink]);
+  }, [isInvalidToken, token, requestNewLink]);
 
   // Mutation for ticket reassignment
   const reassignMutation = useMutation({
@@ -98,17 +125,17 @@ const ManageOrderPage: React.FC = () => {
       const response = await fetch(`/api/tickets/${orderDetails.ticket.id}/reassign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: orderToken, ...data }),
+        body: JSON.stringify({ token, ...data }),
       });
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to reassign ticket');
+        throw new Error(await extractErrorMessage(response, 'Failed to reassign ticket'));
       }
       return response.json();
     },
     onSuccess: () => {
-      alert(
-        '✓ Ticket reassigned successfully! The new owner will receive an email with their ticket details. You will no longer have access to this ticket.'
+      toast.success(
+        'Ticket transferred',
+        'The new owner will receive an email with their ticket details. You no longer have access to this ticket.'
       );
       setShowReassignModal(false);
       setReassignData({ email: '', firstName: '', lastName: '' });
@@ -123,39 +150,41 @@ const ManageOrderPage: React.FC = () => {
       const response = await fetch(`/api/tickets/${orderDetails.ticket.id}/apparel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: orderToken, ...data }),
+        body: JSON.stringify({ token, ...data }),
       });
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save apparel preferences');
+        throw new Error(await extractErrorMessage(response, 'Failed to save apparel preferences'));
       }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order', orderToken] });
+      queryClient.invalidateQueries({ queryKey: ['order', token] });
     },
   });
+
+  const showErrorState =
+    tokenStatus === 'missing' || tokenStatus === 'not-found' || isInvalidToken || (!!error && !orderDetails);
 
   return (
     <Layout title="Manage Your Ticket | ZurichJS Conference 2026" description="View and manage your ZurichJS Conference 2026 ticket.">
       <PageHeader />
       <div className="min-h-screen bg-brand-primary py-16 md:py-24 px-6">
         <div className="max-w-3xl mx-auto">
-          {/* Loading State */}
-          {(!router.isReady || isLoading) && <LoadingState />}
-
           {/* Error State */}
-          {router.isReady && (!orderToken || error) && (
+          {showErrorState && (
             <ErrorState
-              orderToken={orderToken}
-              error={error}
+              tokenStatus={tokenStatus}
+              error={error ?? null}
               isInvalidToken={!!isInvalidToken}
               recoverLinkMutation={recoverLinkMutation}
             />
           )}
 
+          {/* Loading State — only reachable when SSR failed transiently and the client is retrying */}
+          {!showErrorState && isLoading && <LoadingState />}
+
           {/* Success State */}
-          {router.isReady && !isLoading && !error && orderDetails && (
+          {!showErrorState && orderDetails && (
             <>
               <TicketHeader ticket={orderDetails.ticket} />
 
@@ -240,9 +269,57 @@ const ManageOrderPage: React.FC = () => {
   );
 };
 
+export const getServerSideProps: GetServerSideProps<ManageOrderPageProps> = async (ctx) => {
+  // These imports are server-only; Next.js strips them from the client bundle
+  const { verifyOrderToken } = await import('@/lib/auth/orderToken');
+  const { getOrderDetails } = await import('@/lib/orders');
+  const { getQueryClient } = await import('@/lib/query-client');
+  const { logger } = await import('@/lib/logger');
+
+  const token = typeof ctx.query.token === 'string' ? ctx.query.token : '';
+
+  if (!token) {
+    return { props: { token: '', tokenStatus: 'missing' } };
+  }
+
+  const ticketId = verifyOrderToken(token);
+  if (!ticketId) {
+    return { props: { token, tokenStatus: 'invalid' } };
+  }
+
+  try {
+    // Cap the lookup so a hung DB connection can't stall SSR indefinitely —
+    // on timeout the page falls back to client-side fetching via the API
+    const details = await Promise.race([
+      getOrderDetails(ticketId),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Order details lookup timed out after 3000ms')), 3000);
+      }),
+    ]);
+
+    if (!details) {
+      return { props: { token, tokenStatus: 'not-found' } };
+    }
+
+    const queryClient = getQueryClient();
+    queryClient.setQueryData(['order', token], details);
+
+    return {
+      props: {
+        token,
+        tokenStatus: 'ok',
+        dehydratedState: dehydrate(queryClient),
+      },
+    };
+  } catch (err) {
+    logger.scope('Manage Order Page').error('SSR order details fetch failed', err, { ticketId });
+    return { props: { token, tokenStatus: 'error' } };
+  }
+};
+
 function LoadingState() {
   return (
-    <div className="text-center">
+    <div className="text-center" role="status">
       <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
       <p className="mt-4 text-black">Loading your ticket...</p>
     </div>
@@ -250,8 +327,8 @@ function LoadingState() {
 }
 
 interface ErrorStateProps {
-  orderToken: string;
-  error: Error | null;
+  tokenStatus: TokenStatus;
+  error: FetchError | null;
   isInvalidToken: boolean;
   recoverLinkMutation: {
     mutate: () => void;
@@ -262,14 +339,16 @@ interface ErrorStateProps {
   };
 }
 
-function ErrorState({ orderToken, error, isInvalidToken, recoverLinkMutation }: ErrorStateProps) {
+function ErrorState({ tokenStatus, error, isInvalidToken, recoverLinkMutation }: ErrorStateProps) {
+  const hasToken = tokenStatus !== 'missing';
+
   // A stale-but-well-formed link triggers an automatic resend of the ticket
   // email — present that as the main event, not as an access failure
-  if (orderToken && isInvalidToken && !recoverLinkMutation.isError) {
+  if (hasToken && isInvalidToken && !recoverLinkMutation.isError) {
     return (
       <div className="text-center">
         <div className="mb-8">
-          <div className="text-6xl mb-4">📮</div>
+          <MailCheck className="w-14 h-14 mx-auto mb-4 text-black" aria-hidden="true" />
           <Kicker variant="light" className="mb-4">
             Link Update
           </Kicker>
@@ -308,10 +387,18 @@ function ErrorState({ orderToken, error, isInvalidToken, recoverLinkMutation }: 
     );
   }
 
+  const errorMessage = !hasToken
+    ? 'No access token found. Please use the link from your confirmation email.'
+    : tokenStatus === 'not-found'
+      ? 'We could not find a ticket for this link. It may have been transferred or refunded.'
+      : error
+        ? error.message
+        : 'An unexpected error occurred while loading your ticket.';
+
   return (
     <div className="text-center">
       <div className="mb-8">
-        <div className="text-6xl mb-4">🔒</div>
+        <Lock className="w-14 h-14 mx-auto mb-4 text-black" aria-hidden="true" />
         <Kicker variant="light" className="mb-4">
           Access Denied
         </Kicker>
@@ -319,13 +406,7 @@ function ErrorState({ orderToken, error, isInvalidToken, recoverLinkMutation }: 
           Unable to Access Ticket
         </Heading>
         <div className="max-w-xl mx-auto">
-          <p className="text-lg text-black/80 mb-4">
-            {!orderToken
-              ? 'No access token found. Please use the link from your confirmation email.'
-              : error instanceof Error
-                ? error.message
-                : 'An unexpected error occurred while loading your ticket.'}
-          </p>
+          <p className="text-lg text-black/80 mb-4">{errorMessage}</p>
           <div className="bg-black rounded-2xl p-6 text-left mb-8">
             <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
             <ul className="text-gray-200 space-y-2">
@@ -343,7 +424,7 @@ function ErrorState({ orderToken, error, isInvalidToken, recoverLinkMutation }: 
               </li>
             </ul>
           </div>
-          {orderToken && (
+          {hasToken && (
             <div className="mb-8">
               <Button
                 variant="dark"
@@ -376,7 +457,7 @@ function ErrorState({ orderToken, error, isInvalidToken, recoverLinkMutation }: 
 function TicketHeader({ ticket }: { ticket: { first_name: string; last_name: string } }) {
   return (
     <div className="text-center mb-12">
-      <div className="text-6xl mb-4">🎫</div>
+      <TicketIcon className="w-14 h-14 mx-auto mb-4 text-black" aria-hidden="true" />
       <Kicker variant="light" className="mb-4">
         Your Ticket
       </Kicker>
@@ -401,7 +482,7 @@ function TransferNotice({
   return (
     <div className="bg-blue-100 border-l-4 border-blue-500 rounded-lg p-6 mb-8">
       <div className="flex items-start gap-3">
-        <span className="text-xl">↗️</span>
+        <ArrowRightLeft className="w-5 h-5 text-blue-700 mt-1" aria-hidden="true" />
         <div>
           <h3 className="text-blue-900 font-semibold mb-2">Transferred Ticket</h3>
           <p className="text-blue-800 text-sm">

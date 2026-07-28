@@ -6,43 +6,12 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyOrderToken } from '@/lib/auth/orderToken';
-import { createServiceRoleClient } from '@/lib/supabase';
-import type { Ticket } from '@/lib/types/database';
-import type { TicketUpgrade } from '@/lib/types/ticket-upgrade';
+import { getOrderDetails, type OrderDetailsResponse } from '@/lib/orders';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Order Details API');
 
-export interface OrderDetailsResponse {
-  ticket: Ticket;
-  transferInfo?: {
-    transferredFrom: string;
-    transferredFromEmail: string;
-    transferredAt: string;
-  };
-  pendingUpgrade?: {
-    id: string;
-    status: TicketUpgrade['status'];
-    upgradeMode: TicketUpgrade['upgrade_mode'];
-    amount: number | null;
-    currency: string | null;
-    stripePaymentLinkUrl: string | null;
-    bankTransferReference: string | null;
-    bankTransferDueDate: string | null;
-    createdAt: string;
-  };
-  apparelPreferences?: {
-    tshirtSize: string | null;
-    hoodieSize: string | null;
-  };
-  /** Workshop discount voucher — present only for VIP tickets with an issued, active voucher */
-  vipPerk?: {
-    code: string;
-    discountPercent: number;
-    expiresAt: string | null;
-    isRedeemed: boolean;
-  };
-}
+export type { OrderDetailsResponse } from '@/lib/orders';
 
 export default async function handler(
   req: NextApiRequest,
@@ -66,97 +35,13 @@ export default async function handler(
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    // Fetch ticket details
-    const supabase = createServiceRoleClient();
-    const { data, error: fetchError } = await supabase
-      .from('tickets')
-      .select('*')
-      .eq('id', ticketId)
-      .single();
+    const orderDetails = await getOrderDetails(ticketId);
 
-    if (fetchError || !data) {
-      log.error('Error fetching ticket', fetchError);
+    if (!orderDetails) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Type the ticket data explicitly to include transfer tracking fields
-    const ticket = data as Ticket;
-
-    // Build response
-    const response: OrderDetailsResponse = {
-      ticket,
-    };
-
-    // Add transfer info if ticket was transferred
-    if (ticket.transferred_from_name && ticket.transferred_from_email && ticket.transferred_at) {
-      response.transferInfo = {
-        transferredFrom: ticket.transferred_from_name,
-        transferredFromEmail: ticket.transferred_from_email,
-        transferredAt: ticket.transferred_at,
-      };
-    }
-
-    // Check for pending VIP upgrade
-    const { data: pendingUpgrade } = await supabase
-      .from('ticket_upgrades')
-      .select('*')
-      .eq('ticket_id', ticketId)
-      .in('status', ['pending_payment', 'pending_bank_transfer'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (pendingUpgrade) {
-      response.pendingUpgrade = {
-        id: pendingUpgrade.id,
-        status: pendingUpgrade.status as 'pending_payment' | 'pending_bank_transfer',
-        upgradeMode: pendingUpgrade.upgrade_mode as 'complimentary' | 'bank_transfer' | 'stripe',
-        amount: pendingUpgrade.amount,
-        currency: pendingUpgrade.currency,
-        stripePaymentLinkUrl: pendingUpgrade.stripe_payment_link_url,
-        bankTransferReference: pendingUpgrade.bank_transfer_reference,
-        bankTransferDueDate: pendingUpgrade.bank_transfer_due_date,
-        createdAt: pendingUpgrade.created_at,
-      };
-    }
-
-    // Include the workshop discount voucher for VIP tickets
-    if (ticket.ticket_category === 'vip') {
-      const { data: vipPerk, error: vipPerkError } = await supabase
-        .from('vip_perks')
-        .select('code, discount_percent, expires_at, max_redemptions, current_redemptions')
-        .eq('ticket_id', ticketId)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (vipPerkError) {
-        // Non-fatal — the page still works without the voucher block
-        log.error('Error fetching VIP perk for order', vipPerkError, { ticketId });
-      } else if (vipPerk) {
-        response.vipPerk = {
-          code: vipPerk.code,
-          discountPercent: vipPerk.discount_percent,
-          expiresAt: vipPerk.expires_at,
-          isRedeemed: vipPerk.max_redemptions != null && vipPerk.current_redemptions >= vipPerk.max_redemptions,
-        };
-      }
-    }
-
-    // Include saved apparel preferences if any
-    const { data: apparelPreferences } = await supabase
-      .from('ticket_apparel_preferences')
-      .select('tshirt_size, hoodie_size')
-      .eq('ticket_id', ticketId)
-      .maybeSingle();
-
-    if (apparelPreferences) {
-      response.apparelPreferences = {
-        tshirtSize: apparelPreferences.tshirt_size,
-        hoodieSize: apparelPreferences.hoodie_size,
-      };
-    }
-
-    return res.status(200).json(response);
+    return res.status(200).json(orderDetails);
   } catch (error) {
     log.error('Error getting order details', error);
     return res.status(500).json({ error: 'Internal server error' });

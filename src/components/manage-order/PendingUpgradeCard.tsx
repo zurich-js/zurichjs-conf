@@ -101,6 +101,7 @@ function BankTransferDetails({ upgrade }: { upgrade: PendingUpgrade }) {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
+                timeZone: 'Europe/Zurich',
               })}
             />
           )}

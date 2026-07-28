@@ -4,6 +4,8 @@
  */
 
 import Link from 'next/link';
+import { ArrowRightLeft, Calendar, MapPin } from 'lucide-react';
+import { Button } from '@/components/atoms';
 
 export function EventInfoCard() {
   return (
@@ -11,11 +13,17 @@ export function EventInfoCard() {
       <h2 className="text-xl font-bold text-brand-primary mb-6">Event Information</h2>
       <div className="space-y-4 text-gray-200">
         <div>
-          <h3 className="text-brand-white font-semibold mb-1">📅 Date & Time</h3>
+          <h3 className="text-brand-white font-semibold mb-1 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-brand-primary" aria-hidden="true" />
+            Date &amp; Time
+          </h3>
           <p className="text-gray-400">September 11, 2026</p>
         </div>
         <div>
-          <h3 className="text-brand-white font-semibold mb-1">📍 Venue</h3>
+          <h3 className="text-brand-white font-semibold mb-1 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-brand-primary" aria-hidden="true" />
+            Venue
+          </h3>
           <p className="text-gray-400">
             Technopark Zürich
             <br />
@@ -42,7 +50,8 @@ export function QuickActionsCard({ ticketId }: QuickActionsCardProps) {
           href={`/api/calendar/${ticketId}`}
           className="flex items-center justify-center gap-2 bg-brand-primary text-black font-semibold py-3 px-6 rounded-lg hover:bg-brand-primary/90 transition-colors"
         >
-          📅 Add to Calendar
+          <Calendar className="w-4 h-4" aria-hidden="true" />
+          Add to Calendar
         </a>
         <a
           href="https://maps.google.com/?q=Technopark+Zürich"
@@ -50,7 +59,8 @@ export function QuickActionsCard({ ticketId }: QuickActionsCardProps) {
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 bg-gray-800 text-brand-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors"
         >
-          📍 View Map
+          <MapPin className="w-4 h-4" aria-hidden="true" />
+          View Map
         </a>
       </div>
     </div>
@@ -69,12 +79,10 @@ export function TransferSection({ onTransferClick }: TransferSectionProps) {
         Can&apos;t attend? You can transfer your ticket to someone else. Once transferred, you will no longer have access
         to this ticket and the action cannot be undone.
       </p>
-      <button
-        onClick={onTransferClick}
-        className="flex items-center justify-center gap-2 bg-brand-primary text-black font-semibold py-3 px-6 rounded-lg hover:bg-brand-primary/90 transition-colors w-full md:w-auto"
-      >
-        ↗️ Transfer to Someone Else
-      </button>
+      <Button variant="primary" onClick={onTransferClick} className="w-full md:w-auto">
+        <ArrowRightLeft className="w-4 h-4" aria-hidden="true" />
+        Transfer to Someone Else
+      </Button>
     </div>
   );
 }

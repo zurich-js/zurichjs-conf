@@ -2,7 +2,7 @@
  * Manage Order Component Types
  */
 
-import type { OrderDetailsResponse } from '@/pages/api/orders/[token]';
+import type { OrderDetailsResponse } from '@/lib/orders';
 
 export type { OrderDetailsResponse };
 
