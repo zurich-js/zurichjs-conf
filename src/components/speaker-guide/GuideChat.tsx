@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, RotateCcw, Send } from "lucide-react";
+import { Bot, ChevronRight, RotateCcw, Send } from "lucide-react";
 import { slugify } from "@/components/RichTextRenderer";
 import type { ContentSection } from "@/data/info-pages";
 
@@ -20,44 +20,13 @@ interface ChatMessage {
   streaming?: boolean;
 }
 
-/**
- * Minimal typings for the Chrome built-in Prompt API (on-device Gemini Nano).
- * @see https://developer.chrome.com/docs/ai/prompt-api
- */
-interface LanguageModelSession {
-  prompt(input: string): Promise<string>;
-}
-
-interface LanguageModelStatic {
-  availability(): Promise<string>;
-  create(options?: {
-    initialPrompts?: Array<{ role: string; content: string }>;
-  }): Promise<LanguageModelSession>;
-}
-
-const getLanguageModel = (): LanguageModelStatic | null => {
-  const candidate = (globalThis as unknown as Record<string, unknown>)
-    .LanguageModel;
-  if (
-    candidate &&
-    typeof (candidate as LanguageModelStatic).availability === "function" &&
-    typeof (candidate as LanguageModelStatic).create === "function"
-  ) {
-    return candidate as LanguageModelStatic;
-  }
-  return null;
-};
-
-const SYSTEM_PROMPT =
-  "You are Faru, the ZurichJS Conf 2026 speaker guide assistant. Answer questions from speakers using ONLY the guide excerpts provided with each question. Be brief and friendly. If the excerpts don't contain the answer, say you don't know and suggest asking in the speakers group chat or emailing hello@zurichjs.com. Never invent dates, prices, names, or logistics.";
-
 const GREETING =
   "Hey! 👋 I'm Faru, your speaker guide companion. Fun fact: \"Faru\" was Faris's nickname as a kid — he graciously lent it to me, so technically I'm the second Faru to help people find their way around. Ask me about arrival, the venues, your slides, the after party — anything from the guide.";
 
 const SUGGESTIONS = [
   "How do I get to the after party?",
   "When are the tech checks?",
-  "Can I bring a plus one?",
+  "What's happening on the 12th?",
   "Where is the speaker hotel?",
 ];
 
@@ -121,6 +90,7 @@ const STOPWORDS = new Set([
   "the", "a", "an", "is", "are", "do", "does", "i", "my", "me", "we", "our",
   "you", "your", "to", "of", "in", "on", "at", "for", "and", "or", "what",
   "when", "where", "how", "who", "can", "will", "there", "it", "be", "with",
+  "whats", "happening",
 ]);
 
 const tokenize = (text: string): string[] =>
@@ -155,6 +125,39 @@ const retrieve = (question: string, chunks: GuideChunk[]): GuideChunk[] => {
     .map((entry) => entry.chunk);
 };
 
+/**
+ * Pull the best-matching sentences out of the retrieved sections so Faru can
+ * quote an actual answer instead of only linking the sections.
+ */
+const extractAnswer = (
+  question: string,
+  sources: GuideChunk[]
+): string | null => {
+  const tokens = tokenize(question);
+  if (tokens.length === 0) return null;
+
+  const scored: Array<{ text: string; score: number }> = [];
+  sources.forEach((source) => {
+    source.text.split(/(?<=[.!?])\s+/).forEach((raw) => {
+      const sentence = raw.trim();
+      if (sentence.length < 15) return;
+      const lower = sentence.toLowerCase();
+      let score = 0;
+      tokens.forEach((token) => {
+        if (lower.includes(token)) score += 1;
+      });
+      if (score > 0) scored.push({ text: sentence, score });
+    });
+  });
+
+  if (scored.length === 0) return null;
+  scored.sort((a, b) => b.score - a.score);
+  return scored
+    .slice(0, 2)
+    .map((sentence) => `“${sentence.text}”`)
+    .join("\n\n");
+};
+
 const excerpt = (text: string, maxLength = 200): string =>
   text.length <= maxLength ? text : `${text.slice(0, maxLength).trimEnd()}…`;
 
@@ -179,19 +182,17 @@ const FaruAvatar: React.FC = () => (
 );
 
 /**
- * Full-page chat over the speaker guide. Retrieval runs in the browser; when
- * Chrome's built-in Prompt API (on-device Gemini Nano) is available, answers
- * are generated on-device from the retrieved guide sections.
+ * Full-page chat over the speaker guide. Pure in-browser retrieval — no AI
+ * model, no server calls: sections are scored by keyword overlap and the
+ * best-matching sentences are quoted back with links to their sections.
  */
 export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
   const [mounted, setMounted] = useState(false);
-  const [aiAvailable, setAiAvailable] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", text: GREETING },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const sessionRef = useRef<LanguageModelSession | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const aliveRef = useRef(true);
@@ -201,17 +202,6 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
   useEffect(() => {
     setMounted(true);
     aliveRef.current = true;
-    const model = getLanguageModel();
-    if (model) {
-      model
-        .availability()
-        .then((state) => {
-          if (aliveRef.current && state === "available") setAiAvailable(true);
-        })
-        .catch(() => {
-          /* Treat probe failures as "no on-device model". */
-        });
-    }
     return () => {
       aliveRef.current = false;
     };
@@ -246,7 +236,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
           };
           return next;
         });
-        await sleep(26);
+        await sleep(24);
       }
     }
     if (!aliveRef.current) return;
@@ -255,25 +245,6 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
       next[next.length - 1] = { role: "assistant", text: fullText, sources };
       return next;
     });
-  };
-
-  const answerWithModel = async (
-    question: string,
-    sources: GuideChunk[]
-  ): Promise<string> => {
-    const model = getLanguageModel();
-    if (!model) throw new Error("Prompt API unavailable");
-    if (!sessionRef.current) {
-      sessionRef.current = await model.create({
-        initialPrompts: [{ role: "system", content: SYSTEM_PROMPT }],
-      });
-    }
-    const context = sources
-      .map((source) => `## ${source.title}\n${source.text}`)
-      .join("\n\n");
-    return sessionRef.current.prompt(
-      `Guide excerpts:\n\n${context}\n\nSpeaker question: ${question}`
-    );
   };
 
   const ask = async (rawQuestion: string): Promise<void> => {
@@ -287,24 +258,19 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
     const sources = retrieve(question, chunks);
 
     if (sources.length === 0) {
-      await sleep(700);
+      await sleep(600);
       await streamReply(
         "Hmm, I couldn't find that in the guide. Ask in the speakers group chat or email hello@zurichjs.com — a human will know!"
       );
-    } else if (aiAvailable) {
-      try {
-        const text = await answerWithModel(question, sources);
-        await streamReply(text.trim(), sources);
-      } catch {
-        await sleep(500);
-        await streamReply(
-          "My on-device model hiccuped, but here's what the guide says:",
-          sources
-        );
-      }
     } else {
-      await sleep(700);
-      await streamReply("Here's what the guide says about that:", sources);
+      await sleep(600);
+      const answer = extractAnswer(question, sources);
+      await streamReply(
+        answer
+          ? `Here's what the guide says:\n\n${answer}`
+          : "Here's what the guide says about that:",
+        sources
+      );
     }
 
     if (!aliveRef.current) return;
@@ -334,9 +300,8 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-xs text-gray-500">
-          {aiAvailable
-            ? "Answers are generated on your device (Chrome built-in AI) from the guide only — nothing leaves your browser."
-            : "Faru finds the right guide sections for you, right in your browser. (In Chrome with built-in AI, it answers conversationally.)"}
+          Faru answers straight from this guide, right in your browser —
+          nothing you type leaves the page.
         </p>
         {messages.length > 1 && (
           <button
@@ -455,6 +420,43 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
           <Send className="w-4 h-4" aria-hidden="true" />
         </button>
       </form>
+
+      <details className="group mt-3">
+        <summary className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer list-none hover:text-gray-800 w-fit">
+          <ChevronRight
+            className="w-3.5 h-3.5 transition-transform group-open:rotate-90"
+            aria-hidden="true"
+          />
+          For the nerds: curious how this works — without any AI?
+        </summary>
+        <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2 pl-4.5">
+          <p>
+            No AI model, no servers, no API keys — Faru is a few dozen lines of
+            plain JavaScript running entirely in your browser:
+          </p>
+          <ol className="list-decimal list-inside space-y-1">
+            <li>
+              On page load, the guide is split into one text chunk per section.
+            </li>
+            <li>
+              Your question is tokenized, and filler words (&quot;the&quot;,
+              &quot;when&quot;, &quot;can&quot;…) are dropped.
+            </li>
+            <li>
+              Every section is scored by keyword overlap — matches in section
+              titles count triple.
+            </li>
+            <li>
+              The best-matching sentences from the top sections are quoted back,
+              with links to the full sections below.
+            </li>
+          </ol>
+          <p>
+            The typing effect is pure theatre — the actual &quot;thinking&quot;
+            takes about a millisecond. Nothing you type ever leaves this page.
+          </p>
+        </div>
+      </details>
     </div>
   );
 };
