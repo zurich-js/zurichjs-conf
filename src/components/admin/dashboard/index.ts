@@ -6,6 +6,9 @@
 // Types
 export * from './types';
 
+// Utils
+export { isComplimentaryTicket } from './ticket-utils';
+
 // Modals
 export { ConfirmModal } from './ConfirmModal';
 export type { ConfirmModalProps } from './ConfirmModal';

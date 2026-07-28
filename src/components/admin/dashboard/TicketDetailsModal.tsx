@@ -7,6 +7,7 @@ import type { Ticket } from './types';
 import { TicketInvoiceModal } from '@/components/admin/tickets';
 import { useTicketSpendBreakdown } from '@/hooks/useTicketSpendBreakdown';
 import { SpendBreakdownSection } from './SpendBreakdownSection';
+import { isComplimentaryTicket } from './ticket-utils';
 import { UpgradeHistorySection } from './UpgradeHistorySection';
 import { WorkshopBookingsSection } from './WorkshopBookingsSection';
 
@@ -75,7 +76,7 @@ export function TicketDetailsModal({
   onUpgrade,
   onTicketUpdate,
 }: TicketDetailsModalProps) {
-  const isComplimentary = ticket.metadata?.paymentType === 'complimentary' || ticket.amount_paid === 0;
+  const isComplimentary = isComplimentaryTicket(ticket);
 
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const { data: spendData, isLoading: spendLoading } = useTicketSpendBreakdown(ticket.id);
