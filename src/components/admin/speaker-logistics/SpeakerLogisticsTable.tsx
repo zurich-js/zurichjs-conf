@@ -68,7 +68,7 @@ export function SpeakerLogisticsTable({ speakers, onCopyLink }: SpeakerLogistics
                     <RsvpCell attending={row.answers?.attending_after_party} plusOne={row.answers?.after_party_plus_one} />
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <RsvpCell attending={row.answers?.attending_speaker_hangout} />
+                    <RsvpCell attending={row.answers?.attending_speaker_hangout} plusOne={row.answers?.speaker_hangout_plus_one} />
                   </td>
                   <td className="px-4 py-3 text-center">
                     {row.tshirt_size ? (

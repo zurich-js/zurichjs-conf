@@ -24,6 +24,7 @@ export const speakerLogisticsSchema = z
     attending_speaker_hangout: z.boolean({
       message: 'Please tell us if you are joining the speaker hangout activities',
     }),
+    speaker_hangout_plus_one: z.boolean().optional().nullable(),
     dietary_restrictions: z
       .string()
       .max(1000, 'Dietary restrictions is too long')

@@ -21,12 +21,16 @@ function trimToNull(value: string | null | undefined): string | null {
 export function normalizeAnswers(data: SpeakerLogisticsFormData): SpeakerLogisticsAnswers {
   const dinnerPlusOne = data.attending_speakers_dinner ? (data.dinner_plus_one ?? false) : false;
   const afterPartyPlusOne = data.attending_after_party ? (data.after_party_plus_one ?? false) : false;
+  const hangoutPlusOne = data.attending_speaker_hangout
+    ? (data.speaker_hangout_plus_one ?? false)
+    : false;
 
   return {
     attending_warmup: data.attending_warmup,
     attending_speakers_dinner: data.attending_speakers_dinner,
     attending_after_party: data.attending_after_party,
     attending_speaker_hangout: data.attending_speaker_hangout,
+    speaker_hangout_plus_one: hangoutPlusOne,
     dietary_restrictions:
       data.attending_speakers_dinner || data.attending_after_party
         ? trimToNull(data.dietary_restrictions)
@@ -62,7 +66,9 @@ export function buildAttendanceSummary(answers: SpeakerLogisticsAnswers): string
     `VIP After Party (Sep 11): ${
       answers.attending_after_party ? `yes${answers.after_party_plus_one ? ' +1' : ''}` : 'no'
     }`,
-    `Speaker Hangout (Sep 12): ${answers.attending_speaker_hangout ? 'yes' : 'no'}`,
+    `Speaker Hangout (Sep 12): ${
+      answers.attending_speaker_hangout ? `yes${answers.speaker_hangout_plus_one ? ' +1' : ''}` : 'no'
+    }`,
   ];
   return parts.join(' · ');
 }

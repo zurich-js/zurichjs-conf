@@ -106,6 +106,10 @@ export function AnswerDetails({ row }: { row: SpeakerLogisticsAdminRow }) {
         ) : (
           <p className="text-gray-500">No after-party plus one.</p>
         )}
+        <p className="mt-3 font-semibold text-gray-900">Hangout activities plus one (Sep 12)</p>
+        <p className="mt-1 text-gray-700">
+          {answers.speaker_hangout_plus_one === true ? 'Yes — bringing a plus one' : 'No plus one'}
+        </p>
         <p className="mt-3 text-xs text-gray-500">Submitted {formatDateTime(row.submitted_at)}</p>
       </div>
     </div>

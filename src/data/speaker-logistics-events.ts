@@ -67,8 +67,8 @@ export const SPEAKER_LOGISTICS_EVENTS: readonly SpeakerLogisticsEvent[] = [
     date: 'Saturday, September 12, 2026',
     isoDate: '2026-09-12',
     description:
-      'A relaxed day of hangout activities with fellow speakers to wind down after the conference.',
+      'A relaxed day of hangout activities with fellow speakers to wind down after the conference. Plus ones are welcome — just let us know so we can plan capacity.',
     hasCatering: false,
-    allowsPlusOne: false,
+    allowsPlusOne: true,
   },
 ] as const;
