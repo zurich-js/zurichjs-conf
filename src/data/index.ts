@@ -8,6 +8,7 @@ export { scheduleData } from './schedule';
 export {
   communityDayMeetup,
   publicProgramTabs,
+  warmupChillRun,
   workshopProgramSections,
   workshopSlotCount,
 } from './public-program';

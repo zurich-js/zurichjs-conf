@@ -6,7 +6,7 @@ import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
-import { communityDayMeetup, publicProgramTabs } from '@/data';
+import { communityDayMeetup, publicProgramTabs, warmupChillRun } from '@/data';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
@@ -102,6 +102,42 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
                   </Button>
                   <Button variant="blue" asChild href={communityDayMeetup.rsvpUrl}>
                     RSVP on Meetup
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'warmup' && (
+              <div className="mt-8 rounded-lg bg-brand-gray-lightest p-6">
+                <Heading level="h3" variant="light" className="text-base font-bold leading-tight">
+                  {warmupChillRun.title}
+                </Heading>
+                <p className="mt-2 text-sm font-medium text-brand-gray-medium">
+                  {warmupChillRun.time} ·{' '}
+                  <a
+                    href={warmupChillRun.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-brand-black"
+                  >
+                    {warmupChillRun.location}
+                  </a>
+                </p>
+                <p className="mt-3 max-w-2xl text-base leading-relaxed text-brand-gray-medium">
+                  {warmupChillRun.description} Hosted by{' '}
+                  <a
+                    href={warmupChillRun.hostUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-brand-black"
+                  >
+                    {warmupChillRun.hostName}
+                  </a>
+                  .
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Button variant="primary" asChild href={warmupChillRun.rsvpUrl}>
+                    RSVP to the run
                   </Button>
                 </div>
               </div>
