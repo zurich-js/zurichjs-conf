@@ -6,17 +6,15 @@ export const communityDayMeetup = {
 } as const;
 
 export const warmupChillRun = {
-  location: 'Technoparkstrasse 1, Zürich',
-  mapUrl: 'https://www.google.com/maps/search/?api=1&query=Technoparkstrasse%201%2C%20Z%C3%BCrich',
   rsvpUrl: 'https://atmo.rsvp/p/jyc.dev/e/3mqmpqpn37sio',
-  hostName: '@jyc.dev',
-  hostUrl: 'https://bsky.app/profile/jyc.dev',
 } as const;
 
 /**
  * Static schedule-list entry for the chill run. Merged into the DB-driven
  * schedule on the workshop-day tab and sorted by start time, so it lands
- * after the afternoon workshops and before the speakers dinner.
+ * after the afternoon workshops and before the speakers dinner. Kept
+ * deliberately minimal — the details (meeting point, host, RSVP) live on
+ * the atmo.rsvp page linked from the card.
  */
 export const warmupChillRunScheduleItem: PublicProgramScheduleItem = {
   id: 'warmup-chill-run',
@@ -26,8 +24,7 @@ export const warmupChillRunScheduleItem: PublicProgramScheduleItem = {
   room: null,
   type: 'event',
   title: 'Official ZurichJS Chill Run',
-  description:
-    'A fun, easy ~5K close to the conference venue — not a race. Everyone is welcome, no matter your level. Just bring your sneakers and good vibes!',
+  description: null,
   submission_id: null,
   is_visible: true,
   session: null,

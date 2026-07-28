@@ -42,38 +42,6 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
     : dayItems;
 
   const getEventActions = (item: PublicProgramScheduleItem): ReactNode => {
-    if (item.id === warmupChillRunScheduleItem.id) {
-      return (
-        <>
-          <p className="text-sm leading-7 text-brand-gray-darkest">
-            Meeting point:{' '}
-            <a
-              href={warmupChillRun.mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-brand-black"
-            >
-              {warmupChillRun.location}
-            </a>
-            {' '}· Hosted by{' '}
-            <a
-              href={warmupChillRun.hostUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-brand-black"
-            >
-              {warmupChillRun.hostName}
-            </a>
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Button variant="primary" asChild href={warmupChillRun.rsvpUrl}>
-              RSVP to the run
-            </Button>
-          </div>
-        </>
-      );
-    }
-
     if (item.type === 'event' && item.date === '2026-09-09' && item.title.toLowerCase().includes('meetup')) {
       return (
         <div className="flex flex-wrap gap-3">
@@ -149,6 +117,9 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
                     placeholderVariant="plain"
                     expandableSessions
                     eventActions={getEventActions(item)}
+                    eventLink={item.id === warmupChillRunScheduleItem.id
+                      ? { label: 'Info and RSVP', href: warmupChillRun.rsvpUrl }
+                      : undefined}
                   />
                 ))
               ) : activeTab === 'community' ? null : (

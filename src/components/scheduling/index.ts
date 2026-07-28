@@ -9,7 +9,7 @@ export { MarkdownAbstract } from './MarkdownAbstract';
 
 export type { ScheduleCardProps } from './ScheduleCard';
 export type { SessionCardProps } from './SessionCard';
-export type { EventCardProps } from './EventCard';
+export type { EventCardProps, EventCardLink } from './EventCard';
 export type { BreakCardProps } from './BreakCard';
 export type { PlaceholderCardProps } from './PlaceholderCard';
 export type { ProgramScheduleItemCardProps } from './ProgramScheduleItemCard';
