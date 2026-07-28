@@ -6,7 +6,7 @@
 import React from 'react';
 import { Shirt, Sparkles, Check } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
-import { Select } from '@/components/atoms';
+import { Button, Select } from '@/components/atoms';
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 import type { ApparelPreferences, ApparelPreferencesData } from './types';
 
@@ -90,13 +90,16 @@ export function ApparelPreferencesCard({ isVip, preferences, mutation }: Apparel
           </div>
         )}
 
-        <button
+        <Button
+          type="button"
+          variant="primary"
+          className="w-full"
           onClick={handleSave}
-          disabled={mutation.isPending || !tshirtSize}
-          className="w-full bg-brand-primary text-black font-semibold py-3 px-6 rounded-lg hover:bg-brand-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          loading={mutation.isPending}
+          disabled={!tshirtSize}
         >
           {mutation.isPending ? 'Saving...' : 'Save Preferences'}
-        </button>
+        </Button>
       </div>
     </div>
   );

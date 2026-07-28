@@ -152,9 +152,11 @@ function CopyCodeButton({ code }: { code: string }) {
 }
 
 function formatExpiry(dateString: string): string {
+  // Pinned timezone keeps server-rendered HTML and client hydration in sync
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'Europe/Zurich',
   });
 }

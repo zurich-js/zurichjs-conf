@@ -3,8 +3,14 @@
  * Modal for transferring ticket to another person
  */
 
+import React from 'react';
+import { z } from 'zod';
+import { AlertTriangle } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
+import { Modal, ModalBody, Input, Button } from '@/components/atoms';
 import type { ReassignData } from './types';
+
+const emailSchema = z.string().email();
 
 interface ReassignModalProps {
   isOpen: boolean;
@@ -15,90 +21,118 @@ interface ReassignModalProps {
 }
 
 export function ReassignModal({ isOpen, onClose, reassignData, setReassignData, mutation }: ReassignModalProps) {
-  if (!isOpen) return null;
+  const [emailError, setEmailError] = React.useState<string | undefined>(undefined);
 
   const handleClose = () => {
     onClose();
     setReassignData({ email: '', firstName: '', lastName: '' });
+    setEmailError(undefined);
     mutation.reset();
   };
 
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!emailSchema.safeParse(reassignData.email).success) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+    setEmailError(undefined);
+    mutation.mutate(reassignData);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <div className="bg-brand-primary rounded-2xl max-w-md w-full p-8">
-        <h2 className="text-xl font-bold text-black mb-4">Transfer Ticket</h2>
-        <p className="text-black/80 mb-6">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Transfer Ticket" variant="dark" size="md">
+      <ModalBody className="pt-0">
+        <p className="text-brand-gray-light mb-6">
           Enter the details of the person you want to transfer this ticket to. They will receive an email with their new
           ticket. This action cannot be undone.
         </p>
 
         {mutation.error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+          <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg mb-4" role="alert">
             {mutation.error instanceof Error ? mutation.error.message : 'Failed to transfer ticket'}
           </div>
         )}
 
-        <div className="space-y-4 mb-6">
-          <div>
-            <label className="block text-black font-semibold mb-2">First Name *</label>
-            <input
-              type="text"
-              value={reassignData.firstName}
-              onChange={(e) => setReassignData({ ...reassignData, firstName: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none bg-white text-black"
-              placeholder="John"
-              disabled={mutation.isPending}
-            />
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="space-y-4 mb-6">
+            <div>
+              <label htmlFor="reassign-first-name" className="block text-brand-white font-semibold mb-2">
+                First Name *
+              </label>
+              <Input
+                id="reassign-first-name"
+                name="firstName"
+                autoComplete="given-name"
+                value={reassignData.firstName}
+                onChange={(e) => setReassignData({ ...reassignData, firstName: e.target.value })}
+                placeholder="John"
+                disabled={mutation.isPending}
+                required
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <label htmlFor="reassign-last-name" className="block text-brand-white font-semibold mb-2">
+                Last Name *
+              </label>
+              <Input
+                id="reassign-last-name"
+                name="lastName"
+                autoComplete="family-name"
+                value={reassignData.lastName}
+                onChange={(e) => setReassignData({ ...reassignData, lastName: e.target.value })}
+                placeholder="Doe"
+                disabled={mutation.isPending}
+                required
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <label htmlFor="reassign-email" className="block text-brand-white font-semibold mb-2">
+                Email Address *
+              </label>
+              <Input
+                id="reassign-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={reassignData.email}
+                onChange={(e) => setReassignData({ ...reassignData, email: e.target.value })}
+                placeholder="john.doe@example.com"
+                disabled={mutation.isPending}
+                required
+                fullWidth
+                error={emailError}
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-black font-semibold mb-2">Last Name *</label>
-            <input
-              type="text"
-              value={reassignData.lastName}
-              onChange={(e) => setReassignData({ ...reassignData, lastName: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none bg-white text-black"
-              placeholder="Doe"
-              disabled={mutation.isPending}
-            />
-          </div>
-
-          <div>
-            <label className="block text-black font-semibold mb-2">Email Address *</label>
-            <input
-              type="email"
-              value={reassignData.email}
-              onChange={(e) => setReassignData({ ...reassignData, email: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border-2 border-black/20 focus:border-black focus:outline-none bg-white text-black"
-              placeholder="john.doe@example.com"
-              disabled={mutation.isPending}
-            />
-          </div>
-        </div>
-
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
-          <p className="text-yellow-800 text-sm font-semibold">
-            ⚠️ Warning: This action cannot be undone. You will lose access to this ticket immediately.
+          <p className="flex items-start gap-2 text-sm text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-3 mb-6">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+            <span>
+              <strong>Warning:</strong> This action cannot be undone. You will lose access to this ticket immediately.
+            </span>
           </p>
-        </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={handleClose}
-            disabled={mutation.isPending}
-            className="flex-1 bg-gray-200 text-black font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate(reassignData)}
-            disabled={mutation.isPending || !reassignData.email || !reassignData.firstName || !reassignData.lastName}
-            className="flex-1 bg-black text-brand-primary font-semibold py-3 px-6 rounded-lg hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {mutation.isPending ? 'Transferring...' : 'Confirm Transfer'}
-          </button>
-        </div>
-      </div>
-    </div>
+          <div className="flex gap-3">
+            <Button type="button" variant="ghost" className="flex-1" onClick={handleClose} disabled={mutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              className="flex-1"
+              loading={mutation.isPending}
+              disabled={!reassignData.email || !reassignData.firstName || !reassignData.lastName}
+            >
+              {mutation.isPending ? 'Transferring...' : 'Confirm Transfer'}
+            </Button>
+          </div>
+        </form>
+      </ModalBody>
+    </Modal>
   );
 }
