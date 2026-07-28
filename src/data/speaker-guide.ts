@@ -183,7 +183,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Technoparkstrasse 1, 8005 Zürich — 1–2 min walk from your hotel; doors open at 07:00. Check in at registration and tell a volunteer you're a speaker. Full agenda on the <a href='/schedule'>schedule page</a>.",
+        "Technoparkstrasse 1, 8005 Zürich — 1–2 min walk from your hotel; doors open at 07:00. Check in at registration and tell a volunteer you're a speaker. Lunch in two waves, 12:40–14:00. Full agenda on the <a href='/schedule'>schedule page</a>.",
     },
     {
       type: "paragraph",
@@ -197,6 +197,7 @@ export const speakerGuide: InfoPage = {
         "<strong>Getting there:</strong> your hotel is a 1–2 minute walk away — otherwise tram lines 4 and 13 stop directly at the <em>Technopark</em> stop, and the S-Bahn station <em>Hardbrücke</em> is a ~7 minute walk away.",
         "<strong>Schedule:</strong> the up-to-date program (including your slot) lives on the <a href='/schedule'>schedule page</a>. You should also receive a <strong>Google Calendar invite</strong> for your slot up to a week before the conference. If it hasn't landed by then, message us in the group chat or at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
         "<strong>On arrival:</strong> check in at the registration desk and let a volunteer know you're a speaker; we'll take it from there, including a tech check before your talk.",
+        "<strong>Lunch (12:40–14:00):</strong> to reduce traffic, conference-day lunch runs in two waves around the <em>e18e &amp; friends</em> live episode (13:05–13:35, with Alexander Lichter and Debbie O'Brien). Grab food from 12:40 and head back in for the panel, or eat after it from 13:35. Food is available for the full 75 minutes, it's sit-down serving, and there's no separate speakers line — come whenever suits you.",
         "<strong>Speakers room:</strong> there's a dedicated room for speakers to work, prep, or just decompress away from the crowd. If you need anything beyond that for work or meetings, let us know and we'll arrange it.",
       ],
     },
@@ -225,7 +226,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "And don't worry about food: whether you're a morning or afternoon instructor, <strong>lunch is provided</strong> during the <strong>13:00–14:00</strong> lunch break. Best to grab breakfast beforehand; it's included at your hotel.",
+        "And don't worry about food: whether you're a morning or afternoon instructor, <strong>lunch is provided</strong> on workshop day during the <strong>13:00–14:00</strong> lunch break. Best to grab breakfast beforehand; it's included at your hotel.",
     },
     {
       type: "paragraph",
