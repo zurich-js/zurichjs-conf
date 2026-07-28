@@ -2148,6 +2148,62 @@ export type Database = {
         }
         Relationships: []
       }
+      speaker_activity_guests: {
+        Row: {
+          activity: string
+          admin_notes: string | null
+          amount_paid: number | null
+          created_at: string
+          dietary_restrictions: string | null
+          email: string | null
+          first_name: string
+          guest_type: string
+          id: string
+          last_name: string
+          related_speaker_id: string | null
+          stripe_payment_link: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity: string
+          admin_notes?: string | null
+          amount_paid?: number | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          email?: string | null
+          first_name: string
+          guest_type: string
+          id?: string
+          last_name: string
+          related_speaker_id?: string | null
+          stripe_payment_link?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity?: string
+          admin_notes?: string | null
+          amount_paid?: number | null
+          created_at?: string
+          dietary_restrictions?: string | null
+          email?: string | null
+          first_name?: string
+          guest_type?: string
+          id?: string
+          last_name?: string
+          related_speaker_id?: string | null
+          stripe_payment_link?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "speaker_activity_guests_related_speaker_id_fkey"
+            columns: ["related_speaker_id"]
+            isOneToOne: false
+            referencedRelation: "cfp_speakers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           billing_address_city: string

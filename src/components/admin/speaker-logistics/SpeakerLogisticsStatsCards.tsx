@@ -5,13 +5,24 @@
 
 import React from 'react';
 import { CalendarDays, ClipboardCheck, Salad, Shirt } from 'lucide-react';
+import type { SpeakerLogisticsEventKey } from '@/data/speaker-logistics-events';
 import type { SpeakerLogisticsStats, SpeakerLogisticsEventStats } from './types';
 
 interface SpeakerLogisticsStatsCardsProps {
   stats: SpeakerLogisticsStats;
+  /** Admin-added additional guests per activity (counted on top of speaker RSVPs) */
+  guestCounts?: Partial<Record<SpeakerLogisticsEventKey, number>>;
 }
 
-function EventStatCard({ label, stats }: { label: string; stats: SpeakerLogisticsEventStats }) {
+function EventStatCard({
+  label,
+  stats,
+  guests = 0,
+}: {
+  label: string;
+  stats: SpeakerLogisticsEventStats;
+  guests?: number;
+}) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -19,19 +30,20 @@ function EventStatCard({ label, stats }: { label: string; stats: SpeakerLogistic
         {label}
       </div>
       <p className="mt-1 text-2xl font-semibold text-gray-950">
-        {stats.headcount}
+        {stats.headcount + guests}
         <span className="ml-1 text-sm font-normal text-gray-500">headcount</span>
       </p>
       <p className="mt-1 text-xs text-gray-500">
         {stats.attending} attending
-        {stats.plusOnes > 0 ? ` · ${stats.plusOnes} plus one(s)` : ''} · {stats.notAttending} declined ·{' '}
+        {stats.plusOnes > 0 ? ` · ${stats.plusOnes} plus one(s)` : ''}
+        {guests > 0 ? ` · ${guests} additional guest(s)` : ''} · {stats.notAttending} declined ·{' '}
         {stats.unanswered} unanswered
       </p>
     </div>
   );
 }
 
-export function SpeakerLogisticsStatsCards({ stats }: SpeakerLogisticsStatsCardsProps) {
+export function SpeakerLogisticsStatsCards({ stats, guestCounts }: SpeakerLogisticsStatsCardsProps) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -66,10 +78,10 @@ export function SpeakerLogisticsStatsCards({ stats }: SpeakerLogisticsStatsCards
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <EventStatCard label="Warm-Up (Sep 9)" stats={stats.warmup} />
-        <EventStatCard label="Speakers Dinner (Sep 10)" stats={stats.speakersDinner} />
-        <EventStatCard label="After Party (Sep 11)" stats={stats.afterParty} />
-        <EventStatCard label="Hangout (Sep 12)" stats={stats.speakerHangout} />
+        <EventStatCard label="Warm-Up (Sep 9)" stats={stats.warmup} guests={guestCounts?.warmup} />
+        <EventStatCard label="Speakers Dinner (Sep 10)" stats={stats.speakersDinner} guests={guestCounts?.speakers_dinner} />
+        <EventStatCard label="After Party (Sep 11)" stats={stats.afterParty} guests={guestCounts?.after_party} />
+        <EventStatCard label="Hangout (Sep 12)" stats={stats.speakerHangout} guests={guestCounts?.speaker_hangout} />
       </div>
     </div>
   );
