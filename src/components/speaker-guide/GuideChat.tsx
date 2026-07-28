@@ -90,7 +90,8 @@ const STOPWORDS = new Set([
   "the", "a", "an", "is", "are", "do", "does", "i", "my", "me", "we", "our",
   "you", "your", "to", "of", "in", "on", "at", "for", "and", "or", "what",
   "when", "where", "how", "who", "can", "will", "there", "it", "be", "with",
-  "whats", "happening",
+  "whats", "happening", "someone", "anyone", "something", "anything", "up",
+  "out", "down", "off", "if", "that", "this", "was", "get",
 ]);
 
 const tokenize = (text: string): string[] =>
@@ -99,25 +100,55 @@ const tokenize = (text: string): string[] =>
     .split(/[^a-z0-9äöüéèà]+/)
     .filter((token) => token.length > 1 && !STOPWORDS.has(token));
 
-/** Rank chunks by keyword overlap with the question; title hits weigh extra. */
+/** Whole-word match with light prefix stemming for longer tokens, so "pick"
+ * matches "picks" but "up" can never match inside "backup" or "group". */
+const matchesToken = (word: string, token: string): boolean =>
+  word === token || (token.length >= 4 && word.startsWith(token));
+
+const countTokenMatches = (words: string[], token: string): number => {
+  let count = 0;
+  words.forEach((word) => {
+    if (matchesToken(word, token)) count += 1;
+  });
+  return count;
+};
+
+/**
+ * Rank chunks tf-idf style: whole-word term frequency weighted by how rare
+ * the term is across the guide, with an extra boost for section-title hits.
+ * Substring scoring is deliberately avoided; it let short tokens like "up"
+ * match inside unrelated words and surface the wrong sections.
+ */
 const retrieve = (question: string, chunks: GuideChunk[]): GuideChunk[] => {
   const tokens = tokenize(question);
   if (tokens.length === 0) return [];
 
-  return chunks
-    .map((chunk) => {
-      const body = chunk.text.toLowerCase();
-      const title = chunk.title.toLowerCase();
+  const indexed = chunks.map((chunk) => ({
+    chunk,
+    words: tokenize(chunk.text),
+    titleWords: tokenize(chunk.title),
+  }));
+
+  const idf = new Map<string, number>();
+  tokens.forEach((token) => {
+    const df = indexed.filter(
+      (entry) =>
+        entry.words.some((word) => matchesToken(word, token)) ||
+        entry.titleWords.some((word) => matchesToken(word, token))
+    ).length;
+    if (df > 0) idf.set(token, Math.log(1 + chunks.length / df));
+  });
+
+  return indexed
+    .map((entry) => {
       let score = 0;
-      tokens.forEach((token) => {
-        if (title.includes(token)) score += 3;
-        let index = body.indexOf(token);
-        while (index !== -1) {
-          score += 1;
-          index = body.indexOf(token, index + token.length);
+      idf.forEach((weight, token) => {
+        score += countTokenMatches(entry.words, token) * weight;
+        if (entry.titleWords.some((word) => matchesToken(word, token))) {
+          score += 3 * weight;
         }
       });
-      return { chunk, score };
+      return { chunk: entry.chunk, score };
     })
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -170,10 +201,10 @@ const extractAnswer = (
   rankedChunks.forEach((chunk, rank) => {
     const rankBonus = Math.max(0, 2 - rank);
     splitSentences(chunk.text).forEach((sentence) => {
-      const lower = sentence.toLowerCase();
+      const words = tokenize(sentence);
       let matches = 0;
       tokens.forEach((token) => {
-        if (lower.includes(token)) matches += 1;
+        if (words.some((word) => matchesToken(word, token))) matches += 1;
       });
       if (matches > 0) {
         candidates.push({ chunk, text: sentence, score: matches * 2 + rankBonus });
