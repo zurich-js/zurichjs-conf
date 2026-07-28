@@ -16,6 +16,7 @@ export interface SpeakerLogisticsAnswers {
   attending_speakers_dinner: boolean | null;
   attending_after_party: boolean | null;
   attending_speaker_hangout: boolean | null;
+  speaker_hangout_plus_one: boolean | null;
   dietary_restrictions: string | null;
   dinner_plus_one: boolean | null;
   dinner_plus_one_dietary_restrictions: string | null;

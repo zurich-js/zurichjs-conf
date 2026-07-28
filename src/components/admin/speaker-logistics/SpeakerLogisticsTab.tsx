@@ -29,7 +29,11 @@ function matchesFilter(row: SpeakerLogisticsAdminRow, filter: SpeakerLogisticsFi
     case 'submitted':
       return row.status === 'submitted';
     case 'plus_ones':
-      return row.answers?.dinner_plus_one === true || row.answers?.after_party_plus_one === true;
+      return (
+        row.answers?.dinner_plus_one === true ||
+        row.answers?.after_party_plus_one === true ||
+        row.answers?.speaker_hangout_plus_one === true
+      );
     case 'dietary':
       return Boolean(row.answers?.dietary_restrictions || row.answers?.dinner_plus_one_dietary_restrictions);
     default:

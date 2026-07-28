@@ -15,6 +15,7 @@ export interface LogisticsFormState {
   attending_speakers_dinner: boolean | null;
   attending_after_party: boolean | null;
   attending_speaker_hangout: boolean | null;
+  speaker_hangout_plus_one: boolean;
   dietary_restrictions: string;
   dinner_plus_one: boolean;
   dinner_plus_one_dietary_restrictions: string;
@@ -31,6 +32,7 @@ export const EMPTY_LOGISTICS_FORM_STATE: LogisticsFormState = {
   attending_speakers_dinner: null,
   attending_after_party: null,
   attending_speaker_hangout: null,
+  speaker_hangout_plus_one: false,
   dietary_restrictions: '',
   dinner_plus_one: false,
   dinner_plus_one_dietary_restrictions: '',

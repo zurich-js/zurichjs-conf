@@ -17,12 +17,12 @@ interface SpeakerLogisticsCardListProps {
 const EVENT_CHIPS: Array<{
   label: string;
   attendanceKey: 'attending_warmup' | 'attending_speakers_dinner' | 'attending_after_party' | 'attending_speaker_hangout';
-  plusOneKey?: 'dinner_plus_one' | 'after_party_plus_one';
+  plusOneKey?: 'dinner_plus_one' | 'after_party_plus_one' | 'speaker_hangout_plus_one';
 }> = [
   { label: 'Sep 9', attendanceKey: 'attending_warmup' },
   { label: 'Sep 10', attendanceKey: 'attending_speakers_dinner', plusOneKey: 'dinner_plus_one' },
   { label: 'Sep 11', attendanceKey: 'attending_after_party', plusOneKey: 'after_party_plus_one' },
-  { label: 'Sep 12', attendanceKey: 'attending_speaker_hangout' },
+  { label: 'Sep 12', attendanceKey: 'attending_speaker_hangout', plusOneKey: 'speaker_hangout_plus_one' },
 ];
 
 export function SpeakerLogisticsCardList({ speakers, onCopyLink }: SpeakerLogisticsCardListProps) {

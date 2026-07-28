@@ -37,6 +37,7 @@ export interface SpeakerLogisticsAdminRow {
     attending_speakers_dinner: boolean | null;
     attending_after_party: boolean | null;
     attending_speaker_hangout: boolean | null;
+    speaker_hangout_plus_one: boolean | null;
     dietary_restrictions: string | null;
     dinner_plus_one: boolean | null;
     dinner_plus_one_dietary_restrictions: string | null;
@@ -149,6 +150,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             attending_speakers_dinner: logistics.attending_speakers_dinner,
             attending_after_party: logistics.attending_after_party,
             attending_speaker_hangout: logistics.attending_speaker_hangout,
+            speaker_hangout_plus_one: logistics.speaker_hangout_plus_one,
             dietary_restrictions: logistics.dietary_restrictions,
             dinner_plus_one: logistics.dinner_plus_one,
             dinner_plus_one_dietary_restrictions: logistics.dinner_plus_one_dietary_restrictions,
@@ -163,7 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tallyEvent(stats.warmup, answers?.attending_warmup ?? null);
       tallyEvent(stats.speakersDinner, answers?.attending_speakers_dinner ?? null, answers?.dinner_plus_one);
       tallyEvent(stats.afterParty, answers?.attending_after_party ?? null, answers?.after_party_plus_one);
-      tallyEvent(stats.speakerHangout, answers?.attending_speaker_hangout ?? null);
+      tallyEvent(stats.speakerHangout, answers?.attending_speaker_hangout ?? null, answers?.speaker_hangout_plus_one);
 
       if (answers?.dietary_restrictions || answers?.dinner_plus_one_dietary_restrictions) {
         stats.withDietaryRestrictions += 1;

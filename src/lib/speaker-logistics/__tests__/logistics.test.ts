@@ -7,6 +7,7 @@ const baseForm: SpeakerLogisticsFormData = {
   attending_speakers_dinner: true,
   attending_after_party: true,
   attending_speaker_hangout: false,
+  speaker_hangout_plus_one: false,
   dietary_restrictions: 'Vegetarian, nut allergy',
   dinner_plus_one: true,
   dinner_plus_one_dietary_restrictions: 'Vegan',
@@ -33,6 +34,8 @@ describe('normalizeAnswers', () => {
       ...baseForm,
       attending_speakers_dinner: false,
       attending_after_party: false,
+      attending_speaker_hangout: false,
+      speaker_hangout_plus_one: true,
     });
 
     expect(answers.dinner_plus_one).toBe(false);
@@ -41,6 +44,17 @@ describe('normalizeAnswers', () => {
     expect(answers.after_party_plus_one_first_name).toBeNull();
     expect(answers.after_party_plus_one_last_name).toBeNull();
     expect(answers.after_party_plus_one_email).toBeNull();
+    expect(answers.speaker_hangout_plus_one).toBe(false);
+  });
+
+  it('keeps the hangout plus-one flag when attending the hangout with a plus one', () => {
+    const answers = normalizeAnswers({
+      ...baseForm,
+      attending_speaker_hangout: true,
+      speaker_hangout_plus_one: true,
+    });
+
+    expect(answers.speaker_hangout_plus_one).toBe(true);
   });
 
   it('drops dietary restrictions when attending neither catered event', () => {
@@ -83,11 +97,14 @@ describe('normalizeAnswers', () => {
       after_party_plus_one_first_name: 'Alex',
       after_party_plus_one_last_name: 'Muster',
       after_party_plus_one_email: 'alex@example.com',
+      attending_speaker_hangout: true,
+      speaker_hangout_plus_one: null,
     });
 
     expect(answers.dinner_plus_one).toBe(false);
     expect(answers.after_party_plus_one).toBe(false);
     expect(answers.after_party_plus_one_email).toBeNull();
+    expect(answers.speaker_hangout_plus_one).toBe(false);
   });
 });
 
@@ -95,6 +112,18 @@ describe('buildAttendanceSummary', () => {
   it('summarizes RSVPs with plus-one markers', () => {
     expect(buildAttendanceSummary(normalizeAnswers(baseForm))).toBe(
       'Warm-Up Meetup (Sep 9): yes · Speakers Dinner (Sep 10): yes +1 · VIP After Party (Sep 11): yes +1 · Speaker Hangout (Sep 12): no'
+    );
+  });
+
+  it('marks a hangout plus one when attending with one', () => {
+    const answers = normalizeAnswers({
+      ...baseForm,
+      attending_speaker_hangout: true,
+      speaker_hangout_plus_one: true,
+    });
+
+    expect(buildAttendanceSummary(answers)).toBe(
+      'Warm-Up Meetup (Sep 9): yes · Speakers Dinner (Sep 10): yes +1 · VIP After Party (Sep 11): yes +1 · Speaker Hangout (Sep 12): yes +1'
     );
   });
 

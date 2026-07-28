@@ -37,6 +37,7 @@ function buildPayload(state: LogisticsFormState) {
     attending_speakers_dinner: state.attending_speakers_dinner,
     attending_after_party: state.attending_after_party,
     attending_speaker_hangout: state.attending_speaker_hangout,
+    speaker_hangout_plus_one: state.speaker_hangout_plus_one,
     dietary_restrictions: state.dietary_restrictions || null,
     dinner_plus_one: state.dinner_plus_one,
     dinner_plus_one_dietary_restrictions: state.dinner_plus_one_dietary_restrictions || null,
@@ -354,7 +355,22 @@ const SpeakerLogisticsPage: React.FC = () => {
                   onChange={(value) => handleChange('attending_speaker_hangout', value)}
                   error={errors.attending_speaker_hangout}
                   disabled={saveMutation.isPending}
-                />
+                >
+                  <div>
+                    <p className="block text-sm font-semibold text-white mb-2">
+                      Are you bringing a plus one to the hangout activities?
+                    </p>
+                    <YesNoChoice
+                      name="speaker_hangout_plus_one"
+                      legend="Are you bringing a plus one to the speaker hangout activities?"
+                      value={formState.speaker_hangout_plus_one}
+                      yesLabel="Yes, +1"
+                      noLabel="No, just me"
+                      onChange={(value) => handleChange('speaker_hangout_plus_one', value)}
+                      disabled={saveMutation.isPending}
+                    />
+                  </div>
+                </EventRsvpCard>
 
                 {/* T-shirt size */}
                 <section className="bg-black rounded-2xl p-6 md:p-8" aria-labelledby="tshirt-title">
