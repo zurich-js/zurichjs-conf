@@ -18,12 +18,12 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Welcome aboard — we're thrilled to have you speaking at ZurichJS Conf 2026! This guide collects everything you need before and during the conference. Skim the table of contents, and if anything is unclear, just ask in the speakers group chat or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. You will never be on your own: our team, volunteers, and guides will be around at every step.",
+        "Welcome — we're glad to have you speaking at ZurichJS Conf 2026. This guide covers everything you need before and during the conference. Skim the table of contents, and if anything is unclear, ask in the speakers group chat or email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. You won't be on your own at any point: our team, volunteers, and guides are around at every step.",
     },
     {
       type: "paragraph",
       content:
-        "One ask from us: <strong>we'd love for you to stick around as much as possible</strong>. Attendees are flying in from across the world — Singapore, Australia, Sweden, the UK, Germany, Austria, France — and they're coming for <em>you</em>. Having you around beyond your talk means the world to them (and to us). That said, of course we want you to enjoy Switzerland too — balance it however feels right.",
+        "One ask from us: <strong>stick around as much as you can</strong>. Attendees are flying in from Singapore, Australia, Sweden, the UK, Germany, Austria, and France — and they're coming for <em>you</em>. Having you around beyond your talk matters to them, and to us. We also want you to enjoy Switzerland, so balance it however works for you.",
     },
     {
       type: "heading",
@@ -33,7 +33,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "One-tap Google Maps routes between the places you'll actually go:",
+        "One-tap Google Maps routes between the places you'll need:",
     },
     {
       type: "quicklinks",
@@ -94,7 +94,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Your people: Faris, Bogdan, Nadja &amp; Colin. Fastest channel is the speakers group chat; otherwise <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
+        "Faris, Bogdan, Nadja &amp; Colin. Fastest channel is the speakers group chat; otherwise <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
     },
     {
       type: "paragraph",
@@ -146,7 +146,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "And here's the best part: <strong>you don't have to navigate your arrival alone</strong>. We'll assign volunteers and support to come pick you up — look for the person holding a <strong>ZurichJS sign</strong> — and they'll guide you on public transport all the way to your hotel. Your arrival details are part of the speaker information form, so make sure we have your flight times.",
+        "<strong>You don't have to navigate your arrival alone.</strong> We'll assign volunteers to pick you up — look for the <strong>ZurichJS sign</strong> — and ride with you on public transport to your hotel. Your arrival details are part of the speaker information form, so make sure we have your flight times.",
     },
     {
       type: "heading",
@@ -161,14 +161,13 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Speakers stay at the <a href='https://www.google.com/maps/search/?api=1&amp;query=Novotel+Z%C3%BCrich+City+West' target='_blank' rel='noopener noreferrer'><strong>Novotel Zürich City West</strong></a> (Schiffbaustrasse 13, 8005 Zürich) — right in Zürich-West, just a <strong>1–2 minute walk from Technopark</strong>, surrounded by restaurants and bars. We picked it for convenience: you can slip back to your room between sessions whenever you need a breather.",
+        "Speakers stay at the <a href='https://www.google.com/maps/search/?api=1&amp;query=Novotel+Z%C3%BCrich+City+West' target='_blank' rel='noopener noreferrer'><strong>Novotel Zürich City West</strong></a> (Schiffbaustrasse 13, 8005 Zürich) — right in Zürich-West, just a <strong>1–2 minute walk from Technopark</strong>, surrounded by restaurants and bars. We picked it so you can slip back to your room between sessions whenever you need a break.",
     },
     {
       type: "list",
       items: [
         "<strong>From the airport (~35–40 min):</strong> train to Zürich HB, then an S-Bahn one stop to <em>Hardbrücke</em> — the hotel is a few minutes' walk from the station. Here's the <a href='https://www.google.com/maps/dir/?api=1&amp;origin=Zurich+Airport&amp;destination=Novotel+Z%C3%BCrich+City+West&amp;travelmode=transit' target='_blank' rel='noopener noreferrer'>step-by-step route on Google Maps</a>, or plan it live on <a href='https://www.sbb.ch/en' target='_blank' rel='noopener noreferrer'>SBB</a>.",
-        "<strong>To Technopark:</strong> 1–2 minutes on foot — no transport needed on conference morning, and an easy escape hatch when you want a quiet moment.",
-        "<strong>We'll come get you:</strong> as above, a volunteer can meet you at the airport with a ZurichJS sign and ride the route with you, so you never have to puzzle out the Swiss transit system jet-lagged.",
+        "<strong>To Technopark:</strong> 1–2 minutes on foot — no transport needed on conference morning.",
       ],
     },
     {
@@ -209,7 +208,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "If you're running a workshop on September 10th, two things are handled on a fixed timeline so you're never guessing:",
+        "If you're running a workshop on September 10th, two things are settled on a fixed timeline:",
     },
     {
       type: "list",
@@ -236,12 +235,12 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Thu Sept 10th, 18:30–22:00 at Ziegelhütte — dinner and bowling with the other speakers. Guides will take you there, so don't stress the route.",
+        "Thu Sept 10th, 18:30–22:00 at Ziegelhütte — dinner and bowling with the other speakers. Guides will take you there.",
     },
     {
       type: "paragraph",
       content:
-        "On workshop day evening — <strong>Thursday, September 10th, 18:30–22:00</strong> — we're hosting a speaker dinner at <a href='https://www.google.com/maps/search/?api=1&amp;query=Restaurant+Ziegelh%C3%BCtte+Z%C3%BCrich' target='_blank' rel='noopener noreferrer'><strong>Ziegelhütte</strong></a>. Expect good food, good company, and yes — <strong>bowling</strong>. It's the perfect way to meet your fellow speakers properly before conference day.",
+        "On workshop day evening — <strong>Thursday, September 10th, 18:30–22:00</strong> — we're hosting a speaker dinner at <a href='https://www.google.com/maps/search/?api=1&amp;query=Restaurant+Ziegelh%C3%BCtte+Z%C3%BCrich' target='_blank' rel='noopener noreferrer'><strong>Ziegelhütte</strong></a>. Expect good food, good company, and <strong>bowling</strong> — a proper chance to meet your fellow speakers before conference day.",
     },
     {
       type: "paragraph",
@@ -266,7 +265,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "<strong>Plus ones are welcome!</strong> A conference is more fun with your loved ones and friends around, and we want to accommodate them. Just <strong>tell us in advance</strong> — via the form or directly — so we can plan seats, food, and capacity (Zurich is tight on space and pricey per head). Please don't bring someone unannounced on the day.",
+        "<strong>Plus ones are welcome.</strong> A conference is more fun with your loved ones and friends around, and we want to accommodate them. Just <strong>tell us in advance</strong> — via the form or directly — so we can plan seats, food, and capacity (Zurich is tight on space and pricey per head). Please don't bring someone unannounced on the day.",
     },
     {
       type: "heading",
@@ -291,28 +290,28 @@ export const speakerGuide: InfoPage = {
       type: "list",
       items: [
         "<strong>Aspect ratio:</strong> build your deck in <strong>16:9</strong>. The stage output is Full HD (1920×1080) — 16:9 decks fill the screen edge to edge, while 4:3 decks get letterboxed and shrink.",
-        "<strong>Dark mode:</strong> we recommend <strong>dark backgrounds with light, high-contrast text</strong> — dark slides read far better under stage lighting and are much easier on the audience's eyes than a glowing white wall.",
-        "<strong>Type size:</strong> keep body text at ~24pt or larger and code samples at 18pt+ with a high-contrast syntax theme. Rule of thumb: if you can read it standing three meters behind your laptop, the back row can read it too.",
+        "<strong>Dark mode:</strong> we recommend <strong>dark backgrounds with light, high-contrast text</strong> — dark slides read far better under stage lighting and are much easier on the audience's eyes than a bright white screen.",
+        "<strong>Type size:</strong> keep body text at ~24pt or larger and code samples at 18pt+ with a high-contrast syntax theme. If you can read it standing three meters behind your laptop, the back row can read it too.",
         "<strong>Videos &amp; audio:</strong> embed media in the deck rather than relying on streaming, and tell us in advance if your talk needs sound so the A/V crew can wire it up.",
       ],
     },
     {
       type: "paragraph",
-      content: "<strong>On stage</strong>, here's what's waiting for you:",
+      content: "<strong>On stage</strong>, the setup is:",
     },
     {
       type: "list",
       items: [
         "<strong>Cabling:</strong> the stage connection is <strong>HDMI</strong>. We'll have USB-C and other common adapters on hand, but if your machine needs anything unusual, please bring your own adapter — and your charger; there's power at the podium.",
         "<strong>Clicker:</strong> a presenter remote is provided, and you're welcome to bring your own if you prefer it.",
-        "<strong>Podium:</strong> the podium sits to the side of the stage with the main screen beside you, so you never block the audience's view of your slides. You're not chained to it — you'll be miked up, so feel free to use the whole stage.",
-        "<strong>Backup:</strong> because you sent your slides in advance (see above), a backup machine is standing by if your laptop refuses to cooperate on the day.",
+        "<strong>Podium:</strong> the podium sits to the side of the stage with the main screen beside you, so you never block the audience's view of your slides. You'll be miked up, so you're free to move around the whole stage.",
+        "<strong>Backup:</strong> because you sent your slides in advance (see above), a backup machine is standing by if your laptop fails on the day.",
       ],
     },
     {
       type: "paragraph",
       content:
-        "And every speaker gets a <strong>tech check</strong> before going on stage — you will not be plugging in cold in front of the audience:",
+        "Every speaker gets a <strong>tech check</strong> before going on stage — nobody plugs in cold in front of the audience:",
     },
     {
       type: "list",
@@ -335,7 +334,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue right on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11th. Drinks and apéro are included, the September sunset over the Alps is free, and you'll be able to swim in the lake — so <strong>pack a bathing suit</strong> (entirely optional, but you'll be glad you did). There'll also be a <strong>photobooth</strong> — come grab a memento with your fellow speakers. Speakers have full access, of course.",
+        "After the conference we've booked <strong>Seebad Enge</strong> — a private lakeside venue on Lake Zürich — from <strong>19:00 to 23:00</strong> on September 11th. Drinks and apéro are included, and you can swim in the lake, so <strong>pack a bathing suit</strong> if you fancy it (optional). There'll also be a <strong>photobooth</strong> for photos with your fellow speakers.",
     },
     {
       type: "paragraph",
@@ -367,7 +366,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Things happen — if you fall ill or can't make your slot, <strong>tell us as early as you can</strong> via the speakers group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> so we can adjust the schedule. No guilt, no drama; your health comes first. And <strong>feel free to message any of us privately</strong> — we've all dealt with health stuff, we're here to support you, and we can guide you to pharmacies (\"Apotheke\" — plentiful, and staff speak English) or whatever else you need. For medical emergencies in Switzerland dial <strong>144</strong> (ambulance) or <strong>112</strong> (general emergency).",
+        "If you fall ill or can't make your slot, <strong>tell us as early as you can</strong> via the speakers group chat or <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> so we can adjust the schedule. No guilt — your health comes first. <strong>Feel free to message any of us privately</strong>: we've all dealt with health stuff, we're here to support you, and we can point you to pharmacies (\"Apotheke\" — plentiful, and staff speak English). For medical emergencies in Switzerland dial <strong>144</strong> (ambulance) or <strong>112</strong> (general emergency).",
     },
     {
       type: "heading",
@@ -377,7 +376,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "Promote your talk! Grab logos &amp; blurbs from the <a href='/partners/assets'>assets page</a> and tag <strong>@zurichjs</strong>.",
+        "Promote your talk — logos &amp; blurbs are on the <a href='/partners/assets'>assets page</a>; tag <strong>@zurichjs</strong> so we can amplify you.",
     },
     {
       type: "paragraph",
@@ -392,7 +391,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "tldr",
       content:
-        "English works everywhere. Pay by card in CHF, drink the tap water, and note things close early (shops shut Sundays) — plan dinner ahead. Zurich is pricey, but we've got you covered most of the time; ask us for budget-friendly tips.",
+        "English works everywhere. Pay by card in CHF, drink the tap water, and note things close early (shops shut Sundays) — plan dinner ahead. Zurich is pricey, but we cover most things; ask us for budget-friendly tips.",
     },
     {
       type: "paragraph",
@@ -401,7 +400,7 @@ export const speakerGuide: InfoPage = {
     },
     {
       type: "paragraph",
-      content: "A few phrases that earn instant goodwill:",
+      content: "A few phrases locals appreciate:",
     },
     {
       type: "list",
@@ -421,14 +420,14 @@ export const speakerGuide: InfoPage = {
         "Currency is the <strong>Swiss franc (CHF)</strong> — cards and Apple/Google Pay are accepted almost everywhere.",
         "Tap water is excellent — refill your bottle at any of the 1,200+ public fountains.",
         "Tipping is not expected; rounding up for good service is a kind gesture.",
-        "Most shops are <strong>closed on Sundays</strong> — the shops at the main station and airport are the exception. In general, things also <strong>close early</strong> here (many shops by 19:00–20:00, plenty of kitchens by 21:30–22:00), so it's good to plan in advance where you're heading for dinner or a late-night drink rather than wandering and hoping.",
+        "Most shops are <strong>closed on Sundays</strong> — the shops at the main station and airport are the exception. In general, things also <strong>close early</strong> here (many shops by 19:00–20:00, plenty of kitchens by 21:30–22:00), so plan ahead for dinner or a late-night drink.",
         "Zurich is very safe, including at night and on public transport.",
       ],
     },
     {
       type: "paragraph",
       content:
-        "<strong>A word on prices:</strong> Zurich can be super pricey at times. Don't stress — <strong>we'll be sorting you out most of the time</strong> (meals, the after party, and so on), so this only matters for your own extra plans. If you want budget-friendly recommendations for anything, just ask us — we know the good cheap spots. For orientation, typical prices look like this:",
+        "<strong>A word on prices:</strong> Zurich can be pricey. <strong>We cover most things</strong> — meals, the speaker dinner, the after party — so this mainly matters for your own extra plans. Ask us for budget-friendly recommendations any time; we know the good spots. For orientation:",
     },
     {
       type: "list",
@@ -492,7 +491,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "That's it — see you in September! And remember: group chat first, <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> second, and there's always someone from the team nearby during the conference days.",
+        "That's it — see you in September. Group chat first, <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a> second, and there's always someone from the team nearby during the conference days.",
     },
   ],
 };
