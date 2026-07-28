@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import MiniSearch from "minisearch";
 import { Bot, ChevronRight, RotateCcw, Send } from "lucide-react";
+import { analytics } from "@/lib/analytics/client";
 import { slugify } from "@/components/RichTextRenderer";
 import type { ContentSection } from "@/data/info-pages";
 
@@ -94,6 +96,11 @@ const STOPWORDS = new Set([
   "out", "down", "off", "if", "that", "this", "was",
 ]);
 
+const processTerm = (term: string): string | null => {
+  const lower = term.toLowerCase();
+  return lower.length > 1 && !STOPWORDS.has(lower) ? lower : null;
+};
+
 const tokenize = (text: string): string[] =>
   text
     .toLowerCase()
@@ -101,23 +108,15 @@ const tokenize = (text: string): string[] =>
     .filter((token) => token.length > 1 && !STOPWORDS.has(token));
 
 /** Whole-word match with light prefix stemming: "pick" matches "picks" and
- * "get" matches "getting", but "up" can never match inside "backup" or
- * "group", and short tokens can't reach into much longer words. */
+ * "get" matches "getting", but short tokens can't reach into much longer
+ * or unrelated words. */
 const matchesToken = (word: string, token: string): boolean =>
   word === token ||
   (token.length >= 3 &&
     word.startsWith(token) &&
     word.length - token.length <= 4);
 
-const countTokenMatches = (words: string[], token: string): number => {
-  let count = 0;
-  words.forEach((word) => {
-    if (matchesToken(word, token)) count += 1;
-  });
-  return count;
-};
-
-/** Inverse document frequency per query token, computed over all sections:
+/** Inverse document frequency per matched term, computed over all sections:
  * rare terms ("pick", "getting") weigh more than ubiquitous ones ("speaker"). */
 const computeIdf = (
   tokens: string[],
@@ -134,37 +133,6 @@ const computeIdf = (
     if (df > 0) idf.set(token, Math.log(1 + chunks.length / df));
   });
   return idf;
-};
-
-/**
- * Rank chunks tf-idf style: whole-word term frequency weighted by how rare
- * the term is across the guide, with an extra boost for section-title hits.
- * Substring scoring is deliberately avoided; it let short tokens like "up"
- * match inside unrelated words and surface the wrong sections.
- */
-const retrieve = (question: string, chunks: GuideChunk[]): GuideChunk[] => {
-  const tokens = tokenize(question);
-  if (tokens.length === 0) return [];
-
-  const idf = computeIdf(tokens, chunks);
-
-  return chunks
-    .map((chunk) => {
-      const words = tokenize(chunk.text);
-      const titleWords = tokenize(chunk.title);
-      let score = 0;
-      idf.forEach((weight, token) => {
-        score += countTokenMatches(words, token) * weight;
-        if (titleWords.some((word) => matchesToken(word, token))) {
-          score += 3 * weight;
-        }
-      });
-      return { chunk, score };
-    })
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map((entry) => entry.chunk);
 };
 
 /** Split chunk text into quotable fragments — sentences AND the "·"-separated
@@ -196,19 +164,19 @@ interface ExtractedAnswer {
 
 /**
  * Pull the best-matching fragments out of the retrieved sections so Faru can
- * quote an actual answer. Fragments from higher-ranked sections get a boost,
- * near-duplicates are dropped (keeping the more informative one), and only
- * the sections that contributed to the answer are returned as sources.
+ * quote an actual answer. Matched terms come from MiniSearch (so typo-fixed
+ * document terms work too), weighted by idf; fragments from higher-ranked
+ * sections get a boost; near-duplicates are dropped, keeping the more
+ * informative one. Only the sections that contributed are returned.
  */
 const extractAnswer = (
-  question: string,
+  matchedTerms: string[],
   rankedChunks: GuideChunk[],
   allChunks: GuideChunk[]
 ): ExtractedAnswer | null => {
-  const tokens = tokenize(question);
-  if (tokens.length === 0 || rankedChunks.length === 0) return null;
+  if (matchedTerms.length === 0 || rankedChunks.length === 0) return null;
 
-  const idf = computeIdf(tokens, allChunks);
+  const idf = computeIdf(matchedTerms, allChunks);
 
   const candidates: Array<{ chunk: GuideChunk; text: string; score: number }> =
     [];
@@ -234,9 +202,7 @@ const extractAnswer = (
 
   if (candidates.length === 0) {
     const lead = splitSentences(rankedChunks[0].text)[0];
-    return lead
-      ? { text: `“${lead}”`, chunks: [rankedChunks[0]] }
-      : null;
+    return lead ? { text: `“${lead}”`, chunks: [rankedChunks[0]] } : null;
   }
 
   candidates.sort((a, b) => b.score - a.score || b.text.length - a.text.length);
@@ -285,9 +251,10 @@ const FaruAvatar: React.FC = () => (
 );
 
 /**
- * Full-page chat over the speaker guide. Pure in-browser retrieval — no AI
- * model, no server calls: sections are scored by keyword overlap and the
- * best-matching sentences are quoted back with links to their sections.
+ * Full-page chat over the speaker guide. Retrieval is a MiniSearch index
+ * (BM25-style scoring, prefix + fuzzy matching for typos) built in the
+ * browser; the best-matching sentences from the top sections are quoted
+ * back. No AI model, no server calls.
  */
 export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
   const [mounted, setMounted] = useState(false);
@@ -301,6 +268,26 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
   const aliveRef = useRef(true);
 
   const chunks = useMemo(() => buildChunks(sections), [sections]);
+
+  const chunkById = useMemo(
+    () => new Map(chunks.map((chunk) => [chunk.id, chunk])),
+    [chunks]
+  );
+
+  const miniSearch = useMemo(() => {
+    const index = new MiniSearch<GuideChunk>({
+      fields: ["title", "text"],
+      processTerm,
+      searchOptions: {
+        boost: { title: 3 },
+        prefix: true,
+        fuzzy: 0.2,
+        processTerm,
+      },
+    });
+    index.addAll(chunks);
+    return index;
+  }, [chunks]);
 
   useEffect(() => {
     setMounted(true);
@@ -350,7 +337,10 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
     });
   };
 
-  const ask = async (rawQuestion: string): Promise<void> => {
+  const ask = async (
+    rawQuestion: string,
+    questionSource: "typed" | "suggestion"
+  ): Promise<void> => {
     const question = rawQuestion.trim();
     if (!question || busy) return;
 
@@ -358,7 +348,26 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
     setMessages((prev) => [...prev, { role: "user", text: question }]);
     setBusy(true);
 
-    const sources = retrieve(question, chunks);
+    const results = miniSearch.search(question).slice(0, 3);
+    const sources = results
+      .map((result) => chunkById.get(String(result.id)))
+      .filter((chunk): chunk is GuideChunk => Boolean(chunk));
+    // Document-side matched terms, so fuzzy/prefix hits carry through to
+    // sentence selection (a typo'd query still highlights real words).
+    const matchedTerms = Array.from(
+      new Set(results.flatMap((result) => Object.keys(result.match)))
+    );
+    const answer = extractAnswer(matchedTerms, sources, chunks);
+
+    analytics.track("speaker_guide_question_asked", {
+      question,
+      question_source: questionSource,
+      results_count: sources.length,
+      answered: Boolean(answer),
+      matched_sections: (answer ? answer.chunks : sources).map(
+        (chunk) => chunk.title
+      ),
+    });
 
     if (sources.length === 0) {
       await sleep(600);
@@ -367,7 +376,6 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
       );
     } else {
       await sleep(600);
-      const answer = extractAnswer(question, sources, chunks);
       await streamReply(
         answer
           ? `Here's what the guide says:\n\n${answer.text}`
@@ -383,6 +391,9 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
 
   const reset = (): void => {
     if (busy) return;
+    analytics.track("speaker_guide_chat_reset", {
+      messages_count: messages.length,
+    });
     setMessages([{ role: "assistant", text: GREETING }]);
     inputRef.current?.focus();
   };
@@ -454,6 +465,12 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
                       >
                         <a
                           href={`/speaker-guide#${source.id}`}
+                          onClick={() =>
+                            analytics.track("speaker_guide_answer_source_clicked", {
+                              section_id: source.id,
+                              section_title: source.title,
+                            })
+                          }
                           className="text-sm font-semibold text-blue-primary underline"
                         >
                           {source.title}
@@ -486,7 +503,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
             <button
               key={suggestion}
               type="button"
-              onClick={() => void ask(suggestion)}
+              onClick={() => void ask(suggestion, "suggestion")}
               className="text-xs rounded-full border border-gray-300 bg-white px-3 py-1.5 text-gray-700 cursor-pointer transition-colors hover:border-gray-500 hover:bg-gray-50"
             >
               {suggestion}
@@ -498,7 +515,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          void ask(input);
+          void ask(input, "typed");
         }}
         className="flex gap-2"
       >
@@ -524,7 +541,14 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
         </button>
       </form>
 
-      <details className="group mt-3">
+      <details
+        className="group mt-3"
+        onToggle={(event) => {
+          if ((event.target as HTMLDetailsElement).open) {
+            analytics.track("speaker_guide_how_it_works_opened", {});
+          }
+        }}
+      >
         <summary className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer list-none hover:text-gray-800 w-fit">
           <ChevronRight
             className="w-3.5 h-3.5 transition-transform group-open:rotate-90"
@@ -534,22 +558,31 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
         </summary>
         <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2 pl-4.5">
           <p>
-            Faru doesn&apos;t use an AI model and never talks to a server.
-            It&apos;s a small piece of plain JavaScript that runs in your
-            browser:
+            Faru doesn&apos;t use an AI model and never talks to a server. It
+            runs a small search engine in your browser:
           </p>
           <ol className="list-decimal list-inside space-y-1">
             <li>
               When the page loads, the guide is split into one text chunk per
-              section.
+              section and indexed with{" "}
+              <a
+                href="https://github.com/lucaong/minisearch"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-primary underline"
+              >
+                MiniSearch
+              </a>
+              , a tiny open-source full-text search library.
             </li>
             <li>
-              Your question is broken into keywords, and filler words like
-              &quot;the&quot; and &quot;when&quot; are dropped.
+              Your question is broken into keywords; filler words like
+              &quot;the&quot; and &quot;when&quot; are dropped, and small typos
+              are tolerated.
             </li>
             <li>
-              Each section gets a score based on how many of your keywords it
-              contains. Matches in section titles count triple.
+              Sections are ranked by relevance. Rare words count more than
+              common ones, and matches in section titles count triple.
             </li>
             <li>
               The best-matching sentences from the top sections are quoted
@@ -557,8 +590,8 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
             </li>
           </ol>
           <p>
-            This is a simplified version of the term-frequency scoring that
-            classic search engines use. If you want to go deeper, read up on{" "}
+            The ranking approach is the same idea behind classic search
+            engines; read up on{" "}
             <a
               href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf"
               target="_blank"
@@ -566,9 +599,10 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
               className="text-blue-primary underline"
             >
               tf&ndash;idf
-            </a>
-            . The typing effect is just pacing for readability; the actual
-            lookup takes about a millisecond. Nothing you type leaves the page.
+            </a>{" "}
+            if you want to go deeper. The typing effect is just pacing for
+            readability; the actual lookup takes about a millisecond. Nothing
+            you type leaves the page.
           </p>
         </div>
       </details>

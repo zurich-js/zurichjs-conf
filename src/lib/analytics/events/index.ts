@@ -149,6 +149,17 @@ export type { TechStackDetectedEvent } from './tech-stack-events';
 // Sponsorship events
 export type { SponsorClickedEvent, CommunityPartnerClickedEvent } from './sponsorship-events';
 
+// Speaker guide events
+export type {
+  SpeakerGuideChatBannerClickedEvent,
+  SpeakerGuideQuicklinkClickedEvent,
+  SpeakerGuideTocClickedEvent,
+  SpeakerGuideQuestionAskedEvent,
+  SpeakerGuideAnswerSourceClickedEvent,
+  SpeakerGuideChatResetEvent,
+  SpeakerGuideHowItWorksOpenedEvent,
+} from './speaker-guide-events';
+
 // Import all event types for the union
 import type { PageViewedEvent, UserIdentifiedEvent } from './base';
 import type {
@@ -247,6 +258,15 @@ import type {
 } from './easter-egg-events';
 import type { TechStackDetectedEvent } from './tech-stack-events';
 import type { SponsorClickedEvent, CommunityPartnerClickedEvent, SponsorQuoteViewedEvent } from './sponsorship-events';
+import type {
+  SpeakerGuideChatBannerClickedEvent,
+  SpeakerGuideQuicklinkClickedEvent,
+  SpeakerGuideTocClickedEvent,
+  SpeakerGuideQuestionAskedEvent,
+  SpeakerGuideAnswerSourceClickedEvent,
+  SpeakerGuideChatResetEvent,
+  SpeakerGuideHowItWorksOpenedEvent,
+} from './speaker-guide-events';
 
 /**
  * Union of all possible analytics events.
@@ -334,7 +354,14 @@ export type AnalyticsEvent =
   | TechStackDetectedEvent
   | SponsorClickedEvent
   | CommunityPartnerClickedEvent
-  | SponsorQuoteViewedEvent;
+  | SponsorQuoteViewedEvent
+  | SpeakerGuideChatBannerClickedEvent
+  | SpeakerGuideQuicklinkClickedEvent
+  | SpeakerGuideTocClickedEvent
+  | SpeakerGuideQuestionAskedEvent
+  | SpeakerGuideAnswerSourceClickedEvent
+  | SpeakerGuideChatResetEvent
+  | SpeakerGuideHowItWorksOpenedEvent;
 
 /**
  * Extract event name from AnalyticsEvent

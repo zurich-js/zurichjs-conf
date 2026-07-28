@@ -1,10 +1,12 @@
 import React from "react";
 import { ArrowUpRight, MapPin } from "lucide-react";
 import { Heading } from "@/components/atoms";
-import type { ContentSection } from "@/data/info-pages";
+import type { ContentSection, QuickLink } from "@/data/info-pages";
 
 export interface RichTextRendererProps {
   sections: ContentSection[];
+  /** Called when a quicklink card is clicked (e.g. for analytics). */
+  onQuickLinkClick?: (link: QuickLink) => void;
 }
 
 export interface NavigationItem {
@@ -72,6 +74,7 @@ export const extractNavigationItems = (
  */
 export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   sections,
+  onQuickLinkClick,
 }) => {
   const renderSection = (
     section: ContentSection,
@@ -158,6 +161,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => onQuickLinkClick?.(link)}
                 className="group flex items-start gap-3 rounded-xl border border-gray-200 p-4 transition-colors hover:border-gray-400 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow-main"
               >
                 <MapPin
