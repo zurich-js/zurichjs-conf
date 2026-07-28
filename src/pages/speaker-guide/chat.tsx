@@ -27,9 +27,6 @@ const SpeakerGuideChatPage: React.FC = () => {
               <Heading level="h1" variant="light" className="text-xl font-bold">
                 Faru
               </Heading>
-              <span className="text-sm text-gray-500 hidden sm:inline">
-                · your speaker guide chat (named after tiny Faris, true story)
-              </span>
             </div>
             <Link
               href="/speaker-guide"
