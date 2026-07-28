@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
 import { formatTimeRange } from './utils';
@@ -9,21 +10,30 @@ export interface EventCardProps {
   startTime: string;
   durationMinutes: number;
   className?: string;
+  /** Extra content (links, RSVP buttons) rendered inside the expandable panel below the description. */
+  actions?: ReactNode;
 }
 
-export function EventCard({ id, title, description, startTime, durationMinutes, className }: EventCardProps) {
+export function EventCard({ id, title, description, startTime, durationMinutes, className, actions }: EventCardProps) {
+  const hasPanel = Boolean(description) || Boolean(actions);
+
   return (
     <ScheduleCard
       id={id}
       className={cn('rounded-2xl px-3 py-2', className)}
-      expandable={Boolean(description)}
+      expandable={hasPanel}
       header={(
         <>
           <p className="text-sm text-brand-gray-medium">{formatTimeRange(startTime, durationMinutes)}</p>
           <h3 className="mt-1 text-lg font-bold leading-tight text-brand-black">{title}</h3>
         </>
       )}
-      panel={description ? <p className="text-sm leading-7 text-brand-gray-darkest">{description}</p> : undefined}
+      panel={hasPanel ? (
+        <>
+          {description ? <p className="text-sm leading-7 text-brand-gray-darkest">{description}</p> : null}
+          {actions ? <div className={cn(description && 'mt-4')}>{actions}</div> : null}
+        </>
+      ) : undefined}
     />
   );
 }
