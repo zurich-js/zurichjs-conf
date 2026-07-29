@@ -3,8 +3,17 @@
  * the admin reconciliation tab.
  */
 
+export const SPEAKER_LOGISTICS_EVENT_KEYS = [
+  'warmup',
+  'speakers_dinner',
+  'after_party',
+  'speaker_hangout',
+] as const;
+
+export type SpeakerLogisticsEventKey = (typeof SPEAKER_LOGISTICS_EVENT_KEYS)[number];
+
 export interface SpeakerLogisticsEvent {
-  key: 'warmup' | 'speakers_dinner' | 'after_party' | 'speaker_hangout';
+  key: SpeakerLogisticsEventKey;
   /** Column on cfp_speaker_logistics holding the RSVP */
   field:
     | 'attending_warmup'

@@ -10,6 +10,21 @@ export type SpeakerLogisticsRow = Database['public']['Tables']['cfp_speaker_logi
 export type SpeakerLogisticsInsert = Database['public']['Tables']['cfp_speaker_logistics']['Insert'];
 export type SpeakerLogisticsUpdate = Database['public']['Tables']['cfp_speaker_logistics']['Update'];
 
+export type ActivityGuestRow = Database['public']['Tables']['speaker_activity_guests']['Row'];
+export type ActivityGuestInsert = Database['public']['Tables']['speaker_activity_guests']['Insert'];
+export type ActivityGuestUpdate = Database['public']['Tables']['speaker_activity_guests']['Update'];
+
+/** How an additional activity guest got their seat */
+export const ACTIVITY_GUEST_TYPES = ['speaker_plus_one', 'volunteer', 'complimentary', 'paid'] as const;
+export type ActivityGuestType = (typeof ACTIVITY_GUEST_TYPES)[number];
+
+export const ACTIVITY_GUEST_TYPE_LABELS: Record<ActivityGuestType, string> = {
+  speaker_plus_one: 'Speaker plus one',
+  volunteer: 'Volunteer',
+  complimentary: 'Complimentary',
+  paid: 'Paid',
+};
+
 /** The answers a speaker submits through the logistics form */
 export interface SpeakerLogisticsAnswers {
   attending_warmup: boolean | null;

@@ -11,7 +11,9 @@ import { useToast } from '@/contexts/ToastContext';
 import { SpeakerLogisticsStatsCards } from './SpeakerLogisticsStatsCards';
 import { SpeakerLogisticsTable } from './SpeakerLogisticsTable';
 import { SpeakerLogisticsCardList } from './SpeakerLogisticsCardList';
-import { useSpeakerLogisticsOverview } from './hooks';
+import { ActivityGuestsSection } from './ActivityGuestsSection';
+import { useActivityGuests, useSpeakerLogisticsOverview } from './hooks';
+import type { SpeakerLogisticsEventKey } from '@/data/speaker-logistics-events';
 import type { SpeakerLogisticsAdminRow, SpeakerLogisticsFilter } from './types';
 
 const FILTERS: Array<{ id: SpeakerLogisticsFilter; label: string }> = [
@@ -44,9 +46,19 @@ function matchesFilter(row: SpeakerLogisticsAdminRow, filter: SpeakerLogisticsFi
 export function SpeakerLogisticsTab() {
   const toast = useToast();
   const { data, isLoading, error } = useSpeakerLogisticsOverview();
+  const guestsQuery = useActivityGuests();
 
   const [filter, setFilter] = useState<SpeakerLogisticsFilter>('all');
   const [search, setSearch] = useState('');
+
+  const guestCounts = useMemo(() => {
+    const counts: Partial<Record<SpeakerLogisticsEventKey, number>> = {};
+    for (const guest of guestsQuery.data?.guests ?? []) {
+      const key = guest.activity as SpeakerLogisticsEventKey;
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  }, [guestsQuery.data?.guests]);
 
   const filteredSpeakers = useMemo(() => {
     const speakers = data?.speakers ?? [];
@@ -90,7 +102,7 @@ export function SpeakerLogisticsTab() {
 
   return (
     <div className="space-y-6">
-      <SpeakerLogisticsStatsCards stats={data.stats} />
+      <SpeakerLogisticsStatsCards stats={data.stats} guestCounts={guestCounts} />
 
       {/* Filters + search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -128,6 +140,8 @@ export function SpeakerLogisticsTab() {
       <div className="lg:hidden">
         <SpeakerLogisticsCardList speakers={filteredSpeakers} onCopyLink={handleCopyLink} />
       </div>
+
+      <ActivityGuestsSection speakers={data.speakers} />
 
       <p className="text-xs text-gray-500">
         Each speaker gets a unique link — copy it here and send it to them yourself (no login needed on their

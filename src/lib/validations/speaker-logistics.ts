@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { TSHIRT_SIZES } from './cfp';
+import { SPEAKER_LOGISTICS_EVENT_KEYS } from '@/data/speaker-logistics-events';
+import { ACTIVITY_GUEST_TYPES } from '@/lib/types/speaker-logistics';
 
 /**
  * Speaker Logistics Validation Schemas
@@ -91,3 +93,56 @@ export const speakerLogisticsSchema = z
   });
 
 export type SpeakerLogisticsFormData = z.infer<typeof speakerLogisticsSchema>;
+
+/**
+ * Additional guests admins add to a speaker-week activity (plus ones,
+ * volunteers, complimentary invites, or externals who paid for their seat)
+ */
+export const activityGuestSchema = z
+  .object({
+    activity: z.enum(SPEAKER_LOGISTICS_EVENT_KEYS),
+    guest_type: z.enum(ACTIVITY_GUEST_TYPES),
+    first_name: z.string().min(1, 'First name is required').max(100, 'First name is too long'),
+    last_name: z.string().min(1, 'Last name is required').max(100, 'Last name is too long'),
+    email: z
+      .string()
+      .email('Invalid email address')
+      .max(255, 'Email is too long')
+      .nullable()
+      .optional()
+      .or(z.literal('')),
+    related_speaker_id: z.string().uuid().nullable().optional(),
+    /** Amount the guest paid, in cents/rappen */
+    amount_paid: z.number().int().min(0, 'Amount cannot be negative').nullable().optional(),
+    stripe_payment_link: z
+      .string()
+      .url('Invalid URL')
+      .max(500, 'Link is too long')
+      .nullable()
+      .optional()
+      .or(z.literal('')),
+    dietary_restrictions: z
+      .string()
+      .max(1000, 'Dietary restrictions is too long')
+      .optional()
+      .nullable(),
+    admin_notes: z.string().max(2000, 'Notes are too long').optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.guest_type === 'speaker_plus_one' && !data.related_speaker_id) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['related_speaker_id'],
+        message: 'Select which speaker they are the plus one of',
+      });
+    }
+    if (data.guest_type === 'paid' && data.amount_paid == null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['amount_paid'],
+        message: 'Amount paid is required for paid guests',
+      });
+    }
+  });
+
+export type ActivityGuestFormData = z.infer<typeof activityGuestSchema>;
