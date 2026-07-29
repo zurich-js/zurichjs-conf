@@ -15,6 +15,7 @@ export function CheckoutStep({
   orderSummary,
   attendees,
   isPartialDiscount,
+  needsAttendeeInfo,
   isSubmitting,
   error,
   onBack,
@@ -25,6 +26,13 @@ export function CheckoutStep({
   onFieldCaptured,
   savedBillingData,
 }: CheckoutStepProps) {
+  // When the attendee step is skipped, the billing contact is the sole ticket
+  // holder — collect their apparel sizes here instead.
+  const ticketItems = cart.items.filter((item) => item.kind !== 'workshop');
+  const apparel = !needsAttendeeInfo && ticketItems.length > 0
+    ? { hoodie: ticketItems.some((item) => item.variant === 'vip') }
+    : undefined;
+
   return (
     <motion.div
       key="checkout"
@@ -45,6 +53,7 @@ export function CheckoutStep({
             )}
             <CheckoutForm
               onSubmit={onSubmit}
+              apparel={apparel}
               isSubmitting={isSubmitting}
               totalAmount={orderSummary.total.toFixed(2)}
               currency={orderSummary.currency}
