@@ -10,6 +10,7 @@
  * Renders nothing until pricing has resolved.
  */
 
+import { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { getStageConfig, type PriceStage } from '@/config/pricing-stages';
@@ -33,10 +34,22 @@ function formatStageCountdown(days: number, hours: number, minutes: number, seco
   return `${hours}:${padZero(minutes)}:${padZero(seconds)}`;
 }
 
+/** Reveal only after the hero (with its own CTA) has scrolled away, so the
+ *  first viewport never shows two ticket CTAs at once. */
+const SCROLL_REVEAL_PX = 400;
+
 export function StickyTicketCta({ plans, currentStage, location, className = '' }: StickyTicketCtaProps) {
   const { cart } = useCart();
   const stageConfig = currentStage ? getStageConfig(currentStage) : undefined;
   const countdown = useCountdown(stageConfig?.endDate ?? '2099-01-01T00:00:00.000Z');
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setRevealed(window.scrollY > SCROLL_REVEAL_PX);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const standardPlan = plans.find((plan) => plan.id === 'standard') ?? plans[0];
   if (!standardPlan || !currentStage || !stageConfig) return null;
@@ -50,7 +63,7 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
 
   return (
     <div
-      className={`fixed bottom-0 inset-x-0 z-40 lg:hidden bg-black border-t border-brand-gray-dark px-4 py-3 ${className}`}
+      className={`fixed bottom-0 inset-x-0 z-40 lg:hidden bg-black border-t border-brand-gray-dark px-4 py-3 transition-transform duration-300 ${revealed ? 'translate-y-0' : 'translate-y-full'} ${className}`}
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       <div className="flex items-center justify-between gap-3">

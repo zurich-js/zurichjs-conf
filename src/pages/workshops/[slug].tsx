@@ -84,6 +84,7 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
                 </>
               }
               action={{ type: 'link', label: 'See conference tickets', href: '/#tickets' }}
+              actionVariant="black"
             />
           </div>
         </ShapedSection>

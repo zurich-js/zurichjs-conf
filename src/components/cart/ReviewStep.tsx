@@ -28,6 +28,7 @@ export function ReviewStep({
   onEmailCaptured,
 }: ReviewStepProps) {
   const [isSeebadEngeOpen, setIsSeebadEngeOpen] = useState(false);
+  const [saveCartOpen, setSaveCartOpen] = useState(false);
   const [saveCartEmail, setSaveCartEmail] = useState('');
   const [cartSaved, setCartSaved] = useState(false);
 
@@ -218,16 +219,28 @@ export function ReviewStep({
         </Link>
 
         {/* Save-cart email capture: most cart exits happen on this step,
-            before checkout ever sees an email — this keeps them reachable. */}
+            before checkout ever sees an email — this keeps them reachable.
+            Collapsed to a quiet text link so it never competes with Continue. */}
         {onEmailCaptured && (
           cartSaved ? (
             <p role="status" className="text-center text-sm text-brand-gray-light">
               Cart saved — we&apos;ll email you a link to pick up where you left off.
             </p>
+          ) : !saveCartOpen ? (
+            <p className="text-center text-sm text-brand-gray-light">
+              Not ready to decide?{' '}
+              <button
+                type="button"
+                onClick={() => setSaveCartOpen(true)}
+                className="font-medium text-brand-yellow-main hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 rounded"
+              >
+                Save your cart for later
+              </button>
+            </p>
           ) : (
             <form onSubmit={handleSaveCart}>
               <label htmlFor="save-cart-email" className="block text-sm text-brand-gray-light">
-                Not ready to decide? We&apos;ll save your cart and email you a link.
+                We&apos;ll email you a link to pick up where you left off.
               </label>
               <div className="mt-2 flex gap-2">
                 <input
@@ -236,6 +249,8 @@ export function ReviewStep({
                   required
                   autoComplete="email"
                   placeholder="you@company.com"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus
                   value={saveCartEmail}
                   onChange={(event) => setSaveCartEmail(event.target.value)}
                   className="min-w-0 flex-1 rounded-lg bg-brand-gray-darkest px-3 py-2 text-sm text-brand-white placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-blue"

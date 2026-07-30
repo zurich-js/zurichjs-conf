@@ -6,8 +6,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { Button } from '@/components/atoms';
+import { Button, type ButtonVariant } from '@/components/atoms';
 
 export interface UpsellBannerProps {
   /** Banner headline */
@@ -26,6 +25,8 @@ export interface UpsellBannerProps {
         label: string;
         href: string;
       };
+  /** Button variant — use a quiet variant when the banner is secondary to the page's main CTA */
+  actionVariant?: ButtonVariant;
   /** Optional className for custom styling */
   className?: string;
 }
@@ -38,6 +39,7 @@ export const UpsellBanner: React.FC<UpsellBannerProps> = ({
   title,
   description,
   action,
+  actionVariant = 'primary',
   className = '',
 }) => {
   return (
@@ -52,13 +54,11 @@ export const UpsellBanner: React.FC<UpsellBannerProps> = ({
           <p className="text-sm text-brand-gray-light mb-4">{description}</p>
 
           {action.type === 'link' ? (
-            <Link href={action.href}>
-              <Button variant="primary" size="sm" asChild>
-                {action.label}
-              </Button>
-            </Link>
+            <Button variant={actionVariant} size="sm" asChild href={action.href}>
+              {action.label}
+            </Button>
           ) : (
-            <Button variant="primary" size="sm" onClick={action.onClick}>
+            <Button variant={actionVariant} size="sm" onClick={action.onClick}>
               {action.label}
             </Button>
           )}
