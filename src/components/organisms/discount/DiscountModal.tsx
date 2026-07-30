@@ -135,7 +135,7 @@ export function DiscountModal({
                 {/* Code row */}
                 <div className="flex items-center justify-center gap-2">
                   {/* Code pill */}
-                  <div className="rounded-lg bg-[#252525] px-4 py-2">
+                  <div className="rounded-lg bg-brand-gray-dark px-4 py-2">
                     <code className="font-mono text-base font-semibold tracking-widest text-white sm:text-lg">
                       {data.code.split('').map((char, index) => (
                         <motion.span
@@ -203,7 +203,7 @@ export function DiscountModal({
                     placeholder="you@company.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="w-52 rounded-lg bg-[#252525] px-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/60 sm:w-60 sm:text-base"
+                    className="w-52 rounded-lg bg-brand-gray-dark px-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/60 sm:w-60 sm:text-base"
                   />
                   <button
                     type="submit"

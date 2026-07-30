@@ -30,14 +30,21 @@ export function ReviewStep({
   const [isSeebadEngeOpen, setIsSeebadEngeOpen] = useState(false);
   const [saveCartOpen, setSaveCartOpen] = useState(false);
   const [saveCartEmail, setSaveCartEmail] = useState('');
+  const [savingCart, setSavingCart] = useState(false);
+  const [saveCartFailed, setSaveCartFailed] = useState(false);
   const [cartSaved, setCartSaved] = useState(false);
 
-  const handleSaveCart = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveCart = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const email = saveCartEmail.trim();
-    if (!email || !onEmailCaptured) return;
-    onEmailCaptured(email);
-    setCartSaved(true);
+    if (!email || !onEmailCaptured || savingCart) return;
+    setSavingCart(true);
+    setSaveCartFailed(false);
+    const scheduled = await onEmailCaptured(email);
+    setSavingCart(false);
+    // Only claim "check your inbox" when the email was actually scheduled
+    if (scheduled) setCartSaved(true);
+    else setSaveCartFailed(true);
   };
 
   const hasTicket = cart.items.some((item) => item.kind !== 'workshop');
@@ -255,10 +262,15 @@ export function ReviewStep({
                   onChange={(event) => setSaveCartEmail(event.target.value)}
                   className="min-w-0 flex-1 rounded-lg bg-brand-gray-darkest px-3 py-2 text-sm text-brand-white placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 />
-                <Button type="submit" variant="ghost" size="sm" className="shrink-0">
+                <Button type="submit" variant="ghost" size="sm" className="shrink-0" loading={savingCart} disabled={savingCart}>
                   Save cart
                 </Button>
               </div>
+              {saveCartFailed && (
+                <p role="alert" className="mt-2 text-sm text-brand-orange">
+                  Couldn&apos;t save your cart right now — please try again.
+                </p>
+              )}
             </form>
           )
         )}

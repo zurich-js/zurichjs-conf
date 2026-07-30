@@ -23,8 +23,6 @@ const updateConfigSchema = z.object({
   force_show: z.boolean().optional(),
   ab_percent_off: z.number().int().min(1).max(100).optional(),
   ab_duration_minutes: z.number().int().min(1).optional(),
-  abc_percent_off: z.number().int().min(1).max(100).optional(),
-  abc_duration_minutes: z.number().int().min(1).optional(),
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

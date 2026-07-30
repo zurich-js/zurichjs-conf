@@ -2,9 +2,9 @@
  * StickyTicketCta Molecule
  *
  * Mobile-only fixed bottom bar with the current ticket price, the live
- * pricing-stage countdown, and a persistent "Get your ticket" CTA. High-intent
- * pages (/speakers, /schedule, workshop details) render it so visitors never
- * have to hunt for the ticket section on the homepage.
+ * pricing-stage countdown, and a persistent "Get your ticket" CTA — so
+ * visitors never have to hunt for the ticket section on the homepage.
+ * Currently rendered by /speakers and /about.
  *
  * Receives pricing data via props — pages wire it up with useTicketPricing().
  * Renders nothing until pricing has resolved.

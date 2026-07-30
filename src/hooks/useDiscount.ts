@@ -62,17 +62,13 @@ interface GenerateDiscountParams {
   lotteryPercentOff?: number;
 }
 
-// API call
+// API call — the offer itself is resolved server-side from the admin config;
+// the client sends only the gate email (and the lottery percentage when set).
 async function generateDiscount({
   email,
   lotteryPercentOff,
 }: GenerateDiscountParams): Promise<DiscountData> {
-  const payload: Record<string, unknown> = {
-    email,
-    // Everyone gets the aggressive-20 offer; its percentage and duration are
-    // still resolved server-side from the admin config.
-    variant: 'aggressive-20',
-  };
+  const payload: Record<string, unknown> = { email };
   if (lotteryPercentOff) payload.percentOff = lotteryPercentOff;
 
   const res = await fetch('/api/discount/generate', {
@@ -97,6 +93,7 @@ export function useDiscount() {
   const pendingEmail = useRef<string | null>(null);
   const [isLotteryReady, setIsLotteryReady] = useState(false);
   const [emailSubmitFailed, setEmailSubmitFailed] = useState(false);
+  const [codeEmailed, setCodeEmailed] = useState(false);
 
   // Clipboard
   const [, copyToClipboard] = useCopyToClipboard();
@@ -120,7 +117,12 @@ export function useDiscount() {
     }
     return null; // still loading — eligibility check waits
   }, [configQuery.data, configQuery.isError]);
-  const offerPercentOff = configQuery.data?.offerPercentOff ?? FALLBACK_OFFER_PERCENT;
+  const configOfferPercentOff = configQuery.data?.offerPercentOff ?? FALLBACK_OFFER_PERCENT;
+  // Lottery visitors won a specific percentage — the gate must advertise that
+  // number, not the standard popup offer.
+  const offerPercentOff = lotteryResult.current?.eligible
+    ? lotteryResult.current.percentOff
+    : configOfferPercentOff;
 
   // Speaker lineup for tech-stack personalization. On the homepage (the only
   // place the popup mounts) this is already in the hydrated SSR cache.
@@ -147,9 +149,12 @@ export function useDiscount() {
     onSuccess: (discount) => {
       setEmailSubmitFailed(false);
       setData(discount);
-      setState('modal_open');
+      // Respect a dismissal that happened while the code was generating —
+      // never snap the modal back open over the user's explicit close.
+      setState((prev) => (prev === 'minimized' ? 'minimized' : 'modal_open'));
       const email = pendingEmail.current;
       if (email) {
+        setCodeEmailed(true);
         analytics.identify(email);
         analytics.track('discount_email_captured', {
           discount_code: discount.code,
@@ -339,9 +344,7 @@ export function useDiscount() {
     offerPercentOff,
     isGeneratingCode: isPending,
     emailSubmitFailed,
-    // True when this session unlocked the code via the email gate (a restored
-    // cookie discount has no email on record)
-    codeEmailed: pendingEmail.current !== null,
+    codeEmailed,
     submitEmail,
     dismiss,
     reopen,

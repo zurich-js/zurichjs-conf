@@ -7,6 +7,9 @@ import Link from 'next/link';
 import type { TicketsSectionProps, Plan } from '@/components/organisms';
 import type { Feature } from '@/components/molecules/FeatureList';
 import type { FAQItem } from '@/components/molecules/FAQAccordion';
+// Direct file import — the molecules barrel re-exports components that read
+// this data module, so going through it would create an import cycle.
+import { UpsellHighlight } from '@/components/molecules/UpsellBanner';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
 import { redirectToCheckout } from '@/lib';
 import { InfoIcon } from 'lucide-react';
@@ -149,6 +152,21 @@ export const STAGE_COPY: Record<
     countdownTitle: 'Sales close in',
   },
 };
+
+/**
+ * Conference-ticket cross-sell shown on workshop detail pages
+ */
+export const workshopTicketCrossSell = {
+  title: 'Coming for the workshop? Make it the full week.',
+  description: (
+    <>
+      The conference talks follow on September 11 at the same venue.{' '}
+      <UpsellHighlight>VIP tickets include 20% off all workshops</UpsellHighlight> — including this
+      one.
+    </>
+  ),
+  action: { type: 'link', label: 'See conference tickets', href: '/#tickets' },
+} as const;
 
 /**
  * FAQ items addressing common objections and concerns

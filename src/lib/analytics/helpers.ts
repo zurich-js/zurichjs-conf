@@ -173,6 +173,24 @@ export function trackWorkshopViewed(params: {
 }
 
 /**
+ * Track workshop added to cart
+ */
+export function trackWorkshopAddedToCart(params: {
+  workshopId: string
+  workshopTitle: string
+  amount: number
+  currency: string
+}) {
+  analytics.track('workshop_added_to_cart', {
+    workshop_id: params.workshopId,
+    workshop_title: params.workshopTitle,
+    workshop_amount: params.amount,
+    currency: params.currency,
+    quantity: 1,
+  })
+}
+
+/**
  * Track speaker profile viewed
  */
 export function trackSpeakerViewed(params: {

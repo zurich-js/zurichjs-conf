@@ -3,8 +3,8 @@
  * Wrapper around TicketsSection that fetches pricing from Stripe
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import React, { useState, useCallback } from 'react';
+import { useCartRoutePrefetch } from '@/hooks/useCartRoutePrefetch';
 import { TicketsSection } from './TicketsSection';
 import { StudentVerificationModal, VerificationSuccessModal, TicketWaitlistModal, SeebadEngeModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -97,13 +97,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
 }) => {
   const { plans, currentStage, isLoading, error, refetch } = useTicketPricing();
   const { addToCart, navigateToCart } = useCart();
-  const router = useRouter();
-
-  // Ticket CTAs push to /cart via router (buttons, not Links), so warm the
-  // route bundle while the visitor is still comparing plans.
-  useEffect(() => {
-    void router.prefetch('/cart');
-  }, [router]);
+  useCartRoutePrefetch();
   const {
     isModalOpen,
     openModal,

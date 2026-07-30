@@ -37,8 +37,6 @@ export function getServerConfig(): ResolvedDiscountConfig {
     forceShow: process.env.NEXT_PUBLIC_DISCOUNT_FORCE_SHOW === 'true',
     abPercentOff: parseInt(process.env.DISCOUNT_AB_PERCENT_OFF || '20', 10),
     abDurationMinutes: parseInt(process.env.DISCOUNT_AB_DURATION_MINUTES || '60', 10),
-    abcPercentOff: parseInt(process.env.DISCOUNT_ABC_PERCENT_OFF || '30', 10),
-    abcDurationMinutes: parseInt(process.env.DISCOUNT_ABC_DURATION_MINUTES || '30', 10),
     source: 'env',
   };
 }

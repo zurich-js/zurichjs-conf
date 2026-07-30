@@ -32,9 +32,15 @@ interface RecoveryTouch {
  * (buyers revisit the cart ~4x before purchasing), and a 24h follow-up.
  * Scheduled touches are cancelled when the purchase completes.
  */
+const FOLLOW_UP_TOUCH: RecoveryTouch = {
+  delayHours: 24,
+  subject: 'Did you forget something? Your tickets are waiting!',
+  includeGoodie: false,
+};
+
 const ABANDONMENT_TOUCHES: RecoveryTouch[] = [
   { delayHours: 1, subject: 'Your ZurichJS cart is saved — still deciding?', includeGoodie: false },
-  { delayHours: 24, subject: 'Did you forget something? Your tickets are waiting!', includeGoodie: false },
+  FOLLOW_UP_TOUCH,
 ];
 
 /**
@@ -62,11 +68,12 @@ const bodySchema = z.object({
       })
     )
     .min(1)
-    .max(20),
+    .max(40),
   cartTotal: z.number().min(0).max(1_000_000),
   currency: z.string().length(3),
-  /** Encoded cart state for URL reconstruction — base64url alphabet only */
-  encodedCartState: z.string().max(4_000).regex(/^[A-Za-z0-9\-_]*$/).optional(),
+  /** Encoded cart state for URL reconstruction — base64url alphabet only.
+   *  Sized for large mixed carts (~300-350 chars per line item). */
+  encodedCartState: z.string().max(16_000).regex(/^[A-Za-z0-9\-_]*$/).optional(),
   /** True when the user explicitly saved their cart — the first email sends
    *  immediately and carries the thank-you discount code. */
   immediate: z.boolean().optional(),
@@ -138,7 +145,7 @@ export default async function handler(
               : 'Your saved ZurichJS cart',
             includeGoodie: goodie !== null,
           },
-          { delayHours: 24, subject: 'Did you forget something? Your tickets are waiting!', includeGoodie: false },
+          FOLLOW_UP_TOUCH,
         ]
       : ABANDONMENT_TOUCHES;
 

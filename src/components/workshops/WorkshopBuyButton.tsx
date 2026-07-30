@@ -5,14 +5,13 @@
  * query) so we don't run N per-card pricing queries.
  */
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useCartRoutePrefetch } from '@/hooks/useCartRoutePrefetch';
 import { formatPrice } from '@/lib/cart';
-import { analytics } from '@/lib/analytics';
+import { trackWorkshopAddedToCart } from '@/lib/analytics';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 
 interface WorkshopBuyButtonProps {
@@ -34,13 +33,7 @@ export function WorkshopBuyButton({
 }: WorkshopBuyButtonProps) {
   const { addToCart, isInCart, navigateToCart } = useCart();
   const { addToast } = useToast();
-  const router = useRouter();
-
-  // "View cart" pushes via router; prefetch keeps it instant (Next dedupes
-  // repeated prefetches across the many buy buttons in a list).
-  useEffect(() => {
-    void router.prefetch('/cart');
-  }, [router]);
+  useCartRoutePrefetch();
   const itemId = `workshop_${offering.workshopId}`;
   const alreadyInCart = isInCart(itemId);
 
@@ -57,12 +50,11 @@ export function WorkshopBuyButton({
         workshopRoom: offering.room,
         workshopDurationMinutes: offering.durationMinutes,
       });
-      analytics.track('workshop_added_to_cart', {
-        workshop_id: offering.workshopId,
-        workshop_title: title,
-        workshop_amount: offering.unitAmount / 100,
+      trackWorkshopAddedToCart({
+        workshopId: offering.workshopId,
+        workshopTitle: title,
+        amount: offering.unitAmount / 100,
         currency: offering.currency,
-        quantity: 1,
       });
       addToast({
         type: 'success',

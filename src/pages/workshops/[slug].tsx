@@ -3,8 +3,9 @@ import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { UpsellBanner, UpsellHighlight } from '@/components/molecules/UpsellBanner';
+import { UpsellBanner } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { workshopTicketCrossSell } from '@/data/tickets';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
 import { WorkshopPurchasePanel } from '@/components/workshops/WorkshopPurchasePanel';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
@@ -75,17 +76,7 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
 
         <ShapedSection shape="straight" variant="dark" compact>
           <div className="mx-auto max-w-screen-lg">
-            <UpsellBanner
-              title="Coming for the workshop? Make it the full week."
-              description={
-                <>
-                  The conference talks follow on September 11 at the same venue.{' '}
-                  <UpsellHighlight>VIP tickets include 20% off all workshops</UpsellHighlight> — including this one.
-                </>
-              }
-              action={{ type: 'link', label: 'See conference tickets', href: '/#tickets' }}
-              actionVariant="black"
-            />
+            <UpsellBanner {...workshopTicketCrossSell} actionVariant="black" />
           </div>
         </ShapedSection>
 

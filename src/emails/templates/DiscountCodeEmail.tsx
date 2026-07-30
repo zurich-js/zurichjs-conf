@@ -6,7 +6,7 @@
 
 import { Button, Hr, Link, Section, Text } from '@react-email/components';
 import * as React from 'react';
-import { EmailLayout } from '../components';
+import { DiscountCodeCard, EmailLayout } from '../components';
 import { colors, spacing, typography, radii } from '../design/tokens';
 
 export interface DiscountCodeEmailProps {
@@ -59,13 +59,10 @@ export const DiscountCodeEmail: React.FC<DiscountCodeEmailProps> = ({
         </Text>
       </Section>
 
-      <Section style={codeCardStyle}>
-        <Text style={codeStyle}>{code}</Text>
-        <Text style={codeFinePrintStyle}>
-          It applies automatically when you use the button below — or enter it in the promo code
-          field at checkout.
-        </Text>
-      </Section>
+      <DiscountCodeCard
+        code={code}
+        finePrint="It applies automatically when you use the button below — or enter it in the promo code field at checkout."
+      />
 
       <Section style={ctaSectionStyle}>
         <div style={{ textAlign: 'center' }}>
@@ -115,32 +112,6 @@ const bodyTextStyle: React.CSSProperties = {
   lineHeight: typography.body.lineHeight,
   color: colors.text.secondary,
   margin: `0 0 ${spacing.base}px 0`,
-};
-
-const codeCardStyle: React.CSSProperties = {
-  backgroundColor: colors.surface.card,
-  border: `2px dashed ${colors.brand.yellow}`,
-  borderRadius: `${radii.card}px`,
-  padding: spacing['2xl'],
-  marginBottom: spacing['3xl'],
-  textAlign: 'center' as const,
-};
-
-const codeStyle: React.CSSProperties = {
-  fontSize: '24px',
-  lineHeight: '32px',
-  fontWeight: 700,
-  letterSpacing: '4px',
-  fontFamily: 'ui-monospace, Menlo, monospace',
-  color: colors.text.primary,
-  margin: `0 0 ${spacing.sm}px 0`,
-};
-
-const codeFinePrintStyle: React.CSSProperties = {
-  fontSize: '12px',
-  lineHeight: '18px',
-  color: colors.text.muted,
-  margin: 0,
 };
 
 const ctaSectionStyle: React.CSSProperties = {

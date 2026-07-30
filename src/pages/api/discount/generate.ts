@@ -4,10 +4,9 @@
  * Sets httpOnly cookies for the discount code and expiry.
  * Idempotent — if httpOnly cookies already present, returns existing data.
  *
- * Accepts optional `percentOff` in request body for UTM lottery discounts, and
- * an optional `variant` (A/B/C experiment key) plus a `priceSensitivityReason`
- * (stored as Stripe metadata for analysis). Only the variant *key* is trusted:
- * the percentage and duration for each variant are resolved server-side.
+ * The offer (percentage + duration) is resolved entirely server-side from the
+ * admin config — the client sends only an email (the gate) and, for UTM
+ * lottery visits, the lottery percentage (validated against lottery bounds).
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -15,25 +14,23 @@ import { z } from 'zod';
 import { addNewsletterContact, sendDiscountCodeEmail } from '@/lib/email';
 import { getStripeClient } from '@/lib/stripe/client';
 import { getDiscountConfig } from '@/lib/discount/config-server';
-import {
-  DISCOUNT_VARIANTS,
-  getVariantServerConfig,
-} from '@/lib/discount/experiment';
-import { PRICE_SENSITIVITY_REASONS } from '@/lib/discount/price-sensitivity';
 import { createSingleUseDiscountCode } from '@/lib/discount/stripe-codes';
 import { isValidLotteryPercent } from '@/lib/discount/utm-lottery';
 import { logger } from '@/lib/logger';
+import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import type { GenerateDiscountResponse } from '@/lib/discount/types';
 
 const log = logger.scope('DiscountGenerate');
 
+// Public unauthenticated endpoint that creates Stripe objects and sends
+// outbound email — same tight per-IP budget as /api/cart/abandoned.
+const limiter = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
+
 const bodySchema = z.object({
   /** The discount is email-gated: no email, no new code. */
   email: z.string().trim().email().max(254).optional(),
+  /** UTM lottery percentage — validated against lottery bounds below */
   percentOff: z.number().optional(),
-  variant: z.enum(DISCOUNT_VARIANTS).optional(),
-  /** Why the visitor qualified for price-sensitive-30 (metadata only) */
-  priceSensitivityReason: z.enum(PRICE_SENSITIVITY_REASONS).nullish(),
 });
 
 export default async function handler(
@@ -44,6 +41,11 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const { allowed } = limiter.check(getClientIp(req));
+  if (!allowed) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
+
   try {
     const result = bodySchema.safeParse(
       typeof req.body === 'object' && req.body !== null ? req.body : {}
@@ -51,9 +53,6 @@ export default async function handler(
     const body = result.success ? result.data : {};
 
     const isLotteryDiscount = isValidLotteryPercent(body.percentOff);
-    const variant = !isLotteryDiscount ? body.variant : undefined;
-    const priceSensitivityReason =
-      variant === 'price-sensitive-30' ? body.priceSensitivityReason ?? undefined : undefined;
 
     // Check if a discount already exists in httpOnly cookies
     const existingCode = req.cookies.discount_code;
@@ -96,15 +95,12 @@ export default async function handler(
     const config = await getDiscountConfig();
     const stripe = getStripeClient();
 
-    // Resolve the offer: lottery percentage wins, then experiment variant,
-    // then the default (control) config. Duration always comes from the server.
-    const offer = variant
-      ? getVariantServerConfig(variant, config)
-      : { percentOff: config.percentOff, durationMinutes: config.durationMinutes };
-    const percentOff = isLotteryDiscount ? body.percentOff! : offer.percentOff;
+    // Resolve the offer: lottery percentage wins, otherwise everyone gets the
+    // popup offer (the former aggressive-20 variant, stored in the ab fields).
+    const percentOff = isLotteryDiscount ? body.percentOff! : config.abPercentOff;
     const durationMinutes = isLotteryDiscount
       ? config.durationMinutes
-      : offer.durationMinutes;
+      : config.abDurationMinutes;
 
     const source = isLotteryDiscount ? 'utm_lottery' : 'discount_popup';
 
@@ -115,10 +111,6 @@ export default async function handler(
       metadata: {
         source,
         email: body.email,
-        ...(variant ? { experiment_variant: variant } : {}),
-        ...(priceSensitivityReason
-          ? { price_sensitivity_reason: priceSensitivityReason }
-          : {}),
       },
     });
 
@@ -145,8 +137,6 @@ export default async function handler(
       expiresAt: expiresAt.toISOString(),
       percentOff,
       isLottery: isLotteryDiscount,
-      experimentVariant: variant,
-      priceSensitivityReason,
     });
 
     const expiresAtISO = expiresAt.toISOString();

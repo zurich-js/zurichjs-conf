@@ -5,7 +5,7 @@
 
 import { Button, Hr, Link, Section, Text } from '@react-email/components';
 import * as React from 'react';
-import { EmailLayout } from '../components';
+import { DiscountCodeCard, EmailLayout } from '../components';
 import { colors, spacing, typography, radii } from '../design/tokens';
 
 interface CartItem {
@@ -95,18 +95,17 @@ export const CartAbandonmentEmail: React.FC<CartAbandonmentEmailProps> = ({
 
       {/* Thank-you discount (explicit cart saves only) */}
       {discount && (
-        <Section style={discountCardStyle}>
-          <Text style={discountTitleStyle}>A little thank-you 🎁</Text>
-          <Text style={discountTextStyle}>
-            Check out within the next <strong>{discount.validHours} hours</strong> and take{' '}
-            <strong>{discount.percentOff}% off</strong> with this single-use code:
-          </Text>
-          <Text style={discountCodeStyle}>{discount.code}</Text>
-          <Text style={discountFinePrintStyle}>
-            It applies automatically when you open your cart from this email — or enter it in the
-            promo code field at checkout.
-          </Text>
-        </Section>
+        <DiscountCodeCard
+          code={discount.code}
+          title="A little thank-you 🎁"
+          text={
+            <>
+              Check out within the next <strong>{discount.validHours} hours</strong> and take{' '}
+              <strong>{discount.percentOff}% off</strong> with this single-use code:
+            </>
+          }
+          finePrint="It applies automatically when you open your cart from this email — or enter it in the promo code field at checkout."
+        />
       )}
 
       {/* CTA Section */}
@@ -250,47 +249,6 @@ const cartTotalValueStyle: React.CSSProperties = {
   fontSize: '20px',
   fontWeight: 700,
   color: colors.text.primary,
-  margin: 0,
-};
-
-const discountCardStyle: React.CSSProperties = {
-  backgroundColor: colors.surface.card,
-  border: `2px dashed ${colors.brand.yellow}`,
-  borderRadius: `${radii.card}px`,
-  padding: spacing['2xl'],
-  marginBottom: spacing['3xl'],
-  textAlign: 'center' as const,
-};
-
-const discountTitleStyle: React.CSSProperties = {
-  fontSize: '18px',
-  lineHeight: '24px',
-  fontWeight: 700,
-  color: colors.text.primary,
-  margin: `0 0 ${spacing.sm}px 0`,
-};
-
-const discountTextStyle: React.CSSProperties = {
-  fontSize: typography.body.fontSize,
-  lineHeight: typography.body.lineHeight,
-  color: colors.text.secondary,
-  margin: `0 0 ${spacing.base}px 0`,
-};
-
-const discountCodeStyle: React.CSSProperties = {
-  fontSize: '24px',
-  lineHeight: '32px',
-  fontWeight: 700,
-  letterSpacing: '4px',
-  fontFamily: 'ui-monospace, Menlo, monospace',
-  color: colors.text.primary,
-  margin: `0 0 ${spacing.sm}px 0`,
-};
-
-const discountFinePrintStyle: React.CSSProperties = {
-  fontSize: '12px',
-  lineHeight: '18px',
-  color: colors.text.muted,
   margin: 0,
 };
 

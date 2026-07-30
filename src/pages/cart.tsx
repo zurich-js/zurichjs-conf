@@ -61,7 +61,7 @@ export default function CartPage() {
   const [capturedEmail, setCapturedEmail] = useState<string | null>(null);
   const [capturedFirstName, setCapturedFirstName] = useState<string | null>(null);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
-  const { mutate: scheduleAbandonmentEmail } = useCartAbandonmentEmail();
+  const { mutate: scheduleAbandonmentEmail, mutateAsync: scheduleAbandonmentEmailAsync } = useCartAbandonmentEmail();
   const [checkoutFinalizing, setCheckoutFinalizing] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
@@ -107,7 +107,13 @@ export default function CartPage() {
         result.success ? 'success' : 'error'
       );
       if (voucherParam) void setVoucherParam(null);
-      clearPendingVoucher();
+      // Only clear the parked code when it was the one we tried — a failed
+      // URL code must not destroy a different, still-valid parked voucher.
+      if (result.success || code === pendingVoucher) {
+        clearPendingVoucher();
+      } else if (pendingVoucher) {
+        hasAutoAppliedVoucher.current = false; // let the parked code try next
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voucherParam, pendingVoucher, cart.items.length, cart.couponCode]);
@@ -323,8 +329,9 @@ export default function CartPage() {
 
   // Save-cart email from the review step: identifies the visitor and makes
   // review-stage abandoners reachable by the recovery email (most cart exits
-  // happen before checkout ever sees an email).
-  const handleReviewEmailCaptured = (email: string) => {
+  // happen before checkout ever sees an email). Returns whether the email was
+  // actually scheduled so the UI never claims "check your inbox" on failure.
+  const handleReviewEmailCaptured = async (email: string): Promise<boolean> => {
     setCapturedEmail(email);
     analytics.identify(email, { email });
     analytics.track('checkout_email_captured', {
@@ -338,18 +345,25 @@ export default function CartPage() {
     // Explicit save sends the first email immediately (with the thank-you
     // code) plus a scheduled follow-up; purchase cancels the follow-up.
     const encoded = encodeCartState(cart);
-    lastRecoveryCartState.current = encoded;
-    scheduleAbandonmentEmail({
-      email,
-      firstName: capturedFirstName ?? undefined,
-      cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
-        title, quantity, price, currency,
-      })),
-      cartTotal: orderSummary.total,
-      currency: orderSummary.currency,
-      encodedCartState: encoded,
-      immediate: true,
-    });
+    try {
+      await scheduleAbandonmentEmailAsync({
+        email,
+        firstName: capturedFirstName ?? undefined,
+        cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
+          title, quantity, price, currency,
+        })),
+        cartTotal: orderSummary.total,
+        currency: orderSummary.currency,
+        encodedCartState: encoded,
+        immediate: true,
+      });
+      // Mark covered only on success so a failed save doesn't suppress the
+      // abandonment-triggered fallback email.
+      lastRecoveryCartState.current = encoded;
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   // Cart abandonment tracking
