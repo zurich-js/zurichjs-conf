@@ -11,17 +11,15 @@
  */
 
 import type Stripe from 'stripe';
-import { randomBytes } from 'crypto';
+import { randomInt } from 'crypto';
 
 /** Unambiguous alphabet (no I/O/0/1) for human-typed codes */
 export function generateUniqueCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const length = 8;
-  const bytes = randomBytes(length);
   let code = '';
   for (let i = 0; i < length; i++) {
-    const idx = bytes[i] % chars.length;
-    code += chars.charAt(idx);
+    code += chars.charAt(randomInt(chars.length));
   }
   return code;
 }

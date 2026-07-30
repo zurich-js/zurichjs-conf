@@ -338,6 +338,9 @@ export function useDiscount() {
     offerPercentOff,
     isGeneratingCode: isPending,
     emailSubmitFailed,
+    // True when this session unlocked the code via the email gate (a restored
+    // cookie discount has no email on record)
+    codeEmailed: pendingEmail.current !== null,
     submitEmail,
     dismiss,
     reopen,

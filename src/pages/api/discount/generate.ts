@@ -12,7 +12,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { addNewsletterContact } from '@/lib/email';
+import { addNewsletterContact, sendDiscountCodeEmail } from '@/lib/email';
 import { getStripeClient } from '@/lib/stripe/client';
 import { getDiscountConfig } from '@/lib/discount/config-server';
 import {
@@ -110,9 +110,17 @@ export default async function handler(
     });
 
     // The gate doubles as lead capture — add the email to the newsletter
-    // audience. Fire-and-forget: a contact failure must not block the code.
+    // audience, and send the code (with its expiry) to the inbox so the offer
+    // survives a closed tab. Both fire-and-forget: neither may block the code.
     addNewsletterContact(body.email, 'popup').catch((err) => {
       log.error('Failed to add discount email to newsletter', err, { email: body.email });
+    });
+    void sendDiscountCodeEmail({
+      to: body.email,
+      code,
+      percentOff,
+      validMinutes: durationMinutes,
+      expiresAtISO: expiresAt.toISOString(),
     });
 
     log.info('Generated discount code', {

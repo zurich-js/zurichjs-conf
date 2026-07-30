@@ -25,6 +25,8 @@ interface DiscountModalProps {
   offerPercentOff: number;
   isGenerating?: boolean;
   emailSubmitFailed?: boolean;
+  /** True when the code was also sent to the submitted email */
+  codeEmailed?: boolean;
   personalization?: DiscountPersonalization | null;
   onDismiss: () => void;
   onSubmitEmail: (email: string) => void;
@@ -41,6 +43,7 @@ export function DiscountModal({
   offerPercentOff,
   isGenerating = false,
   emailSubmitFailed = false,
+  codeEmailed = false,
   personalization,
   onDismiss,
   onSubmitEmail,
@@ -112,13 +115,10 @@ export function DiscountModal({
                 : 'We got you a discount!'}
             </h2>
 
-            {/* Tech-stack personalization: relevant speakers (no names) */}
+            {/* Tech-stack personalization: relevant speakers (no names, no counts) */}
             {personalization && (
               <p className="mb-3 text-sm text-white/70 sm:text-base">
-                {personalization.matchCount === 1
-                  ? `A ${personalization.stackDisplayName} speaker is`
-                  : `${personalization.matchCount} ${personalization.stackDisplayName} speakers are`}{' '}
-                on the lineup — come meet them.
+                We&apos;ve got {personalization.stackDisplayName} speakers on the lineup — come meet them.
               </p>
             )}
 
@@ -165,6 +165,12 @@ export function DiscountModal({
                     )}
                   </button>
                 </div>
+
+                {codeEmailed && (
+                  <p className="mt-4 text-xs text-white/50">
+                    We&apos;ve also emailed it to you, with the exact expiry time.
+                  </p>
+                )}
               </>
             ) : (
               <>

@@ -19,6 +19,7 @@ export function DiscountContainer() {
     offerPercentOff,
     isGeneratingCode,
     emailSubmitFailed,
+    codeEmailed,
     submitEmail,
     dismiss,
     reopen,
@@ -35,6 +36,7 @@ export function DiscountContainer() {
           offerPercentOff={offerPercentOff}
           isGenerating={isGeneratingCode}
           emailSubmitFailed={emailSubmitFailed}
+          codeEmailed={codeEmailed}
           personalization={personalization}
           onDismiss={dismiss}
           onSubmitEmail={submitEmail}
