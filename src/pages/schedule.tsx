@@ -1,11 +1,14 @@
 import { type ReactNode } from 'react';
 import type { GetServerSideProps } from 'next';
+import { useQuery } from '@tanstack/react-query';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs, StickyTicketCta } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
+import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
 import { communityDayMeetup, publicProgramTabs, warmupChillRun, warmupChillRunScheduleItem } from '@/data';
 import { analytics } from '@/lib/analytics/client';
@@ -44,6 +47,10 @@ export default function SchedulePage({ items }: SchedulePageProps) {
   const activeTab = scheduleDayParamToTab[dayParam];
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
   const { plans, currentStage } = useTicketPricing();
+  // Workshop offerings so workshop rows show their price + add-to-cart chip
+  // here too, not only on /workshops. Shares the TanStack cache with that page.
+  const { currency } = useCurrency();
+  const { data: workshopsData } = useQuery(createWorkshopsScheduleQueryOptions(currency));
   const dayItems = activeScheduleTab.sessionDate
     ? items.filter((item) => item.date === activeScheduleTab.sessionDate)
     : items.filter((item) => item.date === (activeTab === 'community' ? '2026-09-09' : '2026-09-12'));
@@ -127,6 +134,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
                     eventLink={item.id === warmupChillRunScheduleItem.id
                       ? { label: 'Info and RSVP', href: warmupChillRun.rsvpUrl }
                       : undefined}
+                    offeringsBySubmissionId={workshopsData?.offeringsBySubmissionId}
                   />
                 ))
               ) : activeTab === 'community' ? null : (
