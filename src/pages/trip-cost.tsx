@@ -210,22 +210,22 @@ export default function TripCostPage() {
 
   // Price evolution calculations
   const isStudentOrHaveTicket = ticketType === 'student' || ticketType === 'have_ticket';
-  const lateBirdTicketCHF = (() => {
+  const lastMinuteTicketCHF = (() => {
     if (isStudentOrHaveTicket) return breakdown.ticketCHF;
     const plan = chfPlans.find((p) => p.id === ticketType);
     return plan?.comparePrice ? Math.round(plan.comparePrice / 100) : null;
   })();
-  const lateBirdTicketNative = (() => {
+  const lastMinuteTicketNative = (() => {
     if (isStudentOrHaveTicket) return ticketNative;
     if (!nativeStripeCurrency) return undefined;
     const plan = nativePlans.find((p) => p.id === ticketType);
     return plan?.comparePrice ? Math.round(plan.comparePrice / 100) : undefined;
   })();
-  const midTicketCHF = lateBirdTicketCHF !== null
-    ? (isStudentOrHaveTicket ? breakdown.ticketCHF : Math.round(breakdown.ticketCHF + (lateBirdTicketCHF - breakdown.ticketCHF) * 0.4))
+  const midTicketCHF = lastMinuteTicketCHF !== null
+    ? (isStudentOrHaveTicket ? breakdown.ticketCHF : Math.round(breakdown.ticketCHF + (lastMinuteTicketCHF - breakdown.ticketCHF) * 0.4))
     : null;
-  const midTicketNative = (midTicketCHF !== null && ticketNative !== undefined && lateBirdTicketNative !== undefined)
-    ? (isStudentOrHaveTicket ? ticketNative : Math.round(ticketNative + (lateBirdTicketNative - ticketNative) * 0.4))
+  const midTicketNative = (midTicketCHF !== null && ticketNative !== undefined && lastMinuteTicketNative !== undefined)
+    ? (isStudentOrHaveTicket ? ticketNative : Math.round(ticketNative + (lastMinuteTicketNative - ticketNative) * 0.4))
     : undefined;
 
   const computeEvolution = (tNative: number | undefined, tCHF: number, tMul: number, hMul: number): number | null => {
@@ -234,7 +234,7 @@ export default function TripCostPage() {
     return (tNative ?? Math.round(tCHF * rate)) + Math.round(breakdown.travelCHF * tMul * rate) + Math.round(breakdown.hotelTotalCHF * hMul * rate);
   };
   const standardEstDisplayAmount = midTicketCHF !== null ? computeEvolution(midTicketNative, midTicketCHF, 1.25, 1.20) : null;
-  const lateBirdDisplayAmount = lateBirdTicketCHF !== null ? computeEvolution(lateBirdTicketNative, lateBirdTicketCHF, 1.30, 1.25) : null;
+  const lastMinuteDisplayAmount = lastMinuteTicketCHF !== null ? computeEvolution(lastMinuteTicketNative, lastMinuteTicketCHF, 1.30, 1.25) : null;
 
   const handleShare = useCallback(async () => {
     const params = encodeToSearchParams(input);
@@ -249,7 +249,7 @@ export default function TripCostPage() {
     router.push('/#tickets');
   };
 
-  const showEvolution = lateBirdDisplayAmount !== null && standardEstDisplayAmount !== null && totalDisplayAmount !== null;
+  const showEvolution = lastMinuteDisplayAmount !== null && standardEstDisplayAmount !== null && totalDisplayAmount !== null;
 
   return (
     <>
@@ -290,13 +290,13 @@ export default function TripCostPage() {
               <HotelSection nights={input.nights} hotelType={input.hotelType} customHotelCHF={input.customHotelCHF} currency={displayCurrency} rates={rates} attendanceDays={input.attendanceDays ?? 'main_only'} onUpdate={update} />
 
               {showEvolution && (
-                <PriceEvolution totalDisplayAmount={totalDisplayAmount} standardEstDisplayAmount={standardEstDisplayAmount} lateBirdDisplayAmount={lateBirdDisplayAmount} displayCurrency={displayCurrency} isConverted={isConverted} />
+                <PriceEvolution totalDisplayAmount={totalDisplayAmount} standardEstDisplayAmount={standardEstDisplayAmount} lastMinuteDisplayAmount={lastMinuteDisplayAmount} displayCurrency={displayCurrency} isConverted={isConverted} />
               )}
             </div>
 
             <div className="lg:col-span-2">
               <BreakdownCard
-                breakdown={breakdown} ticketType={ticketType} travelRegion={input.travelRegion} displayCurrency={displayCurrency} rates={rates} ticketNative={ticketNative} totalDisplayAmount={totalDisplayAmount} lateBirdDisplayAmount={lateBirdDisplayAmount}
+                breakdown={breakdown} ticketType={ticketType} travelRegion={input.travelRegion} displayCurrency={displayCurrency} rates={rates} ticketNative={ticketNative} totalDisplayAmount={totalDisplayAmount} lastMinuteDisplayAmount={lastMinuteDisplayAmount}
                 rateDate={rateDate} rateSource={rateSource} needsRates={needsRates} ratesLoading={ratesLoading} ratesError={ratesError} copied={copied} breakdownRef={breakdownRef} onShare={handleShare} onGetTickets={handleGetTickets}
               />
             </div>

@@ -46,7 +46,7 @@ function getPlanDisplayPrice(
   return `${isConverted ? '~' : ''}${formatAmount(display, displayCurrency)}`;
 }
 
-/** Get compare (late bird) price for a plan */
+/** Get compare (last minute) price for a plan */
 function getCompareLabel(
   planId: string,
   chfPlans: TicketPlan[],
@@ -116,7 +116,7 @@ function TicketButton({
             </span>
             {comparePrice && !isLoading && (
               <span className="block text-[11px] text-gray-400 line-through">
-                {comparePrice} at Late Bird
+                {comparePrice} at Last Minute
               </span>
             )}
           </div>
