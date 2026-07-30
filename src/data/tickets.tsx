@@ -12,7 +12,7 @@ import { redirectToCheckout } from '@/lib';
 import { InfoIcon } from 'lucide-react';
 import { communityDayMeetup } from '@/data/public-program';
 
-import { getCurrentStageEndDate, getFinalStage, GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
+import { getCurrentStageEndDate, GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
 
 /**
  * Get the current pricing stage end date for countdown display
@@ -438,14 +438,13 @@ export const createTicketDataFromStripe = (
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 
-  // Show countdown for all stages except the final one (no further price rise)
-  const showCountdown = currentStage !== getFinalStage().stage;
-
+  // Every stage counts down to its end date — in the final stage that's when
+  // sales close, which is exactly when urgency matters most.
   return {
     kicker: 'TICKETS',
     title: stageCopy.title,
     subtitle: stageCopy.subtitle,
-    discountEndsAt: showCountdown ? getStageEndDate() : undefined,
+    discountEndsAt: getStageEndDate(),
     countdownTitle: stageCopy.countdownTitle,
     plans,
   };
