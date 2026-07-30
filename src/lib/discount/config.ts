@@ -20,7 +20,7 @@ export const COOKIE_NAMES = {
 export function getClientConfig(): Pick<DiscountConfig, 'forceShow' | 'showProbability'> {
   return {
     forceShow: process.env.NEXT_PUBLIC_DISCOUNT_FORCE_SHOW === 'true',
-    showProbability: parseFloat(process.env.NEXT_PUBLIC_DISCOUNT_SHOW_PROBABILITY || '0.25'),
+    showProbability: parseFloat(process.env.NEXT_PUBLIC_DISCOUNT_SHOW_PROBABILITY || '0.5'),
   };
 }
 
@@ -30,10 +30,10 @@ export function getClientConfig(): Pick<DiscountConfig, 'forceShow' | 'showProba
  */
 export function getServerConfig(): ResolvedDiscountConfig {
   return {
-    showProbability: parseFloat(process.env.DISCOUNT_SHOW_PROBABILITY || '0.25'),
+    showProbability: parseFloat(process.env.DISCOUNT_SHOW_PROBABILITY || '0.5'),
     percentOff: parseInt(process.env.DISCOUNT_PERCENT_OFF || '10', 10),
     durationMinutes: parseInt(process.env.DISCOUNT_DURATION_MINUTES || '120', 10),
-    cooldownHours: parseInt(process.env.DISCOUNT_COOLDOWN_HOURS || '24', 10),
+    cooldownHours: parseInt(process.env.DISCOUNT_COOLDOWN_HOURS || '6', 10),
     forceShow: process.env.NEXT_PUBLIC_DISCOUNT_FORCE_SHOW === 'true',
     abPercentOff: parseInt(process.env.DISCOUNT_AB_PERCENT_OFF || '20', 10),
     abDurationMinutes: parseInt(process.env.DISCOUNT_AB_DURATION_MINUTES || '60', 10),

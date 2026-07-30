@@ -37,6 +37,8 @@ export interface DiscountClientConfigResponse {
   showProbability: number;
   forceShow: boolean;
   cooldownHours: number;
+  /** Advertised offer (%) shown on the email-gate step before a code exists */
+  offerPercentOff: number;
 }
 
 /** Offer parameters resolved server-side for one experiment variant */

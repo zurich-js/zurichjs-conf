@@ -11,17 +11,33 @@ import { DiscountModal } from './DiscountModal';
 import { DiscountWidget } from './DiscountWidget';
 
 export function DiscountContainer() {
-  const { state, discountData, countdown, personalization, dismiss, reopen, copyCode } = useDiscount();
+  const {
+    state,
+    discountData,
+    countdown,
+    personalization,
+    offerPercentOff,
+    isGeneratingCode,
+    emailSubmitFailed,
+    submitEmail,
+    dismiss,
+    reopen,
+    copyCode,
+  } = useDiscount();
 
   return (
     <AnimatePresence mode="wait">
-      {state === 'modal_open' && discountData && (
+      {state === 'modal_open' && (
         <DiscountModal
           key="discount-modal"
           data={discountData}
           countdown={countdown}
+          offerPercentOff={offerPercentOff}
+          isGenerating={isGeneratingCode}
+          emailSubmitFailed={emailSubmitFailed}
           personalization={personalization}
           onDismiss={dismiss}
+          onSubmitEmail={submitEmail}
           onCopyCode={copyCode}
         />
       )}

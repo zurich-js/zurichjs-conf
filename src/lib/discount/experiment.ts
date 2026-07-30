@@ -1,32 +1,20 @@
 /**
- * Discount Popup A/B/C Experiment
+ * Discount Popup Offer Variants
  *
- * PostHog-driven experiment comparing the standard popup offer against a more
- * aggressive short-lived one, plus a price-sensitivity variant. All offers are
- * admin-configurable via the discount_config table (Admin → Discount tab),
- * with env vars as fallback:
- * - `control`            → 10% off, valid 2h (existing behavior)
- * - `aggressive-20`      → 20% off, valid 1h
- * - `price-sensitive-30` → 30% off, valid 30min — only for
- *   visitors in lower-income European countries (relative to Switzerland,
- *   e.g. Serbia, North Macedonia, Portugal) OR recurring (3rd+ visit)
- *   visitors who have not converted. See `price-sensitivity.ts`.
+ * RETIRED EXPERIMENT: the PostHog A/B/C experiment (`discount-popup-offer`)
+ * concluded in favor of `aggressive-20`, which the popup now serves to every
+ * visitor (see useDiscount) — no PostHog enrollment happens anymore. The
+ * variant keys and server-side offer resolution below remain because:
+ * - /api/discount/generate resolves the live offer via `aggressive-20`,
+ * - all offers stay admin-configurable via the discount_config table
+ *   (Admin → Discount tab), with env vars as fallback:
+ *   - `control`            → 10% off, valid 2h
+ *   - `aggressive-20`      → 20% off, valid 1h (the live offer)
+ *   - `price-sensitive-30` → 30% off, valid 30min (unused)
  *
  * The client only ever sends the *variant key* to the API — the actual
  * percentage and duration are resolved server-side so clients cannot mint
  * arbitrary discounts.
- *
- * PostHog setup (one-time, in the PostHog UI):
- * 1. Create an experiment with feature flag key `discount-popup-offer` and
- *    variants `control` / `aggressive-20` / `price-sensitive-30`.
- * 2. Add a release condition excluding known buyers:
- *    `is_ticket_holder is not set` (the success page sets this person property).
- * 3. For the C variant, add a variant override targeting
- *    `price_sensitive_eligible = true` — the client reports this via
- *    `setPersonPropertiesForFlags` before evaluating the flag. The client
- *    additionally downgrades an assigned-but-ineligible C to control as a
- *    hard guard (tracked as `variant_downgraded` on `discount_popup_shown`),
- *    so misconfigured targeting can't leak the 30% offer.
  */
 
 import type { DiscountVariantConfig, ResolvedDiscountConfig } from './types';

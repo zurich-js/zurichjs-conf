@@ -30,6 +30,10 @@ export default async function handler(
       showProbability: config.showProbability,
       forceShow: config.forceShow,
       cooldownHours: config.cooldownHours,
+      // Everyone gets the (former aggressive-20) offer; the percentage is
+      // advertised on the email-gate step, so it must be client-visible.
+      // Generation still resolves the real offer server-side.
+      offerPercentOff: config.abPercentOff,
     });
   } catch (err) {
     log.error('Failed to load discount client config', err as Error);

@@ -12,6 +12,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
+import { addNewsletterContact } from '@/lib/email';
 import { getStripeClient } from '@/lib/stripe/client';
 import { getDiscountConfig } from '@/lib/discount/config-server';
 import {
@@ -27,6 +28,8 @@ import { randomBytes } from 'crypto';
 const log = logger.scope('DiscountGenerate');
 
 const bodySchema = z.object({
+  /** The discount is email-gated: no email, no new code. */
+  email: z.string().trim().email().max(254).optional(),
   percentOff: z.number().optional(),
   variant: z.enum(DISCOUNT_VARIANTS).optional(),
   /** Why the visitor qualified for price-sensitive-30 (metadata only) */
@@ -82,6 +85,13 @@ export default async function handler(
       }
     }
 
+    // New codes are email-gated — the popup collects an email before the
+    // code is generated. The existing-cookie path above stays email-free so
+    // restored discounts keep working.
+    if (!body.email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
     const config = await getDiscountConfig();
     const stripe = getStripeClient();
     const code = generateUniqueCode();
@@ -110,6 +120,7 @@ export default async function handler(
       name: `${isLotteryDiscount ? 'UTM Lottery' : 'Discount Popup'}: ${code}`,
       metadata: {
         source,
+        email: body.email,
         ...(variant ? { experiment_variant: variant } : {}),
         ...(priceSensitivityReason
           ? { price_sensitivity_reason: priceSensitivityReason }
@@ -139,6 +150,12 @@ export default async function handler(
       await stripe.coupons.del(coupon.id);
       throw err;
     }
+
+    // The gate doubles as lead capture — add the email to the newsletter
+    // audience. Fire-and-forget: a contact failure must not block the code.
+    addNewsletterContact(body.email, 'popup').catch((err) => {
+      log.error('Failed to add discount email to newsletter', err, { email: body.email });
+    });
 
     log.info('Generated discount code', {
       code,

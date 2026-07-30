@@ -76,10 +76,10 @@ describe('getVariantServerConfig', () => {
 describe('getServerConfig (env fallback)', () => {
   it('provides the documented defaults when no env is set', () => {
     expect(getServerConfig()).toEqual({
-      showProbability: 0.25,
+      showProbability: 0.5,
       percentOff: 10,
       durationMinutes: 120,
-      cooldownHours: 24,
+      cooldownHours: 6,
       forceShow: false,
       abPercentOff: 20,
       abDurationMinutes: 60,

@@ -4,19 +4,17 @@
  * Manages the discount popup lifecycle entirely client-side.
  * Uses TanStack Query for API calls and usehooks-ts for utilities.
  *
- * Experiment: eligible visitors are enrolled in the PostHog experiment
- * `discount-popup-offer` (control 10%/2h vs aggressive-20 20%/1h vs
- * price-sensitive-30 30%/30min) at trigger time. Known ticket holders are
- * excluded before enrollment. The price-sensitive-30 variant is gated to
- * visitors in lower-income European countries (relative to CH) or recurring
- * (3rd+ visit) non-converted visitors — see @/lib/discount/price-sensitivity.
+ * Everyone gets the same offer (the former `aggressive-20` variant — the
+ * A/B/C experiment concluded in its favor). The code is email-gated: the
+ * popup first advertises the offer with an email field, and the code is only
+ * generated once an email is submitted. Known ticket holders never see it.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useCopyToClipboard, useTimeout, useIsClient } from 'usehooks-ts';
-import posthog from 'posthog-js';
 import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 import {
   discountStatusQueryOptions,
   discountClientConfigQueryOptions,
@@ -32,15 +30,7 @@ import {
   clearDiscountCookies,
   isKnownTicketHolder,
   buildDiscountPersonalization,
-  DISCOUNT_EXPERIMENT_FLAG,
-  isDiscountVariant,
-  applyPriceSensitivityGate,
-  getPriceSensitivityEligibility,
-  getClientDetectedCountry,
   recordVisit,
-  getVisitCount,
-  type DiscountVariant,
-  type PriceSensitivityEligibility,
 } from '@/lib/discount';
 import {
   evaluateUtmLottery,
@@ -53,7 +43,11 @@ import { useCountdown, type TimeRemaining } from './useCountdown';
 // Constants
 const POPUP_DELAY_MS = 15_000; // 15 seconds
 /** Used only when the config API fails and we run on env fallbacks */
-const FALLBACK_COOLDOWN_HOURS = 24;
+const FALLBACK_COOLDOWN_HOURS = 6;
+/** Sentinel discount_code for popup events fired before a code exists */
+const EMAIL_GATE_CODE = 'email_gate';
+/** Advertised offer when the config API hasn't resolved (matches env default) */
+const FALLBACK_OFFER_PERCENT = 20;
 const EMPTY_COUNTDOWN: TimeRemaining = {
   days: 0,
   hours: 0,
@@ -64,59 +58,30 @@ const EMPTY_COUNTDOWN: TimeRemaining = {
 };
 
 interface GenerateDiscountParams {
+  email: string;
   lotteryPercentOff?: number;
-  variant?: DiscountVariant;
-  priceSensitivityReason?: PriceSensitivityEligibility['reason'];
 }
 
 // API call
 async function generateDiscount({
+  email,
   lotteryPercentOff,
-  variant,
-  priceSensitivityReason,
 }: GenerateDiscountParams): Promise<DiscountData> {
-  const payload: Record<string, unknown> = {};
+  const payload: Record<string, unknown> = {
+    email,
+    // Everyone gets the aggressive-20 offer; its percentage and duration are
+    // still resolved server-side from the admin config.
+    variant: 'aggressive-20',
+  };
   if (lotteryPercentOff) payload.percentOff = lotteryPercentOff;
-  if (variant) payload.variant = variant;
-  if (priceSensitivityReason) payload.priceSensitivityReason = priceSensitivityReason;
 
-  const hasBody = Object.keys(payload).length > 0;
   const res = await fetch('/api/discount/generate', {
     method: 'POST',
-    headers: hasBody ? { 'Content-Type': 'application/json' } : undefined,
-    body: hasBody ? JSON.stringify(payload) : undefined,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error('Failed to generate discount');
   return res.json();
-}
-
-/**
- * Resolves the experiment variant from PostHog at trigger time.
- * - Returns a variant when enrolled.
- * - Returns 'excluded' when the flag explicitly evaluates to false
- *   (release conditions exclude this person, e.g. identified ticket holders).
- * - Returns undefined when flags are unavailable (blocked/not loaded) —
- *   the visitor gets control behavior without polluting the experiment.
- *
- * `priceSensitiveEligible` is reported to PostHog as a flag-evaluation person
- * property so the experiment can target the price-sensitive-30 variant to
- * eligible visitors only (see experiment.ts for the PostHog setup).
- */
-function resolveExperimentVariant(
-  priceSensitiveEligible: boolean
-): DiscountVariant | 'excluded' | undefined {
-  try {
-    posthog.setPersonPropertiesForFlags(
-      { price_sensitive_eligible: priceSensitiveEligible },
-      false // don't force an extra flag reload — getFeatureFlag evaluates below
-    );
-    // Also reports flag exposure ($feature_flag_called) to PostHog
-    const value = posthog.getFeatureFlag(DISCOUNT_EXPERIMENT_FLAG);
-    if (value === false) return 'excluded';
-    return isDiscountVariant(value) ? value : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 export function useDiscount() {
@@ -129,10 +94,9 @@ export function useDiscount() {
   const flags = useRef({ shown: false, copied: false, eligibilityChecked: false });
   const isEligible = useRef(false);
   const lotteryResult = useRef<LotteryResult | null>(null);
-  const experimentVariant = useRef<DiscountVariant | null>(null);
-  const priceSensitivity = useRef<PriceSensitivityEligibility | null>(null);
-  const variantDowngraded = useRef(false);
+  const pendingEmail = useRef<string | null>(null);
   const [isLotteryReady, setIsLotteryReady] = useState(false);
+  const [emailSubmitFailed, setEmailSubmitFailed] = useState(false);
 
   // Clipboard
   const [, copyToClipboard] = useCopyToClipboard();
@@ -156,6 +120,7 @@ export function useDiscount() {
     }
     return null; // still loading — eligibility check waits
   }, [configQuery.data, configQuery.isError]);
+  const offerPercentOff = configQuery.data?.offerPercentOff ?? FALLBACK_OFFER_PERCENT;
 
   // Speaker lineup for tech-stack personalization. On the homepage (the only
   // place the popup mounts) this is already in the hydrated SSR cache.
@@ -175,14 +140,25 @@ export function useDiscount() {
     );
   }, [isClient, state, speakersData]);
 
-  // Generate discount mutation
+  // Generate discount mutation — runs when the visitor submits their email
+  // on the gate step. The email is the price of the code.
   const { mutate, isPending } = useMutation({
     mutationFn: generateDiscount,
     onSuccess: (discount) => {
+      setEmailSubmitFailed(false);
       setData(discount);
       setState('modal_open');
+      const email = pendingEmail.current;
+      if (email) {
+        analytics.identify(email);
+        analytics.track('discount_email_captured', {
+          discount_code: discount.code,
+          percent_off: discount.percentOff,
+          email,
+        } as EventProperties<'discount_email_captured'>);
+      }
     },
-    onError: () => setState('idle'),
+    onError: () => setEmailSubmitFailed(true),
   });
 
   // Countdown - use a far future date as fallback to avoid hydration issues
@@ -194,21 +170,8 @@ export function useDiscount() {
     if (!isClient || !config || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
 
-    // Count this visit so the experiment can tell recurring visitors apart,
-    // and pre-report price-sensitivity eligibility to PostHog so the flag's
-    // variant targeting has reloaded by the time the popup triggers (15s).
+    // Count this visit so recurring non-buyers stay identifiable in analytics.
     const visitCount = recordVisit();
-    const earlyEligibility = getPriceSensitivityEligibility({
-      countryCode: getClientDetectedCountry(),
-      visitCount,
-    });
-    try {
-      posthog.setPersonPropertiesForFlags({
-        price_sensitive_eligible: earlyEligibility.eligible,
-      });
-    } catch {
-      // PostHog unavailable — the local hard gate still applies.
-    }
 
     const trackEligibility = (props: {
       was_eligible: boolean;
@@ -287,55 +250,28 @@ export function useDiscount() {
 
   useTimeout(() => {
     if (!isEligible.current || data || isPending) return;
-
-    // Lottery discounts bypass the experiment entirely
-    if (lotteryResult.current?.eligible) {
-      mutate({ lotteryPercentOff: lotteryResult.current.percentOff });
-      return;
-    }
-
-    // Recompute price-sensitivity eligibility fresh at trigger time — the
-    // country cookie (set async by CurrencyContext via /api/geo/detect) is
-    // normally present by now even on a first visit.
-    const eligibility = getPriceSensitivityEligibility({
-      countryCode: getClientDetectedCountry(),
-      visitCount: getVisitCount(),
-    });
-    priceSensitivity.current = eligibility;
-
-    // Enroll in the A/B/C experiment at trigger time (counts as flag exposure)
-    const assigned = resolveExperimentVariant(eligibility.eligible);
-    if (assigned === 'excluded') return; // e.g. ticket holder identified in PostHog
-
-    // Hard guard: never serve the price-sensitive offer to an ineligible visitor
-    const gated = assigned ? applyPriceSensitivityGate(assigned, eligibility.eligible) : null;
-    variantDowngraded.current = gated?.downgraded ?? false;
-
-    experimentVariant.current = gated?.variant ?? null;
-    mutate({
-      variant: gated?.variant,
-      priceSensitivityReason:
-        gated?.variant === 'price-sensitive-30' ? eligibility.reason : null,
-    });
+    // Open the email gate — the code is only generated after the visitor
+    // submits their email (submitEmail below).
+    setState('modal_open');
   }, shouldTrigger ? delayMs : null);
 
-  // Track analytics when modal opens
+  // Track when the gate opens. The code doesn't exist yet, so the event
+  // carries the EMAIL_GATE_CODE sentinel and the advertised offer percent.
   useEffect(() => {
-    if (state !== 'modal_open' || !data || flags.current.shown) return;
+    if (state !== 'modal_open' || data || flags.current.shown) return;
     flags.current.shown = true;
     analytics.track('discount_popup_shown', {
-      discount_code: data.code,
-      percent_off: data.percentOff,
-      expires_at: data.expiresAt,
+      discount_code: EMAIL_GATE_CODE,
+      percent_off: lotteryResult.current?.eligible
+        ? lotteryResult.current.percentOff
+        : offerPercentOff,
+      expires_at: '',
       is_lottery: lotteryResult.current?.eligible ?? false,
       lottery_source: lotteryResult.current?.source,
-      experiment_variant: experimentVariant.current ?? undefined,
-      variant_downgraded: variantDowngraded.current || undefined,
-      price_sensitivity_reason: priceSensitivity.current?.reason ?? undefined,
       personalized: personalization !== null,
       detected_stack: personalization?.stack,
     });
-  }, [state, data, personalization]);
+  }, [state, data, personalization, offerPercentOff]);
 
   // Handle expiry
   useEffect(() => {
@@ -347,19 +283,29 @@ export function useDiscount() {
     analytics.track('discount_expired', {
       discount_code: data.code,
       was_copied: flags.current.copied,
-      experiment_variant: experimentVariant.current ?? undefined,
     });
   }, [countdown.isComplete, state, data]);
 
   // Actions
+  const submitEmail = useCallback((email: string) => {
+    if (data || isPending) return;
+    pendingEmail.current = email;
+    mutate({
+      email,
+      lotteryPercentOff: lotteryResult.current?.eligible
+        ? lotteryResult.current.percentOff
+        : undefined,
+    });
+  }, [data, isPending, mutate]);
+
   const dismiss = useCallback(() => {
-    if (!data) return;
     setDismissedCookie();
-    setState('minimized');
+    // Dismissing the gate (no code yet) closes it for good this session;
+    // dismissing a revealed code minimizes to the corner widget.
+    setState(data ? 'minimized' : 'idle');
     analytics.track('discount_popup_dismissed', {
-      discount_code: data.code,
-      time_remaining_seconds: Math.floor(countdown.total / 1000),
-      experiment_variant: experimentVariant.current ?? undefined,
+      discount_code: data?.code ?? EMAIL_GATE_CODE,
+      time_remaining_seconds: data ? Math.floor(countdown.total / 1000) : 0,
     });
   }, [data, countdown.total]);
 
@@ -380,7 +326,6 @@ export function useDiscount() {
       analytics.track('discount_code_copied', {
         discount_code: data.code,
         time_remaining_seconds: Math.floor(countdown.total / 1000),
-        experiment_variant: experimentVariant.current ?? undefined,
       });
     }
   }, [data, countdown.total, copyToClipboard]);
@@ -390,6 +335,10 @@ export function useDiscount() {
     discountData: data,
     countdown: data?.expiresAt ? countdown : EMPTY_COUNTDOWN,
     personalization,
+    offerPercentOff,
+    isGeneratingCode: isPending,
+    emailSubmitFailed,
+    submitEmail,
     dismiss,
     reopen,
     copyCode,

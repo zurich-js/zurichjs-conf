@@ -131,8 +131,9 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
   // Hide NavBar on admin pages
   const showNavBar = !router.pathname.startsWith('/admin');
 
-  // Only show discount popup on homepage
-  const showDiscount = router.pathname === '/';
+  // Discount popup mounts on the high-traffic content pages, not just the
+  // homepage — /speakers alone starts 16% of sessions.
+  const showDiscount = ['/', '/speakers', '/workshops', '/schedule'].includes(router.pathname);
 
   return (
     <PostHogProvider client={posthog}>
