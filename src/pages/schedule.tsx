@@ -86,7 +86,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
       />
 
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
+        <ShapedSection shape="straight" variant="dark" dropTop dropBottom compact>
           <Kicker variant="dark" className="block mt-10">
             September 9-12, 2026
           </Kicker>
@@ -98,7 +98,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
           </p>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="light" dropTop dropBottom>
+        <ShapedSection shape="straight" variant="light" dropTop dropBottom compact>
           <div className="mx-auto max-w-screen-lg">
             <DayTabs
               tabs={publicProgramTabs.map((tab) => ({
@@ -150,7 +150,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="dark">
+        <ShapedSection shape="straight" variant="dark" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Meet The Lineup
@@ -169,7 +169,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="medium">
+        <ShapedSection shape="straight" variant="medium" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Join Us
@@ -188,7 +188,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="dark">
+        <ShapedSection shape="straight" variant="dark" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Bring Your Team

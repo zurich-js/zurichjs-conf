@@ -366,7 +366,7 @@ export default function SpeakersPage() {
         </SectionContainer>
 
 
-        <ShapedSection shape="straight" variant="medium">
+        <ShapedSection shape="straight" variant="medium" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Join The Crowd
