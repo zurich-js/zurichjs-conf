@@ -142,10 +142,10 @@ export default async function handler(
           return null;
         }
 
-        // Get comparison price (last_call price — the final stage — for non-student categories)
+        // Get comparison price (last_minute price — the final stage — for non-student categories)
         let comparePrice: number | undefined;
-        if (category !== 'standard_student_unemployed' && currentStage !== 'last_call') {
-          const lastCallKey = buildLookupKey(category, 'last_call', targetCurrency);
+        if (category !== 'standard_student_unemployed' && currentStage !== 'last_minute') {
+          const lastCallKey = buildLookupKey(category, 'last_minute', targetCurrency);
           const lastCallPrice = await fetchPrice(stripe, lastCallKey);
           const anchorAmount = lastCallPrice?.unit_amount ?? undefined;
           // Only compare when the final price is actually higher (VIP stays flat after late bird)

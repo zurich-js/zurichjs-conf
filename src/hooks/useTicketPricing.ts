@@ -10,7 +10,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 /**
  * Price stage types
  */
-type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird' | 'last_call';
+type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird' | 'last_minute';
 
 /**
  * Stock availability info

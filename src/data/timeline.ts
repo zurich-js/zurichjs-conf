@@ -75,9 +75,9 @@ export const timelineData: Omit<TimelineSectionProps, 'className'> = {
       emphasis: true,
     },
     {
-      id: 'last-call',
+      id: 'last-minute',
       dateISO: '2026-08-28',
-      title: 'Last call tickets',
+      title: 'Last minute tickets',
       icon: 'ticket',
       body: 'Final ticket pricing for the last two weeks. Last chance to grab your spot before we sell out!',
       href: '#tickets',

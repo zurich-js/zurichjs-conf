@@ -249,14 +249,14 @@ describe('parseTicketInfo', () => {
       expect(result).toEqual({ category: 'standard', stage: 'late_bird' });
     });
 
-    it('should parse standard_last_call correctly', () => {
-      const result = parseTicketInfo('standard_last_call');
-      expect(result).toEqual({ category: 'standard', stage: 'last_call' });
+    it('should parse standard_last_minute correctly', () => {
+      const result = parseTicketInfo('standard_last_minute');
+      expect(result).toEqual({ category: 'standard', stage: 'last_minute' });
     });
 
-    it('should parse vip_last_call correctly', () => {
-      const result = parseTicketInfo('vip_last_call');
-      expect(result).toEqual({ category: 'vip', stage: 'last_call' });
+    it('should parse vip_last_minute correctly', () => {
+      const result = parseTicketInfo('vip_last_minute');
+      expect(result).toEqual({ category: 'vip', stage: 'last_minute' });
     });
 
     it('should parse vip_blind_bird correctly', () => {
@@ -313,9 +313,9 @@ describe('parseTicketInfo', () => {
       expect(result).toEqual({ category: 'standard', stage: 'late_bird' });
     });
 
-    it('should parse standard_last_call_eur correctly', () => {
-      const result = parseTicketInfo('standard_last_call_eur');
-      expect(result).toEqual({ category: 'standard', stage: 'last_call' });
+    it('should parse standard_last_minute_eur correctly', () => {
+      const result = parseTicketInfo('standard_last_minute_eur');
+      expect(result).toEqual({ category: 'standard', stage: 'last_minute' });
     });
 
     it('should parse standard_general_eur correctly', () => {
@@ -363,8 +363,8 @@ describe('getTicketDisplayName', () => {
       expect(getTicketDisplayName('standard', 'late_bird')).toBe('Late Bird');
     });
 
-    it('should return "Last Call" for last_call stage', () => {
-      expect(getTicketDisplayName('standard', 'last_call')).toBe('Last Call');
+    it('should return "Last Minute" for last_minute stage', () => {
+      expect(getTicketDisplayName('standard', 'last_minute')).toBe('Last Minute');
     });
   });
 });
@@ -407,8 +407,8 @@ describe('toLegacyType', () => {
       expect(toLegacyType('standard', 'late_bird')).toBe('late_bird');
     });
 
-    it('should return "late_bird" for last_call stage (legacy enum has no last_call)', () => {
-      expect(toLegacyType('standard', 'last_call')).toBe('late_bird');
+    it('should return "late_bird" for last_minute stage (legacy enum has no last_minute)', () => {
+      expect(toLegacyType('standard', 'last_minute')).toBe('late_bird');
     });
   });
 });
@@ -475,12 +475,12 @@ describe('isTicketProduct', () => {
       expect(isTicketProduct(createMockPrice('standard_late_bird'))).toBe(true);
     });
 
-    it('should return true for standard_last_call', () => {
-      expect(isTicketProduct(createMockPrice('standard_last_call'))).toBe(true);
+    it('should return true for standard_last_minute', () => {
+      expect(isTicketProduct(createMockPrice('standard_last_minute'))).toBe(true);
     });
 
-    it('should return true for vip_last_call', () => {
-      expect(isTicketProduct(createMockPrice('vip_last_call'))).toBe(true);
+    it('should return true for vip_last_minute', () => {
+      expect(isTicketProduct(createMockPrice('vip_last_minute'))).toBe(true);
     });
 
     it('should return true for vip_blind_bird', () => {

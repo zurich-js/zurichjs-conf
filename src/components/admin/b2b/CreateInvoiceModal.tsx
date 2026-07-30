@@ -26,7 +26,7 @@ interface FormData {
   invoiceNotes: string;
   paymentMethod: 'bank_transfer' | 'stripe';
   ticketCategory: 'standard' | 'student' | 'unemployed' | 'vip';
-  ticketStage: 'blind_bird' | 'early_bird' | 'general_admission' | 'late_bird' | 'last_call';
+  ticketStage: 'blind_bird' | 'early_bird' | 'general_admission' | 'late_bird' | 'last_minute';
   ticketQuantity: number;
   unitPrice: number;
 }
@@ -186,7 +186,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
                   { value: 'early_bird', label: 'Early Bird' },
                   { value: 'general_admission', label: 'General Admission' },
                   { value: 'late_bird', label: 'Late Bird' },
-                  { value: 'last_call', label: 'Last Call' },
+                  { value: 'last_minute', label: 'Last Minute' },
                 ]}
               />
               <FormInput

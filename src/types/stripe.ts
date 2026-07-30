@@ -5,7 +5,7 @@
 /**
  * Price stage types matching Stripe lookup keys
  */
-export type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird' | 'last_call';
+export type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird' | 'last_minute';
 
 /**
  * Ticket category types
@@ -59,9 +59,9 @@ export const STAGE_INFO: Record<PriceStage, StageInfo> = {
     label: 'Late Bird',
     description: 'Last chance pricing',
   },
-  last_call: {
-    name: 'last_call',
-    label: 'Last Call',
+  last_minute: {
+    name: 'last_minute',
+    label: 'Last Minute',
     description: 'Final pricing before the conference',
   },
 };

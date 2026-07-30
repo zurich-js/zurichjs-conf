@@ -54,8 +54,8 @@ function toLegacyType(category: TicketCategory, stage: TicketStage): TicketType 
   if (category === 'unemployed') return 'unemployed';
   if (stage === 'blind_bird') return 'blind_bird';
   if (stage === 'early_bird') return 'early_bird';
-  // Legacy enum has no last_call value — map to late_bird (closest period)
-  if (stage === 'late_bird' || stage === 'last_call') return 'late_bird';
+  // Legacy enum has no last_minute value — map to late_bird (closest period)
+  if (stage === 'late_bird' || stage === 'last_minute') return 'late_bird';
   return 'standard';
 }
 
@@ -72,7 +72,7 @@ function getTicketDisplayName(category: TicketCategory, stage: TicketStage): str
     early_bird: 'Early Bird',
     general_admission: 'Standard',
     late_bird: 'Late Bird',
-    last_call: 'Last Call',
+    last_minute: 'Last Minute',
   };
 
   return stageNames[stage] || 'Conference Ticket';

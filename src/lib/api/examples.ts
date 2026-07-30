@@ -37,7 +37,7 @@ export async function fetchTicketPricing(): Promise<TicketPricingResponse> {
 // ============================================================================
 
 interface TicketSearchParams extends Record<string, string | number | boolean | undefined> {
-  stage?: 'early_bird' | 'standard' | 'late_bird' | 'last_call';
+  stage?: 'early_bird' | 'standard' | 'late_bird' | 'last_minute';
   category?: 'standard_student_unemployed' | 'standard' | 'vip';
   currency?: string;
   limit?: number;

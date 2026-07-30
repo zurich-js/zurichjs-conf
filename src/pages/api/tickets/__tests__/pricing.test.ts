@@ -209,11 +209,11 @@ describe('Ticket Pricing API Handler', () => {
       if (key === 'vip_late_bird') {
         return { data: [createMockStripePrice(key, 45000, 'CHF')] };
       }
-      if (key === 'standard_last_call') {
+      if (key === 'standard_last_minute') {
         return { data: [createMockStripePrice(key, 28000, 'CHF')] };
       }
       // VIP stays flat after late bird — same amount as vip_late_bird
-      if (key === 'vip_last_call') {
+      if (key === 'vip_last_minute') {
         return { data: [createMockStripePrice(key, 45000, 'CHF')] };
       }
 
@@ -233,10 +233,10 @@ describe('Ticket Pricing API Handler', () => {
       if (key === 'vip_late_bird_eur') {
         return { data: [createMockStripePrice(key, 42000, 'EUR')] };
       }
-      if (key === 'standard_last_call_eur') {
+      if (key === 'standard_last_minute_eur') {
         return { data: [createMockStripePrice(key, 26000, 'EUR')] };
       }
-      if (key === 'vip_last_call_eur') {
+      if (key === 'vip_last_minute_eur') {
         return { data: [createMockStripePrice(key, 42000, 'EUR')] };
       }
 
@@ -581,7 +581,7 @@ describe('Ticket Pricing API Handler', () => {
   // ==========================================================================
 
   describe('compare prices', () => {
-    it('should include compare price from last_call for non-student tickets', async () => {
+    it('should include compare price from last_minute for non-student tickets', async () => {
       const req = createMockRequest();
       const res = createMockResponse();
 
@@ -591,11 +591,11 @@ describe('Ticket Pricing API Handler', () => {
       const standardPlan = json.plans.find((p) => p.id === 'standard');
       const vipPlan = json.plans.find((p) => p.id === 'vip');
 
-      expect(standardPlan?.comparePrice).toBe(28000); // last_call price
-      expect(vipPlan?.comparePrice).toBe(45000); // last_call price
+      expect(standardPlan?.comparePrice).toBe(28000); // last_minute price
+      expect(vipPlan?.comparePrice).toBe(45000); // last_minute price
     });
 
-    it('should not include compare price when the last_call amount is not higher (flat VIP)', async () => {
+    it('should not include compare price when the last_minute amount is not higher (flat VIP)', async () => {
       mocks.mockGetCurrentStage.mockReturnValue({
         stage: 'late_bird',
         displayName: 'Late Bird',
@@ -612,11 +612,11 @@ describe('Ticket Pricing API Handler', () => {
         if (key === 'vip_late_bird') {
           return { data: [createMockStripePrice(key, 45000, 'CHF')] };
         }
-        if (key === 'standard_last_call') {
+        if (key === 'standard_last_minute') {
           return { data: [createMockStripePrice(key, 28000, 'CHF')] };
         }
-        // VIP stays flat — last_call amount equals late_bird amount
-        if (key === 'vip_last_call') {
+        // VIP stays flat — last_minute amount equals late_bird amount
+        if (key === 'vip_last_minute') {
           return { data: [createMockStripePrice(key, 45000, 'CHF')] };
         }
         return { data: [] };
@@ -631,7 +631,7 @@ describe('Ticket Pricing API Handler', () => {
       const standardPlan = json.plans.find((p) => p.id === 'standard');
       const vipPlan = json.plans.find((p) => p.id === 'vip');
 
-      expect(standardPlan?.comparePrice).toBe(28000); // still rises in last_call
+      expect(standardPlan?.comparePrice).toBe(28000); // still rises in last_minute
       expect(vipPlan?.comparePrice).toBeUndefined(); // flat — no fake discount shown
     });
 
@@ -647,22 +647,22 @@ describe('Ticket Pricing API Handler', () => {
       expect(studentPlan?.comparePrice).toBeUndefined();
     });
 
-    it('should not include compare price when stage is last_call', async () => {
+    it('should not include compare price when stage is last_minute', async () => {
       mocks.mockGetCurrentStage.mockReturnValue({
-        stage: 'last_call',
-        displayName: 'Last Call',
+        stage: 'last_minute',
+        displayName: 'Last Minute',
       });
 
-      // Update mock to return last_call prices
+      // Update mock to return last_minute prices
       mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
         const key = lookup_keys[0];
         if (key === 'standard_student_unemployed') {
           return { data: [createMockStripePrice(key, 5000, 'CHF')] };
         }
-        if (key === 'standard_last_call') {
+        if (key === 'standard_last_minute') {
           return { data: [createMockStripePrice(key, 28000, 'CHF')] };
         }
-        if (key === 'vip_last_call') {
+        if (key === 'vip_last_minute') {
           return { data: [createMockStripePrice(key, 45000, 'CHF')] };
         }
         return { data: [] };

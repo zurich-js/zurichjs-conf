@@ -68,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       early_bird: 'Early Bird',
       general_admission: 'General Admission',
       late_bird: 'Late Bird',
-      last_call: 'Last Call',
+      last_minute: 'Last Minute',
     };
 
     const ticketDescription = `ZurichJS Conference 2026 - ${categoryLabels[invoice.ticket_category] || invoice.ticket_category} Ticket (${stageLabels[invoice.ticket_stage] || invoice.ticket_stage})`;

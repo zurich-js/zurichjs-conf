@@ -37,7 +37,7 @@ const STAGE_LABELS: Record<string, string> = {
   early_bird: 'Early Bird',
   general_admission: 'General Admission',
   late_bird: 'Late Bird',
-  last_call: 'Last Call',
+  last_minute: 'Last Minute',
 };
 
 // ─── Helper: safely read session_metadata ────────────────────────────────────

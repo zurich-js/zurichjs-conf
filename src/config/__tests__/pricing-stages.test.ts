@@ -21,7 +21,7 @@ const emptyCounts = (): StageStockCounts => ({
     early_bird: 0,
     standard: 0,
     late_bird: 0,
-    last_call: 0,
+    last_minute: 0,
   },
   byCategory: {
     standard_student_unemployed: 0,
@@ -49,31 +49,31 @@ describe('PRICING_STAGES', () => {
     });
   });
 
-  it('ends with last_call as the final stage', () => {
-    expect(PRICING_STAGES[PRICING_STAGES.length - 1].stage).toBe('last_call');
+  it('ends with last_minute as the final stage', () => {
+    expect(PRICING_STAGES[PRICING_STAGES.length - 1].stage).toBe('last_minute');
   });
 });
 
 describe('getCurrentStage', () => {
-  it('returns late_bird just before the last_call boundary', () => {
+  it('returns late_bird just before the last_minute boundary', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-27T23:59:59.000Z'));
 
     expect(getCurrentStage().stage).toBe('late_bird');
   });
 
-  it('returns last_call from Aug 28 (two weeks before the conference)', () => {
+  it('returns last_minute from Aug 28 (two weeks before the conference)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-28T00:00:00.000Z'));
 
-    expect(getCurrentStage().stage).toBe('last_call');
+    expect(getCurrentStage().stage).toBe('last_minute');
   });
 
-  it('returns last_call right up to the conference', () => {
+  it('returns last_minute right up to the conference', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-10T12:00:00.000Z'));
 
-    expect(getCurrentStage().stage).toBe('last_call');
+    expect(getCurrentStage().stage).toBe('last_minute');
   });
 
   it('advances past blind_bird when its stock limit is exhausted', () => {
@@ -92,20 +92,20 @@ describe('getNextStage', () => {
     expect(getNextStage('blind_bird')?.stage).toBe('early_bird');
     expect(getNextStage('early_bird')?.stage).toBe('standard');
     expect(getNextStage('standard')?.stage).toBe('late_bird');
-    expect(getNextStage('late_bird')?.stage).toBe('last_call');
+    expect(getNextStage('late_bird')?.stage).toBe('last_minute');
   });
 
   it('returns undefined after the final stage', () => {
-    expect(getNextStage('last_call')).toBeUndefined();
+    expect(getNextStage('last_minute')).toBeUndefined();
   });
 });
 
 describe('isStageStockExhausted', () => {
   it('is false for stages without a stage limit', () => {
     const counts = emptyCounts();
-    counts.byStage.last_call = 10000;
+    counts.byStage.last_minute = 10000;
 
-    expect(isStageStockExhausted('last_call', counts)).toBe(false);
+    expect(isStageStockExhausted('last_minute', counts)).toBe(false);
   });
 
   it('is true for blind_bird once its limit is reached', () => {

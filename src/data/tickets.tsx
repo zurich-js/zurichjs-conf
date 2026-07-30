@@ -138,11 +138,11 @@ export const STAGE_COPY: Record<
     ),
     countdownTitle: 'Late Bird phase ends in',
   },
-  last_call: {
-    title: 'Last call tickets',
+  last_minute: {
+    title: 'Last minute tickets',
     subtitle: (
       <>
-        <strong>Last call</strong> to get your tickets. Don&apos;t miss out on the event of the
+        <strong>Last chance</strong> to get your tickets. Don&apos;t miss out on the event of the
         year!
       </>
     ),
@@ -222,7 +222,7 @@ export const TICKET_FAQ: FAQItem[] = [
     answer: (
       <>
         We&apos;d love to welcome everyone, so if there&apos;s room, yes — you can buy a ticket at
-        the door. Door tickets are priced above the final Last Call price, so grabbing yours
+        the door. Door tickets are priced above even the Last Minute price, so grabbing yours
         online in advance is always the better deal. One thing to know: we plan catering,
         t-shirts, and all the little touches around the attendees we expect, so door sales depend
         on what we have left on the day. We&apos;ll always do our best to fit you in, but we may
@@ -456,8 +456,8 @@ export const createTicketDataFromStripe = (
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 
-  // Show countdown for all stages except last_call (last stage)
-  const showCountdown = currentStage !== 'last_call';
+  // Show countdown for all stages except last_minute (last stage)
+  const showCountdown = currentStage !== 'last_minute';
 
   return {
     kicker: 'TICKETS',

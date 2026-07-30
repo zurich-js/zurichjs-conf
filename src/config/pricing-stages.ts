@@ -12,7 +12,7 @@
 /**
  * Price stage types
  */
-export type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird' | 'last_call';
+export type PriceStage = 'blind_bird' | 'early_bird' | 'standard' | 'late_bird' | 'last_minute';
 
 /**
  * Ticket category types
@@ -87,7 +87,7 @@ export interface StockInfo {
  * - Early bird: Jan 1, 2026 -> Apr 22, 2026
  * - Standard (General Admission): Apr 22, 2026 -> Aug 1, 2026
  * - Late bird: Aug 1, 2026 -> Aug 28, 2026
- * - Last call: Aug 28, 2026 -> Sep 11, 2026 (final two weeks)
+ * - Last minute: Aug 28, 2026 -> Sep 11, 2026 (final two weeks)
  *
  * Stock limits:
  * - Blind bird: 30 tickets total (standard + VIP combined)
@@ -131,8 +131,8 @@ export const PRICING_STAGES: StageConfig[] = [
     description: 'Late pricing - prices rise again soon',
   },
   {
-    stage: 'last_call',
-    displayName: 'Last Call',
+    stage: 'last_minute',
+    displayName: 'Last Minute',
     startDate: new Date('2026-08-28T00:00:00.000Z'),
     endDate: new Date('2026-09-11T00:00:00.000Z'),
     priority: 5,

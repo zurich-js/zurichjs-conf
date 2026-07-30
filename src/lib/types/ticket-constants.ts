@@ -24,7 +24,7 @@ export const TICKET_STAGES: readonly TicketStage[] = [
   'early_bird',
   'general_admission',
   'late_bird',
-  'last_call',
+  'last_minute',
 ] as const;
 
 /**
@@ -43,7 +43,7 @@ export const LOOKUP_KEY_STAGES = [
   'standard',
   'general',
   'late_bird',
-  'last_call',
+  'last_minute',
 ] as const;
 
 /**
@@ -55,5 +55,5 @@ export const STAGE_LOOKUP_MAP: Record<string, TicketStage> = {
   standard: 'general_admission',
   general: 'general_admission',
   late_bird: 'late_bird',
-  last_call: 'last_call',
+  last_minute: 'last_minute',
 } as const;

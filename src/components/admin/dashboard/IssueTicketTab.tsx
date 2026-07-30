@@ -178,7 +178,7 @@ function TicketTypeSelector({ category, setCategory, stage, setStage }: {
           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent">
           <option value="blind_bird">Blind Bird</option><option value="early_bird">Early Bird</option>
           <option value="general_admission">General Admission</option><option value="late_bird">Late Bird</option>
-          <option value="last_call">Last Call</option>
+          <option value="last_minute">Last Minute</option>
         </select>
       </div>
     </div>

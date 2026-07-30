@@ -3,7 +3,7 @@
  *
  * Verifies that validateCheckoutPrices accepts prices matching the current
  * pricing stage and rejects prices from expired stages — including the
- * last_call stage covering the final two weeks before the conference.
+ * last_minute stage covering the final two weeks before the conference.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -19,7 +19,7 @@ vi.mock('@/lib/tickets/getTicketCounts', () => ({
         early_bird: 0,
         standard: 0,
         late_bird: 0,
-        last_call: 0,
+        last_minute: 0,
       },
       byCategory: {
         standard_student_unemployed: 0,
@@ -51,20 +51,20 @@ describe('validateCheckoutPrices', () => {
     vi.useRealTimers();
   });
 
-  it('accepts last_call prices during the last_call window', async () => {
+  it('accepts last_minute prices during the last_minute window', async () => {
     vi.setSystemTime(new Date('2026-09-01T00:00:00.000Z'));
     const stripe = createMockStripe({
-      price_1: 'standard_last_call',
-      price_2: 'vip_last_call_eur',
+      price_1: 'standard_last_minute',
+      price_2: 'vip_last_minute_eur',
     });
 
     const result = await validateCheckoutPrices(stripe, ['price_1', 'price_2']);
 
     expect(result.valid).toBe(true);
-    expect(result.currentStage).toBe('last_call');
+    expect(result.currentStage).toBe('last_minute');
   });
 
-  it('rejects late_bird prices during the last_call window', async () => {
+  it('rejects late_bird prices during the last_minute window', async () => {
     vi.setSystemTime(new Date('2026-09-01T00:00:00.000Z'));
     const stripe = createMockStripe({ price_1: 'standard_late_bird' });
 
@@ -72,12 +72,12 @@ describe('validateCheckoutPrices', () => {
 
     expect(result.valid).toBe(false);
     expect(result.error).toContain('late bird');
-    expect(result.currentStage).toBe('last_call');
+    expect(result.currentStage).toBe('last_minute');
   });
 
-  it('rejects last_call prices before the last_call window opens', async () => {
+  it('rejects last_minute prices before the last_minute window opens', async () => {
     vi.setSystemTime(new Date('2026-08-15T00:00:00.000Z'));
-    const stripe = createMockStripe({ price_1: 'standard_last_call' });
+    const stripe = createMockStripe({ price_1: 'standard_last_minute' });
 
     const result = await validateCheckoutPrices(stripe, ['price_1']);
 
