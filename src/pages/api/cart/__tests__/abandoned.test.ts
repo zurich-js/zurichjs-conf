@@ -85,9 +85,14 @@ function createResponse(): MockResponse {
   return res;
 }
 
-async function callHandler(req: Partial<NextApiRequest>) {
+// Each call gets its own IP by default so the module-level rate limiter
+// doesn't couple unrelated tests.
+let ipCounter = 0;
+
+async function callHandler(req: Partial<NextApiRequest>, ip?: string) {
   const res = createResponse();
-  await handler(req as NextApiRequest, res as unknown as NextApiResponse);
+  const headers = { 'x-forwarded-for': ip ?? `10.0.0.${++ipCounter}` };
+  await handler({ headers, ...req } as NextApiRequest, res as unknown as NextApiResponse);
   return res;
 }
 
@@ -136,14 +141,32 @@ describe('/api/cart/abandoned', () => {
 
     const missingCart = await callHandler({ method: 'POST', body: { email: 'buyer@example.com' } });
     expect(missingCart._status).toBe(400);
-    expect(missingCart._json).toEqual(expect.objectContaining({ error: 'Email and cart items are required' }));
+    expect(missingCart._json).toEqual(expect.objectContaining({ error: 'Validation failed' }));
 
     const invalidEmail = await callHandler({
       method: 'POST',
       body: { ...validRequest.body, email: 'nope' },
     });
     expect(invalidEmail._status).toBe(400);
-    expect(invalidEmail._json).toEqual(expect.objectContaining({ error: 'Invalid email address' }));
+    expect(invalidEmail._json).toEqual(expect.objectContaining({ error: 'Validation failed' }));
+
+    const forgedCartState = await callHandler({
+      method: 'POST',
+      body: { ...validRequest.body, encodedCartState: 'javascript:alert(1)' },
+    });
+    expect(forgedCartState._status).toBe(400);
+
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('rate limits repeated requests from the same IP', async () => {
+    const ip = '198.51.100.7';
+    for (let i = 0; i < 5; i += 1) {
+      expect((await callHandler(validRequest, ip))._status).toBe(200);
+    }
+    const throttled = await callHandler(validRequest, ip);
+    expect(throttled._status).toBe(429);
+    expect(mocks.sendEmail).toHaveBeenCalledTimes(5);
   });
 
   it('schedules recovery email, replaces older scheduled emails, and notifies analytics', async () => {

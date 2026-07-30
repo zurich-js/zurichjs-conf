@@ -5,37 +5,46 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import * as React from 'react';
-import { Resend } from 'resend';
+import { z } from 'zod';
 import { render } from '@react-email/render';
 import { CartAbandonmentEmail } from '@/emails/templates/CartAbandonmentEmail';
 import type { CartAbandonmentEmailProps } from '@/emails/templates/CartAbandonmentEmail';
 import { getBaseUrl } from '@/lib/url';
 import { serverAnalytics } from '@/lib/analytics/server';
-import type { CartItem as BaseCartItem } from '@/types/cart';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { getResendClient, EMAIL_CONFIG } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { notifyCartAbandonment } from '@/lib/platform-notifications';
+import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 
 const log = logger.scope('Cart Abandonment');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 /** Delay before sending abandonment email (in hours) */
 const ABANDONMENT_EMAIL_DELAY_HOURS = 24;
 
-/** Cart item for email display (subset of full CartItem) */
-type EmailCartItem = Pick<BaseCartItem, 'title' | 'quantity' | 'price' | 'currency'>;
+// Public unauthenticated endpoint that triggers outbound email — keep the
+// per-IP budget tight. Legit clients fire at most once per session.
+const limiter = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
 
-interface CartAbandonedRequest {
-  email: string;
-  firstName?: string;
-  /** Cart items for email display */
-  cartItems: EmailCartItem[];
-  cartTotal: number;
-  currency: string;
-  /** Encoded cart state for URL reconstruction */
-  encodedCartState?: string;
-}
+const bodySchema = z.object({
+  email: z.string().trim().email().max(254),
+  firstName: z.string().trim().max(100).optional(),
+  cartItems: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(200),
+        quantity: z.number().int().min(1).max(20),
+        price: z.number().min(0).max(100_000),
+        currency: z.string().length(3),
+      })
+    )
+    .min(1)
+    .max(20),
+  cartTotal: z.number().min(0).max(1_000_000),
+  currency: z.string().length(3),
+  /** Encoded cart state for URL reconstruction — base64url alphabet only */
+  encodedCartState: z.string().max(4_000).regex(/^[A-Za-z0-9\-_]*$/).optional(),
+});
 
 interface CartAbandonedResponse {
   success: boolean;
@@ -57,41 +66,25 @@ export default async function handler(
     });
   }
 
+  const { allowed } = limiter.check(getClientIp(req));
+  if (!allowed) {
+    return res.status(429).json({
+      success: false,
+      error: 'Too many requests',
+    });
+  }
+
   try {
-    const {
-      email,
-      firstName,
-      cartItems,
-      cartTotal,
-      currency,
-      encodedCartState,
-    } = req.body as CartAbandonedRequest;
-
-    // Validate required fields
-    if (!email || !cartItems || cartItems.length === 0) {
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
       return res.status(400).json({
         success: false,
-        error: 'Email and cart items are required',
+        error: 'Validation failed',
       });
     }
+    const { email, firstName, cartItems, cartTotal, currency, encodedCartState } = parsed.data;
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address',
-      });
-    }
-
-    // Check if Resend API key is configured
-    if (!process.env.RESEND_API_KEY) {
-      log.error('RESEND_API_KEY is not configured');
-      return res.status(500).json({
-        success: false,
-        error: 'Email service not configured',
-      });
-    }
+    const resend = getResendClient();
 
     // Calculate scheduled time (24 hours from now)
     const scheduledAt = new Date(
@@ -120,7 +113,8 @@ export default async function handler(
 
     // Schedule the email
     const result = await resend.emails.send({
-      from: 'ZurichJS Conference <hello@zurichjs.com>',
+      from: EMAIL_CONFIG.from,
+      replyTo: EMAIL_CONFIG.replyTo,
       to: email,
       subject: 'Did you forget something? Your tickets are waiting!',
       html: emailHtml,
