@@ -142,12 +142,16 @@ export default async function handler(
           return null;
         }
 
-        // Get comparison price (late_bird price for non-student categories)
+        // Get comparison price (last_call price — the final stage — for non-student categories)
         let comparePrice: number | undefined;
-        if (category !== 'standard_student_unemployed' && currentStage !== 'late_bird') {
-          const lateBirdKey = buildLookupKey(category, 'late_bird', targetCurrency);
-          const lateBirdPrice = await fetchPrice(stripe, lateBirdKey);
-          comparePrice = lateBirdPrice?.unit_amount ?? undefined;
+        if (category !== 'standard_student_unemployed' && currentStage !== 'last_call') {
+          const lastCallKey = buildLookupKey(category, 'last_call', targetCurrency);
+          const lastCallPrice = await fetchPrice(stripe, lastCallKey);
+          const anchorAmount = lastCallPrice?.unit_amount ?? undefined;
+          // Only compare when the final price is actually higher (VIP stays flat after late bird)
+          comparePrice = anchorAmount !== undefined && anchorAmount > price.unit_amount
+            ? anchorAmount
+            : undefined;
         }
 
         // Calculate stock info

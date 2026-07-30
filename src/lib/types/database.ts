@@ -16,7 +16,7 @@ export type TicketCategory = 'standard' | 'student' | 'unemployed' | 'vip';
 /**
  * Ticket Stage - When the ticket was purchased (pricing period)
  */
-export type TicketStage = 'blind_bird' | 'early_bird' | 'general_admission' | 'late_bird';
+export type TicketStage = 'blind_bird' | 'early_bird' | 'general_admission' | 'late_bird' | 'last_call';
 
 /**
  * Legacy type for backward compatibility

@@ -25,6 +25,8 @@ const mapDbStageToStage = (dbStage: string): PriceStage => {
       return 'standard';
     case 'late_bird':
       return 'late_bird';
+    case 'last_call':
+      return 'last_call';
     default:
       return 'standard';
   }
@@ -76,6 +78,7 @@ export async function getTicketCounts(): Promise<TicketCountsResult> {
         early_bird: 0,
         standard: 0,
         late_bird: 0,
+        last_call: 0,
       },
       byCategory: {
         standard_student_unemployed: 0,

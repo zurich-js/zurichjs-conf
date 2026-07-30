@@ -129,10 +129,20 @@ export const STAGE_COPY: Record<
     countdownTitle: 'Standard pricing ends in',
   },
   late_bird: {
-    title: 'Last chance tickets',
+    title: 'Late bird tickets',
     subtitle: (
       <>
-        <strong>Last chance</strong> to get your tickets. Don&apos;t miss out on the event of the
+        Time is running out! Get your ticket <strong>before prices rise one last time</strong> in
+        the final two weeks.
+      </>
+    ),
+    countdownTitle: 'Late Bird phase ends in',
+  },
+  last_call: {
+    title: 'Last call tickets',
+    subtitle: (
+      <>
+        <strong>Last call</strong> to get your tickets. Don&apos;t miss out on the event of the
         year!
       </>
     ),
@@ -204,6 +214,24 @@ export const TICKET_FAQ: FAQItem[] = [
         </a>{' '}
         if we can help you navigate how to plan the trip – whether that&apos;s accommodation,
         transport, or affordable places to eat.
+      </>
+    ),
+  },
+  {
+    question: 'Can I buy a ticket at the door?',
+    answer: (
+      <>
+        We&apos;d love to welcome everyone, so if there&apos;s room, yes — you can buy a ticket at
+        the door. Door tickets are priced above the final Last Call price, so grabbing yours
+        online in advance is always the better deal. One thing to know: we plan catering,
+        t-shirts, and all the little touches around the attendees we expect, so door sales depend
+        on what we have left on the day. We&apos;ll always do our best to fit you in, but we may
+        have to cap door sales to make sure everyone gets the full experience. If you already know
+        you&apos;re coming, save yourself the uncertainty (and some money) and{' '}
+        <a href="#tickets" className="underline">
+          get your ticket in advance
+        </a>
+        .
       </>
     ),
   },
@@ -428,8 +456,8 @@ export const createTicketDataFromStripe = (
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 
-  // Show countdown for all stages except late_bird (last stage)
-  const showCountdown = currentStage !== 'late_bird';
+  // Show countdown for all stages except last_call (last stage)
+  const showCountdown = currentStage !== 'last_call';
 
   return {
     kicker: 'TICKETS',

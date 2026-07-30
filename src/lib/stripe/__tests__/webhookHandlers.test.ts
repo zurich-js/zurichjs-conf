@@ -249,6 +249,16 @@ describe('parseTicketInfo', () => {
       expect(result).toEqual({ category: 'standard', stage: 'late_bird' });
     });
 
+    it('should parse standard_last_call correctly', () => {
+      const result = parseTicketInfo('standard_last_call');
+      expect(result).toEqual({ category: 'standard', stage: 'last_call' });
+    });
+
+    it('should parse vip_last_call correctly', () => {
+      const result = parseTicketInfo('vip_last_call');
+      expect(result).toEqual({ category: 'vip', stage: 'last_call' });
+    });
+
     it('should parse vip_blind_bird correctly', () => {
       const result = parseTicketInfo('vip_blind_bird');
       expect(result).toEqual({ category: 'vip', stage: 'blind_bird' });
@@ -303,6 +313,11 @@ describe('parseTicketInfo', () => {
       expect(result).toEqual({ category: 'standard', stage: 'late_bird' });
     });
 
+    it('should parse standard_last_call_eur correctly', () => {
+      const result = parseTicketInfo('standard_last_call_eur');
+      expect(result).toEqual({ category: 'standard', stage: 'last_call' });
+    });
+
     it('should parse standard_general_eur correctly', () => {
       const result = parseTicketInfo('standard_general_eur');
       expect(result).toEqual({ category: 'standard', stage: 'general_admission' });
@@ -347,6 +362,10 @@ describe('getTicketDisplayName', () => {
     it('should return "Late Bird" for late_bird stage', () => {
       expect(getTicketDisplayName('standard', 'late_bird')).toBe('Late Bird');
     });
+
+    it('should return "Last Call" for last_call stage', () => {
+      expect(getTicketDisplayName('standard', 'last_call')).toBe('Last Call');
+    });
   });
 });
 
@@ -386,6 +405,10 @@ describe('toLegacyType', () => {
 
     it('should return "late_bird" for late_bird stage', () => {
       expect(toLegacyType('standard', 'late_bird')).toBe('late_bird');
+    });
+
+    it('should return "late_bird" for last_call stage (legacy enum has no last_call)', () => {
+      expect(toLegacyType('standard', 'last_call')).toBe('late_bird');
     });
   });
 });
@@ -450,6 +473,14 @@ describe('isTicketProduct', () => {
 
     it('should return true for standard_late_bird', () => {
       expect(isTicketProduct(createMockPrice('standard_late_bird'))).toBe(true);
+    });
+
+    it('should return true for standard_last_call', () => {
+      expect(isTicketProduct(createMockPrice('standard_last_call'))).toBe(true);
+    });
+
+    it('should return true for vip_last_call', () => {
+      expect(isTicketProduct(createMockPrice('vip_last_call'))).toBe(true);
     });
 
     it('should return true for vip_blind_bird', () => {
