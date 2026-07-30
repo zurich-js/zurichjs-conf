@@ -1,7 +1,10 @@
 /**
  * Discount Config Tab
- * Admin configuration for the discount popup and its A/B/C experiment offers.
- * Replaces the DISCOUNT_* env vars (which remain as fallback only).
+ * Admin configuration for the discount popup: show behavior plus the single
+ * live offer (the former aggressive-20 experiment winner, stored in the
+ * ab_* columns). Replaces the DISCOUNT_* env vars (which remain as fallback
+ * only). The retired control/price-sensitive variant columns still exist in
+ * the DB but are no longer editable here.
  */
 
 import { useState, useEffect } from 'react';
@@ -48,39 +51,27 @@ interface ConfigFormProps {
 
 function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
   const [showProbability, setShowProbability] = useState(config.show_probability);
-  const [percentOff, setPercentOff] = useState(config.percent_off);
-  const [durationMinutes, setDurationMinutes] = useState(config.duration_minutes);
   const [cooldownHours, setCooldownHours] = useState(config.cooldown_hours);
   const [forceShow, setForceShow] = useState(config.force_show);
   const [abPercentOff, setAbPercentOff] = useState(config.ab_percent_off);
   const [abDurationMinutes, setAbDurationMinutes] = useState(config.ab_duration_minutes);
-  const [abcPercentOff, setAbcPercentOff] = useState(config.abc_percent_off);
-  const [abcDurationMinutes, setAbcDurationMinutes] = useState(config.abc_duration_minutes);
 
   // Sync when config changes externally
   useEffect(() => {
     setShowProbability(config.show_probability);
-    setPercentOff(config.percent_off);
-    setDurationMinutes(config.duration_minutes);
     setCooldownHours(config.cooldown_hours);
     setForceShow(config.force_show);
     setAbPercentOff(config.ab_percent_off);
     setAbDurationMinutes(config.ab_duration_minutes);
-    setAbcPercentOff(config.abc_percent_off);
-    setAbcDurationMinutes(config.abc_duration_minutes);
   }, [config]);
 
   const handleSave = () => {
     onSave({
       show_probability: showProbability,
-      percent_off: percentOff,
-      duration_minutes: durationMinutes,
       cooldown_hours: cooldownHours,
       force_show: forceShow,
       ab_percent_off: abPercentOff,
       ab_duration_minutes: abDurationMinutes,
-      abc_percent_off: abcPercentOff,
-      abc_duration_minutes: abcDurationMinutes,
     });
   };
 
@@ -94,9 +85,8 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 flex items-start gap-2">
         <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
         <p className="text-sm text-blue-800">
-          Changes take effect within about a minute (server cache + CDN). Offer values
-          for the A/B/C experiment variants are resolved server-side — the client never
-          controls percentages or durations.
+          Changes take effect within about a minute (server cache + CDN). The offer is
+          resolved server-side — the client never controls percentages or durations.
         </p>
       </div>
 
@@ -137,28 +127,10 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
         </section>
 
         <section>
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">Control offer (variant A)</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <NumberField
-              label="Discount"
-              suffix="%"
-              min={1}
-              max={100}
-              value={percentOff}
-              onChange={setPercentOff}
-            />
-            <NumberField
-              label="Validity"
-              suffix="minutes"
-              min={1}
-              value={durationMinutes}
-              onChange={setDurationMinutes}
-            />
-          </div>
-        </section>
-
-        <section>
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">Aggressive offer (variant B)</h4>
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">Popup offer</h4>
+          <p className="text-xs text-gray-500 mb-3">
+            Every visitor who unlocks the popup with their email gets this offer.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <NumberField
               label="Discount"
@@ -174,33 +146,6 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
               min={1}
               value={abDurationMinutes}
               onChange={setAbDurationMinutes}
-            />
-          </div>
-        </section>
-
-        <section>
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">
-            Price-sensitive offer (variant C)
-          </h4>
-          <p className="text-xs text-gray-500 mb-3">
-            Only shown to visitors in lower-income European countries or recurring
-            (3rd+ visit) visitors who haven&apos;t bought a ticket.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <NumberField
-              label="Discount"
-              suffix="%"
-              min={1}
-              max={100}
-              value={abcPercentOff}
-              onChange={setAbcPercentOff}
-            />
-            <NumberField
-              label="Validity"
-              suffix="minutes"
-              min={1}
-              value={abcDurationMinutes}
-              onChange={setAbcDurationMinutes}
             />
           </div>
         </section>
