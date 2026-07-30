@@ -279,6 +279,35 @@ export default function CartPage() {
     }
   };
 
+  // Save-cart email from the review step: identifies the visitor and makes
+  // review-stage abandoners reachable by the recovery email (most cart exits
+  // happen before checkout ever sees an email).
+  const handleReviewEmailCaptured = (email: string) => {
+    setCapturedEmail(email);
+    analytics.identify(email, { email });
+    analytics.track('checkout_email_captured', {
+      email,
+      step: 'review',
+      cart_item_count: cart.items.length,
+      cart_total_amount: orderSummary.total,
+      cart_currency: orderSummary.currency,
+      cart_items: mapCartItemsToAnalytics(cart.items),
+    } as EventProperties<'checkout_email_captured'>);
+    // Schedule the recovery email right away — "we'll email you a link" must
+    // hold even if the abandonment handlers never fire (e.g. killed mobile
+    // tab). Re-triggers replace older scheduled sends; purchase cancels them.
+    scheduleAbandonmentEmail({
+      email,
+      firstName: capturedFirstName ?? undefined,
+      cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
+        title, quantity, price, currency,
+      })),
+      cartTotal: orderSummary.total,
+      currency: orderSummary.currency,
+      encodedCartState: encodeCartState(cart),
+    });
+  };
+
   // Cart abandonment tracking
   useCartAbandonment({
     enabled: !isEmpty && !checkoutFinalizing,
@@ -394,6 +423,7 @@ export default function CartPage() {
                 onRemoveVoucher={removeVoucher}
                 onUpgradeToVip={handleUpgradeToVip}
                 onTeamRequest={handleTeamModalOpen}
+                onEmailCaptured={handleReviewEmailCaptured}
               />
             )}
 

@@ -13,6 +13,8 @@ export interface CartAbandonmentEmailScheduledEvent {
       email_id?: string;
       scheduled_for: string;
       cart_recovery_url: string;
+      /** Number of scheduled touches in this recovery sequence */
+      touch_count?: number;
     };
 }
 

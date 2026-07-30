@@ -13,6 +13,7 @@
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { getStageConfig, type PriceStage } from '@/config/pricing-stages';
+import { useCart } from '@/contexts/CartContext';
 import { STAGE_COPY } from '@/data/tickets';
 import { useCountdown, padZero } from '@/hooks/useCountdown';
 import { trackButtonClick } from '@/lib/analytics';
@@ -33,6 +34,7 @@ function formatStageCountdown(days: number, hours: number, minutes: number, seco
 }
 
 export function StickyTicketCta({ plans, currentStage, location, className = '' }: StickyTicketCtaProps) {
+  const { cart } = useCart();
   const stageConfig = currentStage ? getStageConfig(currentStage) : undefined;
   const countdown = useCountdown(stageConfig?.endDate ?? '2099-01-01T00:00:00.000Z');
 
@@ -40,6 +42,11 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
   if (!standardPlan || !currentStage || !stageConfig) return null;
 
   const countdownTitle = (STAGE_COPY[currentStage] ?? STAGE_COPY.standard).countdownTitle;
+
+  // A visitor with a cart in progress gets a resume nudge instead of a second
+  // "buy" message — one bar, one intent.
+  const hasCart = cart.items.length > 0;
+  const label = hasCart ? 'Resume checkout' : 'Get your ticket';
 
   return (
     <div
@@ -49,7 +56,9 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
       <div className="flex items-center justify-between gap-3">
         <div>
           <span className="block text-lg font-bold leading-tight text-white">
-            From {formatPrice(standardPlan.price / 100, standardPlan.currency)}
+            {hasCart
+              ? `Your cart · ${formatPrice(cart.totalPrice, cart.currency)}`
+              : `From ${formatPrice(standardPlan.price / 100, standardPlan.currency)}`}
           </span>
           {!countdown.isComplete && (
             <span className="block text-[11px] text-brand-gray-light">
@@ -64,17 +73,17 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
           variant="primary"
           size="md"
           asChild
-          href="/#tickets"
+          href={hasCart ? '/cart' : '/#tickets'}
           className="shrink-0"
           onClick={() =>
             trackButtonClick({
-              buttonText: 'Get your ticket',
+              buttonText: label,
               buttonLocation: `sticky_cta:${location}`,
-              buttonAction: 'navigate_tickets',
+              buttonAction: hasCart ? 'resume_cart' : 'navigate_tickets',
             })
           }
         >
-          Get your ticket
+          {label}
           <ArrowRight className="w-4 h-4" aria-hidden="true" />
         </Button>
       </div>

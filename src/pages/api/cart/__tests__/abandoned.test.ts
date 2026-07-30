@@ -166,10 +166,11 @@ describe('/api/cart/abandoned', () => {
     }
     const throttled = await callHandler(validRequest, ip);
     expect(throttled._status).toBe(429);
-    expect(mocks.sendEmail).toHaveBeenCalledTimes(5);
+    // Two recovery touches per accepted request
+    expect(mocks.sendEmail).toHaveBeenCalledTimes(10);
   });
 
-  it('schedules recovery email, replaces older scheduled emails, and notifies analytics', async () => {
+  it('schedules both recovery touches, replaces older scheduled emails, and notifies analytics', async () => {
     const res = await callHandler(validRequest);
 
     expect(res._status).toBe(200);
@@ -178,23 +179,32 @@ describe('/api/cart/abandoned', () => {
       emailId: 'email_new',
     }));
     expect(mocks.renderEmail).toHaveBeenCalled();
+    expect(mocks.sendEmail).toHaveBeenCalledTimes(2);
     expect(mocks.sendEmail).toHaveBeenCalledWith(expect.objectContaining({
       to: 'buyer@example.com',
       html: '<html>email</html>',
       scheduledAt: expect.any(String),
     }));
     expect(mocks.cancelEmail).toHaveBeenCalledWith('email_old');
-    expect(mocks.supabaseInsert).toHaveBeenCalledWith(expect.objectContaining({
-      email: 'buyer@example.com',
-      resend_email_id: 'email_new',
-      scheduled_for: expect.any(String),
-    }));
+    expect(mocks.supabaseInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        email: 'buyer@example.com',
+        resend_email_id: 'email_new',
+        scheduled_for: expect.any(String),
+      }),
+      expect.objectContaining({
+        email: 'buyer@example.com',
+        resend_email_id: 'email_new',
+        scheduled_for: expect.any(String),
+      }),
+    ]);
     expect(mocks.analyticsTrack).toHaveBeenCalledWith(
       'cart_abandonment_email_scheduled',
       'buyer@example.com',
       expect.objectContaining({
         cart_recovery_url: 'https://conf.test/cart?cart=encoded_cart&utm_source=email&utm_medium=abandonment&utm_campaign=cart_recovery',
         first_name: 'Buyer',
+        touch_count: 2,
       })
     );
     expect(mocks.notifyCartAbandonment).toHaveBeenCalledWith(expect.objectContaining({
@@ -204,8 +214,21 @@ describe('/api/cart/abandoned', () => {
     }));
   });
 
-  it('returns a failure when Resend rejects the scheduled recovery email', async () => {
+  it('still succeeds when only one recovery touch can be scheduled', async () => {
     mocks.sendEmail.mockResolvedValueOnce({ data: null, error: { message: 'invalid scheduled_at' } });
+
+    const res = await callHandler(validRequest);
+
+    expect(res._status).toBe(200);
+    expect(mocks.analyticsTrack).toHaveBeenCalledWith(
+      'cart_abandonment_email_scheduled',
+      'buyer@example.com',
+      expect.objectContaining({ touch_count: 1 })
+    );
+  });
+
+  it('returns a failure when Resend rejects every recovery touch', async () => {
+    mocks.sendEmail.mockResolvedValue({ data: null, error: { message: 'invalid scheduled_at' } });
 
     const res = await callHandler(validRequest);
 

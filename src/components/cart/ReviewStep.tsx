@@ -25,8 +25,19 @@ export function ReviewStep({
   onRemoveVoucher,
   onUpgradeToVip,
   onTeamRequest,
+  onEmailCaptured,
 }: ReviewStepProps) {
   const [isSeebadEngeOpen, setIsSeebadEngeOpen] = useState(false);
+  const [saveCartEmail, setSaveCartEmail] = useState('');
+  const [cartSaved, setCartSaved] = useState(false);
+
+  const handleSaveCart = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = saveCartEmail.trim();
+    if (!email || !onEmailCaptured) return;
+    onEmailCaptured(email);
+    setCartSaved(true);
+  };
 
   const hasTicket = cart.items.some((item) => item.kind !== 'workshop');
   const hasWorkshop = cart.items.some((item) => item.kind === 'workshop');
@@ -205,6 +216,37 @@ export function ReviewStep({
             Estimate your trip cost
           </Button>
         </Link>
+
+        {/* Save-cart email capture: most cart exits happen on this step,
+            before checkout ever sees an email — this keeps them reachable. */}
+        {onEmailCaptured && (
+          cartSaved ? (
+            <p role="status" className="text-center text-sm text-brand-gray-light">
+              Cart saved — we&apos;ll email you a link to pick up where you left off.
+            </p>
+          ) : (
+            <form onSubmit={handleSaveCart}>
+              <label htmlFor="save-cart-email" className="block text-sm text-brand-gray-light">
+                Not ready to decide? We&apos;ll save your cart and email you a link.
+              </label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  id="save-cart-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  value={saveCartEmail}
+                  onChange={(event) => setSaveCartEmail(event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg bg-brand-gray-darkest px-3 py-2 text-sm text-brand-white placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                />
+                <Button type="submit" variant="ghost" size="sm" className="shrink-0">
+                  Save cart
+                </Button>
+              </div>
+            </form>
+          )
+        )}
 
         <p className="text-center text-sm text-brand-gray-light">
           Questions about your order?{' '}
