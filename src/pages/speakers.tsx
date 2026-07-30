@@ -161,7 +161,7 @@ export default function SpeakersPage() {
         keywords="zurichjs speakers, conference speakers, public speaker lineup"
       />
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
+        <ShapedSection shape="straight" variant="dark" dropTop dropBottom compact>
             <Kicker variant="dark" className="mb-4">
               September 11, 2026
             </Kicker>
