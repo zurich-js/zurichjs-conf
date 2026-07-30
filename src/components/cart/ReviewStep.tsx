@@ -224,7 +224,7 @@ export function ReviewStep({
         {onEmailCaptured && (
           cartSaved ? (
             <p role="status" className="text-center text-sm text-brand-gray-light">
-              Cart saved — we&apos;ll email you a link to pick up where you left off.
+              Cart saved — check your inbox, there&apos;s a little something in there for you.
             </p>
           ) : !saveCartOpen ? (
             <p className="text-center text-sm text-brand-gray-light">

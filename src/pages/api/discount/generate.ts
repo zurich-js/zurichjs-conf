@@ -20,10 +20,10 @@ import {
   getVariantServerConfig,
 } from '@/lib/discount/experiment';
 import { PRICE_SENSITIVITY_REASONS } from '@/lib/discount/price-sensitivity';
+import { createSingleUseDiscountCode } from '@/lib/discount/stripe-codes';
 import { isValidLotteryPercent } from '@/lib/discount/utm-lottery';
 import { logger } from '@/lib/logger';
 import type { GenerateDiscountResponse } from '@/lib/discount/types';
-import { randomBytes } from 'crypto';
 
 const log = logger.scope('DiscountGenerate');
 
@@ -35,18 +35,6 @@ const bodySchema = z.object({
   /** Why the visitor qualified for price-sensitive-30 (metadata only) */
   priceSensitivityReason: z.enum(PRICE_SENSITIVITY_REASONS).nullish(),
 });
-
-function generateUniqueCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const length = 8;
-  const bytes = randomBytes(length);
-  let code = '';
-  for (let i = 0; i < length; i++) {
-    const idx = bytes[i] % chars.length;
-    code += chars.charAt(idx);
-  }
-  return code;
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -94,7 +82,6 @@ export default async function handler(
 
     const config = await getDiscountConfig();
     const stripe = getStripeClient();
-    const code = generateUniqueCode();
 
     // Resolve the offer: lottery percentage wins, then experiment variant,
     // then the default (control) config. Duration always comes from the server.
@@ -106,18 +93,12 @@ export default async function handler(
       ? config.durationMinutes
       : offer.durationMinutes;
 
-    const expiresAt = new Date(Date.now() + durationMinutes * 60 * 1000);
-    const redeemBy = Math.floor(expiresAt.getTime() / 1000);
-
     const source = isLotteryDiscount ? 'utm_lottery' : 'discount_popup';
 
-    // Create Stripe coupon
-    const coupon = await stripe.coupons.create({
-      percent_off: percentOff,
-      duration: 'once',
-      max_redemptions: 1,
-      redeem_by: redeemBy,
-      name: `${isLotteryDiscount ? 'UTM Lottery' : 'Discount Popup'}: ${code}`,
+    const { code, couponId, promotionCodeId, expiresAt } = await createSingleUseDiscountCode(stripe, {
+      percentOff,
+      durationMinutes,
+      namePrefix: isLotteryDiscount ? 'UTM Lottery' : 'Discount Popup',
       metadata: {
         source,
         email: body.email,
@@ -125,31 +106,8 @@ export default async function handler(
         ...(priceSensitivityReason
           ? { price_sensitivity_reason: priceSensitivityReason }
           : {}),
-        generated_at: new Date().toISOString(),
       },
     });
-
-    // Create promotion code for the coupon
-    let promotionCode;
-    try {
-      promotionCode = await stripe.promotionCodes.create({
-        promotion: { type: 'coupon', coupon: coupon.id },
-        code,
-        max_redemptions: 1,
-        expires_at: redeemBy,
-        metadata: {
-          source,
-          ...(variant ? { experiment_variant: variant } : {}),
-          ...(priceSensitivityReason
-            ? { price_sensitivity_reason: priceSensitivityReason }
-            : {}),
-        },
-      });
-    } catch (err) {
-      // Clean up coupon if promotion code creation fails
-      await stripe.coupons.del(coupon.id);
-      throw err;
-    }
 
     // The gate doubles as lead capture — add the email to the newsletter
     // audience. Fire-and-forget: a contact failure must not block the code.
@@ -159,8 +117,8 @@ export default async function handler(
 
     log.info('Generated discount code', {
       code,
-      couponId: coupon.id,
-      promotionCodeId: promotionCode.id,
+      couponId,
+      promotionCodeId,
       expiresAt: expiresAt.toISOString(),
       percentOff,
       isLottery: isLotteryDiscount,

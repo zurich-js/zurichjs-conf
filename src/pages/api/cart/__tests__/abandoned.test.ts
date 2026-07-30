@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   supabaseEq: vi.fn(),
   supabaseDelete: vi.fn(),
   supabaseInsert: vi.fn(),
+  createSingleUseDiscountCode: vi.fn(),
 }));
 
 vi.mock('resend', () => ({
@@ -47,6 +48,14 @@ vi.mock('@/lib/supabase', () => ({
   createServiceRoleClient: vi.fn(() => ({
     from: mocks.supabaseFrom,
   })),
+}));
+
+vi.mock('@/lib/stripe/client', () => ({
+  getStripeClient: vi.fn(() => ({})),
+}));
+
+vi.mock('@/lib/discount/stripe-codes', () => ({
+  createSingleUseDiscountCode: mocks.createSingleUseDiscountCode,
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -130,6 +139,12 @@ describe('/api/cart/abandoned', () => {
     mocks.supabaseEq.mockResolvedValue({ data: [{ resend_email_id: 'email_old' }] });
     mocks.supabaseDelete.mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) });
     mocks.supabaseInsert.mockResolvedValue({ error: null });
+    mocks.createSingleUseDiscountCode.mockResolvedValue({
+      code: 'SAVEME10',
+      couponId: 'coupon_1',
+      promotionCodeId: 'promo_1',
+      expiresAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
   });
 
   afterEach(() => {
@@ -212,6 +227,50 @@ describe('/api/cart/abandoned', () => {
       itemsSummary: '2x Standard, 1x Workshop: Agentic JS',
       amount: 77000,
     }));
+  });
+
+  it('sends the first email immediately with the goodie on explicit saves', async () => {
+    const res = await callHandler({
+      ...validRequest,
+      body: { ...validRequest.body, immediate: true },
+    });
+
+    expect(res._status).toBe(200);
+    expect(mocks.createSingleUseDiscountCode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      percentOff: 10,
+      durationMinutes: 120,
+      metadata: expect.objectContaining({ source: 'cart_save_goodie' }),
+    }));
+    // First touch sends now (no scheduledAt) and advertises the goodie
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(1, expect.not.objectContaining({ scheduledAt: expect.any(String) }));
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      subject: 'Your saved cart — plus 10% off for the next 2 hours',
+    }));
+    // Second touch is the scheduled 24h follow-up
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(2, expect.objectContaining({ scheduledAt: expect.any(String) }));
+    // Only the cancellable follow-up is stored for purchase cancellation
+    expect(mocks.supabaseInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ resend_email_id: 'email_new' }),
+    ]);
+  });
+
+  it('still sends the save-cart email when the goodie cannot be created', async () => {
+    mocks.createSingleUseDiscountCode.mockRejectedValueOnce(new Error('stripe down'));
+
+    const res = await callHandler({
+      ...validRequest,
+      body: { ...validRequest.body, immediate: true },
+    });
+
+    expect(res._status).toBe(200);
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      subject: 'Your saved ZurichJS cart',
+    }));
+  });
+
+  it('does not create a goodie code for passive abandonment', async () => {
+    await callHandler(validRequest);
+    expect(mocks.createSingleUseDiscountCode).not.toHaveBeenCalled();
   });
 
   it('still succeeds when only one recovery touch can be scheduled', async () => {

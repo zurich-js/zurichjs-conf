@@ -15,12 +15,20 @@ interface CartItem {
   currency: string;
 }
 
+export interface CartAbandonmentDiscount {
+  code: string;
+  percentOff: number;
+  validHours: number;
+}
+
 export interface CartAbandonmentEmailProps {
   firstName?: string;
   cartItems: CartItem[];
   cartTotal: number;
   currency: string;
   cartUrl: string;
+  /** Optional thank-you code included when the user explicitly saved their cart */
+  discount?: CartAbandonmentDiscount;
   supportEmail?: string;
 }
 
@@ -30,9 +38,12 @@ export const CartAbandonmentEmail: React.FC<CartAbandonmentEmailProps> = ({
   cartTotal,
   currency,
   cartUrl,
+  discount,
   supportEmail = 'hello@zurichjs.com',
 }) => {
-  const preheader = `Your ZurichJS Conference tickets are waiting for you`;
+  const preheader = discount
+    ? `Your saved cart — plus ${discount.percentOff}% off for the next ${discount.validHours} hours`
+    : `Your ZurichJS Conference tickets are waiting for you`;
   const greeting = firstName ? `Hi ${firstName},` : 'Hi there,';
 
   return (
@@ -81,6 +92,21 @@ export const CartAbandonmentEmail: React.FC<CartAbandonmentEmailProps> = ({
           </tr>
         </table>
       </Section>
+
+      {/* Thank-you discount (explicit cart saves only) */}
+      {discount && (
+        <Section style={discountCardStyle}>
+          <Text style={discountTitleStyle}>A little thank-you 🎁</Text>
+          <Text style={discountTextStyle}>
+            Check out within the next <strong>{discount.validHours} hours</strong> and take{' '}
+            <strong>{discount.percentOff}% off</strong> with this single-use code:
+          </Text>
+          <Text style={discountCodeStyle}>{discount.code}</Text>
+          <Text style={discountFinePrintStyle}>
+            Enter it in the promo code field at checkout.
+          </Text>
+        </Section>
+      )}
 
       {/* CTA Section */}
       <Section style={ctaSectionStyle}>
@@ -223,6 +249,47 @@ const cartTotalValueStyle: React.CSSProperties = {
   fontSize: '20px',
   fontWeight: 700,
   color: colors.text.primary,
+  margin: 0,
+};
+
+const discountCardStyle: React.CSSProperties = {
+  backgroundColor: colors.surface.card,
+  border: `2px dashed ${colors.brand.yellow}`,
+  borderRadius: `${radii.card}px`,
+  padding: spacing['2xl'],
+  marginBottom: spacing['3xl'],
+  textAlign: 'center' as const,
+};
+
+const discountTitleStyle: React.CSSProperties = {
+  fontSize: '18px',
+  lineHeight: '24px',
+  fontWeight: 700,
+  color: colors.text.primary,
+  margin: `0 0 ${spacing.sm}px 0`,
+};
+
+const discountTextStyle: React.CSSProperties = {
+  fontSize: typography.body.fontSize,
+  lineHeight: typography.body.lineHeight,
+  color: colors.text.secondary,
+  margin: `0 0 ${spacing.base}px 0`,
+};
+
+const discountCodeStyle: React.CSSProperties = {
+  fontSize: '24px',
+  lineHeight: '32px',
+  fontWeight: 700,
+  letterSpacing: '4px',
+  fontFamily: 'ui-monospace, Menlo, monospace',
+  color: colors.text.primary,
+  margin: `0 0 ${spacing.sm}px 0`,
+};
+
+const discountFinePrintStyle: React.CSSProperties = {
+  fontSize: '12px',
+  lineHeight: '18px',
+  color: colors.text.muted,
   margin: 0,
 };
 

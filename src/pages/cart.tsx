@@ -69,6 +69,10 @@ export default function CartPage() {
   const { toasts, showToast } = useToast();
   const router = useRouter();
   const hasTrackedRecovery = useRef(false);
+  // Encoded cart state of the last recovery email we scheduled — prevents the
+  // abandonment handler from double-scheduling what an explicit save (or an
+  // earlier abandonment) already covered.
+  const lastRecoveryCartState = useRef<string | null>(null);
 
   useCartUrlSync(cart);
 
@@ -293,9 +297,10 @@ export default function CartPage() {
       cart_currency: orderSummary.currency,
       cart_items: mapCartItemsToAnalytics(cart.items),
     } as EventProperties<'checkout_email_captured'>);
-    // Schedule the recovery email right away — "we'll email you a link" must
-    // hold even if the abandonment handlers never fire (e.g. killed mobile
-    // tab). Re-triggers replace older scheduled sends; purchase cancels them.
+    // Explicit save sends the first email immediately (with the thank-you
+    // code) plus a scheduled follow-up; purchase cancels the follow-up.
+    const encoded = encodeCartState(cart);
+    lastRecoveryCartState.current = encoded;
     scheduleAbandonmentEmail({
       email,
       firstName: capturedFirstName ?? undefined,
@@ -304,7 +309,8 @@ export default function CartPage() {
       })),
       cartTotal: orderSummary.total,
       currency: orderSummary.currency,
-      encodedCartState: encodeCartState(cart),
+      encodedCartState: encoded,
+      immediate: true,
     });
   };
 
@@ -326,18 +332,23 @@ export default function CartPage() {
     userEmail: capturedEmail,
     userFirstName: capturedFirstName,
     onAbandonment: (data) => {
-      if (data.email) {
-        scheduleAbandonmentEmail({
-          email: data.email,
-          firstName: data.first_name,
-          cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
-            title, quantity, price, currency,
-          })),
-          cartTotal: orderSummary.total,
-          currency: orderSummary.currency,
-          encodedCartState: encodeCartState(cart),
-        });
-      }
+      if (!data.email) return;
+      // Skip if this exact cart is already covered by a scheduled recovery
+      // email (e.g. an explicit save moments ago) — re-sending would race the
+      // replace logic server-side and duplicate the sequence.
+      const encoded = encodeCartState(cart);
+      if (lastRecoveryCartState.current === encoded) return;
+      lastRecoveryCartState.current = encoded;
+      scheduleAbandonmentEmail({
+        email: data.email,
+        firstName: data.first_name,
+        cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
+          title, quantity, price, currency,
+        })),
+        cartTotal: orderSummary.total,
+        currency: orderSummary.currency,
+        encodedCartState: encoded,
+      });
     },
   });
 
