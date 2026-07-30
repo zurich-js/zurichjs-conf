@@ -390,25 +390,37 @@ export async function bulkMakeDecision(
     errors: [] as Array<{ submission_id: string; error: string }>,
   };
 
-  for (const submissionId of submissionIds) {
-    const result = await makeDecision(
-      {
-        submission_id: submissionId,
-        decision,
-        notes: options?.notes,
-        generate_coupon: options?.generate_coupon,
-        coupon_discount_percent: options?.coupon_discount_percent,
-        send_email: options?.send_email,
-        personal_message: options?.personal_message,
-      },
-      adminId
+  // Each decision performs several DB round trips (plus optional Stripe and
+  // email calls). Fully serial processing made a 200-submission bulk request
+  // take ~1000 sequential round trips; a bounded concurrency of 5 keeps
+  // Stripe/Resend rate limits comfortable while cutting wall-clock ~5x.
+  const concurrency = 5;
+  for (let i = 0; i < submissionIds.length; i += concurrency) {
+    const chunk = submissionIds.slice(i, i + concurrency);
+    const chunkResults = await Promise.all(
+      chunk.map((submissionId) =>
+        makeDecision(
+          {
+            submission_id: submissionId,
+            decision,
+            notes: options?.notes,
+            generate_coupon: options?.generate_coupon,
+            coupon_discount_percent: options?.coupon_discount_percent,
+            send_email: options?.send_email,
+            personal_message: options?.personal_message,
+          },
+          adminId
+        ).then((result) => ({ submissionId, result }))
+      )
     );
 
-    if (result.success) {
-      results.success++;
-    } else {
-      results.failed++;
-      results.errors.push({ submission_id: submissionId, error: result.error || 'Unknown error' });
+    for (const { submissionId, result } of chunkResults) {
+      if (result.success) {
+        results.success++;
+      } else {
+        results.failed++;
+        results.errors.push({ submission_id: submissionId, error: result.error || 'Unknown error' });
+      }
     }
   }
 

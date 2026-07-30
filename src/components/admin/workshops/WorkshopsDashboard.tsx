@@ -11,21 +11,24 @@ import type { AdminWorkshopListItem } from '@/pages/api/admin/workshops';
 import type { Workshop } from '@/lib/types/database';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/molecules';
+import { adminFetch } from '@/lib/admin/api-fetch';
+import { adminKeys } from '@/lib/admin/query-keys';
 import { WorkshopsSummaryStrip } from './WorkshopsSummaryStrip';
 import { WorkshopsFilterBar, type WorkshopFilterStatus } from './WorkshopsFilterBar';
 import { WorkshopCard } from './WorkshopCard';
 import { WorkshopAdminModal } from './WorkshopAdminModal';
 
-const adminKeys = {
-  all: ['admin', 'workshops'] as const,
-  list: () => [...adminKeys.all, 'list'] as const,
-};
-
-async function fetchAdminWorkshops(): Promise<AdminWorkshopListItem[]> {
-  const res = await fetch('/api/admin/workshops');
-  if (!res.ok) throw new Error('Failed to load workshops');
-  const data = await res.json();
-  return data.items as AdminWorkshopListItem[];
+/**
+ * Canonical fetcher for the shared `adminKeys.workshopList()` cache entry.
+ * The cached value is always the raw `AdminWorkshopListItem[]` from the API
+ * (same as WorkshopsRegistrantsTab / IssueWorkshopTicketTab, which derive
+ * their view shapes via `select`).
+ */
+async function fetchAdminWorkshops(signal?: AbortSignal): Promise<AdminWorkshopListItem[]> {
+  const data = await adminFetch<{ items: AdminWorkshopListItem[] }>('/api/admin/workshops', {
+    signal,
+  });
+  return data.items;
 }
 
 async function createOffering(input: { cfpSubmissionId: string }): Promise<Workshop> {
@@ -63,8 +66,8 @@ function matchesSearch(item: AdminWorkshopListItem, term: string): boolean {
 export function WorkshopsDashboard() {
   const qc = useQueryClient();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: adminKeys.list(),
-    queryFn: fetchAdminWorkshops,
+    queryKey: adminKeys.workshopList(),
+    queryFn: ({ signal }) => fetchAdminWorkshops(signal),
   });
 
   const [status, setStatus] = useState<WorkshopFilterStatus>('all');
@@ -100,7 +103,7 @@ export function WorkshopsDashboard() {
   const createMutation = useMutation({
     mutationFn: createOffering,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: adminKeys.list() });
+      qc.invalidateQueries({ queryKey: adminKeys.workshopList() });
       showToast('Workshop offering created', 'success');
     },
     onError: (err: Error) => {
@@ -192,7 +195,7 @@ export function WorkshopsDashboard() {
           onSaved={() => {
             /* keep modal open so admin sees the saved state */
           }}
-          listQueryKey={adminKeys.list()}
+          listQueryKey={adminKeys.workshopList()}
           onToast={showToast}
         />
       )}

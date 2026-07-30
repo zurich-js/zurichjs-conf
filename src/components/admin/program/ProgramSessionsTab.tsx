@@ -3,17 +3,15 @@
  * Sessions list with filtering, search, and CRUD operations
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit3, Eye, Plus, Trash2 } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { Pill } from '@/components/admin/shared';
-import { usePromoteSubmissionToSession } from '@/hooks/useProgram';
+import { fetchWorkshopOffering, usePromoteSubmissionToSession } from '@/hooks/useProgram';
+import { queryKeys } from '@/lib/query-keys';
 import type { Workshop } from '@/lib/types/database';
-import type { ProgramScheduleItemRecord } from '@/lib/types/program-schedule';
-import type { ProgramSession } from '@/lib/types/program';
 import type { CfpSubmissionWithStats } from '@/lib/types/cfp/admin';
-import type { SpeakerWithSessions } from '@/components/admin/speakers';
 import {
   filterProgramSessions,
   getSessionScheduleCount,
@@ -38,32 +36,29 @@ export function ProgramSessionsTab({
   const [kind, setKind] = useState<string>('all');
   const [modal, setModal] = useState<SessionModalState>(null);
   const [showPromote, setShowPromote] = useState(false);
-  const [offeringsBySessionId, setOfferingsBySessionId] = useState<Map<string, Workshop | null>>(new Map());
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const workshopSessions = sessions.filter((session) => session.kind === 'workshop');
-    if (workshopSessions.length === 0) {
-      setOfferingsBySessionId(new Map());
-      return;
-    }
+  const workshopSessionIds = useMemo(
+    () => sessions.filter((session) => session.kind === 'workshop').map((session) => session.id),
+    [sessions]
+  );
 
-    let active = true;
-    Promise.all(
-      workshopSessions.map(async (session) => {
-        const response = await fetch(`/api/admin/program/workshop-offerings/${session.id}`);
-        if (!response.ok) return [session.id, null] as const;
-        const data = await response.json();
-        return [session.id, data.offering ?? null] as const;
-      })
-    ).then((entries) => {
-      if (active) setOfferingsBySessionId(new Map(entries));
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [sessions]);
+  const offeringsBySessionId = useQueries({
+    queries: workshopSessionIds.map((sessionId) => ({
+      queryKey: queryKeys.program.workshopOffering(sessionId),
+      queryFn: () => fetchWorkshopOffering(sessionId),
+    })),
+    combine: (results) => {
+      const map = new Map<string, Workshop | null>();
+      results.forEach((result, index) => {
+        const sessionId = workshopSessionIds[index];
+        if (!sessionId) return;
+        if (result.isSuccess) map.set(sessionId, result.data ?? null);
+        else if (result.isError) map.set(sessionId, null);
+      });
+      return map;
+    },
+  });
 
   const archiveMutation = useMutation({
     mutationFn: async (sessionId: string) => {

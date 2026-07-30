@@ -2,8 +2,12 @@
  * B2B Orders Tab - Admin interface for managing B2B invoices
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type { B2BInvoice, B2BInvoiceWithAttendees, B2BInvoiceStatus } from '@/lib/types/b2b';
+import { adminKeys } from '@/lib/admin/query-keys';
+import { adminFetch } from '@/lib/admin/api-fetch';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { B2BSummaryStats } from './types';
 import { B2BSummaryCards } from './B2BSummaryCards';
 import { B2BFilters } from './B2BFilters';
@@ -11,43 +15,45 @@ import { B2BInvoiceList } from './B2BInvoiceList';
 import { CreateInvoiceModal } from './CreateInvoiceModal';
 import { InvoiceDetailsModal } from './InvoiceDetailsModal';
 
+async function fetchInvoices(
+  status: B2BInvoiceStatus | '',
+  search: string,
+  signal?: AbortSignal,
+): Promise<B2BInvoice[]> {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (search) params.append('search', search);
+
+  const data = await adminFetch<{ invoices: B2BInvoice[] }>(
+    `/api/admin/b2b-invoices?${params.toString()}`,
+    { signal },
+  );
+  return data.invoices;
+}
+
 export function B2BOrdersTab() {
-  const [invoices, setInvoices] = useState<B2BInvoice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<B2BInvoiceStatus | ''>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebouncedValue(searchQuery, 400);
   const [selectedInvoice, setSelectedInvoice] = useState<B2BInvoiceWithAttendees | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchInvoices = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (searchQuery) params.append('search', searchQuery);
-
-      const response = await fetch(`/api/admin/b2b-invoices?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch invoices');
-
-      const data = await response.json();
-      setInvoices(data.invoices);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load invoices');
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, searchQuery]);
-
-  useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
+  const {
+    data: invoices = [],
+    isPending: loading,
+    error,
+  } = useQuery({
+    queryKey: adminKeys.b2bInvoiceList({ status: statusFilter, search: debouncedSearch }),
+    queryFn: ({ signal }) => fetchInvoices(statusFilter, debouncedSearch, signal),
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
+  });
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, searchQuery]);
+  }, [statusFilter, debouncedSearch]);
 
   const summaryStats: B2BSummaryStats = useMemo(() => ({
     total: invoices.length,
@@ -60,10 +66,9 @@ export function B2BOrdersTab() {
   }), [invoices]);
 
   const handleInvoiceUpdate = () => {
-    fetchInvoices();
+    queryClient.invalidateQueries({ queryKey: adminKeys.b2b() });
     if (selectedInvoice) {
-      fetch(`/api/admin/b2b-invoices/${selectedInvoice.id}`)
-        .then((r) => r.json())
+      adminFetch<B2BInvoiceWithAttendees>(`/api/admin/b2b-invoices/${selectedInvoice.id}`)
         .then(setSelectedInvoice)
         .catch(() => setSelectedInvoice(null));
     }
@@ -99,7 +104,7 @@ export function B2BOrdersTab() {
       {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error}
+          {error instanceof Error ? error.message : 'Failed to load invoices'}
         </div>
       )}
 
@@ -125,7 +130,7 @@ export function B2BOrdersTab() {
           onClose={() => setShowCreateModal(false)}
           onCreated={() => {
             setShowCreateModal(false);
-            fetchInvoices();
+            queryClient.invalidateQueries({ queryKey: adminKeys.b2b() });
           }}
         />
       )}

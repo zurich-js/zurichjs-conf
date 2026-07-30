@@ -4,6 +4,7 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { logger } from '@/lib/logger';
 import type {
   CfpAnalytics,
   CfpFunnelData,
@@ -17,7 +18,10 @@ import type {
   CfpContentInsights,
 } from '../types/cfp-analytics';
 
-type CfpServiceClient = ReturnType<typeof createCfpServiceClient>;
+const log = logger.scope('CFP Analytics');
+
+/** Per-table row cap for the analytics snapshot; a hit is logged as a warning. */
+const FETCH_LIMIT = 10000;
 
 interface ReviewActivityCounts {
   totalReviews: number;
@@ -37,27 +41,42 @@ const SCORE_RANGES = [
   { range: '3-3.5', min: 3, max: 3.5 },
   { range: '3.5-4', min: 3.5, max: 4 },
 ] as const;
-const SCORE_VALUES = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4] as const;
 
 export async function getCfpAnalytics(): Promise<CfpAnalytics> {
   const supabase = createCfpServiceClient();
 
-  // Fetch all data in parallel
+  // Fetch all data in parallel. Every aggregate below (including review
+  // activity counts) is computed from these rows, so all of them share the
+  // same FETCH_LIMIT assumption — a cap hit means the analytics are
+  // undercounting and the limit needs raising (or a move to DB-side
+  // aggregation).
   const [
     submissionsResult,
     speakersResult,
     reviewsResult,
     tagJoinsResult,
     tagsResult,
-    reviewActivityCounts,
   ] = await Promise.all([
-    supabase.from('cfp_submissions').select('id, status, submission_type, talk_level, speaker_id, created_at, submitted_at, title, abstract, additional_notes, outline, slides_url, previous_recording_url').limit(10000),
-    supabase.from('cfp_speakers').select('id, first_name, last_name, company, country, city, bio, profile_image_url, travel_assistance_required, assistance_type, departure_airport, special_requirements, company_interested_in_sponsoring').limit(10000),
-    supabase.from('cfp_reviews').select('id, submission_id, score_overall, created_at').limit(10000),
-    supabase.from('cfp_submission_tags').select('submission_id, tag_id').limit(10000),
-    supabase.from('cfp_tags').select('id, name').limit(10000),
-    fetchReviewActivityCounts(supabase),
+    supabase.from('cfp_submissions').select('id, status, submission_type, talk_level, speaker_id, created_at, submitted_at, title, abstract, additional_notes, outline, slides_url, previous_recording_url').limit(FETCH_LIMIT),
+    supabase.from('cfp_speakers').select('id, first_name, last_name, company, country, city, bio, profile_image_url, travel_assistance_required, assistance_type, departure_airport, special_requirements, company_interested_in_sponsoring').limit(FETCH_LIMIT),
+    supabase.from('cfp_reviews').select('id, submission_id, score_overall, created_at').limit(FETCH_LIMIT),
+    supabase.from('cfp_submission_tags').select('submission_id, tag_id').limit(FETCH_LIMIT),
+    supabase.from('cfp_tags').select('id, name').limit(FETCH_LIMIT),
   ]);
+
+  for (const [table, result] of [
+    ['cfp_submissions', submissionsResult],
+    ['cfp_speakers', speakersResult],
+    ['cfp_reviews', reviewsResult],
+    ['cfp_submission_tags', tagJoinsResult],
+  ] as const) {
+    if ((result.data?.length ?? 0) >= FETCH_LIMIT) {
+      log.warn('CFP analytics fetch hit its row limit; aggregates may undercount', {
+        table,
+        limit: FETCH_LIMIT,
+      });
+    }
+  }
 
   const submissions = (submissionsResult.data || []) as Array<{
     id: string;
@@ -143,7 +162,10 @@ export async function getCfpAnalytics(): Promise<CfpAnalytics> {
   const logistics = buildLogistics(speakers);
 
   // --- Review Activity ---
-  const reviewActivity = buildReviewActivity(submissions.length, reviewActivityCounts);
+  const reviewActivity = buildReviewActivity(
+    submissions.length,
+    computeReviewActivityCounts(submissions, reviews),
+  );
 
   // --- Submission Timeline ---
   const submissionTimeline = buildTimeline(submissions);
@@ -167,67 +189,54 @@ export async function getCfpAnalytics(): Promise<CfpAnalytics> {
   };
 }
 
-async function fetchReviewActivityCounts(supabase: CfpServiceClient): Promise<ReviewActivityCounts> {
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now);
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+/**
+ * Derive review-activity aggregates from the already-fetched review rows.
+ *
+ * This used to issue ~41 `count: 'exact'` queries per request (one per score
+ * value plus one per day of a 30-day window). All of those aggregates are
+ * computable from the single `cfp_reviews` select that `getCfpAnalytics`
+ * already performs, so no extra database work is needed.
+ */
+function computeReviewActivityCounts(
+  submissions: Array<{ id: string }>,
+  reviews: Array<{ submission_id: string; score_overall: number | null; created_at: string }>,
+): ReviewActivityCounts {
+  const scores = reviews
+    .map((r) => r.score_overall)
+    .filter((s): s is number => s !== null);
 
-  const dayStarts: Date[] = [];
-  for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
-    dayStarts.push(new Date(d));
-  }
-
-  const [totalReviewsResult, unreviewedResult, ...countResults] = await Promise.all([
-    supabase
-      .from('cfp_reviews')
-      .select('*', { count: 'exact', head: true }),
-    supabase
-      .from('cfp_submissions')
-      .select('id, cfp_reviews!left(id)', { count: 'exact', head: true })
-      .is('cfp_reviews.id', null),
-    ...SCORE_VALUES.map((score) => (
-      supabase
-        .from('cfp_reviews')
-        .select('*', { count: 'exact', head: true })
-        .eq('score_overall', score)
-    )),
-    ...dayStarts.map((dayStart) => {
-      const nextDay = new Date(dayStart);
-      nextDay.setDate(nextDay.getDate() + 1);
-
-      return supabase
-        .from('cfp_reviews')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', dayStart.toISOString())
-        .lt('created_at', nextDay.toISOString());
-    }),
-  ]);
-  const scoreResults = countResults.slice(0, SCORE_VALUES.length);
-  const dailyResults = countResults.slice(SCORE_VALUES.length);
-  const scoreCounts = SCORE_VALUES.map((score, index) => ({
-    score,
-    count: scoreResults[index]?.count || 0,
-  }));
   const scoreDistribution = SCORE_RANGES.map(({ range, min, max }) => ({
     range,
-    count: scoreCounts
-      .filter(({ score }) => score >= min && (max === 4 ? score <= max : score < max))
-      .reduce((total, { count }) => total + count, 0),
+    count: scores.filter((score) => score >= min && (max === 4 ? score <= max : score < max))
+      .length,
   }));
-  const scoreTotal = scoreCounts.reduce((total, { count }) => total + count, 0);
-  const scoreSum = scoreCounts.reduce((total, { score, count }) => {
-    return total + (score * count);
-  }, 0);
+  const avgScore =
+    scores.length > 0 ? scores.reduce((total, s) => total + s, 0) / scores.length : null;
+
+  // Reviews per UTC calendar day over the last 31 days (today inclusive)
+  const countsByDate = new Map<string, number>();
+  for (const r of reviews) {
+    const date = r.created_at.split('T')[0];
+    countsByDate.set(date, (countsByDate.get(date) || 0) + 1);
+  }
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const dayMs = 24 * 60 * 60 * 1000;
+  const reviewsPerDay: Array<{ date: string; count: number }> = [];
+  for (let daysAgo = 30; daysAgo >= 0; daysAgo--) {
+    const date = new Date(todayUtc - daysAgo * dayMs).toISOString().split('T')[0];
+    reviewsPerDay.push({ date, count: countsByDate.get(date) || 0 });
+  }
+
+  const reviewedSubmissionIds = new Set(reviews.map((r) => r.submission_id));
+  const unreviewed = submissions.filter((s) => !reviewedSubmissionIds.has(s.id)).length;
 
   return {
-    totalReviews: totalReviewsResult.count || 0,
-    avgScore: scoreTotal > 0 ? scoreSum / scoreTotal : null,
+    totalReviews: reviews.length,
+    avgScore,
     scoreDistribution,
-    reviewsPerDay: dayStarts.map((dayStart, index) => ({
-      date: dayStart.toISOString().split('T')[0],
-      count: dailyResults[index]?.count || 0,
-    })),
-    unreviewed: unreviewedResult.count || 0,
+    reviewsPerDay,
+    unreviewed,
   };
 }
 
