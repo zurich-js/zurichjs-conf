@@ -103,7 +103,8 @@ export const CartAbandonmentEmail: React.FC<CartAbandonmentEmailProps> = ({
           </Text>
           <Text style={discountCodeStyle}>{discount.code}</Text>
           <Text style={discountFinePrintStyle}>
-            Enter it in the promo code field at checkout.
+            It applies automatically when you open your cart from this email — or enter it in the
+            promo code field at checkout.
           </Text>
         </Section>
       )}

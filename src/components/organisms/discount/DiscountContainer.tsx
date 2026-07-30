@@ -44,11 +44,12 @@ export function DiscountContainer() {
         />
       )}
 
-      {state === 'minimized' && discountData && (
+      {state === 'minimized' && (
         <DiscountWidget
           key="discount-widget"
           countdown={countdown}
-          percentOff={discountData.percentOff}
+          percentOff={discountData?.percentOff ?? offerPercentOff}
+          hasCode={discountData !== null}
           onReopen={reopen}
         />
       )}

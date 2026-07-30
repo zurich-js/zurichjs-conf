@@ -299,10 +299,11 @@ export function useDiscount() {
   }, [data, isPending, mutate]);
 
   const dismiss = useCallback(() => {
+    // The dismissed cookie stops the popup auto-triggering on later visits;
+    // within this session it always minimizes to the corner widget — with or
+    // without a code — so the offer stays reachable on screen.
     setDismissedCookie();
-    // Dismissing the gate (no code yet) closes it for good this session;
-    // dismissing a revealed code minimizes to the corner widget.
-    setState(data ? 'minimized' : 'idle');
+    setState('minimized');
     analytics.track('discount_popup_dismissed', {
       discount_code: data?.code ?? EMAIL_GATE_CODE,
       time_remaining_seconds: data ? Math.floor(countdown.total / 1000) : 0,
@@ -310,11 +311,11 @@ export function useDiscount() {
   }, [data, countdown.total]);
 
   const reopen = useCallback(() => {
-    if (!data) return;
+    // Without a code this reopens the email gate
     setState('modal_open');
     analytics.track('discount_widget_clicked', {
-      discount_code: data.code,
-      time_remaining_seconds: Math.floor(countdown.total / 1000),
+      discount_code: data?.code ?? EMAIL_GATE_CODE,
+      time_remaining_seconds: data ? Math.floor(countdown.total / 1000) : 0,
     });
   }, [data, countdown.total]);
 

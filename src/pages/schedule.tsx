@@ -4,10 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { DayTabs, StickyTicketCta } from '@/components/molecules';
+import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
 import { communityDayMeetup, publicProgramTabs, warmupChillRun, warmupChillRunScheduleItem } from '@/data';
@@ -46,7 +45,6 @@ export default function SchedulePage({ items }: SchedulePageProps) {
   );
   const activeTab = scheduleDayParamToTab[dayParam];
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
-  const { plans, currentStage } = useTicketPricing();
   // Workshop offerings so workshop rows show their price + add-to-cart chip
   // here too, not only on /workshops. Shares the TanStack cache with that page.
   const { currency } = useCurrency();
@@ -210,8 +208,6 @@ export default function SchedulePage({ items }: SchedulePageProps) {
         <ShapedSection shape="straight" variant="dark" compactTop>
           <SiteFooter showContactLinks />
         </ShapedSection>
-
-        <StickyTicketCta plans={plans} currentStage={currentStage} location="schedule" />
       </main>
     </>
   );

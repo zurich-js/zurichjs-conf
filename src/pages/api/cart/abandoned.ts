@@ -149,7 +149,8 @@ export default async function handler(
       : `${baseUrl}/cart`;
 
     // Render the email template per touch variant: only the immediate touch
-    // carries the goodie (it expires long before any follow-up lands).
+    // carries the goodie (it expires long before any follow-up lands). The
+    // goodie variant's cart link embeds the code so /cart auto-applies it.
     const baseProps: CartAbandonmentEmailProps = {
       firstName,
       cartItems,
@@ -159,7 +160,11 @@ export default async function handler(
     };
     const baseHtml = await render(React.createElement(CartAbandonmentEmail, baseProps));
     const goodieHtml = goodie
-      ? await render(React.createElement(CartAbandonmentEmail, { ...baseProps, discount: goodie }))
+      ? await render(React.createElement(CartAbandonmentEmail, {
+          ...baseProps,
+          cartUrl: `${cartRecoveryUrl}${cartRecoveryUrl.includes('?') ? '&' : '?'}voucher=${goodie.code}`,
+          discount: goodie,
+        }))
       : baseHtml;
 
     // Send/schedule the recovery touches

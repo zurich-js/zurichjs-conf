@@ -10,6 +10,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { AnimatePresence } from 'framer-motion';
 import type { GetServerSideProps } from 'next';
+import { useQueryState } from 'nuqs';
 
 import { useCart } from '@/contexts/CartContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -73,6 +74,30 @@ export default function CartPage() {
   // abandonment handler from double-scheduling what an explicit save (or an
   // earlier abandonment) already covered.
   const lastRecoveryCartState = useRef<string | null>(null);
+  // ?voucher=CODE deep links (recovery/discount emails) auto-apply the code
+  // once the cart has items, then clean the URL. nuqs keeps this off the
+  // router-events path so no phantom pageviews fire.
+  const [voucherParam, setVoucherParam] = useQueryState('voucher');
+  const hasAutoAppliedVoucher = useRef(false);
+  useEffect(() => {
+    if (!voucherParam || hasAutoAppliedVoucher.current) return;
+    if (cart.items.length === 0) return; // wait for cart restore/hydration
+    hasAutoAppliedVoucher.current = true;
+    if (cart.couponCode) {
+      void setVoucherParam(null);
+      return;
+    }
+    void applyVoucher(voucherParam).then((result) => {
+      showToast(
+        result.success
+          ? 'Your discount code has been applied 🎉'
+          : result.error || 'That discount code is no longer valid',
+        result.success ? 'success' : 'error'
+      );
+      void setVoucherParam(null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voucherParam, cart.items.length, cart.couponCode]);
 
   useCartUrlSync(cart);
 
