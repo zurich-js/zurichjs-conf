@@ -74,30 +74,43 @@ export default function CartPage() {
   // abandonment handler from double-scheduling what an explicit save (or an
   // earlier abandonment) already covered.
   const lastRecoveryCartState = useRef<string | null>(null);
-  // ?voucher=CODE deep links (recovery/discount emails) auto-apply the code
-  // once the cart has items, then clean the URL. nuqs keeps this off the
+  // ?voucher=CODE deep links (recovery/discount emails, popup CTA) auto-apply
+  // the code once the cart has items, then clean the URL. An empty cart parks
+  // the code in localStorage instead, so it still applies after the visitor
+  // grabs a ticket and comes back. nuqs keeps the URL cleanup off the
   // router-events path so no phantom pageviews fire.
   const [voucherParam, setVoucherParam] = useQueryState('voucher');
+  const [pendingVoucher, setPendingVoucher, clearPendingVoucher] = useLocalStorage('zurichjs_pending_voucher');
   const hasAutoAppliedVoucher = useRef(false);
   useEffect(() => {
-    if (!voucherParam || hasAutoAppliedVoucher.current) return;
-    if (cart.items.length === 0) return; // wait for cart restore/hydration
-    hasAutoAppliedVoucher.current = true;
+    const code = voucherParam ?? pendingVoucher;
+    if (!code || hasAutoAppliedVoucher.current) return;
     if (cart.couponCode) {
-      void setVoucherParam(null);
+      if (voucherParam) void setVoucherParam(null);
+      clearPendingVoucher();
       return;
     }
-    void applyVoucher(voucherParam).then((result) => {
+    if (cart.items.length === 0) {
+      // Park the code until the cart has something to apply it to
+      if (voucherParam) {
+        setPendingVoucher(voucherParam);
+        void setVoucherParam(null);
+      }
+      return;
+    }
+    hasAutoAppliedVoucher.current = true;
+    void applyVoucher(code).then((result) => {
       showToast(
         result.success
           ? 'Your discount code has been applied 🎉'
           : result.error || 'That discount code is no longer valid',
         result.success ? 'success' : 'error'
       );
-      void setVoucherParam(null);
+      if (voucherParam) void setVoucherParam(null);
+      clearPendingVoucher();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voucherParam, cart.items.length, cart.couponCode]);
+  }, [voucherParam, pendingVoucher, cart.items.length, cart.couponCode]);
 
   useCartUrlSync(cart);
 

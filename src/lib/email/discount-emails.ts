@@ -32,7 +32,9 @@ export async function sendDiscountCodeEmail(
       percentOff: data.percentOff,
       validMinutes: data.validMinutes,
       expiresAtISO: data.expiresAtISO,
-      ticketsUrl: `${EMAIL_CONFIG.siteUrl}/#tickets`,
+      // Deep link: /cart auto-applies the voucher (or parks it until the
+      // cart has items)
+      ticketsUrl: `${EMAIL_CONFIG.siteUrl}/cart?voucher=${data.code}`,
       supportEmail: EMAIL_CONFIG.supportEmail,
     };
 

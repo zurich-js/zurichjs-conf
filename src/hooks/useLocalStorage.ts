@@ -18,6 +18,8 @@ interface LocalStorageSchema {
   zurichjs_billing_data: Partial<CheckoutFormData>;
   zurichjs_cart_recovery: string;
   zurichjs_cart_v1: Cart;
+  /** Voucher code waiting for a non-empty cart to apply itself to */
+  zurichjs_pending_voucher: string;
 }
 
 export type LocalStorageKey = keyof LocalStorageSchema;

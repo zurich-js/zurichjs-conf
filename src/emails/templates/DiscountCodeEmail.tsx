@@ -62,7 +62,8 @@ export const DiscountCodeEmail: React.FC<DiscountCodeEmailProps> = ({
       <Section style={codeCardStyle}>
         <Text style={codeStyle}>{code}</Text>
         <Text style={codeFinePrintStyle}>
-          Enter it in the promo code field at checkout.
+          It applies automatically when you use the button below — or enter it in the promo code
+          field at checkout.
         </Text>
       </Section>
 

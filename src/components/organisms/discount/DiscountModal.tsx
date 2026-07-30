@@ -31,6 +31,8 @@ interface DiscountModalProps {
   onDismiss: () => void;
   onSubmitEmail: (email: string) => void;
   onCopyCode: () => Promise<void>;
+  /** Deep-links the code into the purchase flow (cart or tickets section) */
+  onUseCode: () => void;
 }
 
 function formatCountdown(countdown: TimeRemaining): string {
@@ -48,6 +50,7 @@ export function DiscountModal({
   onDismiss,
   onSubmitEmail,
   onCopyCode,
+  onUseCode,
 }: DiscountModalProps) {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState('');
@@ -165,6 +168,15 @@ export function DiscountModal({
                     )}
                   </button>
                 </div>
+
+                {/* Deep link into the purchase flow — the code applies itself */}
+                <button
+                  onClick={onUseCode}
+                  className="mt-5 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-bold text-black transition-opacity hover:opacity-80"
+                >
+                  Use it on your ticket
+                  <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                </button>
 
                 {codeEmailed && (
                   <p className="mt-4 text-xs text-white/50">
