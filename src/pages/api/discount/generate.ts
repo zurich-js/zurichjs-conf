@@ -62,13 +62,26 @@ export default async function handler(
 
     if (existingCode && existingExpires) {
       const expiresAt = existingExpires;
-      if (new Date(expiresAt) > new Date()) {
+      const remainingMs = new Date(expiresAt).getTime() - Date.now();
+      if (remainingMs > 0) {
         log.info('Returning existing discount code', { code: existingCode });
         const config = await getDiscountConfig();
+        const percentOff = existingPercentOff ? parseInt(existingPercentOff, 10) : config.percentOff;
+        // The gate may re-collect an email for a code that already exists —
+        // still deliver it to the inbox with the remaining validity.
+        if (body.email) {
+          await sendDiscountCodeEmail({
+            to: body.email,
+            code: existingCode,
+            percentOff,
+            validMinutes: Math.max(1, Math.round(remainingMs / 60_000)),
+            expiresAtISO: new Date(expiresAt).toISOString(),
+          });
+        }
         return res.status(200).json({
           code: existingCode,
           expiresAt,
-          percentOff: existingPercentOff ? parseInt(existingPercentOff, 10) : config.percentOff,
+          percentOff,
         });
       }
     }
@@ -111,17 +124,19 @@ export default async function handler(
 
     // The gate doubles as lead capture — add the email to the newsletter
     // audience, and send the code (with its expiry) to the inbox so the offer
-    // survives a closed tab. Both fire-and-forget: neither may block the code.
-    addNewsletterContact(body.email, 'popup').catch((err) => {
-      log.error('Failed to add discount email to newsletter', err, { email: body.email });
-    });
-    void sendDiscountCodeEmail({
-      to: body.email,
-      code,
-      percentOff,
-      validMinutes: durationMinutes,
-      expiresAtISO: expiresAt.toISOString(),
-    });
+    // survives a closed tab. Awaited: fire-and-forget promises are dropped
+    // when the serverless function freezes after responding. Failures are
+    // logged inside the helpers and never block the on-page code.
+    await Promise.allSettled([
+      addNewsletterContact(body.email, 'popup'),
+      sendDiscountCodeEmail({
+        to: body.email,
+        code,
+        percentOff,
+        validMinutes: durationMinutes,
+        expiresAtISO: expiresAt.toISOString(),
+      }),
+    ]);
 
     log.info('Generated discount code', {
       code,
