@@ -18,12 +18,17 @@ import {
 } from './api';
 import type { VipPerkConfig } from './types';
 
-/** Perks list + stats — one endpoint, one query (`list()` key covers both). */
+/**
+ * Perks list + stats — one endpoint, one query (`list()` key covers both).
+ * Every mutation in this tab invalidates `list()` explicitly, so a long
+ * staleTime is safe: refetches only guard against out-of-band changes
+ * (another admin's session, webhook-created perks).
+ */
 export function useVipPerks() {
   return useQuery({
     queryKey: vipPerkQueryKeys.list(),
     queryFn: ({ signal }) => fetchVipPerks(signal),
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -34,12 +39,12 @@ export function useVipPerkConfig() {
   });
 }
 
-/** Stripe product reference list — changes rarely, cache generously. */
+/** Stripe product reference list — essentially static, cache generously. */
 export function useVipPerkProducts() {
   return useQuery({
     queryKey: vipPerkQueryKeys.products(),
     queryFn: ({ signal }) => fetchVipPerkProducts(signal),
-    staleTime: 10 * 60_000,
+    staleTime: 30 * 60_000,
   });
 }
 

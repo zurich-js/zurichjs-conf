@@ -221,7 +221,9 @@ export function WorkshopsRegistrantsTab() {
     queryKey: adminKeys.workshopList(),
     queryFn: ({ signal }) => fetchWorkshops(signal),
     select: toCardModels,
-    staleTime: 60_000,
+    // Workshop offerings are near-static; registrant counts on the cards only
+    // need to be roughly fresh (the registrants query below stays at 1 min).
+    staleTime: 10 * 60_000,
   });
 
   const filteredWorkshops = useMemo(() => {

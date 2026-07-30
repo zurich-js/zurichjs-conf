@@ -2,9 +2,12 @@
  * Query key factory for the admin dashboard.
  *
  * All admin server-state lives under the `['admin']` root so related caches
- * can be reasoned about (and cleared on logout) as one family. Keys are
- * hierarchical: every input that changes the server response (filters,
- * search, ids, currency) must be part of the key.
+ * can be reasoned about as one family. On logout the entire query cache is
+ * dropped (`useAdminAuth().logout` calls `queryClient.clear()`) — deliberate,
+ * so no admin data survives into an unauthenticated browser session; a quick
+ * logout/login therefore refetches everything. Keys are hierarchical: every
+ * input that changes the server response (filters, search, ids, currency)
+ * must be part of the key.
  *
  * Admin CFP keys predate this factory and live in
  * `src/lib/types/cfp-admin.ts` (`cfpQueryKeys`, rooted at `['cfp']`);

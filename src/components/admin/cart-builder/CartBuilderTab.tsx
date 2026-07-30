@@ -80,8 +80,10 @@ export function CartBuilderTab() {
   const { data: catalog, isLoading, error, refetch } = useQuery({
     queryKey: adminKeys.cartBuilderCatalog(currency),
     queryFn: ({ signal }) => fetchCatalog(currency, signal),
-    // Stripe prices + published workshops are stable reference data.
-    staleTime: 5 * 60_000,
+    // Stripe prices + published workshops are stable reference data; they only
+    // shift at pricing-stage boundaries, and the error-state Retry / remount
+    // refetch covers those rare flips.
+    staleTime: 30 * 60_000,
   });
 
   const setQuantity = (key: string, quantity: number) => {
