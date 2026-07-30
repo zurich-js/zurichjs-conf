@@ -3,8 +3,9 @@ import type { GetServerSideProps } from 'next';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { DayTabs } from '@/components/molecules';
+import { DayTabs, StickyTicketCta } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
 import { communityDayMeetup, publicProgramTabs, warmupChillRun, warmupChillRunScheduleItem } from '@/data';
 import { analytics } from '@/lib/analytics/client';
@@ -42,6 +43,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
   );
   const activeTab = scheduleDayParamToTab[dayParam];
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
+  const { plans, currentStage } = useTicketPricing();
   const dayItems = activeScheduleTab.sessionDate
     ? items.filter((item) => item.date === activeScheduleTab.sessionDate)
     : items.filter((item) => item.date === (activeTab === 'community' ? '2026-09-09' : '2026-09-12'));
@@ -200,6 +202,8 @@ export default function SchedulePage({ items }: SchedulePageProps) {
         <ShapedSection shape="straight" variant="dark" compactTop>
           <SiteFooter showContactLinks />
         </ShapedSection>
+
+        <StickyTicketCta plans={plans} currentStage={currentStage} location="schedule" />
       </main>
     </>
   );

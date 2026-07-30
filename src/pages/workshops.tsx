@@ -4,11 +4,12 @@ import { useQueryState, parseAsStringLiteral } from 'nuqs';
 
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { DayTabs } from '@/components/molecules';
+import { DayTabs, StickyTicketCta } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { ProgramScheduleItemCard } from '@/components/scheduling';
 import { workshopProgramSections } from '@/data';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
@@ -48,6 +49,7 @@ export default function WorkshopsPage() {
   );
   const tabsRef = useRef<HTMLDivElement>(null);
   const { currency } = useCurrency();
+  const { plans, currentStage } = useTicketPricing();
 
   const queryOptions = useMemo(
     () => createWorkshopsScheduleQueryOptions(currency),
@@ -201,6 +203,8 @@ export default function WorkshopsPage() {
         <ShapedSection shape="straight" variant="dark" compactTop>
           <SiteFooter showContactLinks />
         </ShapedSection>
+
+        <StickyTicketCta plans={plans} currentStage={currentStage} location="workshops" />
       </main>
     </>
   );
