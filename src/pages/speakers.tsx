@@ -171,9 +171,12 @@ export default function SpeakersPage() {
             <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
               Meet the engineers, makers, and community leaders shaping the ZurichJS Conf 2026 experience.
             </p>
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap gap-3">
               <Button variant="primary" asChild href="/#tickets">
                 Get your ticket
+              </Button>
+              <Button variant="blue" asChild href="/schedule">
+                Check out the schedule
               </Button>
             </div>
         </ShapedSection>
