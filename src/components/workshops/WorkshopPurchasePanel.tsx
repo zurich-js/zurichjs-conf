@@ -5,7 +5,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { analytics } from '@/lib/analytics';
 import { Check, GraduationCap, MapPin, Timer, Users } from 'lucide-react';
@@ -38,6 +38,12 @@ export function WorkshopPurchasePanel({
   const { currency } = useCurrency();
   const router = useRouter();
   const { addToCart, isInCart, navigateToCart } = useCart();
+
+  // Add-to-cart pushes to /cart via router (a button, not a Link), so warm
+  // the route bundle up front for an instant transition.
+  useEffect(() => {
+    void router.prefetch('/cart');
+  }, [router]);
   const { addToast } = useToast();
 
   const queryOptions = useMemo(

@@ -5,6 +5,8 @@
  * query) so we don't run N per-card pricing queries.
  */
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
@@ -32,6 +34,13 @@ export function WorkshopBuyButton({
 }: WorkshopBuyButtonProps) {
   const { addToCart, isInCart, navigateToCart } = useCart();
   const { addToast } = useToast();
+  const router = useRouter();
+
+  // "View cart" pushes via router; prefetch keeps it instant (Next dedupes
+  // repeated prefetches across the many buy buttons in a list).
+  useEffect(() => {
+    void router.prefetch('/cart');
+  }, [router]);
   const itemId = `workshop_${offering.workshopId}`;
   const alreadyInCart = isInCart(itemId);
 
