@@ -72,6 +72,8 @@ export function WorkshopPurchasePanel({
       workshopDurationMinutes: offering.durationMinutes,
     });
     analytics.track('workshop_added_to_cart', {
+      workshop_id: offering.workshopId,
+      workshop_title: title,
       workshop_amount: offering.unitAmount / 100,
       currency: offering.currency,
       quantity: 1,

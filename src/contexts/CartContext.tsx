@@ -167,6 +167,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
         'This may indicate a geo-detection inconsistency.'
       );
     }
+    // First item into an empty cart marks a true cart creation — repeat
+    // /cart visits and rehydrated carts don't fire this.
+    if (cartRef.current.items.length === 0) {
+      analytics.track('cart_created', {
+        item_kind: item.kind === 'workshop' ? 'workshop' : 'ticket',
+        item_id: item.id,
+        item_title: item.title,
+        price: item.price,
+        currency: item.currency,
+        quantity,
+      } as EventProperties<'cart_created'>);
+    }
     dispatch({ type: 'ADD_ITEM', item, quantity });
     // Sync ref immediately for navigation
     cartRef.current = addItem(cartRef.current, item, quantity);
@@ -185,6 +197,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
     const priceIds = currentCart.items.map((item) => item.priceId);
 
     if (priceIds.length === 0) {
+      trackVoucherEvent({ code, success: false, error: 'empty_cart', cartPriceIds: priceIds });
       return { success: false, error: 'No tickets selected' };
     }
 
@@ -336,30 +349,27 @@ interface VoucherTrackingData {
 }
 
 function trackVoucherEvent(data: VoucherTrackingData) {
+  if (!data.success) {
+    analytics.track('voucher_apply_failed', {
+      voucher_code: data.code.trim(),
+      error_reason: data.error || 'unknown',
+      cart_items_count: data.cartPriceIds?.length,
+    } as EventProperties<'voucher_apply_failed'>);
+    return;
+  }
+
   const isPartialDiscount = data.applicablePriceIds &&
     data.cartPriceIds &&
     data.applicablePriceIds.length < data.cartPriceIds.length;
-
-  console.log('[Cart] Voucher applied:', {
-    code: data.code,
-    success: data.success,
-    discountType: data.discountType,
-    discountValue: data.discountValue,
-    applicablePriceIds: data.applicablePriceIds,
-    cartPriceIds: data.cartPriceIds,
-    isPartialDiscount,
-    error: data.error,
-  });
 
   analytics.track('voucher_applied', {
     voucher_code: data.code.trim(),
     discount_amount: 0,
     discount_type: data.discountType || 'fixed',
     discount_value: data.discountValue || 0,
-    success: data.success,
+    success: true,
     is_partial_discount: isPartialDiscount,
     applicable_items_count: data.applicablePriceIds?.length,
     cart_items_count: data.cartPriceIds?.length,
-    ...(data.error && { error_message: data.error }),
   } as EventProperties<'voucher_applied'>);
 }

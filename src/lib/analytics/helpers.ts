@@ -173,6 +173,23 @@ export function trackWorkshopViewed(params: {
 }
 
 /**
+ * Track speaker profile viewed
+ */
+export function trackSpeakerViewed(params: {
+  speakerSlug: string
+  speakerName: string
+  hasTalk: boolean
+  hasWorkshop: boolean
+}) {
+  analytics.track('speaker_viewed', {
+    speaker_slug: params.speakerSlug,
+    speaker_name: params.speakerName,
+    has_talk: params.hasTalk,
+    has_workshop: params.hasWorkshop,
+  })
+}
+
+/**
  * Track sponsor logo click
  */
 export function trackSponsorClicked(params: {
