@@ -121,10 +121,10 @@ const mockPrice = (lookupKey: string, unitAmount: number, currency: string) => (
   active: true,
 });
 
-// VIP sold out: 30 of 30 sold.
+// VIP sold out: 50 of 50 sold.
 const SOLD_OUT_VIP_COUNTS = {
-  byStage: { blind_bird: 30, early_bird: 20, standard: 10, late_bird: 0 },
-  byCategory: { standard_student_unemployed: 5, standard: 25, vip: 30 },
+  byStage: { blind_bird: 30, early_bird: 30, standard: 20, late_bird: 0 },
+  byCategory: { standard_student_unemployed: 5, standard: 25, vip: 50 },
 };
 
 describe('Admin Cart Builder Catalog API', () => {
