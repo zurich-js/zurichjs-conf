@@ -5,10 +5,10 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { trackWorkshopAddedToCart } from '@/lib/analytics';
-import { Check, GraduationCap, MapPin, Timer, Users } from 'lucide-react';
+import { BellRing, Check, GraduationCap, MapPin, Timer, Users } from 'lucide-react';
 import { Button, Heading } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -18,6 +18,7 @@ import { createWorkshopPricingQueryOptions } from '@/lib/queries/workshops';
 import { formatPrice } from '@/lib/cart';
 import { formatDuration, formatWorkshopAvailability } from '@/components/scheduling/utils';
 import { cn } from '@/lib/utils';
+import { WorkshopWaitlistModal } from './WorkshopWaitlistModal';
 
 interface WorkshopPurchasePanelProps {
   /** Program session id — preferred match for post-CFP workshop offerings. */
@@ -41,6 +42,7 @@ export function WorkshopPurchasePanel({
   const { addToCart, isInCart, navigateToCart } = useCart();
   useCartRoutePrefetch();
   const { addToast } = useToast();
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   const queryOptions = useMemo(
     () => createWorkshopPricingQueryOptions({ currency, sessionId, cfpSubmissionId: cfpSubmissionId ?? undefined, sessionSlug }),
@@ -158,13 +160,15 @@ export function WorkshopPurchasePanel({
               View in cart
             </button>
           )}
-          {offering && !alreadyInCart && (
-            <Button
-              variant="blue"
-              onClick={offering.soldOut ? undefined : handleAddToCart}
-              disabled={offering.soldOut}
-            >
-              {offering.soldOut ? 'Sold out' : 'Add to cart'}
+          {offering?.soldOut && (
+            <Button variant="blue" onClick={() => setIsWaitlistOpen(true)}>
+              <BellRing size={16} aria-hidden="true" />
+              Join the waitlist
+            </Button>
+          )}
+          {offering && !offering.soldOut && !alreadyInCart && (
+            <Button variant="blue" onClick={handleAddToCart}>
+              Add to cart
             </Button>
           )}
           {offering && (
@@ -177,6 +181,15 @@ export function WorkshopPurchasePanel({
           )}
         </div>
       </div>
+
+      {offering && (
+        <WorkshopWaitlistModal
+          isOpen={isWaitlistOpen}
+          workshopId={offering.workshopId}
+          workshopTitle={title}
+          onClose={() => setIsWaitlistOpen(false)}
+        />
+      )}
     </section>
   );
 }
