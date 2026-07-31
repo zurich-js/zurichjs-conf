@@ -26,6 +26,7 @@ export function ReviewStep({
   onUpgradeToVip,
   onTeamRequest,
   onEmailCaptured,
+  onSaveCartOpened,
 }: ReviewStepProps) {
   const [isSeebadEngeOpen, setIsSeebadEngeOpen] = useState(false);
   const [saveCartOpen, setSaveCartOpen] = useState(false);
@@ -238,7 +239,10 @@ export function ReviewStep({
               Not ready to decide?{' '}
               <button
                 type="button"
-                onClick={() => setSaveCartOpen(true)}
+                onClick={() => {
+                  setSaveCartOpen(true);
+                  onSaveCartOpened?.();
+                }}
                 className="font-medium text-brand-yellow-main hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 rounded"
               >
                 Save your cart for later

@@ -31,6 +31,8 @@ export interface ReviewStepProps extends CartStepProps {
    *  abandoners become reachable by the recovery email. Resolves to whether
    *  the recovery email was actually scheduled. */
   onEmailCaptured?: (email: string) => Promise<boolean>;
+  /** Called when the visitor opens the save-cart email form */
+  onSaveCartOpened?: () => void;
 }
 
 export interface AttendeesStepProps extends CartStepProps {

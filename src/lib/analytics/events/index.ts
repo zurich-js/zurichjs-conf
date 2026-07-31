@@ -101,7 +101,13 @@ export type {
 } from './cfp-events';
 
 // Email events
-export type { CartAbandonmentEmailScheduledEvent, CartRecoveryClickedEvent } from './email-events';
+export type {
+  CartAbandonmentEmailScheduledEvent,
+  CartRecoveryClickedEvent,
+  CartSaveOpenedEvent,
+  CartSavedEvent,
+  CartSaveFailedEvent,
+} from './email-events';
 
 // VIP events
 export type {
@@ -206,7 +212,13 @@ import type {
   CfpReviewerAuthenticatedEvent,
   CfpReviewSubmittedEvent,
 } from './cfp-events';
-import type { CartAbandonmentEmailScheduledEvent, CartRecoveryClickedEvent } from './email-events';
+import type {
+  CartAbandonmentEmailScheduledEvent,
+  CartRecoveryClickedEvent,
+  CartSaveOpenedEvent,
+  CartSavedEvent,
+  CartSaveFailedEvent,
+} from './email-events';
 import type {
   VipUpgradeInitiatedEvent,
   VipUpgradeCompletedEvent,
@@ -290,6 +302,9 @@ export type AnalyticsEvent =
   | WebhookReceivedEvent
   | CartAbandonmentEmailScheduledEvent
   | CartRecoveryClickedEvent
+  | CartSaveOpenedEvent
+  | CartSavedEvent
+  | CartSaveFailedEvent
   | CfpLoginRequestedEvent
   | CfpSpeakerAuthenticatedEvent
   | CfpSubmissionCreatedEvent

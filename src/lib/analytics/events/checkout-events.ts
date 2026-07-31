@@ -134,6 +134,14 @@ export interface CheckoutEmailCapturedEvent {
       timestamp_iso?: string;
       step: 'review' | 'attendees' | 'upsells' | 'checkout';
       time_to_email_seconds?: number;
+      /** Where the email came from within the step */
+      capture_source?: 'save_cart' | 'checkout_form' | 'team_request';
+      ticket_count?: number;
+      workshop_count?: number;
+      seat_count?: number;
+      has_discount?: boolean;
+      coupon_code?: string;
+      purchase_type?: 'ticket' | 'workshop' | 'mixed';
     };
 }
 

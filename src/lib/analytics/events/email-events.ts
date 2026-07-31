@@ -27,3 +27,41 @@ export interface CartRecoveryClickedEvent {
       utm_campaign: string;
     };
 }
+
+/** Shared cart context for the save-cart funnel events below */
+interface CartSaveContextProperties {
+  ticket_count?: number;
+  workshop_count?: number;
+  seat_count?: number;
+  has_discount?: boolean;
+  coupon_code?: string;
+  purchase_type?: 'ticket' | 'workshop' | 'mixed';
+}
+
+export interface CartSaveOpenedEvent {
+  event: 'cart_save_opened';
+  properties: BaseEventProperties & CartProperties & CartSaveContextProperties;
+}
+
+export interface CartSavedEvent {
+  event: 'cart_saved';
+  properties: BaseEventProperties &
+    CartProperties &
+    UserProperties &
+    CartSaveContextProperties & {
+      email: string;
+      /** Resend id of the first recovery email in the scheduled sequence */
+      email_id?: string;
+      scheduled_for?: string;
+    };
+}
+
+export interface CartSaveFailedEvent {
+  event: 'cart_save_failed';
+  properties: BaseEventProperties &
+    CartProperties &
+    CartSaveContextProperties & {
+      email: string;
+      error_message?: string;
+    };
+}

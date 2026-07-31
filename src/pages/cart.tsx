@@ -145,6 +145,21 @@ export default function CartPage() {
       : 'ticket';
   const hasDiscount = orderSummary.discount > 0;
 
+  // Shared cart context attached to every cart-funnel analytics event so
+  // saves, captures, and failures are all segmentable the same way.
+  const cartAnalyticsContext = {
+    cart_item_count: cart.items.length,
+    cart_total_amount: orderSummary.total,
+    cart_currency: orderSummary.currency,
+    cart_items: mapCartItemsToAnalytics(cart.items),
+    ticket_count: ticketCount,
+    workshop_count: workshopSeatCount,
+    seat_count: totalSeatCount,
+    has_discount: hasDiscount,
+    coupon_code: cart.couponCode,
+    purchase_type: purchaseType,
+  };
+
   // VIP upsell logic
   const standardTicketItem = cart.items.find(item => item.variant === 'standard' && !item.title.includes('Workshop'));
   const showVipUpsell = ticketCount >= 1 && ticketCount <= 2 && !!standardTicketItem;
@@ -327,26 +342,44 @@ export default function CartPage() {
     }
   };
 
+  // Any email capture (checkout form blur, team-request modal) identifies the
+  // visitor so their anonymous cart events merge into one PostHog person.
+  const handleEmailCaptured = (email: string) => {
+    setCapturedEmail(email);
+    analytics.identify(email, {
+      email,
+      first_name: capturedFirstName ?? undefined,
+    });
+  };
+
+  const handleSaveCartOpened = () => {
+    analytics.track('cart_save_opened', {
+      ...cartAnalyticsContext,
+    } as EventProperties<'cart_save_opened'>);
+  };
+
   // Save-cart email from the review step: identifies the visitor and makes
   // review-stage abandoners reachable by the recovery email (most cart exits
   // happen before checkout ever sees an email). Returns whether the email was
   // actually scheduled so the UI never claims "check your inbox" on failure.
   const handleReviewEmailCaptured = async (email: string): Promise<boolean> => {
     setCapturedEmail(email);
-    analytics.identify(email, { email });
+    analytics.identify(email, {
+      email,
+      first_name: capturedFirstName ?? undefined,
+      has_saved_cart: true,
+    });
     analytics.track('checkout_email_captured', {
       email,
       step: 'review',
-      cart_item_count: cart.items.length,
-      cart_total_amount: orderSummary.total,
-      cart_currency: orderSummary.currency,
-      cart_items: mapCartItemsToAnalytics(cart.items),
+      capture_source: 'save_cart',
+      ...cartAnalyticsContext,
     } as EventProperties<'checkout_email_captured'>);
     // Explicit save sends the first email immediately (with the thank-you
     // code) plus a scheduled follow-up; purchase cancels the follow-up.
     const encoded = encodeCartState(cart);
     try {
-      await scheduleAbandonmentEmailAsync({
+      const response = await scheduleAbandonmentEmailAsync({
         email,
         firstName: capturedFirstName ?? undefined,
         cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
@@ -360,8 +393,20 @@ export default function CartPage() {
       // Mark covered only on success so a failed save doesn't suppress the
       // abandonment-triggered fallback email.
       lastRecoveryCartState.current = encoded;
+      analytics.track('cart_saved', {
+        email,
+        first_name: capturedFirstName ?? undefined,
+        email_id: response.emailId,
+        scheduled_for: response.scheduledFor,
+        ...cartAnalyticsContext,
+      } as EventProperties<'cart_saved'>);
       return true;
-    } catch {
+    } catch (err) {
+      analytics.track('cart_save_failed', {
+        email,
+        error_message: err instanceof Error ? err.message : String(err),
+        ...cartAnalyticsContext,
+      } as EventProperties<'cart_save_failed'>);
       return false;
     }
   };
@@ -487,6 +532,7 @@ export default function CartPage() {
                 onUpgradeToVip={handleUpgradeToVip}
                 onTeamRequest={handleTeamModalOpen}
                 onEmailCaptured={handleReviewEmailCaptured}
+                onSaveCartOpened={handleSaveCartOpened}
               />
             )}
 
@@ -515,7 +561,7 @@ export default function CartPage() {
                 onRemove={removeFromCart}
                 onRemoveVoucher={removeVoucher}
                 onSubmit={handleCheckoutSubmit}
-                onEmailCaptured={setCapturedEmail}
+                onEmailCaptured={handleEmailCaptured}
                 onFieldCaptured={handleCapturedField}
               />
             )}
@@ -551,7 +597,7 @@ export default function CartPage() {
             quantity={teamTicketInfo.quantity}
             onSubmit={handleTeamRequestSubmit}
             onSuccess={handleTeamRequestSuccess}
-            onEmailCaptured={setCapturedEmail}
+            onEmailCaptured={handleEmailCaptured}
             onFieldCaptured={handleCapturedField}
           />
         )}
