@@ -13,6 +13,7 @@ import { getQueryClient } from "@/lib/query-client";
 import { NuqsAdapter } from "nuqs/adapters/next/pages";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Script from "next/script";
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import type { Cart } from '@/types/cart';
@@ -136,29 +137,44 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
   const showDiscount = ['/', '/speakers', '/workshops', '/schedule'].includes(router.pathname);
 
   return (
-    <PostHogProvider client={posthog}>
-      <QueryClientProvider client={queryClient}>
-        <HydrationBoundary state={pageProps.dehydratedState}>
-          <NuqsAdapter>
-            <CurrencyProvider currency={detectedCurrency}>
-              <CartProvider initialCart={pageProps.initialCart}>
-                <MotionProvider>
-                  <ToastProvider>
-                    <div className={figtree.variable}>
-                      {showNavBar && <NavBar />}
-                      <Component {...pageProps} />
-                      {showDiscount && <DiscountContainer />}
-                    </div>
-                  </ToastProvider>
-                </MotionProvider>
-              </CartProvider>
-            </CurrencyProvider>
-          </NuqsAdapter>
-        </HydrationBoundary>
-        {process.env.NODE_ENV === 'development' && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
-      </QueryClientProvider>
-    </PostHogProvider>
+    <>
+      <Script
+        async
+        src="https://www.googletagmanager.com/gtag/js?id=AW-18272636718"
+        strategy="afterInteractive"
+      />
+      <Script id="google-ads-tag" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'AW-18272636718');
+        `}
+      </Script>
+      <PostHogProvider client={posthog}>
+        <QueryClientProvider client={queryClient}>
+          <HydrationBoundary state={pageProps.dehydratedState}>
+            <NuqsAdapter>
+              <CurrencyProvider currency={detectedCurrency}>
+                <CartProvider initialCart={pageProps.initialCart}>
+                  <MotionProvider>
+                    <ToastProvider>
+                      <div className={figtree.variable}>
+                        {showNavBar && <NavBar />}
+                        <Component {...pageProps} />
+                        {showDiscount && <DiscountContainer />}
+                      </div>
+                    </ToastProvider>
+                  </MotionProvider>
+                </CartProvider>
+              </CurrencyProvider>
+            </NuqsAdapter>
+          </HydrationBoundary>
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
+        </QueryClientProvider>
+      </PostHogProvider>
+    </>
   );
 }
