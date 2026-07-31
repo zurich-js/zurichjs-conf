@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 
 import {
   getCurrentStage,
-  getFinalStage,
+  getStagesAfter,
   getStockInfo,
   GLOBAL_STOCK_LIMITS,
   type PriceStage,
@@ -39,6 +39,8 @@ interface TicketPlanResponse {
   title: string;
   price: number;
   comparePrice?: number;
+  /** Stage the comparePrice belongs to (the stage this ticket peaks at) */
+  comparePriceStage?: PriceStage;
   currency: string;
   priceId: string;
   lookupKey: string;
@@ -143,17 +145,29 @@ export default async function handler(
           return null;
         }
 
-        // Get comparison price (final-stage price for non-student categories)
-        const finalStage = getFinalStage().stage;
+        // Get comparison price: the highest price this category still climbs to
+        // in a later stage. Anchoring to the final stage alone loses the increase
+        // for categories that peak earlier — VIP tops out at late bird and has no
+        // last_minute price, so its rise was never shown.
         let comparePrice: number | undefined;
-        if (category !== 'standard_student_unemployed' && currentStage !== finalStage) {
-          const finalStageKey = buildLookupKey(category, finalStage, targetCurrency);
-          const finalStagePrice = await fetchPrice(stripe, finalStageKey);
-          const anchorAmount = finalStagePrice?.unit_amount ?? undefined;
-          // Only compare when the final price is actually higher (VIP stays flat after late bird)
-          comparePrice = anchorAmount !== undefined && anchorAmount > price.unit_amount
-            ? anchorAmount
-            : undefined;
+        let comparePriceStage: PriceStage | undefined;
+        if (category !== 'standard_student_unemployed') {
+          const laterAmounts = await Promise.all(
+            getStagesAfter(currentStage).map(async ({ stage }) => {
+              const laterPrice = await fetchPrice(stripe, buildLookupKey(category, stage, targetCurrency));
+              return { stage, amount: laterPrice?.unit_amount ?? null };
+            })
+          );
+
+          for (const { stage, amount } of laterAmounts) {
+            // Only compare against prices that are actually higher — a flat later
+            // stage must not render as a fake discount
+            if (amount === null || amount <= price.unit_amount) continue;
+            if (comparePrice === undefined || amount > comparePrice) {
+              comparePrice = amount;
+              comparePriceStage = stage;
+            }
+          }
         }
 
         // Calculate stock info
@@ -187,6 +201,7 @@ export default async function handler(
           title: CATEGORY_TITLES[category],
           price: price.unit_amount,
           comparePrice,
+          comparePriceStage,
           currency: price.currency.toUpperCase(),
           priceId: price.id,
           lookupKey,

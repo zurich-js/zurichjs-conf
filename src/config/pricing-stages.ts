@@ -208,6 +208,19 @@ export const getFinalStage = (): StageConfig => {
 };
 
 /**
+ * Get every stage that comes after the given one, cheapest first.
+ * Used to find the highest price a ticket will still reach — a category can
+ * stop increasing before the final stage (VIP tops out at late bird), so the
+ * final stage alone is not a reliable anchor.
+ */
+export const getStagesAfter = (currentStage: PriceStage): StageConfig[] => {
+  const currentConfig = getStageConfig(currentStage);
+  if (!currentConfig) return [];
+
+  return PRICING_STAGES.filter(s => s.priority > currentConfig.priority);
+};
+
+/**
  * Get the next pricing stage after the current one
  */
 export const getNextStage = (currentStage: PriceStage): StageConfig | undefined => {
