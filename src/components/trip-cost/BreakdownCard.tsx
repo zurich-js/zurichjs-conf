@@ -1,6 +1,6 @@
 /**
  * Trip Cost Calculator — Breakdown Summary Card
- * Shows cost breakdown, savings vs last minute, exchange rate info, and CTAs
+ * Shows cost breakdown, savings vs the final pricing stage, exchange rate info, and CTAs
  */
 
 import React from 'react';
@@ -14,6 +14,7 @@ import {
   secondaryCurrencyLabel,
 } from './CalculatorWidgets';
 import { TRAVEL_RANGES, CURRENCY_META, type DisplayCurrency, type TicketType } from '@/config/trip-cost';
+import { getFinalStage } from '@/config/pricing-stages';
 import type { TripCostBreakdown } from '@/lib/trip-cost/calculations';
 import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 import type { TravelRegion } from '@/config/trip-cost';
@@ -145,7 +146,7 @@ export function BreakdownCard({
                 className="cursor-pointer flex items-center gap-1 text-[11px] text-brand-green mt-2 hover:underline"
               >
                 <Info className="w-3 h-3 shrink-0" />
-                You save {isConverted ? '~' : ''}{formatAmount(lastMinuteDisplayAmount - totalDisplayAmount, displayCurrency)} ({Math.round(((lastMinuteDisplayAmount - totalDisplayAmount) / lastMinuteDisplayAmount) * 100)}%) vs. last minute pricing
+                You save {isConverted ? '~' : ''}{formatAmount(lastMinuteDisplayAmount - totalDisplayAmount, displayCurrency)} ({Math.round(((lastMinuteDisplayAmount - totalDisplayAmount) / lastMinuteDisplayAmount) * 100)}%) vs. {getFinalStage().displayName.toLowerCase()} pricing
               </button>
             )}
           </div>

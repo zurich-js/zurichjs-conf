@@ -7,6 +7,7 @@ import React from 'react';
 import { Ticket, Crown, GraduationCap, Check } from 'lucide-react';
 import { CalculatorSection, formatAmount, toDisplayCurrency } from './CalculatorWidgets';
 import { CURRENCY_META, type TicketType, type DisplayCurrency } from '@/config/trip-cost';
+import { getFinalStage } from '@/config/pricing-stages';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
 import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 
@@ -46,7 +47,7 @@ function getPlanDisplayPrice(
   return `${isConverted ? '~' : ''}${formatAmount(display, displayCurrency)}`;
 }
 
-/** Get compare (last minute) price for a plan */
+/** Get compare (final-stage) price for a plan */
 function getCompareLabel(
   planId: string,
   chfPlans: TicketPlan[],
@@ -116,7 +117,7 @@ function TicketButton({
             </span>
             {comparePrice && !isLoading && (
               <span className="block text-[11px] text-gray-400 line-through">
-                {comparePrice} at Last Minute
+                {comparePrice} at {getFinalStage().displayName}
               </span>
             )}
           </div>

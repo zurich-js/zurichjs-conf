@@ -10,6 +10,7 @@ import { logger } from '@/lib/logger';
 
 import {
   getCurrentStage,
+  getFinalStage,
   getStockInfo,
   GLOBAL_STOCK_LIMITS,
   type PriceStage,
@@ -142,12 +143,13 @@ export default async function handler(
           return null;
         }
 
-        // Get comparison price (last_minute price — the final stage — for non-student categories)
+        // Get comparison price (final-stage price for non-student categories)
+        const finalStage = getFinalStage().stage;
         let comparePrice: number | undefined;
-        if (category !== 'standard_student_unemployed' && currentStage !== 'last_minute') {
-          const lastCallKey = buildLookupKey(category, 'last_minute', targetCurrency);
-          const lastCallPrice = await fetchPrice(stripe, lastCallKey);
-          const anchorAmount = lastCallPrice?.unit_amount ?? undefined;
+        if (category !== 'standard_student_unemployed' && currentStage !== finalStage) {
+          const finalStageKey = buildLookupKey(category, finalStage, targetCurrency);
+          const finalStagePrice = await fetchPrice(stripe, finalStageKey);
+          const anchorAmount = finalStagePrice?.unit_amount ?? undefined;
           // Only compare when the final price is actually higher (VIP stays flat after late bird)
           comparePrice = anchorAmount !== undefined && anchorAmount > price.unit_amount
             ? anchorAmount

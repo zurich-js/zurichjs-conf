@@ -9,6 +9,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   PRICING_STAGES,
   getCurrentStage,
+  getFinalStage,
   getNextStage,
   getStageConfig,
   isStageStockExhausted,
@@ -51,6 +52,11 @@ describe('PRICING_STAGES', () => {
 
   it('ends with last_minute as the final stage', () => {
     expect(PRICING_STAGES[PRICING_STAGES.length - 1].stage).toBe('last_minute');
+  });
+
+  it('getFinalStage returns the last stage of the ladder', () => {
+    expect(getFinalStage().stage).toBe('last_minute');
+    expect(getFinalStage().priority).toBe(PRICING_STAGES.length);
   });
 });
 

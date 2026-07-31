@@ -65,6 +65,7 @@ vi.mock('@/lib/tickets/getTicketCounts', () => ({
 
 vi.mock('@/config/pricing-stages', () => ({
   getCurrentStage: mocks.mockGetCurrentStage,
+  getFinalStage: () => ({ stage: 'last_minute', displayName: 'Last Minute' }),
   getStockInfo: mocks.mockGetStockInfo,
   GLOBAL_STOCK_LIMITS: {
     vip: 50,

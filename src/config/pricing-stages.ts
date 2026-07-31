@@ -200,6 +200,14 @@ export const getStageConfig = (stage: PriceStage): StageConfig | undefined => {
 };
 
 /**
+ * Get the final pricing stage (highest priority) — the anchor for compare
+ * prices and "prices rise until" copy
+ */
+export const getFinalStage = (): StageConfig => {
+  return PRICING_STAGES[PRICING_STAGES.length - 1];
+};
+
+/**
  * Get the next pricing stage after the current one
  */
 export const getNextStage = (currentStage: PriceStage): StageConfig | undefined => {

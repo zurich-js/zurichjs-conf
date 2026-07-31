@@ -12,7 +12,7 @@ import { redirectToCheckout } from '@/lib';
 import { InfoIcon } from 'lucide-react';
 import { communityDayMeetup } from '@/data/public-program';
 
-import { getCurrentStageEndDate, GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
+import { getCurrentStageEndDate, getFinalStage, GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
 
 /**
  * Get the current pricing stage end date for countdown display
@@ -456,8 +456,8 @@ export const createTicketDataFromStripe = (
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 
-  // Show countdown for all stages except last_minute (last stage)
-  const showCountdown = currentStage !== 'last_minute';
+  // Show countdown for all stages except the final one (no further price rise)
+  const showCountdown = currentStage !== getFinalStage().stage;
 
   return {
     kicker: 'TICKETS',
