@@ -36,7 +36,7 @@ export function ApparelPreferencesCard({ isVip, preferences, mutation }: Apparel
         <h2 className="text-xl font-bold text-brand-primary">Apparel Preferences</h2>
       </div>
       <p className="text-gray-200 mb-6">
-        Every attendee receives a limited edition conference t-shirt. Tell us your preferred size so we can plan ahead.
+        Tell us your preferred size for the limited edition conference t-shirt so we can plan ahead.
       </p>
 
       <div className="space-y-6">

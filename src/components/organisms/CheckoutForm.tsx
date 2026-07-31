@@ -365,8 +365,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         <div className="bg-black rounded-2xl p-6 md:p-8">
           <h2 className="text-xl font-bold text-brand-white mb-2">Conference Apparel</h2>
           <p className="text-sm text-gray-300 mb-6">
-            Every attendee receives a limited edition conference t-shirt. Tell us your preferred
-            size so we can plan ahead. Apparel comes in standard unisex sizing.
+            Tell us your preferred size for the limited edition conference t-shirt so we can plan
+            ahead. Apparel comes in standard unisex sizing and is subject to availability.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
