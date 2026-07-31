@@ -29,6 +29,8 @@ export interface TicketPlan {
   title: string;
   price: number;
   comparePrice?: number;
+  /** Stage the comparePrice belongs to (the stage this ticket peaks at) */
+  comparePriceStage?: PriceStage;
   currency: string;
   priceId: string;
   lookupKey: string;

@@ -12,6 +12,7 @@ import {
   getFinalStage,
   getNextStage,
   getStageConfig,
+  getStagesAfter,
   isStageStockExhausted,
   type StageStockCounts,
 } from '../pricing-stages';
@@ -103,6 +104,26 @@ describe('getNextStage', () => {
 
   it('returns undefined after the final stage', () => {
     expect(getNextStage('last_minute')).toBeUndefined();
+  });
+});
+
+describe('getStagesAfter', () => {
+  it('returns every later stage in ladder order', () => {
+    expect(getStagesAfter('standard').map((s) => s.stage)).toEqual(['late_bird', 'last_minute']);
+    expect(getStagesAfter('blind_bird').map((s) => s.stage)).toEqual([
+      'early_bird',
+      'standard',
+      'late_bird',
+      'last_minute',
+    ]);
+  });
+
+  it('excludes the stage itself', () => {
+    expect(getStagesAfter('late_bird').map((s) => s.stage)).toEqual(['last_minute']);
+  });
+
+  it('returns an empty list for the final stage', () => {
+    expect(getStagesAfter('last_minute')).toEqual([]);
   });
 });
 

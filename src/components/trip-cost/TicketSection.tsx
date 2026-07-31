@@ -7,7 +7,7 @@ import React from 'react';
 import { Ticket, Crown, GraduationCap, Check } from 'lucide-react';
 import { CalculatorSection, formatAmount, toDisplayCurrency } from './CalculatorWidgets';
 import { CURRENCY_META, type TicketType, type DisplayCurrency } from '@/config/trip-cost';
-import { getFinalStage } from '@/config/pricing-stages';
+import { getFinalStage, getStageConfig } from '@/config/pricing-stages';
 import type { TicketPlan } from '@/hooks/useTicketPricing';
 import type { ExchangeRates } from '@/lib/trip-cost/use-exchange-rate';
 
@@ -47,19 +47,33 @@ function getPlanDisplayPrice(
   return `${isConverted ? '~' : ''}${formatAmount(display, displayCurrency)}`;
 }
 
-/** Get compare (final-stage) price for a plan */
+interface CompareLabel {
+  /** Formatted price the ticket rises to */
+  amount: string;
+  /** Stage that price kicks in at — not always the final stage (VIP peaks at late bird) */
+  stageName: string;
+}
+
+/** Get the compare price for a plan, plus the stage it applies to */
 function getCompareLabel(
   planId: string,
   chfPlans: TicketPlan[],
   nativePlans: TicketPlan[],
   displayCurrency: DisplayCurrency,
   rates: ExchangeRates,
-): string | null {
+): CompareLabel | null {
+  const stageName = (plan: TicketPlan): string =>
+    (plan.comparePriceStage && getStageConfig(plan.comparePriceStage)?.displayName) ??
+    getFinalStage().displayName;
+
   // Use native compare price if available
   if (displayCurrency !== 'CHF' && CURRENCY_META[displayCurrency].hasNativePricing && nativePlans.length > 0) {
     const nativePlan = nativePlans.find((p) => p.id === planId);
     if (nativePlan?.comparePrice) {
-      return formatAmount(Math.round(nativePlan.comparePrice / 100), displayCurrency);
+      return {
+        amount: formatAmount(Math.round(nativePlan.comparePrice / 100), displayCurrency),
+        stageName: stageName(nativePlan),
+      };
     }
   }
 
@@ -67,8 +81,10 @@ function getCompareLabel(
   if (!chfPlan?.comparePrice) return null;
   const chf = Math.round(chfPlan.comparePrice / 100);
   const display = toDisplayCurrency(chf, displayCurrency, rates);
-  if (display === null) return formatAmount(chf, 'CHF');
-  return formatAmount(display, displayCurrency);
+  return {
+    amount: display === null ? formatAmount(chf, 'CHF') : formatAmount(display, displayCurrency),
+    stageName: stageName(chfPlan),
+  };
 }
 
 interface TicketButtonProps {
@@ -76,7 +92,7 @@ interface TicketButtonProps {
   label: string;
   sublabel?: string;
   price: string | null;
-  comparePrice?: string | null;
+  comparePrice?: CompareLabel | null;
   isSelected: boolean;
   isLoading: boolean;
   onClick: () => void;
@@ -117,7 +133,7 @@ function TicketButton({
             </span>
             {comparePrice && !isLoading && (
               <span className="block text-[11px] text-gray-400 line-through">
-                {comparePrice} at {getFinalStage().displayName}
+                {comparePrice.amount} at {comparePrice.stageName}
               </span>
             )}
           </div>
