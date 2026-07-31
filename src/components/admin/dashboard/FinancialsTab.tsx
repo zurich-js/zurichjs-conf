@@ -2,9 +2,11 @@
  * FinancialsTab - Display comprehensive financial overview and analytics
  */
 
-import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useQuery } from '@tanstack/react-query';
 import { DollarSign, CreditCard, TrendingUp, RotateCcw, Ticket, Handshake, Building2, Gift, GraduationCap, Sparkles } from 'lucide-react';
+import { adminKeys } from '@/lib/admin/query-keys';
+import { adminFetch } from '@/lib/admin/api-fetch';
 import type { FinancialData } from './types';
 import { formatAmount, getCombinedByCurrency, getGrandTotal } from './financials-utils';
 
@@ -20,18 +22,14 @@ const Legend = dynamic(() => import('recharts').then((mod) => mod.Legend), { ssr
 const formatCHF = formatAmount;
 
 export function FinancialsTab() {
-  const [financials, setFinancials] = useState<FinancialData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { fetchFinancials(); }, []);
-
-  const fetchFinancials = async () => {
-    try {
-      const res = await fetch('/api/admin/financials');
-      if (res.ok) setFinancials(await res.json());
-    } catch (err) { console.error('Failed to fetch financials:', err); }
-    finally { setLoading(false); }
-  };
+  // Expensive aggregate endpoint (many Stripe calls) — cache generously so tab
+  // switches within a session don't re-hit it.
+  const { data: financials, isPending: loading } = useQuery({
+    queryKey: adminKeys.financials(),
+    queryFn: ({ signal }) => adminFetch<FinancialData>('/api/admin/financials', { signal }),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
 
   if (loading) return <div className="flex flex-col items-center justify-center py-12 space-y-4"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div><p className="text-base font-medium text-black">Loading financial data...</p></div>;
   if (!financials) return <div className="bg-white rounded-xl shadow-lg p-12 text-center border border-gray-200"><p className="text-base font-medium text-black">Failed to load financial data</p></div>;

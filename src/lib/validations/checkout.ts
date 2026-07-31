@@ -1,8 +1,11 @@
 import { z } from 'zod';
+import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 
 /**
  * Attendee information schema
- * Each ticket requires attendee details
+ * Each ticket requires attendee details. Apparel sizes are optional at this
+ * level because the same shape is reused for workshop seats, which get no
+ * apparel — ticket slots are validated with `ticketAttendeeInfoSchema`.
  */
 export const attendeeInfoSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -13,9 +16,28 @@ export const attendeeInfoSchema = z.object({
     .email('Invalid email address'),
   company: z.string().optional(),
   jobTitle: z.string().optional(),
+  tshirtSize: z.enum(APPAREL_SIZES).optional(),
+  hoodieSize: z.enum(APPAREL_SIZES).optional(),
 });
 
 export type AttendeeInfo = z.infer<typeof attendeeInfoSchema>;
+
+/**
+ * Conference-ticket attendee: everyone gets a t-shirt, so the size is required.
+ * Hoodie size stays optional here — it's required only for VIP slots, which the
+ * form enforces via `vipTicketAttendeeInfoSchema`.
+ */
+export const ticketAttendeeInfoSchema = attendeeInfoSchema.extend({
+  tshirtSize: z.enum(APPAREL_SIZES, { message: 'Please select a t-shirt size' }),
+});
+
+/**
+ * VIP-ticket attendee: the VIP package includes a hoodie, so its size is
+ * required too.
+ */
+export const vipTicketAttendeeInfoSchema = ticketAttendeeInfoSchema.extend({
+  hoodieSize: z.enum(APPAREL_SIZES, { message: 'Please select a hoodie size' }),
+});
 
 /**
  * Checkout form validation schema
@@ -42,6 +64,12 @@ export const checkoutFormSchema = z.object({
   state: z.string().optional(),
   postalCode: z.string().min(1, 'Postal code is required'),
   country: z.string().min(1, 'Country is required'),
+
+  // Apparel — collected here only when the attendee step is skipped (single
+  // seat per line), where the billing contact is the sole ticket holder.
+  // Required-ness is enforced by the form via an extended schema.
+  tshirtSize: z.enum(APPAREL_SIZES).optional(),
+  hoodieSize: z.enum(APPAREL_SIZES).optional(),
 
   // Terms & Conditions
   agreeToTerms: z.boolean().refine((val) => val === true, {

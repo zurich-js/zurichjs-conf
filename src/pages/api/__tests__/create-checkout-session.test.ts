@@ -243,6 +243,53 @@ describe('/api/create-checkout-session', () => {
     }));
   });
 
+  it('stores attendee apparel sizes in compact metadata keys, stripped from the attendees JSON', async () => {
+    const attendees = [
+      { firstName: 'One', lastName: 'Person', email: 'one@example.com', tshirtSize: 'M' },
+      { firstName: 'Two', lastName: 'Person', email: 'two@example.com', tshirtSize: 'XL', hoodieSize: 'L' },
+      { firstName: 'Three', lastName: 'Person', email: 'three@example.com', tshirtSize: 'NOT_A_SIZE' },
+    ];
+
+    const res = await callHandler({
+      method: 'POST',
+      body: { cart: ticketCart, customerInfo: { ...customerInfo, attendees } },
+    });
+
+    expect(res._status).toBe(200);
+    const sessionParams = mocks.sessionsCreate.mock.calls[0][0];
+    expect(sessionParams.metadata.attendeeTshirtSizes).toBe('M,XL,');
+    expect(sessionParams.metadata.attendeeHoodieSizes).toBe(',L,');
+    // Sizes must not inflate the attendees JSON (Stripe caps metadata values at 500 chars)
+    expect(JSON.parse(sessionParams.metadata.attendees)).toEqual([
+      { firstName: 'One', lastName: 'Person', email: 'one@example.com' },
+      { firstName: 'Two', lastName: 'Person', email: 'two@example.com' },
+      { firstName: 'Three', lastName: 'Person', email: 'three@example.com' },
+    ]);
+    expect(sessionParams.metadata.tshirtSize).toBeUndefined();
+  });
+
+  it('stores billing-contact apparel sizes for single-seat purchases', async () => {
+    const singleTicketCart: Cart = {
+      ...ticketCart,
+      totalItems: 1,
+      items: [{ ...ticketCart.items[0], quantity: 1 }],
+    };
+
+    const res = await callHandler({
+      method: 'POST',
+      body: {
+        cart: singleTicketCart,
+        customerInfo: { ...customerInfo, tshirtSize: 'S', hoodieSize: 'INVALID' },
+      },
+    });
+
+    expect(res._status).toBe(200);
+    const sessionParams = mocks.sessionsCreate.mock.calls[0][0];
+    expect(sessionParams.metadata.tshirtSize).toBe('S');
+    expect(sessionParams.metadata.hoodieSize).toBeUndefined();
+    expect(sessionParams.metadata.attendeeTshirtSizes).toBeUndefined();
+  });
+
   it('reuses existing Stripe customers and applies vouchers', async () => {
     mocks.customersList.mockResolvedValueOnce({ data: [{ id: 'cus_existing' }] });
     const cartWithVoucher: Cart = {

@@ -13,6 +13,7 @@ import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
 import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
 import { createServiceRoleClient } from '@/lib/supabase';
+import { APPAREL_SIZES, type ApparelSize } from '@/lib/types/ticket-constants';
 import { VIP_WORKSHOP_DISCOUNT_PERCENT } from '@/lib/cart-operations';
 import type { Json } from '@/lib/types/database';
 
@@ -96,6 +97,10 @@ const sanitizeSupabaseOrValue = (value: string | undefined): string | null => {
   const trimmed = value.trim();
   return /^[A-Za-z0-9_-]+$/.test(trimmed) ? trimmed : null;
 };
+
+/** Only pass through known apparel sizes — anything else becomes ''. */
+const sanitizeApparelSize = (value: string | undefined | null): ApparelSize | '' =>
+  APPAREL_SIZES.includes(value as ApparelSize) ? (value as ApparelSize) : '';
 
 type TicketCategory = 'standard' | 'vip' | 'student' | 'unemployed';
 
@@ -434,10 +439,33 @@ export default async function handler(
       country: customerInfo.country,
       subscribeNewsletter: customerInfo.subscribeNewsletter ? 'true' : 'false',
       couponCode: cart.couponCode || '',
-      // Store attendee information as JSON string for multi-ticket purchases
-      attendees: customerInfo.attendees ? JSON.stringify(customerInfo.attendees) : '',
+      // Store attendee information as JSON string for multi-ticket purchases.
+      // Apparel sizes are stripped out and carried in compact aligned keys
+      // below so the attendees JSON stays within Stripe's 500-char value cap.
+      attendees: customerInfo.attendees
+        ? JSON.stringify(
+            customerInfo.attendees.map(
+              ({ tshirtSize: _tshirtSize, hoodieSize: _hoodieSize, ...contact }) => contact
+            )
+          )
+        : '',
       totalTickets: cart.totalItems.toString(),
     };
+
+    // Apparel sizes, index-aligned with the attendees array. When there is no
+    // attendee step (single-seat purchase) the billing contact is the sole
+    // ticket holder and their sizes are stored under buyer-level keys.
+    if (customerInfo.attendees && customerInfo.attendees.length > 0) {
+      const tshirtSizes = customerInfo.attendees.map((attendee) => sanitizeApparelSize(attendee.tshirtSize));
+      const hoodieSizes = customerInfo.attendees.map((attendee) => sanitizeApparelSize(attendee.hoodieSize));
+      if (tshirtSizes.some(Boolean)) metadata.attendeeTshirtSizes = tshirtSizes.join(',');
+      if (hoodieSizes.some(Boolean)) metadata.attendeeHoodieSizes = hoodieSizes.join(',');
+    } else {
+      const buyerTshirtSize = sanitizeApparelSize(customerInfo.tshirtSize);
+      const buyerHoodieSize = sanitizeApparelSize(customerInfo.hoodieSize);
+      if (buyerTshirtSize) metadata.tshirtSize = buyerTshirtSize;
+      if (buyerHoodieSize) metadata.hoodieSize = buyerHoodieSize;
+    }
 
     // Workshop-specific session context is persisted in checkout_cart_snapshots,
     // not Stripe metadata. This keeps us clear of the 500-char metadata limit

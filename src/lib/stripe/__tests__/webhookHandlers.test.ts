@@ -49,6 +49,7 @@ const mocks = vi.hoisted(() => ({
   mockServerAnalyticsTrack: vi.fn().mockResolvedValue(undefined),
   mockServerAnalyticsError: vi.fn().mockResolvedValue(undefined),
   mockSupabaseEq: vi.fn().mockResolvedValue({ data: [], error: null }),
+  mockSupabaseUpsert: vi.fn().mockResolvedValue({ error: null }),
   mockGetVipPerkConfig: vi.fn().mockResolvedValue({
     id: 'config_1',
     discount_percent: 20,
@@ -145,6 +146,7 @@ vi.mock('@/lib/supabase', () => ({
       select: vi.fn(() => ({
         eq: mocks.mockSupabaseEq,
       })),
+      upsert: mocks.mockSupabaseUpsert,
     })),
   })),
 }));
@@ -798,6 +800,152 @@ describe('handleCheckoutSessionCompleted', () => {
           email: 'jane@example.com',
         })
       );
+    });
+  });
+
+  describe('apparel preferences from checkout', () => {
+    it('should save t-shirt sizes for multiple attendees from compact metadata keys', async () => {
+      const attendees = [
+        { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+        { firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' },
+      ];
+
+      let ticketCounter = 0;
+      mocks.mockCreateTicket.mockImplementation(async () => {
+        ticketCounter += 1;
+        return {
+          success: true,
+          ticket: {
+            id: `ticket_${ticketCounter}`,
+            email: 'test@example.com',
+            ticket_type: 'standard',
+            amount_paid: 10000,
+            qr_code_url: 'https://example.com/qr.png',
+          },
+        };
+      });
+
+      const session = createMockSession({
+        metadata: {
+          attendees: JSON.stringify(attendees),
+          attendeeTshirtSizes: 'M,XL',
+          totalTickets: '2',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockSupabaseUpsert).toHaveBeenCalledWith(
+        [
+          { ticket_id: 'ticket_1', tshirt_size: 'M', hoodie_size: null },
+          { ticket_id: 'ticket_2', tshirt_size: 'XL', hoodie_size: null },
+        ],
+        { onConflict: 'ticket_id' }
+      );
+    });
+
+    it('should save hoodie sizes only for VIP tickets', async () => {
+      mocks.mockListLineItems.mockResolvedValue({
+        data: [
+          {
+            price: {
+              lookup_key: 'vip_early_bird',
+              unit_amount: 49500,
+              currency: 'chf',
+              id: 'price_vip',
+            } as Stripe.Price,
+            quantity: 1,
+            description: 'VIP Ticket',
+          },
+        ],
+      });
+
+      const session = createMockSession({
+        metadata: {
+          attendees: JSON.stringify([
+            { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+          ]),
+          attendeeTshirtSizes: 'L',
+          attendeeHoodieSizes: 'XL',
+          totalTickets: '1',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockSupabaseUpsert).toHaveBeenCalledWith(
+        [{ ticket_id: 'ticket_123', tshirt_size: 'L', hoodie_size: 'XL' }],
+        { onConflict: 'ticket_id' }
+      );
+    });
+
+    it('should ignore hoodie sizes for non-VIP tickets', async () => {
+      const session = createMockSession({
+        metadata: {
+          attendees: JSON.stringify([
+            { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+          ]),
+          attendeeTshirtSizes: 'L',
+          attendeeHoodieSizes: 'XL',
+          totalTickets: '1',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockSupabaseUpsert).toHaveBeenCalledWith(
+        [{ ticket_id: 'ticket_123', tshirt_size: 'L', hoodie_size: null }],
+        { onConflict: 'ticket_id' }
+      );
+    });
+
+    it('should save the billing contact size for single-seat purchases', async () => {
+      const session = createMockSession({
+        metadata: {
+          tshirtSize: 'S',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockSupabaseUpsert).toHaveBeenCalledWith(
+        [{ ticket_id: 'ticket_123', tshirt_size: 'S', hoodie_size: null }],
+        { onConflict: 'ticket_id' }
+      );
+    });
+
+    it('should skip apparel save when no sizes were collected', async () => {
+      const session = createMockSession();
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockSupabaseUpsert).not.toHaveBeenCalled();
+    });
+
+    it('should ignore invalid sizes from metadata', async () => {
+      const session = createMockSession({
+        metadata: {
+          tshirtSize: 'GIGANTIC',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockSupabaseUpsert).not.toHaveBeenCalled();
+    });
+
+    it('should not fail ticket fulfilment when the apparel save errors', async () => {
+      mocks.mockSupabaseUpsert.mockResolvedValueOnce({ error: { message: 'db down' } });
+
+      const session = createMockSession({
+        metadata: {
+          tshirtSize: 'M',
+        },
+      });
+
+      await expect(handleCheckoutSessionCompleted(session)).resolves.not.toThrow();
+
+      expect(mocks.mockSendTicketConfirmationEmailsQueued).toHaveBeenCalled();
     });
   });
 

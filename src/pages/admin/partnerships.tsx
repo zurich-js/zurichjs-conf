@@ -3,14 +3,15 @@
  * Manage partnerships, coupons, vouchers, and tracking
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Head from 'next/head';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Plus, Search, Mail } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import {
   Partnership,
   PartnershipType,
@@ -21,7 +22,6 @@ import {
   PartnershipDetailModal,
   SendEmailModal,
   ExportEmailsModal,
-  PartnershipWithDetails,
   fetchPartnerships,
   fetchPartnerEmails,
   fetchPartnershipStats,
@@ -42,6 +42,7 @@ export default function PartnershipsDashboard() {
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 400);
   const [typeFilter, setTypeFilter] = useState<PartnershipType | ''>('');
   const [statusFilter, setStatusFilter] = useState<PartnershipStatus | ''>('');
 
@@ -49,20 +50,22 @@ export default function PartnershipsDashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedPartnership, setSelectedPartnership] = useState<Partnership | null>(null);
-  const [detailedPartnership, setDetailedPartnership] = useState<PartnershipWithDetails | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailPartnership, setEmailPartnership] = useState<Partnership | null>(null);
 
   // Queries
+  const listParams = { type: typeFilter || undefined, status: statusFilter || undefined, search: debouncedSearchQuery || undefined };
+
   const { data: partnershipsData, isLoading: isLoadingPartnerships } = useQuery({
-    queryKey: partnershipQueryKeys.list({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
-    queryFn: () => fetchPartnerships({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
+    queryKey: partnershipQueryKeys.list(listParams),
+    queryFn: () => fetchPartnerships(listParams),
     enabled: isAuthenticated === true,
+    placeholderData: keepPreviousData,
   });
 
   const { data: emailsData, isLoading: isLoadingEmails } = useQuery({
-    queryKey: partnershipQueryKeys.emails({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
-    queryFn: () => fetchPartnerEmails({ type: typeFilter || undefined, status: statusFilter || undefined, search: searchQuery || undefined }),
+    queryKey: partnershipQueryKeys.emails(listParams),
+    queryFn: () => fetchPartnerEmails(listParams),
     enabled: isAuthenticated === true && showExportModal,
   });
 
@@ -70,12 +73,14 @@ export default function PartnershipsDashboard() {
     queryKey: partnershipQueryKeys.stats(),
     queryFn: fetchPartnershipStats,
     enabled: isAuthenticated === true,
+    staleTime: 60_000,
   });
 
   const { data: productsData } = useQuery({
     queryKey: partnershipQueryKeys.products(),
     queryFn: fetchProducts,
     enabled: isAuthenticated === true,
+    staleTime: 10 * 60_000,
   });
 
   const { data: detailedData } = useQuery({
@@ -84,9 +89,8 @@ export default function PartnershipsDashboard() {
     enabled: !!selectedPartnership,
   });
 
-  useEffect(() => {
-    if (detailedData) setDetailedPartnership(detailedData);
-  }, [detailedData]);
+  // Modal renders once details arrive (same gating the removed local state provided)
+  const detailedPartnership = detailedData ?? null;
 
   // Mutations
   const createMutation = useCreatePartnership();
@@ -214,10 +218,7 @@ export default function PartnershipsDashboard() {
           partnership={detailedPartnership}
           products={productsData?.products || []}
           isOpen={!!selectedPartnership}
-          onClose={() => {
-            setSelectedPartnership(null);
-            setDetailedPartnership(null);
-          }}
+          onClose={() => setSelectedPartnership(null)}
           onCreateCoupon={(data) => createCouponMutation.mutateAsync({ partnershipId: selectedPartnership.id, data })}
           onDeleteCoupon={(couponId) => deleteCouponMutation.mutateAsync({ partnershipId: selectedPartnership.id, couponId })}
           onCreateVouchers={(data) => createVouchersMutation.mutateAsync({ partnershipId: selectedPartnership.id, data })}

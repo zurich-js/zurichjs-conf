@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
 import { BreakCard } from './BreakCard';
-import { EventCard } from './EventCard';
+import { EventCard, type EventCardLink } from './EventCard';
 import { PlaceholderCard } from './PlaceholderCard';
 import { SessionCard } from './SessionCard';
 
@@ -16,6 +17,10 @@ export interface ProgramScheduleItemCardProps {
    * session has a matching entry, the card renders a price + Add-to-cart chip.
    */
   offeringsBySubmissionId?: Record<string, WorkshopOfferingSummary>;
+  /** Extra content (links, RSVP buttons) rendered inside event cards' expandable panel. */
+  eventActions?: ReactNode;
+  /** Quiet external link rendered on event cards' trailing edge. */
+  eventLink?: EventCardLink;
 }
 
 export function ProgramScheduleItemCard({
@@ -25,6 +30,8 @@ export function ProgramScheduleItemCard({
   showDuration = false,
   expandableSessions = true,
   offeringsBySubmissionId,
+  eventActions,
+  eventLink,
 }: ProgramScheduleItemCardProps) {
   if (item.type === 'session') {
     if (item.session) {
@@ -67,6 +74,8 @@ export function ProgramScheduleItemCard({
         description={item.description}
         startTime={item.start_time}
         durationMinutes={item.duration_minutes}
+        actions={eventActions}
+        link={eventLink}
       />
     );
   }

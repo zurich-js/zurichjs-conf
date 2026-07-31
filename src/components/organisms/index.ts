@@ -37,7 +37,7 @@ export type { TimelineSectionProps, TimelineEntry } from './TimelineSection';
 export type { SiteFooterProps } from './SiteFooter';
 export type { PageHeaderProps } from './PageHeader';
 export type { NavBarProps } from './NavBar';
-export type { CheckoutFormProps } from './CheckoutForm';
+export type { CheckoutFormProps, CheckoutFormApparelConfig } from './CheckoutForm';
 export type { ShapedSectionProps } from './ShapedSection';
 export type { SponsorsSectionProps } from './SponsorsSection';
 export type { BlueskyFeedSectionProps } from './BlueskyFeedSection';

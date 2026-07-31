@@ -5,6 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { GraduationCap, Plus, Trash2 } from 'lucide-react';
+import { adminKeys } from '@/lib/admin/query-keys';
 import type { WorkshopItemInput } from '@/lib/types/b2b';
 import type { B2BAvailableWorkshopsResponse, B2BAvailableWorkshop } from '@/pages/api/admin/b2b-invoices/workshops';
 import { formatAmount } from './types';
@@ -26,7 +27,7 @@ async function fetchAvailableWorkshops(): Promise<B2BAvailableWorkshop[]> {
 
 export function WorkshopItemsEditor({ items, onChange }: WorkshopItemsEditorProps) {
   const { data: available, isLoading, isError } = useQuery({
-    queryKey: ['admin', 'b2b-invoice-workshops'],
+    queryKey: adminKeys.b2bWorkshops(),
     queryFn: fetchAvailableWorkshops,
     staleTime: 5 * 60 * 1000,
   });

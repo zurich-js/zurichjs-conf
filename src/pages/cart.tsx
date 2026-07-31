@@ -168,7 +168,20 @@ export default function CartPage() {
       !!attendee.lastName?.trim() &&
       !!attendee.email?.trim();
 
-    if (attendees.length < ticketCount || attendees.slice(0, ticketCount).some((attendee) => !hasDetails(attendee))) {
+    // Conference tickets include apparel — every holder needs a t-shirt size,
+    // and VIP holders a hoodie size too. Slot order matches AttendeeForm.
+    const ticketSlotIsVip = ticketItems.flatMap((item) =>
+      Array.from({ length: item.quantity }, () => item.variant === 'vip')
+    );
+    const hasApparel = (attendee: AttendeeInfo | undefined, isVip: boolean) =>
+      !!attendee?.tshirtSize && (!isVip || !!attendee.hoodieSize);
+
+    if (
+      attendees.length < ticketCount ||
+      attendees
+        .slice(0, ticketCount)
+        .some((attendee, index) => !hasDetails(attendee) || !hasApparel(attendee, ticketSlotIsVip[index]))
+    ) {
       return false;
     }
 
@@ -197,6 +210,7 @@ export default function CartPage() {
       addressLine1: data.addressLine1, addressLine2: data.addressLine2,
       city: data.city, state: data.state, postalCode: data.postalCode,
       country: data.country, subscribeNewsletter: data.subscribeNewsletter,
+      tshirtSize: data.tshirtSize, hoodieSize: data.hoodieSize,
     });
 
     analytics.identify(data.email, {
