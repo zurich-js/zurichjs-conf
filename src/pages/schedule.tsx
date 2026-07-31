@@ -49,14 +49,14 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
       />
 
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom className="relative">
-          <Heading level="h1" variant="dark" className="max-md:mt-10 text-2xl md:text-3xl font-bold leading-none">
+        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
+          <Kicker variant="dark" className="block mt-10">
+            September 9-12, 2026
+          </Kicker>
+          <Heading level="h1" variant="dark" className="mt-4 text-3xl font-bold leading-none">
             ZurichJS Conf 2026 Schedule
           </Heading>
-          <p className="mt-4 text-base md:text-md">
-            September 9-12, 2026
-          </p>
-          <p className="mt-16 max-w-screen-md text-lg md:text-xl font-bold">
+          <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
             Take a bird&#39;s-eye view of all learning opportunities, and the activities that make up the conf experience in Zurich.
           </p>
         </ShapedSection>

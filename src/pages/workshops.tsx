@@ -96,12 +96,14 @@ export default function WorkshopsPage() {
       />
 
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom compact className="relative">
-          <Heading level="h1" variant="dark" className="max-md:mt-10 text-2xl md:text-3xl font-bold leading-none">
+        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
+          <Kicker variant="dark" className="block mt-10">
+            September 10, 2026
+          </Kicker>
+          <Heading level="h1" variant="dark" className="mt-4 text-3xl font-bold leading-none">
             Zurich Engineering Day
           </Heading>
-          <p className="mt-4 text-base md:text-md">September 10, 2026</p>
-          <p className="mt-8 max-w-screen-md text-base sm:text-lg md:text-xl font-bold">
+          <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
             Accelerate your learning with a full day of workshops for Software Engineers from all domains.
           </p>
           <p className="mt-4 text-brand-gray-light">

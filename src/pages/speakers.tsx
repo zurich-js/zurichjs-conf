@@ -161,21 +161,21 @@ export default function SpeakersPage() {
         keywords="zurichjs speakers, conference speakers, public speaker lineup"
       />
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom compact>
-            <Kicker variant="dark" className="mb-4">
-              September 11, 2026
-            </Kicker>
-            <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none">
-              ZurichJS Conf Speakers
+        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
+          <Kicker variant="dark" className="block mt-10">
+            September 11, 2026
+          </Kicker>
+            <Heading level="h1" variant="dark" className="text-3xl font-bold leading-none mt-4">
+              Meet the Speakers
             </Heading>
             <p className="mt-6 max-w-screen-md text-lg text-brand-gray-light">
               Meet the engineers, makers, and community leaders shaping the ZurichJS Conf 2026 experience.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Button variant="primary" asChild href="/#tickets">
                 Get your ticket
               </Button>
-              <Button variant="blue" asChild href="/schedule">
+              <Button variant="ghost" asChild href="/schedule" className="max-sm:px-0">
                 Check out the schedule
               </Button>
             </div>
