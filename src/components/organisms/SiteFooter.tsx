@@ -147,19 +147,19 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                     >
                         <motion.div
                             variants={container}
-                            className="grid grid-cols-1 grid-rows-3 gap-5 pt-8 lg:gap-8 lg:grid-rows-none lg:grid-cols-[2fr_2fr_3fr] h-full"
+                            className="grid grid-cols-1 gap-5 pt-8 lg:h-full lg:grid-cols-[2fr_2fr_3fr] lg:gap-8"
                         >
-                            <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start h-full">
+                            <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start lg:h-full">
                                 <h3 className="text-brand-white font-semibold text-lg w-max">Ask us anything</h3>
                                 <p className="text-sm text-brand-gray-medium">If you have any uncertainties or burning questions, don’t hesitate to reach out.</p>
                                 <Button variant="outline" size="sm" className="w-fit mt-auto" href="/contact?type=inquiry" asChild>Send inquiry</Button>
                             </motion.div>
-                            <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start h-full">
+                            <motion.div variants={item} className="flex flex-col justify-between gap-2.5 self-start lg:h-full">
                                 <h3 className="text-brand-white font-semibold text-lg w-max">Give us your feedback</h3>
                                 <p className="text-sm text-brand-gray-medium">We want to make this a great experience for everyone. If you have feedback, let us know!</p>
                                 <Button variant="outline" size="sm" className="w-fit mt-auto" href="/contact?type=feedback" asChild>Send feedback</Button>
                             </motion.div>
-                            <motion.div variants={item} className="flex flex-col justify-between gap-2.5 xl:max-w-xs 2xl:max-w-[unset] self-start h-full">
+                            <motion.div variants={item} className="flex flex-col justify-between gap-2.5 xl:max-w-xs 2xl:max-w-[unset] self-start lg:h-full">
                                 <h3 className="text-brand-white font-semibold text-lg">Found a bug?</h3>
                                 <p className="text-sm text-brand-gray-medium">FIll out the form, and we’ll get right to it as soon as we can.</p>
                                 <Button variant="outline" size="sm" className="w-fit mt-auto" href="/report-issue" asChild>Report an issue</Button>
@@ -182,7 +182,7 @@ export const SiteFooter: React.FC<SiteFooterProps> = ({
                 >
                     <motion.div
                         variants={container}
-                        className="grid grid-cols-1 grid-rows-3 gap-5 pt-8 lg:gap-8 lg:grid-rows-none lg:grid-cols-[2fr_2fr_3fr]"
+                        className="grid grid-cols-1 gap-5 pt-8 lg:grid-cols-[2fr_2fr_3fr] lg:gap-8"
                     >
                         <motion.div variants={item} >
                             <LinkGroup title={conferenceLinks.title} links={resolvedConferenceLinks} />
