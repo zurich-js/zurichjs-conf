@@ -59,7 +59,7 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
   // A visitor with a cart in progress gets a resume nudge instead of a second
   // "buy" message — one bar, one intent.
   const hasCart = cart.items.length > 0;
-  const label = hasCart ? 'Resume checkout' : 'Get your ticket';
+  const label = hasCart ? 'Resume checkout' : 'Get tickets';
 
   return (
     <div
@@ -68,7 +68,7 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <span className="block text-lg font-bold leading-tight text-white">
+          <span className="block text-sm font-semibold leading-tight text-white">
             {hasCart
               ? `Your cart · ${formatPrice(cart.totalPrice, cart.currency)}`
               : `From ${formatPrice(standardPlan.price / 100, standardPlan.currency)}`}
@@ -84,7 +84,7 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
         </div>
         <Button
           variant="primary"
-          size="md"
+          size="sm"
           asChild
           href={hasCart ? '/cart' : '/#tickets'}
           className="shrink-0"
@@ -97,7 +97,7 @@ export function StickyTicketCta({ plans, currentStage, location, className = '' 
           }
         >
           {label}
-          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
         </Button>
       </div>
     </div>

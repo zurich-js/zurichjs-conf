@@ -84,7 +84,7 @@ export default function SchedulePage({ items }: SchedulePageProps) {
       />
 
       <main className="min-h-screen bg-brand-white">
-        <ShapedSection shape="straight" variant="dark" dropTop dropBottom compact>
+        <ShapedSection shape="straight" variant="dark" dropTop dropBottom>
           <Kicker variant="dark" className="block mt-10">
             September 9-12, 2026
           </Kicker>

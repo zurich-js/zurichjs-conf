@@ -3,9 +3,7 @@ import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { UpsellBanner } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
-import { workshopTicketCrossSell } from '@/data/tickets';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
 import { WorkshopPurchasePanel } from '@/components/workshops/WorkshopPurchasePanel';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
@@ -74,12 +72,6 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="dark" compact>
-          <div className="mx-auto max-w-screen-lg">
-            <UpsellBanner {...workshopTicketCrossSell} actionVariant="black" />
-          </div>
-        </ShapedSection>
-
         <ShapedSection shape="straight" variant="medium" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-3">
@@ -89,13 +81,18 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
               Browse the rest of the program
             </Heading>
             <p className="mt-4 max-w-2xl text-base leading-8 text-brand-gray-light">
-              Want more hands-on sessions, or a lighter conference day? Browse the rest of the workshops and talks.
+              Want more hands-on sessions, or a lighter conference day? Browse the rest of the
+              workshops and talks — the conference follows on September 11 at the same venue, and
+              VIP tickets include 20% off all workshops, including this one.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
+              <Button variant="primary" asChild href="/#tickets">
+                See conference tickets
+              </Button>
               <Button variant="blue" asChild href="/workshops">
                 See other workshops
               </Button>
-              <Button variant="primary" asChild href="/talks">
+              <Button variant="black" asChild href="/talks">
                 Discover conference talks
               </Button>
             </div>
