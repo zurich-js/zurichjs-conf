@@ -50,7 +50,7 @@ export const ApparelReminderEmail: React.FC<ApparelReminderEmailProps> = ({
       <Section style={cardStyle}>
         <Text style={welcomeTextStyle}>Hi {firstName},</Text>
         <Text style={bodyTextStyle}>
-          Every attendee of ZurichJS Conference 2026 receives a limited edition conference t-shirt
+          We&apos;re preparing limited edition conference t-shirts for ZurichJS Conference 2026
           {isVip ? ', and as a VIP ticket holder your package also includes an exclusive hoodie' : ''}.
           We&apos;re about to place our order and still need your {missingLabel}.
         </Text>

@@ -5,6 +5,7 @@
 
 import type Stripe from 'stripe';
 import type { TicketCategory, TicketStage } from '@/lib/types/database';
+import { APPAREL_SIZES, type ApparelSize } from '@/lib/types/ticket-constants';
 import { createTicket } from '@/lib/tickets';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { addNewsletterContact } from '@/lib/email';
@@ -32,6 +33,14 @@ export interface AttendeeInfo {
   email: string;
   company?: string;
   jobTitle?: string;
+  /** Apparel sizes collected at checkout (hoodie only for VIP tickets). */
+  tshirtSize?: ApparelSize;
+  hoodieSize?: ApparelSize;
+}
+
+/** Only accept known apparel sizes from session metadata. */
+function parseApparelSize(value: string | undefined): ApparelSize | undefined {
+  return APPAREL_SIZES.includes(value as ApparelSize) ? (value as ApparelSize) : undefined;
 }
 
 /**
@@ -94,10 +103,71 @@ function parseAttendees(
       email: customerEmail,
       company: company ?? undefined,
       jobTitle: jobTitle ?? undefined,
+      // Single-seat purchases carry the billing contact's sizes directly
+      tshirtSize: parseApparelSize(session.metadata?.tshirtSize),
+      hoodieSize: parseApparelSize(session.metadata?.hoodieSize),
     }];
+  } else {
+    // Multi-seat purchases carry sizes in compact keys, index-aligned with
+    // the attendees JSON (kept separate to respect Stripe's metadata cap).
+    const tshirtSizes = (session.metadata?.attendeeTshirtSizes ?? '').split(',');
+    const hoodieSizes = (session.metadata?.attendeeHoodieSizes ?? '').split(',');
+    attendees = attendees.map((attendee, index) => ({
+      ...attendee,
+      tshirtSize: parseApparelSize(tshirtSizes[index]),
+      hoodieSize: parseApparelSize(hoodieSizes[index]),
+    }));
   }
 
   return attendees;
+}
+
+/**
+ * Persist apparel sizes collected at checkout so the /admin apparel follow-up
+ * is unnecessary for these tickets. Non-fatal — a failure here must never
+ * break ticket fulfilment; holders can still set sizes via manage-order.
+ */
+async function saveApparelPreferences(
+  ticketResults: TicketCreationResult[],
+  ticketCategory: TicketCategory,
+  log: ReturnType<typeof logger.scope>
+): Promise<void> {
+  const rows = ticketResults.flatMap((result) => {
+    if (!result.success || !result.ticket || !result.attendee.tshirtSize) return [];
+    return [{
+      ticket_id: result.ticket.id,
+      tshirt_size: result.attendee.tshirtSize,
+      // Hoodies are part of the VIP package only
+      hoodie_size: ticketCategory === 'vip' ? (result.attendee.hoodieSize ?? null) : null,
+    }];
+  });
+
+  if (rows.length === 0) return;
+
+  try {
+    const supabase = createServiceRoleClient();
+    const { error } = await supabase
+      .from('ticket_apparel_preferences')
+      .upsert(rows, { onConflict: 'ticket_id' });
+
+    if (error) {
+      log.error('Failed to save apparel preferences from checkout', error, {
+        type: 'system',
+        severity: 'low',
+        code: 'APPAREL_PREFERENCES_SAVE_FAILED',
+        ticketIds: rows.map((row) => row.ticket_id),
+      });
+      return;
+    }
+
+    log.info('Apparel preferences saved from checkout', { count: rows.length });
+  } catch (error) {
+    log.error('Unexpected error saving apparel preferences from checkout', error, {
+      type: 'system',
+      severity: 'low',
+      code: 'APPAREL_PREFERENCES_SAVE_ERROR',
+    });
+  }
 }
 
 /**
@@ -356,6 +426,8 @@ export async function processTickets(
     });
     throw new Error(`Failed to create ${failedTickets.length} ticket(s)`);
   }
+
+  await saveApparelPreferences(ticketResults, ticketInfo.category, log);
 
   await trackTicketPurchasesAndNewsletterSignups(ticketResults, ticketInfo, session);
   await sendTicketConfirmationEmails(ticketResults, ticketDisplayName, session, log);

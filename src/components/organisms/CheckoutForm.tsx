@@ -1,10 +1,19 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { checkoutFormSchema, type CheckoutFormData } from '@/lib/validations/checkout';
-import { Input, Button } from '@/components/atoms';
+import { Input, Button, Select } from '@/components/atoms';
+import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 import Link from 'next/link';
 import { useFormFieldTracking } from '@/hooks/useFormFieldTracking';
+
+const SIZE_OPTIONS = APPAREL_SIZES.map((size) => ({ value: size, label: size }));
+
+export interface CheckoutFormApparelConfig {
+  /** Collect a required hoodie size too (VIP ticket in the cart). */
+  hoodie: boolean;
+}
 
 export interface CheckoutFormProps {
   /**
@@ -31,6 +40,12 @@ export interface CheckoutFormProps {
    * Default values to pre-fill the form (e.g., from primary attendee)
    */
   defaultValues?: Partial<CheckoutFormData>;
+  /**
+   * When set, collects a required t-shirt size (and hoodie size for VIPs)
+   * from the billing contact. Used when the attendee step is skipped and the
+   * billing contact is the sole ticket holder.
+   */
+  apparel?: CheckoutFormApparelConfig;
   /**
    * Cart data for analytics tracking
    */
@@ -68,17 +83,34 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   currency,
   onBack,
   defaultValues,
+  apparel,
   cartData,
   onEmailCaptured,
   onFieldCaptured,
 }) => {
+  // Apparel sizes are optional in the base schema (they only apply when the
+  // billing contact is the sole ticket holder), so require them here when the
+  // apparel section is shown. The stricter schema's output is assignable to
+  // CheckoutFormData, hence the resolver cast.
+  const resolver = React.useMemo<Resolver<CheckoutFormData>>(() => {
+    if (!apparel) return zodResolver(checkoutFormSchema);
+    const schema = checkoutFormSchema.extend({
+      tshirtSize: z.enum(APPAREL_SIZES, { message: 'Please select a t-shirt size' }),
+      ...(apparel.hoodie
+        ? { hoodieSize: z.enum(APPAREL_SIZES, { message: 'Please select a hoodie size' }) }
+        : {}),
+    });
+    return zodResolver(schema) as unknown as Resolver<CheckoutFormData>;
+  }, [apparel]);
+
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
     getValues,
   } = useForm<CheckoutFormData>({
-    resolver: zodResolver(checkoutFormSchema),
+    resolver,
     defaultValues: {
       country: 'Switzerland',
       agreeToTerms: false,
@@ -327,6 +359,64 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Conference Apparel — shown when the billing contact is the sole ticket holder */}
+      {apparel && (
+        <div className="bg-black rounded-2xl p-6 md:p-8">
+          <h2 className="text-xl font-bold text-brand-white mb-2">Conference Apparel</h2>
+          <p className="text-sm text-gray-300 mb-6">
+            Tell us your preferred size for the limited edition conference t-shirt so we can plan
+            ahead. Apparel comes in standard unisex sizing and is subject to availability.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="tshirtSize" className="block text-sm font-semibold text-brand-white mb-2">
+                T-Shirt Size <span className="text-red-400">*</span>
+              </label>
+              <Controller
+                name="tshirtSize"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    options={SIZE_OPTIONS}
+                    placeholder="Select size..."
+                    variant="dark"
+                  />
+                )}
+              />
+              {errors.tshirtSize && (
+                <p className="text-red-400 text-sm mt-1">{errors.tshirtSize.message}</p>
+              )}
+            </div>
+
+            {apparel.hoodie && (
+              <div>
+                <label htmlFor="hoodieSize" className="block text-sm font-semibold text-brand-white mb-2">
+                  VIP Hoodie Size <span className="text-red-400">*</span>
+                </label>
+                <Controller
+                  name="hoodieSize"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      options={SIZE_OPTIONS}
+                      placeholder="Select size..."
+                      variant="dark"
+                    />
+                  )}
+                />
+                {errors.hoodieSize && (
+                  <p className="text-red-400 text-sm mt-1">{errors.hoodieSize.message}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Terms & Conditions */}
       <div className="bg-black rounded-2xl p-6 md:p-8">

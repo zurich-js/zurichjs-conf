@@ -5,10 +5,18 @@
 
 import React from 'react';
 import { CopyIcon } from 'lucide-react';
-import { attendeeInfoSchema, type AttendeeInfo } from '@/lib/validations/checkout';
-import { Input, Button, Heading } from '@/components/atoms';
+import {
+  attendeeInfoSchema,
+  ticketAttendeeInfoSchema,
+  vipTicketAttendeeInfoSchema,
+  type AttendeeInfo,
+} from '@/lib/validations/checkout';
+import { Input, Button, Heading, Select } from '@/components/atoms';
+import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 import type { CartItem as CartItemType } from '@/types/cart';
 import {SectionContainer} from "@/components/organisms";
+
+const SIZE_OPTIONS = APPAREL_SIZES.map((size) => ({ value: size, label: size }));
 
 export interface AttendeeTicketFormProps {
   /**
@@ -27,6 +35,16 @@ export interface AttendeeTicketFormProps {
    * Validation errors for this ticket's fields
    */
   errors?: Record<string, string>;
+  /**
+   * Whether to collect a t-shirt size (conference ticket slots only —
+   * workshop-only seats get no apparel).
+   */
+  showTshirtSize?: boolean;
+  /**
+   * Whether to collect a hoodie size (VIP ticket slots — the VIP package
+   * includes a hoodie).
+   */
+  showHoodieSize?: boolean;
   /**
    * Called when any field changes
    */
@@ -77,6 +95,8 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
   itemTitle,
   attendee,
   errors = {},
+  showTshirtSize = false,
+  showHoodieSize = false,
   onChange,
   onCopyFromPrimary,
 }) => {
@@ -226,6 +246,55 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
           />
         </div>
       </div>
+
+      {/* Apparel Sizes — conference tickets include a t-shirt (and a hoodie for VIP) */}
+      {showTshirtSize && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor={`tshirtSize-${ticketIndex}`}
+              className="block text-sm font-semibold text-white mb-2"
+            >
+              T-Shirt Size <span className="text-red-400">*</span>
+            </label>
+            <Select
+              value={attendee.tshirtSize ?? ''}
+              onChange={(value) => onChange('tshirtSize', value)}
+              options={SIZE_OPTIONS}
+              placeholder="Select size..."
+              variant="dark"
+            />
+            {errors.tshirtSize && (
+              <p id={`tshirtSize-${ticketIndex}-error`} className="text-red-400 text-sm mt-1">
+                {errors.tshirtSize}
+              </p>
+            )}
+          </div>
+
+          {showHoodieSize && (
+            <div>
+              <label
+                htmlFor={`hoodieSize-${ticketIndex}`}
+                className="block text-sm font-semibold text-white mb-2"
+              >
+                VIP Hoodie Size <span className="text-red-400">*</span>
+              </label>
+              <Select
+                value={attendee.hoodieSize ?? ''}
+                onChange={(value) => onChange('hoodieSize', value)}
+                options={SIZE_OPTIONS}
+                placeholder="Select size..."
+                variant="dark"
+              />
+              {errors.hoodieSize && (
+                <p id={`hoodieSize-${ticketIndex}-error`} className="text-red-400 text-sm mt-1">
+                  {errors.hoodieSize}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -242,6 +311,8 @@ interface AttendeeSlot {
   itemId: string;
   itemTitle: string;
   kind: 'ticket' | 'workshop';
+  /** True for VIP ticket slots — the VIP package includes a hoodie. */
+  isVip: boolean;
   workshopId: string | null;
   /** 0-based index within this cart item (i.e. this workshop's seat_index). */
   positionInItem: number;
@@ -256,12 +327,19 @@ function buildSlots(cartItems: CartItemType[]): AttendeeSlot[] {
         itemId: item.id,
         itemTitle: item.title,
         kind,
+        isVip: kind === 'ticket' && item.variant === 'vip',
         workshopId: item.workshopId ?? null,
         positionInItem: i,
       });
     }
   }
   return slots;
+}
+
+/** Slot-appropriate schema: apparel sizes are only required for ticket slots. */
+function schemaForSlot(slot: AttendeeSlot) {
+  if (slot.kind !== 'ticket') return attendeeInfoSchema;
+  return slot.isVip ? vipTicketAttendeeInfoSchema : ticketAttendeeInfoSchema;
 }
 
 function emptyAttendee(): AttendeeInfo {
@@ -312,7 +390,8 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
     const primary = attendees[0];
     if (!primary) return;
     const newAttendees = [...attendees];
-    newAttendees[index] = { ...primary };
+    // Copy contact info only — apparel sizes are personal to each attendee.
+    newAttendees[index] = { ...primary, tshirtSize: undefined, hoodieSize: undefined };
     setAttendees(newAttendees);
 
     if (errors[index]) {
@@ -336,7 +415,7 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
     let hasErrors = false;
 
     attendees.forEach((attendee, index) => {
-      const result = attendeeInfoSchema.safeParse(attendee);
+      const result = schemaForSlot(slots[index]).safeParse(attendee);
       if (!result.success) {
         validationErrors[index] = {};
         result.error.issues.forEach((issue) => {
@@ -378,7 +457,7 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="">
           <p className="text-sm text-brand-gray-light mb-3">
-            Please provide the name and email for each seat. Each attendee will receive their own confirmation.<br/>
+            Please provide the name, email, and t-shirt size for each seat. Each attendee will receive their own confirmation.<br/>
             You&#39;ll get a chance to review and fill <b>billing details</b> at the Payment step.
           </p>
         </div>
@@ -394,6 +473,8 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
             }
             attendee={attendees[index]}
             errors={errors[index]}
+            showTshirtSize={slot.kind === 'ticket'}
+            showHoodieSize={slot.isVip}
             onChange={(field, value) => handleAttendeeChange(index, field, value)}
             onCopyFromPrimary={
               index > 0 && primaryHasUsableInfo
