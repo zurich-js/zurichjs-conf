@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
 import { SEO } from '@/components/SEO';
@@ -6,7 +6,7 @@ import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
-import { communityDayMeetup, publicProgramTabs } from '@/data';
+import { communityDayMeetup, publicProgramTabs, warmupChillRun, warmupChillRunScheduleItem } from '@/data';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
@@ -34,9 +34,29 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<(typeof publicProgramTabs)[number]['id']>(initialTab);
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
-  const visibleItems = activeScheduleTab.sessionDate
+  const dayItems = activeScheduleTab.sessionDate
     ? items.filter((item) => item.date === activeScheduleTab.sessionDate)
     : items.filter((item) => item.date === (activeTab === 'community' ? '2026-09-09' : '2026-09-12'));
+  const visibleItems = activeTab === 'warmup'
+    ? [...dayItems, warmupChillRunScheduleItem].sort((a, b) => a.start_time.localeCompare(b.start_time))
+    : dayItems;
+
+  const getEventActions = (item: PublicProgramScheduleItem): ReactNode => {
+    if (item.type === 'event' && item.date === '2026-09-09' && item.title.toLowerCase().includes('meetup')) {
+      return (
+        <div className="flex flex-wrap gap-3">
+          <Button variant="primary" asChild href={communityDayMeetup.agendaUrl}>
+            View the agenda
+          </Button>
+          <Button variant="blue" asChild href={communityDayMeetup.rsvpUrl}>
+            RSVP on Meetup
+          </Button>
+        </div>
+      );
+    }
+
+    return undefined;
+  };
 
   return (
     <>
@@ -87,26 +107,6 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
               className="pt-0"
             />
 
-            {activeTab === 'community' && (
-              <div className="mt-8 rounded-lg bg-brand-gray-lightest p-6">
-                <Heading level="h3" variant="light" className="text-base font-bold leading-tight">
-                  ZurichJS September Meetup
-                </Heading>
-                <p className="mt-3 max-w-2xl text-base leading-relaxed text-brand-gray-medium">
-                  Community Day kicks off with the ZurichJS meetup on September 9 — free and open to
-                  everyone. Check out the agenda and RSVP to save your spot.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Button variant="primary" asChild href={communityDayMeetup.agendaUrl}>
-                    View the agenda
-                  </Button>
-                  <Button variant="blue" asChild href={communityDayMeetup.rsvpUrl}>
-                    RSVP on Meetup
-                  </Button>
-                </div>
-              </div>
-            )}
-
             <div className="mt-8 flex flex-col gap-4">
               {visibleItems.length > 0 ? (
                 visibleItems.map((item, index) => (
@@ -116,6 +116,10 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
                     defaultOpen={index === 0}
                     placeholderVariant="plain"
                     expandableSessions
+                    eventActions={getEventActions(item)}
+                    eventLink={item.id === warmupChillRunScheduleItem.id
+                      ? { label: 'Info and RSVP', href: warmupChillRun.rsvpUrl }
+                      : undefined}
                   />
                 ))
               ) : activeTab === 'community' ? null : (
