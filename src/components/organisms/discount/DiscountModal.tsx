@@ -1,34 +1,59 @@
 /**
  * Discount Modal
  *
- * Slide-in modal showing the discount code, countdown timer,
- * and copy-to-clipboard functionality. Slides in from the right
- * and positions at bottom-1/3 of the screen. Uses HeadlessUI Dialog.
+ * Slide-in modal for the discount offer. Two steps:
+ * 1. Email gate — advertises the offer and asks for an email.
+ * 2. Code reveal — shows the generated code, countdown timer, and
+ *    copy-to-clipboard once the email has been submitted.
+ * Slides in from the right and positions at bottom-1/3 of the screen.
+ * Uses HeadlessUI Dialog.
  */
 
 import { useState, useCallback } from 'react';
 import { Dialog, DialogPanel, DialogBackdrop } from '@headlessui/react';
 import { motion } from 'framer-motion';
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Check, ArrowRight } from 'lucide-react';
 import { padZero } from '@/hooks/useCountdown';
 import type { DiscountData } from '@/lib/discount/types';
 import type { DiscountPersonalization } from '@/lib/discount/personalization';
 import type { TimeRemaining } from '@/hooks/useCountdown';
 
 interface DiscountModalProps {
-  data: DiscountData;
+  data: DiscountData | null;
   countdown: TimeRemaining;
+  /** Advertised offer (%) shown on the email-gate step before a code exists */
+  offerPercentOff: number;
+  isGenerating?: boolean;
+  emailSubmitFailed?: boolean;
+  /** True when the code was also sent to the submitted email */
+  codeEmailed?: boolean;
   personalization?: DiscountPersonalization | null;
   onDismiss: () => void;
+  onSubmitEmail: (email: string) => void;
   onCopyCode: () => Promise<void>;
+  /** Deep-links the code into the purchase flow (cart or tickets section) */
+  onUseCode: () => void;
 }
 
 function formatCountdown(countdown: TimeRemaining): string {
   return `${countdown.hours}:${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`;
 }
 
-export function DiscountModal({ data, countdown, personalization, onDismiss, onCopyCode }: DiscountModalProps) {
+export function DiscountModal({
+  data,
+  countdown,
+  offerPercentOff,
+  isGenerating = false,
+  emailSubmitFailed = false,
+  codeEmailed = false,
+  personalization,
+  onDismiss,
+  onSubmitEmail,
+  onCopyCode,
+  onUseCode,
+}: DiscountModalProps) {
   const [copied, setCopied] = useState(false);
+  const [email, setEmail] = useState('');
 
   const handleCopy = useCallback(async () => {
     await onCopyCode();
@@ -36,7 +61,17 @@ export function DiscountModal({ data, countdown, personalization, onDismiss, onC
     setTimeout(() => setCopied(false), 2000);
   }, [onCopyCode]);
 
+  const handleEmailSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!email.trim() || isGenerating) return;
+      onSubmitEmail(email.trim());
+    },
+    [email, isGenerating, onSubmitEmail]
+  );
+
   const countdownText = formatCountdown(countdown);
+  const percentOff = data?.percentOff ?? offerPercentOff;
 
   return (
     <Dialog open onClose={onDismiss} className="relative z-50">
@@ -72,7 +107,7 @@ export function DiscountModal({ data, countdown, personalization, onDismiss, onC
 
             {/* Discount percentage */}
             <div className="mb-2 flex items-baseline justify-center text-white">
-              <span className="text-5xl sm:text-7xl leading-none">-{data.percentOff}</span>
+              <span className="text-5xl sm:text-7xl leading-none">-{percentOff}</span>
               <span className="text-xl sm:text-2xl leading-none">%</span>
             </div>
 
@@ -83,57 +118,110 @@ export function DiscountModal({ data, countdown, personalization, onDismiss, onC
                 : 'We got you a discount!'}
             </h2>
 
-            {/* Tech-stack personalization: relevant speakers (no names) */}
+            {/* Tech-stack personalization: relevant speakers (no names, no counts) */}
             {personalization && (
               <p className="mb-3 text-sm text-white/70 sm:text-base">
-                {personalization.matchCount === 1
-                  ? `A ${personalization.stackDisplayName} speaker is`
-                  : `${personalization.matchCount} ${personalization.stackDisplayName} speakers are`}{' '}
-                on the lineup — come meet them.
+                We&apos;ve got {personalization.stackDisplayName} speakers on the lineup — come meet them.
               </p>
             )}
 
-            {/* Subtext with time */}
-            <p className="mb-6 text-sm text-white/70 sm:text-base">
-              Buy a ticket <span className="font-mono font-semibold text-white">in the next <code>{countdownText}</code></span> and use the code at checkout:
-            </p>
+            {data ? (
+              <>
+                {/* Subtext with time */}
+                <p className="mb-6 text-sm text-white/70 sm:text-base">
+                  Buy a ticket <span className="font-mono font-semibold text-white">in the next <code>{countdownText}</code></span> and use the code at checkout:
+                </p>
 
-            {/* Code row */}
-            <div className="flex items-center justify-center gap-2">
-              {/* Code pill */}
-              <div className="rounded-lg bg-[#252525] px-4 py-2">
-                <code className="font-mono text-base font-semibold tracking-widest text-white sm:text-lg">
-                  {data.code.split('').map((char, index) => (
-                    <motion.span
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: 0.2,
-                        delay: 0.3 + index * 0.05,
-                        ease: 'easeOut',
-                      }}
-                      className="inline-block"
-                    >
-                      {char}
-                    </motion.span>
-                  ))}
-                </code>
-              </div>
+                {/* Code row */}
+                <div className="flex items-center justify-center gap-2">
+                  {/* Code pill */}
+                  <div className="rounded-lg bg-brand-gray-dark px-4 py-2">
+                    <code className="font-mono text-base font-semibold tracking-widest text-white sm:text-lg">
+                      {data.code.split('').map((char, index) => (
+                        <motion.span
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.2,
+                            delay: 0.3 + index * 0.05,
+                            ease: 'easeOut',
+                          }}
+                          className="inline-block"
+                        >
+                          {char}
+                        </motion.span>
+                      ))}
+                    </code>
+                  </div>
 
-              {/* Copy button */}
-              <button
-                onClick={handleCopy}
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-                aria-label={copied ? 'Code copied' : 'Copy code'}
-              >
-                {copied ? (
-                  <Check className="h-5 w-5 text-green-400" strokeWidth={2} />
-                ) : (
-                  <Copy className="h-5 w-5" strokeWidth={1.5} />
+                  {/* Copy button */}
+                  <button
+                    onClick={handleCopy}
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+                    aria-label={copied ? 'Code copied' : 'Copy code'}
+                  >
+                    {copied ? (
+                      <Check className="h-5 w-5 text-green-400" strokeWidth={2} />
+                    ) : (
+                      <Copy className="h-5 w-5" strokeWidth={1.5} />
+                    )}
+                  </button>
+                </div>
+
+                {/* Deep link into the purchase flow — the code applies itself */}
+                <button
+                  onClick={onUseCode}
+                  className="mt-5 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-bold text-black transition-opacity hover:opacity-80"
+                >
+                  Use it on your ticket
+                  <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                </button>
+
+                {codeEmailed && (
+                  <p className="mt-4 text-xs text-white/50">
+                    We&apos;ve also emailed it to you, with the exact expiry time.
+                  </p>
                 )}
-              </button>
-            </div>
+              </>
+            ) : (
+              <>
+                {/* Email gate */}
+                <p className="mb-6 text-sm text-white/70 sm:text-base">
+                  The code is short-lived — drop your email and we&apos;ll reveal it right here.
+                </p>
+
+                <form onSubmit={handleEmailSubmit} className="flex items-center justify-center gap-2">
+                  <label htmlFor="discount-email" className="sr-only">
+                    Email address
+                  </label>
+                  <input
+                    id="discount-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="w-52 rounded-lg bg-brand-gray-dark px-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/60 sm:w-60 sm:text-base"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isGenerating}
+                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-white text-black transition-opacity hover:opacity-80 disabled:cursor-wait disabled:opacity-50"
+                    aria-label="Get my discount code"
+                  >
+                    <ArrowRight className="h-5 w-5" strokeWidth={2} />
+                  </button>
+                </form>
+
+                {emailSubmitFailed && (
+                  <p role="alert" className="mt-3 text-sm text-red-400">
+                    Something went wrong — please try again.
+                  </p>
+                )}
+              </>
+            )}
           </DialogPanel>
         </motion.div>
     </Dialog>

@@ -146,6 +146,18 @@ export interface VoucherAppliedEvent {
     discount_value: number;
     success: boolean;
     error_message?: string;
+    is_partial_discount?: boolean;
+    applicable_items_count?: number;
+    cart_items_count?: number;
+  };
+}
+
+export interface VoucherApplyFailedEvent {
+  event: 'voucher_apply_failed';
+  properties: BaseEventProperties & {
+    voucher_code: string;
+    error_reason: string;
+    cart_items_count?: number;
   };
 }
 

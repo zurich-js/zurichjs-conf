@@ -19,6 +19,8 @@ interface ScheduleAbandonmentEmailRequest {
   currency: string;
   /** Encoded cart state to restore full cart on recovery */
   encodedCartState?: string;
+  /** Explicit save: first email sends immediately (with the thank-you code) */
+  immediate?: boolean;
 }
 
 interface ScheduleAbandonmentEmailResponse {

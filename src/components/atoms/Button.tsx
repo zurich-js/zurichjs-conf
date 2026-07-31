@@ -1,4 +1,5 @@
 import React, { forwardRef, ButtonHTMLAttributes } from 'react';
+import Link from 'next/link';
 
 export type ButtonVariant = 'primary' | 'ghost' | 'accent' | 'outline' | 'dark' | 'black' | 'blue'
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
@@ -83,18 +84,35 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     if (asChild && href) {
+      const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (isDisabled) {
+          e.preventDefault();
+          return;
+        }
+        (props.onClick as React.MouseEventHandler<HTMLElement> | undefined)?.(e);
+      };
+
+      // Internal routes go through next/link so CTAs don't trigger a full
+      // document reload; external/mailto/hash-only links keep a plain <a>.
+      if (href.startsWith('/')) {
+        return (
+          <Link
+            href={isDisabled ? '#' : href}
+            className={combinedClassName}
+            aria-disabled={isDisabled}
+            onClick={handleAnchorClick}
+          >
+            {content}
+          </Link>
+        );
+      }
+
       return (
         <a
           href={isDisabled ? undefined : href}
           className={combinedClassName}
           aria-disabled={isDisabled}
-          onClick={(e) => {
-            if (isDisabled) {
-              e.preventDefault();
-              return;
-            }
-            (props.onClick as React.MouseEventHandler<HTMLElement> | undefined)?.(e);
-          }}
+          onClick={handleAnchorClick}
         >
           {content}
         </a>

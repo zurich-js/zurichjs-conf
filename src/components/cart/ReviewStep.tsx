@@ -25,8 +25,27 @@ export function ReviewStep({
   onRemoveVoucher,
   onUpgradeToVip,
   onTeamRequest,
+  onEmailCaptured,
 }: ReviewStepProps) {
   const [isSeebadEngeOpen, setIsSeebadEngeOpen] = useState(false);
+  const [saveCartOpen, setSaveCartOpen] = useState(false);
+  const [saveCartEmail, setSaveCartEmail] = useState('');
+  const [savingCart, setSavingCart] = useState(false);
+  const [saveCartFailed, setSaveCartFailed] = useState(false);
+  const [cartSaved, setCartSaved] = useState(false);
+
+  const handleSaveCart = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const email = saveCartEmail.trim();
+    if (!email || !onEmailCaptured || savingCart) return;
+    setSavingCart(true);
+    setSaveCartFailed(false);
+    const scheduled = await onEmailCaptured(email);
+    setSavingCart(false);
+    // Only claim "check your inbox" when the email was actually scheduled
+    if (scheduled) setCartSaved(true);
+    else setSaveCartFailed(true);
+  };
 
   const hasTicket = cart.items.some((item) => item.kind !== 'workshop');
   const hasWorkshop = cart.items.some((item) => item.kind === 'workshop');
@@ -205,6 +224,56 @@ export function ReviewStep({
             Estimate your trip cost
           </Button>
         </Link>
+
+        {/* Save-cart email capture: most cart exits happen on this step,
+            before checkout ever sees an email — this keeps them reachable.
+            Collapsed to a quiet text link so it never competes with Continue. */}
+        {onEmailCaptured && (
+          cartSaved ? (
+            <p role="status" className="text-center text-sm text-brand-gray-light">
+              Cart saved — check your inbox, there&apos;s a little something in there for you.
+            </p>
+          ) : !saveCartOpen ? (
+            <p className="text-center text-sm text-brand-gray-light">
+              Not ready to decide?{' '}
+              <button
+                type="button"
+                onClick={() => setSaveCartOpen(true)}
+                className="font-medium text-brand-yellow-main hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 rounded"
+              >
+                Save your cart for later
+              </button>
+            </p>
+          ) : (
+            <form onSubmit={handleSaveCart}>
+              <label htmlFor="save-cart-email" className="block text-sm text-brand-gray-light">
+                We&apos;ll email you a link to pick up where you left off.
+              </label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  id="save-cart-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus
+                  value={saveCartEmail}
+                  onChange={(event) => setSaveCartEmail(event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg bg-brand-gray-darkest px-3 py-2 text-sm text-brand-white placeholder:text-brand-gray-medium focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                />
+                <Button type="submit" variant="ghost" size="sm" className="shrink-0" loading={savingCart} disabled={savingCart}>
+                  Save cart
+                </Button>
+              </div>
+              {saveCartFailed && (
+                <p role="alert" className="mt-2 text-sm text-brand-orange">
+                  Couldn&apos;t save your cart right now — please try again.
+                </p>
+              )}
+            </form>
+          )
+        )}
 
         <p className="text-center text-sm text-brand-gray-light">
           Questions about your order?{' '}

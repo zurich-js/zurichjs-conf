@@ -30,6 +30,7 @@ export type {
   TicketAddedToCartEvent,
   TicketRemovedFromCartEvent,
   CartQuantityUpdatedEvent,
+  CartCreatedEvent,
   CartReviewedEvent,
   CartStepViewedEvent,
   TicketPurchasedEvent,
@@ -45,7 +46,11 @@ export type {
   WorkshopRegisteredEvent,
   WorkshopCancelledEvent,
   WorkshopAddedToCartEvent,
+  WorkshopRemovedFromCartEvent,
 } from './workshop-events';
+
+// Speaker events
+export type { SpeakerViewedEvent } from './speaker-events';
 
 // Checkout events
 export type {
@@ -57,6 +62,7 @@ export type {
   CheckoutFormFieldCompletedEvent,
   CheckoutEmailCapturedEvent,
   VoucherAppliedEvent,
+  VoucherApplyFailedEvent,
   VoucherRemovedEvent,
   PaymentSucceededEvent,
   PaymentFailedEvent,
@@ -73,6 +79,7 @@ export type {
   LinkClickedEvent,
   SearchPerformedEvent,
   FilterAppliedEvent,
+  ScheduleTabChangedEvent,
   ShareClickedEvent,
   NewsletterSubscribedEvent,
   FaqOpenedEvent,
@@ -117,6 +124,7 @@ export type {
   DiscountWidgetClickedEvent,
   DiscountExpiredEvent,
   DiscountEligibilityCheckedEvent,
+  DiscountEmailCapturedEvent,
 } from './discount-events';
 
 // Easter egg events
@@ -141,6 +149,7 @@ import type {
   TicketAddedToCartEvent,
   TicketRemovedFromCartEvent,
   CartQuantityUpdatedEvent,
+  CartCreatedEvent,
   CartReviewedEvent,
   CartStepViewedEvent,
   TicketPurchasedEvent,
@@ -154,7 +163,9 @@ import type {
   WorkshopRegisteredEvent,
   WorkshopCancelledEvent,
   WorkshopAddedToCartEvent,
+  WorkshopRemovedFromCartEvent,
 } from './workshop-events';
+import type { SpeakerViewedEvent } from './speaker-events';
 import type {
   CheckoutStartedEvent,
   CheckoutCompletedEvent,
@@ -164,6 +175,7 @@ import type {
   CheckoutFormFieldCompletedEvent,
   CheckoutEmailCapturedEvent,
   VoucherAppliedEvent,
+  VoucherApplyFailedEvent,
   VoucherRemovedEvent,
   PaymentSucceededEvent,
   PaymentFailedEvent,
@@ -178,6 +190,7 @@ import type {
   LinkClickedEvent,
   SearchPerformedEvent,
   FilterAppliedEvent,
+  ScheduleTabChangedEvent,
   ShareClickedEvent,
   NewsletterSubscribedEvent,
   FaqOpenedEvent,
@@ -210,6 +223,7 @@ import type {
   DiscountWidgetClickedEvent,
   DiscountExpiredEvent,
   DiscountEligibilityCheckedEvent,
+  DiscountEmailCapturedEvent,
 } from './discount-events';
 import type {
   EasterEggShownEvent,
@@ -237,12 +251,15 @@ export type AnalyticsEvent =
   | TicketCheckedInEvent
   | TicketButtonClickedEvent
   | CartQuantityUpdatedEvent
+  | CartCreatedEvent
   | CartReviewedEvent
   | CartStepViewedEvent
   | WorkshopViewedEvent
   | WorkshopRegisteredEvent
   | WorkshopCancelledEvent
   | WorkshopAddedToCartEvent
+  | WorkshopRemovedFromCartEvent
+  | SpeakerViewedEvent
   | CheckoutStartedEvent
   | CheckoutCompletedEvent
   | CheckoutAbandonedEvent
@@ -251,6 +268,7 @@ export type AnalyticsEvent =
   | CheckoutFormFieldCompletedEvent
   | CheckoutEmailCapturedEvent
   | VoucherAppliedEvent
+  | VoucherApplyFailedEvent
   | VoucherRemovedEvent
   | PaymentSucceededEvent
   | PaymentFailedEvent
@@ -263,6 +281,7 @@ export type AnalyticsEvent =
   | LinkClickedEvent
   | SearchPerformedEvent
   | FilterAppliedEvent
+  | ScheduleTabChangedEvent
   | ShareClickedEvent
   | NewsletterSubscribedEvent
   | FaqOpenedEvent
@@ -290,6 +309,7 @@ export type AnalyticsEvent =
   | DiscountWidgetClickedEvent
   | DiscountExpiredEvent
   | DiscountEligibilityCheckedEvent
+  | DiscountEmailCapturedEvent
   | EasterEggShownEvent
   | EasterEggRewardCalledEvent
   | EasterEggAlreadyClaimedEvent

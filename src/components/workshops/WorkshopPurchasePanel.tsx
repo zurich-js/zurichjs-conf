@@ -7,12 +7,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { analytics } from '@/lib/analytics';
+import { trackWorkshopAddedToCart } from '@/lib/analytics';
 import { Check, GraduationCap, MapPin, Timer, Users } from 'lucide-react';
 import { Button, Heading } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useCartRoutePrefetch } from '@/hooks/useCartRoutePrefetch';
 import { createWorkshopPricingQueryOptions } from '@/lib/queries/workshops';
 import { formatPrice } from '@/lib/cart';
 import { formatDuration, formatWorkshopAvailability } from '@/components/scheduling/utils';
@@ -38,6 +39,7 @@ export function WorkshopPurchasePanel({
   const { currency } = useCurrency();
   const router = useRouter();
   const { addToCart, isInCart, navigateToCart } = useCart();
+  useCartRoutePrefetch();
   const { addToast } = useToast();
 
   const queryOptions = useMemo(
@@ -71,10 +73,11 @@ export function WorkshopPurchasePanel({
       workshopRoom: offering.room,
       workshopDurationMinutes: offering.durationMinutes,
     });
-    analytics.track('workshop_added_to_cart', {
-      workshop_amount: offering.unitAmount / 100,
+    trackWorkshopAddedToCart({
+      workshopId: offering.workshopId,
+      workshopTitle: title,
+      amount: offering.unitAmount / 100,
       currency: offering.currency,
-      quantity: 1,
     });
     addToast({
       type: 'success',

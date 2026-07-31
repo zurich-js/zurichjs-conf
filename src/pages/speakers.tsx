@@ -5,8 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import type { GetStaticProps } from 'next';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
-import { SpeakerCard } from '@/components/molecules';
+import { SpeakerCard, StickyTicketCta } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
+import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { analytics } from '@/lib/analytics';
 import { getQueryClient } from '@/lib/query-client';
 import { createPrefetch } from '@/lib/prefetch';
@@ -99,6 +100,7 @@ export default function SpeakersPage() {
   const [sortMode, setSortMode] = useState<SortMode>('none');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { data, isLoading } = useQuery(publicSpeakersQueryOptions());
+  const { plans, currentStage } = useTicketPricing();
 
   const speakers = data?.speakers ?? [];
   const placeholderSpeakerCount = selectedTags.length === 0
@@ -364,7 +366,7 @@ export default function SpeakersPage() {
         </SectionContainer>
 
 
-        <ShapedSection shape="straight" variant="medium">
+        <ShapedSection shape="straight" variant="medium" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Join The Crowd
@@ -389,6 +391,8 @@ export default function SpeakersPage() {
         <ShapedSection shape="straight" variant="dark" compactTop>
           <SiteFooter showContactLinks />
         </ShapedSection>
+
+        <StickyTicketCta plans={plans} currentStage={currentStage} location="speakers" />
       </main>
     </>
   );

@@ -35,8 +35,22 @@ export interface WorkshopCancelledEvent {
 export interface WorkshopAddedToCartEvent {
   event: 'workshop_added_to_cart';
   properties: BaseEventProperties & {
+    workshop_id?: string;
+    workshop_title?: string;
     workshop_amount: number;
     currency: string;
     quantity: number;
+  };
+}
+
+export interface WorkshopRemovedFromCartEvent {
+  event: 'workshop_removed_from_cart';
+  properties: BaseEventProperties & {
+    workshop_id?: string;
+    workshop_title?: string;
+    workshop_amount: number;
+    currency: string;
+    quantity: number;
+    removal_location?: 'cart_review' | 'checkout_summary' | 'other';
   };
 }

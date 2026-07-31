@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   supabaseEq: vi.fn(),
   supabaseDelete: vi.fn(),
   supabaseInsert: vi.fn(),
+  createSingleUseDiscountCode: vi.fn(),
 }));
 
 vi.mock('resend', () => ({
@@ -47,6 +48,14 @@ vi.mock('@/lib/supabase', () => ({
   createServiceRoleClient: vi.fn(() => ({
     from: mocks.supabaseFrom,
   })),
+}));
+
+vi.mock('@/lib/stripe/client', () => ({
+  getStripeClient: vi.fn(() => ({})),
+}));
+
+vi.mock('@/lib/discount/stripe-codes', () => ({
+  createSingleUseDiscountCode: mocks.createSingleUseDiscountCode,
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -85,9 +94,14 @@ function createResponse(): MockResponse {
   return res;
 }
 
-async function callHandler(req: Partial<NextApiRequest>) {
+// Each call gets its own IP by default so the module-level rate limiter
+// doesn't couple unrelated tests.
+let ipCounter = 0;
+
+async function callHandler(req: Partial<NextApiRequest>, ip?: string) {
   const res = createResponse();
-  await handler(req as NextApiRequest, res as unknown as NextApiResponse);
+  const headers = { 'x-forwarded-for': ip ?? `10.0.0.${++ipCounter}` };
+  await handler({ headers, ...req } as NextApiRequest, res as unknown as NextApiResponse);
   return res;
 }
 
@@ -125,6 +139,12 @@ describe('/api/cart/abandoned', () => {
     mocks.supabaseEq.mockResolvedValue({ data: [{ resend_email_id: 'email_old' }] });
     mocks.supabaseDelete.mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) });
     mocks.supabaseInsert.mockResolvedValue({ error: null });
+    mocks.createSingleUseDiscountCode.mockResolvedValue({
+      code: 'SAVEME10',
+      couponId: 'coupon_1',
+      promotionCodeId: 'promo_1',
+      expiresAt: new Date('2026-08-01T00:00:00.000Z'),
+    });
   });
 
   afterEach(() => {
@@ -136,17 +156,36 @@ describe('/api/cart/abandoned', () => {
 
     const missingCart = await callHandler({ method: 'POST', body: { email: 'buyer@example.com' } });
     expect(missingCart._status).toBe(400);
-    expect(missingCart._json).toEqual(expect.objectContaining({ error: 'Email and cart items are required' }));
+    expect(missingCart._json).toEqual(expect.objectContaining({ error: 'Validation failed' }));
 
     const invalidEmail = await callHandler({
       method: 'POST',
       body: { ...validRequest.body, email: 'nope' },
     });
     expect(invalidEmail._status).toBe(400);
-    expect(invalidEmail._json).toEqual(expect.objectContaining({ error: 'Invalid email address' }));
+    expect(invalidEmail._json).toEqual(expect.objectContaining({ error: 'Validation failed' }));
+
+    const forgedCartState = await callHandler({
+      method: 'POST',
+      body: { ...validRequest.body, encodedCartState: 'javascript:alert(1)' },
+    });
+    expect(forgedCartState._status).toBe(400);
+
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
   });
 
-  it('schedules recovery email, replaces older scheduled emails, and notifies analytics', async () => {
+  it('rate limits repeated requests from the same IP', async () => {
+    const ip = '198.51.100.7';
+    for (let i = 0; i < 5; i += 1) {
+      expect((await callHandler(validRequest, ip))._status).toBe(200);
+    }
+    const throttled = await callHandler(validRequest, ip);
+    expect(throttled._status).toBe(429);
+    // Two recovery touches per accepted request
+    expect(mocks.sendEmail).toHaveBeenCalledTimes(10);
+  });
+
+  it('schedules both recovery touches, replaces older scheduled emails, and notifies analytics', async () => {
     const res = await callHandler(validRequest);
 
     expect(res._status).toBe(200);
@@ -155,23 +194,32 @@ describe('/api/cart/abandoned', () => {
       emailId: 'email_new',
     }));
     expect(mocks.renderEmail).toHaveBeenCalled();
+    expect(mocks.sendEmail).toHaveBeenCalledTimes(2);
     expect(mocks.sendEmail).toHaveBeenCalledWith(expect.objectContaining({
       to: 'buyer@example.com',
       html: '<html>email</html>',
       scheduledAt: expect.any(String),
     }));
     expect(mocks.cancelEmail).toHaveBeenCalledWith('email_old');
-    expect(mocks.supabaseInsert).toHaveBeenCalledWith(expect.objectContaining({
-      email: 'buyer@example.com',
-      resend_email_id: 'email_new',
-      scheduled_for: expect.any(String),
-    }));
+    expect(mocks.supabaseInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        email: 'buyer@example.com',
+        resend_email_id: 'email_new',
+        scheduled_for: expect.any(String),
+      }),
+      expect.objectContaining({
+        email: 'buyer@example.com',
+        resend_email_id: 'email_new',
+        scheduled_for: expect.any(String),
+      }),
+    ]);
     expect(mocks.analyticsTrack).toHaveBeenCalledWith(
       'cart_abandonment_email_scheduled',
       'buyer@example.com',
       expect.objectContaining({
         cart_recovery_url: 'https://conf.test/cart?cart=encoded_cart&utm_source=email&utm_medium=abandonment&utm_campaign=cart_recovery',
         first_name: 'Buyer',
+        touch_count: 2,
       })
     );
     expect(mocks.notifyCartAbandonment).toHaveBeenCalledWith(expect.objectContaining({
@@ -181,8 +229,65 @@ describe('/api/cart/abandoned', () => {
     }));
   });
 
-  it('returns a failure when Resend rejects the scheduled recovery email', async () => {
+  it('sends the first email immediately with the goodie on explicit saves', async () => {
+    const res = await callHandler({
+      ...validRequest,
+      body: { ...validRequest.body, immediate: true },
+    });
+
+    expect(res._status).toBe(200);
+    expect(mocks.createSingleUseDiscountCode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      percentOff: 10,
+      durationMinutes: 120,
+      metadata: expect.objectContaining({ source: 'cart_save_goodie' }),
+    }));
+    // First touch sends now (no scheduledAt) and advertises the goodie
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(1, expect.not.objectContaining({ scheduledAt: expect.any(String) }));
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      subject: 'Your saved cart — plus 10% off for the next 2 hours',
+    }));
+    // Second touch is the scheduled 24h follow-up
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(2, expect.objectContaining({ scheduledAt: expect.any(String) }));
+    // Only the cancellable follow-up is stored for purchase cancellation
+    expect(mocks.supabaseInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ resend_email_id: 'email_new' }),
+    ]);
+  });
+
+  it('still sends the save-cart email when the goodie cannot be created', async () => {
+    mocks.createSingleUseDiscountCode.mockRejectedValueOnce(new Error('stripe down'));
+
+    const res = await callHandler({
+      ...validRequest,
+      body: { ...validRequest.body, immediate: true },
+    });
+
+    expect(res._status).toBe(200);
+    expect(mocks.sendEmail).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      subject: 'Your saved ZurichJS cart',
+    }));
+  });
+
+  it('does not create a goodie code for passive abandonment', async () => {
+    await callHandler(validRequest);
+    expect(mocks.createSingleUseDiscountCode).not.toHaveBeenCalled();
+  });
+
+  it('still succeeds when only one recovery touch can be scheduled', async () => {
     mocks.sendEmail.mockResolvedValueOnce({ data: null, error: { message: 'invalid scheduled_at' } });
+
+    const res = await callHandler(validRequest);
+
+    expect(res._status).toBe(200);
+    expect(mocks.analyticsTrack).toHaveBeenCalledWith(
+      'cart_abandonment_email_scheduled',
+      'buyer@example.com',
+      expect.objectContaining({ touch_count: 1 })
+    );
+  });
+
+  it('returns a failure when Resend rejects every recovery touch', async () => {
+    mocks.sendEmail.mockResolvedValue({ data: null, error: { message: 'invalid scheduled_at' } });
 
     const res = await callHandler(validRequest);
 

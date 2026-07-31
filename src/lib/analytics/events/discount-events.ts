@@ -61,6 +61,15 @@ export interface DiscountExpiredEvent {
   };
 }
 
+export interface DiscountEmailCapturedEvent {
+  event: 'discount_email_captured';
+  properties: BaseEventProperties & {
+    discount_code: string;
+    percent_off: number;
+    email: string;
+  };
+}
+
 export interface DiscountEligibilityCheckedEvent {
   event: 'discount_eligibility_checked';
   properties: BaseEventProperties & {

@@ -10,6 +10,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { AnimatePresence } from 'framer-motion';
 import type { GetServerSideProps } from 'next';
+import { useQueryState } from 'nuqs';
 
 import { useCart } from '@/contexts/CartContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -60,7 +61,7 @@ export default function CartPage() {
   const [capturedEmail, setCapturedEmail] = useState<string | null>(null);
   const [capturedFirstName, setCapturedFirstName] = useState<string | null>(null);
   const { mutate: createCheckout, isPending: isSubmitting, error } = useCheckout();
-  const { mutate: scheduleAbandonmentEmail } = useCartAbandonmentEmail();
+  const { mutate: scheduleAbandonmentEmail, mutateAsync: scheduleAbandonmentEmailAsync } = useCartAbandonmentEmail();
   const [checkoutFinalizing, setCheckoutFinalizing] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
@@ -69,6 +70,53 @@ export default function CartPage() {
   const { toasts, showToast } = useToast();
   const router = useRouter();
   const hasTrackedRecovery = useRef(false);
+  // Encoded cart state of the last recovery email we scheduled — prevents the
+  // abandonment handler from double-scheduling what an explicit save (or an
+  // earlier abandonment) already covered.
+  const lastRecoveryCartState = useRef<string | null>(null);
+  // ?voucher=CODE deep links (recovery/discount emails, popup CTA) auto-apply
+  // the code once the cart has items, then clean the URL. An empty cart parks
+  // the code in localStorage instead, so it still applies after the visitor
+  // grabs a ticket and comes back. nuqs keeps the URL cleanup off the
+  // router-events path so no phantom pageviews fire.
+  const [voucherParam, setVoucherParam] = useQueryState('voucher');
+  const [pendingVoucher, setPendingVoucher, clearPendingVoucher] = useLocalStorage('zurichjs_pending_voucher');
+  const hasAutoAppliedVoucher = useRef(false);
+  useEffect(() => {
+    const code = voucherParam ?? pendingVoucher;
+    if (!code || hasAutoAppliedVoucher.current) return;
+    if (cart.couponCode) {
+      if (voucherParam) void setVoucherParam(null);
+      clearPendingVoucher();
+      return;
+    }
+    if (cart.items.length === 0) {
+      // Park the code until the cart has something to apply it to
+      if (voucherParam) {
+        setPendingVoucher(voucherParam);
+        void setVoucherParam(null);
+      }
+      return;
+    }
+    hasAutoAppliedVoucher.current = true;
+    void applyVoucher(code).then((result) => {
+      showToast(
+        result.success
+          ? 'Your discount code has been applied 🎉'
+          : result.error || 'That discount code is no longer valid',
+        result.success ? 'success' : 'error'
+      );
+      if (voucherParam) void setVoucherParam(null);
+      // Only clear the parked code when it was the one we tried — a failed
+      // URL code must not destroy a different, still-valid parked voucher.
+      if (result.success || code === pendingVoucher) {
+        clearPendingVoucher();
+      } else if (pendingVoucher) {
+        hasAutoAppliedVoucher.current = false; // let the parked code try next
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voucherParam, pendingVoucher, cart.items.length, cart.couponCode]);
 
   useCartUrlSync(cart);
 
@@ -279,6 +327,45 @@ export default function CartPage() {
     }
   };
 
+  // Save-cart email from the review step: identifies the visitor and makes
+  // review-stage abandoners reachable by the recovery email (most cart exits
+  // happen before checkout ever sees an email). Returns whether the email was
+  // actually scheduled so the UI never claims "check your inbox" on failure.
+  const handleReviewEmailCaptured = async (email: string): Promise<boolean> => {
+    setCapturedEmail(email);
+    analytics.identify(email, { email });
+    analytics.track('checkout_email_captured', {
+      email,
+      step: 'review',
+      cart_item_count: cart.items.length,
+      cart_total_amount: orderSummary.total,
+      cart_currency: orderSummary.currency,
+      cart_items: mapCartItemsToAnalytics(cart.items),
+    } as EventProperties<'checkout_email_captured'>);
+    // Explicit save sends the first email immediately (with the thank-you
+    // code) plus a scheduled follow-up; purchase cancels the follow-up.
+    const encoded = encodeCartState(cart);
+    try {
+      await scheduleAbandonmentEmailAsync({
+        email,
+        firstName: capturedFirstName ?? undefined,
+        cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
+          title, quantity, price, currency,
+        })),
+        cartTotal: orderSummary.total,
+        currency: orderSummary.currency,
+        encodedCartState: encoded,
+        immediate: true,
+      });
+      // Mark covered only on success so a failed save doesn't suppress the
+      // abandonment-triggered fallback email.
+      lastRecoveryCartState.current = encoded;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   // Cart abandonment tracking
   useCartAbandonment({
     enabled: !isEmpty && !checkoutFinalizing,
@@ -297,18 +384,23 @@ export default function CartPage() {
     userEmail: capturedEmail,
     userFirstName: capturedFirstName,
     onAbandonment: (data) => {
-      if (data.email) {
-        scheduleAbandonmentEmail({
-          email: data.email,
-          firstName: data.first_name,
-          cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
-            title, quantity, price, currency,
-          })),
-          cartTotal: orderSummary.total,
-          currency: orderSummary.currency,
-          encodedCartState: encodeCartState(cart),
-        });
-      }
+      if (!data.email) return;
+      // Skip if this exact cart is already covered by a scheduled recovery
+      // email (e.g. an explicit save moments ago) — re-sending would race the
+      // replace logic server-side and duplicate the sequence.
+      const encoded = encodeCartState(cart);
+      if (lastRecoveryCartState.current === encoded) return;
+      lastRecoveryCartState.current = encoded;
+      scheduleAbandonmentEmail({
+        email: data.email,
+        firstName: data.first_name,
+        cartItems: cart.items.map(({ title, quantity, price, currency }) => ({
+          title, quantity, price, currency,
+        })),
+        cartTotal: orderSummary.total,
+        currency: orderSummary.currency,
+        encodedCartState: encoded,
+      });
     },
   });
 
@@ -394,6 +486,7 @@ export default function CartPage() {
                 onRemoveVoucher={removeVoucher}
                 onUpgradeToVip={handleUpgradeToVip}
                 onTeamRequest={handleTeamModalOpen}
+                onEmailCaptured={handleReviewEmailCaptured}
               />
             )}
 

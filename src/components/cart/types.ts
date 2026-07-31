@@ -27,6 +27,10 @@ export interface ReviewStepProps extends CartStepProps {
   onRemoveVoucher: () => void;
   onUpgradeToVip: () => void;
   onTeamRequest: () => void;
+  /** Called with a valid email from the save-cart field, so review-stage
+   *  abandoners become reachable by the recovery email. Resolves to whether
+   *  the recovery email was actually scheduled. */
+  onEmailCaptured?: (email: string) => Promise<boolean>;
 }
 
 export interface AttendeesStepProps extends CartStepProps {

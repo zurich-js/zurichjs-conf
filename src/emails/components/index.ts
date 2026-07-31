@@ -17,3 +17,6 @@ export type { BadgePillProps } from './BadgePill';
 
 export { WalletButton } from './WalletButton';
 export type { WalletButtonProps } from './WalletButton';
+
+export { DiscountCodeCard } from './DiscountCodeCard';
+export type { DiscountCodeCardProps } from './DiscountCodeCard';

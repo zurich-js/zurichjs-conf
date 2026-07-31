@@ -27,6 +27,8 @@ export { AttendeeForm, AttendeeTicketForm } from './AttendeeForm';
 export { PhotoSwiper } from './PhotoSwiper';
 export { TierCard } from './TierCard';
 export { SpeakerActionSlider } from './SpeakerActionSlider';
+export { StickyTicketCta } from './StickyTicketCta';
+export { UpsellBanner, UpsellHighlight } from './UpsellBanner';
 export {
   StatHighlightCard,
   ProgressBar,
@@ -68,6 +70,8 @@ export type { AttendeeFormProps, AttendeeTicketFormProps } from './AttendeeForm'
 export type { PhotoSwiperProps, PhotoSlide, PhotoLayout, NestedContainer } from './PhotoSwiper';
 export type { TierCardProps, TierBenefit } from './TierCard';
 export type { SpeakerActionSliderProps } from './SpeakerActionSlider';
+export type { StickyTicketCtaProps } from './StickyTicketCta';
+export type { UpsellBannerProps } from './UpsellBanner';
 export type {
   StatHighlightCardProps,
   ProgressBarProps,

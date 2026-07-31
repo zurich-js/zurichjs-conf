@@ -20,3 +20,6 @@ export type { VipUpgradeEmailProps } from './VipUpgradeEmail';
 
 export { TicketWaitlistConfirmationEmail } from './TicketWaitlistConfirmationEmail';
 export type { TicketWaitlistConfirmationEmailProps } from './TicketWaitlistConfirmationEmail';
+
+export { DiscountCodeEmail } from './DiscountCodeEmail';
+export type { DiscountCodeEmailProps } from './DiscountCodeEmail';

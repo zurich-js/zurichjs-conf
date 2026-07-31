@@ -37,8 +37,6 @@ function fromRow(row: DiscountConfigRow): ResolvedDiscountConfig {
     forceShow: row.force_show,
     abPercentOff: row.ab_percent_off,
     abDurationMinutes: row.ab_duration_minutes,
-    abcPercentOff: row.abc_percent_off,
-    abcDurationMinutes: row.abc_duration_minutes,
     source: 'database',
   };
 }

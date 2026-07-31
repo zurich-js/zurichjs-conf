@@ -71,16 +71,26 @@ export const CartItem: React.FC<CartItemProps> = ({
   };
 
   const handleRemove = () => {
-    // Track item removal
-    analytics.track('ticket_removed_from_cart', {
-      ticket_category: mapVariantToCategory(item.variant),
-      ticket_stage: 'general_admission',
-      ticket_price: item.price,
-      currency: item.currency,
-      ticket_count: item.quantity,
-      quantity: item.quantity,
-      removal_location: 'cart_review',
-    } as EventProperties<'ticket_removed_from_cart'>);
+    if (isWorkshop) {
+      analytics.track('workshop_removed_from_cart', {
+        workshop_id: item.id,
+        workshop_title: item.title,
+        workshop_amount: item.price,
+        currency: item.currency,
+        quantity: item.quantity,
+        removal_location: 'cart_review',
+      } as EventProperties<'workshop_removed_from_cart'>);
+    } else {
+      analytics.track('ticket_removed_from_cart', {
+        ticket_category: mapVariantToCategory(item.variant),
+        ticket_stage: 'general_admission',
+        ticket_price: item.price,
+        currency: item.currency,
+        ticket_count: item.quantity,
+        quantity: item.quantity,
+        removal_location: 'cart_review',
+      } as EventProperties<'ticket_removed_from_cart'>);
+    }
 
     onRemove(item.id);
   };

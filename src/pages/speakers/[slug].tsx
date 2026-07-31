@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,7 +8,7 @@ import { DayTabs, SpeakerActionSlider } from '@/components/molecules';
 import { SectionContainer, ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard } from '@/components/scheduling';
 import { addConferenceReminder } from '@/components/scheduling/session-actions';
-import { analytics } from '@/lib/analytics';
+import { analytics, trackSpeakerViewed } from '@/lib/analytics';
 import { shareNatively } from '@/lib/native-share';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicSession, PublicSpeaker } from '@/lib/types/cfp';
@@ -241,6 +241,17 @@ export default function SpeakerDetailPage({ speaker }: SpeakerDetailPageProps) {
     ];
   const initialSessionTab = hasAssignedTalks ? 'talks' : hasAssignedWorkshops ? 'workshops' : 'sessions';
   const [activeTab, setActiveTab] = useState<SessionTabId>(initialSessionTab);
+  const lastTrackedSlug = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastTrackedSlug.current === speaker.slug) return;
+    lastTrackedSlug.current = speaker.slug;
+    trackSpeakerViewed({
+      speakerSlug: speaker.slug,
+      speakerName: fullName,
+      hasTalk: hasAssignedTalks,
+      hasWorkshop: hasAssignedWorkshops,
+    });
+  }, [speaker.slug, fullName, hasAssignedTalks, hasAssignedWorkshops]);
   const currentTab = sessionTabs.find((tab) => tab.id === activeTab) ?? sessionTabs.find((tab) => !tab.disabled) ?? sessionTabs[0] ?? null;
   const profileUrl = `${BASE_URL}/speakers/${speaker.slug}`;
   const ogVersion = speaker.updated_at?.slice(0, 10);

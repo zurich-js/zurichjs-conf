@@ -93,6 +93,16 @@ export interface NewsletterSubscribedEvent {
   };
 }
 
+export interface ScheduleTabChangedEvent {
+  event: 'schedule_tab_changed';
+  properties: BaseEventProperties & {
+    selected_tab: string;
+    previous_tab: string;
+    /** Page hosting the tabs, e.g. '/schedule' or '/workshops' */
+    tab_location: string;
+  };
+}
+
 export interface FaqOpenedEvent {
   event: 'faq_opened';
   properties: BaseEventProperties & {

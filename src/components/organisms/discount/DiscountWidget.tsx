@@ -13,6 +13,8 @@ import type { TimeRemaining } from '@/hooks/useCountdown';
 interface DiscountWidgetProps {
   countdown: TimeRemaining;
   percentOff: number;
+  /** False while the offer is still email-gated (no code yet) */
+  hasCode?: boolean;
   onReopen: () => void;
 }
 
@@ -32,7 +34,7 @@ function formatCompactTime(countdown: TimeRemaining): string {
   return `${countdown.hours}:${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`;
 }
 
-export function DiscountWidget({ countdown, onReopen }: DiscountWidgetProps) {
+export function DiscountWidget({ countdown, percentOff, hasCode = true, onReopen }: DiscountWidgetProps) {
   const timeStr = formatFriendlyTime(countdown);
   const compactTimeStr = formatCompactTime(countdown);
 
@@ -45,7 +47,7 @@ export function DiscountWidget({ countdown, onReopen }: DiscountWidgetProps) {
         exit={{ opacity: 0, y: 0 }}
         transition={{ duration: 0.1, ease: 'easeOut' }}
         onClick={onReopen}
-        className="fixed bottom-4 right-4 z-50 cursor-pointer
+        className="fixed bottom-20 lg:bottom-4 right-4 z-50 cursor-pointer
         rounded-2xl overflow-hidden border-2 border-white/40 px-3 py-2 md:px-4 md:py-3 text-left
         shadow-2xl transition-all glass-container hover:border-white/60 md:block"
         aria-label="Reopen discount popup"
@@ -53,14 +55,22 @@ export function DiscountWidget({ countdown, onReopen }: DiscountWidgetProps) {
         <div className="glass-cover" aria-hidden="true" />
         {/* Top row */}
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-sm hidden md:block">Your discount is available for another</span>
+          <span className="text-sm hidden md:block">
+            {hasCode ? 'Your discount is available for another' : `Your ${percentOff}% discount is waiting`}
+          </span>
           <span className="text-xs leading-none md:hidden">Your discount</span>
           <ChevronRight className="h-4 w-4 opacity-40" />
         </div>
 
-        {/* Time */}
-        <div className="text-base font-semibold w-[22ch] hidden md:block">{timeStr}</div>
-        <div className="text-sm font-semibold md:hidden">{compactTimeStr}</div>
+        {/* Time (or the gated offer on mobile) */}
+        {hasCode ? (
+          <>
+            <div className="text-base font-semibold w-[22ch] hidden md:block">{timeStr}</div>
+            <div className="text-sm font-semibold md:hidden">{compactTimeStr}</div>
+          </>
+        ) : (
+          <div className="text-sm font-semibold md:hidden">-{percentOff}%</div>
+        )}
       </motion.button>
     </>
   );

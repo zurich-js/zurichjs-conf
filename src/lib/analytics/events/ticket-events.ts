@@ -46,6 +46,19 @@ export interface CartQuantityUpdatedEvent {
     };
 }
 
+export interface CartCreatedEvent {
+  event: 'cart_created';
+  properties: BaseEventProperties & {
+    /** Kind of the item that opened the cart */
+    item_kind: 'ticket' | 'workshop';
+    item_id: string;
+    item_title: string;
+    price: number;
+    currency: string;
+    quantity: number;
+  };
+}
+
 export interface CartReviewedEvent {
   event: 'cart_reviewed';
   properties: BaseEventProperties & CartProperties;

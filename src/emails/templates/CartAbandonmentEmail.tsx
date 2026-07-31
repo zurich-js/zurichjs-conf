@@ -5,7 +5,7 @@
 
 import { Button, Hr, Link, Section, Text } from '@react-email/components';
 import * as React from 'react';
-import { EmailLayout } from '../components';
+import { DiscountCodeCard, EmailLayout } from '../components';
 import { colors, spacing, typography, radii } from '../design/tokens';
 
 interface CartItem {
@@ -15,12 +15,20 @@ interface CartItem {
   currency: string;
 }
 
+export interface CartAbandonmentDiscount {
+  code: string;
+  percentOff: number;
+  validHours: number;
+}
+
 export interface CartAbandonmentEmailProps {
   firstName?: string;
   cartItems: CartItem[];
   cartTotal: number;
   currency: string;
   cartUrl: string;
+  /** Optional thank-you code included when the user explicitly saved their cart */
+  discount?: CartAbandonmentDiscount;
   supportEmail?: string;
 }
 
@@ -30,9 +38,12 @@ export const CartAbandonmentEmail: React.FC<CartAbandonmentEmailProps> = ({
   cartTotal,
   currency,
   cartUrl,
+  discount,
   supportEmail = 'hello@zurichjs.com',
 }) => {
-  const preheader = `Your ZurichJS Conference tickets are waiting for you`;
+  const preheader = discount
+    ? `Your saved cart — plus ${discount.percentOff}% off for the next ${discount.validHours} hours`
+    : `Your ZurichJS Conference tickets are waiting for you`;
   const greeting = firstName ? `Hi ${firstName},` : 'Hi there,';
 
   return (
@@ -81,6 +92,21 @@ export const CartAbandonmentEmail: React.FC<CartAbandonmentEmailProps> = ({
           </tr>
         </table>
       </Section>
+
+      {/* Thank-you discount (explicit cart saves only) */}
+      {discount && (
+        <DiscountCodeCard
+          code={discount.code}
+          title="A little thank-you 🎁"
+          text={
+            <>
+              Check out within the next <strong>{discount.validHours} hours</strong> and take{' '}
+              <strong>{discount.percentOff}% off</strong> with this single-use code:
+            </>
+          }
+          finePrint="It applies automatically when you open your cart from this email — or enter it in the promo code field at checkout."
+        />
+      )}
 
       {/* CTA Section */}
       <Section style={ctaSectionStyle}>

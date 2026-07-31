@@ -1,39 +1,54 @@
-import { useState, type ReactNode } from 'react';
-import { useRouter } from 'next/router';
+import { type ReactNode } from 'react';
 import type { GetServerSideProps } from 'next';
+import { useQuery } from '@tanstack/react-query';
+import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { DayTabs } from '@/components/molecules';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { createWorkshopsScheduleQueryOptions } from '@/lib/queries/workshops';
 import { PlaceholderCard, ProgramScheduleItemCard } from '@/components/scheduling';
 import { communityDayMeetup, publicProgramTabs, warmupChillRun, warmupChillRunScheduleItem } from '@/data';
+import { analytics } from '@/lib/analytics/client';
+import type { EventProperties } from '@/lib/analytics/events';
 import { buildPublicProgramScheduleItems, getPublicScheduleRows } from '@/lib/program/schedule';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import type { PublicProgramScheduleItem } from '@/lib/types/program-schedule';
 
 interface SchedulePageProps {
   items: PublicProgramScheduleItem[];
-  initialTab: (typeof publicProgramTabs)[number]['id'];
 }
 
-const scheduleDayParamToTab = {
+const DAY_PARAMS = ['community', 'workshop', 'conf', 'post-conf'] as const;
+
+const scheduleDayParamToTab: Record<(typeof DAY_PARAMS)[number], (typeof publicProgramTabs)[number]['id']> = {
   community: 'community',
   workshop: 'warmup',
   conf: 'conference',
   'post-conf': 'post-conference',
-} as const;
+};
 
-const scheduleTabToDayParam: Record<(typeof publicProgramTabs)[number]['id'], string> = {
+const scheduleTabToDayParam: Record<(typeof publicProgramTabs)[number]['id'], (typeof DAY_PARAMS)[number]> = {
   community: 'community',
   warmup: 'workshop',
   conference: 'conf',
   'post-conference': 'post-conf',
 };
 
-export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<(typeof publicProgramTabs)[number]['id']>(initialTab);
+export default function SchedulePage({ items }: SchedulePageProps) {
+  // URL-driven via nuqs so tab flips don't emit router events (and phantom
+  // $pageview captures), matching the workshops page pattern.
+  const [dayParam, setDayParam] = useQueryState(
+    'day',
+    parseAsStringLiteral(DAY_PARAMS).withDefault('community').withOptions({ shallow: true, clearOnDefault: true })
+  );
+  const activeTab = scheduleDayParamToTab[dayParam];
   const activeScheduleTab = publicProgramTabs.find((tab) => tab.id === activeTab) ?? publicProgramTabs[0];
+  // Workshop offerings so workshop rows show their price + add-to-cart chip
+  // here too, not only on /workshops. Shares the TanStack cache with that page.
+  const { currency } = useCurrency();
+  const { data: workshopsData } = useQuery(createWorkshopsScheduleQueryOptions(currency));
   const dayItems = activeScheduleTab.sessionDate
     ? items.filter((item) => item.date === activeScheduleTab.sessionDate)
     : items.filter((item) => item.date === (activeTab === 'community' ? '2026-09-09' : '2026-09-12'));
@@ -81,7 +96,7 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
           </p>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="light" dropTop dropBottom>
+        <ShapedSection shape="straight" variant="light" dropTop dropBottom compact>
           <div className="mx-auto max-w-screen-lg">
             <DayTabs
               tabs={publicProgramTabs.map((tab) => ({
@@ -92,17 +107,14 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
               activeTab={activeTab}
               onTabChange={(tabId) => {
                 const nextTab = tabId as (typeof publicProgramTabs)[number]['id'];
-                const nextDayParam = scheduleTabToDayParam[nextTab];
+                if (nextTab === activeTab) return;
 
-                setActiveTab(nextTab);
-                void router.replace(
-                  {
-                    pathname: '/schedule',
-                    query: nextDayParam === 'community' ? {} : { day: nextDayParam },
-                  },
-                  undefined,
-                  { shallow: true, scroll: false }
-                );
+                analytics.track('schedule_tab_changed', {
+                  selected_tab: nextTab,
+                  previous_tab: activeTab,
+                  tab_location: '/schedule',
+                } as EventProperties<'schedule_tab_changed'>);
+                void setDayParam(scheduleTabToDayParam[nextTab]);
               }}
               className="pt-0"
             />
@@ -120,6 +132,7 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
                     eventLink={item.id === warmupChillRunScheduleItem.id
                       ? { label: 'Info and RSVP', href: warmupChillRun.rsvpUrl }
                       : undefined}
+                    offeringsBySubmissionId={workshopsData?.offeringsBySubmissionId}
                   />
                 ))
               ) : activeTab === 'community' ? null : (
@@ -135,7 +148,7 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="dark">
+        <ShapedSection shape="straight" variant="dark" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Meet The Lineup
@@ -154,7 +167,7 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="medium">
+        <ShapedSection shape="straight" variant="medium" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Join Us
@@ -173,7 +186,7 @@ export default function SchedulePage({ items, initialTab }: SchedulePageProps) {
           </div>
         </ShapedSection>
 
-        <ShapedSection shape="straight" variant="dark">
+        <ShapedSection shape="straight" variant="dark" compact>
           <div className="mx-auto max-w-screen-lg">
             <Kicker variant="dark" className="mb-4">
               Bring Your Team
@@ -206,15 +219,10 @@ export const getServerSideProps: GetServerSideProps<SchedulePageProps> = async (
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);
-  const requestedDay = typeof ctx.query.day === 'string' ? ctx.query.day : null;
-  const initialTab = requestedDay && requestedDay in scheduleDayParamToTab
-    ? scheduleDayParamToTab[requestedDay as keyof typeof scheduleDayParamToTab]
-    : 'community';
 
   return {
     props: {
       items,
-      initialTab,
     },
   };
 };

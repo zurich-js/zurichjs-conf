@@ -5,7 +5,7 @@ import { SEO, organizationSchema, generateBreadcrumbSchema } from "@/components/
 import { aboutPageData } from "@/data/about-us";
 import { SiteFooter, ShapedSection, AboutCTASection} from "@/components/organisms";
 import {Button, Heading, Kicker} from "@/components/atoms";
-import {AnchorHeading} from "@/components/molecules";
+import {AnchorHeading, StickyTicketCta} from "@/components/molecules";
 import {TeamMemberCard} from "@/components/molecules/TeamMemberCard";
 import {ValueCard} from "@/components/molecules/ValueCard";
 import { useCart } from "@/contexts/CartContext";
@@ -71,7 +71,7 @@ export default function AboutUs() {
   ]);
 
   const { addToCart, navigateToCart } = useCart();
-  const { plans: ticketPlans } = useTicketPricing();
+  const { plans: ticketPlans, currentStage } = useTicketPricing();
   const vipPlan = ticketPlans.find((plan) => plan.id === 'vip');
 
   const handleBookVip = () => {
@@ -381,6 +381,8 @@ export default function AboutUs() {
       >
         <SiteFooter />
       </ShapedSection>
+
+      <StickyTicketCta plans={ticketPlans} currentStage={currentStage} location="about" />
     </main>
   </>
   );

@@ -81,13 +81,18 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
               Browse the rest of the program
             </Heading>
             <p className="mt-4 max-w-2xl text-base leading-8 text-brand-gray-light">
-              Want more hands-on sessions, or a lighter conference day? Browse the rest of the workshops and talks.
+              Want more hands-on sessions, or a lighter conference day? Browse the rest of the
+              workshops and talks — the conference follows on September 11 at the same venue, and
+              VIP tickets include 20% off all workshops, including this one.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
+              <Button variant="primary" asChild href="/#tickets">
+                See conference tickets
+              </Button>
               <Button variant="blue" asChild href="/workshops">
                 See other workshops
               </Button>
-              <Button variant="primary" asChild href="/talks">
+              <Button variant="black" asChild href="/talks">
                 Discover conference talks
               </Button>
             </div>

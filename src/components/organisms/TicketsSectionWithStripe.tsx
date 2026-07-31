@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { useCartRoutePrefetch } from '@/hooks/useCartRoutePrefetch';
 import { TicketsSection } from './TicketsSection';
 import { StudentVerificationModal, VerificationSuccessModal, TicketWaitlistModal, SeebadEngeModal } from '@/components/molecules';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
@@ -96,6 +97,7 @@ export const TicketsSectionWithStripe: React.FC<TicketsSectionWithStripeProps> =
 }) => {
   const { plans, currentStage, isLoading, error, refetch } = useTicketPricing();
   const { addToCart, navigateToCart } = useCart();
+  useCartRoutePrefetch();
   const {
     isModalOpen,
     openModal,
