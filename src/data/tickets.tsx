@@ -218,24 +218,6 @@ export const TICKET_FAQ: FAQItem[] = [
     ),
   },
   {
-    question: 'Can I buy a ticket at the door?',
-    answer: (
-      <>
-        We&apos;d love to welcome everyone, so if there&apos;s room, yes — you can buy a ticket at
-        the door. Door tickets are priced above even the Last Minute price, so grabbing yours
-        online in advance is always the better deal. One thing to know: we plan catering,
-        t-shirts, and all the little touches around the attendees we expect, so door sales depend
-        on what we have left on the day. We&apos;ll always do our best to fit you in, but we may
-        have to cap door sales to make sure everyone gets the full experience. If you already know
-        you&apos;re coming, save yourself the uncertainty (and some money) and{' '}
-        <a href="#tickets" className="underline">
-          get your ticket in advance
-        </a>
-        .
-      </>
-    ),
-  },
-  {
     question: 'When is the best time to arrive and leave?',
     answer: (
       <>
