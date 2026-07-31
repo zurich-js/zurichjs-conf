@@ -16,6 +16,8 @@ import {
   parseTicketInfo,
   getTicketDisplayName,
   toLegacyType,
+  isStatusDiscountCategory,
+  resolveVerificationCategory,
 } from '../ticket-utils';
 import {
   extractPartnershipDiscountInfo,
@@ -322,6 +324,37 @@ async function trackTicketPurchasesAndNewsletterSignups(
 }
 
 /**
+ * Resolve category/stage for a purchased ticket price.
+ *
+ * Students and unemployed attendees buy the same Stripe price, so the lookup
+ * key alone always reads as `student`. Verification payment links carry the
+ * approved application's type in their metadata — prefer that so an unemployed
+ * attendee isn't recorded (or emailed) as a student.
+ */
+function resolveTicketInfo(
+  lookupKey: string,
+  session: Stripe.Checkout.Session,
+  log: ReturnType<typeof logger.scope>
+): { category: TicketCategory; stage: TicketStage } {
+  const ticketInfo = parseTicketInfo(lookupKey);
+
+  // Only refine the shared discounted price — never re-categorize standard/VIP
+  if (!isStatusDiscountCategory(ticketInfo.category)) return ticketInfo;
+
+  const verifiedCategory = resolveVerificationCategory(session.metadata);
+  if (!verifiedCategory || verifiedCategory === ticketInfo.category) return ticketInfo;
+
+  log.info('Applying verified status category from payment link metadata', {
+    lookupKey,
+    parsedCategory: ticketInfo.category,
+    verifiedCategory,
+    verificationId: session.metadata?.verification_id,
+  });
+
+  return { ...ticketInfo, category: verifiedCategory };
+}
+
+/**
  * Process ticket purchases from checkout session
  * Creates tickets, tracks analytics, sends confirmation emails
  */
@@ -339,7 +372,7 @@ export async function processTickets(
   const price = ticketLineItems[0]?.price as Stripe.Price | undefined;
   if (!price?.lookup_key) return;
 
-  const ticketInfo = parseTicketInfo(price.lookup_key);
+  const ticketInfo = resolveTicketInfo(price.lookup_key, session, log);
   const ticketDisplayName = getTicketDisplayName(ticketInfo.category, ticketInfo.stage);
 
   log.debug('Ticket info parsed', {

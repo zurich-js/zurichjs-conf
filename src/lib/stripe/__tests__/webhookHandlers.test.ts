@@ -769,6 +769,120 @@ describe('handleCheckoutSessionCompleted', () => {
     });
   });
 
+  describe('verification payment links (shared student/unemployed price)', () => {
+    const studentUnemployedLineItems = {
+      data: [
+        {
+          price: {
+            lookup_key: 'standard_student_unemployed',
+            unit_amount: 2500,
+            currency: 'chf',
+            id: 'price_student_unemployed',
+          } as Stripe.Price,
+          quantity: 1,
+          description: 'Student / Unemployed Ticket',
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      mocks.mockListLineItems.mockResolvedValue(studentUnemployedLineItems);
+    });
+
+    it('should categorize as unemployed when the approved verification says so', async () => {
+      const session = createMockSession({
+        metadata: {
+          verification_id: 'ver_123',
+          verification_type: 'unemployed',
+          type: 'unemployed_verification',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockCreateTicket).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticketType: 'unemployed',
+          ticketCategory: 'unemployed',
+          ticketStage: 'general_admission',
+        })
+      );
+    });
+
+    it('should categorize as unemployed from the legacy type-only metadata', async () => {
+      const session = createMockSession({
+        metadata: { verification_id: 'ver_123', type: 'unemployed_verification' },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockCreateTicket).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticketType: 'unemployed',
+          ticketCategory: 'unemployed',
+        })
+      );
+    });
+
+    it('should keep student category for student verifications', async () => {
+      const session = createMockSession({
+        metadata: { verification_id: 'ver_456', verification_type: 'student' },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockCreateTicket).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticketType: 'student',
+          ticketCategory: 'student',
+        })
+      );
+    });
+
+    it('should fall back to student when no verification metadata is present', async () => {
+      const session = createMockSession();
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockCreateTicket).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticketType: 'student',
+          ticketCategory: 'student',
+        })
+      );
+    });
+
+    it('should not re-categorize a full-price ticket from verification metadata', async () => {
+      mocks.mockListLineItems.mockResolvedValue({
+        data: [
+          {
+            price: {
+              lookup_key: 'standard_early_bird',
+              unit_amount: 10000,
+              currency: 'chf',
+              id: 'price_123',
+            } as Stripe.Price,
+            quantity: 1,
+            description: 'Conference Ticket',
+          },
+        ],
+      });
+
+      const session = createMockSession({
+        metadata: { verification_type: 'unemployed' },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockCreateTicket).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticketType: 'early_bird',
+          ticketCategory: 'standard',
+        })
+      );
+    });
+  });
+
   describe('multi-attendee purchases', () => {
     it('should create tickets for multiple attendees from metadata', async () => {
       const attendees = [

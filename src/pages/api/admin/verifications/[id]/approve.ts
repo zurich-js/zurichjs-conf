@@ -3,8 +3,9 @@
  * POST /api/admin/verifications/[id]/approve
  *
  * Approves a student/unemployed verification request and creates a Stripe payment link.
- * The payment link includes the customer name in metadata so the webhook handler
- * can properly identify the attendee.
+ * The payment link includes the customer name and the approved verification type in
+ * metadata so the webhook handler can identify the attendee and categorize the
+ * resulting ticket as student vs unemployed (both share a single Stripe price).
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -62,6 +63,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         verification_id: verification.id,
         customer_name: verification.name,
         customer_email: verification.email,
+        // Students and unemployed attendees share one price, so the webhook
+        // needs the approved status to categorize the ticket correctly
+        verification_type: verification.verification_type,
         type: `${verification.verification_type}_verification`,
       },
       after_completion: {
