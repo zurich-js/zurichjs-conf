@@ -65,6 +65,7 @@ vi.mock('@/lib/tickets/getTicketCounts', () => ({
 
 vi.mock('@/config/pricing-stages', () => ({
   getCurrentStage: mocks.mockGetCurrentStage,
+  getFinalStage: () => ({ stage: 'last_minute', displayName: 'Last Minute' }),
   getStockInfo: mocks.mockGetStockInfo,
   GLOBAL_STOCK_LIMITS: {
     vip: 50,
@@ -209,6 +210,13 @@ describe('Ticket Pricing API Handler', () => {
       if (key === 'vip_late_bird') {
         return { data: [createMockStripePrice(key, 45000, 'CHF')] };
       }
+      if (key === 'standard_last_minute') {
+        return { data: [createMockStripePrice(key, 28000, 'CHF')] };
+      }
+      // VIP stays flat after late bird — same amount as vip_late_bird
+      if (key === 'vip_last_minute') {
+        return { data: [createMockStripePrice(key, 45000, 'CHF')] };
+      }
 
       // EUR prices
       if (key === 'standard_student_unemployed_eur') {
@@ -224,6 +232,12 @@ describe('Ticket Pricing API Handler', () => {
         return { data: [createMockStripePrice(key, 23000, 'EUR')] };
       }
       if (key === 'vip_late_bird_eur') {
+        return { data: [createMockStripePrice(key, 42000, 'EUR')] };
+      }
+      if (key === 'standard_last_minute_eur') {
+        return { data: [createMockStripePrice(key, 26000, 'EUR')] };
+      }
+      if (key === 'vip_last_minute_eur') {
         return { data: [createMockStripePrice(key, 42000, 'EUR')] };
       }
 
@@ -568,7 +582,7 @@ describe('Ticket Pricing API Handler', () => {
   // ==========================================================================
 
   describe('compare prices', () => {
-    it('should include compare price from late_bird for non-student tickets', async () => {
+    it('should include compare price from last_minute for non-student tickets', async () => {
       const req = createMockRequest();
       const res = createMockResponse();
 
@@ -578,8 +592,48 @@ describe('Ticket Pricing API Handler', () => {
       const standardPlan = json.plans.find((p) => p.id === 'standard');
       const vipPlan = json.plans.find((p) => p.id === 'vip');
 
-      expect(standardPlan?.comparePrice).toBe(25000); // late_bird price
-      expect(vipPlan?.comparePrice).toBe(45000); // late_bird price
+      expect(standardPlan?.comparePrice).toBe(28000); // last_minute price
+      expect(vipPlan?.comparePrice).toBe(45000); // last_minute price
+    });
+
+    it('should not include compare price when the last_minute amount is not higher (flat VIP)', async () => {
+      mocks.mockGetCurrentStage.mockReturnValue({
+        stage: 'late_bird',
+        displayName: 'Late Bird',
+      });
+
+      mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
+        const key = lookup_keys[0];
+        if (key === 'standard_student_unemployed') {
+          return { data: [createMockStripePrice(key, 5000, 'CHF')] };
+        }
+        if (key === 'standard_late_bird') {
+          return { data: [createMockStripePrice(key, 25000, 'CHF')] };
+        }
+        if (key === 'vip_late_bird') {
+          return { data: [createMockStripePrice(key, 45000, 'CHF')] };
+        }
+        if (key === 'standard_last_minute') {
+          return { data: [createMockStripePrice(key, 28000, 'CHF')] };
+        }
+        // VIP stays flat — last_minute amount equals late_bird amount
+        if (key === 'vip_last_minute') {
+          return { data: [createMockStripePrice(key, 45000, 'CHF')] };
+        }
+        return { data: [] };
+      });
+
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      const json = res._json as { plans: Array<{ id: string; comparePrice?: number }> };
+      const standardPlan = json.plans.find((p) => p.id === 'standard');
+      const vipPlan = json.plans.find((p) => p.id === 'vip');
+
+      expect(standardPlan?.comparePrice).toBe(28000); // still rises in last_minute
+      expect(vipPlan?.comparePrice).toBeUndefined(); // flat — no fake discount shown
     });
 
     it('should not include compare price for student/unemployed tickets', async () => {
@@ -594,22 +648,22 @@ describe('Ticket Pricing API Handler', () => {
       expect(studentPlan?.comparePrice).toBeUndefined();
     });
 
-    it('should not include compare price when stage is late_bird', async () => {
+    it('should not include compare price when stage is last_minute', async () => {
       mocks.mockGetCurrentStage.mockReturnValue({
-        stage: 'late_bird',
-        displayName: 'Late Bird',
+        stage: 'last_minute',
+        displayName: 'Last Minute',
       });
 
-      // Update mock to return late_bird prices
+      // Update mock to return last_minute prices
       mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
         const key = lookup_keys[0];
         if (key === 'standard_student_unemployed') {
           return { data: [createMockStripePrice(key, 5000, 'CHF')] };
         }
-        if (key === 'standard_late_bird') {
-          return { data: [createMockStripePrice(key, 25000, 'CHF')] };
+        if (key === 'standard_last_minute') {
+          return { data: [createMockStripePrice(key, 28000, 'CHF')] };
         }
-        if (key === 'vip_late_bird') {
+        if (key === 'vip_last_minute') {
           return { data: [createMockStripePrice(key, 45000, 'CHF')] };
         }
         return { data: [] };

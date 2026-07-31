@@ -31,6 +31,7 @@ const stageLabels: Record<string, string> = {
   early_bird: 'Early Bird',
   general_admission: 'General Admission',
   late_bird: 'Late Bird',
+  last_minute: 'Last Minute',
 };
 
 /** Format ticket category from snake_case to human-readable */

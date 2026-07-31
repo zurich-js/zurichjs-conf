@@ -1,15 +1,16 @@
 /**
  * Trip Cost Calculator — Price Evolution Timeline
- * Shows how the total cost increases from now → standard → late bird
+ * Shows how the total cost increases from now → standard → final stage
  */
 
 import { formatAmount } from './CalculatorWidgets';
 import type { DisplayCurrency } from '@/config/trip-cost';
+import { getFinalStage } from '@/config/pricing-stages';
 
 interface PriceEvolutionProps {
   totalDisplayAmount: number;
   standardEstDisplayAmount: number;
-  lateBirdDisplayAmount: number;
+  lastMinuteDisplayAmount: number;
   displayCurrency: DisplayCurrency;
   isConverted: boolean;
 }
@@ -17,7 +18,7 @@ interface PriceEvolutionProps {
 export function PriceEvolution({
   totalDisplayAmount,
   standardEstDisplayAmount,
-  lateBirdDisplayAmount,
+  lastMinuteDisplayAmount,
   displayCurrency,
   isConverted,
 }: PriceEvolutionProps) {
@@ -43,9 +44,9 @@ export function PriceEvolution({
           </div>
           <div className="text-center z-10 max-w-[30%]">
             <div className="w-6 h-6 rounded-full bg-brand-red border-2 border-white shadow mx-auto" />
-            <span className="block text-[11px] sm:text-xs text-brand-red font-semibold mt-2">Late Bird</span>
+            <span className="block text-[11px] sm:text-xs text-brand-red font-semibold mt-2">{getFinalStage().displayName}</span>
             <span className="block text-sm sm:text-base font-bold text-gray-900">
-              ~{formatAmount(lateBirdDisplayAmount, displayCurrency)}
+              ~{formatAmount(lastMinuteDisplayAmount, displayCurrency)}
             </span>
           </div>
         </div>

@@ -251,6 +251,16 @@ describe('parseTicketInfo', () => {
       expect(result).toEqual({ category: 'standard', stage: 'late_bird' });
     });
 
+    it('should parse standard_last_minute correctly', () => {
+      const result = parseTicketInfo('standard_last_minute');
+      expect(result).toEqual({ category: 'standard', stage: 'last_minute' });
+    });
+
+    it('should parse vip_last_minute correctly', () => {
+      const result = parseTicketInfo('vip_last_minute');
+      expect(result).toEqual({ category: 'vip', stage: 'last_minute' });
+    });
+
     it('should parse vip_blind_bird correctly', () => {
       const result = parseTicketInfo('vip_blind_bird');
       expect(result).toEqual({ category: 'vip', stage: 'blind_bird' });
@@ -305,6 +315,11 @@ describe('parseTicketInfo', () => {
       expect(result).toEqual({ category: 'standard', stage: 'late_bird' });
     });
 
+    it('should parse standard_last_minute_eur correctly', () => {
+      const result = parseTicketInfo('standard_last_minute_eur');
+      expect(result).toEqual({ category: 'standard', stage: 'last_minute' });
+    });
+
     it('should parse standard_general_eur correctly', () => {
       const result = parseTicketInfo('standard_general_eur');
       expect(result).toEqual({ category: 'standard', stage: 'general_admission' });
@@ -349,6 +364,10 @@ describe('getTicketDisplayName', () => {
     it('should return "Late Bird" for late_bird stage', () => {
       expect(getTicketDisplayName('standard', 'late_bird')).toBe('Late Bird');
     });
+
+    it('should return "Last Minute" for last_minute stage', () => {
+      expect(getTicketDisplayName('standard', 'last_minute')).toBe('Last Minute');
+    });
   });
 });
 
@@ -388,6 +407,10 @@ describe('toLegacyType', () => {
 
     it('should return "late_bird" for late_bird stage', () => {
       expect(toLegacyType('standard', 'late_bird')).toBe('late_bird');
+    });
+
+    it('should return "late_bird" for last_minute stage (legacy enum has no last_minute)', () => {
+      expect(toLegacyType('standard', 'last_minute')).toBe('late_bird');
     });
   });
 });
@@ -452,6 +475,14 @@ describe('isTicketProduct', () => {
 
     it('should return true for standard_late_bird', () => {
       expect(isTicketProduct(createMockPrice('standard_late_bird'))).toBe(true);
+    });
+
+    it('should return true for standard_last_minute', () => {
+      expect(isTicketProduct(createMockPrice('standard_last_minute'))).toBe(true);
+    });
+
+    it('should return true for vip_last_minute', () => {
+      expect(isTicketProduct(createMockPrice('vip_last_minute'))).toBe(true);
     });
 
     it('should return true for vip_blind_bird', () => {

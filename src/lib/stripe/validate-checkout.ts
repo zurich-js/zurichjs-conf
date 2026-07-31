@@ -33,6 +33,7 @@ function extractPriceStage(lookupKey: string): PriceStage | null {
     standard: 'standard',
     general: 'standard',
     late_bird: 'late_bird',
+    last_minute: 'last_minute',
   };
 
   return stageMap[stageKey] ?? null;

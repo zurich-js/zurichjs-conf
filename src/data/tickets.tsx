@@ -12,7 +12,7 @@ import { redirectToCheckout } from '@/lib';
 import { InfoIcon } from 'lucide-react';
 import { communityDayMeetup } from '@/data/public-program';
 
-import { getCurrentStageEndDate, GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
+import { getCurrentStageEndDate, getFinalStage, GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
 
 /**
  * Get the current pricing stage end date for countdown display
@@ -129,7 +129,17 @@ export const STAGE_COPY: Record<
     countdownTitle: 'Standard pricing ends in',
   },
   late_bird: {
-    title: 'Last chance tickets',
+    title: 'Late bird tickets',
+    subtitle: (
+      <>
+        Time is running out! Get your ticket <strong>before prices rise one last time</strong> in
+        the final two weeks.
+      </>
+    ),
+    countdownTitle: 'Late Bird phase ends in',
+  },
+  last_minute: {
+    title: 'Last minute tickets',
     subtitle: (
       <>
         <strong>Last chance</strong> to get your tickets. Don&apos;t miss out on the event of the
@@ -428,8 +438,8 @@ export const createTicketDataFromStripe = (
   );
   const stageCopy = STAGE_COPY[currentStage] || STAGE_COPY.standard;
 
-  // Show countdown for all stages except late_bird (last stage)
-  const showCountdown = currentStage !== 'late_bird';
+  // Show countdown for all stages except the final one (no further price rise)
+  const showCountdown = currentStage !== getFinalStage().stage;
 
   return {
     kicker: 'TICKETS',
