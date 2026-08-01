@@ -70,6 +70,7 @@ vi.mock('@/lib/logger', () => ({
 
 import handler from '../catalog';
 import type { CartBuilderCatalogResponse } from '../catalog';
+import { GLOBAL_STOCK_LIMITS } from '@/config/pricing-stages';
 
 interface MockResponse {
   _status: number;
@@ -121,10 +122,14 @@ const mockPrice = (lookupKey: string, unitAmount: number, currency: string) => (
   active: true,
 });
 
-// VIP sold out: 30 of 30 sold.
+// VIP sold out: the full global cap is sold.
 const SOLD_OUT_VIP_COUNTS = {
   byStage: { blind_bird: 30, early_bird: 20, standard: 10, late_bird: 0 },
-  byCategory: { standard_student_unemployed: 5, standard: 25, vip: 30 },
+  byCategory: {
+    standard_student_unemployed: 5,
+    standard: 25,
+    vip: GLOBAL_STOCK_LIMITS.vip,
+  },
 };
 
 describe('Admin Cart Builder Catalog API', () => {
