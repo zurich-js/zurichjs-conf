@@ -5,7 +5,8 @@
  * query) so we don't run N per-card pricing queries.
  */
 
-import { Check } from 'lucide-react';
+import { useState } from 'react';
+import { BellRing, Check } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -13,6 +14,7 @@ import { useCartRoutePrefetch } from '@/hooks/useCartRoutePrefetch';
 import { formatPrice } from '@/lib/cart';
 import { trackWorkshopAddedToCart } from '@/lib/analytics';
 import type { WorkshopOfferingSummary } from '@/lib/workshops/stripePriceLookup';
+import { WorkshopWaitlistModal } from './WorkshopWaitlistModal';
 
 interface WorkshopBuyButtonProps {
   offering: WorkshopOfferingSummary;
@@ -34,6 +36,7 @@ export function WorkshopBuyButton({
   const { addToCart, isInCart, navigateToCart } = useCart();
   const { addToast } = useToast();
   useCartRoutePrefetch();
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const itemId = `workshop_${offering.workshopId}`;
   const alreadyInCart = isInCart(itemId);
 
@@ -76,7 +79,12 @@ export function WorkshopBuyButton({
           {offering.capacityRemaining} seats left
         </span>
       )}
-      {alreadyInCart ? (
+      {offering.soldOut ? (
+        <Button variant={variant} size={size} onClick={() => setIsWaitlistOpen(true)}>
+          <BellRing size={14} aria-hidden="true" />
+          Join the waitlist
+        </Button>
+      ) : alreadyInCart ? (
         <button
           type="button"
           onClick={navigateToCart}
@@ -88,15 +96,17 @@ export function WorkshopBuyButton({
           In cart
         </button>
       ) : (
-        <Button
-          variant={offering.soldOut ? 'ghost' : variant}
-          size={size}
-          onClick={offering.soldOut ? undefined : handleAdd}
-          disabled={offering.soldOut}
-        >
-          {offering.soldOut ? 'Sold out' : 'Add to cart'}
+        <Button variant={variant} size={size} onClick={handleAdd}>
+          Add to cart
         </Button>
       )}
+
+      <WorkshopWaitlistModal
+        isOpen={isWaitlistOpen}
+        workshopId={offering.workshopId}
+        workshopTitle={title}
+        onClose={() => setIsWaitlistOpen(false)}
+      />
     </div>
   );
 }

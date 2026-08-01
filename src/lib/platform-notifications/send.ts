@@ -23,6 +23,7 @@ import type {
   TicketReassignedData,
   TicketCreationErrorData,
   TicketWaitlistData,
+  WorkshopWaitlistData,
   SpeakerLogisticsSubmittedData,
 } from './types'
 
@@ -396,6 +397,20 @@ export function notifyTicketWaitlist(data: TicketWaitlistData): void {
     ]
   )
   void safeSend(`${data.ticketType}_ticket_waitlist_signup`, text, blocks)
+}
+
+export function notifyWorkshopWaitlist(data: WorkshopWaitlistData): void {
+  const title = truncate(data.workshopTitle, 80)
+  const text = `Workshop waitlist: ${data.email} for "${title}"`
+  const blocks = buildBlocks(
+    ':bell: *Workshop Waitlist Signup*',
+    [
+      { label: 'Email', value: data.email },
+      { label: 'Workshop', value: title },
+      { label: 'Workshop ID', value: data.workshopId },
+    ]
+  )
+  void safeSend('workshop_waitlist_signup', text, blocks)
 }
 
 export function notifySpeakerLogisticsSubmitted(data: SpeakerLogisticsSubmittedData): void {

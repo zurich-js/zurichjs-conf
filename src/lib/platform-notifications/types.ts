@@ -138,6 +138,13 @@ export interface TicketWaitlistData {
   ticketType: 'student' | 'vip'
 }
 
+export interface WorkshopWaitlistData {
+  email: string
+  /** Which sold-out workshop the user joined the waitlist for */
+  workshopTitle: string
+  workshopId: string
+}
+
 export interface SpeakerLogisticsSubmittedData {
   speakerId: string
   speakerName: string

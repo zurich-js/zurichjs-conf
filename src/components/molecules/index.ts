@@ -21,6 +21,7 @@ export { TeamRequestModal } from './TeamRequestModal';
 export { TeamRequestSuccessDialog } from './TeamRequestSuccessDialog';
 export { SponsorshipInquiryModal } from './SponsorshipInquiryModal';
 export { TicketWaitlistModal } from './TicketWaitlistModal';
+export { WaitlistModal } from './WaitlistModal';
 export { SeebadEngeModal } from './SeebadEngeModal';
 export { AnchorHeading } from './AnchorHeading';
 export { AttendeeForm, AttendeeTicketForm } from './AttendeeForm';
@@ -64,6 +65,7 @@ export type { TeamRequestModalProps, TeamRequestData } from './TeamRequestModal'
 export type { TeamRequestSuccessDialogProps } from './TeamRequestSuccessDialog';
 export type { SponsorshipInquiryModalProps } from './SponsorshipInquiryModal';
 export type { TicketWaitlistModalProps, TicketWaitlistModalConfig } from './TicketWaitlistModal';
+export type { WaitlistModalProps, WaitlistModalConfig } from './WaitlistModal';
 export type { SeebadEngeModalProps } from './SeebadEngeModal';
 export type { AnchorHeadingProps } from './AnchorHeading';
 export type { AttendeeFormProps, AttendeeTicketFormProps } from './AttendeeForm';

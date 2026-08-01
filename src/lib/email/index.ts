@@ -55,3 +55,9 @@ export { addNewsletterContact } from './newsletter';
 // Ticket waitlist (student/unemployed, VIP)
 export { addTicketWaitlistContact, sendTicketWaitlistConfirmationEmail } from './ticket-waitlist';
 export type { TicketWaitlistType } from './ticket-waitlist';
+
+// Workshop waitlist (sold-out workshops)
+export {
+  addWorkshopWaitlistContact,
+  sendWorkshopWaitlistConfirmationEmail,
+} from './workshop-waitlist';
