@@ -19,10 +19,50 @@ export function stripCurrencySuffix(lookupKey: string): string {
 }
 
 /**
+ * Categories sold under the shared discounted status price. The lookup key
+ * (`standard_student_unemployed`) can't distinguish them, so the approved
+ * verification type is the authority — see resolveVerificationCategory().
+ */
+const STATUS_DISCOUNT_CATEGORIES: readonly TicketCategory[] = ['student', 'unemployed'] as const;
+
+/**
+ * Whether a category comes from the shared student/unemployed discounted price
+ */
+export function isStatusDiscountCategory(category: TicketCategory): boolean {
+  return STATUS_DISCOUNT_CATEGORIES.includes(category);
+}
+
+/**
+ * Resolve the verified status category from Stripe metadata.
+ *
+ * Verification payment links carry the reviewed application's type, either as
+ * `verification_type` or as the legacy `type: "{student|unemployed}_verification"`.
+ * Without it the shared lookup key resolves to `student` for everyone.
+ *
+ * @returns the verified category, or null when the metadata isn't a verification
+ */
+export function resolveVerificationCategory(
+  metadata: Stripe.Metadata | null | undefined
+): TicketCategory | null {
+  const legacyType = metadata?.type?.endsWith('_verification')
+    ? metadata.type.slice(0, -'_verification'.length)
+    : undefined;
+  const verificationType = metadata?.verification_type || legacyType;
+
+  return verificationType === 'student' || verificationType === 'unemployed'
+    ? verificationType
+    : null;
+}
+
+/**
  * Parse ticket info from lookup key: {category}_{stage} or {category}_{stage}_{currency}
  * Called after isTicketProduct() validation
  * Handles multi-part stage names like "blind_bird" correctly
  * Handles currency suffix like "_eur" or "_chf"
+ *
+ * Note: students and unemployed attendees share one price, so a combined
+ * lookup key resolves to `student`. Callers with session metadata should
+ * refine it with resolveVerificationCategory().
  */
 export function parseTicketInfo(lookupKey: string): {
   category: TicketCategory;
