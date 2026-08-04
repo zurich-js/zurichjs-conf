@@ -15,12 +15,12 @@ import { logger } from '@/lib/logger';
 
 const log = logger.scope('DiscountConfigAPI');
 
+// The popup no longer has eligibility gating, so `show_probability`,
+// `cooldown_hours` and `force_show` are not accepted here any more — writing
+// them would imply behaviour that no longer exists.
 const updateConfigSchema = z.object({
-  show_probability: z.number().min(0).max(1).optional(),
   percent_off: z.number().int().min(1).max(100).optional(),
   duration_minutes: z.number().int().min(1).optional(),
-  cooldown_hours: z.number().int().min(1).optional(),
-  force_show: z.boolean().optional(),
   ab_percent_off: z.number().int().min(1).max(100).optional(),
   ab_duration_minutes: z.number().int().min(1).optional(),
 });

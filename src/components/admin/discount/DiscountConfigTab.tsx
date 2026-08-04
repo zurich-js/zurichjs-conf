@@ -50,26 +50,17 @@ interface ConfigFormProps {
 }
 
 function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
-  const [showProbability, setShowProbability] = useState(config.show_probability);
-  const [cooldownHours, setCooldownHours] = useState(config.cooldown_hours);
-  const [forceShow, setForceShow] = useState(config.force_show);
   const [abPercentOff, setAbPercentOff] = useState(config.ab_percent_off);
   const [abDurationMinutes, setAbDurationMinutes] = useState(config.ab_duration_minutes);
 
   // Sync when config changes externally
   useEffect(() => {
-    setShowProbability(config.show_probability);
-    setCooldownHours(config.cooldown_hours);
-    setForceShow(config.force_show);
     setAbPercentOff(config.ab_percent_off);
     setAbDurationMinutes(config.ab_duration_minutes);
   }, [config]);
 
   const handleSave = () => {
     onSave({
-      show_probability: showProbability,
-      cooldown_hours: cooldownHours,
-      force_show: forceShow,
       ab_percent_off: abPercentOff,
       ab_duration_minutes: abDurationMinutes,
     });
@@ -91,41 +82,6 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
       </div>
 
       <div className="space-y-6">
-        <section>
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">Popup behavior</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <NumberField
-              label="Show probability"
-              suffix="0–1"
-              min={0}
-              max={1}
-              step={0.05}
-              value={showProbability}
-              onChange={setShowProbability}
-            />
-            <NumberField
-              label="Cooldown"
-              suffix="hours"
-              min={1}
-              value={cooldownHours}
-              onChange={setCooldownHours}
-            />
-            <div className="flex items-end pb-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={forceShow}
-                  onChange={(e) => setForceShow(e.target.checked)}
-                  className="rounded text-brand-primary focus:ring-brand-primary"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Force show (testing / promotions)
-                </span>
-              </label>
-            </div>
-          </div>
-        </section>
-
         <section>
           <h4 className="text-sm font-semibold text-gray-900 mb-3">Popup offer</h4>
           <p className="text-xs text-gray-500 mb-3">

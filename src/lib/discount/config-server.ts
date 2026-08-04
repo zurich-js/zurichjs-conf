@@ -28,13 +28,13 @@ const CACHE_TTL_MS = 60 * 1000;
 
 let cache: { value: ResolvedDiscountConfig; expiresAt: number } | null = null;
 
+// `show_probability`, `cooldown_hours` and `force_show` still exist on the row
+// but are no longer read: the popup is offered to every visitor, so there is
+// nothing left to gate. The columns are kept for historical rows.
 function fromRow(row: DiscountConfigRow): ResolvedDiscountConfig {
   return {
-    showProbability: row.show_probability,
     percentOff: row.percent_off,
     durationMinutes: row.duration_minutes,
-    cooldownHours: row.cooldown_hours,
-    forceShow: row.force_show,
     abPercentOff: row.ab_percent_off,
     abDurationMinutes: row.ab_duration_minutes,
     source: 'database',

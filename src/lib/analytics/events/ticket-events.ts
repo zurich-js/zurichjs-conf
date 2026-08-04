@@ -122,6 +122,18 @@ export interface TicketCheckedInEvent {
   };
 }
 
+/**
+ * What the clicked ticket CTA actually does. Three very different actions used
+ * to be reported identically, so funnels treated them as one intent:
+ * - `add_to_cart` — the only path that can reach checkout in this session
+ * - `student_verification` — opens the verification modal; the visitor cannot
+ *   buy until they're verified, so they never continue the funnel today
+ * - `waitlist` — sold-out tier, opens a "get notified" form; can never convert
+ *
+ * Filter to `add_to_cart` before reading any click→checkout conversion rate.
+ */
+export type TicketCtaIntent = 'add_to_cart' | 'student_verification' | 'waitlist';
+
 export interface TicketButtonClickedEvent {
   event: 'ticket_button_clicked';
   properties: BaseEventProperties &
@@ -129,5 +141,6 @@ export interface TicketButtonClickedEvent {
       button_location: 'price_card' | 'tickets_section' | 'other';
       ticket_type: string;
       is_sold_out?: boolean;
+      cta_intent?: TicketCtaIntent;
     };
 }

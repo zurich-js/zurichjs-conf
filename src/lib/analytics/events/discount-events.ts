@@ -70,12 +70,16 @@ export interface DiscountEmailCapturedEvent {
   };
 }
 
+/**
+ * Fired once per popup mount. Since the show-probability roll and cooldown
+ * cookie were removed, `was_eligible` is simply the inverse of
+ * `is_known_ticket_holder` — every other visitor is offered the discount.
+ * The old `had_cooldown` / `was_force_shown` properties no longer exist.
+ */
 export interface DiscountEligibilityCheckedEvent {
   event: 'discount_eligibility_checked';
   properties: BaseEventProperties & {
     was_eligible: boolean;
-    had_cooldown: boolean;
-    was_force_shown: boolean;
     /** Popup permanently suppressed because this browser bought a ticket */
     is_known_ticket_holder?: boolean;
     /** Running visit count for this browser (localStorage-based) */

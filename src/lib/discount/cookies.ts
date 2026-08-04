@@ -1,7 +1,7 @@
 /**
  * Discount Cookie Helpers (client-side)
  *
- * Manages regular cookies for cooldown and dismissed state.
+ * Manages the client-readable dismissed-state cookie.
  * httpOnly cookies (discount_code, discount_expires_at) are managed by the API routes.
  */
 
@@ -23,16 +23,8 @@ export function deleteCookie(name: string): void {
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
 }
 
-export function hasCooldownCookie(): boolean {
-  return getCookie(COOKIE_NAMES.COOLDOWN) === '1';
-}
-
 export function hasDismissedCookie(): boolean {
   return getCookie(COOKIE_NAMES.DISMISSED) === '1';
-}
-
-export function setCooldownCookie(hours: number): void {
-  setCookie(COOKIE_NAMES.COOLDOWN, '1', hours * 3600);
 }
 
 export function setDismissedCookie(): void {
@@ -41,6 +33,5 @@ export function setDismissedCookie(): void {
 }
 
 export function clearDiscountCookies(): void {
-  deleteCookie(COOKIE_NAMES.COOLDOWN);
   deleteCookie(COOKIE_NAMES.DISMISSED);
 }

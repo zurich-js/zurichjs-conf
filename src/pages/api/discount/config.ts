@@ -1,9 +1,8 @@
 /**
  * Discount Client Config API
- * GET: Public, client-safe subset of the discount popup configuration
- * (show probability, force-show flag, cooldown). Offer percentages and
- * durations are deliberately NOT exposed — they're resolved server-side
- * at generation time.
+ * GET: Public, client-safe subset of the discount popup configuration. Only
+ * the advertised offer percentage is exposed — the real offer and its duration
+ * are resolved server-side at generation time.
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -27,9 +26,6 @@ export default async function handler(
     // Short CDN cache: admin edits propagate within ~a minute
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     return res.status(200).json({
-      showProbability: config.showProbability,
-      forceShow: config.forceShow,
-      cooldownHours: config.cooldownHours,
       // Everyone gets the (former aggressive-20) offer; the percentage is
       // advertised on the email-gate step, so it must be client-visible.
       // Generation still resolves the real offer server-side.

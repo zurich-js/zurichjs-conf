@@ -24,6 +24,7 @@ import { encodeCartState } from '@/lib/cart-url-state';
 import { useVoucherValidation } from '@/hooks/useVoucherValidation';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { analytics } from '@/lib/analytics/client';
+import { mapVariantToCategory, trackTicketAddedToCart } from '@/lib/analytics/helpers';
 import type { EventProperties } from '@/lib/analytics/events';
 import { useCurrency } from './CurrencyContext';
 
@@ -179,6 +180,22 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
         quantity,
       } as EventProperties<'cart_created'>);
     }
+
+    // Every ticket add, from any entry point. Without this the funnel jumped
+    // straight from ticket_button_clicked to checkout_started (which only
+    // fires on billing submit), so the whole middle of the flow was invisible
+    // and read as a single ~88% cliff. Workshop adds are tracked by their own
+    // entry points via trackWorkshopAddedToCart.
+    if (item.kind !== 'workshop') {
+      trackTicketAddedToCart({
+        category: mapVariantToCategory(item.variant),
+        stage: 'general_admission',
+        price: item.price,
+        quantity,
+        currency: item.currency,
+      });
+    }
+
     dispatch({ type: 'ADD_ITEM', item, quantity });
     // Sync ref immediately for navigation
     cartRef.current = addItem(cartRef.current, item, quantity);

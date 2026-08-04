@@ -67,6 +67,8 @@ export default function CartPage() {
   const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
   const [savedBillingData, saveBillingData] = useLocalStorage('zurichjs_billing_data');
   const [, saveCartForRecovery] = useLocalStorage('zurichjs_cart_recovery');
+  const [savedProgress, saveProgress, clearProgress] = useLocalStorage('zurichjs_checkout_progress');
+  const hasRestoredProgress = useRef(false);
   const { toasts, showToast } = useToast();
   const router = useRouter();
   const hasTrackedRecovery = useRef(false);
@@ -448,6 +450,35 @@ export default function CartPage() {
       });
     },
   });
+
+  // Restore attendee details and the step the visitor left off on. Runs after
+  // mount (not during render) so the server-rendered markup still matches.
+  // 'payment' is never restored — the Stripe client secret doesn't survive, so
+  // the payment step has to be re-entered from 'checkout'.
+  useEffect(() => {
+    if (hasRestoredProgress.current) return;
+    hasRestoredProgress.current = true;
+    if (isEmpty || !savedProgress) return;
+
+    if (savedProgress.attendees?.length) setAttendees(savedProgress.attendees);
+    if (savedProgress.workshopAttendees) setWorkshopAttendees(savedProgress.workshopAttendees);
+    if (savedProgress.step && savedProgress.step !== 'payment') {
+      setCurrentStep(savedProgress.step);
+    }
+  }, [savedProgress, isEmpty]);
+
+  // Persist progress so leaving the page (to check the refund policy, find a
+  // card, close the tab) doesn't discard typed attendee details. An emptied
+  // cart — cleared after a completed purchase — drops the saved progress so a
+  // later visit doesn't resume against stale attendees.
+  useEffect(() => {
+    if (!hasRestoredProgress.current) return;
+    if (isEmpty) {
+      clearProgress();
+      return;
+    }
+    saveProgress({ attendees, workshopAttendees, step: currentStep });
+  }, [attendees, workshopAttendees, currentStep, isEmpty, saveProgress, clearProgress]);
 
   // Track step views
   useEffect(() => {

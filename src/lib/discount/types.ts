@@ -11,11 +11,8 @@ export interface DiscountData {
 }
 
 export interface DiscountConfig {
-  showProbability: number;
   percentOff: number;
   durationMinutes: number;
-  cooldownHours: number;
-  forceShow: boolean;
 }
 
 /**
@@ -33,9 +30,6 @@ export interface ResolvedDiscountConfig extends DiscountConfig {
 
 /** Client-safe subset served by GET /api/discount/config */
 export interface DiscountClientConfigResponse {
-  showProbability: number;
-  forceShow: boolean;
-  cooldownHours: number;
   /** Advertised offer (%) shown on the email-gate step before a code exists */
   offerPercentOff: number;
 }

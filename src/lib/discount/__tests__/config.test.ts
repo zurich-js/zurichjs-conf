@@ -12,15 +12,20 @@ afterEach(() => {
 describe('getServerConfig (env fallback)', () => {
   it('provides the documented defaults when no env is set', () => {
     expect(getServerConfig()).toEqual({
-      showProbability: 0.5,
       percentOff: 10,
       durationMinutes: 120,
-      cooldownHours: 6,
-      forceShow: false,
       abPercentOff: 20,
       abDurationMinutes: 60,
       source: 'env',
     });
+  });
+
+  it('no longer carries eligibility-gating fields', () => {
+    // The popup is offered to every visitor: there is no show-probability
+    // roll, cooldown window or force-show override left to configure.
+    expect(getServerConfig()).not.toHaveProperty('showProbability');
+    expect(getServerConfig()).not.toHaveProperty('cooldownHours');
+    expect(getServerConfig()).not.toHaveProperty('forceShow');
   });
 
   it('follows DISCOUNT_* env overrides', () => {

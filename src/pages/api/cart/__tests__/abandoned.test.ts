@@ -151,6 +151,30 @@ describe('/api/cart/abandoned', () => {
     delete process.env.RESEND_API_KEY;
   });
 
+  it('normalizes the email so a completed purchase can cancel the sequence', async () => {
+    // The purchase webhook cancels scheduled touches with an exact email
+    // match, so a mixed-case address stored verbatim used to keep mailing
+    // "you forgot something" to someone who had already bought.
+    const res = await callHandler({
+      method: 'POST',
+      body: { ...validRequest.body, email: '  Buyer@Example.COM  ' },
+    });
+
+    expect(res._status).toBe(200);
+    expect(mocks.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'buyer@example.com' })
+    );
+    expect(mocks.supabaseEq).toHaveBeenCalledWith('email', 'buyer@example.com');
+    expect(mocks.supabaseInsert).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ email: 'buyer@example.com' })])
+    );
+    expect(mocks.analyticsTrack).toHaveBeenCalledWith(
+      'cart_abandonment_email_scheduled',
+      'buyer@example.com',
+      expect.objectContaining({ email: 'buyer@example.com' })
+    );
+  });
+
   it('rejects invalid requests', async () => {
     expect((await callHandler({ method: 'GET' }))._status).toBe(405);
 

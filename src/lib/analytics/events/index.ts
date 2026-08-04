@@ -38,6 +38,7 @@ export type {
   TicketValidatedEvent,
   TicketCheckedInEvent,
   TicketButtonClickedEvent,
+  TicketCtaIntent,
 } from './ticket-events';
 
 // Workshop events

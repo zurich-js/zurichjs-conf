@@ -57,13 +57,18 @@ export async function cancelAbandonmentEmails(
   try {
     const supabase = createServiceRoleClient();
 
+    // Rows are stored lower-cased (see /api/cart/abandoned); normalize the
+    // Stripe-supplied address the same way or the lookup silently misses and
+    // the buyer still gets the recovery sequence.
+    const email = customerEmail.trim().toLowerCase();
+
     const { data: scheduledEmails } = await supabase
       .from('scheduled_abandonment_emails')
       .select('resend_email_id')
-      .eq('email', customerEmail);
+      .eq('email', email);
 
     if (scheduledEmails && scheduledEmails.length > 0) {
-      log.info('Cancelling scheduled abandonment emails', { count: scheduledEmails.length, email: customerEmail });
+      log.info('Cancelling scheduled abandonment emails', { count: scheduledEmails.length, email });
 
       for (const scheduled of scheduledEmails) {
         try {
@@ -80,7 +85,7 @@ export async function cancelAbandonmentEmails(
       await supabase
         .from('scheduled_abandonment_emails')
         .delete()
-        .eq('email', customerEmail);
+        .eq('email', email);
     }
   } catch (error) {
     log.warn('Failed to cancel abandonment emails', {

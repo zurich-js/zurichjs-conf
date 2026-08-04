@@ -87,7 +87,21 @@ interface UseCartAbandonmentOptions {
    * Optional callback when abandonment is tracked
    */
   onAbandonment?: (data: EventProperties<'checkout_abandoned'>) => void;
+
+  /**
+   * How long the tab must stay hidden before it counts as an abandonment.
+   *
+   * Buyers routinely tab away mid-checkout to look up the refund policy, find
+   * a card, or check a company address, then come back. Firing the moment the
+   * tab hides counted all of those as abandonments and mailed recovery emails
+   * to people still actively shopping. Coming back before the grace period
+   * elapses cancels the pending fire.
+   */
+  visibilityGraceMs?: number;
 }
+
+/** Long enough to cover a quick lookup, short enough to still catch real exits. */
+const DEFAULT_VISIBILITY_GRACE_MS = 30_000;
 
 /**
  * Custom hook for tracking cart abandonment
@@ -102,12 +116,14 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
     userFirstName,
     fieldTrackingStats,
     onAbandonment,
+    visibilityGraceMs = DEFAULT_VISIBILITY_GRACE_MS,
   } = options;
 
   const router = useRouter();
   const sessionStartTime = useRef<number>(Date.now());
   const hasTrackedAbandonment = useRef<boolean>(false);
   const lastTrackedEmail = useRef<string | null>(null);
+  const hiddenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Format cart items for analytics using the centralized utility
@@ -199,30 +215,54 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
       return;
     }
 
+    const clearHiddenTimer = () => {
+      if (hiddenTimer.current) {
+        clearTimeout(hiddenTimer.current);
+        hiddenTimer.current = null;
+      }
+    };
+
     /**
-     * Track abandonment when page visibility changes (tab switch, minimize)
+     * Tab switch / minimize. Held for the grace period so a quick lookup
+     * (refund policy, card details) isn't reported as an abandonment — coming
+     * back cancels the pending fire.
      */
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        trackAbandonment();
+        clearHiddenTimer();
+        hiddenTimer.current = setTimeout(() => {
+          hiddenTimer.current = null;
+          trackAbandonment();
+        }, visibilityGraceMs);
+      } else {
+        clearHiddenTimer();
       }
     };
 
     /**
      * Track abandonment on page unload (close tab, navigate away)
      * Note: Some browsers may not reliably fire this event
+     *
+     * Fires immediately — the page is going away, so there's nothing left to
+     * come back to and no timer would survive to fire later.
      */
     const handleBeforeUnload = () => {
+      clearHiddenTimer();
       trackAbandonment();
     };
 
     /**
      * Track abandonment on route change (SPA navigation)
      * Only triggers when navigating to a different page, not for query param updates
+     *
+     * Fires immediately rather than on a grace timer: this component unmounts
+     * as the route changes, so a deferred timer would be cleaned up and the
+     * abandonment would never be recorded at all.
      */
     const handleRouteChange = (url: string) => {
       const newPath = url.split('?')[0];
       if (newPath !== router.pathname) {
+        clearHiddenTimer();
         trackAbandonment();
       }
     };
@@ -234,11 +274,12 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
 
     // Cleanup listeners on unmount
     return () => {
+      clearHiddenTimer();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       router.events.off('routeChangeStart', handleRouteChange);
     };
-  }, [enabled, trackAbandonment, router.events]);
+  }, [enabled, trackAbandonment, router.events, visibilityGraceMs]);
 
   return {
     /**

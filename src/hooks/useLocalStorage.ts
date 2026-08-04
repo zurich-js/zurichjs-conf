@@ -9,8 +9,20 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { CheckoutFormData } from '@/lib/validations/checkout';
+import type { CartStep } from '@/components/cart/types';
+import type { AttendeeInfo, CheckoutFormData } from '@/lib/validations/checkout';
 import type { Cart } from '@/types/cart';
+
+/**
+ * Checkout progress that used to live in component state only, so leaving the
+ * cart (to read the refund policy, say) discarded every attendee field the
+ * visitor had typed and dropped them back on the review step.
+ */
+export interface CheckoutProgress {
+  attendees: AttendeeInfo[];
+  workshopAttendees: Record<string, AttendeeInfo[]>;
+  step: CartStep;
+}
 
 // ── Allowed keys + their value types ───────────────────────────────────────────
 
@@ -20,6 +32,8 @@ interface LocalStorageSchema {
   zurichjs_cart_v1: Cart;
   /** Voucher code waiting for a non-empty cart to apply itself to */
   zurichjs_pending_voucher: string;
+  /** Attendee details + step so a returning visitor resumes mid-checkout */
+  zurichjs_checkout_progress: CheckoutProgress;
 }
 
 export type LocalStorageKey = keyof LocalStorageSchema;
