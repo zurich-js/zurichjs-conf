@@ -55,7 +55,7 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
   const [abDurationMinutes, setAbDurationMinutes] = useState(config.ab_duration_minutes);
   const [abcPercentOff, setAbcPercentOff] = useState(config.abc_percent_off);
   const [abcDurationMinutes, setAbcDurationMinutes] = useState(config.abc_duration_minutes);
-  const [recurringMinVisits, setRecurringMinVisits] = useState(config.recurring_min_visits ?? 3);
+  const [recurringMinVisits, setRecurringMinVisits] = useState(config.recurring_min_visits);
 
   // Sync when config changes externally
   useEffect(() => {
@@ -63,7 +63,7 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
     setAbDurationMinutes(config.ab_duration_minutes);
     setAbcPercentOff(config.abc_percent_off);
     setAbcDurationMinutes(config.abc_duration_minutes);
-    setRecurringMinVisits(config.recurring_min_visits ?? 3);
+    setRecurringMinVisits(config.recurring_min_visits);
   }, [config]);
 
   const handleSave = () => {

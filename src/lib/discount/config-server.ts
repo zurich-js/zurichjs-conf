@@ -12,27 +12,13 @@
 
 import { createServiceRoleClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
-import { getServerConfig, RECURRING_OFFER_DEFAULTS } from './config';
+import { getServerConfig } from './config';
 import type { ResolvedDiscountConfig } from './types';
 import type { Database } from '@/lib/types/database';
 
 const log = logger.scope('DiscountConfig');
 
-type GeneratedDiscountConfigRow = Database['public']['Tables']['discount_config']['Row'];
-
-/**
- * `recurring_min_visits` is added by
- * 20260804000000_add_recurring_visitor_config.sql and is therefore absent from
- * database.generated.ts until `pnpm regen-db-types` runs against a database
- * with the migration applied. Declared optional so reads compile either way and
- * a pre-migration row simply falls back to the default.
- *
- * Once the types are regenerated, drop this intersection and the cast in
- * updateDiscountConfigRow.
- */
-export type DiscountConfigRow = GeneratedDiscountConfigRow & {
-  recurring_min_visits?: number;
-};
+export type DiscountConfigRow = Database['public']['Tables']['discount_config']['Row'];
 
 export type DiscountConfigUpdate = Partial<
   Omit<DiscountConfigRow, 'id' | 'singleton' | 'updated_at'>
@@ -56,7 +42,7 @@ function fromRow(row: DiscountConfigRow): ResolvedDiscountConfig {
     // retired price-sensitive experiment variant.
     recurringPercentOff: row.abc_percent_off,
     recurringDurationMinutes: row.abc_duration_minutes,
-    recurringMinVisits: row.recurring_min_visits ?? RECURRING_OFFER_DEFAULTS.minVisits,
+    recurringMinVisits: row.recurring_min_visits,
     source: 'database',
   };
 }
@@ -123,7 +109,7 @@ export async function updateDiscountConfigRow(
 
   const { data, error } = await supabase
     .from('discount_config')
-    .update(updates as GeneratedDiscountConfigRow)
+    .update(updates)
     .eq('id', current.id)
     .select()
     .single();
