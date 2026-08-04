@@ -73,6 +73,8 @@ export interface DiscountEligibilityCheckedEvent {
     was_eligible: boolean;
     /** Popup permanently suppressed because this browser bought a ticket */
     is_known_ticket_holder?: boolean;
+    /** Popup permanently suppressed via an admin-issued corporate access link */
+    is_corporate_buyer?: boolean;
     /** Running visit count for this browser (localStorage-based) */
     visit_count?: number;
   };

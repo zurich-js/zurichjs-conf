@@ -1,15 +1,16 @@
 /**
  * Discount Config Tab
- * Admin configuration for the discount popup: show behavior plus the single
- * live offer (the former aggressive-20 experiment winner, stored in the
- * ab_* columns). Replaces the DISCOUNT_* env vars (which remain as fallback
- * only). The retired control/price-sensitive variant columns still exist in
- * the DB but are no longer editable here.
+ * Admin configuration for the discount popup: the single live offer (the former
+ * aggressive-20 experiment winner, stored in the ab_* columns), plus corporate
+ * access links. Replaces the DISCOUNT_* env vars (which remain as fallback
+ * only). The retired variant and eligibility-gating columns still exist in the
+ * DB but are no longer read or editable.
  */
 
 import { useState, useEffect } from 'react';
 import { Percent, Save, Info } from 'lucide-react';
 import { AdminErrorState } from '@/components/admin/AdminErrorState';
+import { CorporateAccessSection } from './CorporateAccessSection';
 import { useDiscountConfig, useUpdateDiscountConfig } from './hooks';
 import type { DiscountConfigRow } from './types';
 
@@ -137,18 +138,25 @@ export function DiscountConfigTab() {
 
   if (isError || !config) {
     return (
-      <AdminErrorState
-        message="Failed to load the discount configuration"
-        onRetry={() => refetch()}
-      />
+      <>
+        <AdminErrorState
+          message="Failed to load the discount configuration"
+          onRetry={() => refetch()}
+        />
+        {/* Independent of the config row, so it stays usable during an outage */}
+        <CorporateAccessSection />
+      </>
     );
   }
 
   return (
-    <ConfigForm
-      config={config}
-      onSave={(updates) => updateMutation.mutate(updates)}
-      isSaving={updateMutation.isPending}
-    />
+    <>
+      <ConfigForm
+        config={config}
+        onSave={(updates) => updateMutation.mutate(updates)}
+        isSaving={updateMutation.isPending}
+      />
+      <CorporateAccessSection />
+    </>
   );
 }

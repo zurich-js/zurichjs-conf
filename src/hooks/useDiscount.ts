@@ -31,6 +31,7 @@ import {
   setDismissedCookie,
   clearDiscountCookies,
   isKnownTicketHolder,
+  isCorporateBuyer,
   buildDiscountPersonalization,
   recordVisit,
 } from '@/lib/discount';
@@ -185,13 +186,17 @@ export function useDiscount() {
       setIsLotteryReady(true);
     }
 
-    // Never offer a discount to someone who already bought a ticket
+    // Never offer a discount to someone who already bought a ticket, or to a
+    // corporate buyer spending a training budget — they book at the standard
+    // rate either way, so the offer is pure margin loss.
     const isTicketHolder = isKnownTicketHolder();
-    isEligible.current = !isTicketHolder;
+    const isCorporate = isCorporateBuyer();
+    isEligible.current = !isTicketHolder && !isCorporate;
 
     analytics.track('discount_eligibility_checked', {
       was_eligible: isEligible.current,
       is_known_ticket_holder: isTicketHolder,
+      is_corporate_buyer: isCorporate,
       visit_count: visitCount,
     });
   }, [isClient]);
