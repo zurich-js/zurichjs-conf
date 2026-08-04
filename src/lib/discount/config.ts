@@ -9,6 +9,18 @@
 
 import type { ResolvedDiscountConfig } from './types';
 
+/**
+ * Last-resort defaults for the recurring-visitor offer, used only when
+ * `discount_config` is unreachable. Mirrors the column defaults in
+ * 20260804000000_add_recurring_visitor_config.sql — the DB row is the source of
+ * truth and is edited in the admin Discount tab.
+ */
+export const RECURRING_OFFER_DEFAULTS = {
+  percentOff: 30,
+  durationMinutes: 30,
+  minVisits: 3,
+} as const;
+
 export const COOKIE_NAMES = {
   DISMISSED: 'discount_dismissed',
   // httpOnly cookies (set by API, not readable client-side):
@@ -25,8 +37,12 @@ export function getServerConfig(): ResolvedDiscountConfig {
     durationMinutes: parseInt(process.env.DISCOUNT_DURATION_MINUTES || '120', 10),
     abPercentOff: parseInt(process.env.DISCOUNT_AB_PERCENT_OFF || '20', 10),
     abDurationMinutes: parseInt(process.env.DISCOUNT_AB_DURATION_MINUTES || '60', 10),
-    recurringPercentOff: parseInt(process.env.DISCOUNT_RECURRING_PERCENT_OFF || '30', 10),
-    recurringDurationMinutes: parseInt(process.env.DISCOUNT_RECURRING_DURATION_MINUTES || '30', 10),
+    // Recurring-visitor settings are admin config only (discount_config), never
+    // env — these constants exist purely so a DB outage still yields a usable
+    // offer, and they match the column defaults.
+    recurringPercentOff: RECURRING_OFFER_DEFAULTS.percentOff,
+    recurringDurationMinutes: RECURRING_OFFER_DEFAULTS.durationMinutes,
+    recurringMinVisits: RECURRING_OFFER_DEFAULTS.minVisits,
     source: 'env',
   };
 }

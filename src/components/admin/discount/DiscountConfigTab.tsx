@@ -55,6 +55,7 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
   const [abDurationMinutes, setAbDurationMinutes] = useState(config.ab_duration_minutes);
   const [abcPercentOff, setAbcPercentOff] = useState(config.abc_percent_off);
   const [abcDurationMinutes, setAbcDurationMinutes] = useState(config.abc_duration_minutes);
+  const [recurringMinVisits, setRecurringMinVisits] = useState(config.recurring_min_visits ?? 3);
 
   // Sync when config changes externally
   useEffect(() => {
@@ -62,6 +63,7 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
     setAbDurationMinutes(config.ab_duration_minutes);
     setAbcPercentOff(config.abc_percent_off);
     setAbcDurationMinutes(config.abc_duration_minutes);
+    setRecurringMinVisits(config.recurring_min_visits ?? 3);
   }, [config]);
 
   const handleSave = () => {
@@ -70,6 +72,7 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
       ab_duration_minutes: abDurationMinutes,
       abc_percent_off: abcPercentOff,
       abc_duration_minutes: abcDurationMinutes,
+      recurring_min_visits: recurringMinVisits,
     });
   };
 
@@ -118,12 +121,20 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
             Recurring-visitor offer
           </h4>
           <p className="text-xs text-gray-500 mb-3">
-            Someone on their 3rd+ visit who still hasn&apos;t bought is hesitating, so
-            they get this offer instead — shown immediately rather than after the usual
-            15-second delay. Set it equal to the standard offer to switch the behaviour
-            off.
+            A visitor who keeps coming back without buying is hesitating, so they get
+            this offer instead — shown immediately rather than after the usual
+            15-second delay. Set the discount equal to the standard offer to switch the
+            behaviour off.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <NumberField
+              label="Kicks in on visit"
+              suffix="visits"
+              min={2}
+              max={50}
+              value={recurringMinVisits}
+              onChange={setRecurringMinVisits}
+            />
             <NumberField
               label="Discount"
               suffix="%"

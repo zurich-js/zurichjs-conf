@@ -33,6 +33,7 @@ export default async function handler(
       // Recurring visitors are offered more; the gate advertises the number it
       // will actually issue.
       recurringOfferPercentOff: config.recurringPercentOff,
+      recurringMinVisits: config.recurringMinVisits,
     });
   } catch (err) {
     log.error('Failed to load discount client config', err as Error);

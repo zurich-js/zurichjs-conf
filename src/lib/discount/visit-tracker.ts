@@ -16,16 +16,14 @@ const VISIT_STORAGE_KEY = 'zjs:discount:visits:v1';
 export const VISIT_SESSION_GAP_MS = 30 * 60 * 1000;
 
 /**
- * Visits at which a non-buyer counts as hesitating. Someone back for a third
- * look who still hasn't bought has read the pitch and stalled, and price is the
- * likeliest reason — so they get the sweetened offer, shown immediately rather
- * than after the usual dwell delay.
+ * True when this visit count qualifies for the recurring-visitor offer.
+ *
+ * A non-buyer back for an Nth look has read the pitch and stalled, and price is
+ * the likeliest reason. The threshold is admin config (`recurring_min_visits`
+ * on discount_config), not a constant — pass it in.
  */
-export const RECURRING_VISITOR_MIN_VISITS = 3;
-
-/** True when this visit count qualifies for the recurring-visitor offer. */
-export function isRecurringVisitor(visitCount: number): boolean {
-  return visitCount >= RECURRING_VISITOR_MIN_VISITS;
+export function isRecurringVisitor(visitCount: number, minVisits: number): boolean {
+  return minVisits > 0 && visitCount >= minVisits;
 }
 
 interface VisitRecord {

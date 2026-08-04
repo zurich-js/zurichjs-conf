@@ -32,6 +32,8 @@ export interface ResolvedDiscountConfig extends DiscountConfig {
    */
   recurringPercentOff: number;
   recurringDurationMinutes: number;
+  /** Visit number at which the recurring offer kicks in */
+  recurringMinVisits: number;
   /** Where this config came from — 'env' means the DB fallback path was used */
   source: 'database' | 'env';
 }
@@ -40,8 +42,10 @@ export interface ResolvedDiscountConfig extends DiscountConfig {
 export interface DiscountClientConfigResponse {
   /** Advertised offer (%) shown on the email-gate step before a code exists */
   offerPercentOff: number;
-  /** Advertised offer (%) for recurring visitors (3rd+ visit) */
+  /** Advertised offer (%) for recurring visitors */
   recurringOfferPercentOff: number;
+  /** Visit number at which the recurring offer kicks in */
+  recurringMinVisits: number;
 }
 
 export interface GenerateDiscountResponse {

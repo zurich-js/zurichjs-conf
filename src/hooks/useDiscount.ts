@@ -17,8 +17,9 @@
  *
  * Timing and generosity vary by intent signal:
  * - UTM lottery winners see it immediately at the lottery percentage
- * - Recurring visitors (3rd+ visit, still no purchase) see it immediately at
- *   the sweetened recurring rate — they've read the pitch and stalled
+ * - Recurring visitors (Nth+ visit, still no purchase) see it immediately at
+ *   the sweetened recurring rate — they've read the pitch and stalled. Both N
+ *   and the rate are admin config, not constants
  * - Everyone else sees it after a 15s dwell at the standard rate
  */
 
@@ -42,6 +43,7 @@ import {
   isRecurringVisitor,
   buildDiscountPersonalization,
   recordVisit,
+  RECURRING_OFFER_DEFAULTS,
 } from '@/lib/discount';
 import {
   evaluateUtmLottery,
@@ -57,8 +59,6 @@ const POPUP_DELAY_MS = 15_000; // 15 seconds
 const EMAIL_GATE_CODE = 'email_gate';
 /** Advertised offer when the config API hasn't resolved (matches env default) */
 const FALLBACK_OFFER_PERCENT = 20;
-/** Advertised recurring-visitor offer when the config API hasn't resolved */
-const FALLBACK_RECURRING_OFFER_PERCENT = 30;
 const EMPTY_COUNTDOWN: TimeRemaining = {
   days: 0,
   hours: 0,
@@ -132,7 +132,9 @@ export function useDiscount() {
   const configResolved = configQuery.isSuccess || configQuery.isError;
   const configOfferPercentOff = configQuery.data?.offerPercentOff ?? FALLBACK_OFFER_PERCENT;
   const configRecurringPercentOff =
-    configQuery.data?.recurringOfferPercentOff ?? FALLBACK_RECURRING_OFFER_PERCENT;
+    configQuery.data?.recurringOfferPercentOff ?? RECURRING_OFFER_DEFAULTS.percentOff;
+  const configRecurringMinVisits =
+    configQuery.data?.recurringMinVisits ?? RECURRING_OFFER_DEFAULTS.minVisits;
   // Lottery visitors won a specific percentage — the gate must advertise that
   // number, not the standard popup offer.
   const offerPercentOff = lotteryResult.current?.eligible
@@ -193,7 +195,7 @@ export function useDiscount() {
   // already bought a ticket; a deliberate dismissal is handled separately by
   // the dismissed cookie in `shouldTrigger` below.
   useEffect(() => {
-    if (!isClient || flags.current.eligibilityChecked) return;
+    if (!isClient || !configResolved || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
 
     const visitCount = recordVisit();
@@ -210,7 +212,7 @@ export function useDiscount() {
     // A visitor back for a third look who still hasn't bought is hesitating.
     // Price is the likeliest reason, so skip the dwell delay and lead with the
     // sweetened offer instead of making them sit through 15s again.
-    if (isRecurringVisitor(visitCount)) {
+    if (isRecurringVisitor(visitCount, configRecurringMinVisits)) {
       isRecurring.current = true;
       setShowImmediately(true);
     }
@@ -229,7 +231,7 @@ export function useDiscount() {
       is_recurring_visitor: isRecurring.current,
       visit_count: visitCount,
     });
-  }, [isClient]);
+  }, [isClient, configResolved, configRecurringMinVisits]);
 
   // Restore minimized state from existing discount
   useEffect(() => {

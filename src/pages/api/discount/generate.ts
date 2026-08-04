@@ -34,8 +34,8 @@ const bodySchema = z.object({
   percentOff: z.number().optional(),
   /**
    * Visit count reported by the client, used to resolve the recurring-visitor
-   * offer. Only the *count* is trusted, never a percentage: the offer value
-   * always comes from admin config, and the threshold is re-checked here. The
+   * offer. Only the *count* is trusted, never a percentage: the offer value and
+   * the threshold both come from admin config, re-checked here. The
    * downside of an inflated count is a visitor getting a slightly better
    * discount, which is the same exposure the UTM lottery already carries.
    */
@@ -62,7 +62,6 @@ export default async function handler(
     const body = result.success ? result.data : {};
 
     const isLotteryDiscount = isValidLotteryPercent(body.percentOff);
-    const isRecurring = isRecurringVisitor(body.visitCount ?? 0);
 
     // Check if a discount already exists in httpOnly cookies
     const existingCode = req.cookies.discount_code;
@@ -104,6 +103,10 @@ export default async function handler(
 
     const config = await getDiscountConfig();
     const stripe = getStripeClient();
+
+    // Threshold comes from admin config, never the client — the client only
+    // reports how many visits it has seen.
+    const isRecurring = isRecurringVisitor(body.visitCount ?? 0, config.recurringMinVisits);
 
     // Resolve the offer: lottery percentage wins, then the recurring-visitor
     // offer for someone on their 3rd+ visit, otherwise the standard popup offer

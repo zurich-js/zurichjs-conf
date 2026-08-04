@@ -23,9 +23,11 @@ const updateConfigSchema = z.object({
   duration_minutes: z.number().int().min(1).optional(),
   ab_percent_off: z.number().int().min(1).max(100).optional(),
   ab_duration_minutes: z.number().int().min(1).optional(),
-  // Recurring-visitor offer (abc_* columns)
+  // Recurring-visitor offer (abc_* columns) and its visit threshold. A minimum
+  // of 2 keeps the sweetened offer distinct from the standard one.
   abc_percent_off: z.number().int().min(1).max(100).optional(),
   abc_duration_minutes: z.number().int().min(1).optional(),
+  recurring_min_visits: z.number().int().min(2).max(50).optional(),
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
