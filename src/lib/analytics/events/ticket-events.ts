@@ -91,6 +91,15 @@ export interface TicketPurchasedEvent {
     UserProperties & {
       attendee_count: number;
       attendee_names?: string[];
+      /**
+       * Who paid. One event fires per attendee, so on a team order the
+       * attendee emails differ from the buyer's — and the buyer is the person
+       * who actually walked the funnel. Tracked as the distinct id too, so
+       * purchase joins onto the same PostHog person as `checkout_started`.
+       */
+      buyer_email?: string;
+      /** True when this attendee is someone other than the buyer */
+      is_gift_seat?: boolean;
     };
 }
 

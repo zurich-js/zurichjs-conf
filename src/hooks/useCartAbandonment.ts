@@ -96,12 +96,20 @@ interface UseCartAbandonmentOptions {
    * tab hides counted all of those as abandonments and mailed recovery emails
    * to people still actively shopping. Coming back before the grace period
    * elapses cancels the pending fire.
+   *
+   * Only applies to a hidden tab. Fully leaving the page — closing it or
+   * navigating away — is unambiguous and still reports immediately.
    */
   visibilityGraceMs?: number;
 }
 
-/** Long enough to cover a quick lookup, short enough to still catch real exits. */
-const DEFAULT_VISIBILITY_GRACE_MS = 30_000;
+/**
+ * A minute: comfortably covers reading the refund policy in another tab or
+ * digging a card out of a wallet, which is the behaviour we were misreading as
+ * abandonment. Real exits are caught by the unload and route-change paths
+ * regardless of this timer, so erring long costs us very little.
+ */
+const DEFAULT_VISIBILITY_GRACE_MS = 60_000;
 
 /**
  * Custom hook for tracking cart abandonment
@@ -223,9 +231,9 @@ export const useCartAbandonment = (options: UseCartAbandonmentOptions) => {
     };
 
     /**
-     * Tab switch / minimize. Held for the grace period so a quick lookup
-     * (refund policy, card details) isn't reported as an abandonment — coming
-     * back cancels the pending fire.
+     * Tab switch / minimize — the visitor is still on the page, so this is
+     * held for the grace period. A quick lookup (refund policy, card details)
+     * isn't an abandonment, and coming back cancels the pending fire.
      */
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
