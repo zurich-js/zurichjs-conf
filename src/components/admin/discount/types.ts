@@ -11,14 +11,17 @@ export type DiscountConfigRow = Database['public']['Tables']['discount_config'][
  * Editable fields for the PUT request.
  *
  * The popup has no eligibility gating any more, so `show_probability`,
- * `cooldown_hours` and `force_show` are no longer accepted — nor are the
- * `abc_*` fields from the concluded price-sensitive experiment.
+ * `cooldown_hours` and `force_show` are no longer accepted. The `abc_*` fields
+ * are reused for the recurring-visitor offer.
  */
 export interface DiscountConfigUpdateInput {
   percent_off?: number;
   duration_minutes?: number;
   ab_percent_off?: number;
   ab_duration_minutes?: number;
+  /** Recurring-visitor offer, stored in the abc_* columns */
+  abc_percent_off?: number;
+  abc_duration_minutes?: number;
 }
 
 /** Request body for minting a corporate access link */

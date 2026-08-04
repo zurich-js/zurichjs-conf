@@ -11,8 +11,15 @@
  *
  * There is no eligibility lottery: every visitor who reaches a page where the
  * popup mounts is offered the discount. Only two things suppress it — a
- * browser that already bought a ticket, and an explicit dismissal (which
- * minimizes to the corner widget so the offer stays reachable).
+ * browser that already bought a ticket or marked as a corporate buyer, and an
+ * explicit dismissal (which minimizes to the corner widget so the offer stays
+ * reachable).
+ *
+ * Timing and generosity vary by intent signal:
+ * - UTM lottery winners see it immediately at the lottery percentage
+ * - Recurring visitors (3rd+ visit, still no purchase) see it immediately at
+ *   the sweetened recurring rate — they've read the pitch and stalled
+ * - Everyone else sees it after a 15s dwell at the standard rate
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -32,6 +39,7 @@ import {
   clearDiscountCookies,
   isKnownTicketHolder,
   isCorporateBuyer,
+  isRecurringVisitor,
   buildDiscountPersonalization,
   recordVisit,
 } from '@/lib/discount';
@@ -49,6 +57,8 @@ const POPUP_DELAY_MS = 15_000; // 15 seconds
 const EMAIL_GATE_CODE = 'email_gate';
 /** Advertised offer when the config API hasn't resolved (matches env default) */
 const FALLBACK_OFFER_PERCENT = 20;
+/** Advertised recurring-visitor offer when the config API hasn't resolved */
+const FALLBACK_RECURRING_OFFER_PERCENT = 30;
 const EMPTY_COUNTDOWN: TimeRemaining = {
   days: 0,
   hours: 0,
@@ -61,6 +71,7 @@ const EMPTY_COUNTDOWN: TimeRemaining = {
 interface GenerateDiscountParams {
   email: string;
   lotteryPercentOff?: number;
+  visitCount?: number;
 }
 
 // API call — the offer itself is resolved server-side from the admin config;
@@ -68,9 +79,12 @@ interface GenerateDiscountParams {
 async function generateDiscount({
   email,
   lotteryPercentOff,
+  visitCount,
 }: GenerateDiscountParams): Promise<DiscountData> {
   const payload: Record<string, unknown> = { email };
   if (lotteryPercentOff) payload.percentOff = lotteryPercentOff;
+  // The server re-checks the threshold and picks the percentage itself.
+  if (visitCount) payload.visitCount = visitCount;
 
   const res = await fetch('/api/discount/generate', {
     method: 'POST',
@@ -92,7 +106,10 @@ export function useDiscount() {
   const isEligible = useRef(false);
   const lotteryResult = useRef<LotteryResult | null>(null);
   const pendingEmail = useRef<string | null>(null);
-  const [isLotteryReady, setIsLotteryReady] = useState(false);
+  const visits = useRef(0);
+  const isRecurring = useRef(false);
+  /** Bypasses the dwell delay — set by the UTM lottery or a recurring visitor. */
+  const [showImmediately, setShowImmediately] = useState(false);
   const [emailSubmitFailed, setEmailSubmitFailed] = useState(false);
   const [codeEmailed, setCodeEmailed] = useState(false);
 
@@ -114,11 +131,15 @@ export function useDiscount() {
   });
   const configResolved = configQuery.isSuccess || configQuery.isError;
   const configOfferPercentOff = configQuery.data?.offerPercentOff ?? FALLBACK_OFFER_PERCENT;
+  const configRecurringPercentOff =
+    configQuery.data?.recurringOfferPercentOff ?? FALLBACK_RECURRING_OFFER_PERCENT;
   // Lottery visitors won a specific percentage — the gate must advertise that
   // number, not the standard popup offer.
   const offerPercentOff = lotteryResult.current?.eligible
     ? lotteryResult.current.percentOff
-    : configOfferPercentOff;
+    : isRecurring.current
+      ? configRecurringPercentOff
+      : configOfferPercentOff;
 
   // Speaker lineup for tech-stack personalization. On the homepage (the only
   // place the popup mounts) this is already in the hydrated SSR cache.
@@ -175,15 +196,23 @@ export function useDiscount() {
     if (!isClient || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
 
-    // Count this visit so recurring non-buyers stay identifiable in analytics.
     const visitCount = recordVisit();
+    visits.current = visitCount;
 
     // The UTM lottery still overrides the standard offer percentage and shows
     // immediately instead of waiting out the dwell delay.
     const lottery = evaluateUtmLottery(parseUtmParams(window.location.search));
     if (lottery.eligible) {
       lotteryResult.current = lottery;
-      setIsLotteryReady(true);
+      setShowImmediately(true);
+    }
+
+    // A visitor back for a third look who still hasn't bought is hesitating.
+    // Price is the likeliest reason, so skip the dwell delay and lead with the
+    // sweetened offer instead of making them sit through 15s again.
+    if (isRecurringVisitor(visitCount)) {
+      isRecurring.current = true;
+      setShowImmediately(true);
     }
 
     // Never offer a discount to someone who already bought a ticket, or to a
@@ -197,6 +226,7 @@ export function useDiscount() {
       was_eligible: isEligible.current,
       is_known_ticket_holder: isTicketHolder,
       is_corporate_buyer: isCorporate,
+      is_recurring_visitor: isRecurring.current,
       visit_count: visitCount,
     });
   }, [isClient]);
@@ -218,7 +248,7 @@ export function useDiscount() {
   // real offer percentage.
   const shouldTrigger =
     isClient && !isLoading && configResolved && state === 'idle' && !statusData?.active && !hasDismissedCookie();
-  const delayMs = isLotteryReady ? 0 : POPUP_DELAY_MS;
+  const delayMs = showImmediately ? 0 : POPUP_DELAY_MS;
 
   useTimeout(() => {
     if (!isEligible.current || data || isPending) return;
@@ -240,6 +270,8 @@ export function useDiscount() {
       expires_at: '',
       is_lottery: lotteryResult.current?.eligible ?? false,
       lottery_source: lotteryResult.current?.source,
+      price_sensitivity_reason: isRecurring.current ? 'recurring_visitor' : undefined,
+      visit_count: visits.current,
       personalized: personalization !== null,
       detected_stack: personalization?.stack,
     });
@@ -267,6 +299,7 @@ export function useDiscount() {
       lotteryPercentOff: lotteryResult.current?.eligible
         ? lotteryResult.current.percentOff
         : undefined,
+      visitCount: visits.current,
     });
   }, [data, isPending, mutate]);
 

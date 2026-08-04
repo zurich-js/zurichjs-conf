@@ -13,6 +13,10 @@ export interface DiscountPopupShownEvent {
     expires_at: string;
     is_lottery: boolean;
     lottery_source?: string;
+    /** Why the offer was sweetened — currently only 'recurring_visitor' */
+    price_sensitivity_reason?: string;
+    /** Visit number this popup was shown on */
+    visit_count?: number;
     /** Whether the popup copy was personalized to the visitor's tech stack */
     personalized?: boolean;
     /** Detected framework used for personalization, e.g. 'react' */
@@ -62,10 +66,10 @@ export interface DiscountEmailCapturedEvent {
 }
 
 /**
- * Fired once per popup mount. Since the show-probability roll and cooldown
- * cookie were removed, `was_eligible` is simply the inverse of
- * `is_known_ticket_holder` — every other visitor is offered the discount.
- * The old `had_cooldown` / `was_force_shown` properties no longer exist.
+ * Fired once per popup mount, before any delay. Records why a visitor was or
+ * wasn't offered a discount, and which visit this is — the counterpart to
+ * `visit_count` on checkout_completed, so you can compare visits-to-purchase
+ * for visitors who saw the offer against those who didn't.
  */
 export interface DiscountEligibilityCheckedEvent {
   event: 'discount_eligibility_checked';
@@ -75,6 +79,8 @@ export interface DiscountEligibilityCheckedEvent {
     is_known_ticket_holder?: boolean;
     /** Popup permanently suppressed via an admin-issued corporate access link */
     is_corporate_buyer?: boolean;
+    /** 3rd+ visit without a purchase — qualifies for the sweetened offer */
+    is_recurring_visitor?: boolean;
     /** Running visit count for this browser (localStorage-based) */
     visit_count?: number;
   };

@@ -16,6 +16,8 @@ describe('getServerConfig (env fallback)', () => {
       durationMinutes: 120,
       abPercentOff: 20,
       abDurationMinutes: 60,
+      recurringPercentOff: 30,
+      recurringDurationMinutes: 30,
       source: 'env',
     });
   });
@@ -33,11 +35,13 @@ describe('getServerConfig (env fallback)', () => {
     vi.stubEnv('DISCOUNT_DURATION_MINUTES', '90');
     vi.stubEnv('DISCOUNT_AB_PERCENT_OFF', '25');
     vi.stubEnv('DISCOUNT_AB_DURATION_MINUTES', '30');
+    vi.stubEnv('DISCOUNT_RECURRING_PERCENT_OFF', '35');
 
     const config = getServerConfig();
     expect(config.percentOff).toBe(12);
     expect(config.durationMinutes).toBe(90);
     expect(config.abPercentOff).toBe(25);
     expect(config.abDurationMinutes).toBe(30);
+    expect(config.recurringPercentOff).toBe(35);
   });
 });

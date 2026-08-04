@@ -25,6 +25,8 @@ export function getServerConfig(): ResolvedDiscountConfig {
     durationMinutes: parseInt(process.env.DISCOUNT_DURATION_MINUTES || '120', 10),
     abPercentOff: parseInt(process.env.DISCOUNT_AB_PERCENT_OFF || '20', 10),
     abDurationMinutes: parseInt(process.env.DISCOUNT_AB_DURATION_MINUTES || '60', 10),
+    recurringPercentOff: parseInt(process.env.DISCOUNT_RECURRING_PERCENT_OFF || '30', 10),
+    recurringDurationMinutes: parseInt(process.env.DISCOUNT_RECURRING_DURATION_MINUTES || '30', 10),
     source: 'env',
   };
 }

@@ -30,6 +30,9 @@ export default async function handler(
       // advertised on the email-gate step, so it must be client-visible.
       // Generation still resolves the real offer server-side.
       offerPercentOff: config.abPercentOff,
+      // Recurring visitors are offered more; the gate advertises the number it
+      // will actually issue.
+      recurringOfferPercentOff: config.recurringPercentOff,
     });
   } catch (err) {
     log.error('Failed to load discount client config', err as Error);

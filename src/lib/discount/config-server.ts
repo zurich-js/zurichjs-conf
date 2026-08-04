@@ -37,6 +37,10 @@ function fromRow(row: DiscountConfigRow): ResolvedDiscountConfig {
     durationMinutes: row.duration_minutes,
     abPercentOff: row.ab_percent_off,
     abDurationMinutes: row.ab_duration_minutes,
+    // abc_* columns are reused for the recurring-visitor offer; they held the
+    // retired price-sensitive experiment variant.
+    recurringPercentOff: row.abc_percent_off,
+    recurringDurationMinutes: row.abc_duration_minutes,
     source: 'database',
   };
 }

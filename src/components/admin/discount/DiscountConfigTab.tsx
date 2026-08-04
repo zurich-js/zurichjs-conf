@@ -53,17 +53,23 @@ interface ConfigFormProps {
 function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
   const [abPercentOff, setAbPercentOff] = useState(config.ab_percent_off);
   const [abDurationMinutes, setAbDurationMinutes] = useState(config.ab_duration_minutes);
+  const [abcPercentOff, setAbcPercentOff] = useState(config.abc_percent_off);
+  const [abcDurationMinutes, setAbcDurationMinutes] = useState(config.abc_duration_minutes);
 
   // Sync when config changes externally
   useEffect(() => {
     setAbPercentOff(config.ab_percent_off);
     setAbDurationMinutes(config.ab_duration_minutes);
+    setAbcPercentOff(config.abc_percent_off);
+    setAbcDurationMinutes(config.abc_duration_minutes);
   }, [config]);
 
   const handleSave = () => {
     onSave({
       ab_percent_off: abPercentOff,
       ab_duration_minutes: abDurationMinutes,
+      abc_percent_off: abcPercentOff,
+      abc_duration_minutes: abcDurationMinutes,
     });
   };
 
@@ -103,6 +109,35 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
               min={1}
               value={abDurationMinutes}
               onChange={setAbDurationMinutes}
+            />
+          </div>
+        </section>
+
+        <section>
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">
+            Recurring-visitor offer
+          </h4>
+          <p className="text-xs text-gray-500 mb-3">
+            Someone on their 3rd+ visit who still hasn&apos;t bought is hesitating, so
+            they get this offer instead — shown immediately rather than after the usual
+            15-second delay. Set it equal to the standard offer to switch the behaviour
+            off.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <NumberField
+              label="Discount"
+              suffix="%"
+              min={1}
+              max={100}
+              value={abcPercentOff}
+              onChange={setAbcPercentOff}
+            />
+            <NumberField
+              label="Validity"
+              suffix="minutes"
+              min={1}
+              value={abcDurationMinutes}
+              onChange={setAbcDurationMinutes}
             />
           </div>
         </section>

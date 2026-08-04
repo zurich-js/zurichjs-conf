@@ -15,6 +15,19 @@ const VISIT_STORAGE_KEY = 'zjs:discount:visits:v1';
 /** Two page loads more than 30 minutes apart count as separate visits. */
 export const VISIT_SESSION_GAP_MS = 30 * 60 * 1000;
 
+/**
+ * Visits at which a non-buyer counts as hesitating. Someone back for a third
+ * look who still hasn't bought has read the pitch and stalled, and price is the
+ * likeliest reason — so they get the sweetened offer, shown immediately rather
+ * than after the usual dwell delay.
+ */
+export const RECURRING_VISITOR_MIN_VISITS = 3;
+
+/** True when this visit count qualifies for the recurring-visitor offer. */
+export function isRecurringVisitor(visitCount: number): boolean {
+  return visitCount >= RECURRING_VISITOR_MIN_VISITS;
+}
+
 interface VisitRecord {
   count: number;
   lastVisitAt: number;

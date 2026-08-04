@@ -16,6 +16,7 @@ import { getStripeClient } from '@/lib/stripe/client';
 import { getDiscountConfig } from '@/lib/discount/config-server';
 import { createSingleUseDiscountCode } from '@/lib/discount/stripe-codes';
 import { isValidLotteryPercent } from '@/lib/discount/utm-lottery';
+import { isRecurringVisitor } from '@/lib/discount/visit-tracker';
 import { logger } from '@/lib/logger';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import type { GenerateDiscountResponse } from '@/lib/discount/types';
@@ -31,6 +32,14 @@ const bodySchema = z.object({
   email: z.string().trim().email().max(254).optional(),
   /** UTM lottery percentage — validated against lottery bounds below */
   percentOff: z.number().optional(),
+  /**
+   * Visit count reported by the client, used to resolve the recurring-visitor
+   * offer. Only the *count* is trusted, never a percentage: the offer value
+   * always comes from admin config, and the threshold is re-checked here. The
+   * downside of an inflated count is a visitor getting a slightly better
+   * discount, which is the same exposure the UTM lottery already carries.
+   */
+  visitCount: z.number().int().min(1).max(10_000).optional(),
 });
 
 export default async function handler(
@@ -53,6 +62,7 @@ export default async function handler(
     const body = result.success ? result.data : {};
 
     const isLotteryDiscount = isValidLotteryPercent(body.percentOff);
+    const isRecurring = isRecurringVisitor(body.visitCount ?? 0);
 
     // Check if a discount already exists in httpOnly cookies
     const existingCode = req.cookies.discount_code;
@@ -95,19 +105,34 @@ export default async function handler(
     const config = await getDiscountConfig();
     const stripe = getStripeClient();
 
-    // Resolve the offer: lottery percentage wins, otherwise everyone gets the
-    // popup offer (the former aggressive-20 variant, stored in the ab fields).
-    const percentOff = isLotteryDiscount ? body.percentOff! : config.abPercentOff;
+    // Resolve the offer: lottery percentage wins, then the recurring-visitor
+    // offer for someone on their 3rd+ visit, otherwise the standard popup offer
+    // (the former aggressive-20 variant, stored in the ab fields).
+    const percentOff = isLotteryDiscount
+      ? body.percentOff!
+      : isRecurring
+        ? config.recurringPercentOff
+        : config.abPercentOff;
     const durationMinutes = isLotteryDiscount
       ? config.durationMinutes
-      : config.abDurationMinutes;
+      : isRecurring
+        ? config.recurringDurationMinutes
+        : config.abDurationMinutes;
 
-    const source = isLotteryDiscount ? 'utm_lottery' : 'discount_popup';
+    const source = isLotteryDiscount
+      ? 'utm_lottery'
+      : isRecurring
+        ? 'discount_popup_recurring'
+        : 'discount_popup';
 
     const { code, couponId, promotionCodeId, expiresAt } = await createSingleUseDiscountCode(stripe, {
       percentOff,
       durationMinutes,
-      namePrefix: isLotteryDiscount ? 'UTM Lottery' : 'Discount Popup',
+      namePrefix: isLotteryDiscount
+        ? 'UTM Lottery'
+        : isRecurring
+          ? 'Discount Popup Recurring'
+          : 'Discount Popup',
       metadata: {
         source,
         email: body.email,
@@ -137,6 +162,7 @@ export default async function handler(
       expiresAt: expiresAt.toISOString(),
       percentOff,
       isLottery: isLotteryDiscount,
+      isRecurring,
     });
 
     const expiresAtISO = expiresAt.toISOString();

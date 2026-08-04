@@ -18,6 +18,7 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { useToast } from '@/hooks/useToast';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
 import { useTeamRequest } from '@/hooks/useTeamRequest';
+import { getVisitCount } from '@/lib/discount';
 import { useCartAbandonment } from '@/hooks/useCartAbandonment';
 import { useCartAbandonmentEmail } from '@/hooks/useCartAbandonmentEmail';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -306,6 +307,7 @@ export default function CartPage() {
       coupon_code: cart.couponCode,
       purchase_type: purchaseType,
       payment_ui: 'embedded_checkout',
+      visit_count: getVisitCount(),
     } as EventProperties<'checkout_started'>);
 
     createCheckout(

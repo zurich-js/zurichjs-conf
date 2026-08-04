@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { recordVisit, getVisitCount, VISIT_SESSION_GAP_MS } from '../visit-tracker';
+import { recordVisit, getVisitCount, isRecurringVisitor, VISIT_SESSION_GAP_MS } from '../visit-tracker';
 
 const BASE = 1_750_000_000_000; // fixed epoch ms so tests don't rely on Date.now()
 
@@ -72,5 +72,19 @@ describe('recordVisit', () => {
     // Node test env has no localStorage global by default
     expect(recordVisit(BASE)).toBe(0);
     expect(getVisitCount()).toBe(0);
+  });
+});
+
+describe('isRecurringVisitor', () => {
+  it('treats a 3rd+ visit as recurring', () => {
+    // First two visits get the standard offer; the third signals hesitation.
+    expect(isRecurringVisitor(1)).toBe(false);
+    expect(isRecurringVisitor(2)).toBe(false);
+    expect(isRecurringVisitor(3)).toBe(true);
+    expect(isRecurringVisitor(12)).toBe(true);
+  });
+
+  it('handles a missing or zero count', () => {
+    expect(isRecurringVisitor(0)).toBe(false);
   });
 });
