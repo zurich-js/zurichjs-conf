@@ -10,9 +10,21 @@ export type {
 // NOTE: config-server.ts is deliberately NOT exported here — it pulls in the
 // service-role Supabase client and must never reach a client bundle.
 
-export { COOKIE_NAMES, getClientConfig, getServerConfig } from './config';
-export { recordVisit, getVisitCount, VISIT_SESSION_GAP_MS } from './visit-tracker';
+export { COOKIE_NAMES, getServerConfig, RECURRING_OFFER_DEFAULTS } from './config';
+export {
+  recordVisit,
+  getVisitCount,
+  isRecurringVisitor,
+  VISIT_SESSION_GAP_MS,
+} from './visit-tracker';
 export { isKnownTicketHolder, markTicketHolder } from './ticket-holder';
+// NOTE: corporate-code.ts is deliberately NOT exported here — it reads a server
+// secret. Import it directly in API routes.
+export {
+  isCorporateBuyer,
+  markCorporateBuyer,
+  clearCorporateBuyer,
+} from './corporate-buyer';
 export {
   buildDiscountPersonalization,
   type DiscountPersonalization,
@@ -21,9 +33,7 @@ export {
   getCookie,
   setCookie,
   deleteCookie,
-  hasCooldownCookie,
   hasDismissedCookie,
-  setCooldownCookie,
   setDismissedCookie,
   clearDiscountCookies,
 } from './cookies';

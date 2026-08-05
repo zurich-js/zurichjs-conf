@@ -1136,6 +1136,73 @@ describe('handleCheckoutSessionCompleted', () => {
         })
       );
     });
+
+    it('attributes every seat of a team order to the buyer, not the attendee', async () => {
+      // The buyer is the person who walked the funnel and fired
+      // checkout_started. Keying these events on attendee emails put them on
+      // PostHog persons who had never entered the funnel, so the final step
+      // under-reported every multi-seat purchase.
+      const session = createMockSession({
+        customer_details: {
+          email: 'Buyer@Example.com',
+          name: 'Team Buyer',
+        } as Stripe.Checkout.Session.CustomerDetails,
+        metadata: {
+          attendees: JSON.stringify([
+            { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+            { firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' },
+          ]),
+          totalTickets: '2',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      const purchaseCalls = mocks.mockServerAnalyticsTrack.mock.calls.filter(
+        (call: unknown[]) => call[0] === 'ticket_purchased'
+      );
+      expect(purchaseCalls).toHaveLength(2);
+
+      // Both events land on the buyer, normalized, so they join the funnel.
+      expect(purchaseCalls.map((call: unknown[]) => call[1])).toEqual([
+        'buyer@example.com',
+        'buyer@example.com',
+      ]);
+
+      // The attendee is still recorded, and flagged as someone else's seat.
+      expect(purchaseCalls.map((call: unknown[]) => (call[2] as { email: string }).email)).toEqual([
+        'john@example.com',
+        'jane@example.com',
+      ]);
+      for (const call of purchaseCalls) {
+        expect(call[2]).toEqual(
+          expect.objectContaining({ buyer_email: 'buyer@example.com', is_gift_seat: true })
+        );
+      }
+    });
+
+    it('does not flag a solo buyer as a gift seat', async () => {
+      const session = createMockSession({
+        customer_details: {
+          email: 'test@example.com',
+          name: 'John Doe',
+        } as Stripe.Checkout.Session.CustomerDetails,
+        metadata: {
+          attendees: JSON.stringify([
+            { firstName: 'John', lastName: 'Doe', email: 'Test@Example.com' },
+          ]),
+          totalTickets: '1',
+        },
+      });
+
+      await handleCheckoutSessionCompleted(session);
+
+      expect(mocks.mockServerAnalyticsTrack).toHaveBeenCalledWith(
+        'ticket_purchased',
+        'test@example.com',
+        expect.objectContaining({ is_gift_seat: false })
+      );
+    });
   });
 
   describe('error handling', () => {

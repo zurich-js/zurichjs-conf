@@ -13,6 +13,7 @@ import { ApiError } from '@/lib/api';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useCart } from '@/contexts/CartContext';
 import { markTicketHolder } from '@/lib/discount/ticket-holder';
+import { getVisitCount } from '@/lib/discount/visit-tracker';
 
 /**
  * Detect if the error is a payment failure (402) vs a generic API/network error.
@@ -114,6 +115,9 @@ const SuccessPage: React.FC = () => {
       ticket_count: ticketCount,
       workshop_count: workshopCount,
       seat_count: ticketCount + workshopCount,
+      // How many visits this decision took. Read alongside the same property on
+      // discount_popup_shown to see whether the nudge is what closed them.
+      visit_count: getVisitCount(),
     } as EventProperties<'checkout_completed'>);
 
     // Also track as a page view with purchase context

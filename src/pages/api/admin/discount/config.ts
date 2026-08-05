@@ -15,14 +15,19 @@ import { logger } from '@/lib/logger';
 
 const log = logger.scope('DiscountConfigAPI');
 
+// The popup no longer has eligibility gating, so `show_probability`,
+// `cooldown_hours` and `force_show` are not accepted here any more — writing
+// them would imply behaviour that no longer exists.
 const updateConfigSchema = z.object({
-  show_probability: z.number().min(0).max(1).optional(),
   percent_off: z.number().int().min(1).max(100).optional(),
   duration_minutes: z.number().int().min(1).optional(),
-  cooldown_hours: z.number().int().min(1).optional(),
-  force_show: z.boolean().optional(),
   ab_percent_off: z.number().int().min(1).max(100).optional(),
   ab_duration_minutes: z.number().int().min(1).optional(),
+  // Recurring-visitor offer (abc_* columns) and its visit threshold. A minimum
+  // of 2 keeps the sweetened offer distinct from the standard one.
+  abc_percent_off: z.number().int().min(1).max(100).optional(),
+  abc_duration_minutes: z.number().int().min(1).optional(),
+  recurring_min_visits: z.number().int().min(2).max(50).optional(),
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

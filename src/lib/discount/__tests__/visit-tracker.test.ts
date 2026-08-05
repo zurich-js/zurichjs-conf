@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { recordVisit, getVisitCount, VISIT_SESSION_GAP_MS } from '../visit-tracker';
+import { recordVisit, getVisitCount, isRecurringVisitor, VISIT_SESSION_GAP_MS } from '../visit-tracker';
 
 const BASE = 1_750_000_000_000; // fixed epoch ms so tests don't rely on Date.now()
 
@@ -72,5 +72,31 @@ describe('recordVisit', () => {
     // Node test env has no localStorage global by default
     expect(recordVisit(BASE)).toBe(0);
     expect(getVisitCount()).toBe(0);
+  });
+});
+
+describe('isRecurringVisitor', () => {
+  it('compares the visit count against the configured threshold', () => {
+    // Visits below the threshold get the standard offer.
+    expect(isRecurringVisitor(1, 3)).toBe(false);
+    expect(isRecurringVisitor(2, 3)).toBe(false);
+    expect(isRecurringVisitor(3, 3)).toBe(true);
+    expect(isRecurringVisitor(12, 3)).toBe(true);
+  });
+
+  it('follows a threshold raised by an admin', () => {
+    // The threshold is admin config, so the same visit count flips with it.
+    expect(isRecurringVisitor(3, 5)).toBe(false);
+    expect(isRecurringVisitor(5, 5)).toBe(true);
+  });
+
+  it('handles a missing or zero count', () => {
+    expect(isRecurringVisitor(0, 3)).toBe(false);
+  });
+
+  it('never treats every visitor as recurring when the threshold is absent', () => {
+    // A zero threshold would otherwise make visit 0 qualify and hand the
+    // sweetened offer to everyone.
+    expect(isRecurringVisitor(1, 0)).toBe(false);
   });
 });

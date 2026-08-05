@@ -13,12 +13,10 @@ export interface DiscountPopupShownEvent {
     expires_at: string;
     is_lottery: boolean;
     lottery_source?: string;
-    /** Experiment variant ('control' | 'aggressive-20' | 'price-sensitive-30'); absent when not enrolled */
-    experiment_variant?: string;
-    /** True when PostHog assigned price-sensitive-30 to an ineligible visitor (served control instead) */
-    variant_downgraded?: boolean;
-    /** Why the visitor qualified for price-sensitive-30 ('low_income_country' = lower-income European country | 'recurring_visitor') */
+    /** Why the offer was sweetened — currently only 'recurring_visitor' */
     price_sensitivity_reason?: string;
+    /** Visit number this popup was shown on */
+    visit_count?: number;
     /** Whether the popup copy was personalized to the visitor's tech stack */
     personalized?: boolean;
     /** Detected framework used for personalization, e.g. 'react' */
@@ -31,7 +29,6 @@ export interface DiscountPopupDismissedEvent {
   properties: BaseEventProperties & {
     discount_code: string;
     time_remaining_seconds: number;
-    experiment_variant?: string;
   };
 }
 
@@ -40,7 +37,6 @@ export interface DiscountCodeCopiedEvent {
   properties: BaseEventProperties & {
     discount_code: string;
     time_remaining_seconds: number;
-    experiment_variant?: string;
   };
 }
 
@@ -57,7 +53,6 @@ export interface DiscountExpiredEvent {
   properties: BaseEventProperties & {
     discount_code: string;
     was_copied: boolean;
-    experiment_variant?: string;
   };
 }
 
@@ -70,14 +65,22 @@ export interface DiscountEmailCapturedEvent {
   };
 }
 
+/**
+ * Fired once per popup mount, before any delay. Records why a visitor was or
+ * wasn't offered a discount, and which visit this is — the counterpart to
+ * `visit_count` on checkout_completed, so you can compare visits-to-purchase
+ * for visitors who saw the offer against those who didn't.
+ */
 export interface DiscountEligibilityCheckedEvent {
   event: 'discount_eligibility_checked';
   properties: BaseEventProperties & {
     was_eligible: boolean;
-    had_cooldown: boolean;
-    was_force_shown: boolean;
     /** Popup permanently suppressed because this browser bought a ticket */
     is_known_ticket_holder?: boolean;
+    /** Popup permanently suppressed via an admin-issued corporate access link */
+    is_corporate_buyer?: boolean;
+    /** 3rd+ visit without a purchase — qualifies for the sweetened offer */
+    is_recurring_visitor?: boolean;
     /** Running visit count for this browser (localStorage-based) */
     visit_count?: number;
   };

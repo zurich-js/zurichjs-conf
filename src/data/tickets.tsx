@@ -356,6 +356,13 @@ export const mapStripePlanToTicketPlan = (
     hideStockBadge: isStudentUnemployed,
     cta: {
       type: 'button' as const,
+      // Only the plain add-to-cart path can reach checkout in this session;
+      // the other two open a modal and end the funnel there.
+      intent: waitlistSoldOutCta
+        ? ('waitlist' as const)
+        : isStudentUnemployed
+          ? ('student_verification' as const)
+          : ('add_to_cart' as const),
       onClick: () => {
         if (studentSoldOutCta) {
           // Open the info modal which has the subscribe form

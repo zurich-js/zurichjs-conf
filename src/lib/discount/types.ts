@@ -11,11 +11,8 @@ export interface DiscountData {
 }
 
 export interface DiscountConfig {
-  showProbability: number;
   percentOff: number;
   durationMinutes: number;
-  cooldownHours: number;
-  forceShow: boolean;
 }
 
 /**
@@ -27,17 +24,28 @@ export interface DiscountConfig {
 export interface ResolvedDiscountConfig extends DiscountConfig {
   abPercentOff: number;
   abDurationMinutes: number;
+  /**
+   * Sweetened offer for recurring visitors — someone on their 3rd+ visit who
+   * still hasn't bought is hesitating, and price is the most likely reason.
+   * Stored in the abc_* columns, which previously held the retired
+   * price-sensitive experiment variant.
+   */
+  recurringPercentOff: number;
+  recurringDurationMinutes: number;
+  /** Visit number at which the recurring offer kicks in */
+  recurringMinVisits: number;
   /** Where this config came from — 'env' means the DB fallback path was used */
   source: 'database' | 'env';
 }
 
 /** Client-safe subset served by GET /api/discount/config */
 export interface DiscountClientConfigResponse {
-  showProbability: number;
-  forceShow: boolean;
-  cooldownHours: number;
   /** Advertised offer (%) shown on the email-gate step before a code exists */
   offerPercentOff: number;
+  /** Advertised offer (%) for recurring visitors */
+  recurringOfferPercentOff: number;
+  /** Visit number at which the recurring offer kicks in */
+  recurringMinVisits: number;
 }
 
 export interface GenerateDiscountResponse {

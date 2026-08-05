@@ -38,6 +38,7 @@ export type {
   TicketValidatedEvent,
   TicketCheckedInEvent,
   TicketButtonClickedEvent,
+  TicketCtaIntent,
 } from './ticket-events';
 
 // Workshop events
@@ -129,8 +130,8 @@ export type {
   DiscountCodeCopiedEvent,
   DiscountWidgetClickedEvent,
   DiscountExpiredEvent,
-  DiscountEligibilityCheckedEvent,
   DiscountEmailCapturedEvent,
+  DiscountEligibilityCheckedEvent,
 } from './discount-events';
 
 // Easter egg events
@@ -234,8 +235,8 @@ import type {
   DiscountCodeCopiedEvent,
   DiscountWidgetClickedEvent,
   DiscountExpiredEvent,
-  DiscountEligibilityCheckedEvent,
   DiscountEmailCapturedEvent,
+  DiscountEligibilityCheckedEvent,
 } from './discount-events';
 import type {
   EasterEggShownEvent,
@@ -323,8 +324,8 @@ export type AnalyticsEvent =
   | DiscountCodeCopiedEvent
   | DiscountWidgetClickedEvent
   | DiscountExpiredEvent
-  | DiscountEligibilityCheckedEvent
   | DiscountEmailCapturedEvent
+  | DiscountEligibilityCheckedEvent
   | EasterEggShownEvent
   | EasterEggRewardCalledEvent
   | EasterEggAlreadyClaimedEvent

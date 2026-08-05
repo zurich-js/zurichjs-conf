@@ -7,7 +7,20 @@
  * Everyone gets the same offer (the former `aggressive-20` variant — the
  * A/B/C experiment concluded in its favor). The code is email-gated: the
  * popup first advertises the offer with an email field, and the code is only
- * generated once an email is submitted. Known ticket holders never see it.
+ * generated once an email is submitted.
+ *
+ * There is no eligibility lottery: every visitor who reaches a page where the
+ * popup mounts is offered the discount. Only two things suppress it — a
+ * browser that already bought a ticket or marked as a corporate buyer, and an
+ * explicit dismissal (which minimizes to the corner widget so the offer stays
+ * reachable).
+ *
+ * Timing and generosity vary by intent signal:
+ * - UTM lottery winners see it immediately at the lottery percentage
+ * - Recurring visitors (Nth+ visit, still no purchase) see it immediately at
+ *   the sweetened recurring rate — they've read the pitch and stalled. Both N
+ *   and the rate are admin config, not constants
+ * - Everyone else sees it after a 15s dwell at the standard rate
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -20,17 +33,17 @@ import {
   discountClientConfigQueryOptions,
 } from '@/lib/queries/discount';
 import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
-import { getClientConfig } from '@/lib/discount/config';
 import type { DiscountState, DiscountData } from '@/lib/discount/types';
 import {
-  hasCooldownCookie,
   hasDismissedCookie,
-  setCooldownCookie,
   setDismissedCookie,
   clearDiscountCookies,
   isKnownTicketHolder,
+  isCorporateBuyer,
+  isRecurringVisitor,
   buildDiscountPersonalization,
   recordVisit,
+  RECURRING_OFFER_DEFAULTS,
 } from '@/lib/discount';
 import {
   evaluateUtmLottery,
@@ -42,8 +55,6 @@ import { useCountdown, type TimeRemaining } from './useCountdown';
 
 // Constants
 const POPUP_DELAY_MS = 15_000; // 15 seconds
-/** Used only when the config API fails and we run on env fallbacks */
-const FALLBACK_COOLDOWN_HOURS = 6;
 /** Sentinel discount_code for popup events fired before a code exists */
 const EMAIL_GATE_CODE = 'email_gate';
 /** Advertised offer when the config API hasn't resolved (matches env default) */
@@ -60,6 +71,7 @@ const EMPTY_COUNTDOWN: TimeRemaining = {
 interface GenerateDiscountParams {
   email: string;
   lotteryPercentOff?: number;
+  visitCount?: number;
 }
 
 // API call — the offer itself is resolved server-side from the admin config;
@@ -67,9 +79,12 @@ interface GenerateDiscountParams {
 async function generateDiscount({
   email,
   lotteryPercentOff,
+  visitCount,
 }: GenerateDiscountParams): Promise<DiscountData> {
   const payload: Record<string, unknown> = { email };
   if (lotteryPercentOff) payload.percentOff = lotteryPercentOff;
+  // The server re-checks the threshold and picks the percentage itself.
+  if (visitCount) payload.visitCount = visitCount;
 
   const res = await fetch('/api/discount/generate', {
     method: 'POST',
@@ -91,7 +106,10 @@ export function useDiscount() {
   const isEligible = useRef(false);
   const lotteryResult = useRef<LotteryResult | null>(null);
   const pendingEmail = useRef<string | null>(null);
-  const [isLotteryReady, setIsLotteryReady] = useState(false);
+  const visits = useRef(0);
+  const isRecurring = useRef(false);
+  /** Bypasses the dwell delay — set by the UTM lottery or a recurring visitor. */
+  const [showImmediately, setShowImmediately] = useState(false);
   const [emailSubmitFailed, setEmailSubmitFailed] = useState(false);
   const [codeEmailed, setCodeEmailed] = useState(false);
 
@@ -104,25 +122,26 @@ export function useDiscount() {
     enabled: isClient,
   });
 
-  // Admin-managed popup config (probability, force show, cooldown). Falls
-  // back to env-based defaults if the API fails so the popup still works.
+  // Admin-managed popup config — now just the advertised offer percentage.
+  // The gate renders that number, so the popup waits for the query to settle
+  // (success or error) rather than flashing the fallback and correcting itself.
   const configQuery = useQuery({
     ...discountClientConfigQueryOptions,
     enabled: isClient,
   });
-  const config = useMemo(() => {
-    if (configQuery.data) return configQuery.data;
-    if (configQuery.isError) {
-      return { ...getClientConfig(), cooldownHours: FALLBACK_COOLDOWN_HOURS };
-    }
-    return null; // still loading — eligibility check waits
-  }, [configQuery.data, configQuery.isError]);
+  const configResolved = configQuery.isSuccess || configQuery.isError;
   const configOfferPercentOff = configQuery.data?.offerPercentOff ?? FALLBACK_OFFER_PERCENT;
+  const configRecurringPercentOff =
+    configQuery.data?.recurringOfferPercentOff ?? RECURRING_OFFER_DEFAULTS.percentOff;
+  const configRecurringMinVisits =
+    configQuery.data?.recurringMinVisits ?? RECURRING_OFFER_DEFAULTS.minVisits;
   // Lottery visitors won a specific percentage — the gate must advertise that
   // number, not the standard popup offer.
   const offerPercentOff = lotteryResult.current?.eligible
     ? lotteryResult.current.percentOff
-    : configOfferPercentOff;
+    : isRecurring.current
+      ? configRecurringPercentOff
+      : configOfferPercentOff;
 
   // Speaker lineup for tech-stack personalization. On the homepage (the only
   // place the popup mounts) this is already in the hydrated SSR cache.
@@ -170,69 +189,49 @@ export function useDiscount() {
   const fallbackExpiry = useRef(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
   const countdown = useCountdown(data?.expiresAt ?? fallbackExpiry.current);
 
-  // Determine eligibility once the admin-managed config has resolved
+  // Determine eligibility. Every visitor is offered the discount — the random
+  // show-probability roll and the cooldown cookie that used to suppress ~84% of
+  // exposures are gone. The only remaining suppression is a browser that
+  // already bought a ticket; a deliberate dismissal is handled separately by
+  // the dismissed cookie in `shouldTrigger` below.
   useEffect(() => {
-    if (!isClient || !config || flags.current.eligibilityChecked) return;
+    if (!isClient || !configResolved || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
 
-    // Count this visit so recurring non-buyers stay identifiable in analytics.
     const visitCount = recordVisit();
+    visits.current = visitCount;
 
-    const trackEligibility = (props: {
-      was_eligible: boolean;
-      had_cooldown: boolean;
-      was_force_shown: boolean;
-      is_known_ticket_holder?: boolean;
-    }) => analytics.track('discount_eligibility_checked', { ...props, visit_count: visitCount });
-
-    // Check UTM lottery first (overrides normal flow)
-    const utmParams = parseUtmParams(window.location.search);
-    const lottery = evaluateUtmLottery(utmParams);
-
+    // The UTM lottery still overrides the standard offer percentage and shows
+    // immediately instead of waiting out the dwell delay.
+    const lottery = evaluateUtmLottery(parseUtmParams(window.location.search));
     if (lottery.eligible) {
-      isEligible.current = true;
       lotteryResult.current = lottery;
-      setIsLotteryReady(true); // Trigger immediate display
-      trackEligibility({ was_eligible: true, had_cooldown: false, was_force_shown: false });
-      return;
+      setShowImmediately(true);
     }
 
-    if (config.forceShow) {
-      isEligible.current = true;
-      trackEligibility({ was_eligible: true, had_cooldown: false, was_force_shown: true });
-      return;
+    // A visitor back for a third look who still hasn't bought is hesitating.
+    // Price is the likeliest reason, so skip the dwell delay and lead with the
+    // sweetened offer instead of making them sit through 15s again.
+    if (isRecurringVisitor(visitCount, configRecurringMinVisits)) {
+      isRecurring.current = true;
+      setShowImmediately(true);
     }
 
-    // Never offer a discount to someone who already bought a ticket
-    if (isKnownTicketHolder()) {
-      isEligible.current = false;
-      trackEligibility({
-        was_eligible: false,
-        had_cooldown: false,
-        was_force_shown: false,
-        is_known_ticket_holder: true,
-      });
-      return;
-    }
+    // Never offer a discount to someone who already bought a ticket, or to a
+    // corporate buyer spending a training budget — they book at the standard
+    // rate either way, so the offer is pure margin loss.
+    const isTicketHolder = isKnownTicketHolder();
+    const isCorporate = isCorporateBuyer();
+    isEligible.current = !isTicketHolder && !isCorporate;
 
-    if (hasCooldownCookie()) {
-      isEligible.current = false;
-      trackEligibility({ was_eligible: false, had_cooldown: true, was_force_shown: false });
-      return;
-    }
-
-    isEligible.current = Math.random() < config.showProbability;
-
-    if (!isEligible.current) {
-      setCooldownCookie(config.cooldownHours);
-    }
-
-    trackEligibility({
+    analytics.track('discount_eligibility_checked', {
       was_eligible: isEligible.current,
-      had_cooldown: false,
-      was_force_shown: false,
+      is_known_ticket_holder: isTicketHolder,
+      is_corporate_buyer: isCorporate,
+      is_recurring_visitor: isRecurring.current,
+      visit_count: visitCount,
     });
-  }, [isClient, config]);
+  }, [isClient, configResolved, configRecurringMinVisits]);
 
   // Restore minimized state from existing discount
   useEffect(() => {
@@ -247,11 +246,11 @@ export function useDiscount() {
   }, [statusData, data]);
 
   // Show popup after delay if eligible (lottery shows immediately, normal has
-  // 15s delay). Waits for the config to resolve so the eligibility check has
-  // run before the timer fires.
+  // 15s delay). Waits for the config to resolve so the gate advertises the
+  // real offer percentage.
   const shouldTrigger =
-    isClient && !isLoading && config !== null && state === 'idle' && !statusData?.active && !hasDismissedCookie();
-  const delayMs = isLotteryReady ? 0 : POPUP_DELAY_MS;
+    isClient && !isLoading && configResolved && state === 'idle' && !statusData?.active && !hasDismissedCookie();
+  const delayMs = showImmediately ? 0 : POPUP_DELAY_MS;
 
   useTimeout(() => {
     if (!isEligible.current || data || isPending) return;
@@ -273,6 +272,8 @@ export function useDiscount() {
       expires_at: '',
       is_lottery: lotteryResult.current?.eligible ?? false,
       lottery_source: lotteryResult.current?.source,
+      price_sensitivity_reason: isRecurring.current ? 'recurring_visitor' : undefined,
+      visit_count: visits.current,
       personalized: personalization !== null,
       detected_stack: personalization?.stack,
     });
@@ -300,6 +301,7 @@ export function useDiscount() {
       lotteryPercentOff: lotteryResult.current?.eligible
         ? lotteryResult.current.percentOff
         : undefined,
+      visitCount: visits.current,
     });
   }, [data, isPending, mutate]);
 

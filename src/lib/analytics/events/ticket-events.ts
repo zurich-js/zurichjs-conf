@@ -91,6 +91,15 @@ export interface TicketPurchasedEvent {
     UserProperties & {
       attendee_count: number;
       attendee_names?: string[];
+      /**
+       * Who paid. One event fires per attendee, so on a team order the
+       * attendee emails differ from the buyer's — and the buyer is the person
+       * who actually walked the funnel. Tracked as the distinct id too, so
+       * purchase joins onto the same PostHog person as `checkout_started`.
+       */
+      buyer_email?: string;
+      /** True when this attendee is someone other than the buyer */
+      is_gift_seat?: boolean;
     };
 }
 
@@ -122,6 +131,18 @@ export interface TicketCheckedInEvent {
   };
 }
 
+/**
+ * What the clicked ticket CTA actually does. Three very different actions used
+ * to be reported identically, so funnels treated them as one intent:
+ * - `add_to_cart` — the only path that can reach checkout in this session
+ * - `student_verification` — opens the verification modal; the visitor cannot
+ *   buy until they're verified, so they never continue the funnel today
+ * - `waitlist` — sold-out tier, opens a "get notified" form; can never convert
+ *
+ * Filter to `add_to_cart` before reading any click→checkout conversion rate.
+ */
+export type TicketCtaIntent = 'add_to_cart' | 'student_verification' | 'waitlist';
+
 export interface TicketButtonClickedEvent {
   event: 'ticket_button_clicked';
   properties: BaseEventProperties &
@@ -129,5 +150,6 @@ export interface TicketButtonClickedEvent {
       button_location: 'price_card' | 'tickets_section' | 'other';
       ticket_type: string;
       is_sold_out?: boolean;
+      cta_intent?: TicketCtaIntent;
     };
 }

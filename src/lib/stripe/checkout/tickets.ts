@@ -272,9 +272,16 @@ async function trackTicketPurchasesAndNewsletterSignups(
   ticketInfo: { category: TicketCategory; stage: TicketStage },
   session: Stripe.Checkout.Session
 ): Promise<void> {
+  // Attribute the purchase to the buyer, not the seat holder. One event fires
+  // per attendee, and keying them on attendee emails meant a team order landed
+  // on PostHog persons who had never fired `checkout_started` — so the last
+  // funnel step silently under-reported every multi-seat purchase. The attendee
+  // is still on the event via `email`.
+  const buyerEmail = session.customer_details?.email?.trim().toLowerCase();
+
   for (const result of ticketResults) {
     if (result.success && result.ticket) {
-      await serverAnalytics.track('ticket_purchased', result.attendee.email, {
+      await serverAnalytics.track('ticket_purchased', buyerEmail || result.attendee.email, {
         ticket_id: result.ticket.id,
         ticket_category: ticketInfo.category,
         ticket_stage: ticketInfo.stage,
@@ -283,6 +290,8 @@ async function trackTicketPurchasesAndNewsletterSignups(
         ticket_count: 1,
         attendee_count: ticketResults.length,
         email: result.attendee.email,
+        buyer_email: buyerEmail,
+        is_gift_seat: Boolean(buyerEmail) && buyerEmail !== result.attendee.email.trim().toLowerCase(),
         company: result.attendee.company,
         payment_status: 'succeeded',
         stripe_session_id: session.id,

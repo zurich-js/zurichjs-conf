@@ -1,8 +1,19 @@
 export { DiscountConfigTab } from './DiscountConfigTab';
-export { useDiscountConfig, useUpdateDiscountConfig } from './hooks';
+export { CorporateAccessSection } from './CorporateAccessSection';
+export {
+  useDiscountConfig,
+  useUpdateDiscountConfig,
+  useCreateCorporateLink,
+} from './hooks';
 export {
   fetchDiscountConfigApi,
   updateDiscountConfigApi,
+  createCorporateLinkApi,
   discountAdminQueryKeys,
 } from './api';
-export type { DiscountConfigRow, DiscountConfigUpdateInput } from './types';
+export type {
+  DiscountConfigRow,
+  DiscountConfigUpdateInput,
+  CorporateLinkInput,
+  CorporateLinkResponse,
+} from './types';

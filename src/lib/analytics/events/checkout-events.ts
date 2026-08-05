@@ -24,6 +24,8 @@ export interface CheckoutStartedEvent {
     coupon_code?: string;
     purchase_type?: 'ticket' | 'workshop' | 'mixed';
     payment_ui?: 'embedded_checkout' | 'hosted_checkout';
+    /** Visits before this checkout began — how long the decision took */
+    visit_count?: number;
   };
 }
 
@@ -38,6 +40,8 @@ export interface CheckoutCompletedEvent {
       ticket_count?: number;
       workshop_count?: number;
       seat_count?: number;
+      /** Visits before converting — the headline "visits until purchase" figure */
+      visit_count?: number;
     };
 }
 

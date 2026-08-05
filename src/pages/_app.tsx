@@ -133,8 +133,18 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
   const showNavBar = !router.pathname.startsWith('/admin');
 
   // Discount popup mounts on the high-traffic content pages, not just the
-  // homepage — /speakers alone starts 16% of sessions.
-  const showDiscount = ['/', '/speakers', '/workshops', '/schedule'].includes(router.pathname);
+  // homepage — /speakers alone starts 16% of sessions. The individual speaker
+  // and workshop pages are included too: they're strong pre-purchase intent
+  // signals and were previously the biggest slice of traffic that could never
+  // see the offer, since only the index routes matched.
+  const showDiscount = [
+    '/',
+    '/speakers',
+    '/speakers/[slug]',
+    '/workshops',
+    '/workshops/[slug]',
+    '/schedule',
+  ].includes(router.pathname);
 
   return (
     <>

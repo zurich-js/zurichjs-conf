@@ -1,15 +1,16 @@
 /**
  * Discount Config Tab
- * Admin configuration for the discount popup: show behavior plus the single
- * live offer (the former aggressive-20 experiment winner, stored in the
- * ab_* columns). Replaces the DISCOUNT_* env vars (which remain as fallback
- * only). The retired control/price-sensitive variant columns still exist in
- * the DB but are no longer editable here.
+ * Admin configuration for the discount popup: the single live offer (the former
+ * aggressive-20 experiment winner, stored in the ab_* columns), plus corporate
+ * access links. Replaces the DISCOUNT_* env vars (which remain as fallback
+ * only). The retired variant and eligibility-gating columns still exist in the
+ * DB but are no longer read or editable.
  */
 
 import { useState, useEffect } from 'react';
 import { Percent, Save, Info } from 'lucide-react';
 import { AdminErrorState } from '@/components/admin/AdminErrorState';
+import { CorporateAccessSection } from './CorporateAccessSection';
 import { useDiscountConfig, useUpdateDiscountConfig } from './hooks';
 import type { DiscountConfigRow } from './types';
 
@@ -50,28 +51,28 @@ interface ConfigFormProps {
 }
 
 function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
-  const [showProbability, setShowProbability] = useState(config.show_probability);
-  const [cooldownHours, setCooldownHours] = useState(config.cooldown_hours);
-  const [forceShow, setForceShow] = useState(config.force_show);
   const [abPercentOff, setAbPercentOff] = useState(config.ab_percent_off);
   const [abDurationMinutes, setAbDurationMinutes] = useState(config.ab_duration_minutes);
+  const [abcPercentOff, setAbcPercentOff] = useState(config.abc_percent_off);
+  const [abcDurationMinutes, setAbcDurationMinutes] = useState(config.abc_duration_minutes);
+  const [recurringMinVisits, setRecurringMinVisits] = useState(config.recurring_min_visits);
 
   // Sync when config changes externally
   useEffect(() => {
-    setShowProbability(config.show_probability);
-    setCooldownHours(config.cooldown_hours);
-    setForceShow(config.force_show);
     setAbPercentOff(config.ab_percent_off);
     setAbDurationMinutes(config.ab_duration_minutes);
+    setAbcPercentOff(config.abc_percent_off);
+    setAbcDurationMinutes(config.abc_duration_minutes);
+    setRecurringMinVisits(config.recurring_min_visits);
   }, [config]);
 
   const handleSave = () => {
     onSave({
-      show_probability: showProbability,
-      cooldown_hours: cooldownHours,
-      force_show: forceShow,
       ab_percent_off: abPercentOff,
       ab_duration_minutes: abDurationMinutes,
+      abc_percent_off: abcPercentOff,
+      abc_duration_minutes: abcDurationMinutes,
+      recurring_min_visits: recurringMinVisits,
     });
   };
 
@@ -92,41 +93,6 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
 
       <div className="space-y-6">
         <section>
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">Popup behavior</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <NumberField
-              label="Show probability"
-              suffix="0–1"
-              min={0}
-              max={1}
-              step={0.05}
-              value={showProbability}
-              onChange={setShowProbability}
-            />
-            <NumberField
-              label="Cooldown"
-              suffix="hours"
-              min={1}
-              value={cooldownHours}
-              onChange={setCooldownHours}
-            />
-            <div className="flex items-end pb-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={forceShow}
-                  onChange={(e) => setForceShow(e.target.checked)}
-                  className="rounded text-brand-primary focus:ring-brand-primary"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Force show (testing / promotions)
-                </span>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        <section>
           <h4 className="text-sm font-semibold text-gray-900 mb-3">Popup offer</h4>
           <p className="text-xs text-gray-500 mb-3">
             Every visitor who unlocks the popup with their email gets this offer.
@@ -146,6 +112,43 @@ function ConfigForm({ config, onSave, isSaving }: ConfigFormProps) {
               min={1}
               value={abDurationMinutes}
               onChange={setAbDurationMinutes}
+            />
+          </div>
+        </section>
+
+        <section>
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">
+            Recurring-visitor offer
+          </h4>
+          <p className="text-xs text-gray-500 mb-3">
+            A visitor who keeps coming back without buying is hesitating, so they get
+            this offer instead — shown immediately rather than after the usual
+            15-second delay. Set the discount equal to the standard offer to switch the
+            behaviour off.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <NumberField
+              label="Kicks in on visit"
+              suffix="visits"
+              min={2}
+              max={50}
+              value={recurringMinVisits}
+              onChange={setRecurringMinVisits}
+            />
+            <NumberField
+              label="Discount"
+              suffix="%"
+              min={1}
+              max={100}
+              value={abcPercentOff}
+              onChange={setAbcPercentOff}
+            />
+            <NumberField
+              label="Validity"
+              suffix="minutes"
+              min={1}
+              value={abcDurationMinutes}
+              onChange={setAbcDurationMinutes}
             />
           </div>
         </section>
@@ -181,18 +184,25 @@ export function DiscountConfigTab() {
 
   if (isError || !config) {
     return (
-      <AdminErrorState
-        message="Failed to load the discount configuration"
-        onRetry={() => refetch()}
-      />
+      <>
+        <AdminErrorState
+          message="Failed to load the discount configuration"
+          onRetry={() => refetch()}
+        />
+        {/* Independent of the config row, so it stays usable during an outage */}
+        <CorporateAccessSection />
+      </>
     );
   }
 
   return (
-    <ConfigForm
-      config={config}
-      onSave={(updates) => updateMutation.mutate(updates)}
-      isSaving={updateMutation.isPending}
-    />
+    <>
+      <ConfigForm
+        config={config}
+        onSave={(updates) => updateMutation.mutate(updates)}
+        isSaving={updateMutation.isPending}
+      />
+      <CorporateAccessSection />
+    </>
   );
 }

@@ -7,12 +7,16 @@ import { FeatureList, Feature } from './FeatureList';
 import {CrownIcon} from "lucide-react";
 import {Heading} from "@/components/atoms";
 import { analytics } from '@/lib/analytics/client';
-import type { EventProperties } from '@/lib/analytics/events';
+import type { EventProperties, TicketCtaIntent } from '@/lib/analytics/events';
 import { mapVariantToCategory } from '@/lib/analytics/helpers';
 
+/** What this CTA does, so click analytics can separate real buying intent
+ *  from verification and waitlist clicks. Defaults to 'add_to_cart'. */
+type CtaIntent = { intent?: TicketCtaIntent };
+
 export type CTA =
-  | { type: 'link'; href: string; label: string; disabled?: boolean }
-  | { type: 'button'; onClick: () => void; label: string; disabled?: boolean; loading?: boolean };
+  | ({ type: 'link'; href: string; label: string; disabled?: boolean } & CtaIntent)
+  | ({ type: 'button'; onClick: () => void; label: string; disabled?: boolean; loading?: boolean } & CtaIntent);
 
 /**
  * Stock availability info
@@ -109,6 +113,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
       currency,
       ticket_count: 1,
       is_sold_out: cta.disabled || false,
+      cta_intent: cta.intent ?? 'add_to_cart',
     } as EventProperties<'ticket_button_clicked'>);
 
     // Call original onClick if it's a button

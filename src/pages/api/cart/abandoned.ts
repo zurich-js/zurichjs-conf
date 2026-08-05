@@ -56,7 +56,11 @@ const GOODIE_VALID_HOURS = 2;
 const limiter = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
 
 const bodySchema = z.object({
-  email: z.string().trim().email().max(254),
+  // Lower-cased on the way in: the purchase webhook cancels scheduled touches
+  // with an exact `.eq('email', ...)` match, so a visitor who typed
+  // "Ada@Example.com" here and "ada@example.com" at checkout used to keep
+  // receiving "you forgot something" mail after buying.
+  email: z.string().trim().toLowerCase().email().max(254),
   firstName: z.string().trim().max(100).optional(),
   cartItems: z
     .array(

@@ -1483,6 +1483,7 @@ export type Database = {
           force_show: boolean
           id: string
           percent_off: number
+          recurring_min_visits: number
           show_probability: number
           singleton: boolean
           updated_at: string
@@ -1497,6 +1498,7 @@ export type Database = {
           force_show?: boolean
           id?: string
           percent_off?: number
+          recurring_min_visits?: number
           show_probability?: number
           singleton?: boolean
           updated_at?: string
@@ -1511,6 +1513,7 @@ export type Database = {
           force_show?: boolean
           id?: string
           percent_off?: number
+          recurring_min_visits?: number
           show_probability?: number
           singleton?: boolean
           updated_at?: string
