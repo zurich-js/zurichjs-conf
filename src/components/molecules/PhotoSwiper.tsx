@@ -36,6 +36,8 @@ export type PhotoLayout =
 
 export interface PhotoSlide {
   id: string;
+  /** Renders a landscape slide at its natural 3:2 aspect ratio. */
+  featured?: boolean;
   layout: PhotoLayout;
 }
 
@@ -98,7 +100,7 @@ export const PhotoSwiper: React.FC<PhotoSwiperProps> = ({ photos, className = ''
         {photos.slice(0, 3).map((photo) => (
           <div
             key={photo.id}
-            className="flex-shrink-0 w-[400px] h-[500px] bg-brand-black animate-pulse"
+            className={`flex-shrink-0 bg-brand-black animate-pulse ${getSlideSizeClass(photo.featured)}`}
             aria-hidden="true"
           />
         ))}
@@ -147,7 +149,7 @@ export const PhotoSwiper: React.FC<PhotoSwiperProps> = ({ photos, className = ''
         return (
           <SwiperSlide key={photo.id} className="!w-auto !h-auto">
             <motion.div
-              className="w-[400px] h-[500px] overflow-hidden"
+              className={`${getSlideSizeClass(photo.featured)} overflow-hidden`}
               initial={shouldAnimate ? { opacity: 0, scale: 0.95 } : false}
               animate={shouldAnimate ? { opacity: 1, scale: 1 } : {}}
               transition={{
@@ -157,7 +159,11 @@ export const PhotoSwiper: React.FC<PhotoSwiperProps> = ({ photos, className = ''
               }}
               >
                 {photo.layout.type === 'single' && (
-                  <SinglePhotoLayout image={photo.layout.image} alt={photo.layout.alt} />
+                  <SinglePhotoLayout
+                    image={photo.layout.image}
+                    alt={photo.layout.alt}
+                    featured={photo.featured}
+                  />
                 )}
                 {photo.layout.type === 'double-vertical' && (
                   <DoubleVerticalPhotoLayout top={photo.layout.top} bottom={photo.layout.bottom} />
@@ -176,6 +182,10 @@ export const PhotoSwiper: React.FC<PhotoSwiperProps> = ({ photos, className = ''
   );
 };
 
+const getSlideSizeClass = (featured = false): string =>
+  featured
+    ? 'w-[min(88vw,750px)] h-[min(58.667vw,500px)]'
+    : 'w-[min(88vw,400px)] h-[min(110vw,500px)]';
 
 /**
  * Photo layout components for manual masonry gallery
@@ -203,19 +213,26 @@ const getHeightClass = (height: '1/3' | '2/3' | 'full'): string => {
 export interface SinglePhotoLayoutProps {
   image: string;
   alt: string;
+  featured?: boolean;
 }
 
 /**
  * SinglePhotoLayout - One full-size image
  */
-export const SinglePhotoLayout: React.FC<SinglePhotoLayoutProps> = ({ image, alt }) => {
+export const SinglePhotoLayout: React.FC<SinglePhotoLayoutProps> = ({
+  image,
+  alt,
+  featured = false,
+}) => {
   return (
     <div className="relative w-full h-full">
       <Image
         src={image}
         alt={alt}
         fill
-        className="object-cover opacity-100 sm:opacity-100 sm:opacity-40 hover:opacity-100 transition-opacity duration-500 rounded-xl"
+        className={`object-cover transition-opacity duration-500 rounded-xl ${
+          featured ? 'opacity-100' : 'opacity-100 sm:opacity-40 hover:opacity-100'
+        }`}
         sizes="(max-width: 640px) 80vw, (max-width: 1024px) 60vw, 40vw"
       />
     </div>
