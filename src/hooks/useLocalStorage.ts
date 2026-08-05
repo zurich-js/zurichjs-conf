@@ -1,14 +1,18 @@
 /**
- * useLocalStorage — Type-safe localStorage hook with TTL support.
+ * useLocalStorage — Type-safe web-storage hook with TTL support.
  *
- * Reads from localStorage on mount, writes on setter calls.
- * Automatically expires entries after the configured TTL.
+ * Reads on mount, writes on setter calls, and auto-expires entries after the
+ * configured TTL. Keys are constrained to the LocalStorageKey union to prevent
+ * typos and ensure discoverability.
  *
- * Keys are constrained to the LocalStorageKey union to prevent typos
- * and ensure discoverability.
+ * Backing store is chosen per key (see STORAGE_BACKEND): keys holding attendee
+ * or billing PII use sessionStorage so the data clears when the tab closes and
+ * never lingers on a shared machine; keys that must survive across sessions
+ * (cart recovery) use localStorage. Choosing the store by key — not per call —
+ * means two call sites for the same key can't split its data across two stores.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { CartStep } from '@/components/cart/types';
 import type { AttendeeInfo, CheckoutFormData } from '@/lib/validations/checkout';
 import type { Cart } from '@/types/cart';
@@ -38,6 +42,36 @@ interface LocalStorageSchema {
 
 export type LocalStorageKey = keyof LocalStorageSchema;
 
+type StorageBackend = 'local' | 'session';
+
+/**
+ * Which backing store each key uses.
+ *
+ * - `session` — holds personal data (billing details, attendee names/emails).
+ *   sessionStorage clears when the tab closes, so PII doesn't sit on a shared
+ *   or kiosk browser after the visitor walks away. The in-tab "check the refund
+ *   policy and come back" flow still works; only closing the tab drops it, and
+ *   the abandonment email covers the come-back-later case.
+ * - `local` — must survive across sessions. Cart recovery and a parked voucher
+ *   are the whole point of persisting past a tab close.
+ *
+ * Keys not listed default to localStorage.
+ */
+const STORAGE_BACKEND: Partial<Record<LocalStorageKey, StorageBackend>> = {
+  zurichjs_billing_data: 'session',
+  zurichjs_checkout_progress: 'session',
+};
+
+function resolveStore(key: LocalStorageKey): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return STORAGE_BACKEND[key] === 'session' ? window.sessionStorage : window.localStorage;
+  } catch {
+    // Access to web storage can throw under strict privacy settings.
+    return null;
+  }
+}
+
 // ── Internal envelope ──────────────────────────────────────────────────────────
 
 interface StoredEntry<T> {
@@ -48,7 +82,7 @@ interface StoredEntry<T> {
 // ── Hook ───────────────────────────────────────────────────────────────────────
 
 /**
- * @param key     One of the registered localStorage keys
+ * @param key     One of the registered storage keys
  * @param ttlMs   Time-to-live in milliseconds (default: 2 hours)
  */
 export function useLocalStorage<K extends LocalStorageKey>(
@@ -58,13 +92,14 @@ export function useLocalStorage<K extends LocalStorageKey>(
   type V = LocalStorageSchema[K];
 
   const [storedValue, setStoredValue] = useState<V | undefined>(() => {
-    if (typeof window === 'undefined') return undefined;
+    const store = resolveStore(key);
+    if (!store) return undefined;
     try {
-      const raw = localStorage.getItem(key);
+      const raw = store.getItem(key);
       if (!raw) return undefined;
       const entry: StoredEntry<V> = JSON.parse(raw);
       if (Date.now() > entry.expiresAt) {
-        localStorage.removeItem(key);
+        store.removeItem(key);
         return undefined;
       }
       return entry.data;
@@ -73,17 +108,33 @@ export function useLocalStorage<K extends LocalStorageKey>(
     }
   });
 
+  // One-time hygiene: session-backed keys previously lived in localStorage.
+  // Purge any leftover copy so pre-migration PII doesn't outlive its purpose in
+  // the more persistent store.
+  useEffect(() => {
+    if (typeof window === 'undefined' || STORAGE_BACKEND[key] !== 'session') return;
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      /* noop */
+    }
+  }, [key]);
+
   const setValue = useCallback((value: V) => {
     setStoredValue(value);
+    const store = resolveStore(key);
+    if (!store) return;
     try {
       const entry: StoredEntry<V> = { data: value, expiresAt: Date.now() + ttlMs };
-      localStorage.setItem(key, JSON.stringify(entry));
+      store.setItem(key, JSON.stringify(entry));
     } catch { /* storage full or unavailable */ }
   }, [key, ttlMs]);
 
   const removeValue = useCallback(() => {
     setStoredValue(undefined);
-    try { localStorage.removeItem(key); } catch { /* noop */ }
+    const store = resolveStore(key);
+    if (!store) return;
+    try { store.removeItem(key); } catch { /* noop */ }
   }, [key]);
 
   return [storedValue, setValue, removeValue];
