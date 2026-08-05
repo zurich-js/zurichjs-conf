@@ -51,6 +51,15 @@ export const sponsorsData: SponsorsSectionProps = {
     },
     {
       id: 'photo-1',
+      featured: true,
+      layout: {
+        type: 'single',
+        image: '/images/open-source-award-winner.png',
+        alt: 'ZurichJS co-founder Faris Aziz receiving the JS Open Source Award trophy for Most Impactful community of the year on behalf of ZurichJS from Scott Tolinski and CJ Reynolds',
+      },
+    },
+    {
+      id: 'photo-2',
       layout: {
         type: 'single',
         image: '/images/meetups/nico.jpg',
@@ -58,7 +67,7 @@ export const sponsorsData: SponsorsSectionProps = {
       },
     },
     {
-      id: 'photo-2',
+      id: 'photo-3',
       layout: {
         type: 'double-vertical',
         top: {
@@ -74,7 +83,7 @@ export const sponsorsData: SponsorsSectionProps = {
       }
     },
     {
-      id: 'photo-3',
+      id: 'photo-4',
       layout: {
         type: 'double-vertical',
         top: {
@@ -90,7 +99,7 @@ export const sponsorsData: SponsorsSectionProps = {
       }
     },
     {
-      id: 'photo-4',
+      id: 'photo-5',
       layout: {
           type: 'single',
           image: '/images/meetups/jens.png',
