@@ -44,7 +44,8 @@ export function CorporateAccessSection() {
       <p className="text-sm text-gray-600 mb-4">
         Teams buying on a training budget aren&apos;t price sensitive. Send this link to
         the contact and the discount popup stops appearing on any browser that opens
-        it — no code for them to enter, nothing to remember.
+        it — no code for them to enter, nothing to remember. To them it just looks
+        like a link to the tickets; nothing on the page mentions corporate access.
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 items-end">

@@ -34,7 +34,8 @@ export function isCorporateBuyer(): boolean {
 
 /**
  * Marks this browser (and the identified PostHog person) as a corporate buyer.
- * Called from the corporate access page once the signed code is verified.
+ * Called from `/corporate/<code>` on the way through to the ticket section,
+ * once the signed code has been verified server-side.
  *
  * @param label Free-text organisation label from the code, for analytics only.
  */
