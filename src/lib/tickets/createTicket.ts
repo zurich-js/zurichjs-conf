@@ -99,6 +99,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       amount_paid: params.amountPaid,
       currency: params.currency,
       status: params.status || 'confirmed',
+      legacy_manage_token_valid: false,
       metadata: (params.metadata || {}) as Json,
       // Partnership tracking fields
       coupon_code: params.couponCode || null,

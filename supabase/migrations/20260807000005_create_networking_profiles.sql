@@ -44,6 +44,7 @@ BEGIN
     (OLD.first_name, OLD.last_name, OLD.email)
   THEN
     NEW.manage_token_nonce := gen_random_uuid();
+    NEW.legacy_manage_token_valid := FALSE;
   END IF;
 
   RETURN NEW;

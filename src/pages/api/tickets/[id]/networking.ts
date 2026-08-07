@@ -5,7 +5,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyOrderTokenClaims } from '@/lib/auth/orderToken';
+import { verifyOrderTokenClaimsForCurrentTicket } from '@/lib/auth/orderTokenServer';
 import { logger } from '@/lib/logger';
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { AttendeeNetworkingProfile, NetworkingSettings } from '@/lib/types/networking';
@@ -41,7 +41,9 @@ export default async function handler(
       ? (req.body as { token: string }).token
       : '';
   const tokenClaims =
-    untrustedToken.length <= 256 ? verifyOrderTokenClaims(untrustedToken) : null;
+    untrustedToken.length <= 256
+      ? await verifyOrderTokenClaimsForCurrentTicket(untrustedToken)
+      : null;
   if (!tokenClaims) {
     res.status(401).json({ error: 'Invalid or expired token' });
     return;

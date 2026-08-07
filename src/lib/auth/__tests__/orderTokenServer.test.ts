@@ -13,6 +13,7 @@ vi.mock('@/lib/supabase', () => ({
   createServiceRoleClient: mocks.createServiceRoleClient,
 }));
 
+import crypto from 'crypto';
 import { generateOrderToken } from '@/lib/auth/orderToken';
 import { verifyOrderTokenForCurrentTicket } from '@/lib/auth/orderTokenServer';
 
@@ -39,7 +40,7 @@ describe('verifyOrderTokenForCurrentTicket', () => {
     mocks.select.mockReturnValue(builder);
     mocks.eq.mockReturnValue(builder);
     mocks.maybeSingle.mockResolvedValue({
-      data: { manage_token_nonce: CURRENT_NONCE },
+      data: { manage_token_nonce: CURRENT_NONCE, legacy_manage_token_valid: true },
       error: null,
     });
   });
@@ -53,18 +54,36 @@ describe('verifyOrderTokenForCurrentTicket', () => {
 
     await expect(verifyOrderTokenForCurrentTicket(token)).resolves.toBe(TICKET_ID);
     expect(mocks.from).toHaveBeenCalledWith('tickets');
-    expect(mocks.select).toHaveBeenCalledWith('manage_token_nonce');
+    expect(mocks.select).toHaveBeenCalledWith(
+      'manage_token_nonce, legacy_manage_token_valid'
+    );
     expect(mocks.eq).toHaveBeenCalledWith('id', TICKET_ID);
   });
 
   it('invalidates a previously valid link after reassignment rotates the nonce', async () => {
     const oldToken = generateOrderToken(TICKET_ID, CURRENT_NONCE);
     mocks.maybeSingle.mockResolvedValue({
-      data: { manage_token_nonce: ROTATED_NONCE },
+      data: { manage_token_nonce: ROTATED_NONCE, legacy_manage_token_valid: false },
       error: null,
     });
 
     await expect(verifyOrderTokenForCurrentTicket(oldToken)).resolves.toBeNull();
+  });
+
+  it('preserves old emailed links only while the compatibility flag is enabled', async () => {
+    const signature = crypto
+      .createHmac('sha256', 'current-secret')
+      .update(TICKET_ID)
+      .digest('base64url');
+    const legacyToken = `${TICKET_ID}.${signature}`;
+
+    await expect(verifyOrderTokenForCurrentTicket(legacyToken)).resolves.toBe(TICKET_ID);
+
+    mocks.maybeSingle.mockResolvedValue({
+      data: { manage_token_nonce: ROTATED_NONCE, legacy_manage_token_valid: false },
+      error: null,
+    });
+    await expect(verifyOrderTokenForCurrentTicket(legacyToken)).resolves.toBeNull();
   });
 
   it('does not query for a malformed ticket ID', async () => {

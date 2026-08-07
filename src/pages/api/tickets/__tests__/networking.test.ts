@@ -5,8 +5,9 @@ const mockVerifyOrderTokenClaims = vi.fn();
 const mockRpc = vi.fn();
 const mockRpcSingle = vi.fn();
 
-vi.mock('@/lib/auth/orderToken', () => ({
-  verifyOrderTokenClaims: (...args: unknown[]) => mockVerifyOrderTokenClaims(...args),
+vi.mock('@/lib/auth/orderTokenServer', () => ({
+  verifyOrderTokenClaimsForCurrentTicket: (...args: unknown[]) =>
+    mockVerifyOrderTokenClaims(...args),
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -62,7 +63,7 @@ describe('POST /api/tickets/[id]/networking', () => {
     mockVerifyOrderTokenClaims.mockReset();
     mockRpc.mockReset();
     mockRpcSingle.mockReset();
-    mockVerifyOrderTokenClaims.mockReturnValue({
+    mockVerifyOrderTokenClaims.mockResolvedValue({
       ticketId: TICKET_ID,
       manageTokenNonce: MANAGE_TOKEN_NONCE,
     });
@@ -86,7 +87,7 @@ describe('POST /api/tickets/[id]/networking', () => {
   });
 
   it('authenticates before validating the profile payload', async () => {
-    mockVerifyOrderTokenClaims.mockReturnValue(null);
+    mockVerifyOrderTokenClaims.mockResolvedValue(null);
     const res = makeRes();
     await handler(makeReq({ enabled: true, profile: PROFILE }), res);
 
@@ -104,8 +105,8 @@ describe('POST /api/tickets/[id]/networking', () => {
 
   it('rejects an invalid or mismatched order token before mutation', async () => {
     mockVerifyOrderTokenClaims
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce({
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
         ticketId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
         manageTokenNonce: MANAGE_TOKEN_NONCE,
       });

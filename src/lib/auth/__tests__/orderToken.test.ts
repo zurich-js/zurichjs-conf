@@ -9,6 +9,7 @@ import {
   extractTicketIdUnverified,
   generateOrderToken,
   generateOrderUrl,
+  verifyLegacyOrderToken,
   verifyOrderToken,
   verifyOrderTokenClaims,
 } from '@/lib/auth/orderToken';
@@ -109,6 +110,12 @@ describe('orderToken', () => {
       expect(verifyOrderToken(`not-a-uuid.${MANAGE_TOKEN_NONCE}.signature`, MANAGE_TOKEN_NONCE)).toBeNull();
       expect(verifyOrderToken(`${TICKET_ID}.not-a-uuid.signature`, MANAGE_TOKEN_NONCE)).toBeNull();
       expect(verifyOrderToken('', MANAGE_TOKEN_NONCE)).toBeNull();
+    });
+
+    it('authenticates legacy signatures for server-side compatibility checks', () => {
+      expect(verifyLegacyOrderToken(legacySignWith(TICKET_ID, 'current-secret'))).toBe(TICKET_ID);
+      expect(verifyLegacyOrderToken(legacySignWith(TICKET_ID, 'wrong-secret'))).toBeNull();
+      expect(verifyLegacyOrderToken(`${TICKET_ID}.bad.extra`)).toBeNull();
     });
 
     it('rejects unknown secrets and truncated signatures without throwing', () => {
