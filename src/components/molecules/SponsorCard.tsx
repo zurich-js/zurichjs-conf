@@ -38,8 +38,6 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
   const tierLabel = tier
     ? `${tier.charAt(0).toUpperCase()}${tier.slice(1)}`
     : undefined;
-  const hoverBackground = logoColorBackground || 'var(--color-brand-white)';
-  const tierBackground = `color-mix(in srgb, ${hoverBackground} 40%, var(--color-brand-black))`;
 
   const baseClasses =
     'block w-full h-full rounded-2xl transition-all duration-300 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none';
@@ -73,16 +71,10 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
       {tierLabel && (
         <>
           <span
-            className="pointer-events-none absolute left-1/2 top-0 z-0 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 translate-y-0 overflow-hidden rounded-t-xl px-2.5 py-1 text-[9px] font-bold uppercase leading-none tracking-wide whitespace-nowrap opacity-0 transition-[translate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-3.5 group-hover:opacity-100 group-focus-within:-translate-y-3.5 group-focus-within:opacity-100 motion-reduce:transition-none"
+            className="pointer-events-none absolute left-1/2 top-0 z-0 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 translate-y-0 px-2.5 py-1 text-[9px] font-bold uppercase leading-none tracking-wide whitespace-nowrap text-brand-white opacity-0 transition-[translate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-3.5 group-hover:opacity-100 group-focus-within:-translate-y-3.5 group-focus-within:opacity-100 motion-reduce:transition-none"
             aria-hidden="true"
           >
-            <span
-              className="absolute inset-0"
-              style={{ backgroundColor: tierBackground }}
-            />
-            <span className="relative z-10 text-brand-white">
-              {tierLabel}
-            </span>
+            {tierLabel}
           </span>
           <span className="sr-only">{tierLabel} sponsor</span>
         </>
