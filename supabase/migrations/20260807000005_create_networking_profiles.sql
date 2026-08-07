@@ -1,8 +1,5 @@
 BEGIN;
 
-ALTER TABLE public.tickets
-  ADD COLUMN IF NOT EXISTS manage_token_nonce UUID NOT NULL DEFAULT gen_random_uuid();
-
 CREATE TABLE IF NOT EXISTS public.networking_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   share_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
@@ -156,8 +153,6 @@ COMMENT ON COLUMN public.networking_profiles.share_id IS
   'Opaque public identifier used in networking share URLs; distinct from ticket and sponsor IDs.';
 COMMENT ON COLUMN public.networking_profiles.profile IS
   'Validated versioned networking contact data. Only explicitly configured fields are exposed publicly.';
-COMMENT ON COLUMN public.tickets.manage_token_nonce IS
-  'Per-ticket nonce signed into management links and rotated whenever ticket identity changes.';
 COMMENT ON FUNCTION public.rotate_ticket_manage_token_on_identity_change() IS
   'Rotates a ticket management nonce before attendee identity changes, revoking previously issued links.';
 COMMENT ON FUNCTION public.revoke_attendee_networking_on_ticket_change() IS

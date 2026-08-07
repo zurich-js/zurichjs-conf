@@ -67,7 +67,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
 
     if (checkError && checkError.code !== 'PGRST116') {
       // PGRST116 is "not found" which is expected
-      log.error('Failed to check for an existing ticket', undefined, {
+      log.error('Failed to check for an existing ticket', new Error(checkError.message), {
         code: checkError.code,
       });
     }
@@ -118,7 +118,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       .single();
 
     if (error) {
-      log.error('Failed to create ticket record', undefined, {
+      log.error('Failed to create ticket record', new Error(error.message), {
         code: error.code,
       });
       return {
@@ -165,7 +165,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       ticket: ticket as Ticket & { manage_token_nonce: string },
     };
   } catch (error) {
-    log.error('Unexpected ticket creation failure', undefined, {
+    log.error('Unexpected ticket creation failure', error, {
       errorName: error instanceof Error ? error.name : 'UnknownError',
     });
     return {

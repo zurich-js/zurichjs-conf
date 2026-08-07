@@ -23,11 +23,11 @@ import handler from '../[id]';
 
 const SHARE_ID = '11111111-2222-4333-8444-555555555555';
 
-function makeReq(id: string, method = 'GET'): NextApiRequest {
+function makeReq(id: string, method = 'GET', host = 'conf.example.test'): NextApiRequest {
   return {
     method,
     query: { id },
-    headers: { host: 'conf.example.test' },
+    headers: { host },
   } as unknown as NextApiRequest;
 }
 
@@ -93,10 +93,10 @@ describe('GET /api/share/qr/[id]', () => {
     expect(mockToBuffer).not.toHaveBeenCalled();
   });
 
-  it('encodes the public share URL with QR campaign attribution', async () => {
+  it('encodes the configured public URL and ignores an untrusted Host header', async () => {
     const publicId = `attendee-${SHARE_ID}`;
     const res = makeRes();
-    await handler(makeReq(publicId), res);
+    await handler(makeReq(publicId, 'GET', 'attacker.example'), res);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual(Buffer.from('png'));
@@ -104,8 +104,9 @@ describe('GET /api/share/qr/[id]', () => {
     expect(res.headers['Cache-Control']).toContain('s-maxage=604800');
     expect(res.headers['X-Content-Type-Options']).toBe('nosniff');
 
-    expect(mockGetAbsoluteUrl).toHaveBeenCalledWith(`/share/${publicId}`, expect.anything());
+    expect(mockGetAbsoluteUrl).toHaveBeenCalledWith(`/share/${publicId}`, undefined);
     const encodedUrl = new URL(mockToBuffer.mock.calls[0][0] as string);
+    expect(encodedUrl.origin).toBe('https://conf.example.test');
     expect(encodedUrl.pathname).toBe(`/share/${publicId}`);
     expect(encodedUrl.searchParams.get('utm_source')).toBe('offline');
     expect(encodedUrl.searchParams.get('utm_medium')).toBe('qr_code');

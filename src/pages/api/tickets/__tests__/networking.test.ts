@@ -136,6 +136,20 @@ describe('POST /api/tickets/[id]/networking', () => {
     expect(JSON.stringify(res.jsonBody)).not.toContain('email');
   });
 
+  it('accepts an uppercase route UUID and uses its canonical token value', async () => {
+    const res = makeRes();
+    await handler(
+      makeReq({ token: 'signed-token', enabled: true, profile: PROFILE }, 'POST', TICKET_ID.toUpperCase()),
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(mockRpc).toHaveBeenCalledWith(
+      'update_attendee_networking_profile',
+      expect.objectContaining({ p_ticket_id: TICKET_ID })
+    );
+  });
+
   it('rejects a valid-HMAC token whose nonce became stale before the locked update', async () => {
     mockRpcSingle.mockResolvedValue({
       data: { result: 'invalid_token', share_id: null, enabled: null, profile: null },
