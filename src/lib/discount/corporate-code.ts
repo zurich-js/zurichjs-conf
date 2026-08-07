@@ -12,8 +12,10 @@
  * and rotating the signing secret invalidates every outstanding code at once.
  *
  * Do NOT export this module from the discount barrel (index.ts) — it reads a
- * server secret and must never reach a client bundle. Import it directly in API
- * routes: `@/lib/discount/corporate-code`.
+ * server secret and must never reach a client bundle. Import it directly from
+ * server code (`@/lib/discount/corporate-code`): an API route, or a page's
+ * `getServerSideProps`, which Next strips from the client bundle along with its
+ * exclusive imports.
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -35,7 +37,7 @@ function signingKey(): Buffer {
 }
 
 interface CorporateCodePayload {
-  /** Organisation name, for analytics and the confirmation screen */
+  /** Organisation name, for analytics only — the visitor never sees it */
   label: string;
   /** Expiry as a unix timestamp in seconds */
   exp: number;

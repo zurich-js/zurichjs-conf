@@ -19,11 +19,31 @@
  */
 
 import posthog from 'posthog-js';
+import { COOKIE_NAMES } from './config';
+import { deleteCookie, getCookie } from './cookies';
 
 const CORPORATE_BUYER_STORAGE_KEY = 'zjs:corporateBuyer:v1';
 
+/**
+ * Promotes the handoff cookie left by `/corporate/<code>` into the durable
+ * marker, then clears it.
+ *
+ * That route redirects on the server and never renders, so this is where the
+ * marking actually lands. Idempotent — the second caller finds no cookie and
+ * does nothing — which lets it run both from the app shell (so the PostHog
+ * person property gets set on any landing page) and from the eligibility check
+ * below (so suppression doesn't depend on which effect happens to run first).
+ */
+export function claimCorporateHandoff(): void {
+  const label = getCookie(COOKIE_NAMES.CORPORATE_HANDOFF);
+  if (!label) return;
+  deleteCookie(COOKIE_NAMES.CORPORATE_HANDOFF);
+  markCorporateBuyer(label);
+}
+
 /** Returns true when this browser has been marked as a corporate buyer. */
 export function isCorporateBuyer(): boolean {
+  claimCorporateHandoff();
   if (typeof localStorage === 'undefined') return false;
   try {
     return localStorage.getItem(CORPORATE_BUYER_STORAGE_KEY) === '1';
@@ -34,7 +54,8 @@ export function isCorporateBuyer(): boolean {
 
 /**
  * Marks this browser (and the identified PostHog person) as a corporate buyer.
- * Called from the corporate access page once the signed code is verified.
+ * Called from `/corporate/<code>` on the way through to the ticket section,
+ * once the signed code has been verified server-side.
  *
  * @param label Free-text organisation label from the code, for analytics only.
  */
