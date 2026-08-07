@@ -82,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(GENERIC_RESPONSE);
     }
 
-    const orderUrl = generateOrderUrl(ticket.id);
+    const orderUrl = generateOrderUrl(ticket.id, ticket.manage_token_nonce);
 
     const emailResult = await sendTicketConfirmationEmail({
       to: ticket.email,

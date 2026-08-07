@@ -6,7 +6,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyOrderToken } from '@/lib/auth/orderToken';
+import { verifyOrderTokenForCurrentTicket } from '@/lib/auth/orderTokenServer';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { apparelPreferencesSchema } from '@/lib/validations/apparel';
 import { logger } from '@/lib/logger';
@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { token, tshirtSize, hoodieSize } = result.data;
 
     // Verify the token and extract ticket ID
-    const tokenTicketId = verifyOrderToken(token);
+    const tokenTicketId = await verifyOrderTokenForCurrentTicket(token);
 
     if (!tokenTicketId) {
       return res.status(401).json({ error: 'Invalid or expired token' });

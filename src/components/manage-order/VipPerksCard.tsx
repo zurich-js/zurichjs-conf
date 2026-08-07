@@ -25,7 +25,7 @@ export function VipPerksCard({ isVip, vipPerk }: VipPerksCardProps) {
   if (!isVip) return null;
 
   return (
-    <section aria-labelledby="vip-benefits-heading" className="bg-black border border-amber-500/40 rounded-2xl mb-8 overflow-hidden">
+    <section aria-labelledby="vip-benefits-heading" className="bg-brand-gray-lightest border border-amber-500/40 rounded-2xl mb-8 overflow-hidden">
       {/* Gold accent edge */}
       <div className="h-1 bg-gradient-to-r from-amber-600 via-amber-300 to-amber-600" aria-hidden="true" />
 
@@ -36,10 +36,10 @@ export function VipPerksCard({ isVip, vipPerk }: VipPerksCardProps) {
               <Crown className="w-5 h-5 text-amber-400" aria-hidden="true" />
             </span>
             <div>
-              <h2 id="vip-benefits-heading" className="text-xl font-bold text-brand-white">
+              <h2 id="vip-benefits-heading" className="text-xl font-bold text-brand-black">
                 Your VIP Benefits
               </h2>
-              <p className="text-sm text-gray-400">Included with your VIP ticket</p>
+              <p className="text-sm text-brand-gray-darkest">Included with your VIP ticket</p>
             </div>
           </div>
           <span className="text-xs font-bold tracking-widest uppercase text-amber-300 bg-amber-400/10 border border-amber-400/40 rounded-full px-3 py-1">
@@ -51,13 +51,13 @@ export function VipPerksCard({ isVip, vipPerk }: VipPerksCardProps) {
           {VIP_BENEFITS.map((benefit) => {
             const Icon = BENEFIT_ICONS[benefit.id];
             return (
-              <li key={benefit.id} className="flex gap-4 bg-white/5 border border-white/10 rounded-xl p-4">
+              <li key={benefit.id} className="flex gap-4 bg-brand-white border border-brand-gray-light rounded-xl p-4">
                 <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-amber-400/10 shrink-0 mt-0.5">
                   <Icon className="w-4.5 h-4.5 text-amber-400" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-brand-white">{benefit.title}</h3>
-                  <p className="text-sm text-gray-400 mt-0.5">{benefit.description}</p>
+                  <h3 className="font-semibold text-brand-black">{benefit.title}</h3>
+                  <p className="text-sm text-brand-gray-darkest mt-0.5">{benefit.description}</p>
                   {benefit.id === 'workshop-discount' && <WorkshopVoucher vipPerk={vipPerk} />}
                 </div>
               </li>
@@ -72,7 +72,7 @@ export function VipPerksCard({ isVip, vipPerk }: VipPerksCardProps) {
 function WorkshopVoucher({ vipPerk }: { vipPerk?: VipPerkSummary | null }) {
   if (!vipPerk) {
     return (
-      <p className="flex items-start gap-2 mt-3 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-lg p-3">
+      <p className="flex items-start gap-2 mt-3 text-sm text-brand-gray-darkest bg-brand-gray-lightest border border-brand-gray-light rounded-lg p-3">
         <Mail className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
         <span>
           Your personal voucher code will be emailed to you when workshops are released — or within 48 hours of purchase
@@ -110,7 +110,7 @@ function WorkshopVoucher({ vipPerk }: { vipPerk?: VipPerkSummary | null }) {
           Browse workshops
           <ArrowRight className="w-4 h-4" aria-hidden="true" />
         </Link>
-        {vipPerk.expiresAt && <p className="text-xs text-gray-400">Valid until {formatExpiry(vipPerk.expiresAt)}</p>}
+        {vipPerk.expiresAt && <p className="text-xs text-brand-gray-darkest">Valid until {formatExpiry(vipPerk.expiresAt)}</p>}
       </div>
     </div>
   );

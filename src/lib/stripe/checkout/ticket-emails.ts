@@ -100,7 +100,7 @@ export async function sendTicketConfirmationEmails(
         });
       }
 
-      const orderUrl = generateOrderUrl(ticketId);
+      const orderUrl = generateOrderUrl(ticketId, result.ticket.manage_token_nonce);
 
       emailsToSend.push({
         to: result.attendee.email,

@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const [ticketsResult, preferencesResult] = await Promise.all([
       supabase
         .from('tickets')
-        .select('id, first_name, last_name, email, ticket_category, status')
+        .select('id, first_name, last_name, email, ticket_category, status, manage_token_nonce')
         .in('id', ticketIds)
         .eq('status', 'confirmed'),
       supabase
@@ -90,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         to: ticket.email,
         firstName: ticket.first_name,
         ticketId: ticket.id,
-        manageTicketUrl: generateOrderUrl(ticket.id),
+        manageTicketUrl: generateOrderUrl(ticket.id, ticket.manage_token_nonce),
         isVip,
         missingTshirt,
         missingHoodie,

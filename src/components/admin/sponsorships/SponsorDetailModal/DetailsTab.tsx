@@ -7,6 +7,7 @@ import { Building2, User, MapPin, ChevronRight, Edit2, Check, Globe } from 'luci
 import type { SponsorshipDealWithRelations, SponsorshipDealStatus } from '../types';
 import { VALID_DEAL_STATUS_TRANSITIONS } from '@/lib/types/sponsorship';
 import { LogoUpload } from '../LogoUpload';
+import { SponsorNetworkingCard } from './SponsorNetworkingCard';
 import { formatAmount, getInitialEditForm, apiCall, type EditFormData } from './types';
 
 interface DetailsTabProps {
@@ -147,6 +148,8 @@ export function DetailsTab({ deal, onUpdate, isUpdating, setIsUpdating, setError
           <ReadOnlyView sponsor={sponsor} />
         )}
       </div>
+
+      <SponsorNetworkingCard sponsorId={sponsor.id} />
 
       {/* Deal Info */}
       <div className="space-y-4">

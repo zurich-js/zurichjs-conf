@@ -7,13 +7,35 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import type { Ticket } from '@/lib/types/database';
+import type { AttendeeNetworkingProfile, NetworkingSettings } from '@/lib/types/networking';
 import type { TicketUpgrade } from '@/lib/types/ticket-upgrade';
+import { attendeeNetworkingProfileSchema } from '@/lib/validations/networking';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Order Details');
 
+export type ManageOrderTicket = Pick<
+  Ticket,
+  | 'id'
+  | 'first_name'
+  | 'last_name'
+  | 'email'
+  | 'company'
+  | 'job_title'
+  | 'ticket_category'
+  | 'ticket_stage'
+  | 'amount_paid'
+  | 'currency'
+  | 'status'
+  | 'qr_code_url'
+  | 'transferred_from_name'
+  | 'transferred_from_email'
+  | 'transferred_at'
+  | 'created_at'
+>;
+
 export interface OrderDetailsResponse {
-  ticket: Ticket;
+  ticket: ManageOrderTicket;
   transferInfo?: {
     transferredFrom: string;
     transferredFromEmail: string;
@@ -34,6 +56,7 @@ export interface OrderDetailsResponse {
     tshirtSize: string | null;
     hoodieSize: string | null;
   };
+  networking?: NetworkingSettings<AttendeeNetworkingProfile>;
   /** Workshop discount voucher — present only for VIP tickets with an issued, active voucher */
   vipPerk?: {
     code: string;
@@ -46,7 +69,7 @@ export interface OrderDetailsResponse {
 /**
  * Fetch everything the manage-order page needs for a ticket.
  *
- * All four queries key off the ticket ID alone, so they run in a single
+ * All queries key off the ticket ID alone, so they run in a single
  * parallel round trip (the vip_perks lookup runs for every ticket and is
  * simply discarded for non-VIPs — cheaper than serializing on the ticket row).
  *
@@ -55,8 +78,14 @@ export interface OrderDetailsResponse {
 export async function getOrderDetails(ticketId: string): Promise<OrderDetailsResponse | null> {
   const supabase = createServiceRoleClient();
 
-  const [ticketResult, pendingUpgradeResult, vipPerkResult, apparelResult] = await Promise.all([
-    supabase.from('tickets').select('*').eq('id', ticketId).single(),
+  const [ticketResult, pendingUpgradeResult, vipPerkResult, apparelResult, networkingResult] = await Promise.all([
+    supabase
+      .from('tickets')
+      .select(
+        'id, first_name, last_name, email, company, job_title, ticket_category, ticket_stage, amount_paid, currency, status, qr_code_url, transferred_from_name, transferred_from_email, transferred_at, created_at'
+      )
+      .eq('id', ticketId)
+      .single(),
     supabase
       .from('ticket_upgrades')
       .select('*')
@@ -76,6 +105,12 @@ export async function getOrderDetails(ticketId: string): Promise<OrderDetailsRes
       .select('tshirt_size, hoodie_size')
       .eq('ticket_id', ticketId)
       .maybeSingle(),
+    supabase
+      .from('networking_profiles')
+      .select('share_id, enabled, profile')
+      .eq('ticket_id', ticketId)
+      .eq('subject_type', 'attendee')
+      .maybeSingle(),
   ]);
 
   if (ticketResult.error || !ticketResult.data) {
@@ -83,7 +118,7 @@ export async function getOrderDetails(ticketId: string): Promise<OrderDetailsRes
     return null;
   }
 
-  const ticket = ticketResult.data as Ticket;
+  const ticket = ticketResult.data as ManageOrderTicket;
 
   const response: OrderDetailsResponse = { ticket };
 
@@ -130,6 +165,25 @@ export async function getOrderDetails(ticketId: string): Promise<OrderDetailsRes
       tshirtSize: apparelResult.data.tshirt_size,
       hoodieSize: apparelResult.data.hoodie_size,
     };
+  }
+
+  if (networkingResult.error) {
+    log.warn('Error fetching attendee networking profile', {
+      ticketId,
+      error: networkingResult.error,
+    });
+  } else if (networkingResult.data) {
+    const profileResult = attendeeNetworkingProfileSchema.safeParse(networkingResult.data.profile);
+
+    if (profileResult.success) {
+      response.networking = {
+        shareId: networkingResult.data.share_id,
+        enabled: networkingResult.data.enabled,
+        profile: profileResult.data,
+      };
+    } else {
+      log.warn('Ignoring invalid attendee networking profile', { ticketId });
+    }
   }
 
   return response;

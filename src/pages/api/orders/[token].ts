@@ -5,7 +5,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyOrderToken } from '@/lib/auth/orderToken';
+import { verifyOrderTokenForCurrentTicket } from '@/lib/auth/orderTokenServer';
 import { getOrderDetails, type OrderDetailsResponse } from '@/lib/orders';
 import { logger } from '@/lib/logger';
 
@@ -17,6 +17,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<OrderDetailsResponse | { error: string }>
 ) {
+  res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -29,7 +31,7 @@ export default async function handler(
     }
 
     // Verify the token and extract ticket ID
-    const ticketId = verifyOrderToken(token);
+    const ticketId = await verifyOrderTokenForCurrentTicket(token);
 
     if (!ticketId) {
       return res.status(401).json({ error: 'Invalid or expired token' });

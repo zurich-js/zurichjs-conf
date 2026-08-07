@@ -18,7 +18,7 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
   const ModeIcon = isStripe ? CreditCard : Building2;
 
   return (
-    <section aria-labelledby="pending-upgrade-heading" className="bg-black border border-blue-500/40 rounded-2xl mb-8 overflow-hidden">
+    <section aria-labelledby="pending-upgrade-heading" className="bg-brand-gray-lightest border border-blue-500/40 rounded-2xl mb-8 overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-blue-600 via-blue-300 to-blue-600" aria-hidden="true" />
 
       <div className="p-6 md:p-8">
@@ -28,10 +28,10 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
               <ModeIcon className="w-5 h-5 text-blue-400" aria-hidden="true" />
             </span>
             <div>
-              <h2 id="pending-upgrade-heading" className="text-xl font-bold text-brand-white">
+              <h2 id="pending-upgrade-heading" className="text-xl font-bold text-brand-black">
                 VIP Upgrade
               </h2>
-              <p className="text-sm text-gray-400">{isStripe ? 'Pay online by card' : 'Pay by bank transfer'}</p>
+              <p className="text-sm text-brand-gray-darkest">{isStripe ? 'Pay online by card' : 'Pay by bank transfer'}</p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-blue-300 bg-blue-400/10 border border-blue-400/40 rounded-full px-3 py-1">
@@ -40,13 +40,13 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
           </span>
         </div>
 
-        <p className="text-gray-200 mb-6">
+        <p className="text-brand-gray-darkest mb-6">
           Complete your payment and your ticket is upgraded to VIP, unlocking:
         </p>
 
         <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
           {VIP_BENEFITS.map((benefit) => (
-            <li key={benefit.id} className="flex items-start gap-2 text-sm text-gray-200 bg-white/5 border border-white/10 rounded-lg p-3">
+            <li key={benefit.id} className="flex items-start gap-2 text-sm text-brand-gray-darkest bg-brand-white border border-brand-gray-light rounded-lg p-3">
               <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
               {benefit.title}
             </li>
@@ -54,9 +54,9 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
         </ul>
 
         {upgrade.amount != null && upgrade.currency && (
-          <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-lg p-4 mb-6">
-            <span className="text-gray-400">Upgrade amount</span>
-            <span className="text-brand-white font-bold text-lg">
+          <div className="flex justify-between items-center bg-brand-white border border-brand-gray-light rounded-lg p-4 mb-6">
+            <span className="text-brand-gray-darkest">Upgrade amount</span>
+            <span className="text-brand-black font-bold text-lg">
               {upgrade.currency} {(upgrade.amount / 100).toFixed(2)}
             </span>
           </div>
@@ -81,17 +81,17 @@ export function PendingUpgradeCard({ upgrade }: PendingUpgradeCardProps) {
 function BankTransferDetails({ upgrade }: { upgrade: PendingUpgrade }) {
   return (
     <div className="space-y-4">
-      <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-        <h3 className="text-brand-white font-semibold mb-3">Bank Transfer Details</h3>
+      <div className="bg-brand-white border border-brand-gray-light rounded-lg p-4">
+        <h3 className="text-brand-black font-semibold mb-3">Bank Transfer Details</h3>
         <dl className="space-y-2 text-sm">
           <TransferRow label="Bank" value={BANK_TRANSFER_DETAILS.bank} />
           <TransferRow label="Account Holder" value={BANK_TRANSFER_DETAILS.accountHolder} />
           <TransferRow label="Address" value={BANK_TRANSFER_DETAILS.address} />
           <TransferRow label="IBAN" value={BANK_TRANSFER_DETAILS.iban} mono />
           {upgrade.bankTransferReference && (
-            <div className="flex justify-between gap-4 pt-2 border-t border-white/10">
-              <dt className="text-gray-400">Reference</dt>
-              <dd className="text-amber-400 font-mono font-bold">{upgrade.bankTransferReference}</dd>
+            <div className="flex justify-between gap-4 pt-2 border-t border-brand-gray-light">
+              <dt className="text-brand-gray-darkest">Reference</dt>
+              <dd className="text-amber-700 font-mono font-bold">{upgrade.bankTransferReference}</dd>
             </div>
           )}
           {upgrade.bankTransferDueDate && (
@@ -118,8 +118,8 @@ function BankTransferDetails({ upgrade }: { upgrade: PendingUpgrade }) {
 function TransferRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-gray-400 shrink-0">{label}</dt>
-      <dd className={`text-brand-white text-right ${mono ? 'font-mono text-xs' : ''}`}>{value}</dd>
+      <dt className="text-brand-gray-darkest shrink-0">{label}</dt>
+      <dd className={`text-brand-black text-right ${mono ? 'font-mono text-xs' : ''}`}>{value}</dd>
     </div>
   );
 }
