@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Ensure the token matches the ticket being updated
-    if (tokenTicketId !== id) {
+    if (tokenTicketId !== id.toLowerCase()) {
       return res.status(403).json({ error: 'You do not have permission to update this ticket' });
     }
 
@@ -52,11 +52,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: ticket, error: fetchError } = await supabase
       .from('tickets')
       .select('id, ticket_category')
-      .eq('id', id)
+      .eq('id', tokenTicketId)
       .single();
 
     if (fetchError || !ticket) {
-      log.error('Error fetching ticket', fetchError, { ticketId: id });
+      log.error('Error fetching ticket', fetchError, { ticketId: tokenTicketId });
       return res.status(404).json({ error: 'Ticket not found' });
     }
 
@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('ticket_apparel_preferences')
       .upsert(
         {
-          ticket_id: id,
+          ticket_id: tokenTicketId,
           tshirt_size: tshirtSize,
           hoodie_size: isVip ? (hoodieSize ?? null) : null,
         },
@@ -80,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (upsertError || !preferences) {
-      log.error('Error saving apparel preferences', upsertError, { ticketId: id });
+      log.error('Error saving apparel preferences', upsertError, { ticketId: tokenTicketId });
       return res.status(500).json({ error: 'Failed to save apparel preferences' });
     }
 

@@ -26,7 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const shareUrl = new URL(getAbsoluteUrl(`/share/${id}`, req));
+    // Publicly cached QR payloads must never depend on attacker-controlled Host
+    // or Origin headers. Calling without req requires the configured base URL.
+    const shareUrl = new URL(getAbsoluteUrl(`/share/${id}`));
     shareUrl.searchParams.set('utm_source', 'offline');
     shareUrl.searchParams.set('utm_medium', 'qr_code');
     shareUrl.searchParams.set('utm_campaign', 'zurichjs_networking');

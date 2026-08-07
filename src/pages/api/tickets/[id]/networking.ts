@@ -47,7 +47,7 @@ export default async function handler(
     return;
   }
 
-  if (tokenClaims.ticketId !== id) {
+  if (tokenClaims.ticketId !== id.toLowerCase()) {
     res.status(403).json({ error: 'You do not have permission to update this ticket' });
     return;
   }
@@ -65,7 +65,7 @@ export default async function handler(
     const supabase = createServiceRoleClient();
     const { data: networking, error: updateError } = await supabase
       .rpc('update_attendee_networking_profile', {
-        p_ticket_id: id,
+        p_ticket_id: tokenClaims.ticketId,
         p_manage_token_nonce: tokenClaims.manageTokenNonce,
         p_enabled: result.data.enabled,
         p_profile: result.data.profile,
@@ -73,7 +73,9 @@ export default async function handler(
       .single();
 
     if (updateError || !networking) {
-      log.error('Failed to save attendee networking profile', updateError, { ticketId: id });
+      log.error('Failed to save attendee networking profile', updateError, {
+        ticketId: tokenClaims.ticketId,
+      });
       res.status(500).json({ error: 'Failed to save networking profile' });
       return;
     }
@@ -95,7 +97,7 @@ export default async function handler(
 
     if (networking.result !== 'ok' || !networking.share_id || networking.enabled === null) {
       log.error('Unexpected attendee networking update result', undefined, {
-        ticketId: id,
+        ticketId: tokenClaims.ticketId,
         result: networking.result,
       });
       res.status(500).json({ error: 'Failed to save networking profile' });
@@ -104,7 +106,9 @@ export default async function handler(
 
     const profileResult = attendeeNetworkingProfileSchema.safeParse(networking.profile);
     if (!profileResult.success) {
-      log.error('Saved attendee networking profile is invalid', profileResult.error, { ticketId: id });
+      log.error('Saved attendee networking profile is invalid', profileResult.error, {
+        ticketId: tokenClaims.ticketId,
+      });
       res.status(500).json({ error: 'Failed to save networking profile' });
       return;
     }
@@ -115,7 +119,9 @@ export default async function handler(
       profile: profileResult.data,
     });
   } catch (error) {
-    log.error('Failed to update attendee networking profile', error, { ticketId: id });
+    log.error('Failed to update attendee networking profile', error, {
+      ticketId: tokenClaims.ticketId,
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
