@@ -48,15 +48,29 @@ export default function TalksPage({ items }: TalksPageProps) {
 
         <ShapedSection shape="straight" variant="light" dropTop dropBottom>
           <div className="mx-auto flex max-w-screen-lg flex-col gap-4">
-            {visibleItems.map((item, index) => (
-              <ProgramScheduleItemCard
-                key={item.id}
-                item={item}
-                defaultOpen={index === firstPublishedIndex}
-                placeholderVariant="plain"
-                expandableSessions
-              />
-            ))}
+            {visibleItems.length > 0 ? (
+              visibleItems.map((item, index) => (
+                <ProgramScheduleItemCard
+                  key={item.id}
+                  item={item}
+                  defaultOpen={index === firstPublishedIndex}
+                  placeholderVariant="plain"
+                  expandableSessions
+                />
+              ))
+            ) : (
+              <div className="rounded-2xl bg-brand-gray-lightest p-6 md:p-8">
+                <Heading level="h2" variant="light" className="text-lg md:text-xl">
+                  The talk schedule is coming soon
+                </Heading>
+                <p className="mt-3 max-w-2xl text-base text-brand-gray-medium">
+                  We&apos;re preparing the conference program. In the meantime, meet the experts joining us in Zurich.
+                </p>
+                <Button variant="black" asChild href="/speakers" className="mt-6">
+                  Meet the speakers
+                </Button>
+              </div>
+            )}
           </div>
         </ShapedSection>
 
@@ -91,17 +105,6 @@ export const getStaticProps: GetStaticProps<TalksPageProps> = async () => {
   const { speakers } = await fetchPublicSpeakers();
   const rows = await getPublicScheduleRows();
   const items = buildPublicProgramScheduleItems(rows, speakers);
-  const hasTalks = items.some((item) => item.type === 'session' && item.session_kind === 'talk' && Boolean(item.session));
-
-  if (!hasTalks) {
-    return {
-      redirect: {
-        destination: '/speakers',
-        permanent: false,
-      },
-      revalidate: 86400,
-    };
-  }
 
   return {
     props: {
