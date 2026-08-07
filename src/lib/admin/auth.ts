@@ -4,13 +4,15 @@
  * + read-only API key authentication for bot/automation access
  */
 
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { NextApiRequest } from 'next';
 import { verifyReadOnlyApiKey, type BotAuthResult } from './bot-auth';
 
 const ADMIN_SESSION_VERSION = 'v1';
 const ADMIN_SESSION_TTL_SECONDS = 24 * 60 * 60;
 const ADMIN_SESSION_KEY_LABEL = 'zurichjs:admin-session:v1';
+const ADMIN_PASSWORD_SALT = 'zurichjs:admin-password:v1';
+const ADMIN_PASSWORD_KEY_LENGTH = 32;
 
 interface AdminSessionPayload {
   sub: 'admin';
@@ -36,8 +38,10 @@ export function verifyAdminPassword(password: string): boolean {
     throw new Error('Missing required environment variable: ADMIN_PASSWORD');
   }
 
-  const provided = createHash('sha256').update(password).digest();
-  const expected = createHash('sha256').update(adminPassword).digest();
+  // ADMIN_PASSWORD remains the source of truth, but a memory-hard comparison
+  // prevents each login attempt from becoming a cheap offline password guess.
+  const provided = scryptSync(password, ADMIN_PASSWORD_SALT, ADMIN_PASSWORD_KEY_LENGTH);
+  const expected = scryptSync(adminPassword, ADMIN_PASSWORD_SALT, ADMIN_PASSWORD_KEY_LENGTH);
   return timingSafeEqual(provided, expected);
 }
 
