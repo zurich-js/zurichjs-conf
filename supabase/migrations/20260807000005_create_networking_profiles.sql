@@ -142,6 +142,8 @@ GRANT EXECUTE ON FUNCTION public.update_attendee_networking_profile(UUID, UUID, 
 
 ALTER TABLE public.networking_profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role has full access to networking profiles"
+  ON public.networking_profiles;
 CREATE POLICY "Service role has full access to networking profiles"
   ON public.networking_profiles FOR ALL
   TO service_role
