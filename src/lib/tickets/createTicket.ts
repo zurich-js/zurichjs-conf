@@ -4,8 +4,11 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import type { Ticket, TicketType, TicketCategory, TicketStage, PaymentStatus, Json } from '@/lib/types/database';
 import { generateAndStoreTicketQRCode } from '@/lib/qrcode';
+
+const log = logger.scope('Ticket Creation');
 
 export interface CreateTicketParams {
   userId?: string; // Optional - tickets can be created without user authentication
@@ -34,7 +37,7 @@ export interface CreateTicketParams {
 
 export interface CreateTicketResult {
   success: boolean;
-  ticket?: Ticket;
+  ticket?: Ticket & { manage_token_nonce: string };
   error?: string;
 }
 
@@ -43,28 +46,18 @@ export interface CreateTicketResult {
  * This should only be called from the Stripe webhook handler
  */
 export async function createTicket(params: CreateTicketParams): Promise<CreateTicketResult> {
-  console.log('[createTicket] Starting ticket creation with params:', {
+  log.info('Starting ticket creation', {
     ticketType: params.ticketType,
     ticketCategory: params.ticketCategory,
     ticketStage: params.ticketStage,
-    email: params.email,
-    firstName: params.firstName,
-    lastName: params.lastName,
-    company: params.company,
-    jobTitle: params.jobTitle,
-    stripeSessionId: params.stripeSessionId,
-    stripeCustomerId: params.stripeCustomerId,
-    amountPaid: params.amountPaid,
-    currency: params.currency,
   });
 
   const supabase = createServiceRoleClient();
-  console.log('[createTicket] Supabase service role client created');
 
   try {
     // Check if ticket already exists (idempotency)
     // Match on both session ID and email to support multi-ticket checkouts
-    console.log('[createTicket] Checking for existing ticket with session ID:', params.stripeSessionId, 'and email:', params.email);
+    log.debug('Checking for an existing ticket');
     const { data: existing, error: checkError } = await supabase
       .from('tickets')
       .select('*')
@@ -74,18 +67,20 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
 
     if (checkError && checkError.code !== 'PGRST116') {
       // PGRST116 is "not found" which is expected
-      console.error('[createTicket] Error checking for existing ticket:', checkError);
+      log.error('Failed to check for an existing ticket', new Error(checkError.message), {
+        code: checkError.code,
+      });
     }
 
     if (existing) {
-      console.log('[createTicket] Ticket already exists for session:', params.stripeSessionId, 'ticket ID:', existing.id);
+      log.info('Ticket already exists');
       return {
         success: true,
-        ticket: existing as Ticket,
+        ticket: existing as Ticket & { manage_token_nonce: string },
       };
     }
 
-    console.log('[createTicket] No existing ticket found, creating new ticket');
+    log.debug('No existing ticket found');
 
     // Prepare ticket data
     const ticketData = {
@@ -104,6 +99,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       amount_paid: params.amountPaid,
       currency: params.currency,
       status: params.status || 'confirmed',
+      legacy_manage_token_valid: false,
       metadata: (params.metadata || {}) as Json,
       // Partnership tracking fields
       coupon_code: params.couponCode || null,
@@ -113,7 +109,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       discount_amount: params.discountAmount || 0,
     };
 
-    console.log('[createTicket] Inserting ticket with data:', ticketData);
+    log.debug('Creating ticket record');
 
     // Create the ticket
     const { data: ticket, error } = await supabase
@@ -123,11 +119,8 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       .single();
 
     if (error) {
-      console.error('[createTicket] Database error creating ticket:', {
+      log.error('Failed to create ticket record', new Error(error.message), {
         code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
       });
       return {
         success: false,
@@ -135,22 +128,18 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       };
     }
 
-    console.log('[createTicket] ✅ Ticket created successfully:', {
-      ticketId: ticket?.id,
-      email: ticket?.email,
+    log.info('Ticket created successfully', {
       ticketType: ticket?.ticket_type,
       ticketCategory: ticket?.ticket_category,
       ticketStage: ticket?.ticket_stage,
-      company: ticket?.company,
-      jobTitle: ticket?.job_title,
     });
 
     // Generate and store QR code
-    console.log('[createTicket] Generating and storing QR code for ticket:', ticket.id);
+    log.debug('Generating ticket QR code');
     const qrResult = await generateAndStoreTicketQRCode(ticket.id);
 
     if (qrResult.success && qrResult.url) {
-      console.log('[createTicket] QR code stored successfully:', qrResult.url);
+      log.debug('Ticket QR code generated');
 
       // Update ticket with QR code URL
       const { error: updateError } = await supabase
@@ -159,23 +148,27 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
         .eq('id', ticket.id);
 
       if (updateError) {
-        console.error('[createTicket] ⚠️ Failed to update ticket with QR URL:', updateError);
+        log.warn('Failed to persist ticket QR code', {
+          code: updateError.code,
+        });
         // Non-fatal, ticket was still created
       } else {
         // Update the ticket object with the QR URL
         ticket.qr_code_url = qrResult.url;
       }
     } else {
-      console.error('[createTicket] ⚠️ Failed to generate QR code:', qrResult.error);
+      log.warn('Failed to generate ticket QR code');
       // Non-fatal, ticket was still created, QR can be generated on-demand
     }
 
     return {
       success: true,
-      ticket: ticket as Ticket,
+      ticket: ticket as Ticket & { manage_token_nonce: string },
     };
   } catch (error) {
-    console.error('[createTicket] ❌ Unexpected error in createTicket:', error);
+    log.error('Unexpected ticket creation failure', error, {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

@@ -1,8 +1,7 @@
 /**
  * Speaker Logistics Token Utilities
  * Generates secure tokens for the speaker event-logistics form linked from
- * email. Same stateless HMAC shape as order tokens, but signed over a
- * domain-scoped payload so order tokens and logistics tokens are never
+ * email. Uses a domain-scoped HMAC payload so order tokens and logistics tokens are never
  * interchangeable.
  */
 

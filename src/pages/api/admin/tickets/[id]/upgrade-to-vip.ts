@@ -189,7 +189,7 @@ export default async function handler(
         const stripe = getStripeClient();
 
         // Get order token for redirect URL
-        const orderUrl = generateOrderUrl(ticketId);
+        const orderUrl = generateOrderUrl(ticketId, ticket.manage_token_nonce);
 
         // Create product for this upgrade
         const product = await stripe.products.create({
@@ -330,7 +330,7 @@ export default async function handler(
     // Send email to attendee
     let emailSent = false;
     try {
-      const orderUrl = generateOrderUrl(ticketId);
+      const orderUrl = generateOrderUrl(ticketId, ticket.manage_token_nonce);
 
       const emailResult = await sendVipUpgradeEmail({
         to: ticket.email,

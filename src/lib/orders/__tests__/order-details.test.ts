@@ -4,6 +4,7 @@ type QueryResult = { data: unknown; error: unknown };
 
 const tableResults = new Map<string, QueryResult>();
 const fromCalls: string[] = [];
+const selectCalls: Array<{ table: string; columns: string }> = [];
 
 vi.mock('@/lib/supabase', () => ({
   createServiceRoleClient: () => ({
@@ -11,7 +12,10 @@ vi.mock('@/lib/supabase', () => ({
       fromCalls.push(table);
       const result = (): QueryResult => tableResults.get(table) ?? { data: null, error: null };
       const builder = {
-        select: () => builder,
+        select: (columns: string) => {
+          selectCalls.push({ table, columns });
+          return builder;
+        },
         eq: () => builder,
         in: () => builder,
         order: () => builder,
@@ -52,6 +56,7 @@ describe('getOrderDetails', () => {
   beforeEach(() => {
     tableResults.clear();
     fromCalls.length = 0;
+    selectCalls.length = 0;
     tableResults.set('tickets', { data: makeTicket(), error: null });
   });
 
@@ -72,14 +77,31 @@ describe('getOrderDetails', () => {
     expect(details?.apparelPreferences).toBeUndefined();
   });
 
-  it('dispatches all four queries up front instead of serially', async () => {
+  it('selects only the ticket fields used by the manage-order response', async () => {
+    await getOrderDetails(TICKET_ID);
+
+    const ticketSelect = selectCalls.find((call) => call.table === 'tickets')?.columns;
+    expect(ticketSelect).not.toBe('*');
+    expect(ticketSelect).not.toContain('stripe_customer_id');
+    expect(ticketSelect).not.toContain('stripe_session_id');
+    expect(ticketSelect).not.toContain('metadata');
+    expect(ticketSelect).not.toContain('manage_token_nonce');
+  });
+
+  it('dispatches all five queries up front instead of serially', async () => {
     const pending = getOrderDetails(TICKET_ID);
 
     // Promise.all issues every query before any result resolves
     expect(fromCalls).toEqual(
-      expect.arrayContaining(['tickets', 'ticket_upgrades', 'vip_perks', 'ticket_apparel_preferences'])
+      expect.arrayContaining([
+        'tickets',
+        'ticket_upgrades',
+        'vip_perks',
+        'ticket_apparel_preferences',
+        'networking_profiles',
+      ])
     );
-    expect(fromCalls).toHaveLength(4);
+    expect(fromCalls).toHaveLength(5);
 
     await pending;
   });
@@ -205,5 +227,53 @@ describe('getOrderDetails', () => {
     const details = await getOrderDetails(TICKET_ID);
 
     expect(details?.apparelPreferences).toEqual({ tshirtSize: 'M', hoodieSize: null });
+  });
+
+  it('includes a valid attendee networking profile', async () => {
+    tableResults.set('networking_profiles', {
+      data: {
+        share_id: '11111111-2222-4333-8444-555555555555',
+        enabled: true,
+        profile: {
+          linkedinUrl: 'https://linkedin.com/in/ada',
+          githubUrl: null,
+          xHandle: '@ada',
+          blueskyHandle: null,
+          mastodonHandle: '@ada@fosstodon.org',
+          websiteUrl: 'https://ada.example.com',
+        },
+      },
+      error: null,
+    });
+
+    const details = await getOrderDetails(TICKET_ID);
+
+    expect(details?.networking).toEqual({
+      shareId: '11111111-2222-4333-8444-555555555555',
+      enabled: true,
+      profile: {
+        linkedinUrl: 'https://linkedin.com/in/ada',
+        githubUrl: null,
+        xHandle: '@ada',
+        blueskyHandle: null,
+        mastodonHandle: '@ada@fosstodon.org',
+        websiteUrl: 'https://ada.example.com',
+      },
+    });
+  });
+
+  it('does not expose malformed networking profile data', async () => {
+    tableResults.set('networking_profiles', {
+      data: {
+        share_id: '11111111-2222-4333-8444-555555555555',
+        enabled: true,
+        profile: { email: 'private@example.com' },
+      },
+      error: null,
+    });
+
+    const details = await getOrderDetails(TICKET_ID);
+
+    expect(details?.networking).toBeUndefined();
   });
 });

@@ -72,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const customerName = `${firstName} ${lastName}`;
     const transferFromName = `${currentTicket.first_name} ${currentTicket.last_name}`;
     const transferNotes = `This ticket has been transferred to you by ${transferFromName} (${currentTicket.email}).`;
-    const orderUrl = generateOrderUrl(ticket.id);
+    const orderUrl = generateOrderUrl(ticket.id, ticket.manage_token_nonce);
 
     const emailResult = await sendTicketConfirmationEmail({
       to: email,

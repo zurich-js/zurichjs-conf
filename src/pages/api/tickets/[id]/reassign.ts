@@ -5,7 +5,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyOrderToken } from '@/lib/auth/orderToken';
+import { verifyOrderTokenForCurrentTicket } from '@/lib/auth/orderTokenServer';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
 import { getTicketDisplayName } from '@/lib/stripe/ticket-utils';
@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verify the token and extract ticket ID
-    const tokenTicketId = verifyOrderToken(token);
+    const tokenTicketId = await verifyOrderTokenForCurrentTicket(token);
 
     if (!tokenTicketId) {
       return res.status(401).json({ error: 'Invalid or expired token' });
@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const customerName = `${firstName} ${lastName}`;
     const transferFromName = `${currentTicket.first_name} ${currentTicket.last_name}`;
     const transferNotes = `This ticket has been transferred to you by ${transferFromName} (${currentTicket.email}).`;
-    const orderUrl = generateOrderUrl(ticket.id);
+    const orderUrl = generateOrderUrl(ticket.id, ticket.manage_token_nonce);
 
     const emailResult = await sendTicketConfirmationEmail({
       to: email,
