@@ -2863,6 +2863,7 @@ export type Database = {
           id: string
           job_title: string | null
           last_name: string
+          legacy_manage_token_valid: boolean
           manage_token_nonce: string
           metadata: Json | null
           partnership_coupon_id: string | null
@@ -2897,6 +2898,7 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name: string
+          legacy_manage_token_valid?: boolean
           manage_token_nonce?: string
           metadata?: Json | null
           partnership_coupon_id?: string | null
@@ -2931,6 +2933,7 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string
+          legacy_manage_token_valid?: boolean
           manage_token_nonce?: string
           metadata?: Json | null
           partnership_coupon_id?: string | null

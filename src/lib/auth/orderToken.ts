@@ -42,6 +42,10 @@ function computeSignature(ticketId: string, manageTokenNonce: string, secret: st
   return hmac.digest('base64url');
 }
 
+function computeLegacySignature(ticketId: string, secret: string): string {
+  return crypto.createHmac('sha256', secret).update(ticketId).digest('base64url');
+}
+
 function signatureMatches(
   ticketId: string,
   manageTokenNonce: string,
@@ -114,6 +118,35 @@ export function verifyOrderTokenClaims(token: string): VerifiedOrderToken | null
       : null;
   } catch (error) {
     log.error('Error verifying order token', error);
+    return null;
+  }
+}
+
+/**
+ * Verify a pre-nonce manage token during the compatibility window.
+ *
+ * Callers must also check the ticket's legacy_manage_token_valid flag. This
+ * function only authenticates the old signature; it does not grant access.
+ */
+export function verifyLegacyOrderToken(token: string): string | null {
+  try {
+    const secret = process.env.ORDER_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
+    if (!secret) return null;
+
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+
+    const [rawTicketId, providedSignature] = parts;
+    const ticketId = canonicalUuid(rawTicketId);
+    if (!ticketId) return null;
+
+    const provided = Buffer.from(providedSignature);
+    const expected = Buffer.from(computeLegacySignature(ticketId, secret));
+    if (provided.length !== expected.length) return null;
+
+    return crypto.timingSafeEqual(provided, expected) ? ticketId : null;
+  } catch (error) {
+    log.error('Error verifying legacy order token', error);
     return null;
   }
 }
