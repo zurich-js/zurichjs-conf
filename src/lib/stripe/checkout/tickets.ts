@@ -56,6 +56,7 @@ export interface TicketCreationResult {
     ticket_type: string;
     amount_paid: number;
     qr_code_url?: string;
+    manage_token_nonce: string;
   };
   error?: string;
   attendee: AttendeeInfo;
@@ -239,6 +240,7 @@ async function createTicketsInDatabase(
         ticket_type: ticketResult.ticket.ticket_type,
         amount_paid: ticketResult.ticket.amount_paid,
         qr_code_url: ticketResult.ticket.qr_code_url ?? undefined,
+        manage_token_nonce: ticketResult.ticket.manage_token_nonce,
       } : undefined,
       error: ticketResult.error,
       attendee,

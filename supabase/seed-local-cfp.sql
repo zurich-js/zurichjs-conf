@@ -2285,6 +2285,134 @@ on conflict (submission_id, reviewer_id) do update set
     created_at = excluded.created_at,
     updated_at = excluded.updated_at;
 
+-- Public networking fixtures
+-- Share paths:
+--   /share/attendee-88000000-0000-4000-8000-000000000001
+--   /share/sponsor-88000000-0000-4000-8000-000000000002
+--   /share/speaker-alex-ng
+insert into public.tickets (
+    id,
+    user_id,
+    ticket_type,
+    ticket_category,
+    ticket_stage,
+    first_name,
+    last_name,
+    email,
+    company,
+    job_title,
+    stripe_customer_id,
+    stripe_session_id,
+    amount_paid,
+    currency,
+    status,
+    metadata
+)
+values (
+    '87000000-0000-4000-8000-000000000001',
+    null,
+    'standard',
+    'standard',
+    'general_admission',
+    'Ada',
+    'Lovelace',
+    'networking-attendee@zurichjs.test',
+    'Analytical Engines',
+    'Programmer',
+    'cus_networking_fixture',
+    'cs_networking_fixture',
+    29900,
+    'CHF',
+    'confirmed',
+    '{"source": "seed-local-cfp", "networking_fixture": true}'::jsonb
+)
+on conflict (id) do update set
+    ticket_type = excluded.ticket_type,
+    ticket_category = excluded.ticket_category,
+    ticket_stage = excluded.ticket_stage,
+    first_name = excluded.first_name,
+    last_name = excluded.last_name,
+    email = excluded.email,
+    company = excluded.company,
+    job_title = excluded.job_title,
+    stripe_customer_id = excluded.stripe_customer_id,
+    stripe_session_id = excluded.stripe_session_id,
+    amount_paid = excluded.amount_paid,
+    currency = excluded.currency,
+    status = excluded.status,
+    metadata = excluded.metadata,
+    updated_at = now();
+
+insert into public.networking_profiles (
+    id,
+    share_id,
+    subject_type,
+    ticket_id,
+    enabled,
+    profile
+)
+values (
+    '89000000-0000-4000-8000-000000000001',
+    '88000000-0000-4000-8000-000000000001',
+    'attendee',
+    '87000000-0000-4000-8000-000000000001',
+    true,
+    '{
+      "linkedinUrl": "https://linkedin.com/in/ada-lovelace",
+      "githubUrl": "https://github.com/ada-lovelace",
+      "xHandle": "@ada_networks",
+      "blueskyHandle": "@ada.bsky.social",
+      "mastodonHandle": "@ada@fosstodon.org",
+      "websiteUrl": "https://ada.example.com"
+    }'::jsonb
+)
+on conflict (ticket_id) do update set
+    share_id = excluded.share_id,
+    subject_type = excluded.subject_type,
+    enabled = excluded.enabled,
+    profile = excluded.profile,
+    updated_at = now();
+
+insert into public.networking_profiles (
+    id,
+    share_id,
+    subject_type,
+    sponsor_id,
+    enabled,
+    profile
+)
+values (
+    '89000000-0000-4000-8000-000000000002',
+    '88000000-0000-4000-8000-000000000002',
+    'sponsor',
+    '85000000-0000-4000-8000-000000000001',
+    true,
+    '{
+      "contactName": "Namespace Partnerships",
+      "email": "community@namespace.so",
+      "phone": null,
+      "websiteUrl": "https://namespace.so",
+      "linkedinUrl": "https://linkedin.com/company/namespaceso",
+      "preferredMethod": "email"
+    }'::jsonb
+)
+on conflict (sponsor_id) do update set
+    share_id = excluded.share_id,
+    subject_type = excluded.subject_type,
+    enabled = excluded.enabled,
+    profile = excluded.profile,
+    updated_at = now();
+
+update public.cfp_speakers
+set
+    linkedin_url = 'https://linkedin.com/in/alex-ng',
+    github_url = 'https://github.com/alex-ng',
+    twitter_handle = '@alex_ng',
+    bluesky_handle = '@alex-ng.bsky.social',
+    mastodon_handle = '@alex_ng@fosstodon.org',
+    updated_at = now()
+where id = '11111111-1111-4111-8111-111111111111';
+
 -- Additional generated load-test data merged into the main reviewer dashboard seed.
 -- This preserves the curated reviewer-dashboard fixtures above while adding enough
 -- speakers, submissions, tags, and review joins to exercise filtering and coverage logic at scale.

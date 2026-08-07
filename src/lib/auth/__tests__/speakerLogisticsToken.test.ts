@@ -14,6 +14,7 @@ import {
 import { generateOrderToken } from '@/lib/auth/orderToken';
 
 const SPEAKER_ID = '0b7c4d9e-51a3-4f2b-9c6d-8e1f2a3b4c5d';
+const MANAGE_TOKEN_NONCE = '9dc7c037-ef40-4ac5-b24c-66ee9e9ee0f9';
 
 function signWith(speakerId: string, secret: string): string {
   const signature = crypto
@@ -72,7 +73,7 @@ describe('speakerLogisticsToken', () => {
     it('rejects an order token for the same ID (scope isolation)', () => {
       vi.stubEnv('ORDER_TOKEN_SECRET', 'current-secret');
 
-      const orderToken = generateOrderToken(SPEAKER_ID);
+      const orderToken = generateOrderToken(SPEAKER_ID, MANAGE_TOKEN_NONCE);
 
       expect(verifySpeakerLogisticsToken(orderToken)).toBeNull();
     });

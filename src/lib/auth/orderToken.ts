@@ -8,6 +8,16 @@ import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Order Token');
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface VerifiedOrderToken {
+  ticketId: string;
+  manageTokenNonce: string;
+}
+
+function canonicalUuid(value: string): string | null {
+  return UUID_PATTERN.test(value) ? value.toLowerCase() : null;
+}
 
 /**
  * The secret used to sign newly generated tokens.
@@ -22,15 +32,24 @@ function getSigningSecret(): string {
   return secret;
 }
 
-function computeSignature(ticketId: string, secret: string): string {
+function signaturePayload(ticketId: string, manageTokenNonce: string): string {
+  return `${ticketId}.${manageTokenNonce}`;
+}
+
+function computeSignature(ticketId: string, manageTokenNonce: string, secret: string): string {
   const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(ticketId);
+  hmac.update(signaturePayload(ticketId, manageTokenNonce));
   return hmac.digest('base64url');
 }
 
-function signatureMatches(ticketId: string, providedSignature: string, secret: string): boolean {
+function signatureMatches(
+  ticketId: string,
+  manageTokenNonce: string,
+  providedSignature: string,
+  secret: string
+): boolean {
   const provided = Buffer.from(providedSignature);
-  const expected = Buffer.from(computeSignature(ticketId, secret));
+  const expected = Buffer.from(computeSignature(ticketId, manageTokenNonce, secret));
 
   // timingSafeEqual throws on length mismatch — reject those up front
   if (provided.length !== expected.length) {
@@ -42,24 +61,32 @@ function signatureMatches(ticketId: string, providedSignature: string, secret: s
 
 /**
  * Generate a secure token for accessing an order
- * This creates an HMAC signature of the ticket ID using a secret key
+ * The per-ticket nonce is rotated when identity changes, invalidating old links.
  */
-export function generateOrderToken(ticketId: string): string {
-  const signature = computeSignature(ticketId, getSigningSecret());
+export function generateOrderToken(ticketId: string, manageTokenNonce: string): string {
+  const canonicalTicketId = canonicalUuid(ticketId);
+  if (!canonicalTicketId) {
+    throw new Error('A valid ticket ID is required');
+  }
 
-  // Return ticket ID and signature combined
-  return `${ticketId}.${signature}`;
+  const canonicalNonce = canonicalUuid(manageTokenNonce);
+  if (!canonicalNonce) {
+    throw new Error('A valid manage token nonce is required');
+  }
+
+  const signature = computeSignature(canonicalTicketId, canonicalNonce, getSigningSecret());
+
+  return `${canonicalTicketId}.${canonicalNonce}.${signature}`;
 }
 
 /**
- * Verify an order token and extract the ticket ID
- * Returns the ticket ID if valid, null if invalid
+ * Verify an order token and return its authenticated ticket ID and nonce.
  *
- * Tokens signed with a rotated-out secret will not verify — the recovery
- * flow (POST /api/orders/recover-link) handles those by emailing a freshly
- * signed link to the address on the ticket.
+ * This verifies the HMAC but does not establish that the nonce is still current.
+ * Access checks must use verifyOrderTokenForCurrentTicket, while transactional
+ * mutations can compare these claims against a locked ticket row.
  */
-export function verifyOrderToken(token: string): string | null {
+export function verifyOrderTokenClaims(token: string): VerifiedOrderToken | null {
   try {
     const secret = process.env.ORDER_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
 
@@ -70,19 +97,42 @@ export function verifyOrderToken(token: string): string | null {
       return null;
     }
 
-    // Split token into ticket ID and signature
     const parts = token.split('.');
-    if (parts.length !== 2) {
+    if (parts.length !== 3) {
       return null;
     }
 
-    const [ticketId, providedSignature] = parts;
+    const [rawTicketId, rawManageTokenNonce, providedSignature] = parts;
+    const ticketId = canonicalUuid(rawTicketId);
+    const manageTokenNonce = canonicalUuid(rawManageTokenNonce);
+    if (!ticketId || !manageTokenNonce) {
+      return null;
+    }
 
-    return signatureMatches(ticketId, providedSignature, secret) ? ticketId : null;
+    return signatureMatches(ticketId, manageTokenNonce, providedSignature, secret)
+      ? { ticketId, manageTokenNonce }
+      : null;
   } catch (error) {
     log.error('Error verifying order token', error);
     return null;
   }
+}
+
+/**
+ * Verify an order token against a specific current nonce.
+ */
+export function verifyOrderToken(token: string, expectedManageTokenNonce: string): string | null {
+  const claims = verifyOrderTokenClaims(token);
+  if (!claims) {
+    return null;
+  }
+
+  const expectedNonce = canonicalUuid(expectedManageTokenNonce);
+  if (!expectedNonce || claims.manageTokenNonce !== expectedNonce) {
+    return null;
+  }
+
+  return claims.ticketId;
 }
 
 /**
@@ -96,15 +146,18 @@ export function verifyOrderToken(token: string): string | null {
 export function extractTicketIdUnverified(token: string): string | null {
   const ticketId = token.split('.')[0];
 
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidPattern.test(ticketId) ? ticketId : null;
+  return canonicalUuid(ticketId);
 }
 
 /**
  * Generate order URL for a ticket
  */
-export function generateOrderUrl(ticketId: string, baseUrl?: string): string {
-  const token = generateOrderToken(ticketId);
+export function generateOrderUrl(
+  ticketId: string,
+  manageTokenNonce: string,
+  baseUrl?: string
+): string {
+  const token = generateOrderToken(ticketId, manageTokenNonce);
   const base = baseUrl || getBaseUrl();
   return `${base}/manage-order?token=${token}`;
 }

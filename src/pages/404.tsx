@@ -110,7 +110,7 @@ export default function Custom404() {
                 Uncaught Exception
               </Kicker>
 
-              <Heading level="h1" className="text-white mb-6 max-w-2xl text-3xl sm:text-4xl">
+              <Heading level="h1" className="text-white mb-6 max-w-2xl text-2xl xs:text-3xl xl:text-4xl">
                 Page Not Found
               </Heading>
 

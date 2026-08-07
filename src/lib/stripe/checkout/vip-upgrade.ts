@@ -142,7 +142,7 @@ export async function handleVipUpgradePayment(
 
     // Send confirmation email
     try {
-      const orderUrl = generateOrderUrl(ticketId);
+      const orderUrl = generateOrderUrl(ticketId, ticket.manage_token_nonce);
       await sendVipUpgradeEmail({
         to: ticket.email,
         firstName: ticket.first_name,

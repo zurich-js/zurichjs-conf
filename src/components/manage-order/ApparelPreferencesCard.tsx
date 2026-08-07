@@ -30,12 +30,12 @@ export function ApparelPreferencesCard({ isVip, preferences, mutation }: Apparel
   };
 
   return (
-    <div className="bg-black rounded-2xl p-8 mb-8">
+    <div className="rounded-2xl border border-brand-gray-light bg-brand-gray-lightest p-8 mb-8">
       <div className="flex items-center gap-3 mb-2">
-        <Shirt className="w-6 h-6 text-brand-primary" aria-hidden="true" />
-        <h2 className="text-xl font-bold text-brand-primary">Apparel Preferences</h2>
+        <Shirt className="w-6 h-6 text-brand-blue" aria-hidden="true" />
+        <h2 className="text-xl font-bold text-brand-black">Apparel Preferences</h2>
       </div>
-      <p className="text-gray-200 mb-6">
+      <p className="text-brand-gray-darkest mb-6">
         Tell us your preferred size for the limited edition conference t-shirt so we can plan ahead.
       </p>
 
@@ -46,7 +46,6 @@ export function ApparelPreferencesCard({ isVip, preferences, mutation }: Apparel
           onChange={setTshirtSize}
           options={SIZE_OPTIONS}
           placeholder="Select your t-shirt size..."
-          variant="dark"
           disabled={mutation.isPending}
         />
 
@@ -56,7 +55,7 @@ export function ApparelPreferencesCard({ isVip, preferences, mutation }: Apparel
               <Sparkles className="w-4 h-4 text-amber-400" aria-hidden="true" />
               <h3 className="text-amber-400 font-semibold text-sm">VIP Package Hoodie</h3>
             </div>
-            <p className="text-gray-300 text-sm mb-3">
+            <p className="text-brand-gray-darkest text-sm mb-3">
               Your VIP package includes an exclusive conference hoodie. Feel free to pick a different size than your
               t-shirt — hoodies often fit differently.
             </p>
@@ -66,25 +65,24 @@ export function ApparelPreferencesCard({ isVip, preferences, mutation }: Apparel
               onChange={setHoodieSize}
               options={SIZE_OPTIONS}
               placeholder="Select your hoodie size..."
-              variant="dark"
               disabled={mutation.isPending}
             />
           </div>
         )}
 
-        <p className="text-gray-400 text-sm">
+        <p className="text-brand-gray-darkest text-sm">
           Please note: our apparel comes in standard unisex sizing and, while we do our best, we cannot guarantee a
           perfect fit for every body type. Sizes are subject to availability.
         </p>
 
         {mutation.error && (
-          <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg text-sm">
+          <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-lg text-sm">
             {mutation.error instanceof Error ? mutation.error.message : 'Failed to save your preferences'}
           </div>
         )}
 
         {mutation.isSuccess && (
-          <div className="flex items-center gap-2 text-green-400 text-sm">
+          <div className="flex items-center gap-2 text-green-700 text-sm">
             <Check className="w-4 h-4" aria-hidden="true" />
             <span>Your apparel preferences have been saved.</span>
           </div>

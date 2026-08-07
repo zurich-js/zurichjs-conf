@@ -212,7 +212,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Generate order URL
-        const orderUrl = generateOrderUrl(ticket.id);
+        const orderUrl = generateOrderUrl(ticket.id, ticket.manage_token_nonce);
 
         // Prepare email data
         const emailData: TicketConfirmationData = {

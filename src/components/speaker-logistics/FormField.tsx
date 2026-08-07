@@ -63,6 +63,7 @@ export function TextField({
   return (
     <FieldShell id={id} label={label} hint={hint} error={error} required={required}>
       <Input
+        data-mask
         id={id}
         type={type}
         value={value}
@@ -98,6 +99,7 @@ export function TextAreaField({
   return (
     <FieldShell id={id} label={label} hint={hint} error={error} required={required}>
       <Textarea
+        data-mask
         id={id}
         value={value}
         placeholder={placeholder}

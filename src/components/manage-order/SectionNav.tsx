@@ -13,6 +13,7 @@ import {
   Shirt,
   Sparkles,
   Ticket,
+  Users,
   Zap,
   type LucideIcon,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ import {
 export const MANAGE_ORDER_SECTIONS = {
   entryPass: 'entry-pass',
   ticketDetails: 'ticket-details',
+  networking: 'networking',
   vipBenefits: 'vip-benefits',
   apparel: 'apparel',
   vipUpgrade: 'vip-upgrade',
@@ -47,6 +49,7 @@ export function SectionNav({ isVip, hasPendingUpgrade }: SectionNavProps) {
     { id: MANAGE_ORDER_SECTIONS.ticketDetails, label: 'Ticket Details', icon: Ticket },
     ...(isVip ? [{ id: MANAGE_ORDER_SECTIONS.vipBenefits, label: 'VIP Benefits', icon: Crown }] : []),
     { id: MANAGE_ORDER_SECTIONS.apparel, label: 'Apparel', icon: Shirt },
+    { id: MANAGE_ORDER_SECTIONS.networking, label: 'Networking', icon: Users },
     ...(hasPendingUpgrade || !isVip
       ? [{ id: MANAGE_ORDER_SECTIONS.vipUpgrade, label: 'VIP Upgrade', icon: Sparkles }]
       : []),
@@ -65,9 +68,9 @@ export function SectionNav({ isVip, hasPendingUpgrade }: SectionNavProps) {
             <li key={section.id}>
               <a
                 href={`#${section.id}`}
-                className="inline-flex items-center gap-2 bg-black text-brand-white text-sm font-semibold rounded-full px-4 py-2 hover:bg-brand-gray-darkest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-2 rounded-full border border-brand-gray-light bg-brand-gray-lightest px-4 py-2 text-sm font-semibold text-brand-black transition-colors hover:border-brand-gray-medium hover:bg-brand-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
               >
-                <Icon className="w-4 h-4 text-brand-primary" aria-hidden="true" />
+                <Icon className="w-4 h-4 text-brand-blue" aria-hidden="true" />
                 {section.label}
               </a>
             </li>
