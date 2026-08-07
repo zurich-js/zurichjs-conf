@@ -35,8 +35,11 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
 }) => {
   const isEmpty = !logo;
   const hasExplicitColorLogo = !!logoColor;
-  const isSvgOrGif = logo?.endsWith('.svg') || logo?.endsWith('.gif');
-  const isColorSvgOrGif = logoColor?.endsWith('.svg') || logoColor?.endsWith('.gif');
+  const tierLabel = tier
+    ? `${tier.charAt(0).toUpperCase()}${tier.slice(1)}`
+    : undefined;
+  const hoverBackground = logoColorBackground || 'var(--color-brand-white)';
+  const tierBackground = `color-mix(in srgb, ${hoverBackground} 40%, var(--color-brand-black))`;
 
   const baseClasses =
     'block w-full h-full rounded-2xl transition-all duration-300 focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none';
@@ -66,43 +69,62 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
 
   // --- Filled state: keep the base logo as-is, unless we need the grayscale fallback. ---
   const content = (
-    <div
-        className={clsx(
-            'relative w-full h-full flex items-center justify-center rounded-2xl border-2 border-transparent',
-            hasExplicitColorLogo && !logoColorBackground && 'group-hover:border-white',
-        )}
-    >
-      {hasExplicitColorLogo && logoColorBackground && (
-        <div
-          className="absolute inset-0 opacity-0 rounded-2xl transition-opacity duration-500 ease-in-out group-hover:opacity-100"
-          style={{ backgroundColor: logoColorBackground }}
-          aria-hidden="true"
-        />
+    <div className="relative isolate w-full h-full">
+      {tierLabel && (
+        <>
+          <span
+            className="pointer-events-none absolute left-1/2 top-0 z-0 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 translate-y-0 overflow-hidden rounded-t-xl px-2.5 py-1 text-[9px] font-bold uppercase leading-none tracking-wide whitespace-nowrap opacity-0 transition-[translate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-3.5 group-hover:opacity-100 group-focus-within:-translate-y-3.5 group-focus-within:opacity-100 motion-reduce:transition-none"
+            aria-hidden="true"
+          >
+            <span
+              className="absolute inset-0"
+              style={{ backgroundColor: tierBackground }}
+            />
+            <span className="relative z-10 text-brand-white">
+              {tierLabel}
+            </span>
+          </span>
+          <span className="sr-only">{tierLabel} sponsor</span>
+        </>
       )}
-      {/* Default (grayscale) logo */}
-      <Image
-        src={logo}
-        alt={name ? `${name} logo` : 'Sponsor logo'}
-        fill
-        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
-        className={`object-contain p-4 transition-all duration-500 ease-in-out ${
-          hasExplicitColorLogo
-            ? 'opacity-100 group-hover:opacity-0'
-            : 'grayscale group-hover:grayscale-0'
-        }`}
-        unoptimized
-      />
-      {/* Color logo (only if explicitly provided) */}
-      {hasExplicitColorLogo && (
+      <div
+        className={clsx(
+          'relative z-10 w-full h-full flex items-center justify-center rounded-2xl border-2 border-transparent',
+          hasExplicitColorLogo && !logoColorBackground && 'group-hover:border-white group-focus-within:border-white',
+        )}
+      >
+        {hasExplicitColorLogo && logoColorBackground && (
+          <div
+            className="absolute inset-0 opacity-0 rounded-2xl transition-opacity duration-500 ease-in-out group-hover:opacity-100 group-focus-within:opacity-100"
+            style={{ backgroundColor: logoColorBackground }}
+            aria-hidden="true"
+          />
+        )}
+        {/* Default (grayscale) logo */}
         <Image
-          src={logoColor}
+          src={logo}
           alt={name ? `${name} logo` : 'Sponsor logo'}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
-          className="object-contain p-4 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100"
+          className={`object-contain p-4 transition-all duration-500 ease-in-out ${
+            hasExplicitColorLogo
+              ? 'opacity-100 group-hover:opacity-0 group-focus-within:opacity-0'
+              : 'grayscale group-hover:grayscale-0 group-focus-within:grayscale-0'
+          }`}
           unoptimized
         />
-      )}
+        {/* Color logo (only if explicitly provided) */}
+        {hasExplicitColorLogo && (
+          <Image
+            src={logoColor}
+            alt={name ? `${name} logo` : 'Sponsor logo'}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
+            className="object-contain p-4 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 group-focus-within:opacity-100"
+            unoptimized
+          />
+        )}
+      </div>
     </div>
   );
 
@@ -113,7 +135,7 @@ export const SponsorCard: React.FC<SponsorCardProps> = ({
         target="_blank"
         rel="noopener noreferrer"
         className={`${baseClasses} bg-transparent hover:scale-[1.02] group`}
-        aria-label={name ? `Visit ${name} website` : 'Visit sponsor website'}
+        aria-label={name ? `Visit ${name} website${tierLabel ? ` (${tierLabel} sponsor)` : ''}` : 'Visit sponsor website'}
         onClick={() => trackSponsorClicked({
           sponsorName: name || 'Unknown',
           sponsorUrl: url,
