@@ -70,14 +70,14 @@ export const extractNavigationItems = (
 
 /**
  * RichTextRenderer component
- * Renders content sections dynamically based on their type
+ * Renders content blocks dynamically based on their type
  * Supports headings, paragraphs, lists, and nested subsections
  */
 export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   sections,
   onQuickLinkClick,
 }) => {
-  const renderSection = (
+  const renderContentBlock = (
     section: ContentSection,
     index: number
   ): React.ReactNode => {
@@ -87,15 +87,15 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           ? slugify(section.content)
           : undefined;
         return (
-          <div key={index} id={headingId} className="scroll-mt-24">
-            <Heading
-              level={section.level || "h2"}
-              variant="light"
-              className="mb-3"
-            >
-              {section.content}
-            </Heading>
-          </div>
+          <Heading
+            key={index}
+            id={headingId}
+            level={section.level || "h2"}
+            variant="light"
+            className={`${section.level === "h3" ? "mt-[3.5ex] mb-[1ex]" : "mt-[5ex] mb-[1.5ex]"} scroll-mt-24 first:mt-0`}
+          >
+            {section.content}
+          </Heading>
         );
 
       case "paragraph":
@@ -111,7 +111,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           <p
             key={index}
             id={paragraphId}
-            className="text-gray-700 leading-relaxed scroll-mt-24 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+            className="mb-[2ex] text-gray-700 leading-relaxed scroll-mt-24 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
             dangerouslySetInnerHTML={{ __html: section.content || "" }}
           />
         );
@@ -120,7 +120,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
         return (
           <ul
             key={index}
-            className="list-disc list-inside space-y-2 text-gray-700 ml-4 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+            className="mb-[2.5ex] ml-[2ex] list-inside list-disc space-y-[0.75ex] text-gray-700 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
           >
             {section.items?.map((item, i) => (
               <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
@@ -130,9 +130,9 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
 
       case "subsection":
         return (
-          <div key={index} className="space-y-4 text-gray-700">
+          <div key={index} className="text-gray-700">
             {section.subsections?.map((subsection, i) =>
-              renderSection(subsection, i)
+              renderContentBlock(subsection, i)
             )}
           </div>
         );
@@ -141,9 +141,9 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
         return (
           <div
             key={index}
-            className="rounded-xl border border-brand-yellow-main/60 bg-brand-yellow-main/10 px-4 py-3"
+            className="my-[2.5ex] rounded-xl border border-brand-yellow-main/60 bg-brand-yellow-main/10 px-4 py-3"
           >
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-1">
+            <p className="mb-[0.75ex] text-xs font-bold uppercase tracking-wider text-gray-900">
               TL;DR
             </p>
             <p
@@ -155,12 +155,15 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
 
       case "quicklinks":
         return (
-          <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div
+            key={index}
+            className="my-[2.5ex] grid grid-cols-1 gap-3 sm:grid-cols-2"
+          >
             {section.links?.map((link) => {
               const content = (
                 <>
                   <MapPin
-                    className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5"
+                    className="mt-[0.25ex] h-5 w-5 flex-shrink-0 text-gray-500"
                     aria-hidden="true"
                   />
                   <span className="flex-1 min-w-0">
@@ -168,12 +171,12 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
                       {link.label}
                     </span>
                     {link.travelTime && (
-                      <small className="ml-1.5 whitespace-nowrap text-xs font-normal text-gray-500">
+                      <small className="ml-[0.75ex] whitespace-nowrap text-xs font-normal text-gray-500">
                         ({link.travelTime})
                       </small>
                     )}
                     {link.sublabel && (
-                      <span className="block text-xs text-gray-500 mt-0.5">
+                      <span className="mt-[0.5ex] block text-xs text-gray-500">
                         {link.sublabel}
                       </span>
                     )}
@@ -216,7 +219,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
         return (
           <p
             key={index}
-            className="text-gray-700 leading-relaxed [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+            className="mb-[2ex] text-gray-700 leading-relaxed [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
           >
             <span
               dangerouslySetInnerHTML={{ __html: section.before || "" }}
@@ -236,7 +239,11 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
 
       case "infobox":
         return (
-          <InfoBox key={index} title={section.title || "More information"}>
+          <InfoBox
+            key={index}
+            title={section.title || "More information"}
+            className="my-[2.5ex]"
+          >
             <span
               dangerouslySetInnerHTML={{ __html: section.content || "" }}
             />
@@ -245,7 +252,10 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
 
       case "node":
         return (
-          <div key={index} className="text-gray-700 leading-relaxed">
+          <div
+            key={index}
+            className="mb-[2ex] text-gray-700 leading-relaxed"
+          >
             {section.node}
           </div>
         );
@@ -256,10 +266,10 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   };
 
   return (
-    <div className="rich-text-renderer space-y-6">
-      {sections.map((section, index) => (
-        <section key={index}>{renderSection(section, index)}</section>
-      ))}
+    <div className="rich-text-renderer">
+      {sections.map((section, index) =>
+        renderContentBlock(section, index)
+      )}
     </div>
   );
 };
