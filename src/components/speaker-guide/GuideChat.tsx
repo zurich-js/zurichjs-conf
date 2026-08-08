@@ -4,15 +4,19 @@ import { Bot, ChevronRight, RotateCcw, Send } from "lucide-react";
 import { analytics } from "@/lib/analytics/client";
 import { slugify } from "@/components/RichTextRenderer";
 import type { ContentSection } from "@/data/info-pages";
+import type { SpeakerGuideChatContext } from "@/data/speaker-guide-chat";
 
 export interface GuideChatProps {
   sections: ContentSection[];
+  context?: SpeakerGuideChatContext[];
 }
 
 interface GuideChunk {
   id: string;
   title: string;
   text: string;
+  chatContext: string;
+  searchTerms: string;
 }
 
 interface ChatMessage {
@@ -53,8 +57,13 @@ const stripHtml = (html: string): string =>
     .replace(/\s+/g, " ")
     .trim();
 
-/** Group the guide's flat section list into one text chunk per h2 heading. */
-const buildChunks = (sections: ContentSection[]): GuideChunk[] => {
+const EMPTY_CHAT_CONTEXT: SpeakerGuideChatContext[] = [];
+
+/** Group the visible guide and its parallel chat context into one chunk per h2. */
+export const buildChunks = (
+  sections: ContentSection[],
+  context: SpeakerGuideChatContext[] = EMPTY_CHAT_CONTEXT
+): GuideChunk[] => {
   const chunks: GuideChunk[] = [];
   let current: GuideChunk | null = null;
 
@@ -70,12 +79,30 @@ const buildChunks = (sections: ContentSection[]): GuideChunk[] => {
       // fragments and duplicate facts that live in real sections.
       return "";
     }
+    if (section.type === "infotip") {
+      const sentence = stripHtml(
+        `${section.before ?? ""}${section.title ?? ""}${section.after ?? ""}`
+      );
+      const detail = section.content ? stripHtml(section.content) : "";
+      return [sentence, detail].filter(Boolean).join(" ");
+    }
+    if (section.type === "infobox") {
+      return [section.title, section.content ? stripHtml(section.content) : ""]
+        .filter(Boolean)
+        .join(". ");
+    }
     return section.content ? stripHtml(section.content) : "";
   };
 
   sections.forEach((section) => {
     if (section.type === "heading" && section.level === "h2" && section.content) {
-      current = { id: slugify(section.content), title: section.content, text: "" };
+      current = {
+        id: slugify(section.content),
+        title: section.content,
+        text: "",
+        chatContext: "",
+        searchTerms: "",
+      };
       chunks.push(current);
       return;
     }
@@ -85,7 +112,22 @@ const buildChunks = (sections: ContentSection[]): GuideChunk[] => {
     }
   });
 
-  return chunks.filter((chunk) => chunk.text.length > 0);
+  const contextBySection = new Map(
+    context.map((entry) => [entry.sectionId, entry])
+  );
+
+  return chunks
+    .map((chunk) => {
+      const enrichment = contextBySection.get(chunk.id);
+      return {
+        ...chunk,
+        chatContext: enrichment?.content.join(" ") ?? "",
+        searchTerms: enrichment?.searchTerms.join(" ") ?? "",
+      };
+    })
+    .filter(
+      (chunk) => chunk.text.length > 0 || chunk.chatContext.length > 0
+    );
 };
 
 const STOPWORDS = new Set([
@@ -124,7 +166,10 @@ const computeIdf = (
 ): Map<string, number> => {
   const idf = new Map<string, number>();
   const tokenLists = chunks.map(
-    (chunk) => tokenize(chunk.text).concat(tokenize(chunk.title))
+    (chunk) =>
+      tokenize(
+        `${chunk.title} ${chunk.text} ${chunk.chatContext} ${chunk.searchTerms}`
+      )
   );
   tokens.forEach((token) => {
     const df = tokenLists.filter((words) =>
@@ -182,7 +227,7 @@ const extractAnswer = (
     [];
   rankedChunks.forEach((chunk, rank) => {
     const rankBonus = Math.max(0, 2 - rank);
-    splitSentences(chunk.text).forEach((sentence) => {
+    splitSentences(`${chunk.chatContext} ${chunk.text}`.trim()).forEach((sentence) => {
       const words = tokenize(sentence);
       let matchWeight = 0;
       idf.forEach((weight, token) => {
@@ -200,10 +245,7 @@ const extractAnswer = (
     });
   });
 
-  if (candidates.length === 0) {
-    const lead = splitSentences(rankedChunks[0].text)[0];
-    return lead ? { text: `“${lead}”`, chunks: [rankedChunks[0]] } : null;
-  }
+  if (candidates.length === 0) return null;
 
   candidates.sort((a, b) => b.score - a.score || b.text.length - a.text.length);
 
@@ -222,7 +264,7 @@ const extractAnswer = (
   });
 
   return {
-    text: selected.map((entry) => `“${entry.text}”`).join("\n\n"),
+    text: selected.map((entry) => entry.text).join("\n\n"),
     chunks,
   };
 };
@@ -256,7 +298,10 @@ const FaruAvatar: React.FC = () => (
  * browser; the best-matching sentences from the top sections are quoted
  * back. No AI model, no server calls.
  */
-export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
+export const GuideChat: React.FC<GuideChatProps> = ({
+  sections,
+  context = EMPTY_CHAT_CONTEXT,
+}) => {
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", text: GREETING },
@@ -267,7 +312,10 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const aliveRef = useRef(true);
 
-  const chunks = useMemo(() => buildChunks(sections), [sections]);
+  const chunks = useMemo(
+    () => buildChunks(sections, context),
+    [sections, context]
+  );
 
   const chunkById = useMemo(
     () => new Map(chunks.map((chunk) => [chunk.id, chunk])),
@@ -276,10 +324,10 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
 
   const miniSearch = useMemo(() => {
     const index = new MiniSearch<GuideChunk>({
-      fields: ["title", "text"],
+      fields: ["title", "text", "chatContext", "searchTerms"],
       processTerm,
       searchOptions: {
-        boost: { title: 3 },
+        boost: { title: 3, chatContext: 2, searchTerms: 5 },
         prefix: true,
         fuzzy: 0.2,
         processTerm,
@@ -352,12 +400,15 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
     const sources = results
       .map((result) => chunkById.get(String(result.id)))
       .filter((chunk): chunk is GuideChunk => Boolean(chunk));
-    // Document-side matched terms, so fuzzy/prefix hits carry through to
-    // sentence selection (a typo'd query still highlights real words).
+    const queryTerms = Array.from(new Set(tokenize(question)));
+    // Document-side terms are retained only as a fallback, so a typo can still
+    // resolve without allowing broad fuzzy matches to pollute a normal answer.
     const matchedTerms = Array.from(
       new Set(results.flatMap((result) => Object.keys(result.match)))
     );
-    const answer = extractAnswer(matchedTerms, sources, chunks);
+    const answer =
+      extractAnswer(queryTerms, sources, chunks) ??
+      extractAnswer(matchedTerms, sources, chunks);
 
     analytics.track("speaker_guide_question_asked", {
       question,
@@ -378,8 +429,8 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
       await sleep(600);
       await streamReply(
         answer
-          ? `Here's what the guide says:\n\n${answer.text}`
-          : "Here's what the guide says about that:",
+          ? `Here's the useful bit:\n\n${answer.text}`
+          : "Here's what I found about that:",
         answer ? answer.chunks : sources
       );
     }
@@ -414,8 +465,8 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-xs text-gray-500">
-          Faru answers straight from this guide, right in your browser —
-          nothing you type leaves the page.
+          Nothing you type leaves the page: Faru searches the guide and its
+          extra speaker context, straight from your browser.
         </p>
         {messages.length > 1 && (
           <button
@@ -563,8 +614,8 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
           </p>
           <ol className="list-decimal list-inside space-y-1">
             <li>
-              When the page loads, the guide is split into one text chunk per
-              section and indexed with{" "}
+              When the page loads, the visible guide is split into one text
+              chunk per section and indexed with{" "}
               <a
                 href="https://github.com/lucaong/minisearch"
                 target="_blank"
@@ -576,6 +627,11 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
               , a tiny open-source full-text search library.
             </li>
             <li>
+              Chat-only context and common alternative terms are indexed beside
+              each section. They make answers more complete without adding
+              extra prose to the reading page.
+            </li>
+            <li>
               Your question is broken into keywords; filler words like
               &quot;the&quot; and &quot;when&quot; are dropped, and small typos
               are tolerated.
@@ -585,8 +641,8 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
               common ones, and matches in section titles count triple.
             </li>
             <li>
-              The best-matching sentences from the top sections are quoted
-              back, with links to the full sections.
+              The best-matching answer sentences are returned with links to the
+              relevant visible sections.
             </li>
           </ol>
           <p>
