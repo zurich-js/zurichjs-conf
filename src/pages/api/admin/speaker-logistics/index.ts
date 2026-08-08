@@ -10,6 +10,7 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getAdminSpeakersWithSubmissions } from '@/lib/cfp/admin';
 import { generateSpeakerLogisticsUrl } from '@/lib/auth/speakerLogisticsToken';
+import { getSpeakerGuideAccess, type SpeakerGuideAccess } from '@/lib/speaker-guide/access';
 import { logger } from '@/lib/logger';
 import type { SpeakerLogisticsRow } from '@/lib/types/speaker-logistics';
 
@@ -28,6 +29,8 @@ export interface SpeakerLogisticsAdminRow {
   has_workshop: boolean;
   /** Unique form link (shared with the speaker manually) — omitted for read-only bot clients */
   logistics_url: string | null;
+  /** Personalized guide link built from this authoritative logistics record */
+  speaker_guide: SpeakerGuideAccess;
   status: SpeakerLogisticsStatus;
   submitted_at: string | null;
   /** Last time the speaker changed their answers */
@@ -189,6 +192,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ),
         // Unique speaker-level write access — never hand it to the read-only bot
         logistics_url: isBot ? null : generateSpeakerLogisticsUrl(speaker.id),
+        speaker_guide: getSpeakerGuideAccess(speaker),
         status,
         submitted_at: logistics?.submitted_at ?? null,
         updated_at: logistics?.updated_at ?? null,

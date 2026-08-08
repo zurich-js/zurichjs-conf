@@ -9,6 +9,8 @@ import type { SpeakerGuideChatContext } from "@/data/speaker-guide-chat";
 export interface GuideChatProps {
   sections: ContentSection[];
   context?: SpeakerGuideChatContext[];
+  sourceBaseHref?: string;
+  speakerName?: string;
 }
 
 interface GuideChunk {
@@ -301,10 +303,17 @@ const FaruAvatar: React.FC = () => (
 export const GuideChat: React.FC<GuideChatProps> = ({
   sections,
   context = EMPTY_CHAT_CONTEXT,
+  sourceBaseHref = "/speaker-guide",
+  speakerName,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "assistant", text: GREETING },
+    {
+      role: "assistant",
+      text: speakerName
+        ? `Hey ${speakerName}! 👋 I'm Faru, your personal speaker guide companion. Ask me about your schedule, arrival, venues, slides, or any event in your guide.`
+        : GREETING,
+    },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -320,6 +329,27 @@ export const GuideChat: React.FC<GuideChatProps> = ({
   const chunkById = useMemo(
     () => new Map(chunks.map((chunk) => [chunk.id, chunk])),
     [chunks]
+  );
+
+  const suggestions = useMemo(
+    () => SUGGESTIONS.filter((suggestion) => {
+      if (suggestion.includes("after party")) {
+        return chunkById.has("after-party-at-seebad-enge");
+      }
+      if (suggestion.includes("12th")) {
+        const keyDates = chunkById.get("key-dates-at-a-glance");
+        return `${keyDates?.text ?? ""} ${keyDates?.chatContext ?? ""}`.includes("September 12");
+      }
+      if (suggestion.includes("tech checks")) {
+        return chunkById.has("your-talk-slides-stage-and-tech") ||
+          chunkById.has("your-sessions-slides-stage-and-tech");
+      }
+      if (suggestion.includes("speaker hotel")) {
+        return chunkById.has("speaker-hotel");
+      }
+      return true;
+    }),
+    [chunkById]
   );
 
   const miniSearch = useMemo(() => {
@@ -445,7 +475,12 @@ export const GuideChat: React.FC<GuideChatProps> = ({
     analytics.track("speaker_guide_chat_reset", {
       messages_count: messages.length,
     });
-    setMessages([{ role: "assistant", text: GREETING }]);
+    setMessages([{
+      role: "assistant",
+      text: speakerName
+        ? `Hey ${speakerName}! 👋 I'm Faru, your personal speaker guide companion. Ask me about your schedule, arrival, venues, slides, or any event in your guide.`
+        : GREETING,
+    }]);
     inputRef.current?.focus();
   };
 
@@ -515,7 +550,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({
                         className="rounded-xl bg-white border border-gray-200 p-3"
                       >
                         <a
-                          href={`/speaker-guide#${source.id}`}
+                          href={`${sourceBaseHref}#${source.id}`}
                           onClick={() =>
                             analytics.track("speaker_guide_answer_source_clicked", {
                               section_id: source.id,
@@ -550,7 +585,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({
 
       {showSuggestions && (
         <div className="flex flex-wrap gap-2 mb-3">
-          {SUGGESTIONS.map((suggestion) => (
+          {suggestions.map((suggestion) => (
             <button
               key={suggestion}
               type="button"

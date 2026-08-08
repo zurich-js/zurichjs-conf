@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, Utensils, Calendar, Sparkles } from 'lucide-react';
+import { Calendar, Check, Sparkles, Utensils, X } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { useToast } from '@/contexts/ToastContext';
 import type { FlightWithSpeaker, SpeakerWithTravel } from '@/lib/cfp/admin-travel';
@@ -178,7 +178,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     ? calculateNights(firstAccommodationRoom.check_in_date, firstAccommodationRoom.check_out_date)
     : calculateNights(speaker.accommodation?.check_in_date ?? null, speaker.accommodation?.check_out_date ?? null);
   const travelConfirmed = isTravelConfirmed(speaker);
-
   return (
     <AdminModal
       onClose={onClose}
