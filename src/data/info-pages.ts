@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 export interface QuickLink {
   label: string;
   sublabel?: string;
+  travelTime?: string;
   href: string;
 }
 
@@ -14,8 +15,13 @@ export interface ContentSection {
     | "subsection"
     | "node"
     | "tldr"
-    | "quicklinks";
+    | "quicklinks"
+    | "infotip"
+    | "infobox";
   content?: string;
+  title?: string;
+  before?: string;
+  after?: string;
   level?: "h1" | "h2" | "h3";
   items?: string[];
   subsections?: ContentSection[];

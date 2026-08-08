@@ -13,7 +13,7 @@ import { speakerGuide } from "@/data/speaker-guide";
 import { ShapedSection, SiteFooter } from "@/components/organisms";
 
 /**
- * Unlisted speaker guide — shared with confirmed speakers as a direct link.
+ * Unlisted speaker guide shared with confirmed speakers as a direct link.
  * Not linked from navigation, excluded from the sitemap, disallowed in
  * robots.txt, and served with noindex.
  */
@@ -43,10 +43,7 @@ const SpeakerGuidePage: React.FC = () => {
                   >
                     {speakerGuide.title}
                   </Heading>
-                  <p className="text-lg text-gray-700 leading-relaxed print:hidden">
-                    {speakerGuide.description}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-4 print:hidden">
+                  <p className="text-sm text-gray-500 print:hidden">
                     Last updated: {speakerGuide.lastUpdated}
                   </p>
                 </div>
@@ -66,10 +63,6 @@ const SpeakerGuidePage: React.FC = () => {
                   <span className="flex-1 min-w-0">
                     <span className="block font-bold text-gray-900">
                       Don&apos;t want to read all this? Chat with Faru
-                    </span>
-                    <span className="block text-sm text-gray-600 mt-0.5">
-                      Ask questions and get answers straight from this guide —
-                      right in your browser.
                     </span>
                   </span>
                   <ArrowRight
@@ -110,6 +103,7 @@ const SpeakerGuidePage: React.FC = () => {
                     analytics.track("speaker_guide_quicklink_clicked", {
                       link_label: link.label,
                       link_sublabel: link.sublabel,
+                      travel_time: link.travelTime,
                       link_url: link.href,
                     })
                   }
