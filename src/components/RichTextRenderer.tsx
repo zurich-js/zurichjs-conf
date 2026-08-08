@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowUpRight, MapPin } from "lucide-react";
 import { Heading } from "@/components/atoms";
+import { InfoBox, Infotip } from "@/components/molecules";
 import type { ContentSection, QuickLink } from "@/data/info-pages";
 
 export interface RichTextRendererProps {
@@ -157,7 +158,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {section.links?.map((link) => (
               <a
-                key={link.href}
+                key={`${link.label}-${link.href}`}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -169,9 +170,14 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
                   aria-hidden="true"
                 />
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-gray-900">
                     {link.label}
                   </span>
+                  {link.travelTime && (
+                    <small className="ml-1.5 whitespace-nowrap text-xs font-normal text-gray-500">
+                      ({link.travelTime})
+                    </small>
+                  )}
                   {link.sublabel && (
                     <span className="block text-xs text-gray-500 mt-0.5">
                       {link.sublabel}
@@ -185,6 +191,33 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
               </a>
             ))}
           </div>
+        );
+
+      case "infotip":
+        return (
+          <p
+            key={index}
+            className="text-gray-700 leading-relaxed [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+          >
+            <span
+              dangerouslySetInnerHTML={{ __html: section.before || "" }}
+            />
+            <Infotip label={section.title || "More information"}>
+              <span
+                dangerouslySetInnerHTML={{ __html: section.content || "" }}
+              />
+            </Infotip>
+            <span dangerouslySetInnerHTML={{ __html: section.after || "" }} />
+          </p>
+        );
+
+      case "infobox":
+        return (
+          <InfoBox key={index} title={section.title || "More information"}>
+            <span
+              dangerouslySetInnerHTML={{ __html: section.content || "" }}
+            />
+          </InfoBox>
         );
 
       case "node":

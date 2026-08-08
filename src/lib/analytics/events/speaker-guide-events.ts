@@ -15,6 +15,7 @@ export interface SpeakerGuideQuicklinkClickedEvent {
   properties: BaseEventProperties & {
     link_label: string;
     link_sublabel?: string;
+    travel_time?: string;
     link_url: string;
   };
 }

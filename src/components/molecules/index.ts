@@ -42,6 +42,8 @@ export {
 export { LogoMarquee } from './LogoMarquee';
 export { SponsorCard } from './SponsorCard';
 export { PackedGrid } from './PackedGrid';
+export { Infotip } from './Infotip';
+export { InfoBox } from './InfoBox';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -88,3 +90,5 @@ export type {
 } from './AudienceStats';
 export type { LogoMarqueeProps, LogoMarqueeItem } from './LogoMarquee';
 export type { SponsorCardProps } from './SponsorCard';
+export type { InfotipProps } from './Infotip';
+export type { InfoBoxProps } from './InfoBox';
