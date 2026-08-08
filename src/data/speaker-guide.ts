@@ -11,6 +11,9 @@ const locations = {
 const sbbJourneyUrl = (from: string, to: string): string =>
   `https://www.sbb.ch/en?von=${encodeURIComponent(from)}&nach=${encodeURIComponent(to)}`;
 
+const googleMapsUrl = (query: string): string =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
 /**
  * Unlisted guide shared only with confirmed ZurichJS Conf 2026 speakers.
  */
@@ -38,29 +41,18 @@ export const speakerGuide: InfoPage = {
       content: "Key Contacts",
     },
     {
-      type: "paragraph",
-      content:
-        "For questions or changes, use the <strong>speakers group chat on WhatsApp</strong> for the fastest response. You can also email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
-    },
-    {
-      type: "infobox",
-      title: "About the WhatsApp group",
+      type: "infotip",
+      before: "For questions or changes, use the ",
+      title: "speakers group chat on WhatsApp",
       content:
         "You should already be in the private group for confirmed speakers. We use it for announcements, quick questions, and live coordination. If you cannot see it, email us and we will add you.",
-    },
-    {
-      type: "list",
-      items: [
-        "<strong>Faris Aziz:</strong> conference lead and speaker and workshop liaison",
-        "<strong>Bogdan Mihai Ilie:</strong> community and speaker support",
-        "<strong>Nadja Hesselbjerg:</strong> logistics and on-site experience",
-        "<strong>Colin Schwarz:</strong> operations and on-site support",
-      ],
+      after:
+        " for the fastest response. You can also email <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>.",
     },
     {
       type: "paragraph",
       content:
-        "Our volunteer crew will also be easy to identify at each venue and can connect you with the right organizer.",
+        "The core team is in both WhatsApp and email. Any of us can help with specific questions or connect you with the right person. Our volunteer crew will also be easy to identify at each venue.",
     },
     {
       type: "heading",
@@ -102,11 +94,6 @@ export const speakerGuide: InfoPage = {
           href: sbbJourneyUrl(locations.airport, locations.conference),
         },
         {
-          label: "Speaker hotel → Conference venue",
-          travelTime: "1–2 min walk",
-          href: sbbJourneyUrl(locations.hotel, locations.conference),
-        },
-        {
           label: "Conference venue → After party venue",
           travelTime: "20 min",
           href: sbbJourneyUrl(locations.conference, locations.afterParty),
@@ -115,6 +102,10 @@ export const speakerGuide: InfoPage = {
           label: "Speaker hotel → Speaker dinner venue",
           travelTime: "35 min",
           href: sbbJourneyUrl(locations.hotel, locations.speakerDinner),
+        },
+        {
+          label: "Speaker hotel → Conference venue",
+          travelTime: "1 min",
         },
       ],
     },
@@ -126,15 +117,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Please complete your <strong>speaker info form</strong> using the personal link sent directly to you. The link is unique to each speaker, so it cannot be included in this shared guide. The form covers:",
-    },
-    {
-      type: "list",
-      items: [
-        "dietary and accessibility requirements",
-        "arrival and departure details",
-        "plus-one details",
-      ],
+        "Please complete your <strong>speaker info form</strong> using the personal link sent directly to you. The form covers dietary and accessibility requirements, arrival and departure details, and plus-one details.",
     },
     {
       type: "paragraph",
@@ -211,9 +194,13 @@ export const speakerGuide: InfoPage = {
         "Speakers stay at the <a href='https://all.accor.com/hotel/2731/index.en.shtml' target='_blank' rel='noopener noreferrer'><strong>Novotel Zürich City West</strong></a>, Schiffbaustrasse 13, 8005 Zürich. The conference venue, ",
       title: "Technopark Zürich",
       content:
-        "<strong>Technopark Zürich</strong><br />Technoparkstrasse 1<br />8005 Zürich<br /><span class='text-xs text-gray-300'>Select the address to copy it.</span>",
+        "<strong>Technopark Zürich</strong><br />Technoparkstrasse 1<br />8005 Zürich",
+      copyText: "Technopark Zürich, Technoparkstrasse 1, 8005 Zürich",
+      mapHref: googleMapsUrl(
+        "Technopark Zürich, Technoparkstrasse 1, 8005 Zürich"
+      ),
       after:
-        ", is a 1–2 minute walk from the hotel. Restaurants and bars are nearby, and you can easily return to your room between sessions when you need a break.",
+        ", is only 50 metres from the hotel. Restaurants and bars are nearby, and you can easily return to your room between sessions when you need a break.",
     },
     {
       type: "list",
@@ -242,11 +229,6 @@ export const speakerGuide: InfoPage = {
       ],
     },
     {
-      type: "paragraph",
-      content:
-        "Until your point of contact is assigned, Faris is your workshop contact. And do not worry about breakfast: it is included at the speaker hotel.",
-    },
-    {
       type: "heading",
       level: "h2",
       content: "Speaker Dinner at Ziegelhütte",
@@ -257,7 +239,11 @@ export const speakerGuide: InfoPage = {
         "On Thursday evening, we are hosting a Swiss country-style dinner and bowling at ",
       title: "Wirtschaft Ziegelhütte",
       content:
-        "<strong>Wirtschaft Ziegelhütte</strong><br />Hüttenkopfstrasse 70<br />8051 Zürich<br /><span class='text-xs text-gray-300'>Select the address to copy it.</span>",
+        "<strong>Wirtschaft Ziegelhütte</strong><br />Hüttenkopfstrasse 70<br />8051 Zürich",
+      copyText: "Wirtschaft Ziegelhütte, Hüttenkopfstrasse 70, 8051 Zürich",
+      mapHref: googleMapsUrl(
+        "Wirtschaft Ziegelhütte, Hüttenkopfstrasse 70, 8051 Zürich"
+      ),
       after:
         " from <strong>18:30 to 22:00</strong>. Expect good food, good company, and a proper chance to meet your fellow speakers before conference day.",
     },
@@ -276,7 +262,11 @@ export const speakerGuide: InfoPage = {
       before: "Conference day takes place on Friday, September 11, at ",
       title: "Technopark Zürich",
       content:
-        "<strong>Technopark Zürich</strong><br />Technoparkstrasse 1<br />8005 Zürich<br /><span class='text-xs text-gray-300'>Select the address to copy it.</span>",
+        "<strong>Technopark Zürich</strong><br />Technoparkstrasse 1<br />8005 Zürich",
+      copyText: "Technopark Zürich, Technoparkstrasse 1, 8005 Zürich",
+      mapHref: googleMapsUrl(
+        "Technopark Zürich, Technoparkstrasse 1, 8005 Zürich"
+      ),
       after: ". The conference starts at <strong>08:45</strong>.",
     },
     {
@@ -293,7 +283,7 @@ export const speakerGuide: InfoPage = {
       type: "infobox",
       title: "* How conference lunch works",
       content:
-        "Food is available throughout the 75-minute lunch period. The <em>e18e &amp; friends</em> live episode with Alexander Lichter and Debbie O'Brien runs from 13:05 to 13:35, so you can eat before the panel from 12:40 or after it from 13:35. Lunch is sit-down service, and there is no separate speaker line.",
+        "Food is available throughout the 75-minute lunch period. The <em>e18e &amp; friends</em> live episode runs from 13:05 to 13:35, so you can eat before the panel from 12:40 or after it from 13:35. Lunch is sit-down service, and there is no separate speaker line.",
     },
     {
       type: "heading",
@@ -305,14 +295,16 @@ export const speakerGuide: InfoPage = {
       before: "After the conference, we have booked ",
       title: "Seebad Enge",
       content:
-        "<strong>Seebad Enge</strong><br />Mythenquai 9<br />8002 Zürich<br /><span class='text-xs text-gray-300'>Select the address to copy it.</span>",
+        "<strong>Seebad Enge</strong><br />Mythenquai 9<br />8002 Zürich",
+      copyText: "Seebad Enge, Mythenquai 9, 8002 Zürich",
+      mapHref: googleMapsUrl("Seebad Enge, Mythenquai 9, 8002 Zürich"),
       after:
         ", a private lakeside venue, from <strong>19:00 to 23:00</strong>. You will meet VIP ticket holders, the organizers, and one or two sponsors who helped make the event possible. Drinks and apéro are included, and there will be a photobooth.",
     },
     {
       type: "paragraph",
       content:
-        "You can also swim in the lake, so pack a bathing suit if you fancy it. Swimming is completely optional.",
+        "Optionally, you can swim in the lake, so pack a bathing suit if you fancy it.",
     },
     {
       type: "infobox",
@@ -349,7 +341,7 @@ export const speakerGuide: InfoPage = {
       items: [
         "Download logos, images, key facts, and sample copy from the <a href='/partners/assets'>partner assets page</a>.",
         "Share through social posts, newsletters, or your company channels.",
-        "Tag <strong>@zurichjs</strong> so we can celebrate and reshare your post.",
+        "Tag us so we can celebrate and reshare your post.",
       ],
     },
     {
@@ -370,11 +362,15 @@ export const speakerGuide: InfoPage = {
     {
       type: "list",
       items: [
-        "<strong>Grüezi</strong> (GROO-eh-tsee): hello",
-        "<strong>Merci vilmal</strong> (MEHR-see FEEL-mahl): thank you very much",
-        "<strong>Danke vilmal</strong> (DAHN-keh FEEL-mahl): thank you very much",
-        "<strong>Proscht</strong> (prohsht): cheers",
+        "<strong>Grüezi</strong> (/gru-eh-tsee/): hello",
+        "<strong>Merci</strong> or <strong>danke</strong>: thank you",
+        "<strong>Merci vilmal</strong> or <strong>danke vilmal</strong> (/feel-mahl/): thank you very much",
       ],
+    },
+    {
+      type: "paragraph",
+      content:
+        "If you want to blend in a little: at dinners, meetups, and other small social gatherings, people usually greet and say goodbye to each person individually. When you toast, make eye contact and clink glasses with everyone at the table. It is entirely optional; no one expects visitors to know every local custom.",
     },
     {
       type: "heading",
@@ -450,14 +446,19 @@ export const speakerGuide: InfoPage = {
         {
           type: "paragraph",
           content:
-            "<strong>Is there somewhere quiet to work or take a meeting?</strong><br />Yes. Use the dedicated speaker room at Technopark. If you need something more private, let us know and we will help.",
+            "<strong>Is there somewhere quiet to work or take a meeting?</strong><br />We will have a dedicated speaker room at the venue, and there are also various small rooms you can grab on a first-come-first-served basis. If you need something more, let us know.",
         },
       ],
     },
     {
+      type: "heading",
+      level: "h2",
+      content: "See You in Zurich",
+    },
+    {
       type: "paragraph",
       content:
-        "That is everything for now. We are proud to have you with us and look forward to welcoming you to Zurich in September.",
+        "That covers everything for now. We are proud to have you with us and look forward to welcoming you to Zurich in September. Safe travels, and see you soon!",
     },
   ],
 };

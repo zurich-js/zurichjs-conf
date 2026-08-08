@@ -23,7 +23,7 @@ interface ChatMessage {
 }
 
 const GREETING =
-  "Hey! 👋 I'm Faru, your speaker guide companion. Fun fact: \"Faru\" was Faris's nickname as a kid — he graciously lent it to me, so technically I'm the second Faru to help people find their way around. Ask me about arrival, the venues, your slides, the after party — anything from the guide.";
+  "Hey! 👋 I'm Faru, your speaker guide companion. Fun fact: \"Faru\" was Faris's nickname as a kid! He graciously lent it to me, so technically I'm the second Faru to help people find their way around. Ask me about arrival, the venues, your slides, the after party; anything from the guide.";
 
 const SUGGESTIONS = [
   "How do I get to the after party?",
@@ -554,7 +554,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({ sections }) => {
             className="w-3.5 h-3.5 transition-transform group-open:rotate-90"
             aria-hidden="true"
           />
-          For the nerds: curious how this works — without any AI?
+          For the nerds: curious how this works without any AI?
         </summary>
         <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2 pl-4.5">
           <p>

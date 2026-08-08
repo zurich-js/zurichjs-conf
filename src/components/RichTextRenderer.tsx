@@ -156,40 +156,59 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
       case "quicklinks":
         return (
           <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {section.links?.map((link) => (
-              <a
-                key={`${link.label}-${link.href}`}
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => onQuickLinkClick?.(link)}
-                className="group flex items-start gap-3 rounded-xl border border-gray-200 p-4 transition-colors hover:border-gray-400 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow-main"
-              >
-                <MapPin
-                  className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5"
-                  aria-hidden="true"
-                />
-                <span className="flex-1 min-w-0">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {link.label}
-                  </span>
-                  {link.travelTime && (
-                    <small className="ml-1.5 whitespace-nowrap text-xs font-normal text-gray-500">
-                      ({link.travelTime})
-                    </small>
-                  )}
-                  {link.sublabel && (
-                    <span className="block text-xs text-gray-500 mt-0.5">
-                      {link.sublabel}
+            {section.links?.map((link) => {
+              const content = (
+                <>
+                  <MapPin
+                    className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5"
+                    aria-hidden="true"
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {link.label}
                     </span>
-                  )}
-                </span>
-                <ArrowUpRight
-                  className="w-4 h-4 text-gray-400 flex-shrink-0 transition-colors group-hover:text-gray-700"
-                  aria-hidden="true"
-                />
-              </a>
-            ))}
+                    {link.travelTime && (
+                      <small className="ml-1.5 whitespace-nowrap text-xs font-normal text-gray-500">
+                        ({link.travelTime})
+                      </small>
+                    )}
+                    {link.sublabel && (
+                      <span className="block text-xs text-gray-500 mt-0.5">
+                        {link.sublabel}
+                      </span>
+                    )}
+                  </span>
+                </>
+              );
+
+              if (!link.href) {
+                return (
+                  <div
+                    key={`${link.label}-static`}
+                    className="flex items-start gap-3 rounded-xl border border-gray-200 p-4"
+                  >
+                    {content}
+                  </div>
+                );
+              }
+
+              return (
+                <a
+                  key={`${link.label}-${link.href}`}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onQuickLinkClick?.(link)}
+                  className="group flex items-start gap-3 rounded-xl border border-gray-200 p-4 transition-colors hover:border-gray-400 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow-main"
+                >
+                  {content}
+                  <ArrowUpRight
+                    className="w-4 h-4 text-gray-400 flex-shrink-0 transition-colors group-hover:text-gray-700"
+                    aria-hidden="true"
+                  />
+                </a>
+              );
+            })}
           </div>
         );
 
@@ -202,7 +221,11 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
             <span
               dangerouslySetInnerHTML={{ __html: section.before || "" }}
             />
-            <Infotip label={section.title || "More information"}>
+            <Infotip
+              label={section.title || "More information"}
+              copyText={section.copyText}
+              mapHref={section.mapHref}
+            >
               <span
                 dangerouslySetInnerHTML={{ __html: section.content || "" }}
               />

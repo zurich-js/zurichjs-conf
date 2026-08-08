@@ -4,7 +4,7 @@ export interface QuickLink {
   label: string;
   sublabel?: string;
   travelTime?: string;
-  href: string;
+  href?: string;
 }
 
 export interface ContentSection {
@@ -22,6 +22,8 @@ export interface ContentSection {
   title?: string;
   before?: string;
   after?: string;
+  copyText?: string;
+  mapHref?: string;
   level?: "h1" | "h2" | "h3";
   items?: string[];
   subsections?: ContentSection[];
