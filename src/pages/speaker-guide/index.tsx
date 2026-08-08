@@ -99,14 +99,16 @@ const SpeakerGuidePage: React.FC = () => {
                 </nav>
                 <RichTextRenderer
                   sections={speakerGuide.sections}
-                  onQuickLinkClick={(link) =>
+                  onQuickLinkClick={(link) => {
+                    if (!link.href) return;
+
                     analytics.track("speaker_guide_quicklink_clicked", {
                       link_label: link.label,
                       link_sublabel: link.sublabel,
                       travel_time: link.travelTime,
                       link_url: link.href,
-                    })
-                  }
+                    });
+                  }}
                 />
               </div>
               <aside className="lg:block hidden print:hidden">
