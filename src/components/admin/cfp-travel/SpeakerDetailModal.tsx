@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Check, Copy, ExternalLink, Sparkles, Utensils, X } from 'lucide-react';
+import { Calendar, Check, Sparkles, Utensils, X } from 'lucide-react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { useToast } from '@/contexts/ToastContext';
 import type { FlightWithSpeaker, SpeakerWithTravel } from '@/lib/cfp/admin-travel';
@@ -178,18 +178,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
     ? calculateNights(firstAccommodationRoom.check_in_date, firstAccommodationRoom.check_out_date)
     : calculateNights(speaker.accommodation?.check_in_date ?? null, speaker.accommodation?.check_out_date ?? null);
   const travelConfirmed = isTravelConfirmed(speaker);
-  const guidePath = speaker.speaker_guide?.path;
-
-  const copyGuideLink = async (): Promise<void> => {
-    if (!guidePath) return;
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}${guidePath}`);
-      toast.success('Guide link copied', `${speaker.first_name}'s personalized guide is ready to share.`);
-    } catch {
-      toast.error('Copy failed', 'Open the guide and copy its address from the browser.');
-    }
-  };
-
   return (
     <AdminModal
       onClose={onClose}
@@ -225,36 +213,6 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
           icon={travelConfirmed ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-yellow-500" />}
         />
       </div>
-
-      {guidePath ? (
-        <div className="mb-6 flex flex-col gap-3 rounded-xl border border-brand-primary/60 bg-yellow-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-gray-900">Personal speaker guide</h3>
-            <p className="mt-1 text-xs text-gray-600">
-              Built from this speaker&apos;s travel, attendance, guests, and program assignments.
-            </p>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            <button
-              type="button"
-              onClick={() => void copyGuideLink()}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
-            >
-              <Copy className="size-4" aria-hidden="true" />
-              Copy link
-            </button>
-            <a
-              href={guidePath}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md bg-brand-primary px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-300"
-            >
-              Preview
-              <ExternalLink className="size-4" aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-      ) : null}
 
       <div className="space-y-6">
         <SpeakerFlightsSection

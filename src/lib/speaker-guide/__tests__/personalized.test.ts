@@ -10,13 +10,13 @@ function profile(
   return {
     firstName: 'Taylor',
     lastName: 'Speaker',
-    arrivalDate: null,
-    departureDate: null,
+    logisticsSubmitted: true,
+    attendingWarmup: true,
     attendingDinner: true,
-    attendingActivities: true,
-    travelMetadata: {},
+    attendingAfterParty: true,
+    attendingSpeakerHangout: true,
+    hasRegisteredPlusOne: false,
     plusOneNames: [],
-    arrivesViaZurichAirport: true,
     sessions: [
       {
         title: 'A Carefully Tailored Talk',
@@ -37,13 +37,14 @@ function visibleText(value: ReturnType<typeof buildPersonalizedSpeakerGuide>): s
 }
 
 describe('personalized speaker guide', () => {
-  it('removes a declined warm-up and all visible workshop copy without an assignment', () => {
+  it('marks a declined warm-up for follow-up and removes workshop copy without an assignment', () => {
     const result = buildPersonalizedSpeakerGuide(profile({
-      attendingActivities: false,
+      attendingWarmup: false,
     }));
     const text = visibleText(result);
 
-    expect(text).not.toContain('Community Day');
+    expect(text).toContain('Community Day');
+    expect(text).toContain('Let us know if you&apos;re attending this event');
     expect(text.toLowerCase()).not.toContain('workshop');
     expect(result.chatContext.flatMap((entry) => entry.content).join(' ')).toContain(
       'is not scheduled to lead a workshop'
@@ -71,6 +72,15 @@ describe('personalized speaker guide', () => {
     expect(text).toContain('Build Better Systems');
     expect(text).toContain('09:00');
     expect(text).toContain('Room Lake');
+
+    const workshopHeadingIndex = result.guide.sections.findIndex(
+      (section) => section.type === 'heading' && section.content === 'Your Workshop'
+    );
+    expect(result.guide.sections.slice(workshopHeadingIndex + 1, workshopHeadingIndex + 3))
+      .toMatchObject([
+        { type: 'paragraph' },
+        { type: 'list' },
+      ]);
   });
 
   it('names a registered plus one and still points to the info form', () => {
@@ -80,7 +90,56 @@ describe('personalized speaker guide', () => {
     const text = visibleText(result);
 
     expect(text).toContain('Casey Guest');
-    expect(text).toContain('speaker info form');
+    expect(text).toContain('speaker information has been submitted');
+  });
+
+  it('shows submitted logistics state even when no named plus one is registered', () => {
+    const result = buildPersonalizedSpeakerGuide(profile());
+    const text = visibleText(result);
+
+    expect(text).toContain('speaker information has been submitted');
+    expect(text).toContain('do not currently have a plus one registered');
+    expect(text).not.toContain('Please complete your');
+  });
+
+  it('reflects a registered plus one even when that event did not collect a name', () => {
+    const result = buildPersonalizedSpeakerGuide(profile({ hasRegisteredPlusOne: true }));
+    const text = visibleText(result);
+
+    expect(text).toContain('You have a plus one registered');
+    expect(text).toContain('name was not requested for that event');
+  });
+
+  it('asks for the logistics form only while it is pending', () => {
+    const result = buildPersonalizedSpeakerGuide(profile({ logisticsSubmitted: false }));
+    const text = visibleText(result);
+
+    expect(text).toContain('Please complete your');
+    expect(text).toContain('speaker logistics form');
+    expect(text).not.toContain('speaker information has been submitted');
+  });
+
+  it('hides declined event details while retaining a short attendance prompt', () => {
+    const result = buildPersonalizedSpeakerGuide(profile({
+      attendingDinner: false,
+      attendingAfterParty: false,
+    }));
+    const text = visibleText(result);
+
+    expect(text).not.toContain('Speaker Dinner at Ziegelhütte');
+    expect(text).not.toContain('After Party at Seebad Enge');
+    expect(text).toContain('speaker dinner at Ziegelhütte');
+    expect(text).toContain('after party at Seebad Enge');
+    expect(text).toContain('Let us know if you&apos;re attending this event');
+  });
+
+  it('marks attending events and shows their full detail sections', () => {
+    const result = buildPersonalizedSpeakerGuide(profile());
+    const text = visibleText(result);
+
+    expect(text).toContain('You&apos;re attending');
+    expect(text).toContain('Speaker Dinner at Ziegelhütte');
+    expect(text).toContain('After Party at Seebad Enge');
   });
 
   it('describes an assigned lunch panel as the speaker’s panel', () => {
@@ -105,21 +164,12 @@ describe('personalized speaker guide', () => {
     expect(text).toContain('e18e &amp; friends');
   });
 
-  it('removes optional events outside the speaker’s travel window', () => {
-    const result = buildPersonalizedSpeakerGuide(profile({
-      arrivalDate: '2026-09-10',
-      departureDate: '2026-09-11',
-    }));
-    const text = visibleText(result);
-
-    expect(text).not.toContain('Community Day');
-    expect(text).not.toContain('speaker day out');
-    expect(text).toContain('conference day');
-  });
-
   it('keeps every personalized chat context entry attached to a visible section', () => {
     const result = buildPersonalizedSpeakerGuide(profile({
-      attendingActivities: false,
+      attendingWarmup: false,
+      attendingDinner: false,
+      attendingAfterParty: false,
+      attendingSpeakerHangout: false,
     }));
     const sectionIds = new Set(
       result.guide.sections

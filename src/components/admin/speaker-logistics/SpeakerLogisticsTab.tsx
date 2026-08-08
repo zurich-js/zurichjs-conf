@@ -83,6 +83,15 @@ export function SpeakerLogisticsTab() {
     }
   };
 
+  const handleCopyGuideLink = async (row: SpeakerLogisticsAdminRow) => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${row.speaker_guide.path}`);
+      toast.success('Guide link copied', `${row.first_name}'s personalized speaker guide is ready to share.`);
+    } catch {
+      toast.error('Copy failed', 'Could not access the clipboard.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -135,10 +144,18 @@ export function SpeakerLogisticsTab() {
 
       {/* Desktop table / mobile progressive-disclosure cards */}
       <div className="hidden lg:block">
-        <SpeakerLogisticsTable speakers={filteredSpeakers} onCopyLink={handleCopyLink} />
+        <SpeakerLogisticsTable
+          speakers={filteredSpeakers}
+          onCopyLink={handleCopyLink}
+          onCopyGuideLink={handleCopyGuideLink}
+        />
       </div>
       <div className="lg:hidden">
-        <SpeakerLogisticsCardList speakers={filteredSpeakers} onCopyLink={handleCopyLink} />
+        <SpeakerLogisticsCardList
+          speakers={filteredSpeakers}
+          onCopyLink={handleCopyLink}
+          onCopyGuideLink={handleCopyGuideLink}
+        />
       </div>
 
       <ActivityGuestsSection speakers={data.speakers} />

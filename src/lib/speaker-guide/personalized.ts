@@ -20,13 +20,13 @@ export interface PersonalizedGuideSession {
 export interface PersonalizedGuideProfile {
   firstName: string;
   lastName: string;
-  arrivalDate: string | null;
-  departureDate: string | null;
+  logisticsSubmitted: boolean;
+  attendingWarmup: boolean | null;
   attendingDinner: boolean | null;
-  attendingActivities: boolean | null;
-  travelMetadata: Record<string, unknown>;
+  attendingAfterParty: boolean | null;
+  attendingSpeakerHangout: boolean | null;
+  hasRegisteredPlusOne: boolean;
   plusOneNames: string[];
-  arrivesViaZurichAirport: boolean | null;
   sessions: PersonalizedGuideSession[];
 }
 
@@ -40,15 +40,6 @@ interface SectionGroup {
   heading: ContentSection | null;
   sections: ContentSection[];
 }
-
-const EVENT_DATES = {
-  community: '2026-09-09',
-  workshop: '2026-09-10',
-  dinner: '2026-09-10',
-  conference: '2026-09-11',
-  afterParty: '2026-09-11',
-  activities: '2026-09-12',
-} as const;
 
 function escapeHtml(value: string): string {
   return value
@@ -80,30 +71,6 @@ function splitSections(sections: ContentSection[]): SectionGroup[] {
   return groups;
 }
 
-function readBoolean(metadata: Record<string, unknown>, keys: string[]): boolean | null {
-  const attendance = metadata.attendance;
-  const sources = [
-    metadata,
-    typeof attendance === 'object' && attendance !== null
-      ? attendance as Record<string, unknown>
-      : {},
-  ];
-
-  for (const source of sources) {
-    for (const key of keys) {
-      if (typeof source[key] === 'boolean') return source[key];
-    }
-  }
-
-  return null;
-}
-
-function canAttend(profile: PersonalizedGuideProfile, date: string): boolean {
-  if (profile.arrivalDate && profile.arrivalDate > date) return false;
-  if (profile.departureDate && profile.departureDate < date) return false;
-  return true;
-}
-
 function formatDate(date: string | null): string | null {
   const labels: Record<string, string> = {
     '2026-09-09': 'Wednesday, September 9',
@@ -126,6 +93,19 @@ function formatSession(session: PersonalizedGuideSession): string {
 
 function sessionSummary(sessions: PersonalizedGuideSession[]): string {
   return sessions.map(formatSession).join('; ');
+}
+
+function attendanceMarker(attending: boolean | null): string {
+  return attending === true
+    ? ' <strong>✓ You&apos;re attending.</strong>'
+    : ' <strong>Let us know if you&apos;re attending this event.</strong>';
+}
+
+function attendingSectionMarker(): ContentSection {
+  return {
+    type: 'paragraph',
+    content: '<strong>✓ You&apos;re attending.</strong>',
+  };
 }
 
 function appendContext(
@@ -160,33 +140,8 @@ export function buildPersonalizedSpeakerGuide(
       Boolean(startTime && startTime >= '12:00' && startTime < '14:30');
   });
 
-  const communityDecision = readBoolean(profile.travelMetadata, [
-    'attending_community_day',
-    'attending_warmup',
-    'attending_warm_up',
-    'attending_warmup_meetup',
-    'community_day',
-    'warmup',
-    'warmup_meetup',
-    'warm_up',
-  ]) ?? profile.attendingActivities;
-  const afterPartyDecision = readBoolean(profile.travelMetadata, [
-    'attending_after_party',
-    'attending_afterparty',
-    'after_party',
-    'afterparty',
-  ]) ?? profile.attendingActivities;
-  const activitiesDecision = readBoolean(profile.travelMetadata, [
-    'attending_speaker_day_out',
-    'speaker_day_out',
-    'day_out',
-  ]) ?? profile.attendingActivities;
-
-  const showCommunity = communityDecision !== false && canAttend(profile, EVENT_DATES.community);
-  const showDinner = profile.attendingDinner !== false && canAttend(profile, EVENT_DATES.dinner);
-  const showAfterParty = afterPartyDecision !== false && canAttend(profile, EVENT_DATES.afterParty);
-  const showActivities = activitiesDecision !== false && canAttend(profile, EVENT_DATES.activities);
-  const showAirport = profile.arrivesViaZurichAirport !== false;
+  const showDinner = profile.attendingDinner === true;
+  const showAfterParty = profile.attendingAfterParty === true;
 
   const groups = splitSections(speakerGuide.sections);
   const personalizedGroups: SectionGroup[] = [];
@@ -211,28 +166,19 @@ export function buildPersonalizedSpeakerGuide(
 
     if (heading === 'Workshop Day for Instructors' && workshops.length === 0) continue;
     if (heading === 'Your Talk: Slides, Stage, and Tech' && stageSessions.length === 0) continue;
-    if (heading === 'Arriving via Zurich Airport' && !showAirport) continue;
     if (heading === 'Speaker Dinner at Ziegelhütte' && !showDinner) continue;
     if (heading === 'After Party at Seebad Enge' && !showAfterParty) continue;
 
     if (heading === 'Key Dates at a Glance') {
       const items: string[] = [];
-      if (showCommunity) {
-        items.push("<strong>Wednesday, September 9, from 18:00:</strong> Community Day, a relaxed ZurichJS meetup. See the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.");
-      }
+      items.push(`<strong>Wednesday, September 9, from 18:00:</strong> Community Day, a relaxed ZurichJS meetup. See the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.${attendanceMarker(profile.attendingWarmup)}`);
       if (workshops.length > 0) {
         items.push(`<strong>Thursday, September 10:</strong> your workshop day (${sessionSummary(workshops)}).`);
       }
-      if (showDinner) {
-        items.push('<strong>Thursday, September 10, 18:30–22:00:</strong> speaker dinner at Ziegelhütte.');
-      }
+      items.push(`<strong>Thursday, September 10, 18:30–22:00:</strong> speaker dinner at Ziegelhütte.${attendanceMarker(profile.attendingDinner)}`);
       items.push(`<strong>Friday, September 11:</strong> conference day at Technopark Zürich${stageSessions.length > 0 ? ` (${sessionSummary(stageSessions)})` : ''}.`);
-      if (showAfterParty) {
-        items.push('<strong>Friday, September 11, 19:00–23:00:</strong> after party at Seebad Enge.');
-      }
-      if (showActivities) {
-        items.push('<strong>Saturday, September 12, 10:00–16:00:</strong> optional speaker day out, planned around departure times.');
-      }
+      items.push(`<strong>Friday, September 11, 19:00–23:00:</strong> after party at Seebad Enge.${attendanceMarker(profile.attendingAfterParty)}`);
+      items.push(`<strong>Saturday, September 12, 10:00–16:00:</strong> optional speaker hangout activities.${attendanceMarker(profile.attendingSpeakerHangout)}`);
       personalizedGroups.push({ heading: group.heading, sections: [{ type: 'list', items }] });
       continue;
     }
@@ -245,7 +191,6 @@ export function buildPersonalizedSpeakerGuide(
           return {
             ...section,
             links: (section.links ?? []).filter((link) => {
-              if (!showAirport && link.label.startsWith('Zurich Airport')) return false;
               if (!showAfterParty && link.label.includes('After party')) return false;
               if (!showDinner && link.label.includes('dinner')) return false;
               return true;
@@ -260,21 +205,29 @@ export function buildPersonalizedSpeakerGuide(
       const plusOnes = profile.plusOneNames.map(escapeHtml);
       personalizedGroups.push({
         heading: group.heading,
-        sections: plusOnes.length > 0
+        sections: profile.logisticsSubmitted
           ? [
               {
                 type: 'paragraph',
-                content: `We have <strong>${plusOnes.join(' and ')}</strong> registered as ${plusOnes.length === 1 ? 'your plus one' : 'your plus ones'}. We&apos;ll prepare ${plusOnes.length === 1 ? 'a VIP badge' : 'VIP badges'} for conference access.`,
+                content: '<strong>✓ Your speaker information has been submitted.</strong> We have your event RSVPs, dietary requirements, T-shirt size, and any session accommodations you shared.',
               },
               {
                 type: 'paragraph',
-                content: 'Use your personal <strong>speaker info form</strong> if any guest, dietary, accessibility, arrival, or departure details change.',
+                content: plusOnes.length > 0
+                  ? `We have <strong>${plusOnes.join(' and ')}</strong> registered as ${plusOnes.length === 1 ? 'your plus one' : 'your plus ones'}. We&apos;ll prepare ${plusOnes.length === 1 ? 'a VIP badge' : 'VIP badges'} for conference access.`
+                  : profile.hasRegisteredPlusOne
+                    ? 'You have a plus one registered. Their name was not requested for that event.'
+                    : 'You do not currently have a plus one registered.',
+              },
+              {
+                type: 'paragraph',
+                content: 'If anything changes, email <a href="mailto:hello@zurichjs.com">hello@zurichjs.com</a> or message Faris, Nadja, or Bogdan.',
               },
             ]
           : [
               {
                 type: 'paragraph',
-                content: 'Please complete your <strong>speaker info form</strong> using the personal link sent directly to you. It covers dietary and accessibility requirements, arrival and departure details, and lets you register a plus one.',
+                content: 'Please complete your <strong>speaker logistics form</strong> using the personal link sent directly to you. It covers event attendance, dietary requirements, your T-shirt size, session accommodations, and plus-one details.',
               },
               {
                 type: 'paragraph',
@@ -298,13 +251,26 @@ export function buildPersonalizedSpeakerGuide(
     }
 
     if (heading === 'Workshop Day for Instructors') {
+      const workshopInstructions = group.sections.find(
+        (section) => section.type === 'list'
+      )?.items ?? [];
       personalizedGroups.push({
         heading: { type: 'heading', level: 'h2', content: 'Your Workshop' },
         sections: [
-          { type: 'paragraph', content: `${safeFirstName}, you are scheduled to lead:` },
-          { type: 'list', items: workshops.map(formatSession) },
-          ...group.sections.slice(1),
+          {
+            type: 'paragraph',
+            content: `${safeFirstName}, you are scheduled to lead:`,
+          },
+          { type: 'list', items: [...workshops.map(formatSession), ...workshopInstructions] },
         ],
+      });
+      continue;
+    }
+
+    if (heading === 'Speaker Dinner at Ziegelhütte' || heading === 'After Party at Seebad Enge') {
+      personalizedGroups.push({
+        heading: group.heading,
+        sections: [attendingSectionMarker(), ...group.sections],
       });
       continue;
     }
@@ -346,7 +312,6 @@ export function buildPersonalizedSpeakerGuide(
             ...section,
             subsections: (section.subsections ?? []).filter((subsection) => {
               const content = subsection.content ?? '';
-              if (!showCommunity && content.includes('Community Day')) return false;
               if (workshops.length === 0 && content.includes('workshops')) return false;
               return true;
             }),
@@ -396,12 +361,12 @@ export function buildPersonalizedSpeakerGuide(
   const keyDatesContext = chatContext.find((entry) => entry.sectionId === 'key-dates-at-a-glance');
   if (keyDatesContext) {
     const dates = [
-      showCommunity ? 'Community Day on Wednesday, September 9' : null,
+      profile.attendingWarmup ? 'Community Day on Wednesday, September 9' : null,
       workshops.length > 0 ? `${speakerName}'s workshop assignment on Thursday, September 10` : null,
       showDinner ? 'the speaker dinner on Thursday evening' : null,
       'conference day on Friday, September 11',
       showAfterParty ? 'the after party on Friday evening' : null,
-      showActivities ? 'the speaker day out on Saturday, September 12' : null,
+      profile.attendingSpeakerHangout ? 'the speaker hangout on Saturday, September 12' : null,
     ].filter(Boolean);
     keyDatesContext.content = [`${speakerName}'s current guide includes ${dates.join(', ')}.`];
   }
@@ -417,7 +382,12 @@ export function buildPersonalizedSpeakerGuide(
     plusOneContext.content = [
       profile.plusOneNames.length > 0
         ? `${speakerName}'s registered plus ${profile.plusOneNames.length === 1 ? 'one is' : 'ones are'} ${profile.plusOneNames.join(' and ')}.`
-        : `${speakerName} does not currently have a plus one registered; their personal speaker info form can be used to add one.`,
+        : profile.hasRegisteredPlusOne
+          ? `${speakerName} has a plus one registered, but their name was not collected for that event.`
+          : `${speakerName} does not currently have a plus one registered.`,
+      profile.logisticsSubmitted
+        ? `${speakerName} has already submitted their speaker logistics information.`
+        : `${speakerName} has not submitted their speaker logistics form yet.`,
     ];
   }
 
