@@ -117,7 +117,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Please complete your <strong>speaker info form</strong> using the personal link sent directly to you. The form covers dietary and accessibility requirements, arrival and departure details, and plus-one details.",
+        "Please complete your <strong>speaker logistics form</strong> using the personal link sent directly to you. The form covers event attendance, dietary requirements, your T-shirt size, session accommodations, and plus-one details.",
     },
     {
       type: "paragraph",
@@ -162,7 +162,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "A volunteer with a <strong>ZurichJS sign</strong> can meet you at Zurich Airport (ZRH) and travel with you to the hotel. We arrange this from the arrival details in your speaker info form, so make sure your flight information is current.",
+        "A volunteer with a <strong>ZurichJS sign</strong> can meet you at Zurich Airport (ZRH) and travel with you to the hotel. We arrange this from the arrival details shared directly with the organizers, so make sure your flight information is current.",
     },
     {
       type: "paragraph",

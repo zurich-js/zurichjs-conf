@@ -1,18 +1,14 @@
-import { getAcceptedSpeakersWithTravel } from '@/lib/cfp/admin-travel';
+import { getAdminSpeakersWithSubmissions } from '@/lib/cfp/admin';
 import { getAdminScheduleRows } from '@/lib/program/schedule';
 import { listProgramSessions } from '@/lib/program/sessions';
 import { getSpeakerGuideAccess } from '@/lib/speaker-guide/access';
+import { createServiceRoleClient } from '@/lib/supabase';
+import type { ActivityGuestRow, SpeakerLogisticsRow } from '@/lib/types/speaker-logistics';
 import {
   buildPersonalizedSpeakerGuide,
   type PersonalizedGuideProfile,
   type PersonalizedSpeakerGuide,
 } from '@/lib/speaker-guide/personalized';
-
-function record(value: unknown): Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-    ? value as Record<string, unknown>
-    : {};
-}
 
 function addName(names: string[], value: unknown): void {
   if (typeof value !== 'string') return;
@@ -21,44 +17,32 @@ function addName(names: string[], value: unknown): void {
 }
 
 function extractPlusOneNames(
-  metadata: Record<string, unknown>,
-  bookingNames: string[],
-  speakerName: string
+  logistics: SpeakerLogisticsRow | null,
+  guests: ActivityGuestRow[]
 ): string[] {
   const names: string[] = [];
-  const plusOne = record(metadata.plus_one ?? metadata.plusOne);
-
-  [
-    metadata.plus_one_name,
-    metadata.plus_one_full_name,
-    metadata.plus_one_registered_name,
-    metadata.plusOneName,
-    metadata.plus_one,
-    metadata.guest_name,
-    plusOne.name,
-  ].forEach((value) => addName(names, value));
-
-  const plusOnes = metadata.plus_ones ?? metadata.plusOnes;
-  if (Array.isArray(plusOnes)) {
-    plusOnes.forEach((value) => {
-      if (typeof value === 'string') addName(names, value);
-      else addName(names, record(value).name);
-    });
+  if (logistics?.after_party_plus_one === true) {
+    addName(
+      names,
+      [logistics.after_party_plus_one_first_name, logistics.after_party_plus_one_last_name]
+        .filter(Boolean)
+        .join(' ')
+    );
   }
-
-  bookingNames.forEach((name) => addName(names, name));
-  const normalizedSpeakerName = speakerName.trim().toLowerCase();
-
-  return Array.from(new Set(names)).filter(
-    (name) => name.toLowerCase() !== normalizedSpeakerName
-  );
+  guests
+    .filter((guest) => guest.guest_type === 'speaker_plus_one')
+    .forEach((guest) => addName(names, `${guest.first_name} ${guest.last_name}`));
+  return Array.from(new Set(names));
 }
 
 export async function loadPersonalizedSpeakerGuide(
   code: string
 ): Promise<PersonalizedSpeakerGuide | null> {
-  const [speakers, sessionsResult, scheduleRows] = await Promise.all([
-    getAcceptedSpeakersWithTravel(),
+  const supabase = createServiceRoleClient();
+  const [speakers, logisticsResult, guestsResult, sessionsResult, scheduleRows] = await Promise.all([
+    getAdminSpeakersWithSubmissions('program'),
+    supabase.from('cfp_speaker_logistics').select('*'),
+    supabase.from('speaker_activity_guests').select('*'),
     listProgramSessions(),
     getAdminScheduleRows(),
   ]);
@@ -68,8 +52,15 @@ export async function loadPersonalizedSpeakerGuide(
 
   if (!speaker) return null;
 
-  const speakerName = `${speaker.first_name} ${speaker.last_name}`.trim();
-  const travelMetadata = record(speaker.travel?.metadata);
+  if (logisticsResult.error) throw logisticsResult.error;
+  if (guestsResult.error) throw guestsResult.error;
+
+  const logistics = (logisticsResult.data as SpeakerLogisticsRow[] | null)?.find(
+    (row) => row.speaker_id === speaker.id
+  ) ?? null;
+  const guests = (guestsResult.data as ActivityGuestRow[] | null)?.filter(
+    (guest) => guest.related_speaker_id === speaker.id
+  ) ?? [];
   const assignedSessions = sessionsResult.sessions
     .filter((session) =>
       (session.speakers ?? []).some((assignment) => assignment.speaker_id === speaker.id)
@@ -90,23 +81,21 @@ export async function loadPersonalizedSpeakerGuide(
         room: schedule?.room ?? null,
       };
     });
-  const inboundFlight = speaker.flights.find((flight) => flight.direction === 'inbound');
-  const inboundAirport = inboundFlight?.arrival_airport?.toLowerCase() ?? null;
-  const arrivesViaZurichAirport = inboundAirport
-    ? inboundAirport.includes('zrh') || inboundAirport.includes('zurich') || inboundAirport.includes('zürich')
-    : null;
-  const bookingNames = speaker.accommodation_bookings.map((booking) => booking.guest_name);
-
   const profile: PersonalizedGuideProfile = {
     firstName: speaker.first_name,
     lastName: speaker.last_name,
-    arrivalDate: speaker.travel?.arrival_date ?? null,
-    departureDate: speaker.travel?.departure_date ?? null,
-    attendingDinner: speaker.travel?.attending_speakers_dinner ?? null,
-    attendingActivities: speaker.travel?.attending_speakers_activities ?? null,
-    travelMetadata,
-    plusOneNames: extractPlusOneNames(travelMetadata, bookingNames, speakerName),
-    arrivesViaZurichAirport,
+    logisticsSubmitted: Boolean(logistics?.submitted_at),
+    attendingWarmup: logistics?.attending_warmup ?? null,
+    attendingDinner: logistics?.attending_speakers_dinner ?? null,
+    attendingAfterParty: logistics?.attending_after_party ?? null,
+    attendingSpeakerHangout: logistics?.attending_speaker_hangout ?? null,
+    hasRegisteredPlusOne: Boolean(
+      logistics?.dinner_plus_one ||
+      logistics?.after_party_plus_one ||
+      logistics?.speaker_hangout_plus_one ||
+      guests.some((guest) => guest.guest_type === 'speaker_plus_one')
+    ),
+    plusOneNames: extractPlusOneNames(logistics, guests),
     sessions: assignedSessions,
   };
 

@@ -5,16 +5,17 @@
  */
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Link2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, ExternalLink, Link2 } from 'lucide-react';
 import { AnswerDetails, RsvpCell, StatusBadge } from './shared';
 import type { SpeakerLogisticsAdminRow } from './types';
 
 interface SpeakerLogisticsTableProps {
   speakers: SpeakerLogisticsAdminRow[];
   onCopyLink: (row: SpeakerLogisticsAdminRow) => void;
+  onCopyGuideLink: (row: SpeakerLogisticsAdminRow) => void;
 }
 
-export function SpeakerLogisticsTable({ speakers, onCopyLink }: SpeakerLogisticsTableProps) {
+export function SpeakerLogisticsTable({ speakers, onCopyLink, onCopyGuideLink }: SpeakerLogisticsTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (speakers.length === 0) {
@@ -91,6 +92,28 @@ export function SpeakerLogisticsTable({ speakers, onCopyLink }: SpeakerLogistics
                           </span>
                         </button>
                       )}
+                      <button
+                        onClick={() => onCopyGuideLink(row)}
+                        className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                        title="Copy personalized guide link"
+                      >
+                        <BookOpen className="h-4 w-4" aria-hidden="true" />
+                        <span className="sr-only">
+                          Copy personalized guide link for {row.first_name} {row.last_name}
+                        </span>
+                      </button>
+                      <a
+                        href={row.speaker_guide.path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                        title="Preview personalized guide"
+                      >
+                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                        <span className="sr-only">
+                          Preview personalized guide for {row.first_name} {row.last_name}
+                        </span>
+                      </a>
                       <button
                         onClick={() => setExpandedId(isExpanded ? null : row.speaker_id)}
                         className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"

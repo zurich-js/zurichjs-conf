@@ -7,7 +7,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSpeakerTravelDetails } from '@/lib/cfp/admin-travel';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { logger } from '@/lib/logger';
-import { getSpeakerGuideAccess } from '@/lib/speaker-guide/access';
 
 const log = logger.scope('Admin Speaker Travel Details API');
 
@@ -29,12 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ error: 'Speaker not found' });
       }
 
-      return res.status(200).json({
-        speaker: {
-          ...speaker,
-          speaker_guide: getSpeakerGuideAccess(speaker),
-        },
-      });
+      return res.status(200).json({ speaker });
     } catch (error) {
       log.error('Error fetching speaker travel details', error, { speakerId: id });
       return res.status(500).json({ error: 'Internal server error' });
