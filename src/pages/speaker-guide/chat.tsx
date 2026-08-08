@@ -5,6 +5,7 @@ import { Heading } from "@/components/atoms";
 import { SEO } from "@/components/SEO";
 import { GuideChat } from "@/components/speaker-guide";
 import { speakerGuide } from "@/data/speaker-guide";
+import { speakerGuideChatContext } from "@/data/speaker-guide-chat";
 
 /**
  * Unlisted full-page chat over the speaker guide (Faru). Linked from the
@@ -36,7 +37,10 @@ const SpeakerGuideChatPage: React.FC = () => {
               Back to the guide
             </Link>
           </div>
-          <GuideChat sections={speakerGuide.sections} />
+          <GuideChat
+            sections={speakerGuide.sections}
+            context={speakerGuideChatContext}
+          />
         </div>
       </main>
     </>
