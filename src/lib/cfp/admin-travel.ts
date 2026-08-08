@@ -15,12 +15,14 @@ import type {
   CfpFlightStatus,
   CfpFlightDirection,
 } from '@/lib/types/cfp';
+import type { SpeakerGuideAccess } from '@/lib/speaker-guide/access';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface SpeakerWithTravel extends CfpSpeaker {
+  speaker_guide?: SpeakerGuideAccess;
   travel: CfpSpeakerTravel | null;
   flights: CfpSpeakerFlight[];
   accommodation: CfpSpeakerAccommodation | null;
