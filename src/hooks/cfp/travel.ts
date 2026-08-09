@@ -5,55 +5,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-import { travelQueryOptions, flightsQueryOptions, reimbursementsQueryOptions } from '@/lib/queries/cfp';
+import { flightsQueryOptions, reimbursementsQueryOptions } from '@/lib/queries/cfp';
 import { endpoints } from '@/lib/api';
-import type { CfpSpeakerTravel, CfpSpeakerFlight, CfpSpeakerReimbursement } from '@/lib/types/cfp';
-
-/**
- * Hook to fetch travel information
- */
-export function useCfpTravel() {
-  const query = useQuery(travelQueryOptions);
-
-  return {
-    travel: query.data?.travel ?? null,
-    flights: query.data?.flights ?? [],
-    accommodation: query.data?.accommodation ?? null,
-    reimbursements: query.data?.reimbursements ?? [],
-    hasAcceptedSubmission: query.data?.hasAcceptedSubmission ?? false,
-    isLoading: query.isLoading,
-    error: query.error?.message ?? null,
-    refetch: query.refetch,
-  };
-}
-
-/**
- * Hook to update travel details
- */
-export function useUpdateTravel() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: Partial<CfpSpeakerTravel>) => {
-      const response = await fetch(endpoints.cfp.travel(), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
-        throw new Error(result.error || 'Failed to update travel details');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cfp.travel() });
-    },
-  });
-}
+import type { CfpSpeakerFlight, CfpSpeakerReimbursement } from '@/lib/types/cfp';
 
 /**
  * Hook to fetch flights

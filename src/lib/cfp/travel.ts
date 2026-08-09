@@ -5,110 +5,12 @@
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type {
-  CfpSpeakerTravel,
   CfpSpeakerFlight,
   CfpSpeakerAccommodation,
   CfpSpeakerReimbursement,
-  UpdateCfpSpeakerTravelRequest,
   CreateCfpFlightRequest,
   CreateCfpReimbursementRequest,
 } from '../types/cfp';
-
-// ============================================
-// TRAVEL DETAILS
-// ============================================
-
-/**
- * Get speaker travel details
- */
-export async function getSpeakerTravel(speakerId: string): Promise<CfpSpeakerTravel | null> {
-  const supabase = createCfpServiceClient();
-
-  const { data, error } = await supabase
-    .from('cfp_speaker_travel')
-    .select('*')
-    .eq('speaker_id', speakerId)
-    .single();
-
-  if (error || !data) {
-    return null;
-  }
-
-  return data as CfpSpeakerTravel;
-}
-
-/**
- * Create or update speaker travel details
- */
-export async function upsertSpeakerTravel(
-  speakerId: string,
-  updates: UpdateCfpSpeakerTravelRequest
-): Promise<{ travel: CfpSpeakerTravel | null; error: string | null }> {
-  const supabase = createCfpServiceClient();
-
-  // Check if record exists
-  const existing = await getSpeakerTravel(speakerId);
-
-  if (existing) {
-    // Update
-    const { data, error } = await supabase
-      .from('cfp_speaker_travel')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('speaker_id', speakerId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('[CFP Travel] Error updating travel:', error);
-      return { travel: null, error: error.message };
-    }
-
-    return { travel: data as CfpSpeakerTravel, error: null };
-  } else {
-    // Insert
-    const { data, error } = await supabase
-      .from('cfp_speaker_travel')
-      .insert({
-        speaker_id: speakerId,
-        ...updates,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('[CFP Travel] Error creating travel:', error);
-      return { travel: null, error: error.message };
-    }
-
-    return { travel: data as CfpSpeakerTravel, error: null };
-  }
-}
-
-/**
- * Confirm travel details
- */
-export async function confirmTravel(speakerId: string): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createCfpServiceClient();
-
-  const { error } = await supabase
-    .from('cfp_speaker_travel')
-    .update({
-      travel_confirmed: true,
-      confirmed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('speaker_id', speakerId);
-
-  if (error) {
-    console.error('[CFP Travel] Error confirming travel:', error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true, error: null };
-}
 
 // ============================================
 // FLIGHTS
@@ -364,25 +266,4 @@ export async function updateReimbursementReceipt(
   }
 
   return { success: true, error: null };
-}
-
-/**
- * Get complete travel info for a speaker
- */
-export async function getCompleteTravelInfo(speakerId: string, options?: { includeReimbursements?: boolean }): Promise<{
-  travel: CfpSpeakerTravel | null;
-  flights: CfpSpeakerFlight[];
-  accommodation: CfpSpeakerAccommodation | null;
-  reimbursements: CfpSpeakerReimbursement[];
-}> {
-  const promises = [
-    getSpeakerTravel(speakerId),
-    getSpeakerFlights(speakerId),
-    getSpeakerAccommodation(speakerId),
-    options?.includeReimbursements ? getSpeakerReimbursements(speakerId) : Promise.resolve([]),
-  ] as const;
-
-  const [travel, flights, accommodation, reimbursements] = await Promise.all(promises);
-
-  return { travel, flights, accommodation, reimbursements: reimbursements as CfpSpeakerReimbursement[] };
 }

@@ -133,18 +133,18 @@ export default function FlightsPage({ flights }: FlightsPageProps) {
         {/* Header */}
         <header className="border-b border-brand-gray-dark">
           <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
-            <Link href="/cfp/travel" className="flex items-center gap-2 sm:gap-3">
+            <Link href="/cfp/dashboard" className="flex items-center gap-2 sm:gap-3">
               <img src="/images/logo/zurichjs-square.png" alt="ZurichJS" className="h-8 w-8 sm:h-10 sm:w-10" />
               <span className="text-white font-semibold text-sm sm:text-base">Flights</span>
             </Link>
             <Link
-              href="/cfp/travel"
+              href="/cfp/dashboard"
               className="text-brand-gray-light hover:text-white text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="hidden xs:inline">Back to</span> Travel
+              <span className="hidden xs:inline">Back to</span> Dashboard
             </Link>
           </div>
         </header>

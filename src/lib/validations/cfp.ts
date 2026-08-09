@@ -292,26 +292,6 @@ export type ReviewFormData = z.infer<typeof reviewSchema>;
 // ============================================
 
 /**
- * Speaker travel details schema
- */
-export const speakerTravelSchema = z.object({
-  arrival_date: z.string().optional(),
-  departure_date: z.string().optional(),
-  attending_speakers_dinner: z.boolean().optional(),
-  attending_speakers_activities: z.boolean().optional(),
-  dietary_restrictions: z
-    .string()
-    .max(500, 'Text is too long')
-    .optional(),
-  accessibility_needs: z
-    .string()
-    .max(1000, 'Text is too long')
-    .optional(),
-});
-
-export type SpeakerTravelFormData = z.infer<typeof speakerTravelSchema>;
-
-/**
  * Flight details schema
  */
 export const flightSchema = z.object({

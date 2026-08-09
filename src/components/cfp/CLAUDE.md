@@ -35,7 +35,7 @@ Speaker-facing components fetch via hooks in `src/hooks/cfp/`:
 
 - `useSubmissions()` — speaker's own submissions list
 - `useSpeakerProfile()` — current speaker's profile
-- `useTravel()` — travel plan
+- `useCfpFlights()` — speaker flight entries
 - `useBookmarks()` — saved drafts
 
 Reviewer-facing components use:

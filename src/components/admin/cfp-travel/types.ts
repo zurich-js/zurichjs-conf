@@ -2,10 +2,15 @@
  * CFP Travel Admin Component Types
  */
 
-import type { CfpReimbursementStatus, CfpFlightStatus, CfpFlightDirection } from '@/lib/types/cfp';
+import type {
+  CfpReimbursementStatus,
+  CfpFlightStatus,
+  CfpFlightDirection,
+  CfpSpeakerReimbursement,
+} from '@/lib/types/cfp';
 
 export type { CfpReimbursementStatus, CfpFlightStatus };
-export type TabType = 'overview' | 'speakers' | 'flights' | 'arrivals' | 'accommodations' | 'invoices';
+export type TabType = 'overview' | 'speakers' | 'flights' | 'arrivals' | 'invoices';
 
 export const STATUS_COLORS: Record<CfpReimbursementStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -95,6 +100,56 @@ interface FlightDateInput {
   direction: CfpFlightDirection;
   arrival_time: string | null;
   departure_time: string | null;
+}
+
+/** Earliest inbound arrival and latest outbound departure for a traveler. */
+export function deriveTravelWindowFromFlights(flights: FlightDateInput[]): {
+  arrival: string | null;
+  departure: string | null;
+} {
+  const arrivals = flights
+    .filter((flight) => flight.direction === 'inbound' && flight.arrival_time)
+    .map((flight) => flight.arrival_time as string)
+    .sort();
+  const departures = flights
+    .filter((flight) => flight.direction === 'outbound' && flight.departure_time)
+    .map((flight) => flight.departure_time as string)
+    .sort();
+
+  return {
+    arrival: arrivals[0] ?? null,
+    departure: departures[departures.length - 1] ?? null,
+  };
+}
+
+export function formatTravelDate(value: string | null): string {
+  if (!value) return 'TBD';
+  return new Date(value).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Europe/Zurich',
+  });
+}
+
+export function formatTravelWindow(flights: FlightDateInput[]): string {
+  const { arrival, departure } = deriveTravelWindowFromFlights(flights);
+  if (!arrival && !departure) return 'TBD';
+  return `${formatTravelDate(arrival)} → ${formatTravelDate(departure)}`;
+}
+
+export function formatExpenseTotals(reimbursements: CfpSpeakerReimbursement[]): string {
+  const totals = new Map<string, number>();
+  reimbursements
+    .filter((reimbursement) => reimbursement.status !== 'rejected')
+    .forEach((reimbursement) => {
+      const currency = reimbursement.currency || 'CHF';
+      totals.set(currency, (totals.get(currency) ?? 0) + reimbursement.amount);
+    });
+
+  if (totals.size === 0) return 'None';
+  return [...totals.entries()]
+    .map(([currency, amount]) => `${currency} ${(amount / 100).toFixed(2)}`)
+    .join(' + ');
 }
 
 /**
