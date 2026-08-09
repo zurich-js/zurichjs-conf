@@ -20,7 +20,7 @@ export function getStripeClient(): Stripe {
   }
 
   stripeInstance = new Stripe(env.stripe.secretKey, {
-    apiVersion: '2025-10-29.clover',
+    apiVersion: '2026-07-29.dahlia',
     typescript: true,
   });
 

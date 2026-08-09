@@ -73,7 +73,7 @@
 		"react-markdown": "^10.1.0",
 		"recharts": "^3.10.1",
 		"resend": "^6.18.1",
-		"stripe": "19.3.0",
+		"stripe": "22.4.0",
 		"styled-jsx": "5.1.6",
 		"swiper": "^12.2.0",
 		"tailwind-merge": "^3.6.0",

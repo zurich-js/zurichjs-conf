@@ -15,7 +15,7 @@ const log = logger.scope('Validate Workshop Stripe');
 const getStripe = (): Stripe => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) throw new Error('STRIPE_SECRET_KEY is not configured');
-  return new Stripe(secretKey, { apiVersion: '2025-10-29.clover' });
+  return new Stripe(secretKey, { apiVersion: '2026-07-29.dahlia' });
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

@@ -63,7 +63,7 @@ const getStripe = (): Stripe => {
   if (!secretKey) {
     throw new Error('STRIPE_SECRET_KEY is not configured');
   }
-  return new Stripe(secretKey, { apiVersion: '2025-10-29.clover' });
+  return new Stripe(secretKey, { apiVersion: '2026-07-29.dahlia' });
 };
 
 /**

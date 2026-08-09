@@ -12,7 +12,7 @@ import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/
 const log = logger.scope('Voucher Validation API');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
+  apiVersion: '2026-07-29.dahlia',
 });
 
 export interface ValidateVoucherRequest {

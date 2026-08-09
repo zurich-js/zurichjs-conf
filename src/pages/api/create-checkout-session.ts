@@ -47,7 +47,7 @@ const getStripeClient = (): Stripe => {
   }
 
   return new Stripe(secretKey, {
-    apiVersion: '2025-10-29.clover',
+    apiVersion: '2026-07-29.dahlia',
   });
 };
 

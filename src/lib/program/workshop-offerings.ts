@@ -134,7 +134,7 @@ export async function validateWorkshopStripeLookup(params: {
   stripeProductId?: string | null;
 }): Promise<{ validation: StripeValidationResult | null; error?: string }> {
   try {
-    const stripe = new Stripe(env.stripe.secretKey, { apiVersion: '2025-10-29.clover' });
+    const stripe = new Stripe(env.stripe.secretKey, { apiVersion: '2026-07-29.dahlia' });
     const keys = buildRequiredLookupKeys(params.lookupKey);
     const results = await Promise.all(
       keys.map(async (key) => {
