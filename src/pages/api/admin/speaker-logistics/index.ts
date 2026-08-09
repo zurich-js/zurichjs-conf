@@ -125,6 +125,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const logisticsBySpeaker = new Map<string, SpeakerLogisticsRow>(
       (logisticsResult.data ?? []).map((row) => [row.speaker_id, row])
     );
+    const canGenerateLogisticsUrls = Boolean(
+      process.env.ORDER_TOKEN_SECRET || process.env.NEXTAUTH_SECRET
+    );
 
     const stats: SpeakerLogisticsStats = {
       totalSpeakers: speakers.length,
@@ -191,7 +194,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           (submission) => submission.submission_type === 'workshop' && submission.status === 'accepted'
         ),
         // Unique speaker-level write access — never hand it to the read-only bot
-        logistics_url: isBot ? null : generateSpeakerLogisticsUrl(speaker.id),
+        logistics_url: isBot || !canGenerateLogisticsUrls
+          ? null
+          : generateSpeakerLogisticsUrl(speaker.id),
         speaker_guide: getSpeakerGuideAccess(speaker),
         status,
         submitted_at: logistics?.submitted_at ?? null,

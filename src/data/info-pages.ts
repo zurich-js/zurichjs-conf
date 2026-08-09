@@ -7,11 +7,17 @@ export interface QuickLink {
   href?: string;
 }
 
+export interface ContentListGroup {
+  heading: string;
+  items: string[];
+}
+
 export interface ContentSection {
   type:
     | "heading"
     | "paragraph"
     | "list"
+    | "groupedList"
     | "subsection"
     | "node"
     | "tldr"
@@ -19,6 +25,7 @@ export interface ContentSection {
     | "infotip"
     | "infobox";
   content?: string;
+  status?: string;
   title?: string;
   before?: string;
   after?: string;
@@ -26,6 +33,7 @@ export interface ContentSection {
   mapHref?: string;
   level?: "h1" | "h2" | "h3";
   items?: string[];
+  groups?: ContentListGroup[];
   subsections?: ContentSection[];
   /** Rendered as a grid of link cards when `type === "quicklinks"`. */
   links?: QuickLink[];
@@ -37,7 +45,7 @@ export interface InfoPage {
   slug: string;
   title: string;
   description: string;
-  kicker: string;
+  kicker?: string;
   lastUpdated: string;
   sections: ContentSection[];
 }

@@ -14,10 +14,15 @@ export const speakerGuideChatContext = [
       "ask for help",
       "WhatsApp group",
       "email address",
+      "Faris",
+      "Bogdan",
+      "Nadja",
+      "Colin",
     ],
     content: [
       "The whole ZurichJS core team is available in the private speakers WhatsApp group and at hello@zurichjs.com.",
       "Any core-team member can answer a question or connect a speaker with the right person.",
+      "Faris Aziz leads the conference and speaker and workshop coordination; Bogdan Mihai Ilie supports speakers and the community; Nadja Hesselbjerg leads logistics and the on-site experience; Colin Schwarz supports operations on site.",
     ],
   },
   {
@@ -28,10 +33,15 @@ export const speakerGuideChatContext = [
       "September 10",
       "September 11",
       "September 12",
+      "12th",
       "speaker day out",
+      "city tour",
+      "tour of Zurich",
+      "light hike",
     ],
     content: [
-      "Community Day is on Wednesday, September 9; workshops and the speaker dinner are on Thursday, September 10; conference day and the after party are on Friday, September 11; and the optional speaker day out is on Saturday, September 12.",
+      "Community Day is on Wednesday, September 9; workshops and the speaker dinner are on Thursday, September 10; conference day and the after party are on Friday, September 11.",
+      "On the 12th, Saturday, September 12, reserve 10:00–16:00 for the optional speaker day out, planned around departure flights and potentially including a light hike or a tour of Zurich; final details will follow.",
     ],
   },
   {
@@ -76,12 +86,15 @@ export const speakerGuideChatContext = [
       "mic check",
       "presentation check",
       "rehearsal",
+      "send slides",
+      "submit slides",
     ],
     content: [
       "Conference tech checks must be completed before the conference starts at 08:45, at the individual time confirmed with each speaker.",
       "The tech check covers the display connection, presentation clicker, and microphone.",
       "The A/V crew reconnects and verifies each setup during the break before that speaker's session.",
       "A speaker who misses the morning tech check should find the A/V crew during the next break.",
+      "Send slides before the conference through the private speakers WhatsApp group or to hello@zurichjs.com.",
     ],
   },
   {
@@ -152,11 +165,14 @@ export const speakerGuideChatContext = [
       "speaker card",
       "speaker room",
       "conference lunch",
+      "speaker ticket",
+      "do speakers need a ticket",
     ],
     content: [
       "Conference day is Friday, September 11 at Technopark Zürich, Technoparkstrasse 1, 8005 Zürich.",
       "Attendee check-in is planned to open at 07:30, and the conference starts at 08:45.",
       "Speakers should receive their speaker card in advance; otherwise it will be waiting at the check-in desk.",
+      "Speakers do not need to buy a conference ticket; their speaker access is already covered.",
     ],
   },
   {

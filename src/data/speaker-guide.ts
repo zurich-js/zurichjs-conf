@@ -22,13 +22,12 @@ export const speakerGuide: InfoPage = {
   title: "Speaker Guide",
   description:
     "Practical guidance for ZurichJS Conf 2026 speakers, including travel, venues, contacts, stage setup, and local essentials.",
-  kicker: "For Speakers",
   lastUpdated: "August 8, 2026",
   sections: [
     {
       type: "paragraph",
       content:
-        "Welcome! Having you speak at ZurichJS Conf 2026 means the world to us. This community-run conference is built on volunteered time, late nights, and a lot of love. Our CFP received 436 submissions, and yours is one of the few we chose to build the day around. We're proud to host you and see your talk on the Zurich stage.",
+        "<strong class='mb-2 block text-xl text-gray-950'>Welcome aboard!</strong><span class='block'>Having you speak at ZurichJS Conf 2026 means the world to us. This community-run conference is built on volunteered time, late nights, and a lot of love. Our CFP received 436 submissions, and yours is one of the few we chose to build the day around. We're proud to host you and see your talk on the Zurich stage.</span>",
     },
     {
       type: "paragraph",
@@ -60,14 +59,34 @@ export const speakerGuide: InfoPage = {
       content: "Key Dates at a Glance",
     },
     {
-      type: "list",
-      items: [
-        "<strong>Wednesday, September 9, from 18:00:</strong> optional Community Day, a relaxed ZurichJS meetup where you can meet the local community. See the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
-        "<strong>Thursday, September 10:</strong> workshop day at locations across Zurich.",
-        "<strong>Thursday, September 10, 18:30–22:00:</strong> speaker dinner at Ziegelhütte.",
-        "<strong>Friday, September 11:</strong> conference day at Technopark Zürich.",
-        "<strong>Friday, September 11, 19:00–23:00:</strong> after party at Seebad Enge.",
-        "<strong>Saturday, September 12, 10:00–16:00:</strong> optional speaker day out, planned around departure times. Details will follow.",
+      type: "groupedList",
+      groups: [
+        {
+          heading: "Wednesday, September 9",
+          items: [
+            "<strong>From 18:00:</strong> optional Community Day, a relaxed ZurichJS meetup where you can meet the local community. See the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.",
+          ],
+        },
+        {
+          heading: "Thursday, September 10",
+          items: [
+            "<strong>Workshop day:</strong> locations across Zurich.",
+            "<strong>18:30–22:00:</strong> speaker dinner at Ziegelhütte.",
+          ],
+        },
+        {
+          heading: "Friday, September 11",
+          items: [
+            "<strong>Conference day:</strong> Technopark Zürich.",
+            "<strong>19:00–23:00:</strong> after party at Seebad Enge.",
+          ],
+        },
+        {
+          heading: "Saturday, September 12",
+          items: [
+            "<strong>10:00–16:00:</strong> optional speaker day out, planned around everyone&apos;s departure flights. Activities may include a light hike or a tour of Zurich. Final details will follow; reserve the full time window.",
+          ],
+        },
       ],
     },
     {
@@ -132,7 +151,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "paragraph",
       content:
-        "Please send us your slides before the conference. This lets us verify them on the venue hardware and keep a backup ready in case your laptop has a bad day. Tell us if your talk includes live demos, video, audio, or unusual connection requirements.",
+        "Please send us your slides before the conference through the private speakers WhatsApp group or by email at <a href='mailto:hello@zurichjs.com'>hello@zurichjs.com</a>. This lets us verify them on the venue hardware and keep a backup ready in case your laptop has a bad day. Tell us if your talk includes live demos, video, audio, or unusual connection requirements.",
     },
     {
       type: "list",
@@ -147,7 +166,7 @@ export const speakerGuide: InfoPage = {
       type: "infobox",
       title: "Stage equipment",
       content:
-        "<strong>HDMI:</strong> common adapters are available; bring your own for unusual connections, plus your charger.<br /><strong>Clicker:</strong> a presenter remote is provided, or bring your own.<br /><strong>Microphone:</strong> you will be miked and can move around the stage.<br /><strong>Backup:</strong> a backup machine will have the slides you sent in advance.",
+        "<strong>HDMI:</strong> common adapters are available; bring your own for unusual connections, plus your charger. Power is available at the podium.<br /><strong>Clicker:</strong> a presenter remote is provided, or bring your own.<br /><strong>Podium and microphone:</strong> the podium sits to the side of the stage so it does not block the screen. You will be miked and can move around the stage.<br /><strong>Backup:</strong> a backup machine will have the slides you sent in advance.",
     },
     {
       type: "paragraph",
@@ -190,8 +209,19 @@ export const speakerGuide: InfoPage = {
     },
     {
       type: "infotip",
-      before:
-        "Speakers stay at the <a href='https://all.accor.com/hotel/2731/index.en.shtml' target='_blank' rel='noopener noreferrer'><strong>Novotel Zürich City West</strong></a>, Schiffbaustrasse 13, 8005 Zürich. The conference venue, ",
+      before: "Speakers stay at the ",
+      title: "Novotel Zürich City West",
+      content:
+        "<strong>Novotel Zürich City West</strong><br />Schiffbaustrasse 13<br />8005 Zürich<br /><a href='https://all.accor.com/hotel/2731/index.en.shtml' target='_blank' rel='noopener noreferrer'>Hotel website</a>",
+      copyText: "Novotel Zürich City West, Schiffbaustrasse 13, 8005 Zürich",
+      mapHref: googleMapsUrl(
+        "Novotel Zürich City West, Schiffbaustrasse 13, 8005 Zürich"
+      ),
+      after: ".",
+    },
+    {
+      type: "infotip",
+      before: "The conference venue, ",
       title: "Technopark Zürich",
       content:
         "<strong>Technopark Zürich</strong><br />Technoparkstrasse 1<br />8005 Zürich",
@@ -200,7 +230,7 @@ export const speakerGuide: InfoPage = {
         "Technopark Zürich, Technoparkstrasse 1, 8005 Zürich"
       ),
       after:
-        ", is only 50 metres from the hotel. Restaurants and bars are nearby, and you can easily return to your room between sessions when you need a break.",
+        ", is only 50 metres away. Restaurants and bars are nearby, and you can easily return to your room between sessions when you need a break.",
     },
     {
       type: "list",
@@ -273,6 +303,7 @@ export const speakerGuide: InfoPage = {
       type: "list",
       items: [
         "<strong>Check-in:</strong> the venue team will be on site early because we aim to open attendee check-in at 07:30.",
+        "<strong>Your access:</strong> you do not need to buy a conference ticket; your speaker access is already covered.",
         "<strong>Speaker card:</strong> ideally, we will give it to you before conference day. If we do not manage that, the check-in desk will have it ready.",
         "<strong>Schedule:</strong> the current program is on the <a href='/schedule'>schedule page</a>. You should receive a Google Calendar invitation for your slot up to one week before the conference. If it has not arrived by then, let us know.",
         "<strong>Lunch*:</strong> served from 12:40 to 14:00.",

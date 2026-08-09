@@ -108,7 +108,8 @@ export const GuideChat: React.FC<GuideChatProps> = ({
       }
       if (suggestion.includes("tech checks")) {
         return chunkById.has("your-talk-slides-stage-and-tech") ||
-          chunkById.has("your-sessions-slides-stage-and-tech");
+          chunkById.has("your-sessions-slides-stage-and-tech") ||
+          chunkById.has("slides-stage-and-tech");
       }
       if (suggestion.includes("speaker hotel")) {
         return chunkById.has("speaker-hotel");

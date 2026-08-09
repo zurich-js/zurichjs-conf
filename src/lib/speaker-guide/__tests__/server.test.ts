@@ -65,12 +65,50 @@ describe('personalized speaker guide loader', () => {
     const guide = await loadPersonalizedSpeakerGuide(getSpeakerGuideAccess(speaker).code);
     const text = JSON.stringify(guide?.guide.sections);
 
-    expect(text).toContain('speaker information has been submitted');
-    expect(text).toContain('You&apos;re attending');
+    expect(text).toContain('Info submitted');
+    expect(text).toContain('Attending');
     expect(text).not.toContain('After Party at Seebad Enge');
-    expect(text).toContain('Let us know if you&apos;re attending this event');
+    expect(text).toContain('Not attending');
     expect(mocks.from).toHaveBeenCalledWith('cfp_speaker_logistics');
     expect(mocks.from).toHaveBeenCalledWith('speaker_activity_guests');
+  });
+
+  it('ignores unsubmitted draft answers just like the admin overview', async () => {
+    const speaker = {
+      id: 'speaker-draft',
+      first_name: 'Theo',
+      last_name: 'Blanc',
+      submissions: [],
+    };
+    mocks.getAdminSpeakersWithSubmissions.mockResolvedValue([speaker]);
+    mocks.from.mockImplementation((table: string) => ({
+      select: vi.fn().mockResolvedValue(
+        table === 'cfp_speaker_logistics'
+          ? {
+              data: [{
+                speaker_id: speaker.id,
+                submitted_at: null,
+                attending_warmup: true,
+                attending_speakers_dinner: false,
+                attending_after_party: true,
+                attending_speaker_hangout: false,
+                after_party_plus_one: true,
+                after_party_plus_one_first_name: 'Draft',
+                after_party_plus_one_last_name: 'Guest',
+              }],
+              error: null,
+            }
+          : { data: [], error: null }
+      ),
+    }));
+
+    const guide = await loadPersonalizedSpeakerGuide(getSpeakerGuideAccess(speaker).code);
+    const text = JSON.stringify(guide?.guide.sections);
+
+    expect(text.match(/RSVP pending/g)).toHaveLength(4);
+    expect(text).not.toContain('Attending');
+    expect(text).not.toContain('Info submitted');
+    expect(text).not.toContain('Draft Guest');
   });
 
   it('fails when program sessions cannot be loaded', async () => {

@@ -76,6 +76,9 @@ export async function loadPersonalizedSpeakerGuide(
   const logistics = (logisticsResult.data as SpeakerLogisticsRow[] | null)?.find(
     (row) => row.speaker_id === speaker.id
   ) ?? null;
+  // Draft rows are not authoritative. Admin also treats them as pending until
+  // submitted_at is set, so personalized guides must ignore their answers.
+  const submittedLogistics = logistics?.submitted_at ? logistics : null;
   const guests = (guestsResult.data as ActivityGuestRow[] | null)?.filter(
     (guest) => guest.related_speaker_id === speaker.id
   ) ?? [];
@@ -102,18 +105,18 @@ export async function loadPersonalizedSpeakerGuide(
   const profile: PersonalizedGuideProfile = {
     firstName: speaker.first_name,
     lastName: speaker.last_name,
-    logisticsSubmitted: Boolean(logistics?.submitted_at),
-    attendingWarmup: logistics?.attending_warmup ?? null,
-    attendingDinner: logistics?.attending_speakers_dinner ?? null,
-    attendingAfterParty: logistics?.attending_after_party ?? null,
-    attendingSpeakerHangout: logistics?.attending_speaker_hangout ?? null,
+    logisticsSubmitted: Boolean(submittedLogistics),
+    attendingWarmup: submittedLogistics?.attending_warmup ?? null,
+    attendingDinner: submittedLogistics?.attending_speakers_dinner ?? null,
+    attendingAfterParty: submittedLogistics?.attending_after_party ?? null,
+    attendingSpeakerHangout: submittedLogistics?.attending_speaker_hangout ?? null,
     hasRegisteredPlusOne: Boolean(
-      logistics?.dinner_plus_one ||
-      logistics?.after_party_plus_one ||
-      logistics?.speaker_hangout_plus_one ||
+      submittedLogistics?.dinner_plus_one ||
+      submittedLogistics?.after_party_plus_one ||
+      submittedLogistics?.speaker_hangout_plus_one ||
       guests.some((guest) => guest.guest_type === 'speaker_plus_one')
     ),
-    plusOneNames: extractPlusOneNames(logistics, guests),
+    plusOneNames: extractPlusOneNames(submittedLogistics, guests),
     sessions: assignedSessions,
   };
 

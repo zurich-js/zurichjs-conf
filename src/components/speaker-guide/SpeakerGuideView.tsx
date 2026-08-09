@@ -28,9 +28,11 @@ export function SpeakerGuideView({ guide, chatHref }: SpeakerGuideViewProps) {
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_280px]">
               <div>
                 <div className="mb-12">
-                  <Kicker variant="light" className="mb-4 print:hidden">
-                    {guide.kicker}
-                  </Kicker>
+                  {guide.kicker && (
+                    <Kicker variant="light" className="mb-4 print:hidden">
+                      {guide.kicker}
+                    </Kicker>
+                  )}
                   <Heading level="h1" variant="light" className="mb-6 text-2xl font-bold">
                     {guide.title}
                   </Heading>

@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUpRight, MapPin } from "lucide-react";
+import { ArrowUpRight, Check, MapPin } from "lucide-react";
 import { Heading } from "@/components/atoms";
 import { InfoBox, Infotip } from "@/components/molecules";
 import type { ContentSection, QuickLink } from "@/data/info-pages";
@@ -96,9 +96,15 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
             id={headingId}
             level={section.level || "h2"}
             variant="light"
-            className={`${section.level === "h3" ? "mt-[3.5ex] mb-[1ex]" : "mt-[5ex] mb-[1.5ex]"} scroll-mt-24 first:mt-0`}
+            className={`${section.level === "h3" ? "mt-[3.5ex] mb-[1ex]" : "mt-[5ex] mb-[1.5ex]"} ${section.status ? "flex flex-wrap items-center gap-2" : ""} scroll-mt-24 first:mt-0`}
           >
-            {section.content}
+            <span>{section.content}</span>
+            {section.status && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green">
+                <Check className="size-3" strokeWidth={2.5} aria-hidden="true" />
+                {section.status}
+              </span>
+            )}
           </Heading>
         );
 
@@ -128,6 +134,25 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           >
             {section.items?.map((item, i) => (
               <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
+            ))}
+          </ul>
+        );
+
+      case "groupedList":
+        return (
+          <ul
+            key={index}
+            className="mb-[2.5ex] ml-[2ex] list-outside list-disc space-y-[1.5ex] pl-[1.5ex] text-gray-700 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+          >
+            {section.groups?.map((group) => (
+              <li key={group.heading}>
+                <strong dangerouslySetInnerHTML={{ __html: group.heading }} />
+                <ul className="mt-[0.75ex] list-outside list-disc space-y-[0.75ex] pl-[2.5ex]">
+                  {group.items.map((item, itemIndex) => (
+                    <li key={itemIndex} dangerouslySetInnerHTML={{ __html: item }} />
+                  ))}
+                </ul>
+              </li>
             ))}
           </ul>
         );

@@ -85,9 +85,9 @@ function formatSession(session: PersonalizedGuideSession): string {
   const details = [
     formatDate(session.date),
     session.startTime?.slice(0, 5) ?? null,
-    session.room ? `Room ${escapeHtml(session.room)}` : null,
+    session.room ? `@ ${escapeHtml(session.room)}` : null,
   ].filter(Boolean);
-  const suffix = details.length > 0 ? ` — ${details.join(', ')}` : '';
+  const suffix = details.length > 0 ? `: ${details.join(', ')}` : '';
   return `<strong>${escapeHtml(session.title)}</strong>${suffix}`;
 }
 
@@ -96,16 +96,33 @@ function sessionSummary(sessions: PersonalizedGuideSession[]): string {
 }
 
 function attendanceMarker(attending: boolean | null): string {
-  return attending === true
-    ? ' <strong>✓ You&apos;re attending.</strong>'
-    : ' <strong>Let us know if you&apos;re attending this event.</strong>';
+  if (attending === true) {
+    return ' <span class="ml-1 inline-flex items-center gap-1 rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green"><span aria-hidden="true">✓</span> Attending</span>';
+  }
+  if (attending === false) {
+    return ' <span class="ml-1 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Not attending</span>';
+  }
+  return ' <span class="ml-1 inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700">RSVP pending</span>';
 }
 
-function attendingSectionMarker(): ContentSection {
-  return {
-    type: 'paragraph',
-    content: '<strong>✓ You&apos;re attending.</strong>',
-  };
+function statusHeading(
+  heading: ContentSection | null,
+  status: string
+): ContentSection | null {
+  return heading ? { ...heading, status } : null;
+}
+
+function keyDateSession(session: PersonalizedGuideSession): string {
+  const time = session.startTime?.slice(0, 5);
+  const sessionLabel = session.kind === 'workshop'
+    ? 'workshop'
+    : session.kind === 'panel'
+      ? 'live panel'
+      : session.kind === 'keynote'
+        ? 'keynote'
+        : 'live session';
+  const location = session.room ? ` @ ${escapeHtml(session.room)}` : '';
+  return `${time ? `<strong>${time}:</strong> ` : ''}your “<strong>${escapeHtml(session.title)}</strong>” ${sessionLabel}${location}.`;
 }
 
 function appendContext(
@@ -128,7 +145,6 @@ export function buildPersonalizedSpeakerGuide(
 ): PersonalizedSpeakerGuide {
   const speakerName = `${profile.firstName} ${profile.lastName}`.trim();
   const safeFirstName = escapeHtml(profile.firstName);
-  const safeSpeakerName = escapeHtml(speakerName);
   const workshops = profile.sessions.filter((session) => session.kind === 'workshop');
   const stageSessions = profile.sessions.filter(
     (session) => session.kind !== 'workshop' && session.kind !== 'event'
@@ -156,7 +172,7 @@ export function buildPersonalizedSpeakerGuide(
           index === 0 && section.type === 'paragraph'
             ? {
                 ...section,
-                content: `Welcome, ${safeFirstName}! Having you speak at ZurichJS Conf 2026 means the world to us. This community-run conference is built on volunteered time, late nights, and a lot of love. Our CFP received 436 submissions, and yours is one of the few we chose to build the day around. We&apos;re proud to host ${safeSpeakerName} on the Zurich stage.`,
+                content: `<strong class="mb-2 block text-xl text-gray-950">Welcome aboard, ${safeFirstName}!</strong><span class="block">Having you speak at ZurichJS Conf 2026 means the world to us. This community-run conference is built on volunteered time, late nights, and a lot of love. Our CFP received 436 submissions, and yours is one of the few we chose to build the day around. We&apos;re proud to host you on the Zurich stage.</span>`,
               }
             : section
         ),
@@ -170,16 +186,36 @@ export function buildPersonalizedSpeakerGuide(
     if (heading === 'After Party at Seebad Enge' && !showAfterParty) continue;
 
     if (heading === 'Key Dates at a Glance') {
-      const items: string[] = [];
-      items.push(`<strong>Wednesday, September 9, from 18:00:</strong> Community Day, a relaxed ZurichJS meetup. See the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.${attendanceMarker(profile.attendingWarmup)}`);
-      if (workshops.length > 0) {
-        items.push(`<strong>Thursday, September 10:</strong> your workshop day (${sessionSummary(workshops)}).`);
-      }
-      items.push(`<strong>Thursday, September 10, 18:30–22:00:</strong> speaker dinner at Ziegelhütte.${attendanceMarker(profile.attendingDinner)}`);
-      items.push(`<strong>Friday, September 11:</strong> conference day at Technopark Zürich${stageSessions.length > 0 ? ` (${sessionSummary(stageSessions)})` : ''}.`);
-      items.push(`<strong>Friday, September 11, 19:00–23:00:</strong> after party at Seebad Enge.${attendanceMarker(profile.attendingAfterParty)}`);
-      items.push(`<strong>Saturday, September 12, 10:00–16:00:</strong> optional speaker hangout activities.${attendanceMarker(profile.attendingSpeakerHangout)}`);
-      personalizedGroups.push({ heading: group.heading, sections: [{ type: 'list', items }] });
+      const groups: NonNullable<ContentSection['groups']> = [];
+      const sessionsOn = (date: string) => profile.sessions.filter(
+        (session) => session.kind !== 'event' && session.date === date
+      );
+      groups.push({
+        heading: 'Wednesday, September 9',
+        items: [
+          `<strong>From 18:00:</strong> Community Day, a relaxed ZurichJS meetup. See the <a href='https://zurichjs.com/events/sep-2026' target='_blank' rel='noopener noreferrer'>agenda</a> and <a href='https://www.meetup.com/zurich-js/events/315488367/' target='_blank' rel='noopener noreferrer'>RSVP on Meetup</a>.${attendanceMarker(profile.attendingWarmup)}`,
+          ...sessionsOn('2026-09-09').map(keyDateSession),
+        ],
+      });
+      const thursdayEvents = sessionsOn('2026-09-10').map(keyDateSession);
+      thursdayEvents.push(`<strong>18:30–22:00:</strong> speaker dinner at Ziegelhütte.${attendanceMarker(profile.attendingDinner)}`);
+      groups.push({ heading: 'Thursday, September 10', items: thursdayEvents });
+      groups.push({
+        heading: 'Friday, September 11',
+        items: [
+          '<strong>Conference day:</strong> Technopark Zürich.',
+          ...sessionsOn('2026-09-11').map(keyDateSession),
+          `<strong>19:00–23:00:</strong> after party at Seebad Enge.${attendanceMarker(profile.attendingAfterParty)}`,
+        ],
+      });
+      groups.push({
+        heading: 'Saturday, September 12',
+        items: [
+          `<strong>10:00–16:00:</strong> optional speaker day out, planned around everyone&apos;s departure flights. Activities may include a light hike or a tour of Zurich. Final details will follow; reserve the full time window.${attendanceMarker(profile.attendingSpeakerHangout)}`,
+          ...sessionsOn('2026-09-12').map(keyDateSession),
+        ],
+      });
+      personalizedGroups.push({ heading: group.heading, sections: [{ type: 'groupedList', groups }] });
       continue;
     }
 
@@ -204,12 +240,14 @@ export function buildPersonalizedSpeakerGuide(
     if (heading === 'Speaker Info Form and Plus Ones') {
       const plusOnes = profile.plusOneNames.map(escapeHtml);
       personalizedGroups.push({
-        heading: group.heading,
+        heading: profile.logisticsSubmitted
+          ? statusHeading(group.heading, 'Info submitted')
+          : group.heading,
         sections: profile.logisticsSubmitted
           ? [
               {
                 type: 'paragraph',
-                content: '<strong>✓ Your speaker information has been submitted.</strong> We have your event RSVPs, dietary requirements, T-shirt size, and any session accommodations you shared.',
+                content: 'We have your event RSVPs, dietary requirements, T-shirt size, and any session accommodations you shared.',
               },
               {
                 type: 'paragraph',
@@ -240,12 +278,8 @@ export function buildPersonalizedSpeakerGuide(
 
     if (heading === 'Your Talk: Slides, Stage, and Tech') {
       personalizedGroups.push({
-        heading: { type: 'heading', level: 'h2', content: 'Your Sessions, Slides, Stage, and Tech' },
-        sections: [
-          { type: 'paragraph', content: `${safeFirstName}, here is what we currently have scheduled for you:` },
-          { type: 'list', items: stageSessions.map(formatSession) },
-          ...group.sections,
-        ],
+        heading: { type: 'heading', level: 'h2', content: 'Slides, Stage, and Tech' },
+        sections: group.sections,
       });
       continue;
     }
@@ -259,9 +293,19 @@ export function buildPersonalizedSpeakerGuide(
         sections: [
           {
             type: 'paragraph',
-            content: `${safeFirstName}, you are scheduled to lead:`,
+            content: `You are leading ${workshops.map((session) => `<strong>${escapeHtml(session.title)}</strong>`).join(' and ')}.`,
           },
-          { type: 'list', items: [...workshops.map(formatSession), ...workshopInstructions] },
+          {
+            type: 'paragraph',
+            content: workshops.length === 1
+              ? `It is scheduled for <strong>${[
+                  formatDate(workshops[0].date),
+                  workshops[0].startTime?.slice(0, 5) ?? null,
+                  workshops[0].room ? `@ ${escapeHtml(workshops[0].room)}` : null,
+                ].filter(Boolean).join(', ')}</strong>.`
+              : `Your workshop schedule is ${workshops.map(formatSession).join('; ')}.`,
+          },
+          { type: 'list', items: workshopInstructions },
         ],
       });
       continue;
@@ -269,8 +313,8 @@ export function buildPersonalizedSpeakerGuide(
 
     if (heading === 'Speaker Dinner at Ziegelhütte' || heading === 'After Party at Seebad Enge') {
       personalizedGroups.push({
-        heading: group.heading,
-        sections: [attendingSectionMarker(), ...group.sections],
+        heading: statusHeading(group.heading, 'Attending'),
+        sections: group.sections,
       });
       continue;
     }
@@ -326,7 +370,7 @@ export function buildPersonalizedSpeakerGuide(
         heading: group.heading,
         sections: group.sections.map((section) =>
           section.type === 'paragraph'
-            ? { ...section, content: `That covers everything for now, ${safeFirstName}. We&apos;re proud to have you with us and look forward to welcoming you to Zurich in September. Safe travels, and see you soon!` }
+            ? { ...section, content: 'That covers everything for now. We&apos;re proud to have you with us and look forward to welcoming you to Zurich in September. Safe travels, and see you soon!' }
             : section
         ),
       });
@@ -345,7 +389,7 @@ export function buildPersonalizedSpeakerGuide(
       .map((section) => sectionId(section.content ?? ''))
   );
   const remapContextSection = (id: string): string => {
-    if (id === 'your-talk-slides-stage-and-tech') return 'your-sessions-slides-stage-and-tech';
+    if (id === 'your-talk-slides-stage-and-tech') return 'slides-stage-and-tech';
     if (id === 'workshop-day-for-instructors') return 'your-workshop';
     return id;
   };
@@ -360,15 +404,19 @@ export function buildPersonalizedSpeakerGuide(
 
   const keyDatesContext = chatContext.find((entry) => entry.sectionId === 'key-dates-at-a-glance');
   if (keyDatesContext) {
-    const dates = [
-      profile.attendingWarmup ? 'Community Day on Wednesday, September 9' : null,
-      workshops.length > 0 ? `${speakerName}'s workshop assignment on Thursday, September 10` : null,
-      showDinner ? 'the speaker dinner on Thursday evening' : null,
-      'conference day on Friday, September 11',
-      showAfterParty ? 'the after party on Friday evening' : null,
-      profile.attendingSpeakerHangout ? 'the speaker hangout on Saturday, September 12' : null,
-    ].filter(Boolean);
-    keyDatesContext.content = [`${speakerName}'s current guide includes ${dates.join(', ')}.`];
+    const rsvpStatus = (value: boolean | null): string => value === true
+      ? 'attending'
+      : value === false
+        ? 'not attending'
+        : 'RSVP pending';
+    keyDatesContext.content.push(
+      `${speakerName}'s RSVP status is: Community Day ${rsvpStatus(profile.attendingWarmup)}; speaker dinner ${rsvpStatus(profile.attendingDinner)}; after party ${rsvpStatus(profile.attendingAfterParty)}; speaker day out ${rsvpStatus(profile.attendingSpeakerHangout)}.`
+    );
+    if (workshops.length > 0) {
+      keyDatesContext.content.push(
+        `${speakerName} is also scheduled to lead ${workshops.map((session) => session.title).join(' and ')} on workshop day.`
+      );
+    }
   }
   const directionsContext = chatContext.find((entry) => entry.sectionId === 'quick-directions');
   if (directionsContext) {
@@ -391,9 +439,7 @@ export function buildPersonalizedSpeakerGuide(
     ];
   }
 
-  appendContext(chatContext, 'key-dates-at-a-glance', ['personal schedule', speakerName], [
-    `${speakerName}'s personalized guide only shows optional events they can attend based on their current logistics information.`,
-  ]);
+  appendContext(chatContext, 'key-dates-at-a-glance', ['personal schedule', speakerName], []);
   appendContext(chatContext, 'speaker-info-form-and-plus-ones', ['registered guest', 'plus one name'], []);
 
   if (workshops.length > 0) {
@@ -407,7 +453,7 @@ export function buildPersonalizedSpeakerGuide(
   }
 
   if (stageSessions.length > 0) {
-    appendContext(chatContext, 'your-sessions-slides-stage-and-tech', ['my talk', 'my session', 'session title'], [
+    appendContext(chatContext, 'slides-stage-and-tech', ['my talk', 'my session', 'session title'], [
       `${speakerName}'s scheduled conference ${stageSessions.length === 1 ? 'session is' : 'sessions are'} ${stageSessions.map((session) => session.title).join(' and ')}.`,
     ]);
   }
@@ -422,7 +468,7 @@ export function buildPersonalizedSpeakerGuide(
     guide: {
       ...speakerGuide,
       slug: `speaker-guide-${sectionId(speakerName)}`,
-      title: `${profile.firstName}'s Speaker Guide`,
+      title: 'Speaker Guide',
       description: `Personalized ZurichJS Conf 2026 speaker guidance for ${speakerName}.`,
       kicker: `For ${speakerName}`,
       sections,

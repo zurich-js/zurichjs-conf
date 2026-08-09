@@ -50,6 +50,13 @@ export const buildChunks = (
     if (section.type === "list") {
       return (section.items ?? []).map(stripHtml).join(" ");
     }
+    if (section.type === "groupedList") {
+      return (section.groups ?? [])
+        .map((group) =>
+          [stripHtml(group.heading), ...group.items.map(stripHtml)].join(" ")
+        )
+        .join(" ");
+    }
     if (section.type === "subsection") {
       return (section.subsections ?? []).map(textOf).join(" ");
     }

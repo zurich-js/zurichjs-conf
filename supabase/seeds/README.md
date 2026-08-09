@@ -23,6 +23,10 @@ overlay to shape the dataset for a specific admin workflow.
 - Includes invited/admin-managed speakers with no CFP submissions:
   - 3 featured invited speakers.
   - 1 non-featured invited speaker.
+- Includes representative speaker logistics and activity-guest records:
+  - Submitted, declined, draft, and unanswered RSVP states.
+  - Plus ones, dietary requirements, talk accommodations, and T-shirt sizes.
+  - Manually managed volunteer, complimentary, and paid activity guests.
 - Accepted CFP submissions are promoted into `program_sessions`, and their
   primary/panel/workshop speakers are linked through `program_session_speakers`.
 - Seeded schedule and workshop commerce rows link to `program_sessions.session_id`

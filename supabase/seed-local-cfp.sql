@@ -796,6 +796,181 @@ on conflict (id) do update set
     is_featured = excluded.is_featured,
     is_admin_managed = excluded.is_admin_managed;
 
+-- Speaker logistics
+-- Keep a mix of submitted answers, an in-progress draft, and speakers with no
+-- row at all so the admin overview exercises submitted and pending states.
+update public.cfp_speakers
+set tshirt_size = case id
+    when '11111111-1111-4111-8111-111111111111' then 'M'
+    when '22222222-2222-4222-8222-222222222222' then 'L'
+    when '33333333-3333-4333-8333-333333333333' then 'S'
+    when '99999999-1111-4999-8999-111111111111' then 'M'
+    else tshirt_size
+end
+where id in (
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+    '33333333-3333-4333-8333-333333333333',
+    '99999999-1111-4999-8999-111111111111'
+);
+
+insert into public.cfp_speaker_logistics (
+    id,
+    speaker_id,
+    attending_warmup,
+    attending_speakers_dinner,
+    attending_after_party,
+    attending_speaker_hangout,
+    speaker_hangout_plus_one,
+    dietary_restrictions,
+    dinner_plus_one,
+    dinner_plus_one_dietary_restrictions,
+    after_party_plus_one,
+    after_party_plus_one_first_name,
+    after_party_plus_one_last_name,
+    after_party_plus_one_email,
+    talk_special_accommodations,
+    submitted_at
+)
+values
+    (
+        '91000000-0000-4000-8000-000000000001',
+        '11111111-1111-4111-8111-111111111111',
+        true, true, true, true, true,
+        'Vegetarian',
+        true, 'Gluten-free',
+        true, 'Jamie', 'Ng', 'jamie.ng@example.test',
+        'A confidence monitor at the front of the stage',
+        '2026-08-01T09:15:00.000Z'
+    ),
+    (
+        '91000000-0000-4000-8000-000000000002',
+        '22222222-2222-4222-8222-222222222222',
+        false, true, true, false, false,
+        null,
+        false, null,
+        false, null, null, null,
+        null,
+        '2026-08-02T10:30:00.000Z'
+    ),
+    (
+        '91000000-0000-4000-8000-000000000003',
+        '33333333-3333-4333-8333-333333333333',
+        true, true, false, true, false,
+        'Severe peanut allergy',
+        false, null,
+        false, null, null, null,
+        'Step-free stage access',
+        '2026-08-03T14:45:00.000Z'
+    ),
+    (
+        '91000000-0000-4000-8000-000000000004',
+        '55555555-5555-4555-8555-555555555555',
+        false, false, false, false, false,
+        null,
+        false, null,
+        false, null, null, null,
+        null,
+        '2026-08-04T08:20:00.000Z'
+    ),
+    (
+        '91000000-0000-4000-8000-000000000005',
+        '99999999-1111-4999-8999-111111111111',
+        true, true, true, true, false,
+        'Vegan',
+        true, 'No shellfish',
+        false, null, null, null,
+        null,
+        '2026-08-05T16:10:00.000Z'
+    ),
+    (
+        '91000000-0000-4000-8000-000000000006',
+        '77777777-7777-4777-8777-777777777777',
+        true, true, true, false, false,
+        null,
+        false, null,
+        false, null, null, null,
+        'A handheld microphone for hosting',
+        '2026-08-06T11:00:00.000Z'
+    ),
+    (
+        '91000000-0000-4000-8000-000000000007',
+        '99999999-2222-4999-8999-222222222222',
+        true, null, null, null, null,
+        null,
+        null, null,
+        null, null, null, null,
+        null,
+        null
+    )
+on conflict (speaker_id) do update set
+    attending_warmup = excluded.attending_warmup,
+    attending_speakers_dinner = excluded.attending_speakers_dinner,
+    attending_after_party = excluded.attending_after_party,
+    attending_speaker_hangout = excluded.attending_speaker_hangout,
+    speaker_hangout_plus_one = excluded.speaker_hangout_plus_one,
+    dietary_restrictions = excluded.dietary_restrictions,
+    dinner_plus_one = excluded.dinner_plus_one,
+    dinner_plus_one_dietary_restrictions = excluded.dinner_plus_one_dietary_restrictions,
+    after_party_plus_one = excluded.after_party_plus_one,
+    after_party_plus_one_first_name = excluded.after_party_plus_one_first_name,
+    after_party_plus_one_last_name = excluded.after_party_plus_one_last_name,
+    after_party_plus_one_email = excluded.after_party_plus_one_email,
+    talk_special_accommodations = excluded.talk_special_accommodations,
+    submitted_at = excluded.submitted_at,
+    updated_at = now();
+
+insert into public.speaker_activity_guests (
+    id,
+    activity,
+    first_name,
+    last_name,
+    email,
+    guest_type,
+    related_speaker_id,
+    amount_paid,
+    stripe_payment_link,
+    dietary_restrictions,
+    admin_notes
+)
+values
+    (
+        '92000000-0000-4000-8000-000000000001',
+        'speakers_dinner', 'Morgan', 'Host', 'morgan.host@example.test',
+        'speaker_plus_one', '77777777-7777-4777-8777-777777777777',
+        null, null, 'Lactose-free', 'Added manually by the conference team'
+    ),
+    (
+        '92000000-0000-4000-8000-000000000002',
+        'warmup', 'Valentina', 'Meier', 'valentina.volunteer@example.test',
+        'volunteer', null,
+        null, null, null, 'Welcome-desk volunteer'
+    ),
+    (
+        '92000000-0000-4000-8000-000000000003',
+        'speaker_hangout', 'Chris', 'Example', 'chris.guest@example.test',
+        'complimentary', null,
+        null, null, 'Vegetarian', null
+    ),
+    (
+        '92000000-0000-4000-8000-000000000004',
+        'speakers_dinner', 'Taylor', 'Paid', 'taylor.paid@example.test',
+        'paid', null,
+        9500, 'https://buy.stripe.com/test_speaker_dinner', null, 'Paid CHF 95'
+    )
+on conflict (id) do update set
+    activity = excluded.activity,
+    first_name = excluded.first_name,
+    last_name = excluded.last_name,
+    email = excluded.email,
+    guest_type = excluded.guest_type,
+    related_speaker_id = excluded.related_speaker_id,
+    amount_paid = excluded.amount_paid,
+    stripe_payment_link = excluded.stripe_payment_link,
+    dietary_restrictions = excluded.dietary_restrictions,
+    admin_notes = excluded.admin_notes,
+    updated_at = now();
+
 -- Tags
 insert into public.cfp_tags (
     id,

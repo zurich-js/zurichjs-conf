@@ -55,4 +55,15 @@ describe("GuideChat retrieval chunks", () => {
       expect(quickDirections.text).not.toContain("Zurich Airport");
     }
   });
+
+  it("indexes grouped key dates and the full September 12 plan", () => {
+    const keyDates = chunks.find(
+      (chunk) => chunk.id === "key-dates-at-a-glance"
+    );
+
+    expect(keyDates?.text).toContain("Saturday, September 12");
+    expect(keyDates?.text).toContain("light hike or a tour of Zurich");
+    expect(keyDates?.searchTerms).toContain("12th");
+    expect(keyDates?.chatContext).toContain("On the 12th");
+  });
 });
