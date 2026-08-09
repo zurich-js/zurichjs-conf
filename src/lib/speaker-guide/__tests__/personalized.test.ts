@@ -230,6 +230,29 @@ describe('personalized speaker guide', () => {
     expect(visibleText(result)).toContain('your “<strong>A Carefully Tailored Talk</strong>” live session');
   });
 
+  it('provides a direct session answer with its date, time, and room', () => {
+    const result = buildPersonalizedSpeakerGuide(profile());
+    const keyDates = result.chatContext.find(
+      (entry) => entry.sectionId === 'key-dates-at-a-glance'
+    );
+
+    expect(keyDates?.directAnswers).toEqual([{
+      intent: 'personal-session-schedule',
+      answer: 'Your session is “A Carefully Tailored Talk” on Friday, September 11 at 10:15 @ Sky.',
+    }]);
+  });
+
+  it('answers clearly when no session is scheduled', () => {
+    const result = buildPersonalizedSpeakerGuide(profile({ sessions: [] }));
+    const keyDates = result.chatContext.find(
+      (entry) => entry.sectionId === 'key-dates-at-a-glance'
+    );
+
+    expect(keyDates?.directAnswers?.[0].answer).toBe(
+      'You do not currently have a session, talk, panel, keynote, or workshop scheduled in the program.'
+    );
+  });
+
   it('describes an assigned lunch panel as the speaker’s panel', () => {
     const result = buildPersonalizedSpeakerGuide(profile({
       sessions: [

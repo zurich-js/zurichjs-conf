@@ -95,6 +95,30 @@ function sessionSummary(sessions: PersonalizedGuideSession[]): string {
   return sessions.map(formatSession).join('; ');
 }
 
+function chatSessionSummary(session: PersonalizedGuideSession): string {
+  const date = formatDate(session.date);
+  const time = session.startTime?.slice(0, 5) ?? null;
+  const timing = date && time
+    ? ` on ${date} at ${time}`
+    : date
+      ? ` on ${date}`
+      : time
+        ? ` at ${time}`
+        : '';
+  const room = session.room ? ` @ ${session.room}` : '';
+  return `“${session.title}”${timing}${room}`;
+}
+
+function sessionScheduleAnswer(sessions: PersonalizedGuideSession[]): string {
+  if (sessions.length === 0) {
+    return 'You do not currently have a session, talk, panel, keynote, or workshop scheduled in the program.';
+  }
+  if (sessions.length === 1) {
+    return `Your session is ${chatSessionSummary(sessions[0])}.`;
+  }
+  return `Your scheduled sessions are: ${sessions.map(chatSessionSummary).join('; ')}.`;
+}
+
 function attendanceMarker(attending: boolean | null): string {
   if (attending === true) {
     return ' <span class="ml-1 inline-flex items-center gap-1 rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green"><span aria-hidden="true">✓</span> Attending</span>';
@@ -149,6 +173,7 @@ export function buildPersonalizedSpeakerGuide(
   const stageSessions = profile.sessions.filter(
     (session) => session.kind !== 'workshop' && session.kind !== 'event'
   );
+  const scheduledSessions = profile.sessions.filter((session) => session.kind !== 'event');
   const panels = profile.sessions.filter((session) => session.kind === 'panel');
   const lunchPanel = panels.find((session) => {
     const startTime = session.startTime?.slice(0, 5);
@@ -400,6 +425,9 @@ export function buildPersonalizedSpeakerGuide(
       sectionId: entry.sectionId,
       searchTerms: [...entry.searchTerms],
       content: [...entry.content],
+      ...(entry.directAnswers
+        ? { directAnswers: entry.directAnswers.map((answer) => ({ ...answer })) }
+        : {}),
     }));
 
   const keyDatesContext = chatContext.find((entry) => entry.sectionId === 'key-dates-at-a-glance');
@@ -417,6 +445,10 @@ export function buildPersonalizedSpeakerGuide(
         `${speakerName} is also scheduled to lead ${workshops.map((session) => session.title).join(' and ')} on workshop day.`
       );
     }
+    keyDatesContext.directAnswers = [{
+      intent: 'personal-session-schedule',
+      answer: sessionScheduleAnswer(scheduledSessions),
+    }];
   }
   const directionsContext = chatContext.find((entry) => entry.sectionId === 'quick-directions');
   if (directionsContext) {
@@ -453,9 +485,7 @@ export function buildPersonalizedSpeakerGuide(
   }
 
   if (stageSessions.length > 0) {
-    appendContext(chatContext, 'slides-stage-and-tech', ['my talk', 'my session', 'session title'], [
-      `${speakerName}'s scheduled conference ${stageSessions.length === 1 ? 'session is' : 'sessions are'} ${stageSessions.map((session) => session.title).join(' and ')}.`,
-    ]);
+    appendContext(chatContext, 'slides-stage-and-tech', ['my talk', 'my session', 'session title'], []);
   }
   if (lunchPanel) {
     appendContext(chatContext, 'conference-day-at-technopark', ['my panel', 'lunch panel'], [

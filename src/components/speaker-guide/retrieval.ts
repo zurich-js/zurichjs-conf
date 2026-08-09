@@ -8,6 +8,7 @@ export interface GuideChunk {
   text: string;
   chatContext: string;
   searchTerms: string;
+  directAnswers: SpeakerGuideChatContext["directAnswers"];
 }
 
 export interface ExtractedAnswer {
@@ -88,6 +89,7 @@ export const buildChunks = (
         text: "",
         chatContext: "",
         searchTerms: "",
+        directAnswers: undefined,
       };
       chunks.push(current);
       return;
@@ -109,6 +111,7 @@ export const buildChunks = (
         ...chunk,
         chatContext: enrichment?.content.join(" ") ?? "",
         searchTerms: enrichment?.searchTerms.join(" ") ?? "",
+        directAnswers: enrichment?.directAnswers,
       };
     })
     .filter(
@@ -186,6 +189,33 @@ const tokenOverlap = (a: string, b: string): number => {
     if (large.has(token)) shared += 1;
   });
   return shared / small.size;
+};
+
+const isPersonalSessionScheduleQuestion = (question: string): boolean => {
+  const normalized = question.toLowerCase();
+  const mentionsSession =
+    /\b(session|talk|workshop|panel|keynote|speak|speaking)\b/.test(normalized);
+  const asksForSchedule =
+    /\b(when|where|time|schedule|scheduled)\b/.test(normalized);
+  return mentionsSession && asksForSchedule;
+};
+
+export const findDirectAnswer = (
+  question: string,
+  chunks: GuideChunk[]
+): ExtractedAnswer | null => {
+  if (!isPersonalSessionScheduleQuestion(question)) return null;
+
+  for (const chunk of chunks) {
+    const directAnswer = chunk.directAnswers?.find(
+      (candidate) => candidate.intent === "personal-session-schedule"
+    );
+    if (directAnswer) {
+      return { text: directAnswer.answer, chunks: [chunk] };
+    }
+  }
+
+  return null;
 };
 
 /**

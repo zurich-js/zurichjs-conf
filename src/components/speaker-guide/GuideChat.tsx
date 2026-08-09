@@ -8,6 +8,7 @@ import {
   EMPTY_CHAT_CONTEXT,
   buildChunks,
   extractAnswer,
+  findDirectAnswer,
   processTerm,
   tokenize,
 } from "./retrieval";
@@ -205,6 +206,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({
         new Set(results.flatMap((result) => Object.keys(result.match)))
       );
       const answer =
+        findDirectAnswer(question, chunks) ??
         extractAnswer(queryTerms, sources, chunks) ??
         extractAnswer(matchedTerms, sources, chunks);
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildChunks } from "@/components/speaker-guide/retrieval";
+import {
+  buildChunks,
+  findDirectAnswer,
+} from "@/components/speaker-guide/retrieval";
 import { speakerGuide } from "@/data/speaker-guide";
 import { speakerGuideChatContext } from "@/data/speaker-guide-chat";
 
@@ -65,5 +68,22 @@ describe("GuideChat retrieval chunks", () => {
     expect(keyDates?.text).toContain("light hike or a tour of Zurich");
     expect(keyDates?.searchTerms).toContain("12th");
     expect(keyDates?.chatContext).toContain("On the 12th");
+  });
+
+  it("returns only an exact personalized answer for session schedule questions", () => {
+    const personalizedChunks = buildChunks(speakerGuide.sections, [{
+      sectionId: "key-dates-at-a-glance",
+      searchTerms: ["session schedule"],
+      content: [],
+      directAnswers: [{
+        intent: "personal-session-schedule",
+        answer: "Your session is “Typed APIs” on Friday at 14:05 @ Auditorium.",
+      }],
+    }]);
+
+    expect(findDirectAnswer("when is my session?", personalizedChunks)).toMatchObject({
+      text: "Your session is “Typed APIs” on Friday at 14:05 @ Auditorium.",
+      chunks: [{ id: "key-dates-at-a-glance" }],
+    });
   });
 });

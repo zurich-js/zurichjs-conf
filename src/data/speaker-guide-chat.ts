@@ -3,6 +3,10 @@ export interface SpeakerGuideChatContext {
   sectionId: string;
   searchTerms: readonly string[];
   content: readonly string[];
+  directAnswers?: readonly {
+    intent: "personal-session-schedule";
+    answer: string;
+  }[];
 }
 
 export const speakerGuideChatContext = [
