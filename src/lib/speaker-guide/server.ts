@@ -10,6 +10,16 @@ import {
   type PersonalizedSpeakerGuide,
 } from '@/lib/speaker-guide/personalized';
 
+export class PersonalizedGuideDataLoadError extends Error {
+  constructor(
+    public readonly dataset: 'sessions' | 'schedule',
+    cause: string
+  ) {
+    super(`Failed to load personalized guide ${dataset}: ${cause}`);
+    this.name = 'PersonalizedGuideDataLoadError';
+  }
+}
+
 function addName(names: string[], value: unknown): void {
   if (typeof value !== 'string') return;
   const name = value.trim();
@@ -39,13 +49,21 @@ export async function loadPersonalizedSpeakerGuide(
   code: string
 ): Promise<PersonalizedSpeakerGuide | null> {
   const supabase = createServiceRoleClient();
-  const [speakers, logisticsResult, guestsResult, sessionsResult, scheduleRows] = await Promise.all([
+  const [speakers, logisticsResult, guestsResult, sessionsResult, scheduleResult] = await Promise.all([
     getAdminSpeakersWithSubmissions('program'),
     supabase.from('cfp_speaker_logistics').select('*'),
     supabase.from('speaker_activity_guests').select('*'),
     listProgramSessions(),
     getAdminScheduleRows(),
   ]);
+
+  if (sessionsResult.error) {
+    throw new PersonalizedGuideDataLoadError('sessions', sessionsResult.error);
+  }
+  if (scheduleResult.error) {
+    throw new PersonalizedGuideDataLoadError('schedule', scheduleResult.error);
+  }
+
   const speaker = speakers.find(
     (candidate) => getSpeakerGuideAccess(candidate).code === code
   );
@@ -69,7 +87,7 @@ export async function loadPersonalizedSpeakerGuide(
       const assignment = (session.speakers ?? []).find(
         (candidate) => candidate.speaker_id === speaker.id
       );
-      const schedule = scheduleRows.find((row) => row.session_id === session.id);
+      const schedule = scheduleResult.rows.find((row) => row.session_id === session.id);
 
       return {
         title: session.title,

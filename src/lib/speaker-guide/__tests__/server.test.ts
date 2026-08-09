@@ -29,7 +29,7 @@ import { loadPersonalizedSpeakerGuide } from '@/lib/speaker-guide/server';
 describe('personalized speaker guide loader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getAdminScheduleRows.mockResolvedValue([]);
+    mocks.getAdminScheduleRows.mockResolvedValue({ rows: [] });
     mocks.listProgramSessions.mockResolvedValue({ sessions: [] });
   });
 
@@ -71,5 +71,35 @@ describe('personalized speaker guide loader', () => {
     expect(text).toContain('Let us know if you&apos;re attending this event');
     expect(mocks.from).toHaveBeenCalledWith('cfp_speaker_logistics');
     expect(mocks.from).toHaveBeenCalledWith('speaker_activity_guests');
+  });
+
+  it('fails when program sessions cannot be loaded', async () => {
+    mocks.getAdminSpeakersWithSubmissions.mockResolvedValue([]);
+    mocks.listProgramSessions.mockResolvedValue({
+      sessions: [],
+      error: 'sessions unavailable',
+    });
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockResolvedValue({ data: [], error: null }),
+    });
+
+    await expect(loadPersonalizedSpeakerGuide('123456789012345678')).rejects.toThrow(
+      'Failed to load personalized guide sessions: sessions unavailable'
+    );
+  });
+
+  it('fails when the program schedule cannot be loaded', async () => {
+    mocks.getAdminSpeakersWithSubmissions.mockResolvedValue([]);
+    mocks.getAdminScheduleRows.mockResolvedValue({
+      rows: [],
+      error: 'schedule unavailable',
+    });
+    mocks.from.mockReturnValue({
+      select: vi.fn().mockResolvedValue({ data: [], error: null }),
+    });
+
+    await expect(loadPersonalizedSpeakerGuide('123456789012345678')).rejects.toThrow(
+      'Failed to load personalized guide schedule: schedule unavailable'
+    );
   });
 });

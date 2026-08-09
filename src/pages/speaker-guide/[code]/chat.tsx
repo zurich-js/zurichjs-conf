@@ -4,7 +4,10 @@ import { ArrowLeft, Mountain } from 'lucide-react';
 import { Heading } from '@/components/atoms';
 import { GuideChat } from '@/components/speaker-guide';
 import { SEO } from '@/components/SEO';
-import { loadPersonalizedSpeakerGuide } from '@/lib/speaker-guide/server';
+import {
+  loadPersonalizedSpeakerGuide,
+  PersonalizedGuideDataLoadError,
+} from '@/lib/speaker-guide/server';
 
 type PersonalizedChatPageProps = NonNullable<
   Awaited<ReturnType<typeof loadPersonalizedSpeakerGuide>>
@@ -54,7 +57,17 @@ export const getServerSideProps: GetServerSideProps<PersonalizedChatPageProps> =
   const code = typeof params?.code === 'string' ? params.code : '';
   if (!/^[A-Za-z0-9_-]{18}$/.test(code)) return { notFound: true };
 
-  const personalized = await loadPersonalizedSpeakerGuide(code);
+  let personalized: Awaited<ReturnType<typeof loadPersonalizedSpeakerGuide>>;
+  try {
+    personalized = await loadPersonalizedSpeakerGuide(code);
+  } catch (error) {
+    if (error instanceof PersonalizedGuideDataLoadError) {
+      return {
+        redirect: { destination: '/speaker-guide', permanent: false },
+      };
+    }
+    throw error;
+  }
   if (!personalized) return { notFound: true };
 
   return { props: { ...personalized, accessCode: code } };
