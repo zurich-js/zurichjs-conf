@@ -3,7 +3,7 @@ begin;
 alter table public.tickets enable row level security;
 
 revoke all on table public.tickets from anon;
-grant select, insert, update, delete on table public.tickets to authenticated;
+grant select, insert, update on table public.tickets to authenticated;
 grant all on table public.tickets to service_role;
 
 do $$
