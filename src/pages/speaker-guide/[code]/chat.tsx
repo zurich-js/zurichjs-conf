@@ -28,7 +28,7 @@ export default function PersonalizedGuideChatPage({
         description={`Personalized ZurichJS speaker guide chat for ${speakerName}.`}
         noindex
       />
-      <main className="flex h-screen flex-col bg-white">
+      <main className="flex h-dvh flex-col bg-white">
         <div className="mx-auto flex min-h-0 w-full max-w-screen-md flex-1 flex-col px-4 pt-24 pb-4 md:pt-28 md:pb-6">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">

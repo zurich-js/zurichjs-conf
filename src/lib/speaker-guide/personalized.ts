@@ -36,6 +36,18 @@ export interface PersonalizedSpeakerGuide {
   speakerName: string;
 }
 
+interface MutableSpeakerGuideChatContext
+  extends Omit<
+    SpeakerGuideChatContext,
+    'searchTerms' | 'content' | 'directAnswers'
+  > {
+  searchTerms: string[];
+  content: string[];
+  directAnswers?: Array<
+    NonNullable<SpeakerGuideChatContext['directAnswers']>[number]
+  >;
+}
+
 interface SectionGroup {
   heading: ContentSection | null;
   sections: ContentSection[];
@@ -150,7 +162,7 @@ function keyDateSession(session: PersonalizedGuideSession): string {
 }
 
 function appendContext(
-  context: SpeakerGuideChatContext[],
+  context: MutableSpeakerGuideChatContext[],
   section: string,
   searchTerms: string[],
   content: string[]
@@ -418,7 +430,9 @@ export function buildPersonalizedSpeakerGuide(
     if (id === 'workshop-day-for-instructors') return 'your-workshop';
     return id;
   };
-  const chatContext = speakerGuideChatContext
+  const baseChatContext: readonly SpeakerGuideChatContext[] =
+    speakerGuideChatContext;
+  const chatContext: MutableSpeakerGuideChatContext[] = baseChatContext
     .map((entry) => ({ ...entry, sectionId: remapContextSection(entry.sectionId) }))
     .filter((entry) => visibleSectionIds.has(entry.sectionId))
     .map((entry) => ({
