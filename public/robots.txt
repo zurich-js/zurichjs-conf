@@ -25,49 +25,62 @@ Disallow: /speaker-guide
 # OpenAI ChatGPT crawlers
 User-agent: GPTBot
 Allow: /
+Disallow: /speaker-guide
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /speaker-guide
 
 # Anthropic Claude crawlers
 User-agent: anthropic-ai
 Allow: /
+Disallow: /speaker-guide
 
 User-agent: Claude-Web
 Allow: /
+Disallow: /speaker-guide
 
 User-agent: ClaudeBot
 Allow: /
+Disallow: /speaker-guide
 
 # Google AI crawlers
 User-agent: Google-Extended
 Allow: /
+Disallow: /speaker-guide
 
 # Perplexity AI
 User-agent: PerplexityBot
 Allow: /
+Disallow: /speaker-guide
 
 # Microsoft/Bing AI
 User-agent: Bingbot
 Allow: /
+Disallow: /speaker-guide
 
 # Meta AI
 User-agent: FacebookBot
 Allow: /
+Disallow: /speaker-guide
 
 User-agent: meta-externalagent
 Allow: /
+Disallow: /speaker-guide
 
 # Apple Intelligence
 User-agent: Applebot-Extended
 Allow: /
+Disallow: /speaker-guide
 
 # Common AI research crawlers
 User-agent: CCBot
 Allow: /
+Disallow: /speaker-guide
 
 User-agent: cohere-ai
 Allow: /
+Disallow: /speaker-guide
 
 # ============================================
 # Important Files

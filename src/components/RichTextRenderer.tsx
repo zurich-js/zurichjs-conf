@@ -72,6 +72,10 @@ export const extractNavigationItems = (
  * RichTextRenderer component
  * Renders content blocks dynamically based on their type
  * Supports headings, paragraphs, lists, and nested subsections
+ *
+ * NOTE: `content`, `before`, `after`, and `items` are injected as raw HTML.
+ * Only pass compile-time content from `src/data/*`. Sanitize any dynamic or
+ * user-supplied HTML before it reaches this renderer.
  */
 export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   sections,
@@ -209,6 +213,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
                     className="w-4 h-4 text-gray-400 flex-shrink-0 transition-colors group-hover:text-gray-700"
                     aria-hidden="true"
                   />
+                  <span className="sr-only">(opens in a new tab)</span>
                 </a>
               );
             })}

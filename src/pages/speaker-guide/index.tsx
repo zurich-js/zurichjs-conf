@@ -52,7 +52,7 @@ const SpeakerGuidePage: React.FC = () => {
                   onClick={() =>
                     analytics.track("speaker_guide_chat_banner_clicked", {})
                   }
-                  className="group flex items-center gap-4 rounded-2xl border-2 border-brand-yellow-main/60 bg-brand-yellow-main/10 p-5 mb-12 transition-colors hover:bg-brand-yellow-main/20 print:hidden"
+                  className="group flex items-center gap-4 rounded-2xl border-2 border-brand-yellow-main/60 bg-brand-yellow-main/10 p-5 mb-12 transition-colors hover:bg-brand-yellow-main/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow-main print:hidden"
                 >
                   <span
                     className="w-11 h-11 rounded-full bg-brand-yellow-main flex items-center justify-center flex-shrink-0"

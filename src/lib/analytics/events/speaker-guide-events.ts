@@ -32,7 +32,8 @@ export interface SpeakerGuideTocClickedEvent {
 export interface SpeakerGuideQuestionAskedEvent {
   event: 'speaker_guide_question_asked';
   properties: BaseEventProperties & {
-    question: string;
+    /** Privacy: the raw question never leaves the page — length only. */
+    question_length: number;
     question_source: 'typed' | 'suggestion';
     results_count: number;
     answered: boolean;

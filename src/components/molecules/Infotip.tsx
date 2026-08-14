@@ -1,4 +1,4 @@
-import React, { useId, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { Check, Copy, Info, MapPin } from "lucide-react";
 
 export interface InfotipProps {
@@ -18,6 +18,14 @@ export const Infotip: React.FC<InfotipProps> = ({
   const tooltipId = useId();
   const [copied, setCopied] = useState(false);
   const hasActions = Boolean(copyText || mapHref);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    },
+    []
+  );
 
   const copyToClipboard = async (): Promise<void> => {
     if (!copyText) return;
@@ -25,6 +33,8 @@ export const Infotip: React.FC<InfotipProps> = ({
     try {
       await navigator.clipboard.writeText(copyText);
       setCopied(true);
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
     }
@@ -34,8 +44,8 @@ export const Infotip: React.FC<InfotipProps> = ({
     <span className="group/infotip relative inline-flex align-baseline">
       <button
         type="button"
-        aria-controls={hasActions ? tooltipId : undefined}
-        aria-describedby={hasActions ? undefined : tooltipId}
+        aria-controls={copyText ? tooltipId : undefined}
+        aria-describedby={copyText ? undefined : tooltipId}
         aria-label={copyText ? `Copy address for ${label}` : undefined}
         onClick={copyText ? () => void copyToClipboard() : undefined}
         className={`inline-flex items-center gap-1 border-b border-dotted border-gray-500 text-gray-900 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-primary ${copyText ? "cursor-copy" : "cursor-help"}`}

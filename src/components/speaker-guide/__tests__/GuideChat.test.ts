@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildChunks } from "@/components/speaker-guide/GuideChat";
+import { buildChunks } from "@/components/speaker-guide/retrieval";
 import { speakerGuide } from "@/data/speaker-guide";
 import { speakerGuideChatContext } from "@/data/speaker-guide-chat";
 
@@ -39,8 +39,20 @@ describe("GuideChat retrieval chunks", () => {
     expect(conferenceChunk?.text).toContain(
       "Conference day takes place on Friday, September 11, at Technopark Zürich"
     );
-    expect(conferenceChunk?.text).not.toContain(
-      "Select the address to copy it"
+  });
+
+  it("drops quicklink navigation labels from the corpus", () => {
+    const quickDirections = chunks.find(
+      (chunk) => chunk.id === "quick-directions"
     );
+
+    // The section may survive via its intro text or chat context, but the
+    // "A → B" card labels must never become quotable corpus text.
+    chunks.forEach((chunk) => {
+      expect(chunk.text).not.toContain("→");
+    });
+    if (quickDirections) {
+      expect(quickDirections.text).not.toContain("Zurich Airport");
+    }
   });
 });

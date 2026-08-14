@@ -20,7 +20,7 @@ const SpeakerGuideChatPage: React.FC = () => {
         description="Chat with Faru, the ZurichJS Conf 2026 speaker guide assistant."
         noindex
       />
-      <main className="h-screen bg-white flex flex-col">
+      <main className="h-dvh bg-white flex flex-col">
         <div className="max-w-screen-md w-full mx-auto px-4 flex-1 min-h-0 flex flex-col pt-24 md:pt-28 pb-4 md:pb-6">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2 min-w-0">

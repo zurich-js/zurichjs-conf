@@ -1,11 +1,11 @@
 /** Extra retrieval context for Faru that is never rendered in the guide. */
 export interface SpeakerGuideChatContext {
   sectionId: string;
-  searchTerms: string[];
-  content: string[];
+  searchTerms: readonly string[];
+  content: readonly string[];
 }
 
-export const speakerGuideChatContext: SpeakerGuideChatContext[] = [
+export const speakerGuideChatContext = [
   {
     sectionId: "key-contacts",
     searchTerms: [
@@ -189,4 +189,4 @@ export const speakerGuideChatContext: SpeakerGuideChatContext[] = [
       "Call 144 for an ambulance or 112 for the general emergency service in Switzerland.",
     ],
   },
-] as const;
+] as const satisfies readonly SpeakerGuideChatContext[];
