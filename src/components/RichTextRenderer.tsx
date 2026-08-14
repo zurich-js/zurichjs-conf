@@ -1,9 +1,13 @@
 import React from "react";
+import { ArrowUpRight, Check, MapPin } from "lucide-react";
 import { Heading } from "@/components/atoms";
-import type { ContentSection } from "@/data/info-pages";
+import { InfoBox, Infotip } from "@/components/molecules";
+import type { ContentSection, QuickLink } from "@/data/info-pages";
 
 export interface RichTextRendererProps {
   sections: ContentSection[];
+  /** Called when a quicklink card is clicked (e.g. for analytics). */
+  onQuickLinkClick?: (link: QuickLink) => void;
 }
 
 export interface NavigationItem {
@@ -14,7 +18,7 @@ export interface NavigationItem {
 /**
  * Generate a URL-friendly ID from text
  */
-const slugify = (text: string): string => {
+export const slugify = (text: string): string => {
   return text
     .toLowerCase()
     .replace(/<[^>]*>/g, "") // Remove HTML tags
@@ -66,13 +70,18 @@ export const extractNavigationItems = (
 
 /**
  * RichTextRenderer component
- * Renders content sections dynamically based on their type
+ * Renders content blocks dynamically based on their type
  * Supports headings, paragraphs, lists, and nested subsections
+ *
+ * NOTE: `content`, `before`, `after`, and `items` are injected as raw HTML.
+ * Only pass compile-time content from `src/data/*`. Sanitize any dynamic or
+ * user-supplied HTML before it reaches this renderer.
  */
 export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   sections,
+  onQuickLinkClick,
 }) => {
-  const renderSection = (
+  const renderContentBlock = (
     section: ContentSection,
     index: number
   ): React.ReactNode => {
@@ -82,15 +91,21 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           ? slugify(section.content)
           : undefined;
         return (
-          <div key={index} id={headingId} className="scroll-mt-24">
-            <Heading
-              level={section.level || "h2"}
-              variant="light"
-              className="mb-3"
-            >
-              {section.content}
-            </Heading>
-          </div>
+          <Heading
+            key={index}
+            id={headingId}
+            level={section.level || "h2"}
+            variant="light"
+            className={`${section.level === "h3" ? "mt-[3.5ex] mb-[1ex]" : "mt-[5ex] mb-[1.5ex]"} ${section.status ? "flex flex-wrap items-center gap-2" : ""} scroll-mt-24 first:mt-0`}
+          >
+            <span>{section.content}</span>
+            {section.status && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green">
+                <Check className="size-3" strokeWidth={2.5} aria-hidden="true" />
+                {section.status}
+              </span>
+            )}
+          </Heading>
         );
 
       case "paragraph":
@@ -106,7 +121,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           <p
             key={index}
             id={paragraphId}
-            className="text-gray-700 leading-relaxed scroll-mt-24 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+            className="mb-[2ex] text-gray-700 leading-relaxed scroll-mt-24 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
             dangerouslySetInnerHTML={{ __html: section.content || "" }}
           />
         );
@@ -115,7 +130,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
         return (
           <ul
             key={index}
-            className="list-disc list-inside space-y-2 text-gray-700 ml-4 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+            className="mb-[2.5ex] ml-[2ex] list-inside list-disc space-y-[0.75ex] text-gray-700 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
           >
             {section.items?.map((item, i) => (
               <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
@@ -123,18 +138,154 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           </ul>
         );
 
+      case "groupedList":
+        return (
+          <ul
+            key={index}
+            className="mb-[2.5ex] ml-[2ex] list-outside list-disc space-y-[1.5ex] pl-[1.5ex] text-gray-700 [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+          >
+            {section.groups?.map((group) => (
+              <li key={group.heading}>
+                <strong dangerouslySetInnerHTML={{ __html: group.heading }} />
+                <ul className="mt-[0.75ex] list-outside list-disc space-y-[0.75ex] pl-[2.5ex]">
+                  {group.items.map((item, itemIndex) => (
+                    <li key={itemIndex} dangerouslySetInnerHTML={{ __html: item }} />
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        );
+
       case "subsection":
         return (
-          <div key={index} className="space-y-4 text-gray-700">
+          <div key={index} className="text-gray-700">
             {section.subsections?.map((subsection, i) =>
-              renderSection(subsection, i)
+              renderContentBlock(subsection, i)
             )}
           </div>
         );
 
+      case "tldr":
+        return (
+          <div
+            key={index}
+            className="my-[2.5ex] rounded-xl border border-brand-yellow-main/60 bg-brand-yellow-main/10 px-4 py-3"
+          >
+            <p className="mb-[0.75ex] text-xs font-bold uppercase tracking-wider text-gray-900">
+              TL;DR
+            </p>
+            <p
+              className="text-sm text-gray-800 leading-relaxed [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+              dangerouslySetInnerHTML={{ __html: section.content || "" }}
+            />
+          </div>
+        );
+
+      case "quicklinks":
+        return (
+          <div
+            key={index}
+            className="my-[2.5ex] grid grid-cols-1 gap-3 sm:grid-cols-2"
+          >
+            {section.links?.map((link) => {
+              const content = (
+                <>
+                  <MapPin
+                    className="mt-[0.25ex] h-5 w-5 flex-shrink-0 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {link.label}
+                    </span>
+                    {link.travelTime && (
+                      <small className="ml-[0.75ex] whitespace-nowrap text-xs font-normal text-gray-500">
+                        ({link.travelTime})
+                      </small>
+                    )}
+                    {link.sublabel && (
+                      <span className="mt-[0.5ex] block text-xs text-gray-500">
+                        {link.sublabel}
+                      </span>
+                    )}
+                  </span>
+                </>
+              );
+
+              if (!link.href) {
+                return (
+                  <div
+                    key={`${link.label}-static`}
+                    className="flex items-start gap-3 rounded-xl border border-gray-200 p-4"
+                  >
+                    {content}
+                  </div>
+                );
+              }
+
+              return (
+                <a
+                  key={`${link.label}-${link.href}`}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onQuickLinkClick?.(link)}
+                  className="group flex items-start gap-3 rounded-xl border border-gray-200 p-4 transition-colors hover:border-gray-400 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow-main"
+                >
+                  {content}
+                  <ArrowUpRight
+                    className="w-4 h-4 text-gray-400 flex-shrink-0 transition-colors group-hover:text-gray-700"
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">(opens in a new tab)</span>
+                </a>
+              );
+            })}
+          </div>
+        );
+
+      case "infotip":
+        return (
+          <p
+            key={index}
+            className="mb-[2ex] text-gray-700 leading-relaxed [&_a]:text-blue-primary [&_a]:underline [&_a:hover]:text-blue-dark"
+          >
+            <span
+              dangerouslySetInnerHTML={{ __html: section.before || "" }}
+            />
+            <Infotip
+              label={section.title || "More information"}
+              copyText={section.copyText}
+              mapHref={section.mapHref}
+            >
+              <span
+                dangerouslySetInnerHTML={{ __html: section.content || "" }}
+              />
+            </Infotip>
+            <span dangerouslySetInnerHTML={{ __html: section.after || "" }} />
+          </p>
+        );
+
+      case "infobox":
+        return (
+          <InfoBox
+            key={index}
+            title={section.title || "More information"}
+            className="my-[2.5ex]"
+          >
+            <span
+              dangerouslySetInnerHTML={{ __html: section.content || "" }}
+            />
+          </InfoBox>
+        );
+
       case "node":
         return (
-          <div key={index} className="text-gray-700 leading-relaxed">
+          <div
+            key={index}
+            className="mb-[2ex] text-gray-700 leading-relaxed"
+          >
             {section.node}
           </div>
         );
@@ -145,10 +296,10 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   };
 
   return (
-    <div className="rich-text-renderer space-y-6">
-      {sections.map((section, index) => (
-        <section key={index}>{renderSection(section, index)}</section>
-      ))}
+    <div className="rich-text-renderer">
+      {sections.map((section, index) =>
+        renderContentBlock(section, index)
+      )}
     </div>
   );
 };

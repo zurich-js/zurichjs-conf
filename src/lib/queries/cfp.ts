@@ -14,9 +14,7 @@ import type {
   CfpReviewer,
   CfpReview,
   CfpSubmissionStats,
-  CfpSpeakerTravel,
   CfpSpeakerFlight,
-  CfpSpeakerAccommodation,
   CfpSpeakerReimbursement,
 } from '@/lib/types/cfp';
 
@@ -49,14 +47,6 @@ export interface SubmissionResponse {
 
 export interface SuggestedTagsResponse {
   tags: CfpTag[];
-}
-
-export interface TravelResponse {
-  travel: CfpSpeakerTravel | null;
-  flights: CfpSpeakerFlight[];
-  accommodation: CfpSpeakerAccommodation | null;
-  reimbursements: CfpSpeakerReimbursement[];
-  hasAcceptedSubmission: boolean;
 }
 
 export interface FlightsResponse {
@@ -156,22 +146,6 @@ export async function fetchSuggestedTags(): Promise<SuggestedTagsResponse> {
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     throw new Error(data.error || 'Failed to fetch suggested tags');
-  }
-
-  return response.json();
-}
-
-/**
- * Fetch travel information for speaker
- */
-export async function fetchTravel(): Promise<TravelResponse> {
-  const response = await fetch(endpoints.cfp.travel(), {
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || 'Failed to fetch travel information');
   }
 
   return response.json();
@@ -293,16 +267,6 @@ export function submissionQueryOptions(id: string) {
 export const suggestedTagsQueryOptions = queryOptions({
   queryKey: queryKeys.cfp.suggestedTags(),
   queryFn: fetchSuggestedTags,
-  staleTime: CFP_STALE_TIME,
-  gcTime: CFP_GC_TIME,
-});
-
-/**
- * Query options for travel information
- */
-export const travelQueryOptions = queryOptions({
-  queryKey: queryKeys.cfp.travel(),
-  queryFn: fetchTravel,
   staleTime: CFP_STALE_TIME,
   gcTime: CFP_GC_TIME,
 });

@@ -5,13 +5,14 @@
  */
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Link2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, ExternalLink, Link2 } from 'lucide-react';
 import { AnswerDetails, RsvpCell, StatusBadge } from './shared';
 import type { SpeakerLogisticsAdminRow } from './types';
 
 interface SpeakerLogisticsCardListProps {
   speakers: SpeakerLogisticsAdminRow[];
   onCopyLink: (row: SpeakerLogisticsAdminRow) => void;
+  onCopyGuideLink: (row: SpeakerLogisticsAdminRow) => void;
 }
 
 const EVENT_CHIPS: Array<{
@@ -25,7 +26,7 @@ const EVENT_CHIPS: Array<{
   { label: 'Sep 12', attendanceKey: 'attending_speaker_hangout', plusOneKey: 'speaker_hangout_plus_one' },
 ];
 
-export function SpeakerLogisticsCardList({ speakers, onCopyLink }: SpeakerLogisticsCardListProps) {
+export function SpeakerLogisticsCardList({ speakers, onCopyLink, onCopyGuideLink }: SpeakerLogisticsCardListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (speakers.length === 0) {
@@ -113,6 +114,26 @@ export function SpeakerLogisticsCardList({ speakers, onCopyLink }: SpeakerLogist
                     <Link2 className="h-4 w-4" aria-hidden="true" />
                     Copy unique form link
                   </button>
+                )}
+                {row.speaker_guide && (
+                  <>
+                    <button
+                      onClick={() => onCopyGuideLink(row)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <BookOpen className="h-4 w-4" aria-hidden="true" />
+                      Copy guide link
+                    </button>
+                    <a
+                      href={row.speaker_guide.path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                      Preview guide
+                    </a>
+                  </>
                 )}
               </div>
             )}

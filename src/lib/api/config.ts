@@ -108,7 +108,6 @@ export const endpoints = {
     withdrawSubmission: (id: string) => `/api/cfp/submissions/${id}/withdraw` as const,
     suggestedTags: () => '/api/cfp/tags/suggested' as const,
     // Travel endpoints
-    travel: () => '/api/cfp/travel' as const,
     flights: () => '/api/cfp/travel/flights' as const,
     flight: (id: string) => `/api/cfp/travel/flights/${id}` as const,
     reimbursements: () => '/api/cfp/travel/reimbursements' as const,

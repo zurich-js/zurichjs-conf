@@ -4,9 +4,9 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { logger } from '@/lib/logger';
 import type {
   CfpSpeaker,
-  CfpSpeakerTravel,
   CfpSpeakerFlight,
   CfpSpeakerAccommodation,
   CfpSpeakerReimbursement,
@@ -16,36 +16,26 @@ import type {
   CfpFlightDirection,
 } from '@/lib/types/cfp';
 
+const log = logger.scope('Admin Travel');
+
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface SpeakerWithTravel extends CfpSpeaker {
-  travel: CfpSpeakerTravel | null;
   flights: CfpSpeakerFlight[];
-  accommodation: CfpSpeakerAccommodation | null;
-  accommodation_bookings: AccommodationBookingWithContext[];
   reimbursements: CfpSpeakerReimbursement[];
-  accepted_submissions_count: number;
 }
 
 export interface TravelDashboardStats {
-  total_accepted_speakers: number;
-  travel_confirmed: number;
-  attending_dinner: number;
-  attending_activities: number;
+  total_program_speakers: number;
+  round_trips_complete: number;
+  total_flights: number;
+  tracked_travelers: number;
   pending_invoices: number;
   total_invoice_amounts: Record<string, number>;
   flights_arriving_today: number;
   flights_departing_today: number;
-  hotels_booked: number;
-  hotels_pending: number;
-  total_hotel_nights: number;
-  accommodation_people: number;
-  accommodation_rooms: number;
-  accommodation_confirmed: number;
-  accommodation_pending: number;
-  accommodation_guest_payments_due: number;
 }
 
 export interface FlightWithSpeaker extends CfpSpeakerFlight {
@@ -215,25 +205,15 @@ async function getProgramSpeakerIds(): Promise<string[]> {
 /**
  * Get travel dashboard statistics.
  *
- * "Travel confirmed" is derived: a speaker counts as confirmed when they
- * have BOTH an inbound and an outbound flight booked. The cfp_speaker_travel
- * .travel_confirmed boolean column is no longer the source of truth — admins
- * never had to flip it manually for the count to be useful.
+ * A round trip is complete when a program speaker has both an inbound and an
+ * outbound flight booked. The legacy persisted travel_confirmed flag is not
+ * consulted.
  */
 export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
   const supabase = createCfpServiceClient();
   const today = new Date().toISOString().split('T')[0];
 
   const uniqueSpeakerIds = await getProgramSpeakerIds();
-
-  // Get travel preferences (dinner / activities only — confirmation is derived)
-  const { data: travelData } = await supabase
-    .from('cfp_speaker_travel')
-    .select('*')
-    .in('speaker_id', uniqueSpeakerIds);
-
-  const attendingDinner = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_dinner).length;
-  const attendingActivities = (travelData || []).filter((t: CfpSpeakerTravel) => t.attending_speakers_activities).length;
 
   // Get pending invoices (scoped to program speakers)
   const { data: pendingInvoices } = await supabase
@@ -249,15 +229,27 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
     totalPendingAmounts[cur] = (totalPendingAmounts[cur] || 0) + r.amount;
   });
 
-  // Pull all in-scope flights once — used for arriving/departing today AND
-  // for the derived travel_confirmed count.
-  type FlightRow = { speaker_id: string; direction: string; arrival_time: string | null; departure_time: string | null };
-  const { data: scopedFlights } = await supabase
+  // Flights can belong to speakers or other travelers. Operational totals
+  // include both; speaker completion only considers program speakers.
+  type FlightRow = {
+    id: string;
+    speaker_id: string | null;
+    traveler_name: string | null;
+    traveler_email: string | null;
+    direction: string;
+    arrival_time: string | null;
+    departure_time: string | null;
+  };
+  const { data: allFlights } = await supabase
     .from('cfp_speaker_flights')
-    .select('speaker_id, direction, arrival_time, departure_time')
-    .in('speaker_id', uniqueSpeakerIds);
+    .select('id, speaker_id, traveler_name, traveler_email, direction, arrival_time, departure_time');
 
-  const flightsList: FlightRow[] = (scopedFlights || []) as FlightRow[];
+  const flightsList: FlightRow[] = (allFlights || []) as FlightRow[];
+  const programSpeakerIds = new Set(uniqueSpeakerIds);
+  const scopedFlights = flightsList.filter(
+    (flight): flight is FlightRow & { speaker_id: string } =>
+      Boolean(flight.speaker_id && programSpeakerIds.has(flight.speaker_id))
+  );
 
   const arrivingToday = flightsList.filter((f) =>
     f.direction === 'inbound' && !!f.arrival_time && f.arrival_time.startsWith(today)
@@ -267,9 +259,9 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
     f.direction === 'outbound' && !!f.departure_time && f.departure_time.startsWith(today)
   ).length;
 
-  // travel_confirmed = speaker has at least one inbound AND one outbound flight
+  // A complete round trip has at least one inbound and one outbound flight.
   const directionsBySpeaker = new Map<string, Set<string>>();
-  flightsList.forEach((f) => {
+  scopedFlights.forEach((f) => {
     let dirs = directionsBySpeaker.get(f.speaker_id);
     if (!dirs) {
       dirs = new Set<string>();
@@ -279,75 +271,21 @@ export async function getTravelDashboardStats(): Promise<TravelDashboardStats> {
   });
   const travelConfirmed = [...directionsBySpeaker.values()]
     .filter((dirs) => dirs.has('inbound') && dirs.has('outbound')).length;
-
-  // Get accommodation stats
-  const { data: accommodationData } = await supabase
-    .from('cfp_speaker_accommodation')
-    .select('speaker_id, hotel_name, check_in_date, check_out_date')
-    .in('speaker_id', uniqueSpeakerIds);
-
-  type AccommodationRecord = { speaker_id: string; hotel_name: string | null; check_in_date: string | null; check_out_date: string | null };
-  const bookedAccommodations = (accommodationData || []).filter((a: AccommodationRecord) => a.hotel_name);
-  const hotelsBooked = bookedAccommodations.length;
-  const hotelsPending = uniqueSpeakerIds.length - hotelsBooked;
-
-  const totalHotelNights = bookedAccommodations.reduce((sum: number, a: AccommodationRecord) => {
-    if (!a.check_in_date || !a.check_out_date) return sum;
-    const nights = Math.round((new Date(a.check_out_date).getTime() - new Date(a.check_in_date).getTime()) / 86400000);
-    return sum + Math.max(0, nights);
-  }, 0);
-
-  const [bookingStatsResult, roomStatsResult] = await Promise.all([
-    supabase
-      .from('accommodation_bookings')
-      .select('status, guest_amount'),
-    supabase
-      .from('accommodation_booking_rooms')
-      .select('people_count, accommodation_bookings!inner(status)'),
-  ]);
-
-  type GeneralAccommodationBookingStats = {
-    status: AccommodationBookingStatus | null;
-    guest_amount: number | null;
-  };
-  type GeneralAccommodationRoomStats = {
-    people_count: number | null;
-    accommodation_bookings?: { status: AccommodationBookingStatus | null } | { status: AccommodationBookingStatus | null }[] | null;
-  };
-  const accommodationBookings = (bookingStatsResult.data || []) as GeneralAccommodationBookingStats[];
-  const accommodationRoomStats = (roomStatsResult.data || []) as unknown as GeneralAccommodationRoomStats[];
-  const activeAccommodationRooms = accommodationRoomStats.filter((a) => {
-    const booking = Array.isArray(a.accommodation_bookings) ? a.accommodation_bookings[0] : a.accommodation_bookings;
-    return booking?.status !== 'canceled';
-  });
-  const accommodationRooms = activeAccommodationRooms.length;
-  const accommodationPeople = activeAccommodationRooms.reduce((sum, a) => sum + (a.people_count ?? 0), 0);
-  const accommodationConfirmed = accommodationBookings.filter((a) => a.status === 'confirmed').length;
-  const accommodationPending = accommodationBookings.filter((a) =>
-    a.status === 'draft' || a.status === 'pending_details' || a.status === 'pending_payment'
-  ).length;
-  const accommodationGuestPaymentsDue = accommodationBookings.reduce((sum, a) => {
-    if (a.status === 'canceled') return sum;
-    return sum + (a.guest_amount ?? 0);
-  }, 0);
+  const trackedTravelers = new Set(
+    flightsList.map((flight) =>
+      flight.speaker_id || flight.traveler_email || flight.traveler_name || flight.id
+    )
+  ).size;
 
   return {
-    total_accepted_speakers: uniqueSpeakerIds.length,
-    travel_confirmed: travelConfirmed,
-    attending_dinner: attendingDinner,
-    attending_activities: attendingActivities,
+    total_program_speakers: uniqueSpeakerIds.length,
+    round_trips_complete: travelConfirmed,
+    total_flights: flightsList.length,
+    tracked_travelers: trackedTravelers,
     pending_invoices: pendingCount,
     total_invoice_amounts: totalPendingAmounts,
     flights_arriving_today: arrivingToday,
     flights_departing_today: departingToday,
-    hotels_booked: hotelsBooked,
-    hotels_pending: hotelsPending,
-    total_hotel_nights: totalHotelNights,
-    accommodation_people: accommodationPeople,
-    accommodation_rooms: accommodationRooms,
-    accommodation_confirmed: accommodationConfirmed,
-    accommodation_pending: accommodationPending,
-    accommodation_guest_payments_due: accommodationGuestPaymentsDue,
   };
 }
 
@@ -378,48 +316,29 @@ export async function getAcceptedSpeakersWithTravel(): Promise<SpeakerWithTravel
     return [];
   }
 
-  // Get accepted submission counts
-  const { data: acceptedSubmissions } = await supabase
-    .from('cfp_submissions')
-    .select('speaker_id')
-    .eq('status', 'accepted')
-    .in('speaker_id', speakerIds);
-
-  // Get all travel data in parallel
-  const [travelResult, flightsResult, accommodationResult, reimbursementsResult] = await Promise.all([
-    supabase.from('cfp_speaker_travel').select('*').in('speaker_id', speakerIds),
+  // Accommodation is managed manually outside this dashboard.
+  const [flightsResult, reimbursementsResult] = await Promise.all([
     supabase.from('cfp_speaker_flights').select('*').in('speaker_id', speakerIds),
-    supabase.from('cfp_speaker_accommodation').select('*').in('speaker_id', speakerIds),
     supabase.from('cfp_speaker_reimbursements').select('*').in('speaker_id', speakerIds),
   ]);
 
-  // Count accepted submissions per speaker
-  const submissionCounts: Record<string, number> = {};
-  (acceptedSubmissions || []).forEach((s: { speaker_id: string }) => {
-    submissionCounts[s.speaker_id] = (submissionCounts[s.speaker_id] || 0) + 1;
-  });
+  if (flightsResult.error) {
+    log.error('Failed to load speaker flights', flightsResult.error, { speakerCount: speakerIds.length });
+    throw flightsResult.error;
+  }
+  if (reimbursementsResult.error) {
+    log.error('Failed to load speaker reimbursements', reimbursementsResult.error, { speakerCount: speakerIds.length });
+    throw reimbursementsResult.error;
+  }
 
   // Type for DB records
   type DbRecord = { speaker_id: string; [key: string]: unknown };
 
-  const generalAccommodations = await getAccommodations();
-  const bookingsBySpeaker = new Map<string, AccommodationBookingWithContext[]>();
-  generalAccommodations.bookings.forEach((booking) => {
-    if (!booking.related_speaker_id) return;
-    const items = bookingsBySpeaker.get(booking.related_speaker_id) ?? [];
-    items.push(booking);
-    bookingsBySpeaker.set(booking.related_speaker_id, items);
-  });
-
   // Combine data
   return speakers.map((speaker: CfpSpeaker) => ({
     ...speaker,
-    travel: (travelResult.data || []).find((t: DbRecord) => t.speaker_id === speaker.id) || null,
     flights: (flightsResult.data || []).filter((f: DbRecord) => f.speaker_id === speaker.id),
-    accommodation: (accommodationResult.data || []).find((a: DbRecord) => a.speaker_id === speaker.id) || null,
-    accommodation_bookings: bookingsBySpeaker.get(speaker.id) ?? [],
     reimbursements: (reimbursementsResult.data || []).filter((r: DbRecord) => r.speaker_id === speaker.id),
-    accepted_submissions_count: submissionCounts[speaker.id] || 0,
   })) as SpeakerWithTravel[];
 }
 
@@ -440,73 +359,26 @@ export async function getSpeakerTravelDetails(speakerId: string): Promise<Speake
     return null;
   }
 
-  // Get all travel data in parallel
-  const [travelResult, flightsResult, accommodationResult, reimbursementsResult, submissionsResult] = await Promise.all([
-    supabase.from('cfp_speaker_travel').select('*').eq('speaker_id', speakerId).single(),
+  // Accommodation is managed manually outside this dashboard.
+  const [flightsResult, reimbursementsResult] = await Promise.all([
     supabase.from('cfp_speaker_flights').select('*').eq('speaker_id', speakerId),
-    supabase.from('cfp_speaker_accommodation').select('*').eq('speaker_id', speakerId).single(),
     supabase.from('cfp_speaker_reimbursements').select('*').eq('speaker_id', speakerId),
-    supabase.from('cfp_submissions').select('id').eq('speaker_id', speakerId).eq('status', 'accepted'),
   ]);
 
-  const generalAccommodations = await getAccommodations();
+  if (flightsResult.error) {
+    log.error('Failed to load speaker flights', flightsResult.error, { speakerId });
+    throw flightsResult.error;
+  }
+  if (reimbursementsResult.error) {
+    log.error('Failed to load speaker reimbursements', reimbursementsResult.error, { speakerId });
+    throw reimbursementsResult.error;
+  }
 
   return {
     ...speaker,
-    travel: travelResult.data || null,
     flights: flightsResult.data || [],
-    accommodation: accommodationResult.data || null,
-    accommodation_bookings: generalAccommodations.bookings.filter((booking) => booking.related_speaker_id === speakerId),
     reimbursements: reimbursementsResult.data || [],
-    accepted_submissions_count: (submissionsResult.data || []).length,
   } as SpeakerWithTravel;
-}
-
-// ============================================================================
-// Travel Management
-// ============================================================================
-
-/**
- * Update speaker travel details (admin)
- */
-export async function updateSpeakerTravelAdmin(
-  speakerId: string,
-  updates: {
-    flight_budget_amount?: number;
-    flight_budget_currency?: string;
-    travel_confirmed?: boolean;
-    attending_speakers_dinner?: boolean | null;
-    attending_speakers_activities?: boolean | null;
-    arrival_date?: string | null;
-    departure_date?: string | null;
-    dietary_restrictions?: string | null;
-    accessibility_needs?: string | null;
-  }
-): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createCfpServiceClient();
-
-  const payload: Record<string, unknown> = {
-    speaker_id: speakerId,
-    ...updates,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (updates.travel_confirmed === true) {
-    payload.confirmed_at = new Date().toISOString();
-  } else if (updates.travel_confirmed === false) {
-    payload.confirmed_at = null;
-  }
-
-  const { error } = await supabase
-    .from('cfp_speaker_travel')
-    .upsert(payload, { onConflict: 'speaker_id' });
-
-  if (error) {
-    console.error('[Admin Travel] Update error:', error);
-    return { success: false, error: 'Failed to update travel details' };
-  }
-
-  return { success: true, error: null };
 }
 
 // ============================================================================

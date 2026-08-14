@@ -126,7 +126,10 @@ export async function getPublicScheduleRows() {
   return (data || []) as ProgramScheduleItemRecord[];
 }
 
-export async function getAdminScheduleRows() {
+export async function getAdminScheduleRows(): Promise<{
+  rows: ProgramScheduleItemRecord[];
+  error?: string;
+}> {
   const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_schedule_items')
@@ -160,11 +163,10 @@ export async function getAdminScheduleRows() {
     .order('start_time', { ascending: true });
 
   if (error) {
-    console.error('[Program Schedule] Failed to fetch admin schedule rows:', error.message);
-    return [];
+    return { rows: [], error: error.message };
   }
 
-  return (data || []) as ProgramScheduleItemRecord[];
+  return { rows: (data || []) as ProgramScheduleItemRecord[] };
 }
 
 export async function getPublicScheduleRowMapBySubmissionId() {

@@ -1,13 +1,17 @@
 /**
- * Speakers Tab Component
- * Table view (desktop) / Card view (mobile) of speakers with travel status
+ * Speaker travel operations overview.
+ * Non-speaker travelers are managed from the Flights tab.
  */
 
-import { Check, X, Search } from 'lucide-react';
+import { Check, PlaneLanding, PlaneTakeoff, Receipt, Search } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { Pagination } from '@/components/atoms';
 import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
-import { calculateNights } from './types';
+import {
+  deriveTravelWindowFromFlights,
+  formatExpenseTotals,
+  formatTravelDate,
+} from './types';
 
 interface SpeakersTabProps {
   speakers: SpeakerWithTravel[];
@@ -20,67 +24,69 @@ interface SpeakersTabProps {
   onSearchChange: (query: string) => void;
 }
 
-function hasInboundAndOutbound(speaker: SpeakerWithTravel): boolean {
+interface SpeakerOperations {
+  arrival: string | null;
+  departure: string | null;
+  expenses: string;
+}
+
+function getSpeakerOperations(speaker: SpeakerWithTravel): SpeakerOperations {
+  const travelWindow = deriveTravelWindowFromFlights(speaker.flights);
+  return {
+    ...travelWindow,
+    expenses: formatExpenseTotals(speaker.reimbursements),
+  };
+}
+
+function CompletionValue({ value, missingLabel }: { value: string | null; missingLabel: string }) {
+  if (!value) {
+    return <span className="text-sm text-gray-400">{missingLabel}</span>;
+  }
+
   return (
-    speaker.flights.some((f) => f.direction === 'inbound') &&
-    speaker.flights.some((f) => f.direction === 'outbound')
+    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-800">
+      <Check className="w-4 h-4 text-green-600" aria-hidden="true" />
+      {value}
+    </span>
   );
 }
 
-function hasAccommodation(speaker: SpeakerWithTravel): boolean {
-  return speaker.accommodation_bookings.some((booking) => booking.status !== 'canceled')
-    || !!speaker.accommodation?.hotel_name;
-}
-
-function firstAccommodationNights(speaker: SpeakerWithTravel): number | null {
-  const room = speaker.accommodation_bookings
-    .filter((booking) => booking.status !== 'canceled')
-    .flatMap((booking) => booking.rooms)[0];
-  if (room) {
-    return calculateNights(room.check_in_date, room.check_out_date);
-  }
-  return calculateNights(
-    speaker.accommodation?.check_in_date ?? null,
-    speaker.accommodation?.check_out_date ?? null
+function MobileDetail({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0 rounded-lg bg-gray-50 p-3">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 truncate text-sm text-gray-800">{children}</div>
+    </div>
   );
 }
 
-function StatusDot({ speaker }: { speaker: SpeakerWithTravel }) {
-  const hasFlights = speaker.flights.length > 0;
-  const hasHotel = hasAccommodation(speaker);
-
-  if (hasFlights && hasHotel) {
-    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" title="Flights & hotel booked" />;
-  }
-  if (hasFlights || hasHotel) {
-    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500" title="Partially complete" />;
-  }
-  return <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-300" title="Nothing booked" />;
-}
-
-/**
- * Travel-confirmed badge.
- * Confirmed   = both inbound and outbound flights booked
- * In Progress = at least one flight or a hotel exists, but not both directions
- * Not Started = nothing booked
- */
-function StatusBadge({ speaker }: { speaker: SpeakerWithTravel }) {
-  if (hasInboundAndOutbound(speaker)) {
-    return <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">Confirmed</span>;
-  }
-  if (speaker.flights.length > 0 || hasAccommodation(speaker)) {
-    return <span className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">In Progress</span>;
-  }
-  return <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">Not Started</span>;
-}
-
-export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pageSize, onSelectSpeaker, searchQuery, onSearchChange }: SpeakersTabProps) {
+export function SpeakersTab({
+  speakers,
+  isLoading,
+  currentPage,
+  onPageChange,
+  pageSize,
+  onSelectSpeaker,
+  searchQuery,
+  onSearchChange,
+}: SpeakersTabProps) {
   const filteredSpeakers = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return speakers;
-    return speakers.filter((s) => {
-      const haystack = `${s.first_name ?? ''} ${s.last_name ?? ''} ${s.email ?? ''}`.toLowerCase();
-      return haystack.includes(q);
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return speakers;
+    return speakers.filter((speaker) => {
+      const searchable = `${speaker.first_name ?? ''} ${speaker.last_name ?? ''} ${speaker.email ?? ''}`.toLowerCase();
+      return searchable.includes(query);
     });
   }, [speakers, searchQuery]);
 
@@ -88,7 +94,6 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedSpeakers = filteredSpeakers.slice(startIndex, startIndex + pageSize);
 
-  // Reset to page 1 whenever the filter shrinks results past the current page.
   useEffect(() => {
     if (currentPage > 1 && startIndex >= filteredSpeakers.length) {
       onPageChange(1);
@@ -97,70 +102,62 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-black">
-          Speakers ({filteredSpeakers.length}{searchQuery ? ` of ${speakers.length}` : ''})
-        </h2>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      <div className="p-4 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-black">
+            Speaker travel ({filteredSpeakers.length}{searchQuery ? ` of ${speakers.length}` : ''})
+          </h2>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Inbound flights, outbound flights, and expenses for program speakers.
+          </p>
+        </div>
+        <div className="relative w-full lg:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" aria-hidden="true" />
           <input
             type="search"
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search by name or email"
+            aria-label="Search speaker travel"
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
           />
         </div>
       </div>
+
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+        <div className="flex justify-center py-12" role="status" aria-label="Loading speaker travel">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black" />
         </div>
       ) : (
         <>
-          {/* Mobile: Card layout */}
           <div className="sm:hidden divide-y divide-gray-200">
             {paginatedSpeakers.map((speaker) => {
-              const nights = firstAccommodationNights(speaker);
+              const operations = getSpeakerOperations(speaker);
               return (
-                <div
+                <button
                   key={speaker.id}
-                  className="p-4 active:bg-gray-50"
+                  type="button"
                   onClick={() => onSelectSpeaker(speaker)}
+                  className="block w-full p-4 text-left active:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-yellow-400"
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <StatusDot speaker={speaker} />
-                      <div className="min-w-0">
-                        <div className="font-medium text-gray-900 truncate">
-                          {speaker.first_name} {speaker.last_name}
-                        </div>
-                        <div className="text-xs text-gray-500 truncate">{speaker.email}</div>
-                      </div>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">
+                      {speaker.first_name} {speaker.last_name}
                     </div>
-                    <StatusBadge speaker={speaker} />
+                    <div className="text-xs text-gray-500 truncate">{speaker.email}</div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500 ml-4.5">
-                    <span className="flex items-center gap-1">
-                      Flights: {speaker.flights.length > 0 ? (
-                        <Check className="w-3 h-3 text-green-600" />
-                      ) : (
-                        <X className="w-3 h-3 text-gray-300" />
-                      )}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      Hotel: {hasAccommodation(speaker) ? (
-                        <Check className="w-3 h-3 text-green-600" />
-                      ) : (
-                        <X className="w-3 h-3 text-gray-300" />
-                      )}
-                    </span>
-                    {nights !== null && <span>{nights} night{nights !== 1 ? 's' : ''}</span>}
-                    <span>
-                      Dinner: {speaker.travel?.attending_speakers_dinner ? 'Yes' : speaker.travel?.attending_speakers_dinner === false ? 'No' : '-'}
-                    </span>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <MobileDetail icon={<PlaneLanding className="w-3.5 h-3.5" aria-hidden="true" />} label="Inbound">
+                      {operations.arrival ? formatTravelDate(operations.arrival) : 'Not added'}
+                    </MobileDetail>
+                    <MobileDetail icon={<PlaneTakeoff className="w-3.5 h-3.5" aria-hidden="true" />} label="Outbound">
+                      {operations.departure ? formatTravelDate(operations.departure) : 'Not added'}
+                    </MobileDetail>
+                    <MobileDetail icon={<Receipt className="w-3.5 h-3.5" aria-hidden="true" />} label="Expenses">
+                      {operations.expenses}
+                    </MobileDetail>
                   </div>
-                </div>
+                </button>
               );
             })}
             {paginatedSpeakers.length === 0 && (
@@ -168,71 +165,46 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
             )}
           </div>
 
-          {/* Desktop: Table layout */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 text-left text-sm text-gray-500">
                 <tr>
-                  <th className="px-4 py-3 w-8"></th>
-                  <th className="px-4 py-3">Speaker</th>
-                  <th className="px-4 py-3">Talks</th>
-                  <th className="px-4 py-3">Flights</th>
-                  <th className="px-4 py-3">Hotel</th>
-                  <th className="px-4 py-3">Nights</th>
-                  <th className="px-4 py-3">Dinner</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 w-12"></th>
+                  <th className="px-5 py-3">Speaker</th>
+                  <th className="px-4 py-3">Inbound</th>
+                  <th className="px-4 py-3">Outbound</th>
+                  <th className="px-4 py-3">Expenses</th>
+                  <th className="px-5 py-3 text-right"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedSpeakers.map((speaker) => {
-                  const nights = firstAccommodationNights(speaker);
+                  const operations = getSpeakerOperations(speaker);
                   return (
-                    <tr
-                      key={speaker.id}
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => onSelectSpeaker(speaker)}
-                    >
-                      <td className="px-4 py-4"><StatusDot speaker={speaker} /></td>
-                      <td className="px-4 py-4">
+                    <tr key={speaker.id} className="hover:bg-gray-50">
+                      <td className="px-5 py-4">
                         <div className="font-medium text-gray-900">{speaker.first_name} {speaker.last_name}</div>
                         <div className="text-sm text-gray-500">{speaker.email}</div>
                       </td>
-                      <td className="px-4 py-4 text-gray-600">{speaker.accepted_submissions_count}</td>
-                      <td className="px-4 py-4">
-                        {speaker.flights.length > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-green-600">
-                            <Check className="w-4 h-4" />
-                            <span className="text-sm">{speaker.flights.length}</span>
-                          </span>
-                        ) : (
-                          <X className="w-4 h-4 text-gray-300" />
-                        )}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <CompletionValue
+                          value={operations.arrival ? formatTravelDate(operations.arrival) : null}
+                          missingLabel="Not added"
+                        />
                       </td>
-                      <td className="px-4 py-4">
-                        {hasAccommodation(speaker) ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <X className="w-4 h-4 text-gray-300" />
-                        )}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <CompletionValue
+                          value={operations.departure ? formatTravelDate(operations.departure) : null}
+                          missingLabel="Not added"
+                        />
                       </td>
-                      <td className="px-4 py-4 text-gray-600">{nights !== null ? nights : '-'}</td>
-                      <td className="px-4 py-4">
-                        {speaker.travel?.attending_speakers_dinner ? (
-                          <span className="text-green-600">Yes</span>
-                        ) : speaker.travel?.attending_speakers_dinner === false ? (
-                          <span className="text-red-600">No</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4"><StatusBadge speaker={speaker} /></td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 text-sm text-gray-700">{operations.expenses}</td>
+                      <td className="px-5 py-4 text-right">
                         <button
-                          onClick={(e) => { e.stopPropagation(); onSelectSpeaker(speaker); }}
-                          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-primary text-black hover:bg-[#e8d95e] cursor-pointer"
+                          type="button"
+                          onClick={() => onSelectSpeaker(speaker)}
+                          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-primary text-black hover:brightness-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2"
                         >
-                          View
+                          Open
                         </button>
                       </td>
                     </tr>
@@ -240,7 +212,7 @@ export function SpeakersTab({ speakers, isLoading, currentPage, onPageChange, pa
                 })}
                 {paginatedSpeakers.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">No speakers found</td>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No speakers found</td>
                   </tr>
                 )}
               </tbody>

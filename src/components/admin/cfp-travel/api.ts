@@ -132,14 +132,6 @@ export function deleteAccommodation(accommodationId: string) {
 }
 
 // ============================================================================
-// Speaker Travel Mutations
-// ============================================================================
-
-export function updateSpeakerTravel(speakerId: string, data: Record<string, unknown>) {
-  return jsonPut(`/api/admin/cfp/travel/speakers/${speakerId}/travel`, data);
-}
-
-// ============================================================================
 // Invoice Mutations
 // ============================================================================
 

@@ -93,45 +93,53 @@ function getServerEnv() {
       isDevelopment: process.env.NODE_ENV === 'development',
       isProduction: process.env.NODE_ENV === 'production',
 
-      supabase: {
-        secretKey: getRequiredEnv(
-          process.env.SUPABASE_SECRET_KEY,
-          'SUPABASE_SECRET_KEY'
-        ),
+      get supabase() {
+        return {
+          secretKey: getRequiredEnv(
+            process.env.SUPABASE_SECRET_KEY,
+            'SUPABASE_SECRET_KEY'
+          ),
+        };
       },
 
-      stripe: {
-        secretKey: getRequiredEnv(
-          process.env.STRIPE_SECRET_KEY,
-          'STRIPE_SECRET_KEY'
-        ),
-        webhookSecret: getRequiredEnv(
-          process.env.STRIPE_WEBHOOK_SECRET,
-          'STRIPE_WEBHOOK_SECRET'
-        ),
+      get stripe() {
+        return {
+          secretKey: getRequiredEnv(
+            process.env.STRIPE_SECRET_KEY,
+            'STRIPE_SECRET_KEY'
+          ),
+          webhookSecret: getRequiredEnv(
+            process.env.STRIPE_WEBHOOK_SECRET,
+            'STRIPE_WEBHOOK_SECRET'
+          ),
+        };
       },
 
-      email: {
-        resendApiKey: getRequiredEnv(
-          process.env.RESEND_API_KEY,
-          'RESEND_API_KEY'
-        ),
-        from: getOptionalEnv(
-          process.env.EMAIL_FROM,
-          'ZurichJS Conference <hello@zurichjs.com>'
-        ),
-        replyTo: getOptionalEnv(
-          process.env.EMAIL_REPLY_TO,
-          'hello@zurichjs.com'
-        ),
+      get email() {
+        return {
+          resendApiKey: getRequiredEnv(
+            process.env.RESEND_API_KEY,
+            'RESEND_API_KEY'
+          ),
+          from: getOptionalEnv(
+            process.env.EMAIL_FROM,
+            'ZurichJS Conference <hello@zurichjs.com>'
+          ),
+          replyTo: getOptionalEnv(
+            process.env.EMAIL_REPLY_TO,
+            'hello@zurichjs.com'
+          ),
+        };
       },
 
-      admin: {
-        password: getRequiredEnv(
-          process.env.ADMIN_PASSWORD,
-          'ADMIN_PASSWORD'
-        ),
-        readonlyApiKey: process.env.ADMIN_READONLY_API_KEY || null,
+      get admin() {
+        return {
+          password: getRequiredEnv(
+            process.env.ADMIN_PASSWORD,
+            'ADMIN_PASSWORD'
+          ),
+          readonlyApiKey: process.env.ADMIN_READONLY_API_KEY || null,
+        };
       },
     };
   }

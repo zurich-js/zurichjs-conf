@@ -1,10 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { logger } from '@/lib/logger';
 import {
   createProgramScheduleItem,
   getAdminScheduleRows,
 } from '@/lib/program/schedule';
 import type { ProgramScheduleItemInput, ProgramScheduleItemType } from '@/lib/types/program-schedule';
+
+const log = logger.scope('Admin Program Schedule API');
 
 function isValidType(type: string): type is ProgramScheduleItemType {
   return ['session', 'event', 'break', 'placeholder'].includes(type);
@@ -17,8 +20,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'GET') {
-    const items = await getAdminScheduleRows();
-    return res.status(200).json({ items });
+    const { rows, error } = await getAdminScheduleRows();
+    if (error) {
+      log.error('Failed to load program schedule rows', error);
+      return res.status(500).json({ error: 'Failed to load program schedule' });
+    }
+    return res.status(200).json({ items: rows });
   }
 
   if (req.method === 'POST') {

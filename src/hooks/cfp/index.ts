@@ -20,8 +20,6 @@ export {
 
 // Travel hooks
 export {
-  useCfpTravel,
-  useUpdateTravel,
   useCfpFlights,
   useSaveFlight,
   useDeleteFlight,
