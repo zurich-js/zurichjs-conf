@@ -200,7 +200,7 @@ export const speakerGuide: InfoPage = {
       type: "infobox",
       title: "How Swiss public transport tickets work",
       content:
-        "One integrated ticket system covers trains, trams, buses, and boats within the zones and time shown on your ticket. Short-distance tickets are available for brief local journeys. Zurich Airport and Zurich city zone 110 are in different zones, and zone 110 counts as two zones when calculating the fare. Enter your destination in SBB Mobile and the app will show you the ticket you need. There are no entry gates, but inspectors check tickets on board, so buy before travelling and keep the ticket with you.",
+        "One integrated ticket system covers trains, trams, buses, and boats within the zones and time shown on your ticket. Short-distance tickets are available for brief local journeys. Zurich Airport (zone 121) and Zurich city (zone 110) are in different zones, and zone 110 counts as two zones when calculating the fare. Enter your destination in SBB Mobile and the app will show you the ticket you need. There are no entry gates, but inspectors check tickets on board frequently, so buy before travelling and keep the ticket with you.",
     },
     {
       type: "heading",
