@@ -1,9 +1,12 @@
 import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import { SpeakerGuideView } from '@/components/speaker-guide';
+import { logger } from '@/lib/logger';
 import {
   loadPersonalizedSpeakerGuide,
   PersonalizedGuideDataLoadError,
 } from '@/lib/speaker-guide/server';
+
+const log = logger.scope('Speaker Guide Page');
 
 type PersonalizedGuide = NonNullable<
   Awaited<ReturnType<typeof loadPersonalizedSpeakerGuide>>
@@ -38,6 +41,11 @@ export const getServerSideProps: GetServerSideProps<
     personalized = await loadPersonalizedSpeakerGuide(code);
   } catch (error) {
     if (error instanceof PersonalizedGuideDataLoadError) {
+      // The fallback redirect hides the outage from speakers, so the log is
+      // the only signal that personalization is down.
+      log.error('Personalized speaker guide data load failed', error, {
+        dataset: error.dataset,
+      });
       return {
         redirect: { destination: '/speaker-guide', permanent: false },
       };

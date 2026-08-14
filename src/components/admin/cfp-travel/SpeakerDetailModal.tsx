@@ -134,22 +134,24 @@ export function SpeakerDetailModal({ speaker: initialSpeaker, onClose }: Speaker
         <SummaryCard
           label="Flights"
           value={speaker.flights.length > 0 ? `${speaker.flights.length}` : 'None'}
-          icon={speaker.flights.length > 0 ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-gray-300" />}
+          icon={speaker.flights.length > 0
+            ? <Check className="w-4 h-4 text-green-600" aria-hidden="true" />
+            : <X className="w-4 h-4 text-gray-300" aria-hidden="true" />}
         />
         <SummaryCard
           label="Arrival"
           value={formatTravelDate(travelWindow.arrival)}
-          icon={<Plane className="w-4 h-4 text-green-600" />}
+          icon={<Plane className="w-4 h-4 text-green-600" aria-hidden="true" />}
         />
         <SummaryCard
           label="Departure"
           value={formatTravelDate(travelWindow.departure)}
-          icon={<Plane className="w-4 h-4 rotate-180 text-blue-600" />}
+          icon={<Plane className="w-4 h-4 rotate-180 text-blue-600" aria-hidden="true" />}
         />
         <SummaryCard
           label="Invoices"
           value={formatExpenseTotals(speaker.reimbursements)}
-          icon={<FileText className="w-4 h-4 text-purple-600" />}
+          icon={<FileText className="w-4 h-4 text-purple-600" aria-hidden="true" />}
         />
       </div>
 

@@ -221,7 +221,9 @@ export const GuideChat: React.FC<GuideChatProps> = ({
         ),
       });
 
-      if (sources.length === 0) {
+      // A direct answer can match even when MiniSearch returns nothing, so
+      // only give up when both came back empty.
+      if (!answer && sources.length === 0) {
         await sleep(600);
         await streamReply(
           "Hmm, I couldn't find that in the guide. Ask in the speakers group chat or email hello@zurichjs.com — a human will know!"
@@ -280,7 +282,7 @@ export const GuideChat: React.FC<GuideChatProps> = ({
           <button
             type="button"
             onClick={reset}
-            className="flex items-center gap-1.5 text-xs text-gray-500 flex-shrink-0 cursor-pointer transition-colors hover:text-gray-800"
+            className="flex items-center gap-1.5 text-xs text-gray-500 shrink-0 cursor-pointer transition-colors hover:text-gray-800"
           >
             <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
             Start over

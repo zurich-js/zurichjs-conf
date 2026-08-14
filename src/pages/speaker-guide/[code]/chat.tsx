@@ -4,10 +4,13 @@ import { ArrowLeft, Mountain } from 'lucide-react';
 import { Heading } from '@/components/atoms';
 import { GuideChat } from '@/components/speaker-guide';
 import { SEO } from '@/components/SEO';
+import { logger } from '@/lib/logger';
 import {
   loadPersonalizedSpeakerGuide,
   PersonalizedGuideDataLoadError,
 } from '@/lib/speaker-guide/server';
+
+const log = logger.scope('Speaker Guide Chat Page');
 
 type PersonalizedChatPageProps = NonNullable<
   Awaited<ReturnType<typeof loadPersonalizedSpeakerGuide>>
@@ -62,6 +65,11 @@ export const getServerSideProps: GetServerSideProps<PersonalizedChatPageProps> =
     personalized = await loadPersonalizedSpeakerGuide(code);
   } catch (error) {
     if (error instanceof PersonalizedGuideDataLoadError) {
+      // The fallback redirect hides the outage from speakers, so the log is
+      // the only signal that personalization is down.
+      log.error('Personalized speaker guide data load failed', error, {
+        dataset: error.dataset,
+      });
       return {
         redirect: { destination: '/speaker-guide', permanent: false },
       };

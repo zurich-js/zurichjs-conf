@@ -92,28 +92,32 @@ export function SpeakerLogisticsTable({ speakers, onCopyLink, onCopyGuideLink }:
                           </span>
                         </button>
                       )}
-                      <button
-                        onClick={() => onCopyGuideLink(row)}
-                        className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                        title="Copy personalized guide link"
-                      >
-                        <BookOpen className="h-4 w-4" aria-hidden="true" />
-                        <span className="sr-only">
-                          Copy personalized guide link for {row.first_name} {row.last_name}
-                        </span>
-                      </button>
-                      <a
-                        href={row.speaker_guide.path}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                        title="Preview personalized guide"
-                      >
-                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                        <span className="sr-only">
-                          Preview personalized guide for {row.first_name} {row.last_name}
-                        </span>
-                      </a>
+                      {row.speaker_guide && (
+                        <>
+                          <button
+                            onClick={() => onCopyGuideLink(row)}
+                            className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                            title="Copy personalized guide link"
+                          >
+                            <BookOpen className="h-4 w-4" aria-hidden="true" />
+                            <span className="sr-only">
+                              Copy personalized guide link for {row.first_name} {row.last_name}
+                            </span>
+                          </button>
+                          <a
+                            href={row.speaker_guide.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                            title="Preview personalized guide"
+                          >
+                            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                            <span className="sr-only">
+                              Preview personalized guide for {row.first_name} {row.last_name}
+                            </span>
+                          </a>
+                        </>
+                      )}
                       <button
                         onClick={() => setExpandedId(isExpanded ? null : row.speaker_id)}
                         className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"

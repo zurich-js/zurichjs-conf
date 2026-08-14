@@ -115,22 +115,26 @@ export function SpeakerLogisticsCardList({ speakers, onCopyLink, onCopyGuideLink
                     Copy unique form link
                   </button>
                 )}
-                <button
-                  onClick={() => onCopyGuideLink(row)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <BookOpen className="h-4 w-4" aria-hidden="true" />
-                  Copy guide link
-                </button>
-                <a
-                  href={row.speaker_guide.path}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                  Preview guide
-                </a>
+                {row.speaker_guide && (
+                  <>
+                    <button
+                      onClick={() => onCopyGuideLink(row)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <BookOpen className="h-4 w-4" aria-hidden="true" />
+                      Copy guide link
+                    </button>
+                    <a
+                      href={row.speaker_guide.path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                      Preview guide
+                    </a>
+                  </>
+                )}
               </div>
             )}
           </li>

@@ -30,7 +30,7 @@ export interface SpeakerLogisticsAdminRow {
   /** Unique form link (shared with the speaker manually) — omitted for read-only bot clients */
   logistics_url: string | null;
   /** Personalized guide link built from this authoritative logistics record */
-  speaker_guide: SpeakerGuideAccess;
+  speaker_guide: SpeakerGuideAccess | null;
   status: SpeakerLogisticsStatus;
   submitted_at: string | null;
   /** Last time the speaker changed their answers */
@@ -197,7 +197,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         logistics_url: isBot || !canGenerateLogisticsUrls
           ? null
           : generateSpeakerLogisticsUrl(speaker.id),
-        speaker_guide: getSpeakerGuideAccess(speaker),
+        // Guide codes are HMAC-signed with the same secret as logistics URLs,
+        // so they need the same availability gate.
+        speaker_guide: canGenerateLogisticsUrls ? getSpeakerGuideAccess(speaker) : null,
         status,
         submitted_at: logistics?.submitted_at ?? null,
         updated_at: logistics?.updated_at ?? null,

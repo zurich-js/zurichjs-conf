@@ -49,10 +49,8 @@ export async function loadPersonalizedSpeakerGuide(
   code: string
 ): Promise<PersonalizedSpeakerGuide | null> {
   const supabase = createServiceRoleClient();
-  const [speakers, logisticsResult, guestsResult, sessionsResult, scheduleResult] = await Promise.all([
+  const [speakers, sessionsResult, scheduleResult] = await Promise.all([
     getAdminSpeakersWithSubmissions('program'),
-    supabase.from('cfp_speaker_logistics').select('*'),
-    supabase.from('speaker_activity_guests').select('*'),
     listProgramSessions(),
     getAdminScheduleRows(),
   ]);
@@ -69,6 +67,13 @@ export async function loadPersonalizedSpeakerGuide(
   );
 
   if (!speaker) return null;
+
+  // Scope both reads to the resolved speaker: this runs on the render path of
+  // an unlisted URL, so it must never pull other speakers' PII into memory.
+  const [logisticsResult, guestsResult] = await Promise.all([
+    supabase.from('cfp_speaker_logistics').select('*').eq('speaker_id', speaker.id),
+    supabase.from('speaker_activity_guests').select('*').eq('related_speaker_id', speaker.id),
+  ]);
 
   if (logisticsResult.error) throw logisticsResult.error;
   if (guestsResult.error) throw guestsResult.error;

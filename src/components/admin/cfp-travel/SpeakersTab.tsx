@@ -125,7 +125,7 @@ export function SpeakersTab({
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12" aria-label="Loading speaker travel">
+        <div className="flex justify-center py-12" role="status" aria-label="Loading speaker travel">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black" />
         </div>
       ) : (

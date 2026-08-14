@@ -4,6 +4,7 @@
  */
 
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
+import { logger } from '@/lib/logger';
 import type {
   CfpSpeaker,
   CfpSpeakerFlight,
@@ -15,14 +16,14 @@ import type {
   CfpFlightDirection,
 } from '@/lib/types/cfp';
 
+const log = logger.scope('Admin Travel');
+
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface SpeakerWithTravel extends CfpSpeaker {
   flights: CfpSpeakerFlight[];
-  accommodation: CfpSpeakerAccommodation | null;
-  accommodation_bookings: AccommodationBookingWithContext[];
   reimbursements: CfpSpeakerReimbursement[];
 }
 
@@ -321,6 +322,15 @@ export async function getAcceptedSpeakersWithTravel(): Promise<SpeakerWithTravel
     supabase.from('cfp_speaker_reimbursements').select('*').in('speaker_id', speakerIds),
   ]);
 
+  if (flightsResult.error) {
+    log.error('Failed to load speaker flights', flightsResult.error, { speakerCount: speakerIds.length });
+    throw flightsResult.error;
+  }
+  if (reimbursementsResult.error) {
+    log.error('Failed to load speaker reimbursements', reimbursementsResult.error, { speakerCount: speakerIds.length });
+    throw reimbursementsResult.error;
+  }
+
   // Type for DB records
   type DbRecord = { speaker_id: string; [key: string]: unknown };
 
@@ -328,8 +338,6 @@ export async function getAcceptedSpeakersWithTravel(): Promise<SpeakerWithTravel
   return speakers.map((speaker: CfpSpeaker) => ({
     ...speaker,
     flights: (flightsResult.data || []).filter((f: DbRecord) => f.speaker_id === speaker.id),
-    accommodation: null,
-    accommodation_bookings: [],
     reimbursements: (reimbursementsResult.data || []).filter((r: DbRecord) => r.speaker_id === speaker.id),
   })) as SpeakerWithTravel[];
 }
@@ -357,11 +365,18 @@ export async function getSpeakerTravelDetails(speakerId: string): Promise<Speake
     supabase.from('cfp_speaker_reimbursements').select('*').eq('speaker_id', speakerId),
   ]);
 
+  if (flightsResult.error) {
+    log.error('Failed to load speaker flights', flightsResult.error, { speakerId });
+    throw flightsResult.error;
+  }
+  if (reimbursementsResult.error) {
+    log.error('Failed to load speaker reimbursements', reimbursementsResult.error, { speakerId });
+    throw reimbursementsResult.error;
+  }
+
   return {
     ...speaker,
     flights: flightsResult.data || [],
-    accommodation: null,
-    accommodation_bookings: [],
     reimbursements: reimbursementsResult.data || [],
   } as SpeakerWithTravel;
 }

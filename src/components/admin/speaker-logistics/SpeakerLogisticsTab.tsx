@@ -84,6 +84,7 @@ export function SpeakerLogisticsTab() {
   };
 
   const handleCopyGuideLink = async (row: SpeakerLogisticsAdminRow) => {
+    if (!row.speaker_guide) return;
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${row.speaker_guide.path}`);
       toast.success('Guide link copied', `${row.first_name}'s personalized speaker guide is ready to share.`);

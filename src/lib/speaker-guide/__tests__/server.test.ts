@@ -26,9 +26,23 @@ vi.mock('@/lib/supabase', () => ({
 
 import { loadPersonalizedSpeakerGuide } from '@/lib/speaker-guide/server';
 
+/** Mock the `from(table).select('*').eq(column, value)` chain per table. */
+const mockScopedSelect = (
+  rowsByTable: Record<string, { data: unknown[]; error: null }>
+) => {
+  mocks.from.mockImplementation((table: string) => ({
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue(
+        rowsByTable[table] ?? { data: [], error: null }
+      ),
+    }),
+  }));
+};
+
 describe('personalized speaker guide loader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('ORDER_TOKEN_SECRET', 'test-guide-secret');
     mocks.getAdminScheduleRows.mockResolvedValue({ rows: [] });
     mocks.listProgramSessions.mockResolvedValue({ sessions: [] });
   });
@@ -41,26 +55,22 @@ describe('personalized speaker guide loader', () => {
       submissions: [],
     };
     mocks.getAdminSpeakersWithSubmissions.mockResolvedValue([speaker]);
-    mocks.from.mockImplementation((table: string) => ({
-      select: vi.fn().mockResolvedValue(
-        table === 'cfp_speaker_logistics'
-          ? {
-              data: [{
-                speaker_id: speaker.id,
-                submitted_at: '2026-08-08T12:00:00.000Z',
-                attending_warmup: true,
-                attending_speakers_dinner: true,
-                attending_after_party: false,
-                attending_speaker_hangout: true,
-                dinner_plus_one: false,
-                after_party_plus_one: false,
-                speaker_hangout_plus_one: false,
-              }],
-              error: null,
-            }
-          : { data: [], error: null }
-      ),
-    }));
+    mockScopedSelect({
+      cfp_speaker_logistics: {
+        data: [{
+          speaker_id: speaker.id,
+          submitted_at: '2026-08-08T12:00:00.000Z',
+          attending_warmup: true,
+          attending_speakers_dinner: true,
+          attending_after_party: false,
+          attending_speaker_hangout: true,
+          dinner_plus_one: false,
+          after_party_plus_one: false,
+          speaker_hangout_plus_one: false,
+        }],
+        error: null,
+      },
+    });
 
     const guide = await loadPersonalizedSpeakerGuide(getSpeakerGuideAccess(speaker).code);
     const text = JSON.stringify(guide?.guide.sections);
@@ -81,26 +91,22 @@ describe('personalized speaker guide loader', () => {
       submissions: [],
     };
     mocks.getAdminSpeakersWithSubmissions.mockResolvedValue([speaker]);
-    mocks.from.mockImplementation((table: string) => ({
-      select: vi.fn().mockResolvedValue(
-        table === 'cfp_speaker_logistics'
-          ? {
-              data: [{
-                speaker_id: speaker.id,
-                submitted_at: null,
-                attending_warmup: true,
-                attending_speakers_dinner: false,
-                attending_after_party: true,
-                attending_speaker_hangout: false,
-                after_party_plus_one: true,
-                after_party_plus_one_first_name: 'Draft',
-                after_party_plus_one_last_name: 'Guest',
-              }],
-              error: null,
-            }
-          : { data: [], error: null }
-      ),
-    }));
+    mockScopedSelect({
+      cfp_speaker_logistics: {
+        data: [{
+          speaker_id: speaker.id,
+          submitted_at: null,
+          attending_warmup: true,
+          attending_speakers_dinner: false,
+          attending_after_party: true,
+          attending_speaker_hangout: false,
+          after_party_plus_one: true,
+          after_party_plus_one_first_name: 'Draft',
+          after_party_plus_one_last_name: 'Guest',
+        }],
+        error: null,
+      },
+    });
 
     const guide = await loadPersonalizedSpeakerGuide(getSpeakerGuideAccess(speaker).code);
     const text = JSON.stringify(guide?.guide.sections);
@@ -117,9 +123,7 @@ describe('personalized speaker guide loader', () => {
       sessions: [],
       error: 'sessions unavailable',
     });
-    mocks.from.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
-    });
+    mockScopedSelect({});
 
     await expect(loadPersonalizedSpeakerGuide('123456789012345678')).rejects.toThrow(
       'Failed to load personalized guide sessions: sessions unavailable'
@@ -132,9 +136,7 @@ describe('personalized speaker guide loader', () => {
       rows: [],
       error: 'schedule unavailable',
     });
-    mocks.from.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
-    });
+    mockScopedSelect({});
 
     await expect(loadPersonalizedSpeakerGuide('123456789012345678')).rejects.toThrow(
       'Failed to load personalized guide schedule: schedule unavailable'

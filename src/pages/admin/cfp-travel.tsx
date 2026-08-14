@@ -75,7 +75,8 @@ export default function AdminTravelPage() {
   const { data: speakers = [], isLoading: isLoadingSpeakers } = useQuery({
     queryKey: travelQueryKeys.speakers,
     queryFn: fetchSpeakers,
-    enabled: isAuthenticated === true && (activeTab === 'overview' || activeTab === 'speakers'),
+    enabled: isAuthenticated === true
+      && (activeTab === 'overview' || activeTab === 'speakers' || activeTab === 'flights'),
     staleTime: 30 * 1000,
   });
 
