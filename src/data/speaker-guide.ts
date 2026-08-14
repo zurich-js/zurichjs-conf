@@ -191,7 +191,7 @@ export const speakerGuide: InfoPage = {
     {
       type: "list",
       items: [
-        "The train station is directly below the airport terminal. Trains to Zürich HB take about 10–15 minutes and run every few minutes.",
+        "The train station is directly below the airport terminal. Trains to Zürich HB/Zurich mainstation take about 10–15 minutes and run every few minutes.",
         "Buy a ticket in SBB Mobile or at a station machine before you travel.",
         "Taxis cost about CHF 60–70 to the city center. Uber and Bolt also operate in Zurich, but public transport is usually faster and less expensive.",
       ],
