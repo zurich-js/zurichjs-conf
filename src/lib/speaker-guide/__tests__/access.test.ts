@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createSpeakerGuideCode,
   createSpeakerGuideSlug,
@@ -8,6 +8,11 @@ import {
 describe('speaker guide access', () => {
   beforeEach(() => {
     vi.stubEnv('ORDER_TOKEN_SECRET', 'test-guide-secret');
+    vi.stubEnv('NEXTAUTH_SECRET', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('creates a stable speaker-specific path signed over the speaker id', () => {
@@ -53,5 +58,12 @@ describe('speaker guide access', () => {
     expect(() => createSpeakerGuideCode('speaker-1')).toThrow(
       'ORDER_TOKEN_SECRET or NEXTAUTH_SECRET must be configured'
     );
+  });
+
+  it('falls back to the existing NextAuth secret', () => {
+    vi.stubEnv('ORDER_TOKEN_SECRET', '');
+    vi.stubEnv('NEXTAUTH_SECRET', 'shared-server-secret');
+
+    expect(createSpeakerGuideCode('speaker-1')).toHaveLength(18);
   });
 });
