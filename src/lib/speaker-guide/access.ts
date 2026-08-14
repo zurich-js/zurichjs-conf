@@ -6,6 +6,7 @@ import crypto from 'crypto';
 const CODE_SCOPE = 'speaker-guide-code';
 
 interface SpeakerIdentity {
+  id: string;
   first_name: string;
   last_name: string;
 }
@@ -34,17 +35,20 @@ function getSigningSecret(): string {
   return secret;
 }
 
-export function createSpeakerGuideCode(slug: string): string {
+// Signs the speaker's unique id, not the name slug: two speakers whose names
+// normalize to the same slug must never share a code, and a name edit must
+// not invalidate an already-shared link.
+export function createSpeakerGuideCode(speakerId: string): string {
   return crypto
     .createHmac('sha256', getSigningSecret())
-    .update(`${CODE_SCOPE}:${slug}`)
+    .update(`${CODE_SCOPE}:${speakerId}`)
     .digest('base64url')
     .slice(0, 18);
 }
 
 export function getSpeakerGuideAccess(speaker: SpeakerIdentity): SpeakerGuideAccess {
   const slug = createSpeakerGuideSlug(speaker);
-  const code = createSpeakerGuideCode(slug);
+  const code = createSpeakerGuideCode(speaker.id);
 
   return {
     slug,
