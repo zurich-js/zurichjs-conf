@@ -18,10 +18,10 @@ REVOKE ALL ON TABLE public.tickets FROM anon;
 REVOKE ALL ON TABLE public.tickets FROM authenticated;
 
 GRANT SELECT ON TABLE public.tickets TO authenticated;
--- Column-scoped: attendee-editable badge details only. Postgres enforces column privileges
--- independently of RLS, so this blocks self-upgrade (ticket_type, amount_paid, status,
--- checked_in, coupon_code, user_id, email) even though the row itself is theirs.
-GRANT UPDATE (first_name, last_name, company, job_title) ON TABLE public.tickets TO authenticated;
+-- Column-scoped: attendee-editable identity and badge details only. Postgres enforces column
+-- privileges independently of RLS, so this blocks self-upgrade (ticket_type, amount_paid,
+-- status, checked_in, coupon_code, user_id) even though the row itself is theirs.
+GRANT UPDATE (first_name, last_name, company, job_title, email) ON TABLE public.tickets TO authenticated;
 
 GRANT ALL ON TABLE public.tickets TO service_role;
 
@@ -44,9 +44,9 @@ CREATE POLICY "tickets_update_own"
     user_id = (SELECT auth.uid())
     OR lower(email) = lower((SELECT auth.jwt() ->> 'email'))
   )
-  WITH CHECK (
-    user_id = (SELECT auth.uid())
-    OR lower(email) = lower((SELECT auth.jwt() ->> 'email'))
-  );
+  -- Ownership is checked against the existing row by USING. The new row may contain a
+  -- different email so guest tickets (whose user_id is NULL) can be transferred.
+  -- Column privileges above still limit the fields the attendee can change.
+  WITH CHECK (TRUE);
 
 COMMIT;
