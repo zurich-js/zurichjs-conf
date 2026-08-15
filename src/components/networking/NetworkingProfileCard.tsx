@@ -183,14 +183,14 @@ export function NetworkingProfileCard({
           ) : null}
         </div>
 
-        {feedback ? (
-          <p
-            className={`text-sm ${feedback.tone === 'error' ? 'text-red-700' : 'text-green-700'}`}
-            role={feedback.tone === 'error' ? 'alert' : 'status'}
-          >
-            {feedback.text}
-          </p>
-        ) : null}
+        <p
+          className={`text-sm ${feedback?.tone === 'error' ? 'text-red-700' : 'text-green-700'}`}
+          role="status"
+          aria-live={feedback?.tone === 'error' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {feedback?.text ?? ''}
+        </p>
 
         {showQr ? (
           <div className="flex flex-col gap-4 border-t border-brand-gray-light pt-6 sm:flex-row sm:items-center">

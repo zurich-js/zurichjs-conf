@@ -50,6 +50,22 @@ const SENTRY_QUERY_PROPERTIES = new Set([
   'url.query',
 ]);
 
+const SENTRY_SENSITIVE_PROPERTIES = new Set([
+  'access_token',
+  'address',
+  'authorization',
+  'cookie',
+  'cookies',
+  'password',
+  'phone',
+  'refresh_token',
+  'secret',
+  'token',
+]);
+
+const SENTRY_TEXT_PROPERTIES = new Set(['description', 'message', 'name', 'value']);
+const MAX_SENTRY_SANITIZE_DEPTH = 8;
+
 const UUID_PATH_SEGMENT =
   '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
@@ -162,6 +178,9 @@ interface SentrySpanLike {
 interface SentryEventLike {
   breadcrumbs?: SentryBreadcrumbLike[];
   contexts?: Record<string, SentryDataLike | undefined>;
+  exception?: SentryDataLike;
+  extra?: SentryDataLike;
+  message?: string;
   request?: {
     cookies?: unknown;
     data?: unknown;
@@ -172,19 +191,52 @@ interface SentryEventLike {
   };
   spans?: SentrySpanLike[];
   transaction?: string;
+  user?: SentryDataLike;
 }
 
-function sanitizeSentryData(data: SentryDataLike): SentryDataLike {
+function sanitizeSentryText(value: string): string {
+  return value.replace(/(?:https?:\/\/|\/\/|\/)[^\s<>"']+/gi, (candidate) => {
+    const trailingPunctuation = candidate.match(/[).,;:]+$/)?.[0] ?? '';
+    const url = trailingPunctuation
+      ? candidate.slice(0, -trailingPunctuation.length)
+      : candidate;
+    return `${sanitizeAnalyticsUrl(url)}${trailingPunctuation}`;
+  });
+}
+
+function sanitizeSentryData(
+  data: SentryDataLike,
+  depth = 0,
+  seen = new WeakSet<object>()
+): SentryDataLike {
+  if (depth >= MAX_SENTRY_SANITIZE_DEPTH || seen.has(data)) return {};
+  seen.add(data);
+
   const sanitized = { ...data };
 
   for (const [key, value] of Object.entries(data)) {
     const normalizedKey = key.toLowerCase();
-    if (SENTRY_QUERY_PROPERTIES.has(normalizedKey)) {
+    if (
+      SENTRY_QUERY_PROPERTIES.has(normalizedKey) ||
+      SENTRY_SENSITIVE_PROPERTIES.has(normalizedKey)
+    ) {
       delete sanitized[key];
     } else if (SENTRY_URL_PROPERTIES.has(normalizedKey) && typeof value === 'string') {
       sanitized[key] = sanitizeAnalyticsUrl(value);
-    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      sanitized[key] = sanitizeSentryData(value as SentryDataLike);
+    } else if (SENTRY_TEXT_PROPERTIES.has(normalizedKey) && typeof value === 'string') {
+      sanitized[key] = sanitizeSentryText(value);
+    } else if (Array.isArray(value)) {
+      sanitized[key] = depth + 1 >= MAX_SENTRY_SANITIZE_DEPTH
+        ? []
+        : value.map((item) => {
+            if (typeof item === 'string') return sanitizeSentryText(item);
+            if (typeof item === 'object' && item !== null) {
+              return sanitizeSentryData(item as SentryDataLike, depth + 1, seen);
+            }
+            return item;
+          });
+    } else if (typeof value === 'object' && value !== null) {
+      sanitized[key] = sanitizeSentryData(value as SentryDataLike, depth + 1, seen);
     }
   }
 
@@ -259,6 +311,17 @@ export function sanitizeSentryEvent<T extends SentryEventLike>(event: T): T {
 
   if (event.spans) sanitized.spans = event.spans.map(sanitizeSentrySpan);
   if (event.transaction) sanitized.transaction = sanitizeOperationName(event.transaction);
+  if (event.extra) sanitized.extra = sanitizeSentryData(event.extra);
+  if (event.message) sanitized.message = sanitizeSentryText(event.message);
+  if (event.exception) sanitized.exception = sanitizeSentryData(event.exception);
+
+  if (event.user) {
+    if (typeof event.user.email === 'string') {
+      sanitized.user = { email: event.user.email };
+    } else {
+      delete sanitized.user;
+    }
+  }
 
   return sanitized as T;
 }

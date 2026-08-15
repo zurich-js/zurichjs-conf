@@ -41,15 +41,15 @@ export function formatDate(dateString: string): string {
 export function getStatusColor(status: string): string {
   switch (status) {
     case 'confirmed':
-      return 'text-success-light';
+      return 'text-green-700';
     case 'pending':
-      return 'text-yellow-400';
+      return 'text-yellow-700';
     case 'cancelled':
-      return 'text-red-400';
+      return 'text-red-700';
     case 'refunded':
-      return 'text-gray-400';
+      return 'text-gray-700';
     default:
-      return 'text-gray-400';
+      return 'text-gray-700';
   }
 }
 

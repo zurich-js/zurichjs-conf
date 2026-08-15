@@ -47,6 +47,9 @@ export async function verifyOrderTokenClaimsForCurrentTicket(
     const legacyTicketId = ticket.legacy_manage_token_valid
       ? verifyLegacyOrderToken(token)
       : null;
+    // Legacy tokens carry no nonce. This is the current stored value, not an
+    // authenticated token claim; callers may use it only as a current-row
+    // concurrency check after this legacy access gate succeeds.
     return legacyTicketId
       ? { ticketId: legacyTicketId, manageTokenNonce: ticket.manage_token_nonce }
       : null;

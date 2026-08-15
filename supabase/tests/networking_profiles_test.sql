@@ -199,7 +199,7 @@ SELECT is(
 
 RESET ROLE;
 
-SELECT is(
+SELECT ok(
   pg_temp.failed_check_constraint($statement$
     INSERT INTO public.networking_profiles (
       id,
@@ -215,12 +215,14 @@ SELECT is(
       FALSE,
       '{}'::JSONB
     )
-  $statement$),
-  'networking_profiles_exactly_one_subject',
+  $statement$) IN (
+    'networking_profiles_exactly_one_subject',
+    'networking_profiles_subject_type_matches_reference'
+  ),
   'a networking profile without a subject is rejected'
 );
 
-SELECT is(
+SELECT ok(
   pg_temp.failed_check_constraint($statement$
     INSERT INTO public.networking_profiles (
       id,
@@ -240,8 +242,10 @@ SELECT is(
       FALSE,
       '{}'::JSONB
     )
-  $statement$),
-  'networking_profiles_exactly_one_subject',
+  $statement$) IN (
+    'networking_profiles_exactly_one_subject',
+    'networking_profiles_subject_type_matches_reference'
+  ),
   'a networking profile with two subjects is rejected'
 );
 

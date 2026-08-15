@@ -122,7 +122,7 @@ export function NetworkingCard({ settings, mutation }: NetworkingCardProps) {
               data-mask
               type={field.type ?? 'text'}
               inputMode={field.type === 'url' ? 'url' : 'text'}
-              autoComplete="url"
+              autoComplete={field.type === 'url' ? 'url' : 'off'}
               value={profile[field.key] ?? ''}
               onChange={(event) => updateField(field.key, event.target.value)}
               placeholder={field.placeholder}

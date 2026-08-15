@@ -60,6 +60,8 @@ export function SponsorNetworkingCard({ sponsorId }: SponsorNetworkingCardProps)
           signal: controller.signal,
         });
         const body: unknown = await response.json();
+        if (controller.signal.aborted) return;
+
         if (!response.ok) {
           throw new Error(errorMessage(body, 'Failed to load networking settings'));
         }
@@ -70,7 +72,7 @@ export function SponsorNetworkingCard({ sponsorId }: SponsorNetworkingCardProps)
         setProfile(settings.profile);
         setShareId(settings.shareId);
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
+        if (controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
         setFeedback({
           tone: 'error',
           text: error instanceof Error ? error.message : 'Failed to load networking settings',

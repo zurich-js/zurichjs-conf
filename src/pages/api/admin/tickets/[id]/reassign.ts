@@ -55,6 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email,
         first_name: firstName,
         last_name: lastName,
+        user_id: null,
         transferred_from_name: `${currentTicket.first_name} ${currentTicket.last_name}`,
         transferred_from_email: currentTicket.email,
         transferred_at: new Date().toISOString(),

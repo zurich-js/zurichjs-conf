@@ -33,7 +33,7 @@ export function VipPerksCard({ isVip, vipPerk }: VipPerksCardProps) {
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <span className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-400/10 border border-amber-400/40 shrink-0">
-              <Crown className="w-5 h-5 text-amber-400" aria-hidden="true" />
+              <Crown className="w-5 h-5 text-amber-700" aria-hidden="true" />
             </span>
             <div>
               <h2 id="vip-benefits-heading" className="text-xl font-bold text-brand-black">
@@ -42,7 +42,7 @@ export function VipPerksCard({ isVip, vipPerk }: VipPerksCardProps) {
               <p className="text-sm text-brand-gray-darkest">Included with your VIP ticket</p>
             </div>
           </div>
-          <span className="text-xs font-bold tracking-widest uppercase text-amber-300 bg-amber-400/10 border border-amber-400/40 rounded-full px-3 py-1">
+          <span className="text-xs font-bold tracking-widest uppercase text-amber-700 bg-amber-400/10 border border-amber-400/40 rounded-full px-3 py-1">
             VIP
           </span>
         </div>
@@ -53,7 +53,7 @@ export function VipPerksCard({ isVip, vipPerk }: VipPerksCardProps) {
             return (
               <li key={benefit.id} className="flex gap-4 bg-brand-white border border-brand-gray-light rounded-xl p-4">
                 <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-amber-400/10 shrink-0 mt-0.5">
-                  <Icon className="w-4.5 h-4.5 text-amber-400" aria-hidden="true" />
+                  <Icon className="w-4.5 h-4.5 text-amber-700" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-brand-black">{benefit.title}</h3>
@@ -73,7 +73,7 @@ function WorkshopVoucher({ vipPerk }: { vipPerk?: VipPerkSummary | null }) {
   if (!vipPerk) {
     return (
       <p className="flex items-start gap-2 mt-3 text-sm text-brand-gray-darkest bg-brand-gray-lightest border border-brand-gray-light rounded-lg p-3">
-        <Mail className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+        <Mail className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
         <span>
           Your personal voucher code will be emailed to you when workshops are released — or within 48 hours of purchase
           if they&apos;re already on sale.
@@ -84,7 +84,7 @@ function WorkshopVoucher({ vipPerk }: { vipPerk?: VipPerkSummary | null }) {
 
   if (vipPerk.isRedeemed) {
     return (
-      <p className="flex items-center gap-2 mt-3 text-sm text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 rounded-lg p-3">
+      <p className="flex items-center gap-2 mt-3 text-sm text-emerald-700 bg-emerald-400/10 border border-emerald-400/30 rounded-lg p-3">
         <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
         Voucher redeemed — enjoy your workshop!
       </p>
@@ -93,11 +93,11 @@ function WorkshopVoucher({ vipPerk }: { vipPerk?: VipPerkSummary | null }) {
 
   return (
     <div className="mt-3 bg-amber-400/10 border border-amber-400/30 rounded-lg p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-amber-300/90 mb-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-2">
         Your {vipPerk.discountPercent}% voucher code
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <code className="font-mono font-bold text-amber-300 bg-black/40 rounded-md px-3 py-1.5 text-sm">
+        <code className="font-mono font-bold text-amber-700 bg-black/40 rounded-md px-3 py-1.5 text-sm">
           {vipPerk.code}
         </code>
         <CopyCodeButton code={vipPerk.code} />
@@ -105,7 +105,7 @@ function WorkshopVoucher({ vipPerk }: { vipPerk?: VipPerkSummary | null }) {
       <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
         <Link
           href="/workshops"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-300 hover:text-amber-200 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded"
         >
           Browse workshops
           <ArrowRight className="w-4 h-4" aria-hidden="true" />

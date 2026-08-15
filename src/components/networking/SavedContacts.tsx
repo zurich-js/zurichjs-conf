@@ -63,7 +63,9 @@ export function SavedContacts() {
         >
           Back to the conference
         </Link>
-        {feedback ? <p className="mt-4 text-sm text-brand-gray-darkest" role="status">{feedback}</p> : null}
+        <p className="mt-4 text-sm text-brand-gray-darkest" role="status" aria-live="polite">
+          {feedback ?? ''}
+        </p>
       </div>
     );
   }
@@ -79,7 +81,9 @@ export function SavedContacts() {
         </Button>
       </div>
 
-      {feedback ? <p className="text-sm text-brand-gray-darkest" role="status">{feedback}</p> : null}
+      <p className="text-sm text-brand-gray-darkest" role="status" aria-live="polite">
+        {feedback ?? ''}
+      </p>
 
       <ul className="space-y-6">
         {profiles.map((profile) => (

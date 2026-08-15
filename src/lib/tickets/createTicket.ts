@@ -37,7 +37,7 @@ export interface CreateTicketParams {
 
 export interface CreateTicketResult {
   success: boolean;
-  ticket?: Ticket & { manage_token_nonce: string };
+  ticket?: Ticket;
   error?: string;
 }
 
@@ -76,7 +76,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
       log.info('Ticket already exists');
       return {
         success: true,
-        ticket: existing as Ticket & { manage_token_nonce: string },
+        ticket: existing as Ticket,
       };
     }
 
@@ -163,7 +163,7 @@ export async function createTicket(params: CreateTicketParams): Promise<CreateTi
 
     return {
       success: true,
-      ticket: ticket as Ticket & { manage_token_nonce: string },
+      ticket: ticket as Ticket,
     };
   } catch (error) {
     log.error('Unexpected ticket creation failure', error, {

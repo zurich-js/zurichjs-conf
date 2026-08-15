@@ -145,6 +145,55 @@ describe('analytics URL privacy', () => {
     expect(event.request.data).toEqual({ email: 'private@example.com' });
   });
 
+  it('sanitizes nested, cyclic, and top-level Sentry data', () => {
+    const ticketId = 'fdd332be-86c9-4842-912c-e5c1c0968606';
+    const nonce = '9dc7c037-ef40-4ac5-b24c-66ee9e9ee0f9';
+    const cyclic: Record<string, unknown> = {
+      url: '/manage-order?token=ticket-secret',
+    };
+    cyclic.self = cyclic;
+
+    const safe = sanitizeSentryEvent({
+      message: `Failed GET /api/orders/${ticketId}.${nonce}.signed-secret.`,
+      extra: {
+        phone: '+41 44 000 00 00',
+        nested: [
+          { 'http.url': '/manage-order?token=ticket-secret' },
+          '/speaker-logistics?token=speaker-secret',
+        ],
+        cyclic,
+      },
+      user: {
+        email: 'attendee@example.com',
+        id: ticketId,
+        phone: '+41 44 000 00 00',
+      },
+      exception: {
+        values: [
+          {
+            value: `GET /api/orders/${ticketId}.${nonce}.signed-secret`,
+          },
+        ],
+      },
+    });
+
+    expect(safe.message).toBe('Failed GET /api/orders/[token].');
+    expect(safe.extra).toEqual({
+      nested: [
+        { 'http.url': '/manage-order' },
+        '/speaker-logistics',
+      ],
+      cyclic: {
+        url: '/manage-order',
+        self: {},
+      },
+    });
+    expect(safe.user).toEqual({ email: 'attendee@example.com' });
+    expect(safe.exception).toEqual({
+      values: [{ value: 'GET /api/orders/[token]' }],
+    });
+  });
+
   it('sanitizes URL attributes on standalone Sentry spans', () => {
     expect(
       sanitizeSentrySpan({

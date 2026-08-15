@@ -4,6 +4,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 const mockToBuffer = vi.fn();
 const mockGetAbsoluteUrl = vi.fn((path: string, _req?: NextApiRequest) => `https://conf.example.test${path}`);
 const mockIsValidNetworkingPublicId = vi.fn();
+const mockRateLimitCheck = vi.fn();
 
 vi.mock('qrcode', () => ({
   default: {
@@ -17,6 +18,11 @@ vi.mock('@/lib/url', () => ({
 
 vi.mock('@/lib/networking/profiles', () => ({
   isValidNetworkingPublicId: (...args: unknown[]) => mockIsValidNetworkingPublicId(...args),
+}));
+
+vi.mock('@/lib/rate-limit', () => ({
+  createRateLimiter: vi.fn(() => ({ check: (...args: unknown[]) => mockRateLimitCheck(...args) })),
+  getClientIp: vi.fn(() => '127.0.0.1'),
 }));
 
 import handler from '../[id]';
@@ -66,6 +72,13 @@ describe('GET /api/share/qr/[id]', () => {
     mockGetAbsoluteUrl.mockClear();
     mockIsValidNetworkingPublicId.mockReset();
     mockIsValidNetworkingPublicId.mockReturnValue(true);
+    mockRateLimitCheck.mockReset();
+    mockRateLimitCheck.mockReturnValue({
+      allowed: true,
+      current: 1,
+      remaining: 59,
+      resetAt: Date.now() + 60_000,
+    });
     mockToBuffer.mockResolvedValue(Buffer.from('png'));
   });
 
@@ -112,6 +125,24 @@ describe('GET /api/share/qr/[id]', () => {
     expect(encodedUrl.searchParams.get('utm_medium')).toBe('qr_code');
     expect(encodedUrl.searchParams.get('utm_campaign')).toBe('zurichjs_networking');
     expect(mockToBuffer.mock.calls[0][1]).toMatchObject({ width: 400, errorCorrectionLevel: 'H' });
+  });
+
+  it('rate limits QR generation by client IP', async () => {
+    mockRateLimitCheck.mockReturnValue({
+      allowed: false,
+      current: 60,
+      remaining: 0,
+      resetAt: Date.now() + 30_000,
+    });
+    const res = makeRes();
+
+    await handler(makeReq(`attendee-${SHARE_ID}`), res);
+
+    expect(res.statusCode).toBe(429);
+    expect(res.headers['Retry-After']).toBeGreaterThan(0);
+    expect(res.body).toEqual({ error: 'Too many requests' });
+    expect(mockRateLimitCheck).toHaveBeenCalledWith('127.0.0.1');
+    expect(mockToBuffer).not.toHaveBeenCalled();
   });
 
   it('supports speaker slugs without resolving private records', async () => {

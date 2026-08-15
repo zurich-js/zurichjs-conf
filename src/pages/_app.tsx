@@ -122,6 +122,8 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     const handleRouteChangeStart = (url: string) => {
       if (posthog.__loaded) posthog.stopSessionRecording();
 
+      if (isPrivateAnalyticsRoute(url)) return;
+
       const googleTag = (
         window as typeof window & { gtag?: (...args: unknown[]) => void }
       ).gtag;

@@ -94,4 +94,3 @@ export async function shareNetworkingProfile(
   const copied = await (dependencies.copyText ?? copyToClipboard)(text);
   return copied ? 'copied' : 'failed';
 }
-

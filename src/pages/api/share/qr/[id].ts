@@ -7,10 +7,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import QRCode from 'qrcode';
 import { logger } from '@/lib/logger';
 import { isValidNetworkingPublicId } from '@/lib/networking/profiles';
+import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { getAbsoluteUrl } from '@/lib/url';
 
 const log = logger.scope('Networking QR API');
 const CACHE_CONTROL = 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000';
+const rateLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 60 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'GET') {
@@ -22,6 +24,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { id } = req.query;
   if (typeof id !== 'string' || !isValidNetworkingPublicId(id)) {
     res.status(400).json({ error: 'Invalid networking profile ID' });
+    return;
+  }
+
+  const rateLimit = rateLimiter.check(getClientIp(req));
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1000)));
+    res.status(429).json({ error: 'Too many requests' });
     return;
   }
 
