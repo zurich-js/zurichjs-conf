@@ -36,7 +36,9 @@ import { publicSpeakersQueryOptions } from '@/lib/queries/speakers';
 import type { DiscountState, DiscountData } from '@/lib/discount/types';
 import {
   hasDismissedCookie,
+  hasDismissedWithCode,
   setDismissedCookie,
+  setExpiredDismissalCookie,
   clearDiscountCookies,
   isKnownTicketHolder,
   isCorporateBuyer,
@@ -102,7 +104,7 @@ export function useDiscount() {
   const [data, setData] = useState<DiscountData | null>(null);
 
   // One-time flags
-  const flags = useRef({ shown: false, copied: false, eligibilityChecked: false });
+  const flags = useRef({ shown: false, copied: false, eligibilityChecked: false, dismissed: false });
   const isEligible = useRef(false);
   const lotteryResult = useRef<LotteryResult | null>(null);
   const pendingEmail = useRef<string | null>(null);
@@ -245,6 +247,16 @@ export function useDiscount() {
     setState('minimized');
   }, [statusData, data]);
 
+  // A code that was dismissed on an earlier visit and has since expired (the
+  // status API reports it inactive and clears its httpOnly cookies) is the same
+  // "no thanks, and then let it lapse" signal as an expiry in an open tab.
+  // Persist the dismissal so the popup doesn't return once the 24h window ends.
+  useEffect(() => {
+    if (!isClient || !statusData || statusData.active) return;
+    if (!hasDismissedWithCode()) return;
+    setExpiredDismissalCookie();
+  }, [isClient, statusData]);
+
   // Show popup after delay if eligible (lottery shows immediately, normal has
   // 15s delay). Waits for the config to resolve so the gate advertises the
   // real offer percentage.
@@ -285,10 +297,20 @@ export function useDiscount() {
     if (state !== 'modal_open' && state !== 'minimized') return;
 
     setState('expired');
-    clearDiscountCookies();
+    // Someone who closed the popup and then let the offer run out has said no
+    // twice — keep the dismissal (extended well past the offer window) instead
+    // of clearing it, so the popup never comes back for them. An offer that
+    // simply timed out unattended still clears, and may be re-offered later.
+    const wasDismissed = flags.current.dismissed || hasDismissedCookie();
+    if (wasDismissed) {
+      setExpiredDismissalCookie();
+    } else {
+      clearDiscountCookies();
+    }
     analytics.track('discount_expired', {
       discount_code: data.code,
       was_copied: flags.current.copied,
+      was_dismissed: wasDismissed,
     });
   }, [countdown.isComplete, state, data]);
 
@@ -308,8 +330,11 @@ export function useDiscount() {
   const dismiss = useCallback(() => {
     // The dismissed cookie stops the popup auto-triggering on later visits;
     // within this session it always minimizes to the corner widget — with or
-    // without a code — so the offer stays reachable on screen.
-    setDismissedCookie();
+    // without a code — so the offer stays reachable on screen. The cookie
+    // records whether a code was live at dismissal, so a dismissal that later
+    // outlives its code can be turned into a permanent one.
+    flags.current.dismissed = true;
+    setDismissedCookie(data !== null);
     setState('minimized');
     analytics.track('discount_popup_dismissed', {
       discount_code: data?.code ?? EMAIL_GATE_CODE,

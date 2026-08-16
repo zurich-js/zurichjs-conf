@@ -34,7 +34,10 @@ export {
   setCookie,
   deleteCookie,
   hasDismissedCookie,
+  hasDismissedWithCode,
+  hasDismissedExpiredOffer,
   setDismissedCookie,
+  setExpiredDismissalCookie,
   clearDiscountCookies,
 } from './cookies';
 export {

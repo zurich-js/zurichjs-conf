@@ -53,6 +53,8 @@ export interface DiscountExpiredEvent {
   properties: BaseEventProperties & {
     discount_code: string;
     was_copied: boolean;
+    /** Dismissed before expiring — the popup stays suppressed from here on */
+    was_dismissed?: boolean;
   };
 }
 
