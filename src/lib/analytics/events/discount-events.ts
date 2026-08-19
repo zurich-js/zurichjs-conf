@@ -81,6 +81,10 @@ export interface DiscountEligibilityCheckedEvent {
     is_corporate_buyer?: boolean;
     /** 3rd+ visit without a purchase — qualifies for the sweetened offer */
     is_recurring_visitor?: boolean;
+    /** Won the per-visit show lottery that caps popup exposure */
+    won_show_lottery?: boolean;
+    /** Share of visits (0-1) the show lottery lets through */
+    show_probability?: number;
     /** Running visit count for this browser (localStorage-based) */
     visit_count?: number;
   };
