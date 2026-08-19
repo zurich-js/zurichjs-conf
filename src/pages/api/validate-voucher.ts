@@ -7,7 +7,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { logger } from '@/lib/logger';
 import { createServiceRoleClient } from '@/lib/supabase/client';
-import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
+import { isStatusDiscountCategory, isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
+import { STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE } from '@/lib/cart-operations';
 
 const log = logger.scope('Voucher Validation API');
 
@@ -300,6 +301,25 @@ export default async function handler(
       return res.status(200).json({
         valid: false,
         error: 'Unable to validate this promo code for one or more cart items',
+      });
+    }
+
+    // Student/unemployed tickets are already sold at a status discount, so no
+    // promo code stacks on top. The review step disables the input; this is the
+    // authoritative check — the category comes from the Stripe price's lookup
+    // key, so a hand-crafted cart can't get around it.
+    const statusDiscountedPriceIds = Array.from(priceToTicketCategoryMap.entries())
+      .filter(([, category]) => isStatusDiscountCategory(category))
+      .map(([priceId]) => priceId);
+
+    if (statusDiscountedPriceIds.length > 0) {
+      log.warn('Rejecting promo code for status-discounted ticket in cart', {
+        code: trimmedCode,
+        statusDiscountedPriceIds,
+      });
+      return res.status(200).json({
+        valid: false,
+        error: STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE,
       });
     }
 

@@ -10,11 +10,11 @@ import { getBaseUrl } from '@/lib/url';
 import { logger } from '@/lib/logger';
 import crypto from 'crypto';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
-import { isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
+import { isStatusDiscountCategory, isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { validateWorkshopCartItems } from '@/lib/workshops/validateCartItems';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { APPAREL_SIZES, type ApparelSize } from '@/lib/types/ticket-constants';
-import { VIP_WORKSHOP_DISCOUNT_PERCENT } from '@/lib/cart-operations';
+import { STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE, VIP_WORKSHOP_DISCOUNT_PERCENT } from '@/lib/cart-operations';
 import type { Json } from '@/lib/types/database';
 
 const log = logger.scope('Create Checkout Session');
@@ -200,6 +200,14 @@ async function validateDiscountProductsForCheckout(
     if (isTicket && price.lookup_key) {
       priceTicketCategories.set(price.id, parseTicketInfo(price.lookup_key).category as TicketCategory);
     }
+  }
+
+  // Student/unemployed tickets already carry the status discount — a promo code
+  // never stacks on top of one. The category is read from the Stripe price's
+  // lookup key, so this holds regardless of what the client sent.
+  const hasStatusDiscountedTicket = Array.from(priceTicketCategories.values()).some(isStatusDiscountCategory);
+  if (hasStatusDiscountedTicket) {
+    return { valid: false, error: STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE };
   }
 
   let restrictedProductIds = coupon.applies_to?.products ?? [];
