@@ -32,3 +32,6 @@ export * from './useProgram';
 
 export { useTicketSpendBreakdown } from './useTicketSpendBreakdown';
 export type { TicketSpendData, WorkshopBooking, SpendBreakdown } from './useTicketSpendBreakdown';
+
+export { useTicketApparel, useUpdateTicketTshirtSize } from './useTicketApparel';
+export type { TicketApparel } from './useTicketApparel';

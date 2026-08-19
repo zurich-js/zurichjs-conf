@@ -18,3 +18,13 @@ export const apparelPreferencesSchema = z.object({
 });
 
 export type ApparelPreferencesInput = z.infer<typeof apparelPreferencesSchema>;
+
+/**
+ * Admin update of a ticket's apparel sizes.
+ * Sizes are nullable so an admin can clear a previously selected size.
+ */
+export const adminApparelUpdateSchema = z.object({
+  tshirtSize: z.enum(APPAREL_SIZES).nullable(),
+});
+
+export type AdminApparelUpdateInput = z.infer<typeof adminApparelUpdateSchema>;
