@@ -3,6 +3,7 @@
  */
 
 import type { B2BInvoice, B2BInvoiceWithAttendees } from '@/lib/types/b2b';
+import { isWorkshopOnlyInvoice } from '@/lib/b2b/invoice-calculations';
 import { Pagination } from '@/components/atoms';
 import { statusColors, formatAmount, formatDate, ITEMS_PER_PAGE } from './types';
 
@@ -12,6 +13,13 @@ interface B2BInvoiceListProps {
   onPageChange: (page: number) => void;
   onSelectInvoice: (invoice: B2BInvoiceWithAttendees) => void;
   onCreateClick: () => void;
+}
+
+/** Ticket column label — workshop-only invoices have no ticket line */
+function describeTickets(invoice: B2BInvoice): string {
+  return isWorkshopOnlyInvoice(invoice.ticket_quantity)
+    ? 'Workshops only'
+    : `${invoice.ticket_quantity}x ${invoice.ticket_category}`;
 }
 
 export function B2BInvoiceList({
@@ -83,7 +91,7 @@ export function B2BInvoiceList({
             <div className="grid grid-cols-2 gap-2 text-sm mb-3 text-gray-900">
               <div>
                 <span className="font-medium">Tickets:</span>
-                <span className="ml-1">{invoice.ticket_quantity}x {invoice.ticket_category}</span>
+                <span className="ml-1">{describeTickets(invoice)}</span>
               </div>
               <div>
                 <span className="font-medium">Due:</span>
@@ -131,7 +139,7 @@ export function B2BInvoiceList({
                     <div className="text-gray-700 text-xs">{invoice.contact_email}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
-                    {invoice.ticket_quantity}x {invoice.ticket_category}
+                    {describeTickets(invoice)}
                   </td>
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">
                     {formatAmount(invoice.total_amount, invoice.currency)}

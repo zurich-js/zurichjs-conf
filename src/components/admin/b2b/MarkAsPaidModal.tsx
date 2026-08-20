@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import type { B2BInvoiceWithAttendees } from '@/lib/types/b2b';
+import { isWorkshopOnlyInvoice } from '@/lib/b2b/invoice-calculations';
 import { formatAmount } from './types';
 
 interface MarkAsPaidModalProps {
@@ -23,6 +24,9 @@ interface MarkAsPaidResult {
 }
 
 export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModalProps) {
+  // Workshop-only invoices create workshop registrations and no tickets
+  const workshopOnly = isWorkshopOnlyInvoice(invoice.ticket_quantity);
+  const workshopSeatCount = invoice.workshop_items.reduce((sum, item) => sum + item.quantity, 0);
   const [bankReference, setBankReference] = useState('');
   const [sendEmails, setSendEmails] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
@@ -80,8 +84,12 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
 
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-6">
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-gray-600">Tickets Created:</div>
-                <div className="font-medium text-gray-900">{result.ticketsCreated}</div>
+                {!workshopOnly && (
+                  <>
+                    <div className="text-gray-600">Tickets Created:</div>
+                    <div className="font-medium text-gray-900">{result.ticketsCreated}</div>
+                  </>
+                )}
                 {result.workshopRegistrationsCreated > 0 && (
                   <>
                     <div className="text-gray-600">Workshop Registrations:</div>
@@ -175,7 +183,9 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               <div className="text-gray-600">Total Amount:</div>
               <div className="font-medium text-gray-900">{formatAmount(invoice.total_amount, invoice.currency)}</div>
               <div className="text-gray-600">Tickets:</div>
-              <div className="font-medium text-gray-900">{invoice.ticket_quantity}x {invoice.ticket_category}</div>
+              <div className="font-medium text-gray-900">
+                {workshopOnly ? 'None (workshops only)' : `${invoice.ticket_quantity}x ${invoice.ticket_category}`}
+              </div>
               {invoice.workshop_items.map((item) => (
                 <div key={item.id} className="contents">
                   <div className="text-gray-600">Workshop:</div>
@@ -217,10 +227,13 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
             <label htmlFor="sendEmails" className="text-sm text-gray-900 cursor-pointer">
               <span className="font-medium">Send confirmation emails</span>
               <p className="text-gray-600 mt-0.5">
-                Each attendee will receive their ticket with a QR code via email
-                {invoice.workshop_items.length > 0 &&
-                  ', plus a separate confirmation for each assigned workshop seat'}
-                .
+                {workshopOnly
+                  ? 'Each attendee will receive a confirmation for every assigned workshop seat.'
+                  : `Each attendee will receive their ticket with a QR code via email${
+                      invoice.workshop_items.length > 0
+                        ? ', plus a separate confirmation for each assigned workshop seat'
+                        : ''
+                    }.`}
               </p>
             </label>
           </div>
@@ -234,13 +247,13 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               <div className="text-sm">
                 <p className="font-medium text-amber-800">This action will:</p>
                 <ul className="mt-1 text-amber-700 list-disc list-inside space-y-0.5">
-                  <li>Create {invoice.ticket_quantity} tickets in the system</li>
+                  {!workshopOnly && <li>Create {invoice.ticket_quantity} tickets in the system</li>}
                   {invoice.workshop_items.length > 0 && (
                     <li>
-                      Create {invoice.workshop_items.reduce((sum, item) => sum + item.quantity, 0)} workshop
-                      registration(s) for assigned attendees
+                      Create {workshopSeatCount} workshop registration(s) for assigned attendees
                     </li>
                   )}
+                  {workshopOnly && <li>Create no conference tickets — this invoice has none</li>}
                   <li>Mark the invoice as paid</li>
                   {sendEmails && <li>Send confirmation emails to all attendees</li>}
                 </ul>
@@ -260,7 +273,9 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
             />
             <label htmlFor="confirm" className="text-sm text-gray-900 cursor-pointer">
               <span className="font-medium">
-                I confirm that I want to create {invoice.ticket_quantity} tickets and mark this invoice as paid.
+                {workshopOnly
+                  ? `I confirm that I want to book ${workshopSeatCount} workshop seat(s) and mark this invoice as paid.`
+                  : `I confirm that I want to create ${invoice.ticket_quantity} tickets and mark this invoice as paid.`}
               </span>
             </label>
           </div>
@@ -280,7 +295,11 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               disabled={submitting || !confirmed || !bankReference.trim()}
               className="px-4 py-2.5 bg-green-700 text-white font-medium rounded-lg hover:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {submitting ? 'Processing...' : 'Confirm Payment & Create Tickets'}
+              {submitting
+                ? 'Processing...'
+                : workshopOnly
+                  ? 'Confirm Payment & Book Workshops'
+                  : 'Confirm Payment & Create Tickets'}
             </button>
           </div>
         </form>

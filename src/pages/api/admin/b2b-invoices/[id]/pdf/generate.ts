@@ -75,13 +75,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       contactName: invoice.contact_name,
       contactEmail: invoice.contact_email,
+      // A workshop-only invoice (ticket_quantity 0) lists workshop lines only
       lineItems: [
-        {
-          description: ticketDescription,
-          quantity: invoice.ticket_quantity,
-          unitPrice: invoice.unit_price,
-          total: invoice.unit_price * invoice.ticket_quantity,
-        },
+        ...(invoice.ticket_quantity > 0
+          ? [
+              {
+                description: ticketDescription,
+                quantity: invoice.ticket_quantity,
+                unitPrice: invoice.unit_price,
+                total: invoice.unit_price * invoice.ticket_quantity,
+              },
+            ]
+          : []),
         ...workshopItems.map((item) => ({
           description: `Workshop: ${item.workshop_title}`,
           quantity: item.quantity,

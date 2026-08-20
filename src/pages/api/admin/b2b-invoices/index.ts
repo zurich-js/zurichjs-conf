@@ -58,6 +58,7 @@ async function handleList(req: NextApiRequest, res: NextApiResponse) {
 
 /**
  * POST - Create a new invoice
+ * ticketQuantity 0 + workshop items creates a workshop-only invoice
  */
 async function handleCreate(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -69,10 +70,6 @@ async function handleCreate(req: NextApiRequest, res: NextApiResponse) {
       'contactName',
       'contactEmail',
       'dueDate',
-      'ticketCategory',
-      'ticketStage',
-      'ticketQuantity',
-      'unitPrice',
     ] as const;
 
     for (const field of requiredFields) {
@@ -92,12 +89,20 @@ async function handleCreate(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    // Validate numeric fields
-    if (data.ticketQuantity < 1) {
-      return res.status(400).json({ error: 'ticketQuantity must be at least 1' });
+    // Validate ticket configuration. ticketQuantity 0 creates a workshop-only
+    // invoice, so ticket category/stage are only required when tickets are sold.
+    if (!Number.isInteger(data.ticketQuantity) || data.ticketQuantity < 0) {
+      return res.status(400).json({ error: 'ticketQuantity must be 0 or more' });
     }
-    if (data.unitPrice < 0) {
+    if (typeof data.unitPrice !== 'number' || data.unitPrice < 0) {
       return res.status(400).json({ error: 'unitPrice cannot be negative' });
+    }
+    if (data.ticketQuantity > 0) {
+      for (const field of ['ticketCategory', 'ticketStage'] as const) {
+        if (!data[field]) {
+          return res.status(400).json({ error: `Missing required field: ${field}` });
+        }
+      }
     }
 
     // Validate workshop line items
@@ -127,6 +132,13 @@ async function handleCreate(req: NextApiRequest, res: NextApiResponse) {
       if (workshopIds.size !== data.workshopItems.length) {
         return res.status(400).json({ error: 'Duplicate workshop in workshopItems' });
       }
+    }
+
+    // An invoice must bill something
+    if (data.ticketQuantity === 0 && !data.workshopItems?.length) {
+      return res.status(400).json({
+        error: 'An invoice with no conference tickets needs at least one workshop',
+      });
     }
 
     const invoice = await createInvoice(data);

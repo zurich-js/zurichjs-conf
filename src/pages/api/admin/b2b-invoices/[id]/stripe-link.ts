@@ -75,13 +75,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const workshopItems = await getWorkshopItems(id);
     const workshopSeatCount = workshopItems.reduce((sum, item) => sum + item.quantity, 0);
-    const lineSummary =
-      `${invoice.ticket_quantity}x tickets` +
-      (workshopSeatCount > 0 ? ` + ${workshopSeatCount}x workshop seats` : '');
+
+    // Workshop-only invoices (ticket_quantity 0) sell no tickets, so they are
+    // described by their workshop seats instead
+    const sellsTickets = invoice.ticket_quantity > 0;
+    const lineSummary = [
+      sellsTickets ? `${invoice.ticket_quantity}x tickets` : null,
+      workshopSeatCount > 0 ? `${workshopSeatCount}x workshop seats` : null,
+    ]
+      .filter(Boolean)
+      .join(' + ');
+    const productDescription = sellsTickets
+      ? ticketDescription
+      : 'ZurichJS Conference 2026 - Workshop Seats';
 
     // Create a Stripe Product for this invoice
     const product = await stripe.products.create({
-      name: `${invoice.invoice_number} - ${ticketDescription}`,
+      name: `${invoice.invoice_number} - ${productDescription}`,
       description: `B2B Invoice ${invoice.invoice_number} for ${invoice.company_name} - ${lineSummary}`,
       metadata: {
         invoice_id: invoice.id,

@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import type { B2BInvoiceWithAttendees, B2BInvoiceStatus } from '@/lib/types/b2b';
+import { isWorkshopOnlyInvoice } from '@/lib/b2b/invoice-calculations';
 import { MarkAsPaidModal } from '../MarkAsPaidModal';
 
 interface ActionsSectionProps {
@@ -40,7 +41,12 @@ export function ActionsSection({ invoice, onUpdate, setError }: ActionsSectionPr
     }
   };
 
-  const canMarkAsPaid = invoice.attendees.length === invoice.ticket_quantity;
+  // Workshop-only invoices have no ticket count to match — they just need
+  // someone to hold the purchased seats.
+  const workshopOnly = isWorkshopOnlyInvoice(invoice.ticket_quantity);
+  const canMarkAsPaid = workshopOnly
+    ? invoice.attendees.length > 0
+    : invoice.attendees.length === invoice.ticket_quantity;
 
   return (
     <div className="space-y-4">
@@ -73,7 +79,7 @@ export function ActionsSection({ invoice, onUpdate, setError }: ActionsSectionPr
               disabled={!!actionLoading || !canMarkAsPaid}
               className="px-4 py-2.5 bg-green-700 text-white font-medium rounded-lg hover:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              Mark as Paid & Create Tickets
+              {workshopOnly ? 'Mark as Paid & Book Workshops' : 'Mark as Paid & Create Tickets'}
             </button>
             <button
               onClick={() => handleStatusUpdate('cancelled')}
@@ -94,7 +100,9 @@ export function ActionsSection({ invoice, onUpdate, setError }: ActionsSectionPr
 
       {invoice.status === 'sent' && !canMarkAsPaid && (
         <p className="text-sm text-amber-900 bg-amber-100 px-3 py-2 rounded-lg">
-          Add all {invoice.ticket_quantity} attendees before marking as paid.
+          {workshopOnly
+            ? 'Add the attendees taking the workshop seats before marking as paid.'
+            : `Add all ${invoice.ticket_quantity} attendees before marking as paid.`}
         </p>
       )}
 

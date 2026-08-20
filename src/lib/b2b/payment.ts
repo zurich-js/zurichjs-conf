@@ -14,6 +14,7 @@ import type {
 } from '@/lib/types/b2b';
 import { getInvoiceWithAttendees } from './invoices';
 import { validateAttendeeCount, validateWorkshopAssignments } from './attendees';
+import { isWorkshopOnlyInvoice } from './invoice-calculations';
 import { createTicket } from '@/lib/tickets/createTicket';
 import { createWorkshopRegistration } from '@/lib/workshops/createRegistration';
 import {
@@ -63,7 +64,8 @@ function formatTicketTypeLabel(stage: string | null, category: string | null): s
  * It performs these steps in order:
  * 1. Validate invoice status is 'sent' or 'draft'
  * 2. Validate all attendees are present (count matches ticket_quantity)
- * 3. Create tickets for each attendee
+ * 3. Create tickets for each attendee — skipped on workshop-only invoices
+ *    (ticket_quantity 0), which only produce workshop registrations
  * 4. Update invoice status to 'paid'
  * 5. Optionally send confirmation emails
  *
@@ -100,6 +102,14 @@ export async function markInvoiceAsPaidAndCreateTickets(
     );
   }
 
+  // Step 3b: A workshop-only invoice with no workshop lines would fulfil
+  // nothing at all
+  if (isWorkshopOnlyInvoice(invoice.ticket_quantity) && invoice.workshop_items.length === 0) {
+    throw new Error(
+      'Cannot mark invoice as paid: it has no conference tickets and no workshop seats'
+    );
+  }
+
   // Step 4: Validate attendee count
   const validation = await validateAttendeeCount(invoiceId);
   if (!validation.isValid) {
@@ -123,11 +133,15 @@ export async function markInvoiceAsPaidAndCreateTickets(
     await assertWorkshopCapacity(invoice.workshop_items);
   }
 
-  // Step 5: Create tickets for each attendee
+  // Step 5: Create tickets for each attendee.
+  // Workshop-only invoices sell no tickets — often the company already bought
+  // them — so fulfilment is workshop registrations only.
+  const createsTickets = !isWorkshopOnlyInvoice(invoice.ticket_quantity);
+  const ticketAttendees = createsTickets ? attendees : [];
   const ticketResults: MarkPaidResult['tickets'] = [];
   const failedAttendees: string[] = [];
 
-  for (const attendee of attendees) {
+  for (const attendee of ticketAttendees) {
     try {
       const ticketResult = await createTicketForAttendee(invoice, attendee, request.bankTransferReference);
 
@@ -194,7 +208,9 @@ export async function markInvoiceAsPaidAndCreateTickets(
   let emailFailures: MarkPaidResult['emailFailures'] = undefined;
 
   if (request.sendConfirmationEmails) {
-    const emailResult = await sendConfirmationEmails(invoiceId, ticketResults);
+    const emailResult = createsTickets
+      ? await sendConfirmationEmails(invoiceId, ticketResults)
+      : { emailsSent: 0, emailsFailed: 0, failures: [] };
     const workshopEmailResult = await sendB2BWorkshopConfirmationEmails(workshopRegistrations);
 
     emailsSent = emailResult.emailsSent + workshopEmailResult.emailsSent;
@@ -567,6 +583,7 @@ export async function getPaymentSummary(invoiceId: string): Promise<{
   const emailsSent = attendees.filter((a) => a.email_sent).length;
 
   // Check if invoice can be marked as paid
+  const attendeeValidation = await validateAttendeeCount(invoiceId);
   let canMarkAsPaid = true;
   let canMarkAsPaidReason: string | undefined;
 
@@ -576,9 +593,9 @@ export async function getPaymentSummary(invoiceId: string): Promise<{
   } else if (invoiceWithAttendees.status === 'cancelled') {
     canMarkAsPaid = false;
     canMarkAsPaidReason = 'Invoice is cancelled';
-  } else if (attendees.length !== invoiceWithAttendees.ticket_quantity) {
+  } else if (!attendeeValidation.isValid) {
     canMarkAsPaid = false;
-    canMarkAsPaidReason = `Missing attendees: ${attendees.length} of ${invoiceWithAttendees.ticket_quantity} provided`;
+    canMarkAsPaidReason = attendeeValidation.message;
   } else if (invoiceWithAttendees.workshop_items.length > 0) {
     const workshopValidation = await validateWorkshopAssignments(invoiceId);
     if (!workshopValidation.isValid) {
