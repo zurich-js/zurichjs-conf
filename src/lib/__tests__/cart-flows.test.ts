@@ -3,6 +3,7 @@ import type { Cart, CartItem } from '@/types/cart';
 import {
   addItem,
   applyVoucher,
+  cartHasStatusDiscountedTicket,
   createEmptyCart,
   getOrderSummary,
   getVipWorkshopPerkStatus,
@@ -28,6 +29,15 @@ const vipTicket: Omit<CartItem, 'quantity'> = {
   currency: 'CHF',
   priceId: 'price_vip_chf',
   variant: 'vip',
+};
+
+const studentTicket: Omit<CartItem, 'quantity'> = {
+  id: 'standard_student_unemployed',
+  title: 'Student / Unemployed',
+  price: 95,
+  currency: 'CHF',
+  priceId: 'price_student_unemployed_chf',
+  variant: 'member',
 };
 
 const workshopSeat: Omit<CartItem, 'quantity'> = {
@@ -282,6 +292,39 @@ describe('cart flows', () => {
         ['price_vip_chf']
       );
       expect(getVipWorkshopPerkStatus(cart)).toBe('blocked-by-code');
+    });
+  });
+
+  describe('status-discounted (student / unemployed) tickets', () => {
+    it('flags a cart containing the shared student/unemployed ticket', () => {
+      expect(cartHasStatusDiscountedTicket(cartWith([{ ...studentTicket, quantity: 1 }]).items)).toBe(true);
+    });
+
+    it('flags mixed carts so the whole order loses the promo input', () => {
+      const cart = cartWith([
+        { ...standardTicket, quantity: 1 },
+        { ...studentTicket, quantity: 1 },
+      ]);
+      expect(cartHasStatusDiscountedTicket(cart.items)).toBe(true);
+    });
+
+    it('leaves standard, VIP and workshop carts unaffected', () => {
+      const cart = cartWith([
+        { ...standardTicket, quantity: 1 },
+        { ...vipTicket, quantity: 1 },
+        { ...workshopSeat, quantity: 1 },
+      ]);
+      expect(cartHasStatusDiscountedTicket(cart.items)).toBe(false);
+    });
+
+    it('ignores workshops that merely mention students in the title', () => {
+      const cart = cartWith([{
+        ...workshopSeat,
+        id: 'workshop_student_track',
+        title: 'JS for students',
+        quantity: 1,
+      }]);
+      expect(cartHasStatusDiscountedTicket(cart.items)).toBe(false);
     });
   });
 
