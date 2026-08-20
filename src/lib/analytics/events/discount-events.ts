@@ -66,6 +66,24 @@ export interface DiscountEmailCapturedEvent {
 }
 
 /**
+ * Fired when an admin-issued corporate access link is opened. The visitor is
+ * redirected straight to the ticket section and never sees a confirmation, so
+ * this event is the only signal that a link was used — and, via `valid: false`,
+ * the only way to notice links going out expired or truncated.
+ */
+export interface CorporateAccessLinkOpenedEvent {
+  event: 'corporate_access_link_opened';
+  properties: BaseEventProperties & {
+    /** False for an expired, mistyped or tampered link */
+    valid: boolean;
+    /** Organisation the link was minted for — only present when valid */
+    corporate_label?: string;
+    /** Rejection reason: 'expired' | 'bad_signature' | 'malformed' | 'verification_failed' */
+    reason?: string;
+  };
+}
+
+/**
  * Fired once per popup mount, before any delay. Records why a visitor was or
  * wasn't offered a discount, and which visit this is — the counterpart to
  * `visit_count` on checkout_completed, so you can compare visits-to-purchase

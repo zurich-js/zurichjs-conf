@@ -317,6 +317,30 @@ class ServerAnalyticsClient {
 // Export singleton instance
 export const serverAnalytics = new ServerAnalyticsClient()
 
+/**
+ * Reads the browser's PostHog distinct id out of the cookie posthog-js writes.
+ *
+ * For a server-side event on a route that never renders — a redirect, say —
+ * this is the only way to attribute it to the same person as their client-side
+ * events. Returns null when PostHog is blocked, disabled or simply hasn't run
+ * in this browser yet; callers should skip the event rather than invent an id.
+ */
+export function getPostHogDistinctId(cookies: Partial<Record<string, string>>): string | null {
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
+  if (!key) return null
+
+  const raw = cookies[`ph_${key}_posthog`]
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(raw))
+    const distinctId = parsed?.distinct_id
+    return typeof distinctId === 'string' && distinctId ? distinctId : null
+  } catch {
+    return null
+  }
+}
+
 // Graceful shutdown on process exit
 if (typeof process !== 'undefined') {
   process.on('SIGINT', async () => {

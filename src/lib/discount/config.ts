@@ -23,6 +23,13 @@ export const RECURRING_OFFER_DEFAULTS = {
 
 export const COOKIE_NAMES = {
   DISMISSED: 'discount_dismissed',
+  /**
+   * Short-lived handoff from /corporate/<code>. That route redirects on the
+   * server, so it can't touch localStorage — it leaves the organisation label
+   * here for the landing page to promote into the durable marker. Deliberately
+   * NOT httpOnly: the client is the whole point.
+   */
+  CORPORATE_HANDOFF: 'corporate_handoff',
   // httpOnly cookies (set by API, not readable client-side):
   // discount_code, discount_expires_at
 } as const;

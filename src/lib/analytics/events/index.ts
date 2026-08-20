@@ -132,6 +132,7 @@ export type {
   DiscountExpiredEvent,
   DiscountEmailCapturedEvent,
   DiscountEligibilityCheckedEvent,
+  CorporateAccessLinkOpenedEvent,
 } from './discount-events';
 
 // Easter egg events
@@ -248,6 +249,7 @@ import type {
   DiscountExpiredEvent,
   DiscountEmailCapturedEvent,
   DiscountEligibilityCheckedEvent,
+  CorporateAccessLinkOpenedEvent,
 } from './discount-events';
 import type {
   EasterEggShownEvent,
@@ -346,6 +348,7 @@ export type AnalyticsEvent =
   | DiscountExpiredEvent
   | DiscountEmailCapturedEvent
   | DiscountEligibilityCheckedEvent
+  | CorporateAccessLinkOpenedEvent
   | EasterEggShownEvent
   | EasterEggRewardCalledEvent
   | EasterEggAlreadyClaimedEvent
