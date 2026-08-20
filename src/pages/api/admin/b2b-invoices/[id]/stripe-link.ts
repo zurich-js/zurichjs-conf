@@ -75,13 +75,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const workshopItems = await getWorkshopItems(id);
     const workshopSeatCount = workshopItems.reduce((sum, item) => sum + item.quantity, 0);
-    const lineSummary =
-      `${invoice.ticket_quantity}x tickets` +
-      (workshopSeatCount > 0 ? ` + ${workshopSeatCount}x workshop seats` : '');
+
+    // Workshop-only invoices (ticket_quantity 0) sell no tickets, so they are
+    // described by their workshop seats instead
+    const sellsTickets = invoice.ticket_quantity > 0;
+    const lineSummary = [
+      sellsTickets ? `${invoice.ticket_quantity}x tickets` : null,
+      workshopSeatCount > 0 ? `${workshopSeatCount}x workshop seats` : null,
+    ]
+      .filter(Boolean)
+      .join(' + ');
+    const productDescription = sellsTickets
+      ? ticketDescription
+      : 'ZurichJS Conference 2026 - Workshop Seats';
+
+    // Stable, invoice-scoped idempotency keys: a retry (or a double click)
+    // reuses the same Stripe objects instead of creating a second payment link.
+    // Stripe honours these for 24h; beyond that the stored link below is what
+    // stops a regeneration.
+    const idempotencyScope = `b2b-invoice-${invoice.id}`;
 
     // Create a Stripe Product for this invoice
     const product = await stripe.products.create({
-      name: `${invoice.invoice_number} - ${ticketDescription}`,
+      name: `${invoice.invoice_number} - ${productDescription}`,
       description: `B2B Invoice ${invoice.invoice_number} for ${invoice.company_name} - ${lineSummary}`,
       metadata: {
         invoice_id: invoice.id,
@@ -89,14 +105,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         company_name: invoice.company_name,
         is_b2b: 'true',
       },
-    });
+    }, { idempotencyKey: `${idempotencyScope}-product` });
 
     // Create a Price for the product (total amount)
     const price = await stripe.prices.create({
       product: product.id,
       unit_amount: invoice.total_amount,
       currency: invoice.currency.toLowerCase(),
-    });
+    }, { idempotencyKey: `${idempotencyScope}-price` });
 
     // Create the Payment Link
     const paymentLink = await stripe.paymentLinks.create({
@@ -124,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       allow_promotion_codes: false,
       // Require customer email
       customer_creation: 'always',
-    });
+    }, { idempotencyKey: `${idempotencyScope}-link` });
 
     // Update invoice with payment link details
     const supabase = createServiceRoleClient();
@@ -137,8 +153,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', id);
 
     if (updateError) {
-      log.error('Error updating invoice with payment link', updateError);
-      // Don't fail - the payment link was created, we just failed to save it
+      // The link exists in Stripe but the invoice doesn't know about it, so a
+      // success here would strand it. Fail loudly — retrying is safe because
+      // the idempotency keys above return the same link.
+      log.error('Error updating invoice with payment link', updateError, {
+        invoiceId: invoice.id,
+        paymentLinkId: paymentLink.id,
+      });
+      return res.status(500).json({
+        error: `Payment link was created but could not be saved to the invoice: ${updateError.message}`,
+        paymentLinkUrl: paymentLink.url,
+      });
     }
 
     return res.status(200).json({

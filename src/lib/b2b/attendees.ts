@@ -11,6 +11,11 @@ import type {
   UpdateAttendeeRequest,
 } from '@/lib/types/b2b';
 import { getInvoice, getWorkshopItems } from './invoices';
+import {
+  countWorkshopSeats,
+  isWorkshopOnlyInvoice,
+  maxAttendeesForInvoice,
+} from './invoice-calculations';
 
 /**
  * Add attendees to an invoice
@@ -42,11 +47,22 @@ export async function addAttendees(
     .select('*', { count: 'exact', head: true })
     .eq('invoice_id', invoiceId);
 
+  // Ticketed invoices hold one attendee per ticket; workshop-only invoices hold
+  // one per purchased seat.
+  const workshopItems = await getWorkshopItems(invoiceId);
+  const maxAttendees = maxAttendeesForInvoice({
+    ticketQuantity: invoice.ticket_quantity,
+    workshopItems,
+  });
+
   const newTotal = (currentCount || 0) + attendees.length;
-  if (newTotal > invoice.ticket_quantity) {
+  if (newTotal > maxAttendees) {
     throw new Error(
       `Cannot add ${attendees.length} attendees. ` +
-        `Current: ${currentCount || 0}, Max: ${invoice.ticket_quantity}`
+        `Current: ${currentCount || 0}, Max: ${maxAttendees}` +
+        (isWorkshopOnlyInvoice(invoice.ticket_quantity)
+          ? ' (one per purchased workshop seat)'
+          : '')
     );
   }
 
@@ -273,7 +289,8 @@ export async function setAttendeeWorkshops(
 }
 
 /**
- * Validate that every purchased workshop seat is assigned to an attendee
+ * Validate that every purchased workshop seat is assigned to an attendee, and
+ * on workshop-only invoices that every attendee holds at least one seat.
  * Used as a pre-flight check before marking an invoice as paid.
  *
  * @param invoiceId - UUID of the invoice
@@ -291,7 +308,7 @@ export async function validateWorkshopAssignments(invoiceId: string): Promise<{
 
   const { data: assignments, error } = await supabase
     .from('b2b_invoice_attendee_workshops')
-    .select('workshop_item_id')
+    .select('attendee_id, workshop_item_id')
     .in(
       'workshop_item_id',
       items.map((item) => item.id)
@@ -307,6 +324,25 @@ export async function validateWorkshopAssignments(invoiceId: string): Promise<{
       assignment.workshop_item_id,
       (assignedCounts.get(assignment.workshop_item_id) ?? 0) + 1
     );
+  }
+
+  // On a workshop-only invoice an attendee with no seat would receive nothing
+  // when the invoice is paid, so flag them before fulfilment.
+  const invoice = await getInvoice(invoiceId);
+  if (invoice && isWorkshopOnlyInvoice(invoice.ticket_quantity)) {
+    const seatedAttendeeIds = new Set((assignments || []).map((a) => a.attendee_id));
+    const unseated = (await getAttendees(invoiceId)).filter(
+      (attendee) => !seatedAttendeeIds.has(attendee.id)
+    );
+
+    if (unseated.length > 0) {
+      return {
+        isValid: false,
+        message: `${unseated.length} attendee(s) have no workshop seat: ${unseated
+          .map((attendee) => attendee.email)
+          .join(', ')}`,
+      };
+    }
   }
 
   const incomplete = items
@@ -573,6 +609,39 @@ export async function validateAttendeeCount(invoiceId: string): Promise<{
 
   const attendees = await getAttendees(invoiceId);
   const currentCount = attendees.length;
+
+  // A workshop-only invoice has no ticket count to match. It needs at least one
+  // attendee, and no more than the seats it paid for; whether every seat is
+  // taken is checked by validateWorkshopAssignments.
+  if (isWorkshopOnlyInvoice(invoice.ticket_quantity)) {
+    const seatCount = countWorkshopSeats(await getWorkshopItems(invoiceId));
+
+    if (currentCount === 0) {
+      return {
+        isValid: false,
+        currentCount,
+        expectedCount: seatCount,
+        message: 'Workshop-only invoice has no attendees yet',
+      };
+    }
+
+    if (currentCount > seatCount) {
+      return {
+        isValid: false,
+        currentCount,
+        expectedCount: seatCount,
+        message: `Found ${currentCount} attendees but only ${seatCount} workshop seat(s) were purchased`,
+      };
+    }
+
+    return {
+      isValid: true,
+      currentCount,
+      expectedCount: seatCount,
+      message: `${currentCount} attendee(s) for ${seatCount} workshop seat(s)`,
+    };
+  }
+
   const expectedCount = invoice.ticket_quantity;
   const isValid = currentCount === expectedCount;
 

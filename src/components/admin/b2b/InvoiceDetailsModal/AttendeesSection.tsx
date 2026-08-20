@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import type { B2BInvoiceWithAttendees, B2BInvoiceAttendeeWithWorkshops } from '@/lib/types/b2b';
+import { isWorkshopOnlyInvoice, maxAttendeesForInvoice } from '@/lib/b2b/invoice-calculations';
 import type { AttendeeFormData } from './types';
 
 interface AttendeesSectionProps {
@@ -114,7 +115,15 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
   };
 
   const isEditable = invoice.status !== 'paid' && invoice.status !== 'cancelled';
-  const canAddAttendees = isEditable && invoice.attendees.length < invoice.ticket_quantity;
+
+  // Ticketed invoices hold one attendee per ticket; workshop-only invoices hold
+  // one per purchased seat.
+  const workshopOnly = isWorkshopOnlyInvoice(invoice.ticket_quantity);
+  const maxAttendees = maxAttendeesForInvoice({
+    ticketQuantity: invoice.ticket_quantity,
+    workshopItems: invoice.workshop_items,
+  });
+  const canAddAttendees = isEditable && invoice.attendees.length < maxAttendees;
 
   // Seats assigned per workshop line, derived from the attendees' assignments
   const assignedCounts = new Map<string, number>();
@@ -124,11 +133,16 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
     }
   }
 
+  // On a workshop-only invoice an attendee without a seat gets nothing on payment
+  const unseatedCount = workshopOnly
+    ? invoice.attendees.filter((attendee) => attendee.workshop_item_ids.length === 0).length
+    : 0;
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h4 className="font-medium text-gray-900">
-          Attendees ({invoice.attendees.length}/{invoice.ticket_quantity})
+          Attendees ({invoice.attendees.length}/{maxAttendees})
         </h4>
         {canAddAttendees && (
           <button
@@ -268,6 +282,10 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
                     <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium">
                       Ticket Created
                     </span>
+                  ) : workshopOnly && !isEditable ? (
+                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium">
+                      Workshop Seat(s) Booked
+                    </span>
                   ) : isEditable ? (
                     <button
                       onClick={() => handleDeleteAttendee(attendee.id)}
@@ -319,9 +337,16 @@ export function AttendeesSection({ invoice, onUpdate, setError }: AttendeesSecti
       )}
 
       {/* Warning for incomplete attendees */}
-      {invoice.attendees.length < invoice.ticket_quantity && invoice.status !== 'paid' && (
+      {!workshopOnly && invoice.attendees.length < invoice.ticket_quantity && invoice.status !== 'paid' && (
         <p className="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
           {invoice.ticket_quantity - invoice.attendees.length} more attendee(s) needed to complete this invoice.
+        </p>
+      )}
+
+      {workshopOnly && unseatedCount > 0 && invoice.status !== 'paid' && (
+        <p className="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+          {unseatedCount} attendee(s) have no workshop seat yet. This invoice has no conference
+          tickets, so every attendee needs at least one seat.
         </p>
       )}
     </div>

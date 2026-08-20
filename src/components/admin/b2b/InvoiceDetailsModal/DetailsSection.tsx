@@ -4,6 +4,7 @@
 
 import { useState, useCallback } from 'react';
 import type { B2BInvoiceWithAttendees } from '@/lib/types/b2b';
+import { isWorkshopOnlyInvoice } from '@/lib/b2b/invoice-calculations';
 import { formatAmount, formatDate } from '../types';
 import { WorkshopItemsEditor } from '../WorkshopItemsEditor';
 import { getFormValuesFromInvoice, type EditFormData } from './types';
@@ -15,6 +16,7 @@ interface DetailsSectionProps {
 }
 
 export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionProps) {
+  const workshopOnly = isWorkshopOnlyInvoice(invoice.ticket_quantity);
   const [isEditing, setIsEditing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<EditFormData>(() => getFormValuesFromInvoice(invoice));
@@ -162,7 +164,10 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
           <div className="text-sm space-y-1 text-gray-900">
             <div className="flex justify-between"><span>Issue Date</span><span>{formatDate(invoice.issue_date)}</span></div>
             <div className="flex justify-between"><span>Due Date</span><span>{formatDate(invoice.due_date)}</span></div>
-            <div className="flex justify-between"><span>Tickets</span><span>{invoice.ticket_quantity}x {invoice.ticket_category}</span></div>
+            <div className="flex justify-between">
+              <span>Tickets</span>
+              <span>{workshopOnly ? 'None (workshops only)' : `${invoice.ticket_quantity}x ${invoice.ticket_category}`}</span>
+            </div>
             {invoice.workshop_items.map((item) => (
               <div key={item.id} className="flex justify-between">
                 <span>Workshop</span>
@@ -217,10 +222,12 @@ export function DetailsSection({ invoice, onUpdate, setError }: DetailsSectionPr
       {/* Totals */}
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="space-y-2 text-sm text-gray-900">
-          <div className="flex justify-between text-gray-700">
-            <span>{invoice.ticket_quantity}x conference ticket</span>
-            <span>{formatAmount(invoice.unit_price * invoice.ticket_quantity, invoice.currency)}</span>
-          </div>
+          {!workshopOnly && (
+            <div className="flex justify-between text-gray-700">
+              <span>{invoice.ticket_quantity}x conference ticket</span>
+              <span>{formatAmount(invoice.unit_price * invoice.ticket_quantity, invoice.currency)}</span>
+            </div>
+          )}
           {invoice.workshop_items.map((item) => (
             <div key={item.id} className="flex justify-between text-gray-700">
               <span>{item.quantity}x {item.workshop_title}</span>
@@ -307,7 +314,8 @@ function EditForm({ formData, setFormData, onSave, onCancel, loading }: {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-1">Ticket Quantity</label>
-          <input type="number" min={1} value={formData.ticketQuantity} onChange={(e) => update('ticketQuantity', parseInt(e.target.value) || 1)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <input type="number" min={0} value={formData.ticketQuantity} onChange={(e) => update('ticketQuantity', Math.max(0, parseInt(e.target.value) || 0))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-gray-900" />
+          <p className="mt-1 text-xs text-gray-600">0 = workshops-only invoice (no conference tickets).</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-1">Unit Price (CHF)</label>

@@ -151,8 +151,9 @@ export function WorkshopItemsEditor({ items, onChange }: WorkshopItemsEditorProp
               </div>
               {overCapacity && (
                 <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
-                  Only {capacityRemaining} seat(s) remaining for this workshop — payment will fail
-                  unless capacity is increased.
+                  Only {capacityRemaining} seat(s) remaining for this workshop. Invoicing is not
+                  blocked — marking this invoice as paid will oversell it by{' '}
+                  {item.quantity - capacityRemaining}.
                 </p>
               )}
             </div>
