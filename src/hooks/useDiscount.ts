@@ -219,11 +219,13 @@ export function useDiscount() {
       setShowImmediately(true);
     }
 
-    // Keep the offer scarce: only a minority of visits draw the popup. Lottery
-    // winners skip the roll — the campaign they came from promised a discount,
-    // so suppressing it would break that promise. Rolled once per visit, so the
-    // answer holds across reloads and in-visit navigation.
-    const wonShowLottery = rollPopupShowLottery(visitCount);
+    // Keep the offer scarce: only a minority of visits draw the popup. UTM
+    // lottery winners skip the roll entirely — not even a persisted result —
+    // since the campaign they came from promised a discount, and a stored loss
+    // would suppress that promise on their next load this visit (by then the
+    // UTM params are gone). Everyone else rolls once per visit, so the answer
+    // holds across reloads and in-visit navigation.
+    const wonShowLottery = lottery.eligible ? undefined : rollPopupShowLottery(visitCount);
 
     // Never offer a discount to someone who already bought a ticket, or to a
     // corporate buyer spending a training budget — they book at the standard
@@ -231,7 +233,7 @@ export function useDiscount() {
     const isTicketHolder = isKnownTicketHolder();
     const isCorporate = isCorporateBuyer();
     isEligible.current =
-      !isTicketHolder && !isCorporate && (lottery.eligible || wonShowLottery);
+      !isTicketHolder && !isCorporate && (lottery.eligible || wonShowLottery === true);
 
     analytics.track('discount_eligibility_checked', {
       was_eligible: isEligible.current,
@@ -239,7 +241,7 @@ export function useDiscount() {
       is_corporate_buyer: isCorporate,
       is_recurring_visitor: isRecurring.current,
       won_show_lottery: wonShowLottery,
-      show_probability: POPUP_SHOW_PROBABILITY,
+      show_probability: lottery.eligible ? undefined : POPUP_SHOW_PROBABILITY,
       visit_count: visitCount,
     });
   }, [isClient, configResolved, configRecurringMinVisits]);
