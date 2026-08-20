@@ -158,7 +158,7 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
 
             {result.capacityWarnings && result.capacityWarnings.length > 0 && (
               <div className="text-left mb-6">
-                <h4 className="font-medium text-amber-800 mb-2 text-sm">Capacity Warnings:</h4>
+                <h4 className="font-medium text-amber-800 mb-2 text-sm">Workshop Warnings:</h4>
                 <ul className="space-y-1 list-disc list-inside">
                   {result.capacityWarnings.map((warning) => (
                     <li key={warning} className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
@@ -288,17 +288,18 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
             </label>
           </div>
 
-          {/* Capacity warnings — informational, they never block confirmation */}
+          {/* Workshop warnings — informational, they never block confirmation */}
           {availableWorkshops && capacityWarnings.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
-              <p className="font-medium text-amber-800">Workshop capacity will be exceeded:</p>
+              <p className="font-medium text-amber-800">Check these workshop lines before confirming:</p>
               <ul className="mt-1 text-amber-700 list-disc list-inside space-y-0.5">
                 {capacityWarnings.map((warning) => (
                   <li key={warning}>{warning}</li>
                 ))}
               </ul>
               <p className="mt-2 text-amber-700">
-                Seats are still booked — increase the workshop capacity afterwards if the room allows it.
+                Confirming is not blocked: seats past capacity are still booked, but a workshop
+                that no longer exists cannot be registered.
               </p>
             </div>
           )}

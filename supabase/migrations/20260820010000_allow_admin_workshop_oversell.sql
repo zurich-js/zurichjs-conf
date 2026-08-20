@@ -55,6 +55,19 @@ DECLARE
   v_new workshop_registrations;
   v_oversold BOOLEAN := FALSE;
 BEGIN
+  -- Lock the workshop row before anything else: concurrent deliveries for the
+  -- same (session, workshop, seat) then serialize here, so the loser sees the
+  -- row the winner inserted and returns it as a duplicate rather than failing
+  -- on the unique index. It also serializes the capacity check below.
+  SELECT * INTO v_workshop
+  FROM workshops
+  WHERE id = p_workshop_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Workshop % not found', p_workshop_id USING ERRCODE = 'P0002';
+  END IF;
+
   -- Idempotency: if a row already exists for this (session, workshop, seat), return it.
   SELECT * INTO v_existing
   FROM workshop_registrations
@@ -69,16 +82,6 @@ BEGIN
     was_duplicate := TRUE;
     RETURN NEXT;
     RETURN;
-  END IF;
-
-  -- Lock the workshop row so concurrent inserts serialize on capacity.
-  SELECT * INTO v_workshop
-  FROM workshops
-  WHERE id = p_workshop_id
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Workshop % not found', p_workshop_id USING ERRCODE = 'P0002';
   END IF;
 
   -- Capacity check only when the incoming registration is confirmed (pending/cancelled
@@ -144,5 +147,18 @@ $$;
 
 COMMENT ON FUNCTION insert_workshop_registration_atomic IS
   'Atomic capacity-checked workshop registration insert. p_allow_oversell lets admin flows (B2B invoices) exceed capacity; the row is still returned with was_oversold = true so the caller can warn.';
+
+-- SECURITY DEFINER: only the server may call this. Without the revoke, PostgREST
+-- would expose a confirmed-registration insert (and its oversell bypass) to anon
+-- and authenticated callers.
+REVOKE ALL ON FUNCTION insert_workshop_registration_atomic(
+  UUID, UUID, UUID, TEXT, TEXT, INTEGER, TEXT, payment_status,
+  TEXT, TEXT, TEXT, TEXT, UUID, UUID, INTEGER, INTEGER, JSONB, BOOLEAN
+) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION insert_workshop_registration_atomic(
+  UUID, UUID, UUID, TEXT, TEXT, INTEGER, TEXT, payment_status,
+  TEXT, TEXT, TEXT, TEXT, UUID, UUID, INTEGER, INTEGER, JSONB, BOOLEAN
+) TO service_role;
 
 COMMIT;
