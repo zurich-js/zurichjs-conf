@@ -84,8 +84,6 @@ type AtomicInsertRpcArgs = Omit<
   p_coupon_code: string | null;
   p_partnership_coupon_id: string | null;
   p_partnership_voucher_id: string | null;
-  // Added by the admin-oversell migration; not yet in the generated types
-  p_allow_oversell: boolean;
 };
 
 /**

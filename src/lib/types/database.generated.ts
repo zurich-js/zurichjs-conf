@@ -3609,6 +3609,7 @@ export type Database = {
       get_program_speaker_count: { Args: never; Returns: number }
       insert_workshop_registration_atomic: {
         Args: {
+          p_allow_oversell?: boolean
           p_amount_paid: number
           p_coupon_code: string
           p_currency: string
