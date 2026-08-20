@@ -44,6 +44,7 @@ export { SponsorCard } from './SponsorCard';
 export { PackedGrid } from './PackedGrid';
 export { Infotip } from './Infotip';
 export { InfoBox } from './InfoBox';
+export { ApparelAvailabilityNotice } from './ApparelAvailabilityNotice';
 
 export type { CountdownProps } from './Countdown';
 export type { BackgroundMediaProps } from './BackgroundMedia';
@@ -92,3 +93,7 @@ export type { LogoMarqueeProps, LogoMarqueeItem } from './LogoMarquee';
 export type { SponsorCardProps } from './SponsorCard';
 export type { InfotipProps } from './Infotip';
 export type { InfoBoxProps } from './InfoBox';
+export type {
+  ApparelAvailabilityCopy,
+  ApparelAvailabilityNoticeProps,
+} from './ApparelAvailabilityNotice';

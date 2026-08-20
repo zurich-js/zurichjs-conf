@@ -15,6 +15,8 @@ import { Input, Button, Heading, Select } from '@/components/atoms';
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 import type { CartItem as CartItemType } from '@/types/cart';
 import {SectionContainer} from "@/components/organisms";
+import { ApparelAvailabilityNotice } from './ApparelAvailabilityNotice';
+import { APPAREL_AVAILABILITY_NOTICE } from '@/data/apparel';
 
 const SIZE_OPTIONS = APPAREL_SIZES.map((size) => ({ value: size, label: size }));
 
@@ -355,6 +357,11 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
 }) => {
   const slots = React.useMemo(() => buildSlots(cartItems), [cartItems]);
 
+  // Apparel is only collected for conference ticket slots; the hoodie line is
+  // only relevant when a VIP seat is in the cart.
+  const collectsApparel = slots.some((slot) => slot.kind === 'ticket');
+  const collectsHoodie = slots.some((slot) => slot.isVip);
+
   // Seed the flat form state from initial values, splitting by slot kind.
   const [attendees, setAttendees] = React.useState<AttendeeInfo[]>(() => {
     let ticketCursor = 0;
@@ -460,6 +467,12 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
             Please provide the name, email, and t-shirt size for each seat. Each attendee will receive their own confirmation.<br/>
             You&#39;ll get a chance to review and fill <b>billing details</b> at the Payment step.
           </p>
+          {collectsApparel && (
+            <ApparelAvailabilityNotice
+              copy={APPAREL_AVAILABILITY_NOTICE}
+              includesHoodie={collectsHoodie}
+            />
+          )}
         </div>
 
         {slots.map((slot, index) => (

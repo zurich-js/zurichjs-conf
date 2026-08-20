@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { checkoutFormSchema, type CheckoutFormData } from '@/lib/validations/checkout';
 import { Input, Button, Select } from '@/components/atoms';
+import { ApparelAvailabilityNotice } from '@/components/molecules/ApparelAvailabilityNotice';
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
+import { APPAREL_AVAILABILITY_NOTICE } from '@/data/apparel';
 import Link from 'next/link';
 import { useFormFieldTracking } from '@/hooks/useFormFieldTracking';
 
@@ -415,6 +417,11 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
               </div>
             )}
           </div>
+          <ApparelAvailabilityNotice
+            copy={APPAREL_AVAILABILITY_NOTICE}
+            includesHoodie={apparel.hoodie}
+            className="mt-6"
+          />
         </div>
       )}
 
