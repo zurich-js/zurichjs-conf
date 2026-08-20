@@ -31,6 +31,12 @@ export interface CreateRegistrationParams {
   discountAmount?: number; // in cents
   /** 0-based index for multi-seat purchases (same session + workshop). Defaults to 0. */
   seatIndex?: number;
+  /**
+   * Insert the seat even when the workshop is full. Admin flows (B2B invoice
+   * fulfilment) sell seats offline and warn instead of failing; public checkout
+   * must leave this off so paid seats are never silently oversold.
+   */
+  allowOversell?: boolean;
   metadata?: Record<string, unknown>;
   company?: string | null;
   jobTitle?: string | null;
@@ -42,6 +48,8 @@ export interface CreateRegistrationResult {
   /** True when the seat was rejected because the workshop is full. The caller
    *  should issue a Stripe refund for the charged amount. */
   oversold?: boolean;
+  /** True when the seat was created past capacity because allowOversell was set. */
+  oversoldOverride?: boolean;
   /** True when the idempotency check found an existing row. */
   duplicate?: boolean;
   error?: string;
@@ -76,6 +84,8 @@ type AtomicInsertRpcArgs = Omit<
   p_coupon_code: string | null;
   p_partnership_coupon_id: string | null;
   p_partnership_voucher_id: string | null;
+  // Added by the admin-oversell migration; not yet in the generated types
+  p_allow_oversell: boolean;
 };
 
 /**
@@ -107,6 +117,7 @@ export async function createWorkshopRegistration(
       p_discount_amount: params.discountAmount ?? 0,
       p_seat_index: seatIndex,
       p_metadata: (params.metadata ?? {}) as Json,
+      p_allow_oversell: params.allowOversell ?? false,
     };
 
     const { data, error } = await supabase.rpc(
@@ -128,7 +139,9 @@ export async function createWorkshopRegistration(
       return { success: false, error: 'Empty response from atomic insert' };
     }
 
-    if (row.was_oversold) {
+    // Without an override the seat is rejected; with one the row exists and the
+    // oversell is only reported so the caller can warn.
+    if (row.was_oversold && !row.registration) {
       log.warn('Workshop oversold — registration rejected', {
         workshopId: params.workshopId,
         stripeSessionId: params.stripeSessionId,
@@ -139,6 +152,15 @@ export async function createWorkshopRegistration(
 
     if (!row.registration) {
       return { success: false, error: 'Atomic insert returned no registration' };
+    }
+
+    const oversoldOverride = row.was_oversold;
+    if (oversoldOverride) {
+      log.warn('Workshop oversold — seat created by admin override', {
+        workshopId: params.workshopId,
+        stripeSessionId: params.stripeSessionId,
+        seatIndex,
+      });
     }
 
     // Post-insert updates for columns not handled by the RPC. Idempotent retries
@@ -161,7 +183,13 @@ export async function createWorkshopRegistration(
           stripeSessionId: params.stripeSessionId,
           seatIndex,
         });
-        return { success: false, duplicate: row.was_duplicate, registration: row.registration, error: message };
+        return {
+          success: false,
+          duplicate: row.was_duplicate,
+          oversoldOverride,
+          registration: row.registration,
+          error: message,
+        };
       }
       postUpdates.qr_code_url = qrResult.url;
     }
@@ -185,6 +213,7 @@ export async function createWorkshopRegistration(
         return {
           success: false,
           duplicate: row.was_duplicate,
+          oversoldOverride,
           registration: row.registration,
           error: postUpdateError.message,
         };
@@ -196,6 +225,7 @@ export async function createWorkshopRegistration(
     return {
       success: true,
       duplicate: row.was_duplicate,
+      oversoldOverride,
       registration: row.registration,
     };
   } catch (error) {

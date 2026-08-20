@@ -12,8 +12,8 @@ interface CreateInvoiceModalProps {
   onCreated: () => void;
 }
 
-/** What an invoice bills: conference tickets (optionally with workshops), or workshops alone */
-type InvoiceContents = 'tickets' | 'workshops_only';
+/** What an invoice bills: tickets plus any workshops, or workshops with no tickets */
+type InvoiceContents = 'with_tickets' | 'workshops_only';
 
 interface FormData {
   companyName: string;
@@ -56,7 +56,7 @@ const initialFormData: FormData = {
 export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [workshopItems, setWorkshopItems] = useState<WorkshopItemInput[]>([]);
-  const [contents, setContents] = useState<InvoiceContents>('tickets');
+  const [contents, setContents] = useState<InvoiceContents>('with_tickets');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -182,7 +182,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: CreateInvoiceModalPro
             <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <legend className="sr-only">Invoice contents</legend>
               <ContentsOption
-                value="tickets"
+                value="with_tickets"
                 selected={contents}
                 onSelect={setContents}
                 label="Conference tickets"

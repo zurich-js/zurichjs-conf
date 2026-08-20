@@ -3,8 +3,11 @@
  */
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { B2BInvoiceWithAttendees } from '@/lib/types/b2b';
-import { isWorkshopOnlyInvoice } from '@/lib/b2b/invoice-calculations';
+import { buildWorkshopCapacityWarnings, isWorkshopOnlyInvoice } from '@/lib/b2b/invoice-calculations';
+import { adminKeys } from '@/lib/admin/query-keys';
+import type { B2BAvailableWorkshopsResponse, B2BAvailableWorkshop } from '@/pages/api/admin/b2b-invoices/workshops';
 import { formatAmount } from './types';
 
 interface MarkAsPaidModalProps {
@@ -21,12 +24,44 @@ interface MarkAsPaidResult {
   emailsFailed: number;
   tickets: Array<{ attendeeName: string; attendeeEmail: string; ticketId: string }>;
   emailFailures?: Array<{ attendeeEmail: string; attendeeName: string; reason: string }>;
+  capacityWarnings?: string[];
+}
+
+async function fetchAvailableWorkshops(): Promise<B2BAvailableWorkshop[]> {
+  const response = await fetch('/api/admin/b2b-invoices/workshops');
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.error || 'Failed to load workshops');
+  }
+  const data = (await response.json()) as B2BAvailableWorkshopsResponse;
+  return data.workshops;
 }
 
 export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModalProps) {
   // Workshop-only invoices create workshop registrations and no tickets
   const workshopOnly = isWorkshopOnlyInvoice(invoice.ticket_quantity);
   const workshopSeatCount = invoice.workshop_items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Capacity never blocks admin invoicing — it is shown so the organiser knows
+  // a workshop will be oversold before confirming.
+  const { data: availableWorkshops } = useQuery({
+    queryKey: adminKeys.b2bWorkshops(),
+    queryFn: fetchAvailableWorkshops,
+    enabled: invoice.workshop_items.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const capacityWarnings = buildWorkshopCapacityWarnings(
+    invoice.workshop_items.map((item) => ({
+      workshopId: item.workshop_id,
+      title: item.workshop_title,
+      quantity: item.quantity,
+    })),
+    (availableWorkshops ?? []).map((workshop) => ({
+      workshopId: workshop.id,
+      capacity: workshop.capacity,
+      enrolledCount: workshop.enrolledCount,
+    }))
+  );
   const [bankReference, setBankReference] = useState('');
   const [sendEmails, setSendEmails] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
@@ -121,6 +156,19 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               </div>
             )}
 
+            {result.capacityWarnings && result.capacityWarnings.length > 0 && (
+              <div className="text-left mb-6">
+                <h4 className="font-medium text-amber-800 mb-2 text-sm">Capacity Warnings:</h4>
+                <ul className="space-y-1 list-disc list-inside">
+                  {result.capacityWarnings.map((warning) => (
+                    <li key={warning} className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                      {warning}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {result.emailFailures && result.emailFailures.length > 0 && (
               <div className="text-left mb-6">
                 <h4 className="font-medium text-red-700 mb-2 text-sm">Email Failures:</h4>
@@ -134,7 +182,9 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
                   ))}
                 </div>
                 <p className="mt-2 text-xs text-gray-600">
-                  Tickets were still created. You can resend emails later from the attendees list.
+                  {workshopOnly
+                    ? 'Workshop registrations were still created. You can resend emails later from the attendees list.'
+                    : 'Tickets were still created. You can resend emails later from the attendees list.'}
                 </p>
               </div>
             )}
@@ -237,6 +287,21 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               </p>
             </label>
           </div>
+
+          {/* Capacity warnings — informational, they never block confirmation */}
+          {availableWorkshops && capacityWarnings.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
+              <p className="font-medium text-amber-800">Workshop capacity will be exceeded:</p>
+              <ul className="mt-1 text-amber-700 list-disc list-inside space-y-0.5">
+                {capacityWarnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-amber-700">
+                Seats are still booked — increase the workshop capacity afterwards if the room allows it.
+              </p>
+            </div>
+          )}
 
           {/* Warning Box */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">

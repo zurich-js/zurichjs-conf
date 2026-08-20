@@ -41,11 +41,25 @@ export function ActionsSection({ invoice, onUpdate, setError }: ActionsSectionPr
     }
   };
 
-  // Workshop-only invoices have no ticket count to match — they just need
-  // someone to hold the purchased seats.
+  // Workshop-only invoices have no ticket count to match. Mirror what the server
+  // requires instead: every purchased seat taken, and nobody left without one.
   const workshopOnly = isWorkshopOnlyInvoice(invoice.ticket_quantity);
+
+  const assignedCounts = new Map<string, number>();
+  for (const attendee of invoice.attendees) {
+    for (const itemId of attendee.workshop_item_ids) {
+      assignedCounts.set(itemId, (assignedCounts.get(itemId) ?? 0) + 1);
+    }
+  }
+  const allSeatsAssigned = invoice.workshop_items.every(
+    (item) => (assignedCounts.get(item.id) ?? 0) === item.quantity
+  );
+  const everyAttendeeSeated = invoice.attendees.every(
+    (attendee) => attendee.workshop_item_ids.length > 0
+  );
+
   const canMarkAsPaid = workshopOnly
-    ? invoice.attendees.length > 0
+    ? invoice.attendees.length > 0 && allSeatsAssigned && everyAttendeeSeated
     : invoice.attendees.length === invoice.ticket_quantity;
 
   return (
@@ -101,7 +115,7 @@ export function ActionsSection({ invoice, onUpdate, setError }: ActionsSectionPr
       {invoice.status === 'sent' && !canMarkAsPaid && (
         <p className="text-sm text-amber-900 bg-amber-100 px-3 py-2 rounded-lg">
           {workshopOnly
-            ? 'Add the attendees taking the workshop seats before marking as paid.'
+            ? 'Assign every purchased workshop seat to an attendee before marking as paid.'
             : `Add all ${invoice.ticket_quantity} attendees before marking as paid.`}
         </p>
       )}

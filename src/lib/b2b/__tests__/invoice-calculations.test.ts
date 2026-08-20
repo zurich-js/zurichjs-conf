@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  buildWorkshopCapacityWarnings,
   computeInvoiceTotals,
   countWorkshopSeats,
   isWorkshopOnlyInvoice,
@@ -112,5 +113,50 @@ describe('workshop-only invoices', () => {
 
   it('leaves no room for attendees when nothing was purchased', () => {
     expect(maxAttendeesForInvoice({ ticketQuantity: 0 })).toBe(0);
+  });
+});
+
+describe('buildWorkshopCapacityWarnings', () => {
+  const workshops = [
+    { workshopId: 'w1', capacity: 20, enrolledCount: 18 },
+    { workshopId: 'w2', capacity: 10, enrolledCount: 10 },
+  ];
+
+  it('stays silent while every line fits', () => {
+    const warnings = buildWorkshopCapacityWarnings(
+      [{ workshopId: 'w1', title: 'Testing', quantity: 2 }],
+      workshops
+    );
+
+    expect(warnings).toEqual([]);
+  });
+
+  it('reports how far a line oversells the workshop', () => {
+    const warnings = buildWorkshopCapacityWarnings(
+      [{ workshopId: 'w1', title: 'Testing', quantity: 5 }],
+      workshops
+    );
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('only 2 remaining');
+    expect(warnings[0]).toContain('oversold by 3');
+  });
+
+  it('counts a full workshop as zero remaining', () => {
+    const warnings = buildWorkshopCapacityWarnings(
+      [{ workshopId: 'w2', title: 'Full house', quantity: 1 }],
+      workshops
+    );
+
+    expect(warnings[0]).toContain('only 0 remaining');
+  });
+
+  it('flags a line whose workshop offering is gone', () => {
+    const warnings = buildWorkshopCapacityWarnings(
+      [{ workshopId: 'missing', title: 'Deleted', quantity: 1 }],
+      workshops
+    );
+
+    expect(warnings).toEqual(['"Deleted": workshop offering no longer exists']);
   });
 });

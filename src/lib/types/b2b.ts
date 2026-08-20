@@ -299,6 +299,11 @@ export interface MarkPaidResult {
     attendeeName: string;
     reason: string;
   }>;
+  /**
+   * Workshop lines that exceeded remaining capacity. Admin invoicing fulfils
+   * them anyway — these are warnings, not failures.
+   */
+  capacityWarnings?: string[];
 }
 
 /**

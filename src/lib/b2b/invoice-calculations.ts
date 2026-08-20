@@ -71,3 +71,44 @@ export function maxAttendeesForInvoice(params: {
     ? countWorkshopSeats(params.workshopItems)
     : params.ticketQuantity;
 }
+
+/** Current seat usage of a workshop offering, for capacity warnings */
+export interface WorkshopCapacitySnapshot {
+  workshopId: string;
+  capacity: number;
+  enrolledCount: number;
+}
+
+/**
+ * Describe how the invoice's workshop lines sit against current capacity.
+ *
+ * Admin invoicing never blocks on capacity — seats are sold offline and the
+ * organisers decide whether a room can take more people. These strings are
+ * warnings only.
+ */
+export function buildWorkshopCapacityWarnings(
+  items: Array<{ workshopId: string; title: string; quantity: number }>,
+  workshops: WorkshopCapacitySnapshot[]
+): string[] {
+  const byId = new Map(workshops.map((workshop) => [workshop.workshopId, workshop]));
+  const warnings: string[] = [];
+
+  for (const item of items) {
+    const workshop = byId.get(item.workshopId);
+
+    if (!workshop) {
+      warnings.push(`"${item.title}": workshop offering no longer exists`);
+      continue;
+    }
+
+    const remaining = Math.max(0, workshop.capacity - workshop.enrolledCount);
+    if (remaining < item.quantity) {
+      warnings.push(
+        `"${item.title}": ${item.quantity} seat(s) invoiced but only ${remaining} remaining — ` +
+          `the workshop will be oversold by ${item.quantity - remaining}`
+      );
+    }
+  }
+
+  return warnings;
+}

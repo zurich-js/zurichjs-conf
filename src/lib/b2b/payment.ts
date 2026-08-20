@@ -14,7 +14,7 @@ import type {
 } from '@/lib/types/b2b';
 import { getInvoiceWithAttendees } from './invoices';
 import { validateAttendeeCount, validateWorkshopAssignments } from './attendees';
-import { isWorkshopOnlyInvoice } from './invoice-calculations';
+import { buildWorkshopCapacityWarnings, isWorkshopOnlyInvoice } from './invoice-calculations';
 import { createTicket } from '@/lib/tickets/createTicket';
 import { createWorkshopRegistration } from '@/lib/workshops/createRegistration';
 import {
@@ -25,6 +25,9 @@ import { toLegacyType } from '@/lib/stripe/ticket-utils';
 import type { TicketCategory, TicketStage } from '@/lib/types/database';
 import { sendTicketConfirmationEmail } from '@/lib/email';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('B2B Payment');
 
 /** Format ticket stage from snake_case to human-readable */
 const stageLabels: Record<string, string> = {
@@ -119,8 +122,10 @@ export async function markInvoiceAsPaidAndCreateTickets(
     );
   }
 
-  // Step 4b: Validate workshop seat assignments + remaining capacity before
-  // creating anything, so a full workshop fails fast instead of halfway.
+  // Step 4b: Validate workshop seat assignments. Remaining capacity is only
+  // reported — B2B seats are agreed offline, so an admin may deliberately
+  // oversell a workshop and gets a warning rather than a blocked invoice.
+  let capacityWarnings: string[] = [];
   if (invoice.workshop_items.length > 0) {
     const workshopValidation = await validateWorkshopAssignments(invoiceId);
     if (!workshopValidation.isValid) {
@@ -130,7 +135,14 @@ export async function markInvoiceAsPaidAndCreateTickets(
       );
     }
 
-    await assertWorkshopCapacity(invoice.workshop_items);
+    capacityWarnings = await collectWorkshopCapacityWarnings(invoice.workshop_items);
+    if (capacityWarnings.length > 0) {
+      log.warn('Invoice fulfilment exceeds workshop capacity', {
+        invoiceId,
+        invoiceNumber: invoice.invoice_number,
+        warnings: capacityWarnings,
+      });
+    }
   }
 
   // Step 5: Create tickets for each attendee.
@@ -232,49 +244,45 @@ export async function markInvoiceAsPaidAndCreateTickets(
     emailsFailed,
     tickets: ticketResults,
     emailFailures,
+    capacityWarnings: capacityWarnings.length > 0 ? capacityWarnings : undefined,
   };
 }
 
 /**
- * Verify every workshop line still has enough free capacity for its seats.
- * The atomic registration insert enforces this too, but checking up front
- * fails the whole operation before any tickets are created.
+ * Report which workshop lines exceed the offering's remaining capacity.
+ * Purely informational: admin invoicing is never blocked by capacity, so these
+ * strings travel back to the UI as warnings.
  */
-async function assertWorkshopCapacity(items: B2BInvoiceWorkshopItem[]): Promise<void> {
+async function collectWorkshopCapacityWarnings(
+  items: B2BInvoiceWorkshopItem[]
+): Promise<string[]> {
   const supabase = createServiceRoleClient();
 
   const { data: workshops, error } = await supabase
     .from('workshops')
-    .select('id, title, capacity, enrolled_count')
+    .select('id, capacity, enrolled_count')
     .in(
       'id',
       items.map((item) => item.workshop_id)
     );
 
   if (error) {
-    throw new Error(`Failed to check workshop capacity: ${error.message}`);
+    // A failed lookup must not block payment either — say so and move on.
+    return [`Could not check workshop capacity: ${error.message}`];
   }
 
-  const workshopById = new Map((workshops || []).map((w) => [w.id, w]));
-  const insufficient: string[] = [];
-
-  for (const item of items) {
-    const workshop = workshopById.get(item.workshop_id);
-    if (!workshop) {
-      insufficient.push(`"${item.workshop_title}": workshop no longer exists`);
-      continue;
-    }
-    const remaining = Math.max(0, (workshop.capacity ?? 0) - (workshop.enrolled_count ?? 0));
-    if (remaining < item.quantity) {
-      insufficient.push(
-        `"${item.workshop_title}": ${item.quantity} seat(s) needed but only ${remaining} remaining`
-      );
-    }
-  }
-
-  if (insufficient.length > 0) {
-    throw new Error(`Cannot mark invoice as paid: ${insufficient.join('; ')}`);
-  }
+  return buildWorkshopCapacityWarnings(
+    items.map((item) => ({
+      workshopId: item.workshop_id,
+      title: item.workshop_title,
+      quantity: item.quantity,
+    })),
+    (workshops || []).map((workshop) => ({
+      workshopId: workshop.id,
+      capacity: workshop.capacity ?? 0,
+      enrolledCount: workshop.enrolled_count ?? 0,
+    }))
+  );
 }
 
 /**
@@ -307,6 +315,8 @@ async function createWorkshopRegistrations(
       const result = await createWorkshopRegistration({
         workshopId: item.workshop_id,
         ticketId: ticketIdByAttendee.get(attendee.id),
+        // Seats were sold offline: fulfil them even if the workshop is full
+        allowOversell: true,
         stripeSessionId: `b2b_${invoice.id}_${attendee.id}`,
         amountPaid: item.unit_price,
         currency: invoice.currency,
