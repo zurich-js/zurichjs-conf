@@ -55,6 +55,7 @@ export interface Profile {
 
 export interface Ticket {
   id: string;
+  manage_token_nonce: string;
   user_id: string | null; // Nullable for guest purchases
   ticket_type: TicketType; // Legacy field - kept for backward compatibility
   ticket_category: TicketCategory; // NEW: Type of ticket (standard, student, vip, etc)

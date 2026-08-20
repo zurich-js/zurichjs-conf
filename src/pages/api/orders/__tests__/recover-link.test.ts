@@ -28,6 +28,7 @@ import handler from '../recover-link';
 // Each test uses its own ticket ID — the per-ticket send limiter is
 // module-level state shared across tests
 const TICKET_ID = 'fdd332be-86c9-4842-912c-e5c1c0968606';
+const MANAGE_TOKEN_NONCE = '9dc7c037-ef40-4ac5-b24c-66ee9e9ee0f9';
 
 function makeTicket(id: string) {
   return {
@@ -40,6 +41,7 @@ function makeTicket(id: string) {
     amount_paid: 250,
     currency: 'CHF',
     qr_code_url: 'https://example.com/qr.png',
+    manage_token_nonce: MANAGE_TOKEN_NONCE,
   };
 }
 
@@ -110,7 +112,9 @@ describe('POST /api/orders/recover-link', () => {
 
     const emailData = mockSendEmail.mock.calls[0][0] as { to: string; orderUrl: string };
     expect(emailData.to).toBe('attendee@example.com');
-    expect(emailData.orderUrl).toContain(`/manage-order?token=${TICKET_ID}.`);
+    expect(emailData.orderUrl).toContain(
+      `/manage-order?token=${TICKET_ID}.${MANAGE_TOKEN_NONCE}.`
+    );
   });
 
   it('sends at most one email per ticket per window, even from different IPs', async () => {

@@ -3,6 +3,7 @@
  */
 
 import type { OrderDetailsResponse } from '@/lib/orders';
+import type { AttendeeNetworkingProfile } from '@/lib/types/networking';
 
 export type { OrderDetailsResponse };
 
@@ -58,4 +59,9 @@ export interface ApparelPreferences {
 export interface ApparelPreferencesData {
   tshirtSize: string | null;
   hoodieSize: string | null;
+}
+
+export interface NetworkingPreferencesData {
+  enabled: boolean;
+  profile: AttendeeNetworkingProfile;
 }

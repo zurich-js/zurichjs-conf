@@ -11,6 +11,7 @@
 
 import posthog from 'posthog-js'
 import type { EventName, EventProperties } from './events'
+import { sanitizeAnalyticsUrl } from './privacy'
 
 class AnalyticsClient {
   private initialized = false
@@ -164,7 +165,7 @@ class AnalyticsClient {
     }
 
     posthog.capture('$pageview', {
-      $current_url: window.location.href,
+      $current_url: sanitizeAnalyticsUrl(window.location.href),
       page_path: path,
       page_name: title || document.title,
       page_category: category,
@@ -292,10 +293,10 @@ class AnalyticsClient {
 
     return {
       timestamp: Date.now(),
-      page_url: window.location.href,
+      page_url: sanitizeAnalyticsUrl(window.location.href),
       page_title: document.title,
       user_agent: navigator.userAgent,
-      referrer: document.referrer || undefined,
+      referrer: document.referrer ? sanitizeAnalyticsUrl(document.referrer) : undefined,
     }
   }
 }
