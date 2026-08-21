@@ -1980,6 +1980,9 @@ export type Database = {
           duration_minutes: number
           id: string
           is_visible: boolean
+          location_address: string | null
+          location_maps_url: string | null
+          location_name: string | null
           room: string | null
           session_id: string | null
           start_time: string
@@ -1995,6 +1998,9 @@ export type Database = {
           duration_minutes: number
           id?: string
           is_visible?: boolean
+          location_address?: string | null
+          location_maps_url?: string | null
+          location_name?: string | null
           room?: string | null
           session_id?: string | null
           start_time: string
@@ -2010,6 +2016,9 @@ export type Database = {
           duration_minutes?: number
           id?: string
           is_visible?: boolean
+          location_address?: string | null
+          location_maps_url?: string | null
+          location_name?: string | null
           room?: string | null
           session_id?: string | null
           start_time?: string

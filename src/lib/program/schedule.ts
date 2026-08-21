@@ -261,6 +261,9 @@ export function buildPublicProgramScheduleItems(rows: ProgramScheduleItemRecord[
               start_time: row.start_time,
               duration_minutes: row.duration_minutes,
               room: row.room,
+              location_name: row.location_name ?? null,
+              location_address: row.location_address ?? null,
+              location_maps_url: row.location_maps_url ?? null,
             },
           },
           speaker: programSpeakers[0] ?? null,
@@ -298,6 +301,9 @@ export async function createProgramScheduleItem(input: ProgramScheduleItemInput)
       start_time: input.start_time,
       duration_minutes: input.duration_minutes,
       room: input.room ?? null,
+      location_name: input.location_name ?? null,
+      location_address: input.location_address ?? null,
+      location_maps_url: input.location_maps_url ?? null,
       type: input.type,
       title: input.title,
       description: input.description ?? null,
@@ -367,6 +373,9 @@ export async function updateProgramScheduleItem(id: string, input: Partial<Progr
   if (input.start_time !== undefined) updates.start_time = input.start_time;
   if (input.duration_minutes !== undefined) updates.duration_minutes = input.duration_minutes;
   if (input.room !== undefined) updates.room = input.room;
+  if (input.location_name !== undefined) updates.location_name = input.location_name;
+  if (input.location_address !== undefined) updates.location_address = input.location_address;
+  if (input.location_maps_url !== undefined) updates.location_maps_url = input.location_maps_url;
   if (input.type !== undefined) updates.type = input.type;
   if (input.title !== undefined) updates.title = input.title;
   if (input.description !== undefined) updates.description = input.description;

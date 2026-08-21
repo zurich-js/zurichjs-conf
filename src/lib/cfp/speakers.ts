@@ -564,6 +564,9 @@ export async function getVisibleSpeakersWithSessions(): Promise<PublicSpeaker[]>
             start_time: scheduleRow.start_time ?? null,
             duration_minutes: scheduleRow.duration_minutes ?? null,
             room: scheduleRow.room ?? null,
+            location_name: scheduleRow.location_name ?? null,
+            location_address: scheduleRow.location_address ?? null,
+            location_maps_url: scheduleRow.location_maps_url ?? null,
           },
         };
 

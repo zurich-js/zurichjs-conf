@@ -31,6 +31,12 @@ export interface PublicSession {
     start_time: string | null;
     duration_minutes: number | null;
     room: string | null;
+    /** Venue/building name for off-site sessions, e.g. "livingdocs AG Zürich". Null = main venue. */
+    location_name?: string | null;
+    /** Street address of the venue, used for the Google Maps link. */
+    location_address?: string | null;
+    /** Explicit Google Maps URL override. */
+    location_maps_url?: string | null;
   } | null;
 }
 

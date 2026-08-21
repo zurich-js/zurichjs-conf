@@ -74,6 +74,7 @@ function applyScheduleOverride(
   return {
     ...session,
     schedule: {
+      ...session.schedule,
       date: override.date ?? session.schedule?.date ?? null,
       start_time: override.start_time ?? session.schedule?.start_time ?? null,
       duration_minutes: override.duration_minutes ?? session.schedule?.duration_minutes ?? null,

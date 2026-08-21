@@ -40,6 +40,9 @@ export function ProgramScheduleSlotModal({
     start_time: item?.start_time?.slice(0, 5) ?? draft?.start_time ?? '09:00',
     duration_minutes: item?.duration_minutes?.toString() ?? '30',
     room: item?.room ?? draft?.room ?? '',
+    location_name: item?.location_name ?? '',
+    location_address: item?.location_address ?? '',
+    location_maps_url: item?.location_maps_url ?? '',
     title: item?.title ?? '',
     description: item?.description ?? '',
     is_visible: initialIsSessionPlaceholder ? false : (item?.is_visible ?? false),
@@ -67,6 +70,9 @@ export function ProgramScheduleSlotModal({
       start_time: `${form.start_time}:00`,
       duration_minutes: resolvedDuration,
       room: form.room || null,
+      location_name: form.location_name.trim() || null,
+      location_address: form.location_address.trim() || null,
+      location_maps_url: form.location_maps_url.trim() || null,
       title: form.type === 'session' ? (selectedSession?.title ?? (form.title || 'TBA')) : form.title,
       description: form.type === 'session' ? null : form.description || null,
       is_visible: form.is_visible,
@@ -121,9 +127,45 @@ export function ProgramScheduleSlotModal({
           </label>
           <label className="grid gap-1 text-sm font-medium text-gray-800">
             Room
-            <input value={form.room} onChange={(event) => setForm({ ...form, room: event.target.value })} placeholder="Room" className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
+            <input value={form.room} onChange={(event) => setForm({ ...form, room: event.target.value })} placeholder={'Room, e.g. "Headline"'} className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950" />
           </label>
         </div>
+
+        <fieldset className="grid gap-3 rounded-md border border-gray-200 p-3">
+          <legend className="px-1 text-sm font-medium text-gray-800">
+            Venue <span className="text-xs font-normal text-gray-500">(only for off-site slots, e.g. workshops at a partner office — leave empty for the main venue)</span>
+          </legend>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <label className="grid gap-1 text-sm font-medium text-gray-800">
+              Venue name
+              <input
+                value={form.location_name}
+                onChange={(event) => setForm({ ...form, location_name: event.target.value })}
+                placeholder="e.g. livingdocs AG Zürich"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-gray-800">
+              Address
+              <input
+                value={form.location_address}
+                onChange={(event) => setForm({ ...form, location_address: event.target.value })}
+                placeholder="e.g. Förrlibuckstrasse 70, 8005 Zürich"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-gray-800">
+              <span>Google Maps link <span className="text-xs font-normal text-gray-500">(optional — derived from name + address if empty)</span></span>
+              <input
+                type="url"
+                value={form.location_maps_url}
+                onChange={(event) => setForm({ ...form, location_maps_url: event.target.value })}
+                placeholder="https://maps.app.goo.gl/..."
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-950"
+              />
+            </label>
+          </div>
+        </fieldset>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <label className="grid gap-1 text-sm font-medium text-gray-800">

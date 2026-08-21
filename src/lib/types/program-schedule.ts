@@ -8,6 +8,9 @@ export interface ProgramScheduleItemRecord {
   start_time: string;
   duration_minutes: number;
   room: string | null;
+  location_name: string | null;
+  location_address: string | null;
+  location_maps_url: string | null;
   type: ProgramScheduleItemType;
   title: string;
   description: string | null;
@@ -61,6 +64,9 @@ export interface ProgramScheduleItemInput {
   start_time: string;
   duration_minutes: number;
   room?: string | null;
+  location_name?: string | null;
+  location_address?: string | null;
+  location_maps_url?: string | null;
   type: ProgramScheduleItemType;
   title: string;
   description?: string | null;

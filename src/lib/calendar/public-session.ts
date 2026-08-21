@@ -1,5 +1,6 @@
 import { getPublicConferenceCalendarUrl, getPublicEngineeringDayCalendarUrl } from '@/lib/calendar/public-events';
 import { createEvents, type EventAttributes } from 'ics';
+import { getSessionCalendarLocation } from '@/lib/program/session-location';
 import type { PublicSession } from '@/lib/types/cfp';
 
 function getSessionDurationMinutes(session: PublicSession): number {
@@ -38,7 +39,7 @@ function getPublicSessionCalendarPayload(session: PublicSession, options: Public
   const normalizedTime = startTime.length === 5 ? `${startTime}:00` : startTime;
   const start = new Date(`${date}T${normalizedTime}+02:00`);
   const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-  const location = session.schedule?.room ? `Technopark Zurich - ${session.schedule.room}` : 'Technopark Zurich';
+  const location = getSessionCalendarLocation(session.schedule, 'Technopark Zurich');
   const title = `${session.type === 'workshop' ? 'ZurichJS Workshop' : 'ZurichJS Conf'}: ${session.title}`;
   const detailUrl = getPublicSessionDetailUrl(session) || options.speakerDetailUrl || 'https://conf.zurichjs.com/speakers';
   const description = [

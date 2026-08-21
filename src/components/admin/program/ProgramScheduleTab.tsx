@@ -80,6 +80,9 @@ export function ProgramScheduleTab({
       start_time: item.start_time,
       duration_minutes: item.duration_minutes,
       room: item.room ?? null,
+      location_name: item.location_name ?? null,
+      location_address: item.location_address ?? null,
+      location_maps_url: item.location_maps_url ?? null,
       title: item.title,
       description: item.description ?? null,
       is_visible: false,
@@ -336,6 +339,9 @@ function ScheduleGridCard({
         <div className="[grid-area:time] text-sm text-brand-gray-medium">
           <p className="font-semibold text-gray-950">{startTime} - {endTime}</p>
           <p>{formatScheduleDuration(item.duration_minutes)}{item.room ? ` · ${item.room}` : ''}</p>
+          {item.location_name || item.location_address ? (
+            <p className="mt-0.5 text-xs text-brand-blue">@ {item.location_name ?? item.location_address}</p>
+          ) : null}
           {neighbors.overlaps.length > 0 ? (
             <p className="mt-1 text-xxs font-medium text-brand-red">Overlaps {neighbors.overlaps.length} slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
           ) : null}
