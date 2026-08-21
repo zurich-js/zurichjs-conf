@@ -2,7 +2,7 @@
  * Ticket Order Page
  * Simplified multi-step ticket ordering flow with TanStack Query integration
  * Server-side prefetches pricing data to prevent UI shifts
- * REQUIRES AUTHENTICATION: Users must be logged in to access the cart
+ * No login required — the cart is anonymous and persisted in localStorage.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -234,19 +234,11 @@ export default function CartPage() {
       !!attendee.lastName?.trim() &&
       !!attendee.email?.trim();
 
-    // Conference tickets include apparel — every holder needs a t-shirt size,
-    // and VIP holders a hoodie size too. Slot order matches AttendeeForm.
-    const ticketSlotIsVip = ticketItems.flatMap((item) =>
-      Array.from({ length: item.quantity }, () => item.variant === 'vip')
-    );
-    const hasApparel = (attendee: AttendeeInfo | undefined, isVip: boolean) =>
-      !!attendee?.tshirtSize && (!isVip || !!attendee.hoodieSize);
-
+    // Apparel sizes are deliberately NOT checked here — they're optional at
+    // checkout and collected post-purchase via manage-order when skipped.
     if (
       attendees.length < ticketCount ||
-      attendees
-        .slice(0, ticketCount)
-        .some((attendee, index) => !hasDetails(attendee) || !hasApparel(attendee, ticketSlotIsVip[index]))
+      attendees.slice(0, ticketCount).some((attendee) => !hasDetails(attendee))
     ) {
       return false;
     }

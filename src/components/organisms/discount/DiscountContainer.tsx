@@ -15,6 +15,7 @@ import { DiscountModal } from './DiscountModal';
 import { DiscountWidget } from './DiscountWidget';
 
 export function DiscountContainer() {
+  const { cart } = useCart();
   const {
     state,
     discountData,
@@ -28,8 +29,9 @@ export function DiscountContainer() {
     dismiss,
     reopen,
     copyCode,
-  } = useDiscount();
-  const { cart } = useCart();
+    // A visitor with items in their cart is already buying — never interrupt
+    // that with the offer popup. The corner widget (existing code) still shows.
+  } = useDiscount({ suppressAutoOpen: cart.items.length > 0 });
   const router = useRouter();
   const [, setPendingVoucher] = useLocalStorage('zurichjs_pending_voucher');
 

@@ -3,9 +3,10 @@ import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 
 /**
  * Attendee information schema
- * Each ticket requires attendee details. Apparel sizes are optional at this
- * level because the same shape is reused for workshop seats, which get no
- * apparel — ticket slots are validated with `ticketAttendeeInfoSchema`.
+ * Each ticket requires attendee details. Apparel sizes are always optional in
+ * the purchase path: holders who skip them pick sizes post-purchase via the
+ * manage-order link (`/api/tickets/[id]/apparel`), backed by the admin
+ * apparel reminder flow.
  */
 export const attendeeInfoSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -23,23 +24,6 @@ export const attendeeInfoSchema = z.object({
 export type AttendeeInfo = z.infer<typeof attendeeInfoSchema>;
 
 /**
- * Conference-ticket attendee: everyone gets a t-shirt, so the size is required.
- * Hoodie size stays optional here — it's required only for VIP slots, which the
- * form enforces via `vipTicketAttendeeInfoSchema`.
- */
-export const ticketAttendeeInfoSchema = attendeeInfoSchema.extend({
-  tshirtSize: z.enum(APPAREL_SIZES, { message: 'Please select a t-shirt size' }),
-});
-
-/**
- * VIP-ticket attendee: the VIP package includes a hoodie, so its size is
- * required too.
- */
-export const vipTicketAttendeeInfoSchema = ticketAttendeeInfoSchema.extend({
-  hoodieSize: z.enum(APPAREL_SIZES, { message: 'Please select a hoodie size' }),
-});
-
-/**
  * Checkout form validation schema
  * Validates customer information for ticket purchases
  */
@@ -51,11 +35,12 @@ export const checkoutFormSchema = z.object({
     .email('Invalid email address'),
   phone: z.string().optional(),
 
-  // Personal Information
+  // Personal Information — company and job title are marketing data, not
+  // payment requirements, so they must never block a purchase.
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  company: z.string().min(1, 'Company is required'),
-  jobTitle: z.string().min(1, 'Job title is required'),
+  company: z.string().optional(),
+  jobTitle: z.string().optional(),
 
   // Address Information
   addressLine1: z.string().min(1, 'Address is required'),
@@ -67,7 +52,7 @@ export const checkoutFormSchema = z.object({
 
   // Apparel — collected here only when the attendee step is skipped (single
   // seat per line), where the billing contact is the sole ticket holder.
-  // Required-ness is enforced by the form via an extended schema.
+  // Always optional: sizes can be set post-purchase via manage-order.
   tshirtSize: z.enum(APPAREL_SIZES).optional(),
   hoodieSize: z.enum(APPAREL_SIZES).optional(),
 

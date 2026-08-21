@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  attendeeInfoSchema,
-  ticketAttendeeInfoSchema,
-  vipTicketAttendeeInfoSchema,
-} from '../checkout';
+import { attendeeInfoSchema, checkoutFormSchema } from '../checkout';
 
 const baseAttendee = {
   firstName: 'Ada',
@@ -12,8 +8,17 @@ const baseAttendee = {
 };
 
 describe('attendeeInfoSchema', () => {
-  it('accepts attendees without apparel sizes (workshop seats)', () => {
+  it('accepts attendees without apparel sizes (deferred to manage-order)', () => {
     expect(attendeeInfoSchema.safeParse(baseAttendee).success).toBe(true);
+  });
+
+  it('accepts valid apparel sizes when provided', () => {
+    const result = attendeeInfoSchema.safeParse({
+      ...baseAttendee,
+      tshirtSize: 'M',
+      hoodieSize: 'L',
+    });
+    expect(result.success).toBe(true);
   });
 
   it('rejects unknown apparel sizes', () => {
@@ -22,28 +27,32 @@ describe('attendeeInfoSchema', () => {
   });
 });
 
-describe('ticketAttendeeInfoSchema', () => {
-  it('requires a t-shirt size', () => {
-    const result = ticketAttendeeInfoSchema.safeParse(baseAttendee);
-    expect(result.success).toBe(false);
-    expect(result.error?.issues.some((issue) => issue.path[0] === 'tshirtSize')).toBe(true);
+describe('checkoutFormSchema', () => {
+  const baseCheckout = {
+    email: 'ada@example.com',
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    addressLine1: 'Bahnhofstrasse 1',
+    city: 'Zurich',
+    postalCode: '8001',
+    country: 'Switzerland',
+    agreeToTerms: true,
+  };
+
+  it('accepts a checkout without company, job title, or apparel sizes', () => {
+    expect(checkoutFormSchema.safeParse(baseCheckout).success).toBe(true);
   });
 
-  it('accepts a valid t-shirt size without a hoodie size', () => {
-    const result = ticketAttendeeInfoSchema.safeParse({ ...baseAttendee, tshirtSize: 'M' });
-    expect(result.success).toBe(true);
-  });
-});
-
-describe('vipTicketAttendeeInfoSchema', () => {
-  it('requires both t-shirt and hoodie sizes', () => {
-    const result = vipTicketAttendeeInfoSchema.safeParse({ ...baseAttendee, tshirtSize: 'M' });
+  it('still requires the billing address', () => {
+    const { addressLine1: _addressLine1, ...withoutAddress } = baseCheckout;
+    const result = checkoutFormSchema.safeParse(withoutAddress);
     expect(result.success).toBe(false);
-    expect(result.error?.issues.some((issue) => issue.path[0] === 'hoodieSize')).toBe(true);
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'addressLine1')).toBe(true);
+  });
 
-    expect(
-      vipTicketAttendeeInfoSchema.safeParse({ ...baseAttendee, tshirtSize: 'M', hoodieSize: 'L' })
-        .success
-    ).toBe(true);
+  it('still requires agreeing to the terms', () => {
+    const result = checkoutFormSchema.safeParse({ ...baseCheckout, agreeToTerms: false });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.some((issue) => issue.path[0] === 'agreeToTerms')).toBe(true);
   });
 });

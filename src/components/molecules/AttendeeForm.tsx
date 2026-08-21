@@ -5,12 +5,7 @@
 
 import React from 'react';
 import { CopyIcon } from 'lucide-react';
-import {
-  attendeeInfoSchema,
-  ticketAttendeeInfoSchema,
-  vipTicketAttendeeInfoSchema,
-  type AttendeeInfo,
-} from '@/lib/validations/checkout';
+import { attendeeInfoSchema, type AttendeeInfo } from '@/lib/validations/checkout';
 import { Input, Button, Heading, Select } from '@/components/atoms';
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
 import type { CartItem as CartItemType } from '@/types/cart';
@@ -36,13 +31,14 @@ export interface AttendeeTicketFormProps {
    */
   errors?: Record<string, string>;
   /**
-   * Whether to collect a t-shirt size (conference ticket slots only —
-   * workshop-only seats get no apparel).
+   * Whether to offer a t-shirt size picker (conference ticket slots only —
+   * workshop-only seats get no apparel). Optional: skipped sizes are
+   * collected post-purchase via the manage-order link.
    */
   showTshirtSize?: boolean;
   /**
-   * Whether to collect a hoodie size (VIP ticket slots — the VIP package
-   * includes a hoodie).
+   * Whether to offer a hoodie size picker (VIP ticket slots — the VIP package
+   * includes a hoodie). Optional, like the t-shirt size.
    */
   showHoodieSize?: boolean;
   /**
@@ -255,7 +251,7 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
               htmlFor={`tshirtSize-${ticketIndex}`}
               className="block text-sm font-semibold text-white mb-2"
             >
-              T-Shirt Size <span className="text-red-400">*</span>
+              T-Shirt Size (Optional)
             </label>
             <Select
               value={attendee.tshirtSize ?? ''}
@@ -277,7 +273,7 @@ export const AttendeeTicketForm: React.FC<AttendeeTicketFormProps> = ({
                 htmlFor={`hoodieSize-${ticketIndex}`}
                 className="block text-sm font-semibold text-white mb-2"
               >
-                VIP Hoodie Size <span className="text-red-400">*</span>
+                VIP Hoodie Size (Optional)
               </label>
               <Select
                 value={attendee.hoodieSize ?? ''}
@@ -334,12 +330,6 @@ function buildSlots(cartItems: CartItemType[]): AttendeeSlot[] {
     }
   }
   return slots;
-}
-
-/** Slot-appropriate schema: apparel sizes are only required for ticket slots. */
-function schemaForSlot(slot: AttendeeSlot) {
-  if (slot.kind !== 'ticket') return attendeeInfoSchema;
-  return slot.isVip ? vipTicketAttendeeInfoSchema : ticketAttendeeInfoSchema;
 }
 
 function emptyAttendee(): AttendeeInfo {
@@ -415,7 +405,7 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
     let hasErrors = false;
 
     attendees.forEach((attendee, index) => {
-      const result = schemaForSlot(slots[index]).safeParse(attendee);
+      const result = attendeeInfoSchema.safeParse(attendee);
       if (!result.success) {
         validationErrors[index] = {};
         result.error.issues.forEach((issue) => {
@@ -457,7 +447,8 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="">
           <p className="text-sm text-brand-gray-light mb-3">
-            Please provide the name, email, and t-shirt size for each seat. Each attendee will receive their own confirmation.<br/>
+            Please provide the name and email for each seat. Each attendee will receive their own confirmation.<br/>
+            T-shirt sizes are optional here — attendees can also pick theirs later from their ticket email.<br/>
             You&#39;ll get a chance to review and fill <b>billing details</b> at the Payment step.
           </p>
         </div>

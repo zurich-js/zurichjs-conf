@@ -1,7 +1,6 @@
 import React from 'react';
-import { Controller, useForm, type Resolver } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { checkoutFormSchema, type CheckoutFormData } from '@/lib/validations/checkout';
 import { Input, Button, Select } from '@/components/atoms';
 import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
@@ -11,7 +10,7 @@ import { useFormFieldTracking } from '@/hooks/useFormFieldTracking';
 const SIZE_OPTIONS = APPAREL_SIZES.map((size) => ({ value: size, label: size }));
 
 export interface CheckoutFormApparelConfig {
-  /** Collect a required hoodie size too (VIP ticket in the cart). */
+  /** Also offer a hoodie size picker (VIP ticket in the cart). */
   hoodie: boolean;
 }
 
@@ -41,9 +40,10 @@ export interface CheckoutFormProps {
    */
   defaultValues?: Partial<CheckoutFormData>;
   /**
-   * When set, collects a required t-shirt size (and hoodie size for VIPs)
-   * from the billing contact. Used when the attendee step is skipped and the
-   * billing contact is the sole ticket holder.
+   * When set, offers optional t-shirt (and, for VIPs, hoodie) size pickers to
+   * the billing contact. Used when the attendee step is skipped and the
+   * billing contact is the sole ticket holder. Sizes never block checkout —
+   * skipped ones are collected post-purchase via the manage-order link.
    */
   apparel?: CheckoutFormApparelConfig;
   /**
@@ -88,21 +88,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   onEmailCaptured,
   onFieldCaptured,
 }) => {
-  // Apparel sizes are optional in the base schema (they only apply when the
-  // billing contact is the sole ticket holder), so require them here when the
-  // apparel section is shown. The stricter schema's output is assignable to
-  // CheckoutFormData, hence the resolver cast.
-  const resolver = React.useMemo<Resolver<CheckoutFormData>>(() => {
-    if (!apparel) return zodResolver(checkoutFormSchema);
-    const schema = checkoutFormSchema.extend({
-      tshirtSize: z.enum(APPAREL_SIZES, { message: 'Please select a t-shirt size' }),
-      ...(apparel.hoodie
-        ? { hoodieSize: z.enum(APPAREL_SIZES, { message: 'Please select a hoodie size' }) }
-        : {}),
-    });
-    return zodResolver(schema) as unknown as Resolver<CheckoutFormData>;
-  }, [apparel]);
-
   const {
     register,
     control,
@@ -110,7 +95,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     formState: { errors },
     getValues,
   } = useForm<CheckoutFormData>({
-    resolver,
+    resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
       country: 'Switzerland',
       agreeToTerms: false,
@@ -229,7 +214,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="company" className="block text-sm font-semibold text-brand-white mb-2">
-                Company <span className="text-red-400">*</span>
+                Company (Optional)
               </label>
               <Input
                 id="company"
@@ -237,16 +222,12 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 {...registerWithTracking('company', 'text')}
                 placeholder="Acme Inc."
                 className="w-full"
-                aria-invalid={!!errors.company}
               />
-              {errors.company && (
-                <p className="text-red-400 text-sm mt-1">{errors.company.message}</p>
-              )}
             </div>
 
             <div>
               <label htmlFor="jobTitle" className="block text-sm font-semibold text-brand-white mb-2">
-                Job Title <span className="text-red-400">*</span>
+                Job Title (Optional)
               </label>
               <Input
                 id="jobTitle"
@@ -254,11 +235,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 {...registerWithTracking('jobTitle', 'text')}
                 placeholder="Software Engineer"
                 className="w-full"
-                aria-invalid={!!errors.jobTitle}
               />
-              {errors.jobTitle && (
-                <p className="text-red-400 text-sm mt-1">{errors.jobTitle.message}</p>
-              )}
             </div>
           </div>
 
@@ -366,12 +343,13 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           <h2 className="text-xl font-bold text-brand-white mb-2">Conference Apparel</h2>
           <p className="text-sm text-gray-300 mb-6">
             Tell us your preferred size for the limited edition conference t-shirt so we can plan
-            ahead. Apparel comes in standard unisex sizing and is subject to availability.
+            ahead. Apparel comes in standard unisex sizing and is subject to availability. Not
+            sure yet? Skip this — you can pick your size later from your ticket email.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="tshirtSize" className="block text-sm font-semibold text-brand-white mb-2">
-                T-Shirt Size <span className="text-red-400">*</span>
+                T-Shirt Size (Optional)
               </label>
               <Controller
                 name="tshirtSize"
@@ -394,7 +372,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             {apparel.hoodie && (
               <div>
                 <label htmlFor="hoodieSize" className="block text-sm font-semibold text-brand-white mb-2">
-                  VIP Hoodie Size <span className="text-red-400">*</span>
+                  VIP Hoodie Size (Optional)
                 </label>
                 <Controller
                   name="hoodieSize"

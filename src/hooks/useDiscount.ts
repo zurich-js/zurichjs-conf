@@ -18,11 +18,19 @@
  * dismissal minimizes it to the corner widget so the offer stays reachable.
  *
  * Timing and generosity vary by intent signal:
- * - UTM lottery winners see it immediately at the lottery percentage
- * - Recurring visitors (Nth+ visit, still no purchase) see it immediately at
- *   the sweetened recurring rate — they've read the pitch and stalled. Both N
- *   and the rate are admin config, not constants
+ * - UTM lottery winners see it immediately at the lottery percentage — the QR
+ *   code or flyer they arrived from already promised them a discount
+ * - Recurring visitors (Nth+ visit, still no purchase) get the sweetened
+ *   recurring rate after the standard dwell. Both N and the rate are admin
+ *   config, not constants. They used to skip the dwell, but instantly
+ *   interrupting the highest-intent visitors with a focus-trapping modal cost
+ *   more checkouts than the offer recovered
  * - Everyone else sees it after a 15s dwell at the standard rate
+ *
+ * The auto-open is suppressed entirely while the visitor has items in their
+ * cart (`suppressAutoOpen`) — someone already buying must never be
+ * interrupted by a discount prompt. A minimized widget with an existing code
+ * stays reachable regardless.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -99,7 +107,17 @@ async function generateDiscount({
   return res.json();
 }
 
-export function useDiscount() {
+export interface UseDiscountOptions {
+  /**
+   * Blocks the popup from auto-opening (the show lottery, dwell timer, and
+   * instant UTM fire). Set while the cart has items so the offer never
+   * interrupts a purchase in progress. Explicit reopens via the corner
+   * widget still work.
+   */
+  suppressAutoOpen?: boolean;
+}
+
+export function useDiscount({ suppressAutoOpen = false }: UseDiscountOptions = {}) {
   const isClient = useIsClient();
   // Core state
   const [state, setState] = useState<DiscountState>('idle');
@@ -212,11 +230,12 @@ export function useDiscount() {
     }
 
     // A visitor back for a third look who still hasn't bought is hesitating.
-    // Price is the likeliest reason, so skip the dwell delay and lead with the
-    // sweetened offer instead of making them sit through 15s again.
+    // Price is the likeliest reason, so lead with the sweetened offer — after
+    // the standard dwell. These are the highest-intent visitors on the site;
+    // opening a focus-trapping modal the instant they land interrupts the
+    // very purchase the offer is meant to close.
     if (isRecurringVisitor(visitCount, configRecurringMinVisits)) {
       isRecurring.current = true;
-      setShowImmediately(true);
     }
 
     // Keep the offer scarce: only a minority of visits draw the popup. UTM
@@ -260,9 +279,9 @@ export function useDiscount() {
 
   // Show popup after delay if eligible (lottery shows immediately, normal has
   // 15s delay). Waits for the config to resolve so the gate advertises the
-  // real offer percentage.
+  // real offer percentage. Never auto-opens while suppressed (cart has items).
   const shouldTrigger =
-    isClient && !isLoading && configResolved && state === 'idle' && !statusData?.active && !hasDismissedCookie();
+    isClient && !isLoading && configResolved && !suppressAutoOpen && state === 'idle' && !statusData?.active && !hasDismissedCookie();
   const delayMs = showImmediately ? 0 : POPUP_DELAY_MS;
 
   useTimeout(() => {
