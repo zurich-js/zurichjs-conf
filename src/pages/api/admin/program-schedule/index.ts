@@ -5,13 +5,9 @@ import {
   createProgramScheduleItem,
   getAdminScheduleRows,
 } from '@/lib/program/schedule';
-import type { ProgramScheduleItemInput, ProgramScheduleItemType } from '@/lib/types/program-schedule';
+import { programScheduleItemInputSchema } from '@/lib/validations/program-schedule';
 
 const log = logger.scope('Admin Program Schedule API');
-
-function isValidType(type: string): type is ProgramScheduleItemType {
-  return ['session', 'event', 'break', 'placeholder'].includes(type);
-}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { authorized } = verifyAdminAccess(req);
@@ -29,17 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const data = req.body as ProgramScheduleItemInput;
+    const result = programScheduleItemInputSchema.safeParse(req.body);
 
-    if (!data.date || !data.start_time || !data.duration_minutes || !data.title || !data.type) {
-      return res.status(400).json({ error: 'date, start_time, duration_minutes, title, and type are required' });
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        issues: result.error.issues,
+      });
     }
 
-    if (!isValidType(data.type)) {
-      return res.status(400).json({ error: 'Invalid schedule item type' });
-    }
-
-    const { item, error } = await createProgramScheduleItem(data);
+    const { item, error } = await createProgramScheduleItem(result.data);
     if (error || !item) {
       return res.status(400).json({ error: error || 'Failed to create schedule item' });
     }

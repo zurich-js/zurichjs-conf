@@ -94,9 +94,10 @@ export function SessionCard({
   const availability = offering ? formatWorkshopAvailability(offering) : null;
   const compact = expandable && actionMode === 'schedule';
   // Off-site venue (e.g. a workshop hosted at a partner office). The detail
-  // page renders the full WorkshopLocationCard with a map, so skip the inline
-  // line there to avoid duplication.
-  const location = actionMode === 'detail'
+  // page renders the full WorkshopLocationCard with a map for workshops, so
+  // skip the inline line there to avoid duplication. For talks with custom
+  // locations, we still show the location.
+  const location = actionMode === 'detail' && isWorkshop
     ? null
     : getSessionLocation({
         ...session.schedule,

@@ -86,7 +86,9 @@ export function getSessionLocation(source: SessionLocationSource | null | undefi
 
 /**
  * Location string for calendar entries (Google/Outlook/ICS). Falls back to
- * the main conference venue when no per-session venue is set.
+ * the main conference venue when no per-session venue is set. For map-only
+ * locations (only maps_url set, no name or address), returns null to signal
+ * the caller should use the fallback venue.
  */
 export function getSessionCalendarLocation(
   source: SessionLocationSource | null | undefined,
@@ -96,6 +98,13 @@ export function getSessionCalendarLocation(
   const name = trimmedOrNull(source?.location_name);
   const address = trimmedOrNull(source?.location_address);
 
-  const venue = [name, address].filter(Boolean).join(', ') || fallbackVenue;
+  // If only a maps URL is set without name or address, treat as main venue
+  // (map-only is valid for UI rendering but not meaningful for calendar)
+  if (!name && !address) {
+    const venue = fallbackVenue;
+    return room ? `${venue} - ${room}` : venue;
+  }
+
+  const venue = [name, address].filter(Boolean).join(', ');
   return room ? `${venue} - ${room}` : venue;
 }
