@@ -62,6 +62,10 @@ export function ProgramScheduleSlotModal({
       setError('Duration must be a positive number of minutes or use HH:MM');
       return;
     }
+    if (form.location_maps_url.trim() && !form.location_name.trim() && !form.location_address.trim()) {
+      setError('Add a venue name or address to go with the Google Maps link');
+      return;
+    }
     const resolvedDuration = parsedDuration;
     const payload: ProgramScheduleItemInput = {
       type: form.type as ProgramScheduleItemInput['type'],

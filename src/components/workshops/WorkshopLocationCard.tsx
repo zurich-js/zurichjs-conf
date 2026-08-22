@@ -65,18 +65,16 @@ export function WorkshopLocationCard({ schedule, className }: WorkshopLocationCa
           <ExternalLink className="size-3.5" aria-hidden="true" />
         </a>
 
-        {location.mapsEmbedUrl ? (
-          <div className="mt-4 overflow-hidden rounded-xl border border-brand-gray-light">
-            <iframe
-              src={location.mapsEmbedUrl}
-              title={`Map showing ${location.name ?? location.address ?? 'the workshop venue'}`}
-              className="h-64 w-full sm:h-80"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
-          </div>
-        ) : null}
+        <div className="mt-4 overflow-hidden rounded-xl border border-brand-gray-light">
+          <iframe
+            src={location.mapsEmbedUrl}
+            title={`Map showing ${location.name ?? location.address ?? 'the workshop venue'}`}
+            className="h-64 w-full sm:h-80"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        </div>
       </div>
     </section>
   );

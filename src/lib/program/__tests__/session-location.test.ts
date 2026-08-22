@@ -58,14 +58,10 @@ describe('getSessionLocation', () => {
     expect(location?.mapsEmbedUrl).toBe(buildGoogleMapsEmbedUrl('livingdocs AG Zürich'));
   });
 
-  it('returns a location with no embed when only an explicit URL is set', () => {
-    const location = getSessionLocation({
-      location_maps_url: 'https://maps.app.goo.gl/abc123',
-    });
-
-    expect(location?.mapsUrl).toBe('https://maps.app.goo.gl/abc123');
-    expect(location?.mapsEmbedUrl).toBeNull();
-    expect(location?.label).toBe('');
+  it('ignores a maps URL without a venue name or address', () => {
+    // Without a name/address there is nothing to label the venue with — the
+    // record is incomplete, so it is treated as "no venue set".
+    expect(getSessionLocation({ location_maps_url: 'https://maps.app.goo.gl/abc123' })).toBeNull();
   });
 
   it('encodes the maps query', () => {

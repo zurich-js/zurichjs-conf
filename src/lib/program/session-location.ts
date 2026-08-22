@@ -22,7 +22,7 @@ export interface SessionLocation {
   /** Link out to Google Maps (explicit URL or derived search link). */
   mapsUrl: string;
   /** Keyless Google Maps embed URL for an iframe. */
-  mapsEmbedUrl: string | null;
+  mapsEmbedUrl: string;
   /** One-line label, e.g. `livingdocs AG Zürich, Room "Headline"`. */
   label: string;
 }
@@ -30,12 +30,6 @@ export interface SessionLocation {
 function trimmedOrNull(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
-}
-
-/** Query string used to pin the venue on Google Maps (name + address). */
-function buildMapsQuery(name: string | null, address: string | null): string | null {
-  const query = [name, address].filter(Boolean).join(', ');
-  return query || null;
 }
 
 export function buildGoogleMapsSearchUrl(query: string): string {
@@ -49,26 +43,25 @@ export function buildGoogleMapsEmbedUrl(query: string): string {
 /**
  * Resolve the venue for a session. Returns null when no venue was set —
  * i.e. the session happens at the main conference venue and needs no
- * special directions. A room alone does not make a location: rooms at the
- * main venue are covered by on-site signage.
+ * special directions. A room alone does not make a location (rooms at the
+ * main venue are covered by on-site signage), and neither does a maps URL
+ * alone — without a name or address there is nothing to label the venue
+ * with, so incomplete records are treated as "no venue set".
  */
 export function getSessionLocation(source: SessionLocationSource | null | undefined): SessionLocation | null {
   if (!source) return null;
 
   const name = trimmedOrNull(source.location_name);
   const address = trimmedOrNull(source.location_address);
-  const explicitMapsUrl = trimmedOrNull(source.location_maps_url);
   const room = trimmedOrNull(source.room);
 
-  if (!name && !address && !explicitMapsUrl) {
+  if (!name && !address) {
     return null;
   }
 
-  const query = buildMapsQuery(name, address);
-  const mapsUrl = explicitMapsUrl ?? (query ? buildGoogleMapsSearchUrl(query) : null);
-  if (!mapsUrl) {
-    return null;
-  }
+  // Query string used to pin the venue on Google Maps (name + address).
+  const query = [name, address].filter(Boolean).join(', ');
+  const mapsUrl = trimmedOrNull(source.location_maps_url) ?? buildGoogleMapsSearchUrl(query);
 
   const label = [name ?? address, room ? `Room "${room}"` : null]
     .filter(Boolean)
@@ -79,7 +72,7 @@ export function getSessionLocation(source: SessionLocationSource | null | undefi
     address,
     room,
     mapsUrl,
-    mapsEmbedUrl: query ? buildGoogleMapsEmbedUrl(query) : null,
+    mapsEmbedUrl: buildGoogleMapsEmbedUrl(query),
     label,
   };
 }

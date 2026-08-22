@@ -4,11 +4,7 @@ import {
   deleteProgramScheduleItem,
   updateProgramScheduleItem,
 } from '@/lib/program/schedule';
-import type { ProgramScheduleItemInput, ProgramScheduleItemType } from '@/lib/types/program-schedule';
-
-function isValidType(type: string): type is ProgramScheduleItemType {
-  return ['session', 'event', 'break', 'placeholder'].includes(type);
-}
+import { updateProgramScheduleItemSchema } from '@/lib/validations/program-schedule';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { authorized } = verifyAdminAccess(req);
@@ -22,13 +18,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const data = req.body as Partial<ProgramScheduleItemInput>;
-
-    if (data.type && !isValidType(data.type)) {
-      return res.status(400).json({ error: 'Invalid schedule item type' });
+    const result = updateProgramScheduleItemSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: 'Validation failed', issues: result.error.issues });
     }
 
-    const { item, error } = await updateProgramScheduleItem(id, data);
+    const { item, error } = await updateProgramScheduleItem(id, result.data);
     if (error || !item) {
       return res.status(400).json({ error: error || 'Failed to update schedule item' });
     }

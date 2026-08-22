@@ -332,6 +332,7 @@ function ScheduleGridCard({
   const displayType = getDisplayScheduleType(item);
   const startTime = item.start_time.slice(0, 5);
   const endTime = minutesToTime(timeToMinutes(startTime) + item.duration_minutes);
+  const venueLabel = item.location_name?.trim() || item.location_address?.trim() || null;
 
   return (
     <div className="@container h-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -339,8 +340,8 @@ function ScheduleGridCard({
         <div className="[grid-area:time] text-sm text-brand-gray-medium">
           <p className="font-semibold text-gray-950">{startTime} - {endTime}</p>
           <p>{formatScheduleDuration(item.duration_minutes)}{item.room ? ` · ${item.room}` : ''}</p>
-          {item.location_name || item.location_address ? (
-            <p className="mt-0.5 text-xs text-brand-blue">@ {item.location_name ?? item.location_address}</p>
+          {venueLabel ? (
+            <p className="mt-0.5 text-xs text-brand-blue">@ {venueLabel}</p>
           ) : null}
           {neighbors.overlaps.length > 0 ? (
             <p className="mt-1 text-xxs font-medium text-brand-red">Overlaps {neighbors.overlaps.length} slot{neighbors.overlaps.length === 1 ? '' : 's'}</p>
