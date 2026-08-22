@@ -4,6 +4,7 @@ import {
   buildGoogleMapsSearchUrl,
   getSessionCalendarLocation,
   getSessionLocation,
+  isMapsUrlWithoutVenue,
 } from '../session-location';
 
 describe('getSessionLocation', () => {
@@ -68,6 +69,39 @@ describe('getSessionLocation', () => {
     expect(buildGoogleMapsSearchUrl('a b & c')).toBe(
       'https://www.google.com/maps/search/?api=1&query=a%20b%20%26%20c'
     );
+  });
+});
+
+describe('isMapsUrlWithoutVenue', () => {
+  it('flags a maps URL with no venue name or address', () => {
+    expect(isMapsUrlWithoutVenue({ location_maps_url: 'https://maps.app.goo.gl/abc123' })).toBe(true);
+    expect(
+      isMapsUrlWithoutVenue({
+        location_maps_url: 'https://maps.app.goo.gl/abc123',
+        location_name: '  ',
+        location_address: '',
+      })
+    ).toBe(true);
+  });
+
+  it('accepts a maps URL alongside a venue name or address', () => {
+    expect(
+      isMapsUrlWithoutVenue({
+        location_maps_url: 'https://maps.app.goo.gl/abc123',
+        location_name: 'livingdocs AG Zürich',
+      })
+    ).toBe(false);
+    expect(
+      isMapsUrlWithoutVenue({
+        location_maps_url: 'https://maps.app.goo.gl/abc123',
+        location_address: 'Förrlibuckstrasse 70, 8005 Zürich',
+      })
+    ).toBe(false);
+  });
+
+  it('accepts records without a maps URL', () => {
+    expect(isMapsUrlWithoutVenue({})).toBe(false);
+    expect(isMapsUrlWithoutVenue({ location_name: 'livingdocs AG Zürich' })).toBe(false);
   });
 });
 

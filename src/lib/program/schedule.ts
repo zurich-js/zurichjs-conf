@@ -1,3 +1,4 @@
+import { isMapsUrlWithoutVenue } from '@/lib/program/session-location';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
 import type { PublicSession, PublicSessionSpeaker, PublicSpeaker } from '@/lib/types/cfp';
 import type {
@@ -293,6 +294,10 @@ export async function createProgramScheduleItem(input: ProgramScheduleItemInput)
     return { item: null, error: 'Session placeholders cannot be publicly visible until a session is selected' };
   }
 
+  if (isMapsUrlWithoutVenue(input)) {
+    return { item: null, error: 'A Google Maps link requires a venue name or address' };
+  }
+
   const supabase = createCfpServiceClient();
   const { data, error } = await supabase
     .from('program_schedule_items')
@@ -363,6 +368,17 @@ export async function updateProgramScheduleItem(id: string, input: Partial<Progr
 
   if (resolvedType === 'session' && !resolvedSessionId && resolvedVisibility) {
     return { item: null, error: 'Session placeholders cannot be publicly visible until a session is selected' };
+  }
+
+  // The maps-URL invariant must hold for the merged (stored + patched) state:
+  // a patch clearing the venue fields must not leave a stored maps URL behind.
+  const effectiveLocation = {
+    location_name: input.location_name !== undefined ? input.location_name : existingItem.location_name ?? null,
+    location_address: input.location_address !== undefined ? input.location_address : existingItem.location_address ?? null,
+    location_maps_url: input.location_maps_url !== undefined ? input.location_maps_url : existingItem.location_maps_url ?? null,
+  };
+  if (isMapsUrlWithoutVenue(effectiveLocation)) {
+    return { item: null, error: 'A Google Maps link requires a venue name or address' };
   }
 
   const updates: Record<string, unknown> = {

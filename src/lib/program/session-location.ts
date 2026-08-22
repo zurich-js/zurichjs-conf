@@ -32,6 +32,23 @@ function trimmedOrNull(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
+/**
+ * A maps link without a venue name or address can't be labelled anywhere
+ * (cards would render an empty venue, calendars would mislabel the session),
+ * so such a combination is rejected wherever location fields are written.
+ */
+export function isMapsUrlWithoutVenue(location: {
+  location_name?: string | null;
+  location_address?: string | null;
+  location_maps_url?: string | null;
+}): boolean {
+  return Boolean(
+    trimmedOrNull(location.location_maps_url) &&
+    !trimmedOrNull(location.location_name) &&
+    !trimmedOrNull(location.location_address)
+  );
+}
+
 export function buildGoogleMapsSearchUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }

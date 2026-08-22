@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isMapsUrlWithoutVenue } from '@/lib/program/session-location';
 
 /**
  * Program Schedule Validation Schemas
@@ -34,7 +35,7 @@ function requireVenueWithMapsUrl(
   data: { location_maps_url?: string | null; location_name?: string | null; location_address?: string | null },
   ctx: z.RefinementCtx
 ) {
-  if (data.location_maps_url && !data.location_name?.trim() && !data.location_address?.trim()) {
+  if (isMapsUrlWithoutVenue(data)) {
     ctx.addIssue({
       code: 'custom',
       path: ['location_maps_url'],
@@ -47,4 +48,8 @@ export const createProgramScheduleItemSchema = z
   .object(scheduleItemFields)
   .superRefine(requireVenueWithMapsUrl);
 
+// Deliberately no maps-URL refine here: a partial patch can't see stored
+// values (e.g. a maps-URL-only patch is valid when the stored row already has
+// a venue). updateProgramScheduleItem validates the merged stored + patched
+// state instead.
 export const updateProgramScheduleItemSchema = z.object(scheduleItemFields).partial();
