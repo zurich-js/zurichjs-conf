@@ -1,8 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { BellPlus, CalendarPlus, Share2, Users } from 'lucide-react';
+import { BellPlus, CalendarPlus, MapPin, Share2, Users } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Button } from '@/components/atoms';
+import { getSessionLocation } from '@/lib/program/session-location';
 import type { PublicSession } from '@/lib/types/cfp';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
@@ -92,6 +93,16 @@ export function SessionCard({
 
   const availability = offering ? formatWorkshopAvailability(offering) : null;
   const compact = expandable && actionMode === 'schedule';
+  // Off-site venue (e.g. a workshop hosted at a partner office). The workshop
+  // detail page renders the full WorkshopLocationCard with a map, so skip the
+  // inline line only there to avoid duplication; talk detail pages have no
+  // location card, so they keep it.
+  const location = actionMode === 'detail' && isWorkshop
+    ? null
+    : getSessionLocation({
+        ...session.schedule,
+        room: offering?.room ?? session.schedule?.room ?? null,
+      });
 
   const header = (
     <>
@@ -159,6 +170,24 @@ export function SessionCard({
 
   const panel = (
     <>
+      {location ? (
+        <p className={cn('mb-4 flex items-start gap-1.5 text-brand-black', compact ? 'text-xs md:text-sm' : 'text-sm')}>
+          <MapPin className="mt-0.5 size-4 shrink-0 text-brand-gray-medium" aria-hidden="true" />
+          <span>
+            <strong>Location:</strong>{' '}
+            <span className="text-brand-gray-medium">{location.label}</span>
+            {' '}&mdash;{' '}
+            <a
+              href={location.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline underline-offset-2 transition-colors hover:text-brand-gray-medium"
+            >
+              Google Maps
+            </a>
+          </span>
+        </p>
+      ) : null}
       <MarkdownAbstract content={session.abstract} className={cn('text-brand-gray-darkest', compact ? 'text-sm leading-6' : 'text-sm leading-7')} />
 
       {resolvedSpeakers.length > 0 ? (

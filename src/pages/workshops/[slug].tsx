@@ -5,6 +5,7 @@ import { SEO } from '@/components/SEO';
 import { Button, Heading, Kicker } from '@/components/atoms';
 import { ShapedSection, SiteFooter } from '@/components/organisms';
 import { SessionCard, SessionDetailHero, type SessionDetailSpeaker } from '@/components/scheduling';
+import { WorkshopLocationCard } from '@/components/workshops/WorkshopLocationCard';
 import { WorkshopPurchasePanel } from '@/components/workshops/WorkshopPurchasePanel';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { trackWorkshopViewed } from '@/lib/analytics';
@@ -63,6 +64,7 @@ export default function WorkshopDetailPage({ session, speaker }: WorkshopDetailP
               actionMode="detail"
               className="rounded-none border-0 bg-transparent p-0"
             />
+            <WorkshopLocationCard schedule={session.schedule} />
             <WorkshopPurchasePanel
               sessionId={session.id}
               cfpSubmissionId={session.cfp_submission_id}

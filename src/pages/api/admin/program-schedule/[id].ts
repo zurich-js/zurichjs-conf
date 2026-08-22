@@ -1,14 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { logger } from '@/lib/logger';
 import {
   deleteProgramScheduleItem,
   updateProgramScheduleItem,
 } from '@/lib/program/schedule';
-import type { ProgramScheduleItemInput, ProgramScheduleItemType } from '@/lib/types/program-schedule';
+import { updateProgramScheduleItemSchema } from '@/lib/validations/program-schedule';
 
-function isValidType(type: string): type is ProgramScheduleItemType {
-  return ['session', 'event', 'break', 'placeholder'].includes(type);
-}
+const log = logger.scope('Admin Program Schedule Item API');
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { authorized } = verifyAdminAccess(req);
@@ -22,14 +21,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const data = req.body as Partial<ProgramScheduleItemInput>;
-
-    if (data.type && !isValidType(data.type)) {
-      return res.status(400).json({ error: 'Invalid schedule item type' });
+    const result = updateProgramScheduleItemSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: 'Validation failed', issues: result.error.issues });
     }
 
-    const { item, error } = await updateProgramScheduleItem(id, data);
+    const { item, error } = await updateProgramScheduleItem(id, result.data);
     if (error || !item) {
+      log.error('Failed to update schedule item', error, { id });
       return res.status(400).json({ error: error || 'Failed to update schedule item' });
     }
 
@@ -39,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'DELETE') {
     const { success, error } = await deleteProgramScheduleItem(id);
     if (!success) {
+      log.error('Failed to delete schedule item', error, { id });
       return res.status(400).json({ error: error || 'Failed to delete schedule item' });
     }
 
