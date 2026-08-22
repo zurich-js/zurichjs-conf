@@ -79,7 +79,8 @@ export function getSessionLocation(source: SessionLocationSource | null | undefi
 
 /**
  * Location string for calendar entries (Google/Outlook/ICS). Falls back to
- * the main conference venue when no per-session venue is set.
+ * the main conference venue when no per-session venue name/address is set
+ * (a maps URL alone doesn't name a venue, so it falls back too).
  */
 export function getSessionCalendarLocation(
   source: SessionLocationSource | null | undefined,

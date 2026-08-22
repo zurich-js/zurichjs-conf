@@ -95,7 +95,8 @@ export function SessionCard({
   const compact = expandable && actionMode === 'schedule';
   // Off-site venue (e.g. a workshop hosted at a partner office). The workshop
   // detail page renders the full WorkshopLocationCard with a map, so skip the
-  // inline line only there to avoid duplication.
+  // inline line only there to avoid duplication; talk detail pages have no
+  // location card, so they keep it.
   const location = actionMode === 'detail' && isWorkshop
     ? null
     : getSessionLocation({
