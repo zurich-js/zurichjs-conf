@@ -3,8 +3,9 @@
  * Handles magic link authentication for speakers and reviewers
  */
 
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
+import { serialize } from 'cookie';
 import { clientEnv } from '@/config/env';
 import { supabase } from '@/lib/supabase/client';
 import { createCfpServiceClient } from '@/lib/supabase/cfp-client';
@@ -21,6 +22,38 @@ import { getBaseUrl } from '@/lib/url';
  * Create a Supabase client for server-side rendering
  * Uses cookies to manage session
  */
+/**
+ * Serialize the cookies @supabase/ssr asks us to set into Set-Cookie values.
+ *
+ * Two things matter here and both were previously wrong:
+ *
+ *  1. The session cookie is CHUNKED. @supabase/ssr splits anything over
+ *     ~3180 bytes into `sb-<ref>-auth-token.0`, `.1`, ... and hands every
+ *     chunk to a single `setAll` call. Writing them with `res.setHeader` in a
+ *     loop kept only the last one, silently truncating the session — so a
+ *     token refresh inside a request would log the user out. They must be set
+ *     together as an array.
+ *
+ *  2. The options the library passes (httpOnly, secure, sameSite, path,
+ *     maxAge, domain, expires) must be honoured rather than hand-rolled, or
+ *     the session cookie loses HttpOnly and Secure.
+ */
+export function serializeCookies(
+  cookiesToSet: { name: string; value: string; options?: CookieOptions }[]
+): string[] {
+  return cookiesToSet.map(({ name, value, options }) =>
+    serialize(name, value, {
+      path: options?.path ?? '/',
+      sameSite: options?.sameSite ?? 'lax',
+      httpOnly: options?.httpOnly,
+      secure: options?.secure,
+      maxAge: options?.maxAge,
+      domain: options?.domain,
+      expires: options?.expires,
+    })
+  );
+}
+
 export function createSupabaseServerClient(
   context: GetServerSidePropsContext
 ) {
@@ -37,12 +70,8 @@ export function createSupabaseServerClient(
           }));
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            context.res.setHeader(
-              'Set-Cookie',
-              `${name}=${value}; Path=/; ${options?.maxAge ? `Max-Age=${options.maxAge};` : ''} ${options?.httpOnly ? 'HttpOnly;' : ''} ${options?.secure ? 'Secure;' : ''} SameSite=Lax`
-            );
-          });
+          if (cookiesToSet.length === 0) return;
+          context.res.setHeader('Set-Cookie', serializeCookies(cookiesToSet));
         },
       },
     }
@@ -69,12 +98,8 @@ export function createSupabaseApiClient(
           }));
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            res.setHeader(
-              'Set-Cookie',
-              `${name}=${value}; Path=/; ${options?.maxAge ? `Max-Age=${options.maxAge};` : ''} ${options?.httpOnly ? 'HttpOnly;' : ''} ${options?.secure ? 'Secure;' : ''} SameSite=Lax`
-            );
-          });
+          if (cookiesToSet.length === 0) return;
+          res.setHeader('Set-Cookie', serializeCookies(cookiesToSet));
         },
       },
     }
@@ -414,6 +439,27 @@ export async function acceptReviewerInvite(
   }
 
   console.debug("[CFP Auth]", 'Found reviewer', { reviewerId: reviewer.id, currentUserId: reviewer.user_id });
+
+  // Refuse to re-point an invite that another account already holds.
+  // Without this, claiming a known reviewer's email would evict the
+  // legitimate reviewer and inherit their role. Mirrors the guard
+  // getOrCreateSpeaker already applies to cfp_speakers.
+  if (reviewer.user_id && reviewer.user_id !== userId) {
+    console.error("[CFP Auth]", 'Reviewer invite already linked to a different user', {
+      reviewerId: reviewer.id,
+      existingUserId: reviewer.user_id,
+      attemptedUserId: userId,
+    });
+    return {
+      reviewer: null,
+      error: 'This invitation is already associated with another account',
+    };
+  }
+
+  // Already linked to this user (e.g. a repeated callback) — nothing to do.
+  if (reviewer.user_id === userId) {
+    return { reviewer: reviewer as CfpReviewer };
+  }
 
   // Update with user_id and accepted_at
   const { data: updatedReviewer, error: updateError } = await supabaseAdmin
