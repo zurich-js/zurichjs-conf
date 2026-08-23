@@ -11,7 +11,7 @@ import { QueryClientProvider, HydrationBoundary, type DehydratedState } from "@t
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
 import { NuqsAdapter } from "nuqs/adapters/next/pages";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Script from "next/script";
 import posthog from 'posthog-js';
@@ -21,6 +21,7 @@ import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
 import { initEasterEgg } from '@/lib/easter-egg/client';
 import { initTechStackDetection } from '@/lib/analytics/techStackDetector';
+import { isSensitiveRoute, scrubIdentifiers } from '@/lib/analytics/sensitive-routes';
 
 const DiscountContainer = dynamic(
   () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
@@ -77,7 +78,10 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
         capture_pageview: false,
         capture_pageleave: true,
         autocapture: false,
-        disable_session_recording: false,
+        // Never start a recording on a door screen. Attendee names, emails and
+        // apparel sizes are on display there, and the URL carries a ticket
+        // UUID that is itself the admission credential.
+        disable_session_recording: isSensitiveRoute(window.location.pathname),
         session_recording: {
           // Keep checkout contact and billing inputs visible in replays; only
           // credential-style fields should be masked automatically.
@@ -94,8 +98,8 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
 
           // Track initial page view (UTM params are captured automatically by PostHog)
           posthogInstance.capture('$pageview', {
-            $current_url: window.location.href,
-            page_path: window.location.pathname,
+            $current_url: scrubIdentifiers(window.location.href),
+            page_path: scrubIdentifiers(window.location.pathname),
           });
 
           // Initialize tech stack detection (runs once per session after idle)
@@ -105,14 +109,34 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     }
   }, []);
 
+  // True while we have deliberately stopped replay for a door screen, so we
+  // only ever resume a recording we suppressed ourselves.
+  const recordingSuppressed = useRef(isSensitiveRoute(router.pathname));
+
   // Track page views on route changes
   useEffect(() => {
     const handleRouteChange = (url: string) => {
       // Only track if PostHog is initialized
       if (posthog.__loaded) {
+        // Stop replay when entering a door screen, and resume only if we are
+        // the ones who stopped it — so ordinary pages keep whatever the init
+        // config chose. disable_session_recording governs only the initial
+        // state, so a client-side navigation into /checkin would otherwise
+        // keep recording.
+        if (isSensitiveRoute(url)) {
+          if (!recordingSuppressed.current) {
+            recordingSuppressed.current = true;
+            posthog.stopSessionRecording();
+          }
+        } else if (recordingSuppressed.current) {
+          recordingSuppressed.current = false;
+          posthog.startSessionRecording();
+        }
+
         posthog.capture('$pageview', {
-          $current_url: window.location.origin + url,
-          page_path: url.split('?')[0], // Remove query params for cleaner path
+          $current_url: scrubIdentifiers(window.location.origin + url),
+          // Strip the query string for a cleaner path, then the identifiers.
+          page_path: scrubIdentifiers(url.split('?')[0]),
         });
       }
     };
@@ -129,8 +153,11 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     initEasterEgg();
   }, []);
 
-  // Hide NavBar on admin pages
-  const showNavBar = !router.pathname.startsWith('/admin');
+  // Hide NavBar on admin and door pages. A door station is a single-purpose
+  // screen held in one hand; a marketing nav and a shopping cart on it are
+  // mis-taps waiting to happen.
+  const showNavBar =
+    !router.pathname.startsWith('/admin') && !isSensitiveRoute(router.pathname);
 
   // Discount popup mounts on the high-traffic content pages, not just the
   // homepage — /speakers alone starts 16% of sessions. The individual speaker

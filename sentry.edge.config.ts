@@ -5,6 +5,8 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+import { scrubIdentifiers } from "@/lib/analytics/sensitive-routes";
+
 Sentry.init({
   dsn: "https://2ecf4731ccaf3ac40da000ef51dd3fe3@o4510674417483776.ingest.de.sentry.io/4510674435178576",
 
@@ -17,4 +19,16 @@ Sentry.init({
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
+
+  // A ticket UUID in a URL is an admission credential. Strip it from event
+  // URLs and transaction names before anything leaves the process.
+  beforeSend(event) {
+    if (event.request?.url) {
+      event.request.url = scrubIdentifiers(event.request.url);
+    }
+    if (event.transaction) {
+      event.transaction = scrubIdentifiers(event.transaction);
+    }
+    return event;
+  },
 });
