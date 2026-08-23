@@ -12,7 +12,8 @@ const ticketsSchema = z.object({
     ticket_category: z.string(),
     ticket_stage: z.string(),
     stripe_session_id: z.string().nullable(),
-    metadata: unknownRecordSchema.nullable(),
+    // A single row with non-object JSON metadata must not fail the whole brief.
+    metadata: unknownRecordSchema.nullable().catch(null),
     created_at: z.string(),
   }).passthrough()),
 });

@@ -17,12 +17,13 @@ function getAllowedOrigins(): Set<string> {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  const origins = configured?.length ? configured : DEFAULT_ALLOWED_ORIGINS;
+  const origins = new Set(configured?.length ? configured : DEFAULT_ALLOWED_ORIGINS);
   if (process.env.NODE_ENV !== 'production') {
-    origins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+    origins.add('http://localhost:3000');
+    origins.add('http://127.0.0.1:3000');
   }
 
-  return new Set(origins);
+  return origins;
 }
 
 export interface McpAuthResult {
