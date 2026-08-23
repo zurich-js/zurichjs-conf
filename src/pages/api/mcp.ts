@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { verifyMcpAccess } from '@/lib/mcp/auth';
+import { getAllowedOrigins, verifyMcpAccess } from '@/lib/mcp/auth';
 import { createZurichJsMcpServer } from '@/lib/mcp/server';
 import { logger } from '@/lib/logger';
 
@@ -20,8 +20,27 @@ function sendJsonRpcError(
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+  // Handle OPTIONS preflight before bearer-token authentication
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin;
+    const allowedOrigins = getAllowedOrigins();
+
+    if (typeof origin === 'string' && allowedOrigins.has(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      res.status(204).end();
+      return;
+    }
+
+    // Reject disallowed origins
+    res.status(403).end();
+    return;
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'POST, OPTIONS');
     sendJsonRpcError(res, 405, -32000, 'Method not allowed');
     return;
   }

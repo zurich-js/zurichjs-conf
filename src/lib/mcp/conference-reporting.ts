@@ -290,6 +290,7 @@ export class ConferenceReportingClient {
           Authorization: `Bearer ${this.adminApiKey}`,
           'X-Bot-Client': 'zurichjs-mcp/1.0',
         },
+        signal: AbortSignal.timeout(10_000),
       },
       { attempts: 3, label: `ZurichJS MCP ${path}` },
     );

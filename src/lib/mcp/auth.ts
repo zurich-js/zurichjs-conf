@@ -11,7 +11,7 @@ function timingSafeEqual(left: string, right: string): boolean {
     && crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
-function getAllowedOrigins(): Set<string> {
+export function getAllowedOrigins(): Set<string> {
   const configured = process.env.ZURICHJS_MCP_ALLOWED_ORIGINS
     ?.split(',')
     .map((origin) => origin.trim())
