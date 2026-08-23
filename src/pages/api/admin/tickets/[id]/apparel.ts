@@ -10,17 +10,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createServiceRoleClient } from '@/lib/supabase';
-import { adminApparelUpdateSchema } from '@/lib/validations/apparel';
+import { adminApparelUpdateSchema, ticketIdSchema } from '@/lib/validations/apparel';
+import type { TicketApparel } from '@/lib/types/ticket-apparel';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Admin Ticket Apparel API');
 
-export interface TicketApparelResponse {
-  tshirtSize: string | null;
-  hoodieSize: string | null;
-}
-
-type ApiResponse = TicketApparelResponse | { error: string; issues?: unknown };
+type ApiResponse = TicketApparel | { error: string; issues?: unknown };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResponse>) {
   const { authorized } = verifyAdminAccess(req);
@@ -33,10 +29,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { id } = req.query;
-  if (typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid ticket ID' });
+  const idResult = ticketIdSchema.safeParse(req.query.id);
+  if (!idResult.success) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      issues: idResult.error.issues,
+    });
   }
+  const id = idResult.data;
 
   try {
     const supabase = createServiceRoleClient();

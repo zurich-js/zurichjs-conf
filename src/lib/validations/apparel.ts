@@ -7,6 +7,12 @@ import { APPAREL_SIZES } from '@/lib/types/ticket-constants';
  */
 
 /**
+ * Ticket ID validation for apparel routes.
+ * UUIDs are 36 characters in standard form.
+ */
+export const ticketIdSchema = z.string().uuid('Invalid ticket ID format');
+
+/**
  * Ticket holder apparel preferences (manage-ticket flow).
  * Hoodie size is only accepted for VIP tickets — enforced in the API handler,
  * since ticket category is not part of the request body.
