@@ -21,3 +21,12 @@ export type { ScanFlashProps } from './ScanFlash';
 
 export { WorkshopSeats } from './WorkshopSeats';
 export type { WorkshopSeatsProps } from './WorkshopSeats';
+
+export { ScannerViewport } from './ScannerViewport';
+export type { ScannerViewportProps } from './ScannerViewport';
+
+export { StationBar } from './StationBar';
+export type { StationBarProps } from './StationBar';
+
+export { StationStartGate } from './StationStartGate';
+export type { StationStartGateProps } from './StationStartGate';

@@ -45,6 +45,9 @@ import type {
   DoorOutcome,
 } from '@/lib/types/checkin';
 
+/** What the server said about one write. `outcome` is always present. */
+export type DoorMutationResult = DoorCheckInResult | DoorGoodieResult;
+
 /**
  * Retry cadence while writes are stuck. Slow on purpose: the flush stops at the
  * first offline failure, so this is one request per tick, and a door that has
@@ -64,14 +67,21 @@ export interface UseDoorMutationQueueOptions {
   occasion: DoorOccasion | undefined;
   /** Station label written into the audit trail, e.g. "Door A". */
   station?: string;
-  /** Fired for every settled write, so the panel can show the real outcome. */
-  onOutcome?: (entry: DoorQueuedMutation, outcome: DoorOutcome, response: unknown) => void;
+  /**
+   * Fired for every settled write, so the panel can show the real outcome.
+   *
+   * Receives the whole result rather than just the outcome: a `duplicate` carries
+   * the time the person ACTUALLY arrived, which is earlier than the optimistic
+   * timestamp this station wrote, and that earlier time is what the volunteer
+   * needs to read out.
+   */
+  onOutcome?: (entry: DoorQueuedMutation, result: DoorMutationResult) => void;
 }
 
-function outcomeOf(response: unknown): DoorOutcome | null {
+function resultOf(response: unknown): DoorMutationResult | null {
   if (!response || typeof response !== 'object') return null;
-  const value = (response as Partial<DoorCheckInResult | DoorGoodieResult>).outcome;
-  return value ?? null;
+  const outcome = (response as Partial<DoorMutationResult>).outcome;
+  return outcome ? (response as DoorMutationResult) : null;
 }
 
 export function useDoorMutationQueue({
@@ -115,14 +125,14 @@ export function useDoorMutationQueue({
       const currentOccasion = occasionRef.current;
 
       result.sent.forEach((entry, position) => {
-        const response = result.responses[position];
-        const outcome = outcomeOf(response);
+        const settled = resultOf(result.responses[position]);
+        const outcome: DoorOutcome | null = settled?.outcome ?? null;
 
         if (currentOccasion && (outcome === 'denied' || outcome === 'not_found')) {
           revertOptimistic(entry.payload, currentOccasion);
         }
 
-        if (outcome) onOutcomeRef.current?.(entry, outcome, response);
+        if (settled) onOutcomeRef.current?.(entry, settled);
       });
 
       // A write that will never land is rolled back too: leaving the optimistic
@@ -141,18 +151,27 @@ export function useDoorMutationQueue({
     [revertOptimistic]
   );
 
-  const flush = useCallback(async (): Promise<void> => {
+  /**
+   * Drain the queue and report what happened.
+   *
+   * Returns the result rather than void because `pending` in state is stale
+   * inside the caller's own closure — a caller that needs to know whether the
+   * queue is now empty (sign-out does) cannot read it from the render it was
+   * created in.
+   */
+  const flush = useCallback(async (): Promise<FlushResult | null> => {
     const id = staffIdRef.current;
     // One drain at a time. Two concurrent flushes would read the same queue and
     // post every entry twice — survivable, since replay is idempotent, but it
     // doubles the requests exactly when the network is already the problem.
-    if (!id || inFlight.current) return;
+    if (!id || inFlight.current) return null;
 
     inFlight.current = true;
     setIsFlushing(true);
     try {
       const result = await flushQueue({ staffId: id });
       reconcile(result);
+      return result;
     } finally {
       inFlight.current = false;
       setIsFlushing(false);

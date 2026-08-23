@@ -36,6 +36,7 @@ import {
   orderCamerasForDoor,
   type CameraChoice,
   type CameraFailure,
+  type ScannerSupport,
 } from '@/lib/checkin/scanner-policy';
 
 export type DoorScannerStatus = 'idle' | 'starting' | 'scanning' | 'failed';
@@ -63,9 +64,17 @@ export function useDoorScanner({ onScan, repeatMs = SCAN_REPEAT_MS }: UseDoorSca
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [usesWasm, setUsesWasm] = useState(false);
 
-  // Read once on mount rather than during render: `window` does not exist on the
-  // server, and reading it in render would produce a hydration mismatch.
-  const [support, setSupport] = useState(() => detectScannerSupport(undefined));
+  /**
+   * NULL UNTIL MEASURED, not "everything unsupported".
+   *
+   * `window` does not exist during SSR and reading it in render is a hydration
+   * mismatch, so this is filled in on mount. Seeding it with all-false would
+   * make the start screen flash "this page is not on https" and "this browser
+   * cannot open a camera" on every single load before correcting itself — two
+   * alarming claims, both wrong, shown to a volunteer at exactly the moment they
+   * are deciding whether the tool works.
+   */
+  const [support, setSupport] = useState<ScannerSupport | null>(null);
   useEffect(() => {
     setSupport(detectScannerSupport(typeof window === 'undefined' ? undefined : window));
   }, []);
