@@ -17,25 +17,30 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { AlertCircle, Radio } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { SEO } from '@/components/SEO';
-import { Button, Heading } from '@/components/atoms';
+import { Button } from '@/components/atoms';
 import {
   AttendeePanel,
+  DeskLookup,
   DoorNotFound,
+  DoorNotice,
+  ManualAdmit,
   ScanFlash,
   ScannerViewport,
   StationBar,
+  StationNotices,
   StationStartGate,
 } from '@/components/checkin';
 import { useDoorSession } from '@/hooks/checkin/useDoorSession';
 import { useDoorRosterIndex } from '@/hooks/checkin/useDoorRoster';
 import { useDoorMutationQueue } from '@/hooks/checkin/useDoorMutationQueue';
 import { useDoorScanner } from '@/hooks/checkin/useDoorScanner';
+import { useDoorFeedback } from '@/hooks/checkin/useDoorFeedback';
 import { extractScannedId } from '@/lib/checkin/roster-index';
 import { readQueue } from '@/lib/checkin/mutation-queue';
-import { signalDoorOutcome, type DoorFeedbackTone } from '@/lib/checkin/feedback';
-import { checkedInAtFor, toneForOutcome } from '@/lib/checkin/panel-state';
+import type { DoorSearchableRecord } from '@/lib/checkin/roster-index';
+import { canOfferCheckIn, checkedInAtFor, toneForOutcome } from '@/lib/checkin/panel-state';
 import { supabase } from '@/lib/supabase/client';
 import { isDoorResolveHit, roleCan, type DoorCheckInResult } from '@/lib/types/checkin';
 
@@ -48,22 +53,6 @@ interface ScanState {
   nonce: number;
 }
 
-/**
- * ONE signal drives both feedback channels.
- *
- * Sound and colour must never disagree. iOS has no vibration API, so a volunteer
- * looking at the attendee rather than the phone has exactly these two cues; a
- * beep that says "already checked in" over a screen that flashes nothing is
- * worse than no feedback, because it is ambiguous.
- *
- * The nonce is separate from the scan's, because a check-in produces feedback
- * without a new scan.
- */
-interface Feedback {
-  tone: DoorFeedbackTone;
-  nonce: number;
-}
-
 export default function DoorStationPage() {
   const router = useRouter();
   const session = useDoorSession();
@@ -73,17 +62,23 @@ export default function DoorStationPage() {
   const [station, setStation] = useState('');
   const [shiftStarted, setShiftStarted] = useState(false);
   const [scan, setScan] = useState<ScanState | null>(null);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [lastResult, setLastResult] = useState<DoorCheckInResult | null>(null);
   const [escalating, setEscalating] = useState(false);
+  const [lookupOpen, setLookupOpen] = useState(false);
+  /**
+   * Whether the attendee on screen was found by name rather than scanned.
+   *
+   * Load-bearing: nobody verified a QR on that path, so admitting them is a
+   * `manual_admit` in the audit trail rather than a `checked_in`. Recording it as
+   * the latter would make a review weeks later unable to tell a scanned arrival
+   * from a volunteer taking someone's word for it.
+   */
+  const [fromLookup, setFromLookup] = useState(false);
   const [carriedOver, setCarriedOver] = useState(0);
   const [signOutBlocked, setSignOutBlocked] = useState(false);
 
-  /** Play a tone and flash the same verdict. Never call one without the other. */
-  const signal = useCallback((tone: DoorFeedbackTone) => {
-    signalDoorOutcome(tone);
-    setFeedback((previous) => ({ tone, nonce: (previous?.nonce ?? 0) + 1 }));
-  }, []);
+  // Sound and colour from one call, so they can never disagree.
+  const { feedback, signal, clear: clearFeedback } = useDoorFeedback();
 
   /**
    * Starts as soon as the session resolves — which is while the volunteer is
@@ -124,6 +119,10 @@ export default function DoorStationPage() {
     setScan((previous) => ({ subjectId, nonce: (previous?.nonce ?? 0) + 1 }));
     setLastResult(null);
     setEscalating(false);
+    setFromLookup(false);
+    // A scan takes precedence over a half-typed search: the person in front of
+    // the volunteer just presented a badge.
+    setLookupOpen(false);
   }, []);
 
   const scanner = useDoorScanner({ onScan: handleScan });
@@ -157,6 +156,13 @@ export default function DoorStationPage() {
     // A 401 is the expected state before sign-in, not an error worth showing.
     if (session.isError) void router.replace('/checkin/login');
   }, [session.isError, router]);
+
+  // Flattened once per roster rather than per keystroke. Rebuilding the search
+  // index for 300 people is milliseconds; doing it per character would be felt.
+  const searchableRecords = useMemo(
+    () => roster.index?.searchable() ?? [],
+    [roster.index]
+  );
 
   const attendee = useMemo(() => {
     if (!roster.index || !scan?.subjectId) return null;
@@ -222,15 +228,37 @@ export default function DoorStationPage() {
     signal('success');
   }, [attendee, queue, signal]);
 
-  const dismiss = useCallback(() => {
-    setScan(null);
-    setFeedback(null);
+  const handleManualAdmit = useCallback(
+    (reason: string) => {
+      if (!scan?.subjectId) return;
+      queue.submit({ kind: 'manual_admit', scannedId: scan.subjectId, reason });
+      setLastResult({ outcome: 'applied' });
+      signal('success');
+    },
+    [queue, scan?.subjectId, signal]
+  );
+
+  const handleLookupSelect = useCallback((record: DoorSearchableRecord) => {
+    setScan((previous) => ({
+      subjectId: record.subjectId,
+      nonce: (previous?.nonce ?? 0) + 1,
+    }));
     setLastResult(null);
     setEscalating(false);
+    setFromLookup(true);
+    setLookupOpen(false);
+  }, []);
+
+  const dismiss = useCallback(() => {
+    setScan(null);
+    clearFeedback();
+    setLastResult(null);
+    setEscalating(false);
+    setFromLookup(false);
     // The repeat gate is deliberately NOT reset. A badge still lingering in frame
     // would otherwise re-open the panel the instant it is dismissed; leaving the
     // window to expire means a re-scan is a deliberate act.
-  }, []);
+  }, [clearFeedback]);
 
   const signOut = useCallback(async () => {
     // Signing out drops the queue, and those check-ins would simply never have
@@ -297,24 +325,19 @@ export default function DoorStationPage() {
           onSignOut={() => void signOut()}
         />
 
-        {roster.isError ? (
-          <div
-            role="alert"
-            className="flex items-start gap-3 rounded-xl border border-error/40 bg-error/10 px-4 py-3"
-          >
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-error" aria-hidden="true" />
-            <div className="text-sm text-text-secondary">
-              <p>The roster did not load, so scans cannot be resolved.</p>
-              <button
-                type="button"
-                onClick={roster.refetch}
-                className="mt-1 font-medium text-brand-primary underline"
-              >
-                Try again
-              </button>
-            </div>
-          </div>
-        ) : null}
+        <StationNotices
+          rosterFailed={roster.isError}
+          onRetryRoster={roster.refetch}
+          blockedSignOutCount={signOutBlocked ? queue.pending : null}
+          onDismissSignOutBlock={() => setSignOutBlocked(false)}
+          failedWriteCount={queue.failures.length}
+          onDismissFailures={() => {
+            queue.failures.forEach((failure) => queue.dismissFailure(failure.entry.id));
+            // Those people have to be admitted again, so let their badges be
+            // re-scanned now instead of waiting out the repeat window.
+            scanner.clearGate();
+          }}
+        />
 
         {/* Never unmounted while a shift runs: tearing down the video element
             releases the camera and the next scan pays for a new handshake. */}
@@ -330,96 +353,81 @@ export default function DoorStationPage() {
           onPickCamera={(deviceId) => void scanner.start(deviceId)}
         />
 
-        {signOutBlocked ? (
-          <div
-            role="alert"
-            className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-text-secondary"
+        {/* Always reachable, not only after a failed scan: a lead working the
+            problem desk searches for people who never got as far as a badge. */}
+        {!lookupOpen && roleCan(staff.role, 'lookup') && roster.index ? (
+          <Button
+            variant="dark"
+            size="lg"
+            className="w-full"
+            onClick={() => setLookupOpen(true)}
           >
-            <p className="font-medium text-text-primary">Still {queue.pending} unsent</p>
-            <p className="mt-1">
-              Signing out now would lose them. Stay on this page until the count reaches zero —
-              it retries by itself.
-            </p>
-            <button
-              type="button"
-              onClick={() => setSignOutBlocked(false)}
-              className="mt-2 font-medium text-brand-primary underline"
-            >
-              Dismiss
-            </button>
-          </div>
+            <Search className="h-4 w-4" aria-hidden="true" />
+            Find by name
+          </Button>
         ) : null}
 
-        {queue.failures.length > 0 ? (
-          <div
-            role="alert"
-            className="rounded-xl border border-error/40 bg-error/10 px-4 py-3 text-sm text-text-secondary"
-          >
-            <p className="font-medium text-text-primary">
-              {queue.failures.length} check-in{queue.failures.length === 1 ? '' : 's'} could not
-              be saved
-            </p>
-            <p className="mt-1">
-              Tell a lead. Anyone affected needs admitting again — the record did not stick.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                queue.failures.forEach((failure) => queue.dismissFailure(failure.entry.id));
-                // Those people have to be admitted again, so let their badges be
-                // re-scanned now instead of waiting out the repeat window.
-                scanner.clearGate();
-              }}
-              className="mt-2 font-medium text-brand-primary underline"
-            >
-              Dismiss
-            </button>
-          </div>
+        {lookupOpen && roster.index ? (
+          <DeskLookup
+            records={searchableRecords}
+            onSelect={handleLookupSelect}
+            onClose={() => setLookupOpen(false)}
+            showContact={roleCan(staff.role, 'view_contact')}
+          />
         ) : null}
 
         {scan && attendee ? (
-          <AttendeePanel
-            attendee={attendee}
-            occasion={occasion}
-            role={staff.role}
-            lastResult={lastResult}
-            onCheckIn={handleCheckIn}
-            onHandOverGoodie={handleGoodie}
-            onEscalate={() => setEscalating(true)}
-          />
+          <>
+            <AttendeePanel
+              attendee={attendee}
+              occasion={occasion}
+              role={staff.role}
+              lastResult={lastResult}
+              // Omitted on the lookup path: nobody verified a QR there, so the
+              // admission is a manual one and must be recorded as such.
+              onCheckIn={fromLookup ? undefined : handleCheckIn}
+              onHandOverGoodie={handleGoodie}
+              onEscalate={() => setEscalating(true)}
+            />
+
+            {fromLookup &&
+            roleCan(staff.role, 'manual_admit') &&
+            canOfferCheckIn(attendee, occasion, true) ? (
+              <ManualAdmit onAdmit={handleManualAdmit} />
+            ) : null}
+
+            {fromLookup && !roleCan(staff.role, 'manual_admit') ? (
+              <p className="rounded-xl bg-surface-card px-4 py-3 text-sm text-text-tertiary">
+                Admitting someone without a code needs a door lead.
+              </p>
+            ) : null}
+          </>
         ) : null}
 
         {scan && !attendee && roster.index ? (
           <DoorNotFound
             canLookUp={roleCan(staff.role, 'lookup')}
-            // The desk lookup is the next change in the stack; until it lands the
-            // honest answer is to fetch someone who can resolve it.
+            onOpenLookup={() => setLookupOpen(true)}
             onEscalate={() => setEscalating(true)}
           />
         ) : null}
 
         {escalating ? (
-          <div className="rounded-2xl border border-info/40 bg-info/10 p-5">
-            <div className="flex items-start gap-3">
-              <Radio className="mt-0.5 h-5 w-5 shrink-0 text-info" aria-hidden="true" />
-              <div className="text-sm text-text-secondary">
-                <p className="font-medium text-text-primary">Raise a hand for a door lead</p>
-                <p className="mt-1">
-                  A lead can admit someone without a working code and see contact details.
-                  {scan?.subjectId ? (
-                    <>
-                      {' '}
-                      Read them this reference:{' '}
-                      <span className="font-mono text-text-primary">
-                        {scan.subjectId.slice(0, 8)}
-                      </span>
-                      .
-                    </>
-                  ) : null}
-                </p>
-              </div>
-            </div>
-          </div>
+          <DoorNotice
+            tone="info"
+            title="Raise a hand for a door lead"
+            actionLabel="Dismiss"
+            onAction={() => setEscalating(false)}
+          >
+            A lead can admit someone without a working code and see contact details.
+            {scan?.subjectId ? (
+              <>
+                {' '}
+                Read them this reference:{' '}
+                <span className="font-mono text-text-primary">{scan.subjectId.slice(0, 8)}</span>.
+              </>
+            ) : null}
+          </DoorNotice>
         ) : null}
 
         {scan ? (
@@ -450,14 +458,15 @@ export default function DoorStationPage() {
       <main className="min-h-screen bg-surface-page px-4 py-4">
         <div className="mx-auto w-full max-w-lg">
           {session.isError ? (
-            <div className="py-16 text-center">
-              <Heading level="h1" className="mb-3 text-xl font-bold">
-                Sign in to work the door
-              </Heading>
-              <Link href="/checkin/login" className="font-medium text-brand-primary underline">
-                Go to sign-in
+            // The effect above is already redirecting; this is the frame before
+            // it lands, and a link in case the replace is blocked.
+            <p className="py-16 text-center text-text-muted">
+              Taking you to{' '}
+              <Link href="/checkin/login" className="text-brand-primary underline">
+                sign-in
               </Link>
-            </div>
+              …
+            </p>
           ) : (
             body
           )}

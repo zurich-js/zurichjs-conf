@@ -57,6 +57,10 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
 }) => {
   const state = resolveDoorPanelState(attendee, occasion, lastResult);
   const detail = resolveDoorPanelDetail(state, attendee, occasion, lastResult);
+  // `onCheckIn` gates the button as well as handling it: reaching an attendee
+  // through the lookup desk means nobody verified a QR, so that path omits the
+  // handler and offers a manual admission instead — which is a different audit
+  // event, not the same one with a different origin.
   const canCheckIn = canOfferCheckIn(attendee, occasion, roleCan(role, 'check_in'));
 
   return (
@@ -124,7 +128,7 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
       {/* Sticky so the primary action stays reachable with one thumb however
           long the panel gets. */}
       <div className="sticky bottom-0 -mx-1 flex gap-3 bg-surface-page/95 px-1 py-3 backdrop-blur">
-        {canCheckIn ? (
+        {canCheckIn && onCheckIn ? (
           <Button
             variant="primary"
             size="lg"
@@ -139,7 +143,7 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
           <Button
             variant="dark"
             size="lg"
-            className={canCheckIn ? '' : 'flex-1'}
+            className={canCheckIn && onCheckIn ? '' : 'flex-1'}
             onClick={onEscalate}
           >
             Get a lead

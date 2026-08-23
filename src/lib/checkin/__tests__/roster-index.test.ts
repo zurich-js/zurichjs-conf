@@ -380,17 +380,19 @@ describe('buildRosterIndex().searchable', () => {
     expect(index.searchable()[0]?.subjectKind).toBe('ticket');
   });
 
-  it('reports checked-in against the occasion the roster was built for', () => {
+  it('reports the arrival time for the occasion the roster was built for', () => {
+    // The time, not a flag: the desk has to say "already in at 09:14", because a
+    // bare "already checked in" invites admitting them a second time.
     const attended = ticket({ checkedInWorkshopDayAt: '2026-09-10T08:02:00.000Z' });
 
     expect(
       buildRosterIndex(roster({ occasion: 'workshop_day', tickets: [attended] })).searchable()[0]
-        ?.checkedIn
-    ).toBe(true);
+        ?.checkedInAt
+    ).toBe('2026-09-10T08:02:00.000Z');
     expect(
       buildRosterIndex(roster({ occasion: 'conference_day', tickets: [attended] })).searchable()[0]
-        ?.checkedIn
-    ).toBe(false);
+        ?.checkedInAt
+    ).toBeNull();
   });
 });
 
