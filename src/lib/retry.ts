@@ -76,9 +76,18 @@ export async function retry<T>(
   throw lastError
 }
 
+/** Abort errors from AbortSignal — never retry these. */
+export function isAbortError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  // DOMException with name 'AbortError', or Node's AbortError
+  return error.name === 'AbortError'
+}
+
 /** Network-level fetch failure (DNS, TCP reset, TLS, timeout). */
 export function isNetworkError(error: unknown): boolean {
   if (!(error instanceof Error)) return false
+  // Abort errors are intentional cancellations, not transient failures.
+  if (isAbortError(error)) return false
   // Node's undici surfaces transient failures as `TypeError: fetch failed`
   // with a `cause` chain. Cover both the message and common cause codes.
   if (error.name === 'TypeError' && error.message === 'fetch failed') return true
@@ -106,6 +115,7 @@ const DEFAULT_RETRY_STATUSES = [408, 425, 429, 500, 502, 503, 504]
  * `fetch` with retries for transient network errors and retryable HTTP statuses.
  *
  * Honors the `Retry-After` header on 429/503 responses (seconds or HTTP date).
+ * Respects AbortSignal: if the signal is aborted, throws immediately without retry.
  * The final response — successful or not — is returned to the caller; callers
  * still decide how to handle non-2xx statuses for their domain.
  */
@@ -122,13 +132,27 @@ export async function fetchWithRetry(
     label,
   } = options
 
+  // Extract signal from init to check abort state before retries
+  const signal = init?.signal
+
   let lastError: unknown
   for (let attempt = 1; attempt <= attempts; attempt++) {
+    // Check if already aborted before attempting
+    if (signal?.aborted) {
+      throw signal.reason ?? new DOMException('Aborted', 'AbortError')
+    }
+
     try {
       const response = await fetch(input, init)
       if (!retryStatuses.includes(response.status) || attempt === attempts) {
         return response
       }
+
+      // Check abort before waiting to retry
+      if (signal?.aborted) {
+        throw signal.reason ?? new DOMException('Aborted', 'AbortError')
+      }
+
       const retryAfter = parseRetryAfter(response.headers.get('retry-after'))
       const delay = retryAfter ?? computeBackoff(attempt, baseDelayMs, maxDelayMs)
       log.warn('Fetch returned retryable status, retrying', {
@@ -142,10 +166,22 @@ export async function fetchWithRetry(
       await sleep(delay)
     } catch (error) {
       lastError = error
+
+      // Never retry abort errors — they are intentional cancellations
+      if (isAbortError(error)) {
+        throw error
+      }
+
       const isLast = attempt === attempts
       if (isLast || !isNetworkError(error)) {
         throw error
       }
+
+      // Check abort before waiting to retry
+      if (signal?.aborted) {
+        throw signal.reason ?? new DOMException('Aborted', 'AbortError')
+      }
+
       const delay = computeBackoff(attempt, baseDelayMs, maxDelayMs)
       log.warn('Fetch threw network error, retrying', {
         label,

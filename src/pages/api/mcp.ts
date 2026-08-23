@@ -45,6 +45,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
+  // Set CORS headers for browser callers
+  const origin = req.headers.origin;
+  const allowedOrigins = getAllowedOrigins();
+  if (typeof origin === 'string' && allowedOrigins.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
   const access = verifyMcpAccess(req);
   if (!access.authorized) {
     if (access.reason === 'missing_key') {

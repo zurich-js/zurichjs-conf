@@ -77,7 +77,7 @@ describe('POST /api/mcp', () => {
   it('rejects non-POST with 405', async () => {
     const res = await fetch(`${base}/`, { method: 'GET', headers: MCP_HEADERS });
     expect(res.status).toBe(405);
-    expect(res.headers.get('allow')).toBe('POST');
+    expect(res.headers.get('allow')).toBe('POST, OPTIONS');
   });
 
   it('initializes and lists all six read-only tools', async () => {
