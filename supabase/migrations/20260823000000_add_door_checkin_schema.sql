@@ -265,6 +265,11 @@ $$;
 
 COMMENT ON FUNCTION public.door_events_reject_mutation() IS 'Keeps door_events append-only. Rejects DELETE and TRUNCATE outright, and rejects any UPDATE except the reference-clearing one a foreign key performs on ON DELETE SET NULL.';
 
+-- A trigger function has no business being callable directly. Revoked from the
+-- client roles too, because Supabase grants EXECUTE to them directly and a
+-- revoke from PUBLIC alone would not remove it.
+REVOKE ALL ON FUNCTION public.door_events_reject_mutation() FROM PUBLIC, anon, authenticated;
+
 DROP TRIGGER IF EXISTS door_events_no_update ON public.door_events;
 CREATE TRIGGER door_events_no_update
   BEFORE UPDATE ON public.door_events
