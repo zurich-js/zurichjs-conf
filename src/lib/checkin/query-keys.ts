@@ -6,11 +6,16 @@
  * hierarchical, and every input that changes the server response belongs in
  * the key.
  *
- * The station's shape matters here. It prefetches four INDEPENDENT queries once
- * per shift and then resolves every scan from memory, so the read path makes no
- * network request at all. Separate keys are what make that work: they fire
- * concurrently, and a workshop upsell can invalidate seats without discarding
- * the roster.
+ * The station's shape matters here. It makes exactly two requests per shift —
+ * `session` to learn who the volunteer is and which day it is, then `roster` —
+ * and resolves every scan from memory afterwards, so the read path makes no
+ * network request at all. The four independent reads behind the roster (tickets,
+ * apparel, seats, workshops) run concurrently SERVER-side and arrive as one
+ * payload, which is one round trip on venue wifi instead of four.
+ *
+ * `registrations` and `workshops` below are reserved for the day that payload is
+ * worth splitting — so a workshop sale could invalidate seats without discarding
+ * the attendee list. Nothing fetches them yet.
  *
  * INVALIDATION RULE: after a check-in, write the changed attendee into the
  * cache and invalidate nothing. `invalidateQueries` marks a key stale AND

@@ -20,7 +20,8 @@
 
 import { createServiceRoleClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import type { DoorOccasion } from '@/lib/types/checkin';
+import type { Database } from '@/lib/types/database.generated';
+import type { DoorOccasion, DoorTicketStatus } from '@/lib/types/checkin';
 
 const log = logger.scope('Door Roster');
 
@@ -39,10 +40,19 @@ export interface RosterTicket {
   lastName: string | null;
   email: string;
   company: string | null;
+  jobTitle: string | null;
   ticketType: string;
   ticketCategory: string;
-  status: string;
+  ticketStage: string;
+  status: DoorTicketStatus;
   isVip: boolean;
+  /**
+   * Provenance for a transferred ticket. The door needs this: without it a
+   * volunteer sees a badge naming someone else and has no way to tell a
+   * legitimate transfer from a borrowed ticket.
+   */
+  transferredFromName: string | null;
+  transferredFromEmail: string | null;
   checkedInWorkshopDayAt: string | null;
   checkedInConferenceDayAt: string | null;
   goodieHandedAt: string | null;
@@ -109,9 +119,13 @@ interface TicketRow {
   last_name: string | null;
   email: string;
   company: string | null;
+  job_title: string | null;
   ticket_type: string;
   ticket_category: string;
-  status: string;
+  ticket_stage: string;
+  status: Database['public']['Enums']['payment_status'];
+  transferred_from_name: string | null;
+  transferred_from_email: string | null;
   checked_in_workshop_day_at: string | null;
   checked_in_conference_day_at: string | null;
   goodie_handed_at: string | null;
@@ -163,7 +177,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         supabase
           .from('tickets')
           .select(
-            'id, first_name, last_name, email, company, ticket_type, ticket_category, status, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, door_note'
+            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, door_note'
           )
           .order('created_at', { ascending: true })
           .range(from, to),
@@ -213,10 +227,14 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         lastName: t.last_name,
         email: t.email,
         company: t.company,
+        jobTitle: t.job_title,
         ticketType: t.ticket_type,
         ticketCategory: t.ticket_category,
+        ticketStage: t.ticket_stage,
         status: t.status,
         isVip: t.ticket_category === 'vip',
+        transferredFromName: t.transferred_from_name,
+        transferredFromEmail: t.transferred_from_email,
         checkedInWorkshopDayAt: t.checked_in_workshop_day_at,
         checkedInConferenceDayAt: t.checked_in_conference_day_at,
         goodieHandedAt: t.goodie_handed_at,
