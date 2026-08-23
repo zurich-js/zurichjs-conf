@@ -22,7 +22,7 @@ export const speakerGuide: InfoPage = {
   title: "Speaker Guide",
   description:
     "Practical guidance for ZurichJS Conf 2026 speakers, including travel, venues, contacts, stage setup, and local essentials.",
-  lastUpdated: "August 8, 2026",
+  lastUpdated: "August 23, 2026",
   sections: [
     {
       type: "paragraph",
@@ -71,6 +71,7 @@ export const speakerGuide: InfoPage = {
           heading: "Thursday, September 10",
           items: [
             "<strong>Workshop day:</strong> locations across Zurich.",
+            "<strong>15:00–17:00:</strong> open tech check drop-in at Technopark. Test your setup in advance, especially if your session is early on the 11th.",
             "<strong>18:30–22:00:</strong> speaker dinner at Ziegelhütte.",
           ],
         },
@@ -169,9 +170,26 @@ export const speakerGuide: InfoPage = {
         "<strong>HDMI:</strong> common adapters are available; bring your own for unusual connections, plus your charger. Power is available at the podium.<br /><strong>Clicker:</strong> a presenter remote is provided, or bring your own.<br /><strong>Podium and microphone:</strong> the podium sits to the side of the stage so it does not block the screen. You will be miked and can move around the stage.<br /><strong>Backup:</strong> a backup machine will have the slides you sent in advance.",
     },
     {
+      type: "heading",
+      level: "h3",
+      content: "Tech Checks",
+    },
+    {
       type: "paragraph",
       content:
-        "The conference starts at <strong>08:45</strong>. Complete your display, clicker, and microphone check before then at the time we confirm with you. The A/V crew will reconnect and confirm your setup during the break before your session.",
+        "The conference starts at <strong>08:45</strong>. We offer two ways to test your setup:",
+    },
+    {
+      type: "list",
+      items: [
+        "<strong>Open drop-in (Thursday, September 10, 15:00–17:00):</strong> come to Technopark to test your display, clicker, and microphone in advance. This is especially helpful if your session is early on the 11th.",
+        "<strong>Rolling tech checks (Friday):</strong> tech checks are grouped on a rolling basis during the coffee break before your talk. Please remain available during coffee breaks so the A/V crew can confirm your setup.",
+      ],
+    },
+    {
+      type: "paragraph",
+      content:
+        "Calendar invites have been sent for all tech check slots. Coordination happens in the speakers channel.",
     },
     {
       type: "heading",
@@ -467,7 +485,7 @@ export const speakerGuide: InfoPage = {
         {
           type: "paragraph",
           content:
-            "<strong>I missed my morning tech check. What now?</strong><br />Find the A/V crew during the next break. They will also reconnect and confirm your setup in the break before your session.",
+            "<strong>I missed my scheduled tech check. What now?</strong><br />Find the A/V crew during the next break. Your main tech check is scheduled during the coffee break before your talk, so arrive at the stage area with time to spare.",
         },
         {
           type: "paragraph",
