@@ -167,7 +167,7 @@ export function SessionCard({
           <Link
             key={entry.slug}
             href={`/speakers/${entry.slug}`}
-            className="flex w-fit items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="flex w-full min-w-0 sm:w-fit items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
           >
             {renderSpeakerContent(entry)}
           </Link>
