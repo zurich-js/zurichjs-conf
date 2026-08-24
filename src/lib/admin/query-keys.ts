@@ -39,6 +39,7 @@ export const adminKeys = {
   ticketList: () => [...adminKeys.tickets(), 'list'] as const,
   ticketInvoice: (ticketId: string) => [...adminKeys.tickets(), 'invoice', ticketId] as const,
   ticketSpend: (ticketId: string) => [...adminKeys.tickets(), 'spend', ticketId] as const,
+  ticketApparel: (ticketId: string) => [...adminKeys.tickets(), 'apparel', ticketId] as const,
 
   /** Financial overview — expensive aggregate, cache generously */
   financials: () => [...adminKeys.all, 'financials'] as const,

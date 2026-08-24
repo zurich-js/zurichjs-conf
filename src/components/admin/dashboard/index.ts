@@ -16,6 +16,9 @@ export type { ConfirmModalProps } from './ConfirmModal';
 export { ReassignModal } from './ReassignModal';
 export type { ReassignModalProps } from './ReassignModal';
 
+export { TicketApparelSection, TicketApparelSectionView } from './TicketApparelSection';
+export type { TicketApparelSectionProps, TicketApparelSectionViewProps } from './TicketApparelSection';
+
 export { TicketDetailsModal } from './TicketDetailsModal';
 export type { TicketDetailsModalProps } from './TicketDetailsModal';
 
