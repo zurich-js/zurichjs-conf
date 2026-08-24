@@ -3779,6 +3779,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      door_check_in: {
+        Args: {
+          p_manual?: boolean
+          p_occurred_at?: string
+          p_reason?: string
+          p_scanned_id: string
+          p_staff_id: string
+          p_station?: string
+        }
+        Returns: Json
+      }
+      door_current_occasion: { Args: never; Returns: string }
+      door_dashboard: { Args: { p_occasion?: string }; Returns: Json }
+      door_goodie_handover: {
+        Args: {
+          p_note?: string
+          p_occurred_at?: string
+          p_staff_id: string
+          p_station?: string
+          p_ticket_id: string
+        }
+        Returns: Json
+      }
+      door_resolve: { Args: { p_scanned_id: string }; Returns: Json }
+      door_workshops_for: {
+        Args: { p_email: string; p_ticket_id: string }
+        Returns: Json
+      }
       get_program_speaker_count: { Args: never; Returns: number }
       insert_workshop_registration_atomic: {
         Args: {
