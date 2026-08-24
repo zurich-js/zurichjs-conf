@@ -1,11 +1,34 @@
 /**
  * Admin Authentication Utilities
- * Simple password-based authentication for admin dashboard
- * + read-only API key authentication for bot/automation access
+ * Password-based authentication for the admin dashboard, plus read-only API
+ * key authentication for bot/automation access.
+ *
+ * The session cookie is a stateless, domain-scoped HMAC with a hard expiry —
+ * the same construction as order and speaker-logistics tokens
+ * (`@/lib/auth/orderToken`, `@/lib/auth/speakerLogisticsToken`), signed with
+ * the same secret family so no new environment variable is required.
+ *
+ * NOTE: this token authenticates "an admin", not "which admin". It carries no
+ * identity, so it cannot attribute an action to a person. Per-person identity
+ * for door staff is a separate concern — see `@/lib/checkin/staff`.
  */
 
+import crypto from 'crypto';
 import type { NextApiRequest } from 'next';
 import { verifyReadOnlyApiKey, type BotAuthResult } from './bot-auth';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Admin Auth');
+
+// Domain scope baked into the signature so an admin session token can never be
+// replayed against the order or logistics flows, even though they share a secret.
+const TOKEN_SCOPE = 'admin-session';
+
+// Token format version, so the shape can change without silently accepting old tokens.
+const TOKEN_VERSION = 'v1';
+
+/** How long an admin session stays valid. Also drives the cookie's Max-Age. */
+export const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24;
 
 export interface AdminAccessResult {
   authorized: boolean;
@@ -16,7 +39,41 @@ export interface AdminAccessResult {
 }
 
 /**
- * Verify admin password
+ * The secret used to sign admin session tokens.
+ *
+ * Shares the domain-scoped secret family documented in `.env.example`, so
+ * deploying this needs no new configuration.
+ */
+function getSigningSecret(): string {
+  const secret = process.env.ORDER_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
+
+  if (!secret) {
+    throw new Error('ORDER_TOKEN_SECRET or NEXTAUTH_SECRET must be configured');
+  }
+
+  return secret;
+}
+
+function computeSignature(expiresAtMs: number, secret: string): string {
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(`${TOKEN_SCOPE}:${TOKEN_VERSION}:${expiresAtMs}`);
+  return hmac.digest('base64url');
+}
+
+function signatureMatches(expiresAtMs: number, providedSignature: string, secret: string): boolean {
+  const provided = Buffer.from(providedSignature);
+  const expected = Buffer.from(computeSignature(expiresAtMs, secret));
+
+  // timingSafeEqual throws on length mismatch — reject those up front
+  if (provided.length !== expected.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(provided, expected);
+}
+
+/**
+ * Verify the admin password using a timing-safe comparison.
  */
 export function verifyAdminPassword(password: string): boolean {
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -24,31 +81,70 @@ export function verifyAdminPassword(password: string): boolean {
     throw new Error('Missing required environment variable: ADMIN_PASSWORD');
   }
 
-  return password === adminPassword;
+  const provided = Buffer.from(password);
+  const expected = Buffer.from(adminPassword);
+
+  // timingSafeEqual throws on length mismatch — reject those up front.
+  // Length is not secret enough to be worth padding for.
+  if (provided.length !== expected.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(provided, expected);
 }
 
 /**
- * Session token generation (simple approach)
- * In production, use proper JWT or session management
+ * Mint a signed admin session token that expires after
+ * ADMIN_SESSION_TTL_SECONDS.
+ *
+ * Throws if no signing secret is configured, so a misconfigured deployment
+ * fails at login rather than minting tokens that can never be verified.
  */
 export function generateAdminToken(): string {
-  // Simple token generation - in production use crypto.randomBytes or JWT
-  return Buffer.from(`admin:${Date.now()}:${Math.random()}`).toString('base64');
+  const expiresAtMs = Date.now() + ADMIN_SESSION_TTL_SECONDS * 1000;
+  const signature = computeSignature(expiresAtMs, getSigningSecret());
+
+  return `${TOKEN_VERSION}.${expiresAtMs}.${signature}`;
 }
 
 /**
- * Verify admin token (basic check)
- * In production, use proper session validation
+ * Verify an admin session token.
+ *
+ * Fails closed: an absent, malformed, expired, unsigned or wrongly-signed
+ * token — or a missing signing secret — all return false.
  */
 export function verifyAdminToken(token: string | undefined): boolean {
   if (!token) return false;
 
+  let secret: string;
   try {
-    const decoded = Buffer.from(token, 'base64').toString();
-    return decoded.startsWith('admin:');
+    secret = getSigningSecret();
   } catch {
+    // No secret configured: refuse every token rather than accepting all of them.
+    log.error('No admin session secret configured', undefined, {
+      expected: 'ORDER_TOKEN_SECRET or NEXTAUTH_SECRET',
+    });
     return false;
   }
+
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+
+  const [version, expiresAtRaw, providedSignature] = parts;
+  if (version !== TOKEN_VERSION) return false;
+
+  // Reject anything that is not a plain positive integer before Number() gets
+  // a chance to be lenient about whitespace, signs or exponents.
+  if (!/^\d+$/.test(expiresAtRaw)) return false;
+
+  const expiresAtMs = Number(expiresAtRaw);
+  if (!Number.isSafeInteger(expiresAtMs)) return false;
+
+  // Check the signature before the expiry so an attacker cannot use response
+  // timing to distinguish "expired" from "forged".
+  const signed = signatureMatches(expiresAtMs, providedSignature, secret);
+
+  return signed && expiresAtMs > Date.now();
 }
 
 /**

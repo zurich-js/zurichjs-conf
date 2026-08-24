@@ -4,7 +4,11 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyAdminPassword, generateAdminToken } from '@/lib/admin/auth';
+import {
+  ADMIN_SESSION_TTL_SECONDS,
+  generateAdminToken,
+  verifyAdminPassword,
+} from '@/lib/admin/auth';
 import { serialize } from 'cookie';
 import { logger } from '@/lib/logger';
 
@@ -37,7 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24, // 24 hours
+        // Kept in lockstep with the token's own expiry so the cookie cannot
+        // outlive the signature it carries.
+        maxAge: ADMIN_SESSION_TTL_SECONDS,
         path: '/',
       })
     );
