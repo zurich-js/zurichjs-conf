@@ -31,14 +31,14 @@ export default async function handler(
       return res.status(400).json({ error: 'Invalid request', details: parsed.error.issues });
     }
 
-    const { userId, email } = parsed.data;
+    const { userId, email: claimedEmail } = parsed.data;
 
     // Verify the user is actually authenticated
     const supabase = createSupabaseApiClient(req, res);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      log.warn('Unauthorized callback request', { userId, email });
+      log.warn('Unauthorized callback request', { userId, claimedEmail });
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -46,6 +46,21 @@ export default async function handler(
     if (user.id !== userId) {
       log.warn('User ID mismatch in callback', { claimedUserId: userId, actualUserId: user.id });
       return res.status(403).json({ error: 'User ID mismatch' });
+    }
+
+    // The invite is claimed against the SESSION's email, never the body's.
+    // The body value is only cross-checked for a clearer error; trusting it
+    // would let any authenticated user claim another person's invitation and
+    // inherit its role.
+    const email = user.email;
+    if (!email) {
+      log.warn('Authenticated user has no email address', { userId });
+      return res.status(403).json({ error: 'Authenticated account has no email address' });
+    }
+
+    if (email.toLowerCase() !== claimedEmail.toLowerCase()) {
+      log.warn('Email mismatch in callback', { userId, claimedEmail });
+      return res.status(403).json({ error: 'Email mismatch' });
     }
 
     // Accept reviewer invite
