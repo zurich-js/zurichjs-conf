@@ -35,3 +35,35 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Branch-specific configuration
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# A Supabase branch starts with NO data — deliberately, so production PII never
+# lands on a preview instance. That means a fresh staging branch has nothing to
+# scan and the door check-in flow is untestable until it is seeded.
+#
+# TO ENABLE, in this order:
+#   1. Create the persistent branch:  supabase --experimental branches create staging --persistent
+#   2. Read its ref:                  supabase --experimental branches list
+#      (take the value in the BRANCH PROJECT ID column)
+#   3. Uncomment the block below and paste that ref into project_id.
+#
+# Leaving project_id wrong or absent does not fail loudly — Supabase silently
+# SKIPS the configuration step — so verify the seed actually ran on the branch
+# rather than assuming it did.
+#
+# Seed files are applied to branches and to local `supabase db start` only. They
+# are never applied to production, so door fixtures here cannot leak into it.
+#
+# [remotes.staging]
+# project_id = "PASTE_BRANCH_PROJECT_REF_HERE"
+#
+# [remotes.staging.db.seed]
+# enabled = true
+# sql_paths = [
+#   "./seed-local-cfp.sql",
+#   "./seeds/40-workshop-commerce.sql",
+#   "./seeds/50-door-checkin.sql",
+# ]
