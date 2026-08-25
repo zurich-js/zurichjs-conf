@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
-import { Info } from 'lucide-react';
+import { Check, Info, Minus } from 'lucide-react';
 import {
+  DOOR_ABILITIES,
+  DOOR_ABILITY_GUIDE,
   DOOR_ROLES,
   DOOR_ROLE_DESCRIPTIONS,
   DOOR_ROLE_LABELS,
+  DOOR_ROLE_LANE,
+  roleCan,
   type DoorRole,
 } from '@/lib/types/checkin';
 import { useInviteDoorStaff } from '@/hooks/checkin/useDoorStaff';
 
 export interface InviteDoorStaffFormProps {
   onInvited?: () => void;
+  /** Lets the surrounding page highlight the same role in the comparison table. */
+  onRoleChange?: (role: DoorRole) => void;
   className?: string;
 }
 
@@ -26,6 +32,7 @@ export interface InviteDoorStaffFormProps {
  */
 export const InviteDoorStaffForm: React.FC<InviteDoorStaffFormProps> = ({
   onInvited,
+  onRoleChange,
   className = '',
 }) => {
   const [email, setEmail] = useState('');
@@ -50,6 +57,7 @@ export const InviteDoorStaffForm: React.FC<InviteDoorStaffFormProps> = ({
           setEmail('');
           setName('');
           setRole('scanner');
+          onRoleChange?.('scanner');
           // The row is the access grant; a failed email is recoverable by
           // resending, so it is a warning rather than an error.
           if (data.warning) setWarning(data.warning);
@@ -100,7 +108,11 @@ export const InviteDoorStaffForm: React.FC<InviteDoorStaffFormProps> = ({
           <select
             id="door-staff-role"
             value={role}
-            onChange={(e) => setRole(e.target.value as DoorRole)}
+            onChange={(e) => {
+              const next = e.target.value as DoorRole;
+              setRole(next);
+              onRoleChange?.(next);
+            }}
             className="w-full cursor-pointer rounded-lg border border-gray-300 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-brand-primary"
           >
             {DOOR_ROLES.map((value) => (
@@ -112,14 +124,44 @@ export const InviteDoorStaffForm: React.FC<InviteDoorStaffFormProps> = ({
         </div>
       </div>
 
-      {/* The permissions are the consequential part of this form, so they are
-          spelled out rather than left to the role name. */}
+      {/* The permissions are the consequential part of this form, so the chosen
+          role's actual experience is spelled out here rather than left to the
+          role name. Derived from DOOR_ROLE_ABILITIES, so it cannot claim
+          something the guard does not enforce. */}
       <div className="rounded-lg border border-gray-200 bg-white p-3">
         <div className="flex items-start gap-2">
           <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" aria-hidden="true" />
           <div>
             <p className="text-sm font-medium text-black">{DOOR_ROLE_LABELS[role]}</p>
             <p className="text-sm text-black">{DOOR_ROLE_DESCRIPTIONS[role]}</p>
+            <p className="mt-1 text-xs font-medium text-gray-700">{DOOR_ROLE_LANE[role]}</p>
+
+            <dl className="mt-2 space-y-1">
+              {DOOR_ABILITIES.map((ability) => {
+                const guide = DOOR_ABILITY_GUIDE[ability];
+                const allowed = roleCan(role, ability);
+                return (
+                  <div key={ability} className="flex items-start gap-2 text-xs">
+                    {allowed ? (
+                      <Check
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-700"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Minus
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <dt className="sr-only">{allowed ? 'Can' : 'Cannot'}</dt>
+                    <dd className={allowed ? 'text-gray-800' : 'text-gray-600'}>
+                      <span className="font-medium">{guide.label}. </span>
+                      {allowed ? guide.withIt : guide.withoutIt}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
           </div>
         </div>
       </div>

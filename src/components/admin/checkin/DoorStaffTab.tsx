@@ -8,6 +8,7 @@ import {
   useUpdateDoorStaff,
 } from '@/hooks/checkin/useDoorStaff';
 import type { DoorRole } from '@/lib/types/checkin';
+import { DoorRoleGuide } from './DoorRoleGuide';
 import { DoorStaffTable } from './DoorStaffTable';
 import { InviteDoorStaffForm } from './InviteDoorStaffForm';
 
@@ -28,6 +29,9 @@ export const DoorStaffTab: React.FC<DoorStaffTabProps> = ({ className = '' }) =>
   const updateStaff = useUpdateDoorStaff();
   const deactivateAll = useDeactivateAllDoorStaff();
   const [confirmingTeardown, setConfirmingTeardown] = useState(false);
+  // Mirrors the invite form's selection so the comparison table highlights the
+  // column being decided about.
+  const [previewRole, setPreviewRole] = useState<DoorRole>('scanner');
 
   const handleChangeRole = (id: string, role: DoorRole) => updateStaff.mutate({ id, role });
   const handleSetActive = (id: string, isActive: boolean) =>
@@ -44,7 +48,21 @@ export const DoorStaffTab: React.FC<DoorStaffTabProps> = ({ className = '' }) =>
           <UserPlus className="h-5 w-5 text-gray-700" aria-hidden="true" />
           <h2 className="text-lg font-semibold text-black">Invite a volunteer</h2>
         </div>
-        <InviteDoorStaffForm />
+        <InviteDoorStaffForm onRoleChange={setPreviewRole} />
+      </section>
+
+      {/* Placed between inviting and the crew list because that is when the
+          question gets asked: which role do I give this person, and what will
+          they actually be able to do at the door. */}
+      <section className="rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-black">What each role changes</h2>
+          <p className="mt-1 text-sm text-gray-700">
+            Same table the door UI reads to decide which buttons to show, so it cannot
+            drift from what a volunteer actually gets.
+          </p>
+        </div>
+        <DoorRoleGuide highlight={previewRole} />
       </section>
 
       {/* Surfaced prominently because a crew that has not signed in is the
