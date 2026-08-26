@@ -20,7 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         community: items.filter((item) => item.date === '2026-09-09').length,
         workshops: items.filter((item) => item.date === '2026-09-10').length,
         talks: items.filter((item) => item.date === '2026-09-11').length,
-        weekend: items.filter((item) => item.date === '2026-09-12').length,
       },
     }));
   } catch (error) {

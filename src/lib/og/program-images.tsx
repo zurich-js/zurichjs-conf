@@ -44,7 +44,6 @@ type ScheduleOgInput = {
     community: number;
     workshops: number;
     talks: number;
-    weekend: number;
   };
 };
 
@@ -495,7 +494,6 @@ export function renderScheduleOg({ counts }: ScheduleOgInput = {}) {
     community: counts?.community ?? 0,
     workshops: counts?.workshops ?? 0,
     talks: counts?.talks ?? 0,
-    weekend: counts?.weekend ?? 0,
   };
 
   const labels = publicProgramTabs.map((tab) => {
@@ -505,14 +503,12 @@ export function renderScheduleOg({ counts }: ScheduleOgInput = {}) {
     if (tab.id === 'warmup') {
       return { ...tab, count: tabCounts.workshops, accent: COLORS.blue };
     }
-    if (tab.id === 'conference') {
-      return { ...tab, count: tabCounts.talks, accent: COLORS.yellow };
-    }
-    return { ...tab, count: tabCounts.weekend, accent: COLORS.grayLight };
+    // conference
+    return { ...tab, count: tabCounts.talks, accent: COLORS.yellow };
   });
 
   return (
-    <OgShell background={COLORS.black} scheduleLabel="Sep 9-12, 2026">
+    <OgShell background={COLORS.black} scheduleLabel="Sep 9-11, 2026">
       <div
         style={{
           position: 'absolute',

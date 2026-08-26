@@ -37,7 +37,6 @@ export const publicProgramTabs = [
   { id: 'community', label: 'Community day', date: 'September 9, 2026', sessionDate: null },
   { id: 'warmup', label: 'Workshop day', date: 'September 10, 2026', sessionDate: '2026-09-10' },
   { id: 'conference', label: 'Conference day', date: 'September 11, 2026', sessionDate: '2026-09-11' },
-  { id: 'post-conference', label: 'Post-conf day', date: 'September 12, 2026', sessionDate: null },
 ] as const;
 
 export const workshopProgramSections = [
