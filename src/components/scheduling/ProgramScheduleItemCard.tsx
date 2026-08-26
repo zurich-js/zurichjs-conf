@@ -68,7 +68,7 @@ export function ProgramScheduleItemCard({
 
   if (item.type === 'event') {
     const titleLower = item.title.toLowerCase();
-    const isVipOnly = titleLower.includes('vip') || titleLower.includes('after party') || titleLower.includes('afterparty');
+    const isVipOnly = titleLower.includes('vip') || titleLower.includes('after party') || titleLower.includes('after-party') || titleLower.includes('afterparty');
     return (
       <EventCard
         id={item.id}

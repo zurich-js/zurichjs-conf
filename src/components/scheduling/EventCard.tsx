@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { ScheduleCard } from './ScheduleCard';
 import { formatTimeRange } from './utils';
@@ -23,7 +23,7 @@ export interface EventCardProps {
   vipOnly?: boolean;
 }
 
-export function EventCard({ id, title, description, startTime, durationMinutes, className, actions, link, vipOnly }: EventCardProps) {
+export function EventCard({ id, title, description, startTime, durationMinutes, className, actions, link, vipOnly }: EventCardProps): ReactElement {
   const hasPanel = Boolean(description) || Boolean(actions);
 
   return (
