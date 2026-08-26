@@ -27,6 +27,7 @@ export const warmupChillRunScheduleItem: PublicProgramScheduleItem = {
   description: null,
   submission_id: null,
   is_visible: true,
+  vip_only: false,
   session: null,
   speaker: null,
   speakers: [],
