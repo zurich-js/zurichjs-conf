@@ -238,6 +238,38 @@ describe('Admin Cart Builder Catalog API', () => {
     });
   });
 
+  it('keeps VIP at its late_bird price during last_minute (VIP tops out at late bird)', async () => {
+    mocks.mockGetCurrentStage.mockReturnValue({
+      stage: 'last_minute',
+      displayName: 'Last Minute',
+      startDate: new Date('2026-08-28T00:00:00.000Z'),
+      endDate: new Date('2026-09-11T00:00:00.000Z'),
+      priority: 5,
+      description: 'Final pricing - last chance',
+    });
+
+    const res = await callHandler('GET');
+
+    expect(mocks.mockPricesList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lookup_keys: [
+          'standard_student_unemployed',
+          'standard_last_minute',
+          'vip_late_bird',
+        ],
+      })
+    );
+
+    const body = res._json as CartBuilderCatalogResponse;
+    const vip = body.tickets.find((t) => t.id === 'vip');
+    expect(vip).toBeDefined();
+    expect(vip?.lookupKey).toBe('vip_late_bird');
+    expect(vip?.stage).toBe('late_bird');
+
+    const standard = body.tickets.find((t) => t.id === 'standard');
+    expect(standard?.stage).toBe('last_minute');
+  });
+
   it('requests currency-suffixed lookup keys for non-CHF currencies', async () => {
     await callHandler('GET', { currency: 'EUR' });
 

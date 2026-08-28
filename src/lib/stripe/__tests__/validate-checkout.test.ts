@@ -55,7 +55,19 @@ describe('validateCheckoutPrices', () => {
     vi.setSystemTime(new Date('2026-09-01T00:00:00.000Z'));
     const stripe = createMockStripe({
       price_1: 'standard_last_minute',
-      price_2: 'vip_last_minute_eur',
+    });
+
+    const result = await validateCheckoutPrices(stripe, ['price_1']);
+
+    expect(result.valid).toBe(true);
+    expect(result.currentStage).toBe('last_minute');
+  });
+
+  it('accepts VIP late_bird prices during the last_minute window (VIP tops out at late bird)', async () => {
+    vi.setSystemTime(new Date('2026-09-01T00:00:00.000Z'));
+    const stripe = createMockStripe({
+      price_1: 'vip_late_bird',
+      price_2: 'vip_late_bird_eur',
     });
 
     const result = await validateCheckoutPrices(stripe, ['price_1', 'price_2']);

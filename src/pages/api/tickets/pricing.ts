@@ -10,6 +10,7 @@ import { logger } from '@/lib/logger';
 
 import {
   getCurrentStage,
+  getEffectiveStageForCategory,
   getStagesAfter,
   getStockInfo,
   GLOBAL_STOCK_LIMITS,
@@ -138,7 +139,10 @@ export default async function handler(
     // Helper to fetch plans for a given currency
     const fetchPlansForCurrency = async (targetCurrency: SupportedCurrency): Promise<TicketPlanResponse[]> => {
       const pricePromises = TICKET_CATEGORIES.map(async (category) => {
-        const lookupKey = buildLookupKey(category, currentStage, targetCurrency);
+        // Categories capped at an earlier stage (VIP tops out at late bird)
+        // keep selling at their cap-stage price once the ladder moves past it.
+        const effectiveStage = getEffectiveStageForCategory(category, currentStage);
+        const lookupKey = buildLookupKey(category, effectiveStage, targetCurrency);
         const price = await fetchPrice(stripe, lookupKey);
 
         if (!price?.unit_amount || !price?.currency) {
@@ -153,7 +157,7 @@ export default async function handler(
         let comparePriceStage: PriceStage | undefined;
         if (category !== 'standard_student_unemployed') {
           const laterAmounts = await Promise.all(
-            getStagesAfter(currentStage).map(async ({ stage }) => {
+            getStagesAfter(effectiveStage).map(async ({ stage }) => {
               const laterPrice = await fetchPrice(stripe, buildLookupKey(category, stage, targetCurrency));
               return { stage, amount: laterPrice?.unit_amount ?? null };
             })
@@ -205,7 +209,7 @@ export default async function handler(
           currency: price.currency.toUpperCase(),
           priceId: price.id,
           lookupKey,
-          stage: category === 'standard_student_unemployed' ? 'standard' : currentStage,
+          stage: category === 'standard_student_unemployed' ? 'standard' : effectiveStage,
           stock: finalStock,
         } satisfies TicketPlanResponse;
       });
@@ -220,7 +224,7 @@ export default async function handler(
     // If no plans found and currency is not CHF, fall back to CHF
     if (plans.length === 0 && currency !== 'CHF') {
       const attemptedLookupKeys = TICKET_CATEGORIES.map((category) =>
-        buildLookupKey(category, currentStage, currency)
+        buildLookupKey(category, getEffectiveStageForCategory(category, currentStage), currency)
       );
 
       log.warn('No pricing plans found for currency, falling back to CHF', {

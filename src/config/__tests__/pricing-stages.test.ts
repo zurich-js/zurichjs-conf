@@ -9,6 +9,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   PRICING_STAGES,
   getCurrentStage,
+  getEffectiveStageForCategory,
   getFinalStage,
   getNextStage,
   getStageConfig,
@@ -124,6 +125,26 @@ describe('getStagesAfter', () => {
 
   it('returns an empty list for the final stage', () => {
     expect(getStagesAfter('last_minute')).toEqual([]);
+  });
+});
+
+describe('getEffectiveStageForCategory', () => {
+  it('caps VIP at late_bird during last_minute', () => {
+    expect(getEffectiveStageForCategory('vip', 'last_minute')).toBe('late_bird');
+  });
+
+  it('leaves VIP unchanged up to and including late_bird', () => {
+    expect(getEffectiveStageForCategory('vip', 'blind_bird')).toBe('blind_bird');
+    expect(getEffectiveStageForCategory('vip', 'early_bird')).toBe('early_bird');
+    expect(getEffectiveStageForCategory('vip', 'standard')).toBe('standard');
+    expect(getEffectiveStageForCategory('vip', 'late_bird')).toBe('late_bird');
+  });
+
+  it('leaves uncapped categories on the current stage', () => {
+    expect(getEffectiveStageForCategory('standard', 'last_minute')).toBe('last_minute');
+    expect(getEffectiveStageForCategory('standard_student_unemployed', 'last_minute')).toBe(
+      'last_minute'
+    );
   });
 });
 
