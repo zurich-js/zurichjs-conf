@@ -70,6 +70,9 @@ vi.mock('@/config/pricing-stages', () => ({
     const ladder = ['blind_bird', 'early_bird', 'standard', 'late_bird', 'last_minute'];
     return ladder.slice(ladder.indexOf(stage) + 1).map((s) => ({ stage: s }));
   },
+  // Mirrors the real cap logic: VIP tops out at late_bird
+  getEffectiveStageForCategory: (category: string, stage: string) =>
+    category === 'vip' && stage === 'last_minute' ? 'late_bird' : stage,
   getStockInfo: mocks.mockGetStockInfo,
   GLOBAL_STOCK_LIMITS: {
     vip: 50,
@@ -707,7 +710,8 @@ describe('Ticket Pricing API Handler', () => {
         displayName: 'Last Minute',
       });
 
-      // Update mock to return last_minute prices
+      // Update mock to return last_minute prices (VIP has none — it tops out
+      // at late bird)
       mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
         const key = lookup_keys[0];
         if (key === 'standard_student_unemployed') {
@@ -716,7 +720,7 @@ describe('Ticket Pricing API Handler', () => {
         if (key === 'standard_last_minute') {
           return { data: [createMockStripePrice(key, 28000, 'CHF')] };
         }
-        if (key === 'vip_last_minute') {
+        if (key === 'vip_late_bird') {
           return { data: [createMockStripePrice(key, 45000, 'CHF')] };
         }
         return { data: [] };
@@ -728,7 +732,47 @@ describe('Ticket Pricing API Handler', () => {
       await callHandler(req, res);
 
       const json = res._json as { plans: Array<{ comparePrice?: number }> };
+      expect(json.plans).toHaveLength(3);
       expect(json.plans.every((p) => p.comparePrice === undefined)).toBe(true);
+    });
+
+    it('should keep VIP available at its late_bird price during last_minute', async () => {
+      mocks.mockGetCurrentStage.mockReturnValue({
+        stage: 'last_minute',
+        displayName: 'Last Minute',
+      });
+
+      // No vip_last_minute price exists in Stripe — VIP tops out at late bird
+      mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
+        const key = lookup_keys[0];
+        if (key === 'standard_student_unemployed') {
+          return { data: [createMockStripePrice(key, 5000, 'CHF')] };
+        }
+        if (key === 'standard_last_minute') {
+          return { data: [createMockStripePrice(key, 28000, 'CHF')] };
+        }
+        if (key === 'vip_late_bird') {
+          return { data: [createMockStripePrice(key, 45000, 'CHF')] };
+        }
+        return { data: [] };
+      });
+
+      const req = createMockRequest();
+      const res = createMockResponse();
+
+      await callHandler(req, res);
+
+      const json = res._json as {
+        currentStage: string;
+        plans: Array<{ id: string; price: number; stage: string; lookupKey: string }>;
+      };
+      const vipPlan = json.plans.find((p) => p.id === 'vip');
+
+      expect(json.currentStage).toBe('last_minute');
+      expect(vipPlan).toBeDefined();
+      expect(vipPlan?.price).toBe(45000);
+      expect(vipPlan?.stage).toBe('late_bird');
+      expect(vipPlan?.lookupKey).toBe('vip_late_bird');
     });
   });
 
@@ -1117,5 +1161,27 @@ describe('buildLookupKey (integration)', () => {
     expect(calledKeys).toContain('standard_blind_bird');
     expect(calledKeys).toContain('vip_blind_bird');
     expect(calledKeys).toContain('standard_student_unemployed'); // No stage
+  });
+
+  it('should cap VIP at late_bird in lookup key during last_minute', async () => {
+    mocks.mockGetCurrentStage.mockReturnValue({
+      stage: 'last_minute',
+      displayName: 'Last Minute',
+    });
+
+    const calledKeys: string[] = [];
+    mocks.mockPricesList.mockImplementation(({ lookup_keys }: { lookup_keys: string[] }) => {
+      calledKeys.push(...lookup_keys);
+      return { data: [] };
+    });
+
+    const req = createMockRequest();
+    const res = createMockResponse();
+
+    await callHandler(req, res);
+
+    expect(calledKeys).toContain('standard_last_minute');
+    expect(calledKeys).toContain('vip_late_bird'); // VIP tops out at late bird
+    expect(calledKeys).not.toContain('vip_last_minute');
   });
 });
