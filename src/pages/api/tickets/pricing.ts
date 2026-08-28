@@ -157,10 +157,12 @@ export default async function handler(
         let comparePriceStage: PriceStage | undefined;
         if (category !== 'standard_student_unemployed') {
           const laterAmounts = await Promise.all(
-            getStagesAfter(effectiveStage).map(async ({ stage }) => {
-              const laterPrice = await fetchPrice(stripe, buildLookupKey(category, stage, targetCurrency));
-              return { stage, amount: laterPrice?.unit_amount ?? null };
-            })
+            getStagesAfter(effectiveStage)
+              .filter(({ stage }) => getEffectiveStageForCategory(category, stage) === stage)
+              .map(async ({ stage }) => {
+                const laterPrice = await fetchPrice(stripe, buildLookupKey(category, stage, targetCurrency));
+                return { stage, amount: laterPrice?.unit_amount ?? null };
+              })
           );
 
           for (const { stage, amount } of laterAmounts) {
