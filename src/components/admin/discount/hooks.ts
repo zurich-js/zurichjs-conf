@@ -8,29 +8,14 @@ import { useToast } from '@/contexts/ToastContext';
 import {
   fetchDiscountConfigApi,
   updateDiscountConfigApi,
-  createCorporateLinkApi,
   discountAdminQueryKeys,
 } from './api';
-import type { CorporateLinkInput, DiscountConfigUpdateInput } from './types';
+import type { DiscountConfigUpdateInput } from './types';
 
 export function useDiscountConfig() {
   return useQuery({
     queryKey: discountAdminQueryKeys.config(),
     queryFn: fetchDiscountConfigApi,
-  });
-}
-
-export function useCreateCorporateLink() {
-  const toast = useToast();
-
-  return useMutation({
-    mutationFn: (data: CorporateLinkInput) => createCorporateLinkApi(data),
-    onSuccess: (result) => {
-      toast.success('Link created', `Corporate access link ready for ${result.label}`);
-    },
-    onError: (error: Error) => {
-      toast.error('Error', error.message);
-    },
   });
 }
 

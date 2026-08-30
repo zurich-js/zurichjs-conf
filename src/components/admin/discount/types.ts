@@ -25,15 +25,3 @@ export interface DiscountConfigUpdateInput {
   /** Visit number at which the recurring offer kicks in */
   recurring_min_visits?: number;
 }
-
-/** Request body for minting a corporate access link */
-export interface CorporateLinkInput {
-  label: string;
-  validDays: number;
-}
-
-export interface CorporateLinkResponse {
-  code: string;
-  url: string;
-  label: string;
-}

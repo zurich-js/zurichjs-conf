@@ -4,12 +4,7 @@
  */
 
 import { queryKeys } from '@/lib/query-keys';
-import type {
-  DiscountConfigRow,
-  DiscountConfigUpdateInput,
-  CorporateLinkInput,
-  CorporateLinkResponse,
-} from './types';
+import type { DiscountConfigRow, DiscountConfigUpdateInput } from './types';
 
 export const discountAdminQueryKeys = {
   config: queryKeys.discount.adminConfig,
@@ -18,21 +13,6 @@ export const discountAdminQueryKeys = {
 export async function fetchDiscountConfigApi(): Promise<DiscountConfigRow> {
   const res = await fetch('/api/admin/discount/config');
   if (!res.ok) throw new Error('Failed to fetch discount config');
-  return res.json();
-}
-
-export async function createCorporateLinkApi(
-  data: CorporateLinkInput
-): Promise<CorporateLinkResponse> {
-  const res = await fetch('/api/admin/discount/corporate-link', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    throw new Error(body?.error || 'Failed to create corporate link');
-  }
   return res.json();
 }
 

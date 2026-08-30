@@ -11,9 +11,8 @@
  *
  * There is no eligibility lottery: every visitor who reaches a page where the
  * popup mounts is offered the discount. Only two things suppress it — a
- * browser that already bought a ticket or marked as a corporate buyer, and an
- * explicit dismissal (which minimizes to the corner widget so the offer stays
- * reachable).
+ * browser that already bought a ticket, and an explicit dismissal (which
+ * minimizes to the corner widget so the offer stays reachable).
  *
  * Timing and generosity vary by intent signal:
  * - UTM lottery winners see it immediately at the lottery percentage
@@ -39,7 +38,6 @@ import {
   setDismissedCookie,
   clearDiscountCookies,
   isKnownTicketHolder,
-  isCorporateBuyer,
   isRecurringVisitor,
   buildDiscountPersonalization,
   recordVisit,
@@ -217,17 +215,13 @@ export function useDiscount() {
       setShowImmediately(true);
     }
 
-    // Never offer a discount to someone who already bought a ticket, or to a
-    // corporate buyer spending a training budget — they book at the standard
-    // rate either way, so the offer is pure margin loss.
+    // Never offer a discount to someone who already bought a ticket.
     const isTicketHolder = isKnownTicketHolder();
-    const isCorporate = isCorporateBuyer();
-    isEligible.current = !isTicketHolder && !isCorporate;
+    isEligible.current = !isTicketHolder;
 
     analytics.track('discount_eligibility_checked', {
       was_eligible: isEligible.current,
       is_known_ticket_holder: isTicketHolder,
-      is_corporate_buyer: isCorporate,
       is_recurring_visitor: isRecurring.current,
       visit_count: visitCount,
     });

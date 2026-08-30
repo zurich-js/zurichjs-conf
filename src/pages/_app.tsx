@@ -21,7 +21,6 @@ import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
 import { initEasterEgg } from '@/lib/easter-egg/client';
 import { initTechStackDetection } from '@/lib/analytics/techStackDetector';
-import { claimCorporateHandoff } from '@/lib/discount/corporate-buyer';
 
 const DiscountContainer = dynamic(
   () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
@@ -128,13 +127,6 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
   // Initialize console easter egg
   useEffect(() => {
     initEasterEgg();
-  }, []);
-
-  // A corporate access link redirects to /#tickets on the server, so the
-  // marking it stands for has to land here on arrival. Runs after PostHog init
-  // above so the person property goes out with it.
-  useEffect(() => {
-    claimCorporateHandoff();
   }, []);
 
   // Hide NavBar on admin pages

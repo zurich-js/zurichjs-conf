@@ -18,13 +18,6 @@ export {
   VISIT_SESSION_GAP_MS,
 } from './visit-tracker';
 export { isKnownTicketHolder, markTicketHolder } from './ticket-holder';
-// NOTE: corporate-code.ts is deliberately NOT exported here — it reads a server
-// secret. Import it directly in API routes.
-export {
-  isCorporateBuyer,
-  markCorporateBuyer,
-  clearCorporateBuyer,
-} from './corporate-buyer';
 export {
   buildDiscountPersonalization,
   type DiscountPersonalization,
