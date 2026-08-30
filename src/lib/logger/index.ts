@@ -50,6 +50,93 @@ interface LogEntry {
     name?: string
     message?: string
     stack?: string
+    /**
+     * Postgres/PostgREST diagnostics, when the cause carried them.
+     *
+     * Serialized separately because they live on the error OBJECT, not in its
+     * message — flattening to `{name, message, stack}` drops exactly the fields
+     * that say which table and which permission.
+     */
+    code?: unknown
+    details?: unknown
+    hint?: unknown
+    status?: unknown
+  }
+}
+
+/**
+ * Coerce whatever was thrown — or returned — into something loggable.
+ *
+ * WHY THIS IS NOT `error instanceof Error ? error : undefined`
+ * That was the previous behaviour, and it silently DISCARDED the reason for
+ * roughly every database failure in this codebase. Supabase does not throw: it
+ * returns `{ data, error }` where `error` is a PLAIN OBJECT (PostgrestError),
+ * never an Error instance. So `log.error('Failed to load X', error)` recorded the
+ * message and the context and then threw away the only part that said what went
+ * wrong — producing a log line that names a failure and cannot explain it.
+ *
+ * PostgrestError's `code`, `details` and `hint` are the useful half. `42P01`
+ * means the table does not exist, which in practice usually means the app is
+ * talking to the wrong database — and that is invisible from the message alone.
+ */
+function toLoggableError(error: unknown): Error | undefined {
+  if (error === undefined || error === null) return undefined
+  if (error instanceof Error) return error
+
+  if (typeof error === 'object') {
+    const source = error as Record<string, unknown>
+    const message =
+      typeof source.message === 'string' ? source.message : safeStringify(error)
+
+    const loggable = new Error(message)
+    // Named so a reader can tell a coerced value from a real throw.
+    loggable.name = typeof source.name === 'string' ? source.name : 'NonError'
+
+    // Carried explicitly: these identify a Postgres failure and are lost the
+    // moment the object is flattened to a message.
+    for (const key of ['code', 'details', 'hint', 'status', 'statusCode'] as const) {
+      if (source[key] !== undefined) {
+        ;(loggable as unknown as Record<string, unknown>)[key] = source[key]
+      }
+    }
+
+    // A stack captured here points at the logger, not at the failure, which is
+    // worse than no stack at all.
+    loggable.stack = undefined
+    return loggable
+  }
+
+  return new Error(String(error))
+}
+
+/**
+ * Flatten an Error for the log entry, keeping the diagnostic fields that
+ * `toLoggableError` attached. Anything absent is simply omitted.
+ */
+function serializeError(error: Error): NonNullable<LogEntry['error']> {
+  const source = error as unknown as Record<string, unknown>
+
+  const serialized: NonNullable<LogEntry['error']> = {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+  }
+
+  for (const key of ['code', 'details', 'hint', 'status'] as const) {
+    if (source[key] !== undefined && source[key] !== null) {
+      serialized[key] = source[key]
+    }
+  }
+
+  return serialized
+}
+
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? String(value)
+  } catch {
+    // Circular, or a getter that throws. The name is still worth having.
+    return Object.prototype.toString.call(value)
   }
 }
 
@@ -107,7 +194,7 @@ class Logger {
       code?: string
     }
   ): void {
-    const errorObj = error instanceof Error ? error : undefined
+    const errorObj = toLoggableError(error)
     this.log('error', message, errorObj, context)
 
     // Track errors in PostHog for monitoring
@@ -145,13 +232,7 @@ class Logger {
       message,
       timestamp: new Date().toISOString(),
       context,
-      error: error
-        ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          }
-        : undefined,
+      error: error ? serializeError(error) : undefined,
     }
 
     // Output to console
