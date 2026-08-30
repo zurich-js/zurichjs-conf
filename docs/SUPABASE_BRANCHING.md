@@ -23,8 +23,17 @@ history, that you can point a frontend at and break without consequence.
 - Your $10 monthly compute credit does **not** offset branch compute.
 - Branch usage counts against your plan quotas.
 
-Per-PR preview branches only exist for the life of the PR, so they are cheap; a
-persistent staging branch is the recurring cost.
+Per-PR preview branches only exist for the life of the PR, so they are cheap
+individually — but they are **not** covered by your organisation's Spend Cap, and
+they bill for as long as the PR stays open, not for as long as you use them.
+
+**Watch out for stacked PRs.** "Supabase changes only" filters on whether a PR
+touches `supabase/`, and a chained stack means every descendant inherits its
+parent's migrations. The door check-in stack is 15 PRs, of which **14 touch
+`supabase/`** — so that filter saves one branch, not fourteen. Fourteen branches
+left open is roughly **$4.50/day**. Either merge a stack promptly, or turn
+Automatic branching off while one is in flight and create branches by hand for
+the PRs whose SQL you actually want to exercise.
 
 ## Setup
 
@@ -50,21 +59,26 @@ integration as a **required status check**.
 This is the step that actually buys the safety. Without it, branching tells you a
 migration failed and then lets you merge it anyway.
 
-### 3. Create a persistent staging branch
+### 3. Optional: a persistent staging branch
+
+Not required. With **Automatic branching** on, every PR that touches `supabase/`
+already gets its own branch, seeded from `[db.seed]` — which is enough to test a
+migration before it merges.
+
+A persistent branch is worth the ~$9.70/month only if you want an environment
+that **outlives a PR**: somewhere a deployed frontend can point at all week and
+that keeps its data between tests. Preview branches are deleted when their PR
+merges or closes.
 
 ```bash
 supabase --experimental branches create staging --persistent
 supabase --experimental branches list      # note the BRANCH PROJECT ID
 ```
 
-**Persistent, not preview.** Preview branches are per-PR and are deleted when the
-PR merges or closes — fine for reviewing one migration, useless as a staging
-environment you want to keep seeded and pointed at by a deployed frontend.
+### 4. Wire a persistent branch into `config.toml`
 
-### 4. Wire the branch into `config.toml`
-
-Uncomment the `[remotes.staging]` block at the bottom of `supabase/config.toml`
-and paste the ref from step 3.
+Only if you did step 3. Uncomment the `[remotes.staging]` block at the bottom of
+`supabase/config.toml` and paste the ref.
 
 Note the trap documented there: an absent or wrong `project_id` does **not** fail
 loudly — Supabase silently skips the configuration step. Verify the seed actually
@@ -85,9 +99,9 @@ land on a preview instance — but it means a fresh staging branch has nothing t
 scan, so the door station resolves every code to "not in today's roster" and the
 whole flow looks broken.
 
-`supabase/seeds/50-door-checkin.sql` is the fixture that fixes it. It is wired
-into `[remotes.staging.db.seed]` so a branch gets it automatically, and it is
-available locally as:
+`supabase/seeds/50-door-checkin.sql` is the fixture that fixes it. It is in the
+default `[db.seed]` list, so **every** preview branch gets it — and so does local
+`supabase db start`. It is also available on demand as:
 
 ```bash
 pnpm db:seed:door-checkin
@@ -99,6 +113,10 @@ partial goodie handover, an unnamed seat, a colleague's seat stamped with the
 buyer's `ticket_id`, and a workshop-only attendee with an accented name. The
 scannable QR payload is `${baseUrl}/validate/<ticket id>`, so the ids in that file
 are the codes.
+
+It is self-sufficient: it creates a workshop only when the catalogue is empty, so
+it works both on a bare branch and layered on top of the CFP base seed. Both
+paths are verified against a real Postgres with the full migration history.
 
 Seed files are applied to branches and to local `supabase db start` only. They are
 never applied to production, so these fixtures cannot leak into it.
