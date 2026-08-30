@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { parseCurrencyParam, type SupportedCurrency } from '@/config/currency';
 import {
   getCurrentStage,
+  getEffectiveStageForCategory,
   getStockInfo,
   type PriceStage,
   type TicketCategory,
@@ -78,10 +79,13 @@ const buildTicketLookupKey = (
   stage: PriceStage,
   currency: SupportedCurrency
 ): string => {
+  // Categories capped at an earlier stage (VIP tops out at late bird) keep
+  // selling at their cap-stage price once the ladder moves past it.
+  const effectiveStage = getEffectiveStageForCategory(category, stage);
   const base =
     category === 'standard_student_unemployed'
       ? 'standard_student_unemployed'
-      : `${category}_${stage}`;
+      : `${category}_${effectiveStage}`;
   return applyCurrencySuffix(base, currency);
 };
 
@@ -142,7 +146,10 @@ export default async function handler(
         currency: price.currency.toUpperCase(),
         priceId: price.id,
         lookupKey,
-        stage: category === 'standard_student_unemployed' ? 'standard' : currentStage,
+        stage:
+          category === 'standard_student_unemployed'
+            ? 'standard'
+            : getEffectiveStageForCategory(category, currentStage),
         stock: counts
           ? getStockInfo(category, currentStage, counts)
           : { remaining: null, total: null, soldOut: false },

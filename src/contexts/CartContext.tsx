@@ -19,6 +19,8 @@ import {
   updateQuantity,
   applyVoucher as applyVoucherToCart,
   removeVoucher as removeVoucherFromCart,
+  cartHasStatusDiscountedTicket,
+  STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE,
 } from '@/lib/cart-operations';
 import { encodeCartState } from '@/lib/cart-url-state';
 import { useVoucherValidation } from '@/hooks/useVoucherValidation';
@@ -216,6 +218,20 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children, initialCar
     if (priceIds.length === 0) {
       trackVoucherEvent({ code, success: false, error: 'empty_cart', cartPriceIds: priceIds });
       return { success: false, error: 'No tickets selected' };
+    }
+
+    // Student/unemployed tickets already carry the status discount, so no promo
+    // code stacks on top. The review step disables the input, but codes also
+    // arrive from `?voucher=` deep links and parked recovery codes — reject those
+    // here too instead of round-tripping to Stripe for a guaranteed rejection.
+    if (cartHasStatusDiscountedTicket(currentCart.items)) {
+      trackVoucherEvent({
+        code,
+        success: false,
+        error: 'status_discounted_ticket',
+        cartPriceIds: priceIds,
+      });
+      return { success: false, error: STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE };
     }
 
     try {

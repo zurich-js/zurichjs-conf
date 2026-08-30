@@ -3,7 +3,11 @@
  */
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { B2BInvoiceWithAttendees } from '@/lib/types/b2b';
+import { buildWorkshopCapacityWarnings, isWorkshopOnlyInvoice } from '@/lib/b2b/invoice-calculations';
+import { adminKeys } from '@/lib/admin/query-keys';
+import type { B2BAvailableWorkshopsResponse, B2BAvailableWorkshop } from '@/pages/api/admin/b2b-invoices/workshops';
 import { formatAmount } from './types';
 
 interface MarkAsPaidModalProps {
@@ -20,9 +24,44 @@ interface MarkAsPaidResult {
   emailsFailed: number;
   tickets: Array<{ attendeeName: string; attendeeEmail: string; ticketId: string }>;
   emailFailures?: Array<{ attendeeEmail: string; attendeeName: string; reason: string }>;
+  capacityWarnings?: string[];
+}
+
+async function fetchAvailableWorkshops(): Promise<B2BAvailableWorkshop[]> {
+  const response = await fetch('/api/admin/b2b-invoices/workshops');
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.error || 'Failed to load workshops');
+  }
+  const data = (await response.json()) as B2BAvailableWorkshopsResponse;
+  return data.workshops;
 }
 
 export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModalProps) {
+  // Workshop-only invoices create workshop registrations and no tickets
+  const workshopOnly = isWorkshopOnlyInvoice(invoice.ticket_quantity);
+  const workshopSeatCount = invoice.workshop_items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Capacity never blocks admin invoicing — it is shown so the organiser knows
+  // a workshop will be oversold before confirming.
+  const { data: availableWorkshops } = useQuery({
+    queryKey: adminKeys.b2bWorkshops(),
+    queryFn: fetchAvailableWorkshops,
+    enabled: invoice.workshop_items.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const capacityWarnings = buildWorkshopCapacityWarnings(
+    invoice.workshop_items.map((item) => ({
+      workshopId: item.workshop_id,
+      title: item.workshop_title,
+      quantity: item.quantity,
+    })),
+    (availableWorkshops ?? []).map((workshop) => ({
+      workshopId: workshop.id,
+      capacity: workshop.capacity,
+      enrolledCount: workshop.enrolledCount,
+    }))
+  );
   const [bankReference, setBankReference] = useState('');
   const [sendEmails, setSendEmails] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
@@ -80,8 +119,12 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
 
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-6">
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-gray-600">Tickets Created:</div>
-                <div className="font-medium text-gray-900">{result.ticketsCreated}</div>
+                {!workshopOnly && (
+                  <>
+                    <div className="text-gray-600">Tickets Created:</div>
+                    <div className="font-medium text-gray-900">{result.ticketsCreated}</div>
+                  </>
+                )}
                 {result.workshopRegistrationsCreated > 0 && (
                   <>
                     <div className="text-gray-600">Workshop Registrations:</div>
@@ -113,6 +156,19 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               </div>
             )}
 
+            {result.capacityWarnings && result.capacityWarnings.length > 0 && (
+              <div className="text-left mb-6">
+                <h4 className="font-medium text-amber-800 mb-2 text-sm">Workshop Warnings:</h4>
+                <ul className="space-y-1 list-disc list-inside">
+                  {result.capacityWarnings.map((warning) => (
+                    <li key={warning} className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                      {warning}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {result.emailFailures && result.emailFailures.length > 0 && (
               <div className="text-left mb-6">
                 <h4 className="font-medium text-red-700 mb-2 text-sm">Email Failures:</h4>
@@ -126,7 +182,9 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
                   ))}
                 </div>
                 <p className="mt-2 text-xs text-gray-600">
-                  Tickets were still created. You can resend emails later from the attendees list.
+                  {workshopOnly
+                    ? 'Workshop registrations were still created. You can resend emails later from the attendees list.'
+                    : 'Tickets were still created. You can resend emails later from the attendees list.'}
                 </p>
               </div>
             )}
@@ -175,7 +233,9 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               <div className="text-gray-600">Total Amount:</div>
               <div className="font-medium text-gray-900">{formatAmount(invoice.total_amount, invoice.currency)}</div>
               <div className="text-gray-600">Tickets:</div>
-              <div className="font-medium text-gray-900">{invoice.ticket_quantity}x {invoice.ticket_category}</div>
+              <div className="font-medium text-gray-900">
+                {workshopOnly ? 'None (workshops only)' : `${invoice.ticket_quantity}x ${invoice.ticket_category}`}
+              </div>
               {invoice.workshop_items.map((item) => (
                 <div key={item.id} className="contents">
                   <div className="text-gray-600">Workshop:</div>
@@ -217,13 +277,32 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
             <label htmlFor="sendEmails" className="text-sm text-gray-900 cursor-pointer">
               <span className="font-medium">Send confirmation emails</span>
               <p className="text-gray-600 mt-0.5">
-                Each attendee will receive their ticket with a QR code via email
-                {invoice.workshop_items.length > 0 &&
-                  ', plus a separate confirmation for each assigned workshop seat'}
-                .
+                {workshopOnly
+                  ? 'Each attendee will receive a confirmation for every assigned workshop seat.'
+                  : `Each attendee will receive their ticket with a QR code via email${
+                      invoice.workshop_items.length > 0
+                        ? ', plus a separate confirmation for each assigned workshop seat'
+                        : ''
+                    }.`}
               </p>
             </label>
           </div>
+
+          {/* Workshop warnings — informational, they never block confirmation */}
+          {availableWorkshops && capacityWarnings.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
+              <p className="font-medium text-amber-800">Check these workshop lines before confirming:</p>
+              <ul className="mt-1 text-amber-700 list-disc list-inside space-y-0.5">
+                {capacityWarnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-amber-700">
+                Confirming is not blocked: seats past capacity are still booked, but a workshop
+                that no longer exists cannot be registered.
+              </p>
+            </div>
+          )}
 
           {/* Warning Box */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -234,13 +313,13 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               <div className="text-sm">
                 <p className="font-medium text-amber-800">This action will:</p>
                 <ul className="mt-1 text-amber-700 list-disc list-inside space-y-0.5">
-                  <li>Create {invoice.ticket_quantity} tickets in the system</li>
+                  {!workshopOnly && <li>Create {invoice.ticket_quantity} tickets in the system</li>}
                   {invoice.workshop_items.length > 0 && (
                     <li>
-                      Create {invoice.workshop_items.reduce((sum, item) => sum + item.quantity, 0)} workshop
-                      registration(s) for assigned attendees
+                      Create {workshopSeatCount} workshop registration(s) for assigned attendees
                     </li>
                   )}
+                  {workshopOnly && <li>Create no conference tickets — this invoice has none</li>}
                   <li>Mark the invoice as paid</li>
                   {sendEmails && <li>Send confirmation emails to all attendees</li>}
                 </ul>
@@ -260,7 +339,9 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
             />
             <label htmlFor="confirm" className="text-sm text-gray-900 cursor-pointer">
               <span className="font-medium">
-                I confirm that I want to create {invoice.ticket_quantity} tickets and mark this invoice as paid.
+                {workshopOnly
+                  ? `I confirm that I want to book ${workshopSeatCount} workshop seat(s) and mark this invoice as paid.`
+                  : `I confirm that I want to create ${invoice.ticket_quantity} tickets and mark this invoice as paid.`}
               </span>
             </label>
           </div>
@@ -280,7 +361,11 @@ export function MarkAsPaidModal({ invoice, onClose, onSuccess }: MarkAsPaidModal
               disabled={submitting || !confirmed || !bankReference.trim()}
               className="px-4 py-2.5 bg-green-700 text-white font-medium rounded-lg hover:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {submitting ? 'Processing...' : 'Confirm Payment & Create Tickets'}
+              {submitting
+                ? 'Processing...'
+                : workshopOnly
+                  ? 'Confirm Payment & Book Workshops'
+                  : 'Confirm Payment & Create Tickets'}
             </button>
           </div>
         </form>

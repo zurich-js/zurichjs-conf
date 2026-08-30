@@ -141,18 +141,18 @@ export function SessionCard({
   const renderSpeakerContent = (entry: SessionCardSpeaker) => (
     <>
       {entry.imageUrl ? (
-        <div className={cn('relative overflow-hidden rounded-full', compact ? 'size-9' : 'size-11')}>
+        <div className={cn('relative shrink-0 overflow-hidden rounded-full', compact ? 'size-9' : 'size-11')}>
           <Image src={entry.imageUrl} alt={entry.name} fill className="object-cover" sizes="44px" />
         </div>
       ) : (
-        <div className={cn('flex items-center justify-center rounded-full bg-brand-black font-bold text-brand-white', compact ? 'size-9 text-xs' : 'size-11 text-sm')}>
+        <div className={cn('flex shrink-0 items-center justify-center rounded-full bg-brand-black font-bold text-brand-white', compact ? 'size-9 text-xs' : 'size-11 text-sm')}>
           {entry.name.charAt(0)}
         </div>
       )}
 
-      <div>
+      <div className="min-w-0">
         <p className={cn('font-semibold text-brand-black', compact ? 'text-xs md:text-sm' : 'text-sm')}>{entry.name}</p>
-        {entry.role ? <p className="text-xs text-brand-gray-medium">{entry.role}</p> : null}
+        {entry.role ? <p className="truncate text-xs text-brand-gray-medium">{entry.role}</p> : null}
       </div>
     </>
   );
@@ -167,7 +167,7 @@ export function SessionCard({
           <Link
             key={entry.slug}
             href={`/speakers/${entry.slug}`}
-            className="flex w-fit items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="flex w-full min-w-0 sm:w-fit items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue"
           >
             {renderSpeakerContent(entry)}
           </Link>

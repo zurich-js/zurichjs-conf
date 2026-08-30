@@ -33,7 +33,7 @@ export function buildWorkshopWaitlistConfig({
       heading: 'How it works',
       steps: [
         'Join the waitlist for this workshop',
-        'Seats free up when plans change or orders are refunded',
+        'Seats open when we expand capacity or there are cancellations',
         'We email the waitlist as soon as one opens',
       ],
     },

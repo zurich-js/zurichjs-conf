@@ -9,7 +9,11 @@ import { useState } from 'react';
 import { CartItem, CartSummary, VoucherInput, SeebadEngeModal } from '@/components/molecules';
 import { Button, Heading } from '@/components/atoms';
 import type { ReviewStepProps, CartItem as CartItemType } from './types';
-import { getVipWorkshopPerkStatus } from '@/lib/cart-operations';
+import {
+  cartHasStatusDiscountedTicket,
+  getVipWorkshopPerkStatus,
+  STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE,
+} from '@/lib/cart-operations';
 import { InfoIcon, PlusIcon } from 'lucide-react';
 
 export function ReviewStep({
@@ -50,6 +54,10 @@ export function ReviewStep({
 
   const hasTicket = cart.items.some((item) => item.kind !== 'workshop');
   const hasWorkshop = cart.items.some((item) => item.kind === 'workshop');
+  // Student and unemployed tickets are already sold below cost, so promo codes
+  // never stack on top of them. Lock the input rather than letting someone enter
+  // a code only for the server to reject it at checkout.
+  const voucherLockedByStatusTicket = cartHasStatusDiscountedTicket(cart.items);
 
   // VIP tickets carry a standing 20% workshop discount that we apply
   // automatically — no emailed coupon to copy/paste. Surface what's happening so
@@ -197,7 +205,13 @@ export function ReviewStep({
         {/* Discount Code Input */}
         <div>
           <h3 className="text-lg font-semibold text-brand-white mb-4">Promo Code</h3>
-          <VoucherInput onApply={onApplyVoucher} />
+          <VoucherInput onApply={onApplyVoucher} disabled={voucherLockedByStatusTicket} />
+          {voucherLockedByStatusTicket && (
+            <p className="mt-2 flex items-start gap-2 text-sm text-brand-gray-light">
+              <InfoIcon size={16} className="mt-0.5 shrink-0 text-brand-gray-light" aria-hidden="true" />
+              {STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE}
+            </p>
+          )}
         </div>
       </div>
 

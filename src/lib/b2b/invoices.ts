@@ -16,7 +16,7 @@ import type {
   WorkshopItemInput,
   ListInvoicesQuery,
 } from '@/lib/types/b2b';
-import { computeInvoiceTotals } from './invoice-calculations';
+import { computeInvoiceTotals, isWorkshopOnlyInvoice } from './invoice-calculations';
 
 /**
  * Create a new B2B invoice
@@ -28,10 +28,19 @@ import { computeInvoiceTotals } from './invoice-calculations';
 export async function createInvoice(data: CreateB2BInvoiceRequest): Promise<B2BInvoice> {
   const supabase = createServiceRoleClient();
 
+  const workshopOnly = isWorkshopOnlyInvoice(data.ticketQuantity);
+
+  // An invoice must bill something: tickets, workshop seats, or both
+  if (workshopOnly && !data.workshopItems?.length) {
+    throw new Error(
+      'A workshop-only invoice needs at least one workshop line item'
+    );
+  }
+
   // Calculate totals (tickets + workshop seats)
   const vatRate = data.vatRate ?? 0;
   const { subtotal, vatAmount, totalAmount } = computeInvoiceTotals({
-    unitPrice: data.unitPrice,
+    unitPrice: workshopOnly ? 0 : data.unitPrice,
     ticketQuantity: data.ticketQuantity,
     workshopItems: data.workshopItems,
     vatRate,
@@ -61,11 +70,12 @@ export async function createInvoice(data: CreateB2BInvoiceRequest): Promise<B2BI
       invoice_notes: data.invoiceNotes || null,
       payment_method: data.paymentMethod || 'bank_transfer',
 
-      // Ticket configuration
-      ticket_category: data.ticketCategory,
-      ticket_stage: data.ticketStage,
+      // Ticket configuration — placeholders on a workshop-only invoice, where
+      // ticket_quantity 0 means no tickets are ever created from it
+      ticket_category: data.ticketCategory ?? 'standard',
+      ticket_stage: data.ticketStage ?? 'general_admission',
       ticket_quantity: data.ticketQuantity,
-      unit_price: data.unitPrice,
+      unit_price: workshopOnly ? 0 : data.unitPrice,
       currency: 'CHF',
 
       // Calculated totals
@@ -328,16 +338,31 @@ export async function updateInvoice(
     }
   }
 
+  // Resolve the invoice's post-update shape before mutating anything, so an
+  // invalid combination is rejected without leaving half the change applied.
+  const unitPrice = data.unitPrice ?? existing.unit_price;
+  const ticketQuantity = data.ticketQuantity ?? existing.ticket_quantity;
+  const vatRate = data.vatRate ?? existing.vat_rate;
+
+  const nextWorkshopLines =
+    data.workshopItems ??
+    (await getWorkshopItems(invoiceId)).map((item) => ({
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+    }));
+
+  // An invoice must bill something: tickets, workshop seats, or both
+  if (isWorkshopOnlyInvoice(ticketQuantity) && nextWorkshopLines.length === 0) {
+    throw new Error(
+      'Cannot save an invoice with no conference tickets and no workshop seats'
+    );
+  }
+
   // Replace workshop line items when provided (full replacement). Deleting
   // the old items cascades to any attendee seat assignments on them.
   if (data.workshopItems !== undefined) {
     await replaceWorkshopItems(invoiceId, data.workshopItems);
   }
-
-  // Recalculate totals if any pricing input changed
-  const unitPrice = data.unitPrice ?? existing.unit_price;
-  const ticketQuantity = data.ticketQuantity ?? existing.ticket_quantity;
-  const vatRate = data.vatRate ?? existing.vat_rate;
 
   if (
     data.unitPrice !== undefined ||
@@ -345,21 +370,18 @@ export async function updateInvoice(
     data.vatRate !== undefined ||
     data.workshopItems !== undefined
   ) {
-    updateData.unit_price = unitPrice;
+    // A workshop-only invoice bills no tickets, so its unit price is zeroed
+    // instead of lingering from a previous ticketed revision
+    const effectiveUnitPrice = isWorkshopOnlyInvoice(ticketQuantity) ? 0 : unitPrice;
+
+    updateData.unit_price = effectiveUnitPrice;
     updateData.ticket_quantity = ticketQuantity;
     updateData.vat_rate = vatRate;
 
-    const workshopLines =
-      data.workshopItems ??
-      (await getWorkshopItems(invoiceId)).map((item) => ({
-        quantity: item.quantity,
-        unitPrice: item.unit_price,
-      }));
-
     const totals = computeInvoiceTotals({
-      unitPrice,
+      unitPrice: effectiveUnitPrice,
       ticketQuantity,
-      workshopItems: workshopLines,
+      workshopItems: nextWorkshopLines,
       vatRate,
     });
 

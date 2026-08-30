@@ -33,7 +33,7 @@ export const TICKET_FEATURES: Record<string, Feature[]> = {
   standard: [
     { label: 'Access to conference', kind: 'included' as const },
     { label: 'Refreshments and lunch', kind: 'included' as const },
-    { label: 'Goodie bag', kind: 'included' as const },
+    { label: 'Goodies', kind: 'included' as const },
   ],
   vip: [
     { label: 'Everything in Standard', kind: 'extra' as const },

@@ -12,6 +12,10 @@ export type {
 
 export { COOKIE_NAMES, getServerConfig, RECURRING_OFFER_DEFAULTS } from './config';
 export {
+  POPUP_SHOW_PROBABILITY,
+  rollPopupShowLottery,
+} from './show-lottery';
+export {
   recordVisit,
   getVisitCount,
   isRecurringVisitor,

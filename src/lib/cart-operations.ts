@@ -94,6 +94,43 @@ export function cartHasVipTicket(items: CartItem[]): boolean {
 }
 
 /**
+ * Matches the plan id / title of the discounted student & unemployed ticket.
+ * Both statuses are sold under one shared Stripe price whose lookup key is
+ * `standard_student_unemployed`, and the ticket cards put that plan id (and a
+ * title naming the status) on the cart line.
+ */
+const STATUS_DISCOUNTED_TICKET_PATTERN = /student|unemploy/i;
+
+/**
+ * Copy shown — and returned by the client-side apply guard — when someone tries
+ * to stack a promo code on an already-discounted status ticket.
+ */
+export const STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE =
+  'Promo codes can’t be applied to student or unemployed tickets — they’re already discounted.';
+
+/**
+ * Whether a cart line is the discounted student / unemployed ticket.
+ *
+ * The cart item doesn't carry the Stripe lookup key, so this matches the plan id
+ * and title the ticket cards write onto the line. It gates UI and the
+ * client-side apply guard only — checkout re-derives the category from the
+ * Stripe price server-side (see `/api/validate-voucher` and
+ * `create-checkout-session`), so a crafted cart can't buy a stacked discount.
+ */
+export function isStatusDiscountedTicket(item: CartItem): boolean {
+  if (item.kind === 'workshop') return false;
+  return STATUS_DISCOUNTED_TICKET_PATTERN.test(`${item.id} ${item.title}`);
+}
+
+/**
+ * Whether the cart contains at least one discounted student / unemployed ticket.
+ * Such carts can't take a promo code on top — the status discount is the deal.
+ */
+export function cartHasStatusDiscountedTicket(items: CartItem[]): boolean {
+  return items.some(isStatusDiscountedTicket);
+}
+
+/**
  * Derived VIP workshop perk: a standing 20% off all workshop line items, applied
  * automatically when a VIP ticket and one or more workshops share the cart.
  *

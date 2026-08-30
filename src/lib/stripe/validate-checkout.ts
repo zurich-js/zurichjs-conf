@@ -5,15 +5,22 @@
  */
 
 import type Stripe from 'stripe';
-import { getCurrentStage, type PriceStage } from '@/config/pricing-stages';
+import {
+  getCurrentStage,
+  getEffectiveStageForCategory,
+  type PriceStage,
+  type TicketCategory,
+} from '@/config/pricing-stages';
 import { getTicketCounts } from '@/lib/tickets/getTicketCounts';
 import { isTicketProduct, stripCurrencySuffix } from './ticket-utils';
 
 /**
- * Extract the pricing stage from a Stripe price's lookup key.
+ * Extract the category and pricing stage from a Stripe price's lookup key.
  * Returns null for prices that don't have stage-based pricing (student/unemployed).
  */
-function extractPriceStage(lookupKey: string): PriceStage | null {
+function extractPriceInfo(
+  lookupKey: string
+): { category: TicketCategory; stage: PriceStage } | null {
   const normalized = stripCurrencySuffix(lookupKey);
 
   // Student/unemployed tickets have fixed pricing — no stage
@@ -25,6 +32,7 @@ function extractPriceStage(lookupKey: string): PriceStage | null {
   const firstUnderscoreIndex = normalized.indexOf('_');
   if (firstUnderscoreIndex === -1) return null;
 
+  const category = normalized.substring(0, firstUnderscoreIndex) as TicketCategory;
   const stageKey = normalized.substring(firstUnderscoreIndex + 1);
 
   const stageMap: Record<string, PriceStage> = {
@@ -36,7 +44,8 @@ function extractPriceStage(lookupKey: string): PriceStage | null {
     last_minute: 'last_minute',
   };
 
-  return stageMap[stageKey] ?? null;
+  const stage = stageMap[stageKey];
+  return stage ? { category, stage } : null;
 }
 
 interface ValidationResult {
@@ -70,15 +79,19 @@ export async function validateCheckoutPrices(
     const lookupKey = price.lookup_key;
     if (!lookupKey) continue;
 
-    const priceStage = extractPriceStage(lookupKey);
+    const priceInfo = extractPriceInfo(lookupKey);
 
     // Skip prices without a stage (student/unemployed — fixed pricing)
-    if (priceStage === null) continue;
+    if (priceInfo === null) continue;
 
-    if (priceStage !== currentStage) {
+    // Categories capped at an earlier stage (VIP tops out at late bird) are
+    // still sold at their cap-stage price once the ladder moves past it.
+    const expectedStage = getEffectiveStageForCategory(priceInfo.category, currentStage);
+
+    if (priceInfo.stage !== expectedStage) {
       return {
         valid: false,
-        error: `Ticket pricing has changed. The ${priceStage.replace(/_/g, ' ')} phase is no longer active. Please refresh the page and try again.`,
+        error: `Ticket pricing has changed. The ${priceInfo.stage.replace(/_/g, ' ')} phase is no longer active. Please refresh the page and try again.`,
         currentStage,
       };
     }

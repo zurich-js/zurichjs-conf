@@ -9,11 +9,13 @@
  * popup first advertises the offer with an email field, and the code is only
  * generated once an email is submitted.
  *
- * There is no eligibility lottery: every visitor who reaches a page where the
- * popup mounts is offered the discount. Only two things suppress it — a
- * browser that already bought a ticket or marked as a corporate buyer, and an
- * explicit dismissal (which minimizes to the corner widget so the offer stays
- * reachable).
+ * Exposure is capped by a show lottery: only POPUP_SHOW_PROBABILITY of visits
+ * (30% by default) are offered the popup at all, rolled once per visit so it
+ * doesn't blink in and out on a reload. UTM lottery winners bypass the roll —
+ * the QR code or flyer they arrived from already promised them a discount.
+ * Beyond the roll, two things suppress the popup outright — a browser that
+ * already bought a ticket or is marked as a corporate buyer — and an explicit
+ * dismissal minimizes it to the corner widget so the offer stays reachable.
  *
  * Timing and generosity vary by intent signal:
  * - UTM lottery winners see it immediately at the lottery percentage
@@ -43,6 +45,8 @@ import {
   isRecurringVisitor,
   buildDiscountPersonalization,
   recordVisit,
+  rollPopupShowLottery,
+  POPUP_SHOW_PROBABILITY,
   RECURRING_OFFER_DEFAULTS,
 } from '@/lib/discount';
 import {
@@ -189,11 +193,9 @@ export function useDiscount() {
   const fallbackExpiry = useRef(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
   const countdown = useCountdown(data?.expiresAt ?? fallbackExpiry.current);
 
-  // Determine eligibility. Every visitor is offered the discount — the random
-  // show-probability roll and the cooldown cookie that used to suppress ~84% of
-  // exposures are gone. The only remaining suppression is a browser that
-  // already bought a ticket; a deliberate dismissal is handled separately by
-  // the dismissed cookie in `shouldTrigger` below.
+  // Determine eligibility: a per-visit show lottery plus the hard suppressions
+  // (already bought a ticket, corporate buyer). A deliberate dismissal is
+  // handled separately by the dismissed cookie in `shouldTrigger` below.
   useEffect(() => {
     if (!isClient || !configResolved || flags.current.eligibilityChecked) return;
     flags.current.eligibilityChecked = true;
@@ -217,18 +219,29 @@ export function useDiscount() {
       setShowImmediately(true);
     }
 
+    // Keep the offer scarce: only a minority of visits draw the popup. UTM
+    // lottery winners skip the roll entirely — not even a persisted result —
+    // since the campaign they came from promised a discount, and a stored loss
+    // would suppress that promise on their next load this visit (by then the
+    // UTM params are gone). Everyone else rolls once per visit, so the answer
+    // holds across reloads and in-visit navigation.
+    const wonShowLottery = lottery.eligible ? undefined : rollPopupShowLottery(visitCount);
+
     // Never offer a discount to someone who already bought a ticket, or to a
     // corporate buyer spending a training budget — they book at the standard
     // rate either way, so the offer is pure margin loss.
     const isTicketHolder = isKnownTicketHolder();
     const isCorporate = isCorporateBuyer();
-    isEligible.current = !isTicketHolder && !isCorporate;
+    isEligible.current =
+      !isTicketHolder && !isCorporate && (lottery.eligible || wonShowLottery === true);
 
     analytics.track('discount_eligibility_checked', {
       was_eligible: isEligible.current,
       is_known_ticket_holder: isTicketHolder,
       is_corporate_buyer: isCorporate,
       is_recurring_visitor: isRecurring.current,
+      won_show_lottery: wonShowLottery,
+      show_probability: lottery.eligible ? undefined : POPUP_SHOW_PROBABILITY,
       visit_count: visitCount,
     });
   }, [isClient, configResolved, configRecurringMinVisits]);

@@ -64,7 +64,7 @@ export interface StageConfig {
  */
 export const GLOBAL_STOCK_LIMITS: GlobalStockLimits = {
   vip: 52,
-  student_unemployed: 25,
+  student_unemployed: 35,
 };
 
 /**
@@ -139,6 +139,39 @@ export const PRICING_STAGES: StageConfig[] = [
     description: 'Final pricing - last chance',
   },
 ];
+
+/**
+ * Per-category pricing stage caps.
+ *
+ * Some categories stop climbing the price ladder before the final stage:
+ * VIP has no last_minute price in Stripe — it tops out at late bird — so
+ * during last_minute it must keep selling at its late_bird price instead
+ * of disappearing.
+ */
+export const CATEGORY_STAGE_CAPS: Partial<Record<TicketCategory, PriceStage>> = {
+  vip: 'late_bird',
+};
+
+/**
+ * Resolve the pricing stage that actually applies to a category.
+ *
+ * Returns the given stage unless the category is capped at an earlier one
+ * (see CATEGORY_STAGE_CAPS), in which case the cap stage is returned once
+ * the overall stage has moved past it.
+ */
+export const getEffectiveStageForCategory = (
+  category: TicketCategory,
+  stage: PriceStage
+): PriceStage => {
+  const cap = CATEGORY_STAGE_CAPS[category];
+  if (!cap) return stage;
+
+  const capConfig = getStageConfig(cap);
+  const stageConfig = getStageConfig(stage);
+  if (!capConfig || !stageConfig) return stage;
+
+  return stageConfig.priority > capConfig.priority ? cap : stage;
+};
 
 /**
  * Stock counts for determining stage transitions

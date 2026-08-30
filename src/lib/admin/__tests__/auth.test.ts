@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextApiRequest } from 'next';
 import {
+  ADMIN_SESSION_TTL_SECONDS,
   generateAdminToken,
   verifyAdminAccess,
   verifyAdminPassword,
@@ -51,7 +52,7 @@ describe('admin authentication', () => {
 
   it('rejects expired sessions', () => {
     const token = generateAdminToken();
-    vi.advanceTimersByTime(24 * 60 * 60 * 1000);
+    vi.advanceTimersByTime(ADMIN_SESSION_TTL_SECONDS * 1000 + 1);
 
     expect(verifyAdminToken(token)).toBe(false);
   });

@@ -4,6 +4,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { randomBytes } from 'crypto';
 import { verifyAdminAccess } from '@/lib/admin/auth';
 import { createTicket } from '@/lib/tickets';
 import type { TicketCategory, TicketStage, TicketType } from '@/lib/types/database';
@@ -136,8 +137,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isComplimentary = body.paymentType === 'complimentary';
     const isBankTransfer = body.paymentType === 'bank_transfer';
 
-    // Generate unique session ID for manual tickets
-    const manualSessionId = `manual_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Generate unique session ID for manual tickets using cryptographically secure randomness
+    const manualSessionId = `manual_${Date.now()}_${randomBytes(8).toString('hex')}`;
 
     // Determine customer ID based on payment type
     const getCustomerId = () => {

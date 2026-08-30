@@ -63,6 +63,8 @@ export interface B2BInvoice {
   invoice_notes: string | null; // Notes shown on the invoice PDF
 
   // Ticket Configuration
+  // ticket_quantity 0 means a workshop-only invoice; category/stage are then
+  // stored placeholders and no tickets are created on payment.
   ticket_category: TicketCategory;
   ticket_stage: TicketStage;
   ticket_quantity: number;
@@ -174,12 +176,16 @@ export interface CreateB2BInvoiceRequest {
   paymentMethod?: B2BPaymentMethod; // Defaults to 'bank_transfer'
 
   // Ticket Configuration
-  ticketCategory: TicketCategory;
-  ticketStage: TicketStage;
+  // Optional for workshop-only invoices (ticketQuantity 0), where they are
+  // stored as placeholders and never used to create tickets.
+  ticketCategory?: TicketCategory;
+  ticketStage?: TicketStage;
+  /** Number of conference tickets. 0 creates a workshop-only invoice. */
   ticketQuantity: number;
   unitPrice: number; // in cents
 
-  // Workshop seat line items (optional)
+  // Workshop seat line items
+  // Required when ticketQuantity is 0 — an invoice must bill something.
   workshopItems?: WorkshopItemInput[];
 
   // VAT (optional, defaults to 0 for B2B)
@@ -215,6 +221,7 @@ export interface UpdateB2BInvoiceRequest {
   paymentMethod?: B2BPaymentMethod;
   ticketCategory?: TicketCategory;
   ticketStage?: TicketStage;
+  /** 0 turns the invoice into a workshop-only invoice */
   ticketQuantity?: number;
   unitPrice?: number;
   vatRate?: number;
@@ -292,6 +299,11 @@ export interface MarkPaidResult {
     attendeeName: string;
     reason: string;
   }>;
+  /**
+   * Workshop lines that exceeded remaining capacity. Admin invoicing fulfils
+   * them anyway — these are warnings, not failures.
+   */
+  capacityWarnings?: string[];
 }
 
 /**

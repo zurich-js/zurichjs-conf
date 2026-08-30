@@ -8,6 +8,7 @@ import { TicketInvoiceModal } from '@/components/admin/tickets';
 import { useTicketSpendBreakdown } from '@/hooks/useTicketSpendBreakdown';
 import { SpendBreakdownSection } from './SpendBreakdownSection';
 import { isComplimentaryTicket } from './ticket-utils';
+import { TicketApparelSection } from './TicketApparelSection';
 import { UpgradeHistorySection } from './UpgradeHistorySection';
 import { WorkshopBookingsSection } from './WorkshopBookingsSection';
 
@@ -316,6 +317,9 @@ export function TicketDetailsModal({
               )}
             </InfoGrid>
           </InfoSection>
+
+          {/* Apparel */}
+          <TicketApparelSection ticketId={ticket.id} isVip={ticket.ticket_category === 'vip'} />
 
           {/* Spend Breakdown */}
           <SpendBreakdownSection

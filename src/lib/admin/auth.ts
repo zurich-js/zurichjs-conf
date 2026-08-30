@@ -1,15 +1,31 @@
 /**
  * Admin Authentication Utilities
- * Simple password-based authentication for admin dashboard
- * + read-only API key authentication for bot/automation access
+ * Password-based authentication for the admin dashboard, plus read-only API
+ * key authentication for bot/automation access.
+ *
+ * The session cookie is a stateless, domain-scoped HMAC with a hard expiry —
+ * the same construction as order and speaker-logistics tokens
+ * (`@/lib/auth/orderToken`, `@/lib/auth/speakerLogisticsToken`), signed with
+ * the same secret family so no new environment variable is required.
+ *
+ * NOTE: this token authenticates "an admin", not "which admin". It carries no
+ * identity, so it cannot attribute an action to a person. Per-person identity
+ * for door staff is a separate concern — see `@/lib/checkin/staff`.
  */
 
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { NextApiRequest } from 'next';
 import { verifyReadOnlyApiKey, type BotAuthResult } from './bot-auth';
+import { logger } from '@/lib/logger';
 
+const log = logger.scope('Admin Auth');
+
+// Token format version, so the shape can change without silently accepting old tokens.
 const ADMIN_SESSION_VERSION = 'v1';
-const ADMIN_SESSION_TTL_SECONDS = 24 * 60 * 60;
+
+/** How long an admin session stays valid. Also drives the cookie's Max-Age. */
+export const ADMIN_SESSION_TTL_SECONDS = 24 * 60 * 60;
+
 const ADMIN_SESSION_KEY_LABEL = 'zurichjs:admin-session:v1';
 const ADMIN_PASSWORD_SALT = 'zurichjs:admin-password:v1';
 const ADMIN_PASSWORD_KEY_LENGTH = 32;
@@ -30,7 +46,7 @@ export interface AdminAccessResult {
 }
 
 /**
- * Verify admin password
+ * Verify the admin password using a timing-safe comparison.
  */
 export function verifyAdminPassword(password: string): boolean {
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -129,6 +145,10 @@ export function verifyAdminToken(token: string | undefined): boolean {
       payload.exp - payload.iat <= ADMIN_SESSION_TTL_SECONDS
     );
   } catch {
+    // No secret configured or parse failure: refuse every token rather than accepting all of them.
+    log.error('Failed to verify admin session token', undefined, {
+      expected: 'ADMIN_SESSION_SECRET or ADMIN_PASSWORD',
+    });
     return false;
   }
 }
