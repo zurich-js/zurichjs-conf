@@ -84,13 +84,60 @@ Note the trap documented there: an absent or wrong `project_id` does **not** fai
 loudly — Supabase silently skips the configuration step. Verify the seed actually
 ran on the branch rather than assuming.
 
-### 5. Point a frontend at it
+### 5. Point Vercel at the branches
 
-Each branch has its own API URL and anon key (Dashboard → the branch → Project
-Settings → API). Put them in a Vercel **Preview** environment as
-`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, plus
-`SUPABASE_SERVICE_ROLE_KEY` for the server-side paths (the roster endpoint and
-the `door_*` RPC wrappers both need it).
+**Do not set these by hand.** Every preview deployment needs the credentials of
+*its own* branch database, and with automatic branching that is a different
+database per pull request. A single Vercel "Preview" value cannot describe all of
+them, and adding a per-branch override for each PR is not maintainable.
+
+Install the **Supabase integration on Vercel** (Vercel marketplace → Supabase →
+connect it to this project). It syncs the matching branch's credentials into each
+preview deployment when the PR is opened. Supabase also redeploys the most recent
+deployment for a PR afterwards, because there is a race between it writing the
+variables and Vercel starting the build.
+
+Requirements: the Vercel GitHub integration must also be connected, and the
+Supabase project must be linked to the Vercel project.
+
+#### Two name mismatches, already handled in code
+
+The integration writes Supabase's older variable names. This app asks for the
+newer ones, so two of the three would have been set and then ignored — and the
+build would fail its env check on every preview:
+
+| Integration writes | App reads |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | same ✅ |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+| `SUPABASE_SERVICE_ROLE_KEY` | `SUPABASE_SECRET_KEY` |
+
+`src/config/env.ts` now falls back to the integration's names, preferring the
+explicit ones when both are present. Covered by
+`src/config/__tests__/env-aliases.test.ts`.
+
+#### `NEXT_PUBLIC_BASE_URL` must not be inherited
+
+This one is worth understanding rather than just accepting. `NEXT_PUBLIC_BASE_URL`
+is normally set once at the project level, so it points at the production domain
+in *every* environment — including previews.
+
+That value builds the door staff magic-link redirect and the QR payload printed on
+badges. On a preview it would mean a volunteer clicking their sign-in link lands
+on the **production** app and signs in against the **production** database,
+checking real attendees in while trying to rehearse.
+
+`getBaseUrl()` now returns the deployment's own URL when `VERCEL_ENV` is
+`preview`, and is unchanged everywhere else. It needs Vercel's
+"Automatically expose System Environment Variables" setting left on (the
+default). Covered by `src/lib/__tests__/url-preview.test.ts`.
+
+#### What you still set manually in Vercel
+
+Everything that is not Supabase and not per-branch — Stripe test keys, Resend,
+`ADMIN_PASSWORD`, `ORDER_TOKEN_SECRET`, PostHog. Set those once on the **Preview**
+environment. Use Stripe **test** keys there: a preview pointed at a branch
+database with live Stripe keys can take real money.
 
 ## Seeding: the part that catches people out
 

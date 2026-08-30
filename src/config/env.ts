@@ -42,8 +42,18 @@ export const clientEnv = {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       'NEXT_PUBLIC_SUPABASE_URL'
     ),
+    // Falls back to the name the Supabase/Vercel integration writes.
+    //
+    // With Supabase branching, every preview deployment needs the credentials of
+    // ITS OWN branch database, which are only known once that branch exists.
+    // Nobody can maintain that by hand — a new branch per pull request, each with
+    // different keys — so the integration syncs them into Vercel automatically.
+    // It writes NEXT_PUBLIC_SUPABASE_ANON_KEY, which is Supabase's older name for
+    // this value. Without this fallback the sync silently sets a variable nothing
+    // reads, and every preview deployment fails its env check at build time.
     publishableKey: getRequiredEnv(
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
     ),
   },
@@ -95,8 +105,11 @@ function getServerEnv() {
 
       get supabase() {
         return {
+          // Same fallback as the publishable key above: the Supabase/Vercel
+          // integration writes SUPABASE_SERVICE_ROLE_KEY, Supabase's older name
+          // for this value.
           secretKey: getRequiredEnv(
-            process.env.SUPABASE_SECRET_KEY,
+            process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY,
             'SUPABASE_SECRET_KEY'
           ),
         };
