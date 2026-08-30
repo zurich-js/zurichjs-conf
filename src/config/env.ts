@@ -29,14 +29,39 @@ function getOptionalEnv(value: string | undefined, defaultValue: string): string
 const isServer = typeof window === 'undefined';
 
 /**
+ * The URL of the current Vercel PREVIEW deployment, if this is one.
+ *
+ * Returns null on production and anywhere that is not a Vercel preview, so the
+ * ordinary NEXT_PUBLIC_BASE_URL path is untouched where it matters.
+ *
+ * Both spellings are read because only the NEXT_PUBLIC_ ones exist in the browser
+ * bundle and only the bare ones are guaranteed on the server. Next.js inlines
+ * NEXT_PUBLIC_* at build time, so these must stay static references.
+ */
+export function getVercelPreviewUrl(): string | null {
+  const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.VERCEL_ENV;
+  if (vercelEnv !== 'preview') return null;
+
+  const host = process.env.NEXT_PUBLIC_VERCEL_URL ?? process.env.VERCEL_URL;
+  // VERCEL_URL is a bare host with no scheme.
+  return host ? `https://${host}` : null;
+}
+
+/**
  * Client-safe environment variables (exposed to the browser)
  * These must be prefixed with NEXT_PUBLIC_ and directly referenced
  */
 export const clientEnv = {
-  baseUrl: getRequiredEnv(
-    process.env.NEXT_PUBLIC_BASE_URL,
-    'NEXT_PUBLIC_BASE_URL'
-  ),
+  /**
+   * A Vercel preview deployment supplies its OWN url and does not need this set.
+   *
+   * That is not just convenience. This module throws at import time when a
+   * required variable is missing, so without the fallback a preview build fails
+   * before it renders anything — and it would fail for a variable whose value is
+   * WRONG on a preview anyway, since it names the production domain.
+   */
+  baseUrl: getVercelPreviewUrl() ??
+    getRequiredEnv(process.env.NEXT_PUBLIC_BASE_URL, 'NEXT_PUBLIC_BASE_URL'),
   supabase: {
     url: getRequiredEnv(
       process.env.NEXT_PUBLIC_SUPABASE_URL,

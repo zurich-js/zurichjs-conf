@@ -21,10 +21,48 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_123';
   delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  delete process.env.VERCEL_ENV;
+  delete process.env.VERCEL_URL;
+  delete process.env.NEXT_PUBLIC_VERCEL_ENV;
+  delete process.env.NEXT_PUBLIC_VERCEL_URL;
 });
 
 afterEach(() => {
   process.env = { ...ORIGINAL };
+});
+
+describe('base url on a preview deployment', () => {
+  it('does not require NEXT_PUBLIC_BASE_URL on a Vercel preview', async () => {
+    // This module throws at import time on a missing required variable, so
+    // without the fallback a preview build fails before rendering anything —
+    // for a variable whose value would have been wrong on a preview anyway.
+    delete process.env.NEXT_PUBLIC_BASE_URL;
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'k';
+    process.env.VERCEL_ENV = 'preview';
+    process.env.VERCEL_URL = 'zurichjs-conf-abc123.vercel.app';
+
+    const { clientEnv } = await import('../env');
+    expect(clientEnv.baseUrl).toBe('https://zurichjs-conf-abc123.vercel.app');
+  });
+
+  it('still requires it everywhere else', async () => {
+    delete process.env.NEXT_PUBLIC_BASE_URL;
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'k';
+
+    await expect(import('../env')).rejects.toThrow(/NEXT_PUBLIC_BASE_URL/);
+  });
+
+  it('prefers the preview url over an inherited production one', async () => {
+    // NEXT_PUBLIC_BASE_URL is normally set for every environment, so on a preview
+    // it names production. The preview url has to win.
+    process.env.NEXT_PUBLIC_BASE_URL = 'https://zurichjs.com';
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'k';
+    process.env.VERCEL_ENV = 'preview';
+    process.env.VERCEL_URL = 'zurichjs-conf-abc123.vercel.app';
+
+    const { clientEnv } = await import('../env');
+    expect(clientEnv.baseUrl).toBe('https://zurichjs-conf-abc123.vercel.app');
+  });
 });
 
 describe('Supabase key aliases', () => {

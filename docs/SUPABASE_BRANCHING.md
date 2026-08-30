@@ -134,10 +134,26 @@ default). Covered by `src/lib/__tests__/url-preview.test.ts`.
 
 #### What you still set manually in Vercel
 
-Everything that is not Supabase and not per-branch — Stripe test keys, Resend,
-`ADMIN_PASSWORD`, `ORDER_TOKEN_SECRET`, PostHog. Set those once on the **Preview**
-environment. Use Stripe **test** keys there: a preview pointed at a branch
-database with live Stripe keys can take real money.
+The integration supplies the Supabase trio and nothing else. `src/config/env.ts`
+throws at import time on a missing required variable, so a preview build fails
+before it renders anything if these are absent from the **Preview** environment:
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **test** key |
+| `STRIPE_SECRET_KEY` | **test** key |
+| `STRIPE_WEBHOOK_SECRET` | test-mode endpoint, or a placeholder if you are not testing webhooks |
+| `RESEND_API_KEY` | real — door invites are emailed |
+| `ADMIN_PASSWORD` | pick a different one from production |
+| `ORDER_TOKEN_SECRET` | any value; it signs preview-only tokens |
+| `NEXTAUTH_SECRET` | any value |
+| `NEXT_PUBLIC_POSTHOG_KEY` / `_HOST` | optional |
+
+Use Stripe **test** keys. A preview pointed at a branch database with live keys
+can take real money.
+
+`NEXT_PUBLIC_BASE_URL` is deliberately **not** in that list: a preview supplies
+its own URL, so the variable is optional there and ignored if present.
 
 ## Seeding: the part that catches people out
 

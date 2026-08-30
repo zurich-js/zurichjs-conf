@@ -5,25 +5,7 @@
 
 import type { NextApiRequest } from 'next';
 import type { IncomingMessage } from 'http';
-import { clientEnv } from '@/config/env';
-
-/**
- * The URL of the current Vercel PREVIEW deployment, if this is one.
- *
- * Returns null on production and on any non-Vercel environment, so the normal
- * NEXT_PUBLIC_BASE_URL path is untouched everywhere that matters.
- *
- * Both spellings are read because only the NEXT_PUBLIC_ ones exist in the
- * browser bundle, and only the bare ones are guaranteed on the server.
- */
-function getVercelPreviewUrl(): string | null {
-  const env = process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.VERCEL_ENV;
-  if (env !== 'preview') return null;
-
-  const host = process.env.NEXT_PUBLIC_VERCEL_URL ?? process.env.VERCEL_URL;
-  // VERCEL_URL is a bare host with no scheme.
-  return host ? `https://${host}` : null;
-}
+import { clientEnv, getVercelPreviewUrl } from '@/config/env';
 
 /**
  * Get the base URL for the application
