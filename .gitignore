@@ -59,3 +59,7 @@ supabase/.branches/
 
 # Build-time generated OG images (regenerated on each deploy)
 /public/og/
+
+# Copied from node_modules at build time (see the door check-in work); pinned to
+# the installed zxing-wasm version, so it must never be committed.
+/public/scanner/
