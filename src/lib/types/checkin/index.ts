@@ -47,7 +47,7 @@ export type DoorRole = (typeof DOOR_ROLES)[number];
 export const DOOR_ROLE_LABELS: Record<DoorRole, string> = {
   door_lead: 'Door lead',
   scanner: 'Scanner',
-  goodie: 'Goodie bag',
+  goodie: 'Goodies',
 };
 
 export const DOOR_ROLE_DESCRIPTIONS: Record<DoorRole, string> = {

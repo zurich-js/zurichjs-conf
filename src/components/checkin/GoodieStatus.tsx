@@ -55,7 +55,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
         <div className="flex items-center gap-3">
           <PackageCheck className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-text-primary">Goodie bag handed over</p>
+            <p className="text-sm font-semibold text-text-primary">Goodies handed over</p>
             <p className="text-xs text-text-tertiary">
               <time dateTime={handedAt}>{formatTime(handedAt)}</time>
             </p>
@@ -75,7 +75,7 @@ export const GoodieStatus: React.FC<GoodieStatusProps> = ({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Gift className="h-5 w-5 shrink-0 text-brand-yellow-main" aria-hidden="true" />
-          <p className="text-sm font-semibold text-text-primary">Goodie bag not yet handed over</p>
+          <p className="text-sm font-semibold text-text-primary">Goodies not yet handed over</p>
         </div>
         {canHandOver ? (
           <Button size="sm" variant="primary" onClick={onHandOver} loading={pending}>
