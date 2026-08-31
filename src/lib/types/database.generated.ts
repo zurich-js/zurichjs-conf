@@ -3791,6 +3791,7 @@ export type Database = {
         Returns: Json
       }
       door_current_occasion: { Args: never; Returns: string }
+      door_dashboard: { Args: { p_occasion?: string }; Returns: Json }
       door_goodie_handover: {
         Args: {
           p_note?: string

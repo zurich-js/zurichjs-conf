@@ -145,4 +145,5 @@ export type Tab =
   | 'apparel'
   | 'discount'
   | 'cart-builder'
-  | 'door-crew';
+  | 'door-crew'
+  | 'door-live';

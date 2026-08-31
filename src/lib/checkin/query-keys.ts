@@ -62,6 +62,13 @@ export const checkinKeys = {
   staffList: () => [...checkinKeys.staff(), 'list'] as const,
   staffActivity: (staffId: string) => [...checkinKeys.staff(), 'activity', staffId] as const,
 
+  /**
+   * The polled live dashboard. Keyed on occasion so switching days does not
+   * show the previous day's figures while the first poll is in flight.
+   */
+  dashboard: (occasion: DoorOccasion | null) =>
+    [...checkinKeys.all, 'dashboard', occasion] as const,
+
   /** The audit trail, filtered. Every filter belongs in the key. */
   events: () => [...checkinKeys.all, 'events'] as const,
   eventList: (params: DoorEventListParams) => [...checkinKeys.events(), 'list', params] as const,
