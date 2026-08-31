@@ -126,7 +126,7 @@ export const DoorDashboardTab: React.FC<DoorDashboardTabProps> = ({ className = 
             />
             <DoorStatTile label="Still to arrive" value={data.remaining} tone="neutral" />
             <DoorStatTile
-              label="Goodie bags"
+              label="Goodies"
               value={data.goodieHandedOver}
               icon={Gift}
               tone="neutral"

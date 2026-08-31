@@ -5,7 +5,7 @@
 
 import type { NextApiRequest } from 'next';
 import type { IncomingMessage } from 'http';
-import { clientEnv } from '@/config/env';
+import { clientEnv, getVercelPreviewUrl } from '@/config/env';
 
 /**
  * Get the base URL for the application
@@ -18,6 +18,23 @@ import { clientEnv } from '@/config/env';
  * @throws Error if NEXT_PUBLIC_BASE_URL is not set and no request is provided
  */
 export function getBaseUrl(req?: NextApiRequest | IncomingMessage): string {
+  // A Vercel preview deployment must describe ITSELF, never production.
+  //
+  // NEXT_PUBLIC_BASE_URL is normally set once at the project level, so it points
+  // at the production domain in every environment. That is actively dangerous on
+  // a preview: this value builds the door staff magic-link redirect and the QR
+  // payload printed on badges, so a volunteer testing a preview would be sent to
+  // the PRODUCTION app and sign in against the production database — checking
+  // real attendees in while trying to rehearse.
+  //
+  // Vercel sets VERCEL_ENV/VERCEL_URL on every deployment, and their
+  // NEXT_PUBLIC_ twins when "Automatically expose System Environment Variables"
+  // is on (the default).
+  const previewUrl = getVercelPreviewUrl();
+  if (previewUrl) {
+    return previewUrl;
+  }
+
   // Client-side: Always use NEXT_PUBLIC_BASE_URL
   if (typeof window !== 'undefined') {
     return clientEnv.baseUrl;

@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   DOOR_ABILITIES,
+  DOOR_ABILITY_GUIDE,
   DOOR_FAILURE_MESSAGES,
   DOOR_OCCASIONS,
   DOOR_ROLES,
   DOOR_ROLE_ABILITIES,
   DOOR_ROLE_DESCRIPTIONS,
   DOOR_ROLE_LABELS,
+  DOOR_ROLE_LANE,
   doorFailureMessage,
   isDoorResolveHit,
   roleCan,
@@ -127,5 +129,62 @@ describe('doorFailureMessage', () => {
 describe('occasions', () => {
   it('covers only the two days that are actually checked in', () => {
     expect([...DOOR_OCCASIONS]).toEqual(['workshop_day', 'conference_day']);
+  });
+});
+
+describe('role explanations', () => {
+  it('explains every ability from both sides', () => {
+    // An ability with no explanation ships a role whose effect on the volunteer
+    // nobody can describe, which is exactly the decision an organiser is making
+    // when they pick one.
+    for (const ability of DOOR_ABILITIES) {
+      const guide = DOOR_ABILITY_GUIDE[ability];
+      expect(guide.label.length).toBeGreaterThan(3);
+      expect(guide.withIt.length).toBeGreaterThan(30);
+      expect(guide.withoutIt.length).toBeGreaterThan(30);
+    }
+  });
+
+  it('describes the effect on the screen, not the permission name', () => {
+    // The test that keeps this honest: "cannot manually admit" tells an organiser
+    // nothing about whether the volunteer can work alone.
+    const all = DOOR_ABILITIES.map((ability) => DOOR_ABILITY_GUIDE[ability]);
+    for (const guide of all) {
+      expect(`${guide.withIt} ${guide.withoutIt}`).toMatch(
+        /button|panel|screen|appear|visible|shows|absent|box|search|tap/i
+      );
+    }
+  });
+
+  it('places every role somewhere at the door', () => {
+    for (const role of DOOR_ROLES) {
+      expect(DOOR_ROLE_LANE[role].length).toBeGreaterThan(20);
+      expect(DOOR_ROLE_DESCRIPTIONS[role].length).toBeGreaterThan(20);
+    }
+  });
+
+  it('keeps door_lead a strict superset, so promoting never removes anything', () => {
+    // Promoting a scanner to a lead mid-event is a normal thing to need when the
+    // problem desk gets busy. It must never cost them an ability they had.
+    for (const role of DOOR_ROLES) {
+      for (const ability of DOOR_ROLE_ABILITIES[role]) {
+        expect(roleCan('door_lead', ability)).toBe(true);
+      }
+    }
+  });
+
+  it('gives the goodie role no way to admit anyone', () => {
+    // The whole throughput argument rests on this split: handing over a t-shirt
+    // costs ~3.5s and must not sit in the scanning lane.
+    expect(roleCan('goodie', 'check_in')).toBe(false);
+    expect(roleCan('goodie', 'manual_admit')).toBe(false);
+  });
+
+  it('lets only a lead admit without a code or see contact details', () => {
+    for (const role of DOOR_ROLES) {
+      const expected = role === 'door_lead';
+      expect(roleCan(role, 'manual_admit')).toBe(expected);
+      expect(roleCan(role, 'view_contact')).toBe(expected);
+    }
   });
 });

@@ -39,7 +39,14 @@ export interface DoorSearchableRecord {
   email: string | null;
   company: string | null;
   ticketCategory: string | null;
-  checkedIn: boolean;
+  /**
+   * When they were admitted for the roster's occasion, or null.
+   *
+   * The timestamp rather than a boolean, because the desk has to be able to say
+   * "already in at 09:14" — a bare "already checked in" invites the volunteer to
+   * assume a glitch and admit them again.
+   */
+  checkedInAt: string | null;
 }
 
 /**
@@ -234,10 +241,10 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
       email: ticket.email,
       company: ticket.company,
       ticketCategory: ticket.ticketCategory,
-      checkedIn:
+      checkedInAt:
         roster.occasion === 'workshop_day'
-          ? ticket.checkedInWorkshopDayAt !== null
-          : ticket.checkedInConferenceDayAt !== null,
+          ? ticket.checkedInWorkshopDayAt
+          : ticket.checkedInConferenceDayAt,
     }));
 
     // Workshop-only attendees have no ticket row, so without this they would be
@@ -255,7 +262,7 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
         email: seat.email,
         company: seat.company,
         ticketCategory: null,
-        checkedIn: seat.checkedInAt !== null,
+        checkedInAt: seat.checkedInAt,
       });
     }
 

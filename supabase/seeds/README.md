@@ -8,6 +8,7 @@ For phase-specific testing, use the npm scripts:
 - `npm run db:seed:cfp-admission` — accepted/rejected speaker selection phase, no schedule.
 - `npm run db:seed:cfp-schedule` — schedule slots and a few linked submissions, no commerce.
 - `npm run db:seed:workshop-commerce` — full local seed with workshop commerce fixtures.
+- `npm run db:seed:door-checkin` — workshop commerce plus door check-in fixtures.
 
 ## Expected state by phase
 
@@ -81,6 +82,31 @@ overlay to shape the dataset for a specific admin workflow.
     - `workshops.stripe_product_id = null`
     - `workshops.stripe_price_lookup_key = null`
   - This keeps commerce flows testable locally without live Stripe wiring.
+
+### `door-checkin`
+
+- Purpose: door check-in on the workshop and conference days, and the fixture a
+  Supabase staging branch is seeded with (branches start with no data at all).
+- Applies the `workshop-commerce` overlay first, then the door overlay.
+- Expected:
+  - Seven conference tickets with deterministic ids. The printed QR payload is
+    `${baseUrl}/validate/<ticket id>`, so those ids are the scannable codes.
+  - One refunded ticket, which must still RESOLVE at the door and be shown as
+    refused — omitting it makes a charged-back attendee indistinguishable from a
+    stranger, and the remedy for "unknown" is to issue a free ticket.
+  - One transferred ticket, so the provenance banner has something to show.
+  - Pre-arrived attendees and one partial goodie handover, so the duplicate and
+    note paths are reachable without checking anyone in first.
+  - Two tickets deliberately WITHOUT apparel sizes, covering the "no size on
+    file" panel state.
+  - Four workshop seats on one workshop: the buyer's own seat, a colleague's seat
+    carrying the buyer's `ticket_id` (which is what makes seat attribution
+    subtle), an unnamed seat, and a workshop-only attendee with an accented name
+    and no conference ticket.
+  - No `checkin_staff` rows and no `door_events`. Door access is granted only
+    through the admin invite flow, and that flow is part of what staging is for.
+
+See `docs/SUPABASE_BRANCHING.md` for the branch setup this feeds.
 
 Each phase script resets the local database without automatic seeding, applies
 `seed-local-cfp.sql` through the local Postgres container, then applies the

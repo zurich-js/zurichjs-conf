@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, ShieldOff } from 'lucide-react';
 import {
   DOOR_ROLES,
   DOOR_ROLE_LABELS,
+  DOOR_ROLE_LANE,
   type DoorRole,
   type DoorStaff,
 } from '@/lib/types/checkin';
@@ -73,6 +74,11 @@ export const DoorStaffTable: React.FC<DoorStaffTableProps> = ({
                     </option>
                   ))}
                 </select>
+                {/* Says what this person is set up to do without making the lead
+                    scroll back to the comparison table. */}
+                <p className="mt-1 max-w-[15rem] text-xs text-gray-600">
+                  {DOOR_ROLE_LANE[member.role]}
+                </p>
               </td>
 
               <td className="px-4 py-3">

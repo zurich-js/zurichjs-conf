@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown, Percent, Shirt, Link2, ScanLine, Activity } from 'lucide-react';
+import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown, Percent, Shirt, Link2 } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
@@ -16,7 +16,6 @@ import { VipPerksTab } from '@/components/admin/vip-perks';
 import { ApparelTab } from '@/components/admin/apparel';
 import { DiscountConfigTab } from '@/components/admin/discount';
 import { CartBuilderTab } from '@/components/admin/cart-builder';
-import { DoorDashboardTab, DoorStaffTab } from '@/components/admin/checkin';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const TABS: AdminTab<Tab>[] = [
@@ -28,8 +27,7 @@ const TABS: AdminTab<Tab>[] = [
   { id: 'apparel', label: 'Apparel', icon: Shirt },
   { id: 'discount', label: 'Discount', icon: Percent },
   { id: 'cart-builder', label: 'Cart Link', icon: Link2 },
-  { id: 'door-crew', label: 'Door Crew', icon: ScanLine },
-  { id: 'door-live', label: 'Door Live', icon: Activity },
+  // Door check-in lives at /admin/checkin: different audience, different days.
 ];
 
 export default function AdminDashboard() {
@@ -55,8 +53,6 @@ export default function AdminDashboard() {
             {activeTab === 'apparel' && <ApparelTab />}
             {activeTab === 'discount' && <DiscountConfigTab />}
             {activeTab === 'cart-builder' && <CartBuilderTab />}
-            {activeTab === 'door-crew' && <DoorStaffTab />}
-            {activeTab === 'door-live' && <DoorDashboardTab />}
           </div>
         </div>
       </div>

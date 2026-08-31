@@ -47,7 +47,7 @@ export type DoorRole = (typeof DOOR_ROLES)[number];
 export const DOOR_ROLE_LABELS: Record<DoorRole, string> = {
   door_lead: 'Door lead',
   scanner: 'Scanner',
-  goodie: 'Goodie bag',
+  goodie: 'Goodies',
 };
 
 export const DOOR_ROLE_DESCRIPTIONS: Record<DoorRole, string> = {
@@ -81,6 +81,60 @@ export type DoorAbility = (typeof DOOR_ABILITIES)[number];
 export function roleCan(role: DoorRole, ability: DoorAbility): boolean {
   return (DOOR_ROLE_ABILITIES[role] as readonly DoorAbility[]).includes(ability);
 }
+
+/**
+ * What each ability is, and what it CHANGES ON THE VOLUNTEER'S SCREEN.
+ *
+ * The second half is the part an organiser actually needs when choosing a role.
+ * "Cannot manually admit" says nothing about the experience; "the reason box and
+ * the Admit button are absent, so they have to fetch a lead" does. Everything
+ * here is phrased as a difference the volunteer will notice, because the whole
+ * point of picking a role is deciding what someone can get done alone.
+ */
+export const DOOR_ABILITY_GUIDE: Record<
+  DoorAbility,
+  { label: string; withIt: string; withoutIt: string }
+> = {
+  check_in: {
+    label: 'Check people in',
+    withIt: 'Scanning a badge shows a green "Check in" button. One tap admits them.',
+    withoutIt:
+      'Scanning still shows who the person is and whether they are admissible, but there is no button to admit them.',
+  },
+  goodie: {
+    label: 'Hand over t-shirts and hoodies',
+    withIt:
+      'The goodie panel shows their sizes and a "Handed over" button, so the handover is recorded against their ticket.',
+    withoutIt:
+      'Sizes are still visible, but the handover cannot be recorded — someone on the goodie lane does that.',
+  },
+  manual_admit: {
+    label: 'Admit without a working code',
+    withIt:
+      'A person found by name can be admitted after typing a reason. Recorded separately from a scan, so the log shows nobody verified a code.',
+    withoutIt:
+      'They can find the person and read their details, but the screen tells them a door lead has to do the admitting.',
+  },
+  lookup: {
+    label: 'Find someone by name',
+    withIt:
+      '"Find by name" searches the roster in memory — name, company or email — for anyone whose badge has no code.',
+    withoutIt: 'Scanning is the only way to bring up an attendee.',
+  },
+  view_contact: {
+    label: 'See contact details',
+    withIt: 'Email addresses appear on the attendee panel and in lookup results.',
+    withoutIt:
+      'Names and companies show, email addresses do not. Enough to confirm who someone is without handing a volunteer the attendee list.',
+  },
+};
+
+/** One line on where this role stands at the door. */
+export const DOOR_ROLE_LANE: Record<DoorRole, string> = {
+  door_lead: 'The problem desk, and anywhere else. Give this to whoever is running the door.',
+  scanner: 'The scanning lane. This is the role most of the crew should have.',
+  goodie: 'The goodie table, after people are already through the door.',
+};
 
 export interface DoorStaff {
   id: string;

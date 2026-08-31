@@ -144,6 +144,4 @@ export type Tab =
   | 'vip-perks'
   | 'apparel'
   | 'discount'
-  | 'cart-builder'
-  | 'door-crew'
-  | 'door-live';
+  | 'cart-builder';

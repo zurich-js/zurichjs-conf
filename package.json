@@ -28,7 +28,8 @@
     "db:seed:cfp-first-stage": "scripts/seed-supabase-phase.sh cfp-first-stage",
     "db:seed:cfp-admission": "scripts/seed-supabase-phase.sh cfp-admission",
     "db:seed:cfp-schedule": "scripts/seed-supabase-phase.sh cfp-schedule",
-    "db:seed:workshop-commerce": "scripts/seed-supabase-phase.sh workshop-commerce"
+    "db:seed:workshop-commerce": "scripts/seed-supabase-phase.sh workshop-commerce",
+    "db:seed:door-checkin": "scripts/seed-supabase-phase.sh door-checkin"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
