@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import "@/styles/ProfileCard.css";
 import type { AppProps } from "next/app";
+import Head from "next/head";
 import localFont from "next/font/local";
 import { MotionProvider } from "@/contexts/MotionContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -21,6 +22,13 @@ import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
 import { initEasterEgg } from '@/lib/easter-egg/client';
 import { initTechStackDetection } from '@/lib/analytics/techStackDetector';
+import {
+  ANALYTICS_QUERY_PARAMETERS,
+  isPrivateAnalyticsRoute,
+  sanitizeAnalyticsUrl,
+  sanitizePostHogEvent,
+  setSessionRecordingForRoute,
+} from '@/lib/analytics/privacy';
 
 const DiscountContainer = dynamic(
   () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
@@ -64,6 +72,7 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     // Initialize PostHog on the client side
     if (typeof window !== 'undefined') {
       const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+      const initialRouteIsPrivate = isPrivateAnalyticsRoute(window.location.href);
 
       if (!key) {
         console.error('[PostHog] API key not configured');
@@ -77,7 +86,8 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
         capture_pageview: false,
         capture_pageleave: true,
         autocapture: false,
-        disable_session_recording: false,
+        before_send: (event) => sanitizePostHogEvent(event),
+        disable_session_recording: initialRouteIsPrivate,
         session_recording: {
           // Keep checkout contact and billing inputs visible in replays; only
           // credential-style fields should be masked automatically.
@@ -88,13 +98,15 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
           maskTextSelector: '[data-mask]',
         },
         loaded: (posthogInstance) => {
+          setSessionRecordingForRoute(posthogInstance, window.location.href);
+
           if (process.env.NODE_ENV === 'development') {
             posthogInstance.debug();
           }
 
           // Track initial page view (UTM params are captured automatically by PostHog)
           posthogInstance.capture('$pageview', {
-            $current_url: window.location.href,
+            $current_url: sanitizeAnalyticsUrl(window.location.href),
             page_path: window.location.pathname,
           });
 
@@ -107,19 +119,36 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
 
   // Track page views on route changes
   useEffect(() => {
+    const handleRouteChangeStart = (url: string) => {
+      if (posthog.__loaded) posthog.stopSessionRecording();
+
+      if (isPrivateAnalyticsRoute(url)) return;
+
+      const googleTag = (
+        window as typeof window & { gtag?: (...args: unknown[]) => void }
+      ).gtag;
+      googleTag?.('set', {
+        page_location: sanitizeAnalyticsUrl(window.location.origin + url),
+        page_referrer: sanitizeAnalyticsUrl(window.location.href),
+      });
+    };
+
     const handleRouteChange = (url: string) => {
       // Only track if PostHog is initialized
       if (posthog.__loaded) {
         posthog.capture('$pageview', {
-          $current_url: window.location.origin + url,
-          page_path: url.split('?')[0], // Remove query params for cleaner path
+          $current_url: sanitizeAnalyticsUrl(window.location.origin + url),
+          page_path: url.split(/[?#]/)[0],
         });
+        setSessionRecordingForRoute(posthog, url);
       }
     };
 
+    router.events.on('routeChangeStart', handleRouteChangeStart);
     router.events.on('routeChangeComplete', handleRouteChange);
 
     return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChange);
     };
   }, [router.events]);
@@ -129,8 +158,12 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     initEasterEgg();
   }, []);
 
-  // Hide NavBar on admin pages
-  const showNavBar = !router.pathname.startsWith('/admin');
+  // Internal admin and networking pages render their own compact page header.
+  const showNavBar =
+    !router.pathname.startsWith('/admin') &&
+    !router.pathname.startsWith('/share');
+  const isPrivateRoute = isPrivateAnalyticsRoute(router.pathname);
+  const showGoogleAds = !isPrivateRoute;
 
   // Discount popup mounts on the high-traffic content pages, not just the
   // homepage — /speakers alone starts 16% of sessions. The individual speaker
@@ -148,19 +181,49 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
 
   return (
     <>
-      <Script
-        async
-        src="https://www.googletagmanager.com/gtag/js?id=AW-18272636718"
-        strategy="afterInteractive"
-      />
-      <Script id="google-ads-tag" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'AW-18272636718');
-        `}
-      </Script>
+      <Head>
+        {isPrivateRoute ? <meta name="robots" content="noindex,nofollow" /> : null}
+        {isPrivateRoute ? <meta name="referrer" content="no-referrer" /> : null}
+      </Head>
+      {showGoogleAds ? (
+        <>
+          <Script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id=AW-18272636718"
+            strategy="afterInteractive"
+          />
+          <Script id="google-ads-tag" strategy="afterInteractive">
+            {`
+              (function () {
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = function () { window.dataLayer.push(arguments); };
+                var allowedParameters = ${JSON.stringify(ANALYTICS_QUERY_PARAMETERS)};
+                var ticketIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                function sanitizeTagUrl(value) {
+                  var result = new URL(value, window.location.origin);
+                  Array.from(result.searchParams.keys()).forEach(function (key) {
+                    if (!allowedParameters.includes(key.toLowerCase())) {
+                      result.searchParams.delete(key);
+                    }
+                  });
+                  result.hash = '';
+                  var pathParts = result.pathname.split('/');
+                  if (pathParts[1] === 'validate' && ticketIdPattern.test(pathParts[2] || '')) {
+                    result.pathname = '/validate/[ticketId]';
+                  }
+                  return result.toString();
+                }
+                var config = { page_location: sanitizeTagUrl(window.location.href) };
+                if (document.referrer) {
+                  config.page_referrer = sanitizeTagUrl(document.referrer);
+                }
+                window.gtag('js', new Date());
+                window.gtag('config', 'AW-18272636718', config);
+              })();
+            `}
+          </Script>
+        </>
+      ) : null}
       <PostHogProvider client={posthog}>
         <QueryClientProvider client={queryClient}>
           <HydrationBoundary state={pageProps.dehydratedState}>

@@ -16,6 +16,7 @@ import { getStripeClient } from '@/lib/stripe/client';
 import { logger } from '@/lib/logger';
 import { serverAnalytics } from '@/lib/analytics/server';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
+import { getBaseUrl } from '@/lib/url';
 import { sendVipUpgradeEmail } from '@/lib/email';
 import {
   type UpgradeToVipResponse,
@@ -188,8 +189,10 @@ export default async function handler(
         // Create Stripe payment link
         const stripe = getStripeClient();
 
-        // Get order token for redirect URL
-        const orderUrl = generateOrderUrl(ticketId);
+        // Payment links outlive manage-token rotations, so the Stripe redirect
+        // must not embed a nonce-bound ticket credential.
+        const upgradeReturnUrl = new URL('/manage-order', getBaseUrl());
+        upgradeReturnUrl.searchParams.set('upgraded', 'true');
 
         // Create product for this upgrade
         const product = await stripe.products.create({
@@ -219,7 +222,7 @@ export default async function handler(
           },
           after_completion: {
             type: 'redirect',
-            redirect: { url: `${orderUrl}&upgraded=true` },
+            redirect: { url: upgradeReturnUrl.toString() },
           },
           billing_address_collection: 'required',
           customer_creation: 'always',
@@ -330,7 +333,7 @@ export default async function handler(
     // Send email to attendee
     let emailSent = false;
     try {
-      const orderUrl = generateOrderUrl(ticketId);
+      const orderUrl = generateOrderUrl(ticketId, ticket.manage_token_nonce);
 
       const emailResult = await sendVipUpgradeEmail({
         to: ticket.email,

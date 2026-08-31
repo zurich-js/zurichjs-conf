@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextApiRequest } from 'next';
 import {
   ADMIN_SESSION_TTL_SECONDS,
@@ -8,167 +8,109 @@ import {
   verifyAdminToken,
 } from '../auth';
 
-const SECRET = 'test-secret-value';
-
-function req(overrides: Partial<NextApiRequest> = {}): NextApiRequest {
-  return {
-    method: 'GET',
-    cookies: {},
-    headers: {},
-    url: '/api/admin/test',
-    ...overrides,
-  } as NextApiRequest;
-}
-
-beforeEach(() => {
-  vi.stubEnv('ORDER_TOKEN_SECRET', SECRET);
-  vi.stubEnv('NEXTAUTH_SECRET', '');
-  vi.stubEnv('ADMIN_PASSWORD', 'correct-horse');
-  vi.stubEnv('ADMIN_READONLY_API_KEY', '');
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-  vi.useRealTimers();
-});
-
-describe('verifyAdminToken — forgery', () => {
-  // The regression this file exists for: the previous implementation accepted
-  // any base64 string decoding to something starting with "admin:".
-  it('rejects the historical forgery admin_token=YWRtaW46', () => {
-    expect(verifyAdminToken(Buffer.from('admin:').toString('base64'))).toBe(false);
-  });
-
-  it.each([
-    ['undefined', undefined],
-    ['empty string', ''],
-    ['unsigned legacy shape', Buffer.from('admin:1:0.5').toString('base64')],
-    ['too few segments', 'v1.123'],
-    ['too many segments', 'v1.123.sig.extra'],
-    ['wrong version', `v2.${Date.now() + 1000}.sig`],
-    ['non-numeric expiry', 'v1.abc.sig'],
-    ['whitespace-padded expiry', `v1. ${Date.now() + 1000}.sig`],
-    ['signed expiry', `v1.+${Date.now() + 1000}.sig`],
-    ['exponent expiry', 'v1.1e20.sig'],
-    ['garbage', 'not-a-token'],
-  ])('rejects %s', (_label, token) => {
-    expect(verifyAdminToken(token as string | undefined)).toBe(false);
-  });
-
-  it('rejects a token whose signature was minted with a different secret', () => {
-    const token = generateAdminToken();
-    vi.stubEnv('ORDER_TOKEN_SECRET', 'a-different-secret');
-    expect(verifyAdminToken(token)).toBe(false);
-  });
-
-  it('rejects a token whose expiry was tampered with to extend it', () => {
-    const token = generateAdminToken();
-    const [version, expiresAt, signature] = token.split('.');
-    const extended = `${version}.${Number(expiresAt) + 60_000}.${signature}`;
-    expect(verifyAdminToken(extended)).toBe(false);
-  });
-
-  it('fails closed when no signing secret is configured', () => {
-    const token = generateAdminToken();
-    vi.stubEnv('ORDER_TOKEN_SECRET', '');
-    vi.stubEnv('NEXTAUTH_SECRET', '');
-    expect(verifyAdminToken(token)).toBe(false);
-  });
-});
-
-describe('verifyAdminToken — lifetime', () => {
-  it('accepts a freshly minted token', () => {
-    expect(verifyAdminToken(generateAdminToken())).toBe(true);
-  });
-
-  it('accepts a token just before it expires', () => {
+describe('admin authentication', () => {
+  beforeEach(() => {
+    vi.stubEnv('ADMIN_PASSWORD', 'test-admin-password');
+    vi.stubEnv('ADMIN_SESSION_SECRET', 'test-session-signing-secret');
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-07T10:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it('round-trips a signed session token without Math.random', () => {
+    const randomSpy = vi.spyOn(Math, 'random');
+    const first = generateAdminToken();
+    const second = generateAdminToken();
+
+    expect(first).not.toBe(second);
+    expect(first.split('.')).toHaveLength(3);
+    expect(verifyAdminToken(first)).toBe(true);
+    expect(randomSpy).not.toHaveBeenCalled();
+  });
+
+  it('rejects forged legacy and tampered tokens', () => {
     const token = generateAdminToken();
-    vi.advanceTimersByTime(ADMIN_SESSION_TTL_SECONDS * 1000 - 1000);
+    const [version, payload, signature] = token.split('.');
+    const forgedPayload = Buffer.from(
+      JSON.stringify({
+        sub: 'admin',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+        nonce: 'attacker-controlled-nonce',
+      })
+    ).toString('base64url');
+
+    expect(verifyAdminToken(Buffer.from('admin:anything').toString('base64'))).toBe(false);
+    expect(verifyAdminToken(`${version}.${forgedPayload}.${signature}`)).toBe(false);
+    expect(verifyAdminToken(`${version}.${payload}.${signature.slice(1)}`)).toBe(false);
+  });
+
+  it('rejects expired sessions', () => {
+    const token = generateAdminToken();
+    vi.advanceTimersByTime(ADMIN_SESSION_TTL_SECONDS * 1000 + 1);
+
+    expect(verifyAdminToken(token)).toBe(false);
+  });
+
+  it('invalidates sessions when the signing secret rotates', () => {
+    const token = generateAdminToken();
+    vi.stubEnv('ADMIN_SESSION_SECRET', 'rotated-session-signing-secret');
+
+    expect(verifyAdminToken(token)).toBe(false);
+  });
+
+  it('falls back to the admin password when no dedicated secret is set', () => {
+    vi.stubEnv('ADMIN_SESSION_SECRET', '');
+    const token = generateAdminToken();
+
     expect(verifyAdminToken(token)).toBe(true);
   });
 
-  it('rejects a token once its expiry has passed', () => {
-    vi.useFakeTimers();
-    const token = generateAdminToken();
-    vi.advanceTimersByTime(ADMIN_SESSION_TTL_SECONDS * 1000 + 1000);
-    expect(verifyAdminToken(token)).toBe(false);
-  });
+  it('rejects malformed input and a missing signing secret without throwing', () => {
+    for (const token of [undefined, '', 'v1', 'v1.a.b', 'v1.a.b.c', 'v2.a.b']) {
+      expect(() => verifyAdminToken(token)).not.toThrow();
+      expect(verifyAdminToken(token)).toBe(false);
+    }
 
-  it('falls back to NEXTAUTH_SECRET when ORDER_TOKEN_SECRET is absent', () => {
-    vi.stubEnv('ORDER_TOKEN_SECRET', '');
-    vi.stubEnv('NEXTAUTH_SECRET', 'fallback-secret');
-    expect(verifyAdminToken(generateAdminToken())).toBe(true);
-  });
-});
-
-describe('generateAdminToken', () => {
-  it('throws rather than minting an unverifiable token when misconfigured', () => {
-    vi.stubEnv('ORDER_TOKEN_SECRET', '');
-    vi.stubEnv('NEXTAUTH_SECRET', '');
-    expect(() => generateAdminToken()).toThrow(/ORDER_TOKEN_SECRET or NEXTAUTH_SECRET/);
-  });
-
-  it('does not leak the signing secret into the token', () => {
-    expect(generateAdminToken()).not.toContain(SECRET);
-  });
-});
-
-describe('verifyAdminPassword', () => {
-  it('accepts the configured password', () => {
-    expect(verifyAdminPassword('correct-horse')).toBe(true);
-  });
-
-  it.each([
-    ['a wrong password of equal length', 'correct-horsE'],
-    ['a prefix of the password', 'correct'],
-    ['a superstring of the password', 'correct-horse-battery'],
-    ['an empty password', ''],
-  ])('rejects %s', (_label, candidate) => {
-    expect(verifyAdminPassword(candidate)).toBe(false);
-  });
-
-  it('throws when ADMIN_PASSWORD is not configured', () => {
+    vi.stubEnv('ADMIN_SESSION_SECRET', '');
     vi.stubEnv('ADMIN_PASSWORD', '');
-    expect(() => verifyAdminPassword('anything')).toThrow(/ADMIN_PASSWORD/);
-  });
-});
-
-describe('verifyAdminAccess', () => {
-  it('authorizes a valid session cookie as a human', () => {
-    const result = verifyAdminAccess(req({ cookies: { admin_token: generateAdminToken() } }));
-    expect(result).toEqual({ authorized: true, isBot: false, botClient: null });
+    expect(() => verifyAdminToken('v1.a.b')).not.toThrow();
+    expect(verifyAdminToken('v1.a.b')).toBe(false);
+    expect(() => generateAdminToken()).toThrow(/ADMIN_SESSION_SECRET or ADMIN_PASSWORD/);
   });
 
-  it('refuses the forged cookie that previously granted full access', () => {
-    const forged = Buffer.from('admin:').toString('base64');
-    expect(verifyAdminAccess(req({ cookies: { admin_token: forged } })).authorized).toBe(false);
+  it('verifies the configured password', () => {
+    expect(verifyAdminPassword('test-admin-password')).toBe(true);
+    expect(verifyAdminPassword('wrong-password')).toBe(false);
   });
 
-  it('authorizes a valid bot key on GET and marks it as a bot', () => {
-    vi.stubEnv('ADMIN_READONLY_API_KEY', 'bot-key-123');
-    const result = verifyAdminAccess(
-      req({
-        headers: { authorization: 'Bearer bot-key-123', 'x-bot-client': 'metrics/1.0' },
-      }),
-    );
-    expect(result).toEqual({ authorized: true, isBot: true, botClient: 'metrics/1.0' });
-  });
+  it('authorizes the read-only bot key for GET requests only', () => {
+    vi.stubEnv('ADMIN_READONLY_API_KEY', 'test-read-only-key');
+    const request = (method: string) =>
+      ({
+        method,
+        url: '/api/admin/sponsorships',
+        cookies: {},
+        headers: {
+          authorization: 'Bearer test-read-only-key',
+          'x-bot-client': 'auth-regression-test',
+        },
+      }) as unknown as NextApiRequest;
 
-  it('refuses a bot key on a mutating method but still reports it as a bot', () => {
-    vi.stubEnv('ADMIN_READONLY_API_KEY', 'bot-key-123');
-    const result = verifyAdminAccess(
-      req({ method: 'POST', headers: { authorization: 'Bearer bot-key-123' } }),
-    );
-    expect(result.authorized).toBe(false);
-    expect(result.isBot).toBe(true);
-  });
-
-  it('refuses an unauthenticated request', () => {
-    expect(verifyAdminAccess(req())).toEqual({
+    expect(verifyAdminAccess(request('GET'))).toEqual({
+      authorized: true,
+      isBot: true,
+      botClient: 'auth-regression-test',
+    });
+    expect(verifyAdminAccess(request('PUT'))).toEqual({
       authorized: false,
-      isBot: false,
-      botClient: null,
+      isBot: true,
+      botClient: 'auth-regression-test',
     });
   });
 });

@@ -1684,6 +1684,57 @@ export type Database = {
         }
         Relationships: []
       }
+      networking_profiles: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          profile: Json
+          share_id: string
+          sponsor_id: string | null
+          subject_type: string
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          profile?: Json
+          share_id?: string
+          sponsor_id?: string | null
+          subject_type: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          profile?: Json
+          share_id?: string
+          sponsor_id?: string | null
+          subject_type?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "networking_profiles_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: true
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "networking_profiles_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partnership_coupons: {
         Row: {
           code: string
@@ -2812,6 +2863,8 @@ export type Database = {
           id: string
           job_title: string | null
           last_name: string
+          legacy_manage_token_valid: boolean
+          manage_token_nonce: string
           metadata: Json | null
           partnership_coupon_id: string | null
           partnership_id: string | null
@@ -2845,6 +2898,8 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name: string
+          legacy_manage_token_valid?: boolean
+          manage_token_nonce?: string
           metadata?: Json | null
           partnership_coupon_id?: string | null
           partnership_id?: string | null
@@ -2878,6 +2933,8 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string
+          legacy_manage_token_valid?: boolean
+          manage_token_nonce?: string
           metadata?: Json | null
           partnership_coupon_id?: string | null
           partnership_id?: string | null
@@ -3632,6 +3689,20 @@ export type Database = {
           registration: Database["public"]["Tables"]["workshop_registrations"]["Row"]
           was_duplicate: boolean
           was_oversold: boolean
+        }[]
+      }
+      update_attendee_networking_profile: {
+        Args: {
+          p_enabled: boolean
+          p_manage_token_nonce: string
+          p_profile: Json
+          p_ticket_id: string
+        }
+        Returns: {
+          enabled: boolean
+          profile: Json
+          result: string
+          share_id: string
         }[]
       }
     }

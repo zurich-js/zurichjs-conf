@@ -71,6 +71,7 @@ import {
 function makeTicket(overrides: Partial<Ticket> = {}): Ticket {
   return {
     id: 'ticket-001',
+    manage_token_nonce: '11111111-2222-4333-8444-555555555555',
     user_id: 'user-001',
     ticket_type: 'early_bird',
     ticket_category: 'standard',

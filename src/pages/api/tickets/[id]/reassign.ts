@@ -5,7 +5,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyOrderToken } from '@/lib/auth/orderToken';
+import { verifyOrderTokenClaimsForCurrentTicket } from '@/lib/auth/orderTokenServer';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
 import { getTicketDisplayName } from '@/lib/stripe/ticket-utils';
@@ -32,15 +32,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Token, email, first name, and last name are required' });
     }
 
-    // Verify the token and extract ticket ID
-    const tokenTicketId = verifyOrderToken(token);
+    // Verify the token and extract its current ticket access state.
+    const tokenClaims = await verifyOrderTokenClaimsForCurrentTicket(token);
 
-    if (!tokenTicketId) {
+    if (!tokenClaims) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
     // Ensure the token matches the ticket ID being reassigned
-    if (tokenTicketId !== id) {
+    const ticketId = id.toLowerCase();
+    if (tokenClaims.ticketId !== ticketId) {
       return res.status(403).json({ error: 'You do not have permission to reassign this ticket' });
     }
 
@@ -50,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: currentTicket, error: fetchError } = await supabase
       .from('tickets')
       .select('*')
-      .eq('id', id)
+      .eq('id', ticketId)
       .single();
 
     if (fetchError || !currentTicket) {
@@ -71,24 +72,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email,
         first_name: firstName,
         last_name: lastName,
+        user_id: null,
         transferred_from_name: `${currentTicket.first_name} ${currentTicket.last_name}`,
         transferred_from_email: currentTicket.email,
         transferred_at: new Date().toISOString(),
       })
-      .eq('id', id)
+      .eq('id', ticketId)
+      .eq('manage_token_nonce', tokenClaims.manageTokenNonce)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (updateError || !ticket) {
+    if (updateError) {
       log.error('Error updating ticket', updateError);
       return res.status(500).json({ error: 'Failed to reassign ticket' });
+    }
+
+    if (!ticket) {
+      return res.status(409).json({ error: 'Ticket access changed; reload and try again' });
     }
 
     // Send email to new owner with transfer information
     const customerName = `${firstName} ${lastName}`;
     const transferFromName = `${currentTicket.first_name} ${currentTicket.last_name}`;
     const transferNotes = `This ticket has been transferred to you by ${transferFromName} (${currentTicket.email}).`;
-    const orderUrl = generateOrderUrl(ticket.id);
+    const orderUrl = generateOrderUrl(ticket.id, ticket.manage_token_nonce);
 
     const emailResult = await sendTicketConfirmationEmail({
       to: email,

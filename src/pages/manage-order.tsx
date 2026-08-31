@@ -24,6 +24,7 @@ import {
   MANAGE_ORDER_SECTIONS,
   TicketQRCard,
   TicketDetailsCard,
+  NetworkingCard,
   VipPerksCard,
   PendingUpgradeCard,
   UpgradeCta,
@@ -37,8 +38,10 @@ import {
   formatDate,
   type ReassignData,
   type ApparelPreferencesData,
+  type NetworkingPreferencesData,
   type OrderDetailsResponse,
 } from '@/components/manage-order';
+import type { AttendeeNetworkingProfile, NetworkingSettings } from '@/lib/types/networking';
 
 type FetchError = Error & { status?: number };
 
@@ -162,13 +165,37 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
     },
   });
 
+  const networkingMutation = useMutation<
+    NetworkingSettings<AttendeeNetworkingProfile>,
+    Error,
+    NetworkingPreferencesData
+  >({
+    mutationFn: async (data) => {
+      if (!orderDetails?.ticket.id) throw new Error('No ticket ID');
+      const response = await fetch(`/api/tickets/${orderDetails.ticket.id}/networking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, ...data }),
+      });
+      if (!response.ok) {
+        throw new Error(await extractErrorMessage(response, 'Failed to save networking settings'));
+      }
+      return response.json() as Promise<NetworkingSettings<AttendeeNetworkingProfile>>;
+    },
+    onSuccess: (networking) => {
+      queryClient.setQueryData<OrderDetailsResponse>(['order', token], (current) =>
+        current ? { ...current, networking } : current
+      );
+    },
+  });
+
   const showErrorState =
     tokenStatus === 'missing' || tokenStatus === 'not-found' || isInvalidToken || (!!error && !orderDetails);
 
   return (
     <Layout title="Manage Your Ticket | ZurichJS Conference 2026" description="View and manage your ZurichJS Conference 2026 ticket.">
       <PageHeader />
-      <div className="min-h-screen bg-brand-primary py-16 md:py-24 px-6">
+      <div className="min-h-screen bg-brand-white py-16 md:py-24 px-6">
         <div className="max-w-3xl mx-auto">
           {/* Error State */}
           {showErrorState && (
@@ -212,6 +239,9 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
                   preferences={orderDetails.apparelPreferences}
                   mutation={apparelMutation}
                 />
+              </div>
+              <div id={MANAGE_ORDER_SECTIONS.networking} className="scroll-mt-28">
+                <NetworkingCard settings={orderDetails.networking} mutation={networkingMutation} />
               </div>
 
               {orderDetails.pendingUpgrade && (
@@ -270,8 +300,12 @@ const ManageOrderPage: React.FC<ManageOrderPageProps> = ({ token, tokenStatus })
 };
 
 export const getServerSideProps: GetServerSideProps<ManageOrderPageProps> = async (ctx) => {
+  ctx.res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+  ctx.res.setHeader('Referrer-Policy', 'no-referrer');
+  ctx.res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+
   // These imports are server-only; Next.js strips them from the client bundle
-  const { verifyOrderToken } = await import('@/lib/auth/orderToken');
+  const { verifyOrderTokenForCurrentTicket } = await import('@/lib/auth/orderTokenServer');
   const { getOrderDetails } = await import('@/lib/orders');
   const { getQueryClient } = await import('@/lib/query-client');
   const { logger } = await import('@/lib/logger');
@@ -282,7 +316,7 @@ export const getServerSideProps: GetServerSideProps<ManageOrderPageProps> = asyn
     return { props: { token: '', tokenStatus: 'missing' } };
   }
 
-  const ticketId = verifyOrderToken(token);
+  const ticketId = await verifyOrderTokenForCurrentTicket(token);
   if (!ticketId) {
     return { props: { token, tokenStatus: 'invalid' } };
   }
@@ -407,19 +441,19 @@ function ErrorState({ tokenStatus, error, isInvalidToken, recoverLinkMutation }:
         </Heading>
         <div className="max-w-xl mx-auto">
           <p className="text-lg text-black/80 mb-4">{errorMessage}</p>
-          <div className="bg-black rounded-2xl p-6 text-left mb-8">
-            <h3 className="text-brand-primary font-semibold mb-3">What you can do:</h3>
-            <ul className="text-gray-200 space-y-2">
+          <div className="rounded-2xl border border-brand-gray-light bg-brand-gray-lightest p-6 text-left mb-8">
+            <h3 className="text-brand-black font-semibold mb-3">What you can do:</h3>
+            <ul className="text-brand-gray-darkest space-y-2">
               <li className="flex items-start gap-2">
-                <span className="text-brand-primary mt-1">•</span>
+                <span className="text-brand-blue mt-1">•</span>
                 <span>Check your email for the ticket management link</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-brand-primary mt-1">•</span>
+                <span className="text-brand-blue mt-1">•</span>
                 <span>Make sure you&apos;re using the complete link from the email</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-brand-primary mt-1">•</span>
+                <span className="text-brand-blue mt-1">•</span>
                 <span>Contact us at hello@zurichjs.com if you need assistance</span>
               </li>
             </ul>
