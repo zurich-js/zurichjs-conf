@@ -53,6 +53,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: '/mcp',
+        destination: '/api/mcp',
+      },
+      {
         source: '/ingest/static/:path*',
         destination: 'https://eu-assets.i.posthog.com/static/:path*',
       },
