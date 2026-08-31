@@ -132,7 +132,21 @@ export function AccommodationsTab({
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="md:hidden divide-y divide-gray-200">
+            {paginated.map((booking) => (
+              <AccommodationCard
+                key={booking.id}
+                booking={booking}
+                onEdit={setEditing}
+                onDelete={onDelete}
+                isUpdating={isUpdating}
+              />
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 text-left text-sm text-gray-500">
                 <tr>
@@ -264,5 +278,81 @@ function AccommodationRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+function AccommodationCard({
+  booking,
+  onEdit,
+  onDelete,
+  isUpdating,
+}: {
+  booking: AccommodationBookingWithContext;
+  onEdit: (booking: AccommodationBookingWithContext) => void;
+  onDelete: (id: string) => void;
+  isUpdating: boolean;
+}) {
+  const firstCheckIn = booking.rooms.map((room) => room.check_in_date).filter(Boolean).sort()[0] ?? null;
+  const sortedCheckOuts = booking.rooms.map((room) => room.check_out_date).filter(Boolean).sort();
+  const lastCheckOut = sortedCheckOuts[sortedCheckOuts.length - 1] ?? null;
+  const nights = calculateNights(firstCheckIn, lastCheckOut);
+  const roomCount = booking.rooms.length;
+  const peopleCount = booking.rooms.reduce((sum, room) => sum + room.people_count, 0);
+  const hotelNames = [...new Set(booking.rooms.map((room) => room.hotel?.name ?? 'Hotel TBD'))].join(', ');
+
+  return (
+    <div className="p-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-gray-900">{booking.guest_name}</p>
+          <p className="text-xs text-gray-500">
+            {booking.speaker ? `${booking.speaker.first_name} ${booking.speaker.last_name}` : 'Other guest'}
+          </p>
+        </div>
+        <span className={`px-2 py-0.5 text-xs rounded flex-shrink-0 ${STATUS_CLASSES[booking.status]}`}>
+          {STATUS_LABELS[booking.status]}
+        </span>
+      </div>
+
+      <div className="space-y-2 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Stay</span>
+          <span className="text-gray-900">
+            {firstCheckIn || 'TBD'} → {lastCheckOut || 'TBD'}
+            {nights !== null && <span className="text-gray-400 ml-1">({nights}n)</span>}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Rooms</span>
+          <span className="text-gray-900">{roomCount} room{roomCount !== 1 ? 's' : ''} · {peopleCount} people</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Hotel</span>
+          <span className="text-gray-900 text-right truncate max-w-[60%]">{hotelNames}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Payment</span>
+          <span className="text-gray-900">CHF {(booking.guest_amount / 100).toFixed(0)} guest / CHF {(booking.conference_amount / 100).toFixed(0)} conf</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+        <button
+          onClick={() => onEdit(booking)}
+          className="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => {
+            if (confirm('Delete this accommodation booking?')) onDelete(booking.id);
+          }}
+          disabled={isUpdating}
+          className="px-3 py-1.5 text-sm font-medium rounded-lg bg-red-50 hover:bg-red-100 text-red-600 disabled:opacity-50 cursor-pointer"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
   );
 }

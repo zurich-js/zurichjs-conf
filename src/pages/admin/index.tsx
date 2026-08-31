@@ -5,12 +5,12 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Ticket, PlusCircle, DollarSign, GraduationCap, Crown, Percent, Shirt, Link2 } from 'lucide-react';
+import { Ticket, PlusCircle, DollarSign, GraduationCap, Package } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
-import { TicketsTab, IssueTab, FinancialsTab, type Tab } from '@/components/admin/dashboard';
+import { TicketsTab, IssueTab, FinancialsTab } from '@/components/admin/dashboard';
 import { WorkshopsRegistrantsTab } from '@/components/admin/workshops-registrants';
 import { VipPerksTab } from '@/components/admin/vip-perks';
 import { ApparelTab } from '@/components/admin/apparel';
@@ -18,16 +18,103 @@ import { DiscountConfigTab } from '@/components/admin/discount';
 import { CartBuilderTab } from '@/components/admin/cart-builder';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
+type Tab = 'tickets' | 'workshops' | 'issue' | 'commerce' | 'fulfillment';
+type CommerceSubTab = 'financials' | 'discount' | 'cart-builder';
+type FulfillmentSubTab = 'vip-perks' | 'apparel';
+
 const TABS: AdminTab<Tab>[] = [
   { id: 'tickets', label: 'Tickets', icon: Ticket },
   { id: 'workshops', label: 'Workshops', icon: GraduationCap },
   { id: 'issue', label: 'Issue', icon: PlusCircle },
-  { id: 'financials', label: 'Financials', icon: DollarSign },
-  { id: 'vip-perks', label: 'VIP Perks', icon: Crown },
-  { id: 'apparel', label: 'Apparel', icon: Shirt },
-  { id: 'discount', label: 'Discount', icon: Percent },
-  { id: 'cart-builder', label: 'Cart Link', icon: Link2 },
+  { id: 'commerce', label: 'Commerce', icon: DollarSign },
+  { id: 'fulfillment', label: 'Fulfillment', icon: Package },
 ];
+
+const COMMERCE_SUBTABS: { id: CommerceSubTab; label: string }[] = [
+  { id: 'financials', label: 'Financials' },
+  { id: 'discount', label: 'Discounts' },
+  { id: 'cart-builder', label: 'Cart Builder' },
+];
+
+const FULFILLMENT_SUBTABS: { id: FulfillmentSubTab; label: string }[] = [
+  { id: 'vip-perks', label: 'VIP Perks' },
+  { id: 'apparel', label: 'Apparel' },
+];
+
+function SubTabBar<T extends string>({
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  tabs: { id: T; label: string }[];
+  activeTab: T;
+  onTabChange: (tab: T) => void;
+}) {
+  return (
+    <div className="flex gap-1 mb-4 p-1 bg-gray-100 rounded-lg w-fit">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all cursor-pointer ${
+            activeTab === tab.id
+              ? 'bg-white text-black shadow-sm'
+              : 'text-gray-600 hover:text-black'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CommerceSection() {
+  const [subTab, setSubTab] = useState<CommerceSubTab>('financials');
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-black flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Commerce
+            </h2>
+            <p className="text-sm text-gray-500">Revenue, discounts, and sales tools</p>
+          </div>
+          <SubTabBar tabs={COMMERCE_SUBTABS} activeTab={subTab} onTabChange={setSubTab} />
+        </div>
+      </div>
+      {subTab === 'financials' && <FinancialsTab />}
+      {subTab === 'discount' && <DiscountConfigTab />}
+      {subTab === 'cart-builder' && <CartBuilderTab />}
+    </div>
+  );
+}
+
+function FulfillmentSection() {
+  const [subTab, setSubTab] = useState<FulfillmentSubTab>('vip-perks');
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-black flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Fulfillment
+            </h2>
+            <p className="text-sm text-gray-500">VIP perks and apparel management</p>
+          </div>
+          <SubTabBar tabs={FULFILLMENT_SUBTABS} activeTab={subTab} onTabChange={setSubTab} />
+        </div>
+      </div>
+      {subTab === 'vip-perks' && <VipPerksTab />}
+      {subTab === 'apparel' && <ApparelTab />}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('tickets');
@@ -47,11 +134,8 @@ export default function AdminDashboard() {
             {activeTab === 'tickets' && <TicketsTab />}
             {activeTab === 'workshops' && <WorkshopsRegistrantsTab />}
             {activeTab === 'issue' && <IssueTab />}
-            {activeTab === 'financials' && <FinancialsTab />}
-            {activeTab === 'vip-perks' && <VipPerksTab />}
-            {activeTab === 'apparel' && <ApparelTab />}
-            {activeTab === 'discount' && <DiscountConfigTab />}
-            {activeTab === 'cart-builder' && <CartBuilderTab />}
+            {activeTab === 'commerce' && <CommerceSection />}
+            {activeTab === 'fulfillment' && <FulfillmentSection />}
           </div>
         </div>
       </div>
