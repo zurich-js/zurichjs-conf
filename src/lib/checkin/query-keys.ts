@@ -1,0 +1,80 @@
+/**
+ * Query key factory for the door check-in station.
+ *
+ * All door server-state lives under the `['checkin']` root, following the
+ * convention documented in `src/lib/admin/query-keys.ts`: keys are
+ * hierarchical, and every input that changes the server response belongs in
+ * the key.
+ *
+ * The station's shape matters here. It makes exactly two requests per shift —
+ * `session` to learn who the volunteer is and which day it is, then `roster` —
+ * and resolves every scan from memory afterwards, so the read path makes no
+ * network request at all. The four independent reads behind the roster (tickets,
+ * apparel, seats, workshops) run concurrently SERVER-side and arrive as one
+ * payload, which is one round trip on venue wifi instead of four.
+ *
+ * `registrations` and `workshops` below are reserved for the day that payload is
+ * worth splitting — so a workshop sale could invalidate seats without discarding
+ * the attendee list. Nothing fetches them yet.
+ *
+ * INVALIDATION RULE: after a check-in, write the changed attendee into the
+ * cache and invalidate nothing. `invalidateQueries` marks a key stale AND
+ * refetches active observers immediately — `staleTime` does not suppress that —
+ * so invalidating the roster per scan would refetch it up to 300 times a shift
+ * and undo the point of prefetching. Where an invalidation is genuinely needed,
+ * pass `refetchType: 'none'`.
+ */
+
+import type { DoorOccasion } from '@/lib/types/checkin';
+
+export interface DoorRosterParams {
+  /** The roster differs per occasion: workshop day includes seat-only attendees. */
+  occasion: DoorOccasion;
+}
+
+export interface DoorEventListParams {
+  /** Empty string = every occasion */
+  occasion: DoorOccasion | '';
+  /** Empty string = every event type */
+  eventType: string;
+  /** Restrict to one attendee's timeline */
+  subjectId: string | null;
+  /** Restrict to one volunteer's actions */
+  staffId: string | null;
+}
+
+export const checkinKeys = {
+  all: ['checkin'] as const,
+
+  /** Who am I, my role, and the occasion the server thinks is active. Gates the UI. */
+  session: () => [...checkinKeys.all, 'session'] as const,
+
+  /** Attendees plus apparel, narrow projection. The large one; ~40 KB gzipped. */
+  roster: (params: DoorRosterParams) => [...checkinKeys.all, 'roster', params] as const,
+
+  /** Workshop seats across both id spaces. Invalidated when a seat is sold. */
+  registrations: (params: DoorRosterParams) =>
+    [...checkinKeys.all, 'registrations', params] as const,
+
+  /** Workshop catalogue: title, room, times. Rarely changes, so a long staleTime. */
+  workshops: () => [...checkinKeys.all, 'workshops'] as const,
+
+  /** One attendee, refetched only when the station needs to confirm a write. */
+  attendee: (subjectId: string) => [...checkinKeys.all, 'attendee', subjectId] as const,
+
+  /** Staff management, in the admin panel rather than at the door. */
+  staff: () => [...checkinKeys.all, 'staff'] as const,
+  staffList: () => [...checkinKeys.staff(), 'list'] as const,
+  staffActivity: (staffId: string) => [...checkinKeys.staff(), 'activity', staffId] as const,
+
+  /**
+   * The polled live dashboard. Keyed on occasion so switching days does not
+   * show the previous day's figures while the first poll is in flight.
+   */
+  dashboard: (occasion: DoorOccasion | null) =>
+    [...checkinKeys.all, 'dashboard', occasion] as const,
+
+  /** The audit trail, filtered. Every filter belongs in the key. */
+  events: () => [...checkinKeys.all, 'events'] as const,
+  eventList: (params: DoorEventListParams) => [...checkinKeys.events(), 'list', params] as const,
+} as const;

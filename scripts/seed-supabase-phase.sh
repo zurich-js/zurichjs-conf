@@ -14,6 +14,8 @@ Phases:
   cfp-admission    Admission workload: accepted/rejected/pending submissions, no schedule.
   cfp-schedule     Scheduling workload: schedule slots, a few linked submissions, no commerce.
   workshop-commerce Full local seed including workshop commerce and registrations.
+  door-checkin     Workshop commerce plus door check-in fixtures (scannable tickets,
+                   seats, a refunded ticket, a transfer, apparel sizes).
 
 Environment overrides:
   SUPABASE_PROJECT_ID    Defaults to svkbzhlrjujeteqjrckv.
@@ -22,7 +24,7 @@ USAGE
 }
 
 case "$phase" in
-  cfp-first-stage|cfp-admission|cfp-schedule|workshop-commerce)
+  cfp-first-stage|cfp-admission|cfp-schedule|workshop-commerce|door-checkin)
     ;;
   ""|-h|--help)
     usage
@@ -60,6 +62,12 @@ case "$phase" in
     ;;
   workshop-commerce)
     run_sql_file "supabase/seeds/40-workshop-commerce.sql"
+    ;;
+  door-checkin)
+    # Layered on the commerce overlay so the workshop catalogue is real; the door
+    # overlay creates its own workshop only when none exists.
+    run_sql_file "supabase/seeds/40-workshop-commerce.sql"
+    run_sql_file "supabase/seeds/50-door-checkin.sql"
     ;;
 esac
 

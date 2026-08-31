@@ -15,7 +15,18 @@ major_version = 17
 
 [db.seed]
 enabled = true
-sql_paths = ["./seed-local-cfp.sql"]
+# Applied to LOCAL `supabase db start` and to every Supabase preview branch.
+# Never to production.
+#
+# The door fixture is in the default list on purpose. With automatic branching
+# on, a preview branch is where a migration actually gets tested — and a branch
+# starts with no data at all, so without this the door station resolves every
+# code to "not in today's roster" and the flow looks broken rather than empty.
+#
+# 50-door-checkin.sql is self-sufficient: it creates a workshop only when the
+# catalogue is empty, so it works both on a bare branch and layered on the CFP
+# base seed above.
+sql_paths = ["./seed-local-cfp.sql", "./seeds/50-door-checkin.sql"]
 
 [studio]
 port = 54323
@@ -35,3 +46,27 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Optional: a persistent staging branch
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# NOT required. With automatic branching on, every pull request that touches
+# supabase/ already gets its own branch, seeded from [db.seed] above — which is
+# enough to test a migration before it merges.
+#
+# A persistent branch is worth ~$9.70/month only if you want an environment that
+# OUTLIVES a PR: somewhere a deployed frontend can point at all week, that keeps
+# its data between tests. Preview branches are deleted when their PR merges or
+# closes.
+#
+# TO ADD ONE, in this order:
+#   1. supabase --experimental branches create staging --persistent
+#   2. supabase --experimental branches list     # take BRANCH PROJECT ID
+#   3. Uncomment below and paste that ref.
+#
+# A wrong or absent project_id does not fail loudly — Supabase silently SKIPS
+# the configuration step — so confirm the seed actually ran rather than assuming.
+#
+# [remotes.staging]
+# project_id = "PASTE_BRANCH_PROJECT_REF_HERE"

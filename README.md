@@ -123,6 +123,7 @@ docs/
 
 - **[Documentation Index](./docs/README.md)** - All project documentation
 - **[Analytics & Logging](./docs/ANALYTICS_AND_LOGGING.md)** - PostHog integration and structured logging
+- **[Supabase Branching](./docs/SUPABASE_BRANCHING.md)** - Testing migrations on a staging branch before production
 - **[CFP Improvements](./docs/CFP_IMPROVEMENTS.md)** - Roadmap for CFP system
 - **[CLAUDE.md](./CLAUDE.md)** - AI assistant quick reference
 - **[.cursorrules](./.cursorrules)** - Detailed coding standards
