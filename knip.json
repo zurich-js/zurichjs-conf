@@ -1,0 +1,35 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/pages/**/*.{ts,tsx}",
+    "src/pages/api/**/*.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
+  "ignore": [
+    "**/__tests__/**",
+    "**/*.test.{ts,tsx}",
+    "**/*.d.ts",
+    "src/lib/types/database.generated.ts"
+  ],
+  "ignoreDependencies": [
+    "@tailwindcss/oxide",
+    "lightningcss",
+    "styled-jsx",
+    "husky",
+    "lint-staged"
+  ],
+  "ignoreBinaries": ["next", "tsx", "oxlint", "tsc", "husky", "email", "vitest"],
+  "next": {
+    "entry": ["src/pages/**/*.{ts,tsx}", "src/pages/api/**/*.ts"]
+  },
+  "vitest": {
+    "config": ["vitest.config.mts"],
+    "entry": ["**/*.test.{ts,tsx}"]
+  },
+  "paths": {
+    "@/*": ["./src/*"]
+  },
+  "compilers": {
+    "tsx": "oxc"
+  }
+}
