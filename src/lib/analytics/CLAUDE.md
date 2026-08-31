@@ -15,8 +15,8 @@ Both share the same event registry (`events.ts`) so payloads are typed identical
 
 1. Add an entry to `events.ts` with a `snake_case` name and a TypeScript type for
    its properties.
-2. Call `analytics.capture('event_name', { ... })` (client) or
-   `serverAnalytics.capture('event_name', { ... }, { distinctId })` (server).
+2. Call `analytics.track('event_name', { ... })` (client) or
+   `serverAnalytics.track('event_name', distinctId, { ... })` (server).
 3. The properties param is type-checked against the registry entry.
 
 Example:
@@ -28,11 +28,17 @@ export type CheckoutEvents = {
   checkout_completed: { order_id: string; cart_total: number };
 };
 
-// usage
-analytics.capture('checkout_started', {
+// usage (client)
+analytics.track('checkout_started', {
   cart_total: 100,
   cart_currency: 'CHF',
   cart_item_count: 2,
+});
+
+// usage (server)
+await serverAnalytics.track('checkout_completed', userId, {
+  order_id: 'ord_123',
+  cart_total: 100,
 });
 ```
 
@@ -49,7 +55,7 @@ recovery.
 
 ## Server-side events
 
-`serverAnalytics.capture()` needs a `distinctId` (user id, email, or anonymous id
+`serverAnalytics.track()` needs a `distinctId` (user id, email, or anonymous id
 passed from the client via cookie). Don't fabricate ids.
 
 For API routes that don't have a user identity, skip server analytics rather than

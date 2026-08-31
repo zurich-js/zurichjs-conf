@@ -68,7 +68,7 @@ src/
 │   ├── organisms/      # Page sections (Hero, Schedule)
 │   ├── cfp/            # CFP-specific components
 │   └── admin/          # Admin-specific components
-├── lib/                # Domain logic — 37 subdirectories
+├── lib/                # Domain logic — 42 subdirectories
 │   ├── analytics/      # PostHog client + server
 │   ├── cfp/            # CFP business logic — see src/lib/cfp/CLAUDE.md
 │   ├── logger/         # Structured logging
@@ -129,6 +129,24 @@ const supabase = createServiceRoleClient();
 
 Standard handler shape:
 
+```typescript
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Resource API');
+
+const schema = z.object({ /* ... */ });
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // 1. Auth (one of the three patterns above)
+  // 2. Method check
+  // 3. Zod safeParse → 400 with issues
+  // 4. Business logic
+  // 5. try/catch with log.error(message, err, context)
+}
+```
+
 ### Retries & Resilience
 Do NOT write ad-hoc retry loops. Use the shared helpers so backoff, jitter,
 and `Retry-After` handling stay consistent.
@@ -145,19 +163,6 @@ Only retry idempotent operations. For non-idempotent calls (Stripe charges,
 ticket creation, etc.) rely on the provider's idempotency keys instead.
 
 ## CFP System
-
-const log = logger.scope('Resource API');
-
-const schema = z.object({ /* ... */ });
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // 1. Auth
-  // 2. Method check
-  // 3. Zod safeParse → 400 with issues
-  // 4. Business logic
-  // 5. try/catch with log.error(message, err, context)
-}
-```
 
 ### Logging
 - Always `logger.scope('Module Name')` at file top, never `console.log`.
@@ -191,7 +196,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - Don't use `console.log` — use `logger.scope()`.
 - `git commit --no-verify` is allowed in the Claude-on-the-web cloud sandbox (no `.env.local`, so pre-commit's build step always fails on env validation). Locally, fix the failing hook instead — don't bypass.
 - Don't put static content in components — it lives in `src/data/`.
-- Don't hardcode colors — use Tailwind `@theme` tokens or `src/styles/tokens.ts`.
+- Don't hardcode colors — use Tailwind `@theme` tokens defined in `src/styles/globals.css`.
 - Don't add new types to `src/types/` — domain types belong in `src/lib/types/`.
 - Don't create `*_SUMMARY.md` or planning docs after changes — PR descriptions live in PRs.
 - Don't import from `'@/lib/types/cfp'` (legacy) when `'@/lib/types/cfp/...'` (organized) exists.

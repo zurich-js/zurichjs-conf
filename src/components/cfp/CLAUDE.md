@@ -33,14 +33,14 @@ When adding a step:
 
 Speaker-facing components fetch via hooks in `src/hooks/cfp/`:
 
-- `useSubmissions()` — speaker's own submissions list
-- `useSpeakerProfile()` — current speaker's profile
+- `useCfpSubmissions()` — speaker's own submissions list
+- `useCfpSpeaker()` — current speaker's profile
 - `useCfpFlights()` — speaker flight entries
 - `useBookmarks()` — saved drafts
 
 Reviewer-facing components use:
-- `useReviewerDashboard()` — assigned submissions, stats
-- `useReviewerSubmissions()` — single submission for review
+- `useCfpReviewerDashboard()` — assigned submissions, stats
+- `useCfpReviewerSubmission()` — single submission for review
 
 These hooks wrap TanStack Query against the speaker / reviewer API routes.
 

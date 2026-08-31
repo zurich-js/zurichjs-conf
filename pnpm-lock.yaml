@@ -63,9 +63,6 @@ importers:
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -141,18 +138,12 @@ importers:
       stripe:
         specifier: ^19.3.0
         version: 19.3.1(@types/node@20.19.39)
-      styled-jsx:
-        specifier: 5.1.6
-        version: 5.1.6(react@19.2.5)
       swiper:
         specifier: ^12.1.4
         version: 12.1.4
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.5.0
-      use-local-storage-state:
-        specifier: ^19.5.0
-        version: 19.5.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       usehooks-ts:
         specifier: ^3.1.1
         version: 3.1.1(react@19.2.5)
@@ -2292,9 +2283,6 @@ packages:
   cjs-module-lexer@2.2.0:
     resolution: {integrity: sha512-4bHTS2YuzUvtoLjdy+98ykbNB5jS0+07EvFNXerqZQJ89F7DI6ET7OQo/HJuW6K0aVsKA9hj9/RVb2kQVOrPDQ==}
 
-  class-variance-authority@0.7.1:
-    resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
-
   cli-cursor@5.0.0:
     resolution: {integrity: sha512-aCj4O5wKyszjMmDT4tZj93kxyydN/K5zPWSCe6/0AV/AA1pqe5ZBIw0a2ZfPQV7lL5/yb5HsUreJ6UFAF1tEQw==}
     engines: {node: '>=18'}
@@ -4172,13 +4160,6 @@ packages:
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
-
-  use-local-storage-state@19.5.0:
-    resolution: {integrity: sha512-sUJAyFvsmqMpBhdwaRr7GTKkkoxb6PWeNVvpBDrLuwQF1PpbJRKIbOYeLLeqJI7B3wdfFlLLCBbmOdopiSTBOw==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      react: '>=18'
-      react-dom: '>=18'
 
   use-sync-external-store@1.6.0:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
@@ -6276,10 +6257,6 @@ snapshots:
   citty@0.2.2: {}
 
   cjs-module-lexer@2.2.0: {}
-
-  class-variance-authority@0.7.1:
-    dependencies:
-      clsx: 2.1.1
 
   cli-cursor@5.0.0:
     dependencies:
@@ -8418,11 +8395,6 @@ snapshots:
       browserslist: 4.28.2
       escalade: 3.2.0
       picocolors: 1.1.1
-
-  use-local-storage-state@19.5.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
-    dependencies:
-      react: 19.2.5
-      react-dom: 19.2.5(react@19.2.5)
 
   use-sync-external-store@1.6.0(react@19.2.5):
     dependencies:

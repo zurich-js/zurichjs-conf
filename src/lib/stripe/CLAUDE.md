@@ -35,8 +35,12 @@ The single Stripe webhook entry point. Critical rules:
 4. **Service role client** — webhooks are not user-authenticated, so they use
    `createServiceRoleClient()` (RLS bypassed). This is one of the few valid uses.
 
-Events handled today: `checkout.session.completed`, `invoice.payment_succeeded`,
-`charge.refunded`. Add new handlers to `webhookHandlers.ts`, not to the route file.
+Events handled today:
+- `checkout.session.completed` — standard checkout fulfillment
+- `checkout.session.async_payment_succeeded` — delayed payment success (bank transfers, etc.)
+- `checkout.session.async_payment_failed` — delayed payment failure
+
+Add new handlers to `webhookHandlers.ts`, not to the route file.
 
 ## Checkout (`/api/checkout/create-session.ts`)
 

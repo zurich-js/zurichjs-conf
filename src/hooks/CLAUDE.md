@@ -14,7 +14,7 @@ Convention:
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/queries';
+import { queryKeys } from '@/lib/query-keys';
 import { fetchMyResource } from '@/lib/<domain>/api';
 
 export function useMyResource(id: string) {
@@ -26,7 +26,7 @@ export function useMyResource(id: string) {
 }
 ```
 
-- **Query keys** are centralized in `src/lib/queries/` — add new keys there.
+- **Query keys** are centralized in `src/lib/query-keys.ts` — add new keys there.
 - **Fetch functions** live in `src/lib/<domain>/api.ts`, not inside the hook.
 - **Mutations** use `useMutation` + `invalidateQueries` with the matching key.
 
@@ -34,14 +34,13 @@ export function useMyResource(id: string) {
 
 | Hook | What |
 |---|---|
-| `useToast()` | Toast notifications (Context-based) |
-| `useTabs()` | Tab state |
+| `useToast()` | Toast notifications (via `ToastContext`) |
 | `useCountdown()` | Countdown timer with hydration-safe rendering |
 | `useKeyboardShortcuts()` | Keyboard event listeners |
-| `useLocalStorage()` | `use-local-storage-state` wrapper |
+| `useLocalStorage()` | Local storage state with SSR safety |
 | `usePrefersReducedMotion()` | A11y preference |
 | `useGridPacker()` | Layout packing |
-| `useFeatureFlags()` | Feature flag checks |
+| `useDebouncedValue()` | Debounced value updates |
 
 ## Cart / checkout
 
@@ -53,7 +52,6 @@ export function useMyResource(id: string) {
 ## Auth
 
 - `useAdminAuth()` — admin session check
-- `useCfp()` — CFP eligibility for current user
 - `useStudentVerification()` — student verification flow
 
 ## Naming
