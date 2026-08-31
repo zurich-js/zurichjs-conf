@@ -16,6 +16,8 @@ import {
   Copy,
   GraduationCap,
   Briefcase,
+  Ticket,
+  AlertCircle,
 } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
@@ -48,6 +50,7 @@ interface VerificationRequest {
   stripe_session_id: string | null;
   reviewed_at: string | null;
   created_at: string;
+  has_purchased_ticket: boolean;
 }
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -63,6 +66,7 @@ function countryFlag(code: string | null): string {
 }
 
 type StatusFilter = '' | 'pending' | 'approved' | 'rejected';
+type PurchaseFilter = '' | 'purchased' | 'not_purchased';
 
 async function fetchVerifications(
   status: StatusFilter,
@@ -83,6 +87,7 @@ export default function VerificationsDashboard() {
   const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+  const [purchaseFilter, setPurchaseFilter] = useState<PurchaseFilter>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVerification, setSelectedVerification] = useState<VerificationRequest | null>(null);
 
@@ -95,15 +100,28 @@ export default function VerificationsDashboard() {
   });
 
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return verifications;
-    const q = searchQuery.toLowerCase();
-    return verifications.filter(
-      (v) =>
-        v.name.toLowerCase().includes(q) ||
-        v.email.toLowerCase().includes(q) ||
-        v.verification_id.toLowerCase().includes(q)
-    );
-  }, [verifications, searchQuery]);
+    let result = verifications;
+
+    // Apply purchase filter
+    if (purchaseFilter === 'purchased') {
+      result = result.filter((v) => v.has_purchased_ticket);
+    } else if (purchaseFilter === 'not_purchased') {
+      result = result.filter((v) => !v.has_purchased_ticket);
+    }
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (v) =>
+          v.name.toLowerCase().includes(q) ||
+          v.email.toLowerCase().includes(q) ||
+          v.verification_id.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [verifications, searchQuery, purchaseFilter]);
 
   const approveMutation = useMutation({
     mutationFn: (id: string) =>
@@ -144,6 +162,11 @@ export default function VerificationsDashboard() {
   if (!isAuthenticated) return <AdminLoginForm />;
 
   const pendingCount = verifications.filter((v) => v.status === 'pending').length;
+  const approvedCount = verifications.filter((v) => v.status === 'approved').length;
+  const purchasedCount = verifications.filter((v) => v.has_purchased_ticket).length;
+  const approvedNotPurchased = verifications.filter(
+    (v) => v.status === 'approved' && !v.has_purchased_ticket
+  ).length;
 
   return (
     <>
@@ -159,13 +182,33 @@ export default function VerificationsDashboard() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 pb-12">
           {/* Stats bar */}
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-3 mb-6">
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
               <Clock className="w-4 h-4 text-amber-600" />
               <span className="text-sm font-medium text-black">
                 {pendingCount} pending
               </span>
             </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-black">
+                {approvedCount} approved
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <Ticket className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-black">
+                {purchasedCount} purchased
+              </span>
+            </div>
+            {approvedNotPurchased > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-200 shadow-sm">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-800">
+                  {approvedNotPurchased} approved, awaiting purchase
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-black">
@@ -195,6 +238,15 @@ export default function VerificationsDashboard() {
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
+            </select>
+            <select
+              value={purchaseFilter}
+              onChange={(e) => setPurchaseFilter(e.target.value as PurchaseFilter)}
+              className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-black focus:ring-2 focus:ring-brand-primary focus:border-brand-primary bg-white"
+            >
+              <option value="">All purchase status</option>
+              <option value="purchased">Purchased ticket</option>
+              <option value="not_purchased">No ticket yet</option>
             </select>
           </div>
 
@@ -246,6 +298,8 @@ export default function VerificationsDashboard() {
                       )}
                       <span>&middot;</span>
                       <span>{new Date(v.created_at).toLocaleDateString()}</span>
+                      <span>&middot;</span>
+                      <PurchaseStatusBadge purchased={v.has_purchased_ticket} />
                     </div>
                   </div>
                 ))}
@@ -264,6 +318,9 @@ export default function VerificationsDashboard() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ticket
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Currency
@@ -297,6 +354,9 @@ export default function VerificationsDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <StatusPill status={v.status} />
+                        </td>
+                        <td className="px-6 py-4">
+                          <PurchaseStatusBadge purchased={v.has_purchased_ticket} />
                         </td>
                         <td className="px-6 py-4 text-sm text-black">
                           {v.currency ? (
@@ -403,6 +463,22 @@ function TypeIcon({ type }: { type: string }) {
   );
 }
 
+function PurchaseStatusBadge({ purchased }: { purchased: boolean }) {
+  if (purchased) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">
+        <Ticket className="w-3 h-3" />
+        Purchased
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-500">
+      No ticket
+    </span>
+  );
+}
+
 function VerificationDetailModal({
   verification: v,
   onClose,
@@ -448,8 +524,9 @@ function VerificationDetailModal({
     >
       <div className="space-y-6">
         {/* Status */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <StatusPill status={v.status} />
+          <PurchaseStatusBadge purchased={v.has_purchased_ticket} />
           <span className="text-sm text-gray-500">
             ID: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{v.verification_id}</code>
           </span>
