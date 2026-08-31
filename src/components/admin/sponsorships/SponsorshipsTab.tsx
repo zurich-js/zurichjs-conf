@@ -1,10 +1,10 @@
 /**
  * Sponsorships Tab Component
  * Main container for the sponsorship admin dashboard
- * Uses TanStack Query for data fetching and mutations
+ * Uses TanStack Query for data fetching and mutations with offline caching
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, Plus, Search, Filter, RefreshCw } from 'lucide-react';
 import { Pagination } from '@/components/atoms';
@@ -14,6 +14,12 @@ import { SponsorshipsList } from './SponsorshipsList';
 import { SponsorDetailModal } from './SponsorDetailModal';
 import { AddSponsorModal } from './AddSponsorModal';
 import { sponsorshipKeys } from '@/lib/query-keys';
+import {
+  adminQueryDefaults,
+  adminDetailQueryDefaults,
+  adminListQueryDefaults,
+  adminStatsQueryDefaults,
+} from '@/lib/admin/query-persister';
 import type {
   SponsorshipStats,
   SponsorshipDealListItem,
@@ -141,18 +147,18 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
   const [sortField, setSortField] = useState<SponsorshipSortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SponsorshipSortDirection>('desc');
 
-  // Query: Tiers
+  // Query: Tiers (rarely change, cache aggressively)
   const { data: tiers = [] } = useQuery({
     queryKey: sponsorshipKeys.tiers(),
     queryFn: fetchTiers,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    ...adminQueryDefaults,
   });
 
-  // Query: Stats
+  // Query: Stats (aggregates, cache generously)
   const { data: stats, isLoading: isLoadingStats } = useQuery({
     queryKey: sponsorshipKeys.stats(),
     queryFn: fetchStats,
-    staleTime: 30 * 1000, // 30 seconds
+    ...adminStatsQueryDefaults,
   });
 
   // Query: Deals
@@ -166,16 +172,29 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
   const { data: deals = [], isLoading: isLoadingDeals, error: dealsError } = useQuery({
     queryKey: sponsorshipKeys.deals(filters),
     queryFn: () => fetchDeals(filters),
-    staleTime: 60_000,
+    ...adminListQueryDefaults,
     placeholderData: keepPreviousData,
   });
 
-  // Query: Selected Deal
+  // Query: Selected Deal (detail view, cache aggressively for instant modal opens)
   const { data: selectedDeal } = useQuery({
     queryKey: sponsorshipKeys.deal(selectedDealId || ''),
     queryFn: () => fetchDeal(selectedDealId!),
     enabled: !!selectedDealId,
+    ...adminDetailQueryDefaults,
   });
+
+  // Prefetch deal data on hover for instant modal opening
+  const prefetchDeal = useCallback(
+    (dealId: string) => {
+      queryClient.prefetchQuery({
+        queryKey: sponsorshipKeys.deal(dealId),
+        queryFn: () => fetchDeal(dealId),
+        ...adminDetailQueryDefaults,
+      });
+    },
+    [queryClient]
+  );
 
   // Mutation: Create Sponsor
   const createSponsorMutation = useMutation({
@@ -436,6 +455,7 @@ export function SponsorshipsTab({ onManageProspectus }: SponsorshipsTabProps) {
         deals={paginatedDeals}
         isLoading={isLoadingDeals}
         onSelectDeal={handleSelectDeal}
+        onPrefetchDeal={prefetchDeal}
         sortField={sortField}
         sortDirection={sortDirection}
         onSort={handleSort}

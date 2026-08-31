@@ -1,6 +1,8 @@
 /**
  * Admin Travel Operations Dashboard
  * Manage traveler journeys and invoices
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,6 +12,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/contexts/ToastContext';
 import type { SpeakerWithTravel } from '@/lib/cfp/admin-travel';
@@ -169,7 +172,7 @@ export default function AdminTravelPage() {
   if (!isAuthenticated) return <AdminLoginForm title="Travel Operations" />;
 
   return (
-    <>
+    <AdminQueryProvider>
       <Head>
         <title>Travel Operations | Admin - ZurichJS</title>
       </Head>
@@ -255,6 +258,6 @@ export default function AdminTravelPage() {
           />
         )}
       </div>
-    </>
+    </AdminQueryProvider>
   );
 }

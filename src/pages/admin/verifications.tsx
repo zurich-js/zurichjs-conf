@@ -1,6 +1,8 @@
 /**
  * Admin Verifications Dashboard
  * Manage student/unemployed verification requests
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
  */
 
 import { useState, useMemo } from 'react';
@@ -20,6 +22,7 @@ import {
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { Pill } from '@/components/admin/shared/Pill';
@@ -146,7 +149,7 @@ export default function VerificationsDashboard() {
   const pendingCount = verifications.filter((v) => v.status === 'pending').length;
 
   return (
-    <>
+    <AdminQueryProvider>
       <Head>
         <title>Verifications | ZurichJS Admin</title>
       </Head>
@@ -386,7 +389,7 @@ export default function VerificationsDashboard() {
           </div>
         )}
       </div>
-    </>
+    </AdminQueryProvider>
   );
 }
 

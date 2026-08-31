@@ -1,6 +1,8 @@
 /**
  * B2B Admin Page
  * Top-level admin page for B2B invoicing and quote generation
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
  */
 
 import { useState } from 'react';
@@ -10,6 +12,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { B2BOrdersTab } from '@/components/admin/b2b';
 import { QuoteBuilder } from '@/components/admin/b2b/quote';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -29,7 +32,7 @@ export default function B2BAdminPage() {
   if (!isAuthenticated) return <AdminLoginForm />;
 
   return (
-    <>
+    <AdminQueryProvider>
       <Head><title>B2B — ZurichJS Admin</title></Head>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <AdminHeader title="B2B" subtitle="Invoices & Quotes" onLogout={logout} />
@@ -41,6 +44,6 @@ export default function B2BAdminPage() {
           </div>
         </div>
       </div>
-    </>
+    </AdminQueryProvider>
   );
 }

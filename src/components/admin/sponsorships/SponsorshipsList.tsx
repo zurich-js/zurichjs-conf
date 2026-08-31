@@ -13,6 +13,8 @@ interface SponsorshipsListProps {
   deals: SponsorshipDealListItem[];
   isLoading?: boolean;
   onSelectDeal: (dealId: string) => void;
+  /** Prefetch deal data on hover for instant modal opening */
+  onPrefetchDeal?: (dealId: string) => void;
   sortField: SponsorshipSortField;
   sortDirection: SponsorshipSortDirection;
   onSort: (field: SponsorshipSortField) => void;
@@ -55,6 +57,7 @@ export function SponsorshipsList({
   deals,
   isLoading,
   onSelectDeal,
+  onPrefetchDeal,
   sortField,
   sortDirection,
   onSort,
@@ -121,6 +124,7 @@ export function SponsorshipsList({
                 key={deal.id}
                 className="hover:bg-gray-50 cursor-pointer"
                 onClick={() => onSelectDeal(deal.id)}
+                onMouseEnter={() => onPrefetchDeal?.(deal.id)}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -191,6 +195,7 @@ export function SponsorshipsList({
             key={deal.id}
             className="p-4 hover:bg-gray-50 cursor-pointer"
             onClick={() => onSelectDeal(deal.id)}
+            onMouseEnter={() => onPrefetchDeal?.(deal.id)}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
