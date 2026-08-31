@@ -114,11 +114,17 @@ export interface DoorPerson {
   jobTitle: string | null;
 }
 
+/**
+ * Mirrors the `payment_status` Postgres enum. Named so the roster projection and
+ * the RPC payload cannot drift apart.
+ */
+export type DoorTicketStatus = 'pending' | 'confirmed' | 'cancelled' | 'refunded';
+
 export interface DoorTicketInfo {
   type: string;
   category: string;
   stage: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'refunded';
+  status: DoorTicketStatus;
   isVip: boolean;
   transferredFromName: string | null;
   transferredFromEmail: string | null;
