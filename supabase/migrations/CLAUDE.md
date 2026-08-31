@@ -112,3 +112,7 @@ container — never against production.
 - Don't skip RLS because "the table is internal" — RLS is on by default, not
   optional.
 - Don't pick a timestamp earlier than `HEAD`'s most-recent migration.
+- Don't apply migrations directly to production via the Supabase dashboard or CLI
+  outside the standard CI workflow — this creates drift between the schema_migrations
+  table and the git history, causing `supabase db push` to fail with "Remote migration
+  versions not found in local migrations directory."
