@@ -105,7 +105,9 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
           <p className="text-xs text-black/60 font-medium uppercase tracking-wide mb-1">
             {card.label}
           </p>
-          <p className="text-2xl sm:text-3xl font-bold text-black">{card.value}</p>
+          <p className="text-xl sm:text-2xl font-bold text-black tabular-nums truncate">
+            {card.value}
+          </p>
           {'subValue' in card && card.subValue && (
             <p className="text-xs text-gray-500 mt-1">{card.subValue}</p>
           )}
