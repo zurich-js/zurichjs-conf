@@ -9,3 +9,5 @@ export { AudienceInsightsModal } from './AudienceInsightsModal';
 export type { AudienceInsightsModalProps } from './AudienceInsightsModal';
 export { AudienceInsights } from './AudienceInsights';
 export type { AudienceInsightsProps } from './AudienceInsights';
+export { downloadBadgeCsv, ticketsToBadgeCsv, getBadgeLabel, formatRoleCompany } from './badge-export';
+export type { BadgeRow } from './badge-export';

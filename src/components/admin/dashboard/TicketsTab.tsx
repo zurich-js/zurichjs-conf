@@ -5,9 +5,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { Gift } from 'lucide-react';
+import { Gift, Download } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AudienceInsights, UpgradeToVipModal } from '@/components/admin/tickets';
+import { AudienceInsights, UpgradeToVipModal, downloadBadgeCsv } from '@/components/admin/tickets';
 import { adminKeys } from '@/lib/admin/query-keys';
 import { adminFetch, AdminApiError } from '@/lib/admin/api-fetch';
 import { TicketDetailsModal } from './TicketDetailsModal';
@@ -189,7 +189,19 @@ export function TicketsTab() {
     <>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
       <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} filterComplimentary={filterComplimentary} setFilterComplimentary={setFilterComplimentary} headerAction={<AudienceInsights tickets={tickets} />} />
+        <TicketHeader tickets={tickets} filteredCount={filteredAndSortedTickets.length} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNonSwiss={filterNonSwiss} setFilterNonSwiss={setFilterNonSwiss} filterComplimentary={filterComplimentary} setFilterComplimentary={setFilterComplimentary} headerAction={
+          <>
+            <AudienceInsights tickets={tickets} />
+            <button
+              onClick={() => downloadBadgeCsv(tickets)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 cursor-pointer whitespace-nowrap"
+              title="Download badge CSV for confirmed tickets"
+            >
+              <Download className="w-4 h-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Badge CSV</span>
+            </button>
+          </>
+        } />
         <DesktopTable tickets={paginatedTickets} sortField={sortField} sortDirection={sortDirection} onSort={handleSort} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <MobileCards tickets={paginatedTickets} onViewTicket={(t) => { setSelectedTicket(t); setShowDetailsModal(true); }} />
         <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredAndSortedTickets.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
