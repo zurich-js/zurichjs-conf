@@ -9,8 +9,7 @@ import { Loader2, RefreshCw } from 'lucide-react';
 
 import type { AdminWorkshopListItem } from '@/pages/api/admin/workshops';
 import type { Workshop } from '@/lib/types/database';
-import { useToast } from '@/hooks/useToast';
-import { ToastContainer } from '@/components/molecules';
+import { useToast } from '@/contexts/ToastContext';
 import { adminFetch } from '@/lib/admin/api-fetch';
 import { adminKeys } from '@/lib/admin/query-keys';
 import { WorkshopsSummaryStrip } from './WorkshopsSummaryStrip';
@@ -98,16 +97,16 @@ export function WorkshopsDashboard() {
     });
   }, [items, status, search]);
 
-  const { toasts, showToast } = useToast();
+  const toast = useToast();
 
   const createMutation = useMutation({
     mutationFn: createOffering,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: adminKeys.workshopList() });
-      showToast('Workshop offering created', 'success');
+      toast.success('Workshop offering created');
     },
     onError: (err: Error) => {
-      showToast(err.message || 'Failed to create offering', 'error');
+      toast.error(err.message || 'Failed to create offering');
     },
   });
 
@@ -196,11 +195,8 @@ export function WorkshopsDashboard() {
             /* keep modal open so admin sees the saved state */
           }}
           listQueryKey={adminKeys.workshopList()}
-          onToast={showToast}
         />
       )}
-
-      <ToastContainer toasts={toasts} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { Check, Copy, ExternalLink, Loader2, Save, Trash2, X } from 'lucide-reac
 
 import type { Workshop, WorkshopStatus } from '@/lib/types/database';
 import { queryKeys } from '@/lib/query-keys';
+import { useToast } from '@/contexts/ToastContext';
 import { RegistrantsPanel, RevenuePanel } from './DetailPanels';
 import { ReadinessChecklist } from './ReadinessChecklist';
 import { ValidationResultPanel } from './ValidationResultPanel';
@@ -188,7 +189,6 @@ interface WorkshopAdminModalProps {
   onClose: () => void;
   onSaved: (offering?: Workshop) => void;
   listQueryKey: readonly unknown[];
-  onToast?: (message: string, type?: 'success' | 'error') => void;
 }
 
 const toTimeInputValue = (value: string | null): string => {
@@ -280,9 +280,9 @@ export function WorkshopAdminModal({
   onClose,
   onSaved,
   listQueryKey,
-  onToast,
 }: WorkshopAdminModalProps) {
   const qc = useQueryClient();
+  const toast = useToast();
   const isCreateMode = !offering;
   const displayOffering: Workshop = offering ?? {
     id: 'new-workshop-offering',
@@ -512,16 +512,13 @@ export function WorkshopAdminModal({
       // without waiting the 5-min staleTime.
       qc.invalidateQueries({ queryKey: queryKeys.workshops.all });
       onSaved(result);
-      if (onToast) {
-        const statusChange = payload.status && payload.status !== displayOffering.status;
-        onToast(
-          isCreateMode ? 'Workshop offering created' : statusChange ? `Workshop ${payload.status}` : 'Workshop saved',
-          'success'
-        );
-      }
+      const statusChange = payload.status && payload.status !== displayOffering.status;
+      toast.success(
+        isCreateMode ? 'Workshop offering created' : statusChange ? `Workshop ${payload.status}` : 'Workshop saved'
+      );
     },
     onError: (err: Error) => {
-      onToast?.(err.message || 'Save failed', 'error');
+      toast.error(err.message || 'Save failed');
     },
   });
 
@@ -531,17 +528,16 @@ export function WorkshopAdminModal({
     onSuccess: (result) => {
       setValidation(result);
       setValidationError(null);
-      if (onToast) {
-        onToast(
-          result.valid ? 'Stripe prices look good' : 'Some Stripe prices are missing',
-          result.valid ? 'success' : 'error'
-        );
+      if (result.valid) {
+        toast.success('Stripe prices look good');
+      } else {
+        toast.error('Some Stripe prices are missing');
       }
     },
     onError: (err: Error) => {
       setValidation(null);
       setValidationError(err.message);
-      onToast?.(err.message || 'Validation failed', 'error');
+      toast.error(err.message || 'Validation failed');
     },
   });
 
