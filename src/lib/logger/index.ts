@@ -323,7 +323,7 @@ class Logger {
       logFn(
         `${emoji} ${prefix} ${sanitizeForLog(entry.message)}`,
         contextStr ? `\n  Context: ${contextStr}` : '',
-        entry.error ? `\n  Error: ${safeStringify(entry.error)}` : ''
+        entry.error ? `\n  Error: ${sanitizeForLog(safeStringify(entry.error))}` : ''
       )
     } else {
       // JSON format for production (easier to parse)
