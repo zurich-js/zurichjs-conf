@@ -62,6 +62,12 @@ const badgeSelectionIdSchema = z
   .max(240)
   .regex(/^(attendee|speaker|sponsor|manual):[^:]+$/);
 
+const temporaryBadgeOverrideSelectionIdSchema = z
+  .string()
+  .min(3)
+  .max(240)
+  .regex(/^(attendee|speaker):[^:]+$/);
+
 export const badgeEntryOverrideSchema = z.object({
   firstName: z.string().trim().min(1, 'First name is required').max(120),
   lastName: z.string().trim().max(120),
@@ -70,7 +76,7 @@ export const badgeEntryOverrideSchema = z.object({
 }).strict();
 
 const badgeEntryOverridesSchema = z
-  .record(badgeSelectionIdSchema, badgeEntryOverrideSchema)
+  .record(temporaryBadgeOverrideSelectionIdSchema, badgeEntryOverrideSchema)
   .refine((value) => Object.keys(value).length <= 5_000, 'Too many badge entry overrides');
 
 const exportLogoOverrideSchema = z.object({

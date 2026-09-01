@@ -118,6 +118,34 @@ describe('POST /api/admin/badges/export', () => {
       },
     }), overrideRes);
     expect(overrideRes.statusCode).toBe(400);
+
+    const manualOverrideRes = makeRes();
+    await handler(makeReq('POST', {
+      provisionShareIds: false,
+      entryOverrides: {
+        'manual:badge-row': {
+          firstName: 'Temporary',
+          lastName: 'Sponsor',
+          role: 'Representative',
+          company: 'Example Sponsor',
+        },
+      },
+    }), manualOverrideRes);
+    expect(manualOverrideRes.statusCode).toBe(400);
+
+    const sponsorOverrideRes = makeRes();
+    await handler(makeReq('POST', {
+      provisionShareIds: false,
+      entryOverrides: {
+        'sponsor:sponsor-row': {
+          firstName: 'Temporary',
+          lastName: 'Sponsor',
+          role: 'Representative',
+          company: 'Example Sponsor',
+        },
+      },
+    }), sponsorOverrideRes);
+    expect(sponsorOverrideRes.statusCode).toBe(400);
   });
 
   it('allows a read-only deployed export for authenticated bots', async () => {
