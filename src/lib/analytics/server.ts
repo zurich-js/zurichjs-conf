@@ -249,8 +249,13 @@ class ServerAnalyticsClient {
    *
    * Pass `fingerprint` to force grouping when one logical issue would otherwise
    * split across many groups.
+   *
+   * Returns a promise that resolves once the event has been handed to the
+   * network. AWAIT it where the runtime allows (e.g. `onRequestError`) so a
+   * serverless function is not frozen before delivery; a synchronous caller
+   * (the logger) may fire-and-forget — the method never rejects.
    */
-  captureException(
+  async captureException(
     error: Error | unknown,
     context?: {
       distinctId?: string
@@ -261,7 +266,7 @@ class ServerAnalyticsClient {
       action?: string
       [key: string]: unknown
     }
-  ): void {
+  ): Promise<void> {
     if (!this.initialized) {
       this.init()
     }
@@ -281,20 +286,31 @@ class ServerAnalyticsClient {
       properties.$exception_fingerprint = fingerprint
     }
 
-    // `captureExceptionImmediate` sends the request now instead of buffering —
-    // buffered exceptions are routinely lost when the serverless function is
-    // frozen after responding. Fire-and-forget: error reporting must never make
-    // the route that is already failing also slower or crashier.
-    void this.client
-      .captureExceptionImmediate(error, distinctId || 'anonymous', properties)
-      .catch((captureError: unknown) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[ServerAnalytics] Failed to capture exception:', captureError)
-        }
-      })
+    try {
+      // `captureExceptionImmediate` sends the request now instead of buffering —
+      // buffered exceptions are routinely lost when the serverless function is
+      // frozen after responding. No distinctId fallback: the SDK generates a
+      // per-event id when it is absent, whereas a shared 'anonymous' id would
+      // merge every unattributed error into one person profile.
+      await this.client.captureExceptionImmediate(error, distinctId, properties)
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ServerAnalytics] Exception captured:', error, context)
+      if (process.env.NODE_ENV === 'development') {
+        // JSON-encoded so user input echoed in an error message cannot forge
+        // log lines (log injection) — control characters arrive escaped.
+        console.log('[ServerAnalytics] Exception captured:', JSON.stringify({
+          message: error instanceof Error ? error.message : String(error),
+          context,
+        }))
+      }
+    } catch (captureError: unknown) {
+      // Error reporting must never make the route that is already failing
+      // also slower or crashier.
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          '[ServerAnalytics] Failed to capture exception:',
+          JSON.stringify(captureError instanceof Error ? captureError.message : String(captureError))
+        )
+      }
     }
   }
 

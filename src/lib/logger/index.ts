@@ -390,7 +390,8 @@ class Logger {
     if (this.isServer) {
       // Server-side error tracking: a real $exception via the native SDK, so
       // PostHog groups by type + stack and titles the issue with the error name.
-      serverAnalytics.captureException(exception, {
+      // Fire-and-forget from this synchronous path; it never rejects.
+      void serverAnalytics.captureException(exception, {
         distinctId: context?.userId,
         type: errorType,
         severity,
@@ -514,6 +515,8 @@ class ScopedLogger {
       severity?: ErrorSeverity
       type?: ErrorType
       code?: string
+      /** Force PostHog error-tracking grouping ($exception_fingerprint). */
+      fingerprint?: string
     }
   ): void {
     this.logger.error(message, error, this.mergeContext(context))

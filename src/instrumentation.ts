@@ -24,14 +24,17 @@ export const onRequestError: typeof Sentry.captureRequestError = async (
 ) => {
   Sentry.captureRequestError(error, request, context);
 
-  // PostHog error tracking (posthog-node needs the Node runtime).
+  // PostHog error tracking (posthog-node needs the Node runtime). Awaited so
+  // the serverless function is not frozen before the event is delivered.
+  // Deliberately no raw `request.path`: URLs here can carry ticket UUIDs and
+  // signed tokens (e.g. /validate/<uuid>), so only the route TEMPLATE from
+  // `context.routePath` (e.g. /validate/[id]) is reported.
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { serverAnalytics } = await import("@/lib/analytics/server");
-    serverAnalytics.captureException(error, {
+    await serverAnalytics.captureException(error, {
       type: "system",
       severity: "high",
       unhandled: true,
-      path: request.path,
       method: request.method,
       router_kind: context.routerKind,
       route_path: context.routePath,
