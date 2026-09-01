@@ -11,6 +11,7 @@
 		"predev": "pnpm scanner:wasm",
 		"dev": "next dev",
 		"og:generate": "tsx scripts/generate-speaker-og.ts",
+		"badges:export": "tsx scripts/export-badges.ts",
 		"scanner:wasm": "node scripts/copy-scanner-wasm.mjs",
 		"prebuild": "pnpm og:generate && pnpm scanner:wasm",
 		"build": "next build",

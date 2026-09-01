@@ -201,3 +201,46 @@ This is a private conference platform. For questions or issues, contact the deve
 ## License
 
 Private - All rights reserved
+
+## Illustrator badge export
+
+Generate QR PNGs and Illustrator-ready CSV data for confirmed VIP attendees,
+other confirmed attendees, the exact public speaker lineup, and every configured
+sponsor. Hidden CFP applicants are never included.
+
+From the deployed application, sign in to `/admin`, open the **Badges** tab, and
+select **Download badge export**. The server builds and returns a ZIP in memory;
+it does not rely on the deployment filesystem.
+
+The equivalent local command is:
+
+```bash
+pnpm badges:export -- --provision-share-ids --output badge-export
+```
+
+After share IDs have been provisioned, the deployed read-only endpoint can also
+be scripted with the admin read-only API key:
+
+```bash
+curl --fail \
+  --header "Authorization: Bearer $ADMIN_READONLY_API_KEY" \
+  https://conf.zurichjs.com/api/admin/badges/export \
+  --output zurichjs-badges.zip
+```
+
+The script reads `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY` (or the legacy
+`SUPABASE_SERVICE_ROLE_KEY`), and `NEXT_PUBLIC_BASE_URL` from the environment,
+`.env`, or `.env.local`. Pass `--base-url https://conf.zurichjs.com` to override
+the URL encoded in the QR images.
+
+The command is read-only by default. If an attendee or sponsor has never set a
+networking preference, it exits and asks for `--provision-share-ids`. That flag
+only inserts missing `networking_profiles` rows with `enabled=false`; it never
+updates existing visibility or contact settings. It is therefore safe to rerun.
+
+The ignored `badge-export/` directory contains `vip.csv`, `attendee.csv`,
+`speaker.csv`, `sponsor.csv`, a sparse `badges.csv` with all variables,
+`qr/*.png`, downloaded color sponsor logos (falling back to the primary logo),
+and `manifest.json`. CSV image fields contain absolute local paths. Sponsor names
+come from `contact_name`, and their role is exported as `Sponsor` because the
+sponsor schema has no contact job-title field.

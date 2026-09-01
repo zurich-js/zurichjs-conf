@@ -1,0 +1,1 @@
+export { BadgeExportTab } from './BadgeExportTab';
