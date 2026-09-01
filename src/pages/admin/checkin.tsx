@@ -11,19 +11,20 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { Activity, ScanLine } from 'lucide-react';
+import { Activity, ScanLine, ScrollText } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
-import { DoorDashboardTab, DoorStaffTab } from '@/components/admin/checkin';
+import { DoorAuditLog, DoorDashboardTab, DoorStaffTab } from '@/components/admin/checkin';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
-type DoorAdminTab = 'crew' | 'live';
+type DoorAdminTab = 'crew' | 'live' | 'audit';
 
 const TABS: AdminTab<DoorAdminTab>[] = [
   { id: 'crew', label: 'Crew & roles', icon: ScanLine },
   { id: 'live', label: 'Live door', icon: Activity },
+  { id: 'audit', label: 'Audit log', icon: ScrollText },
 ];
 
 export default function DoorCheckInAdmin() {
@@ -51,6 +52,7 @@ export default function DoorCheckInAdmin() {
           <div className="pb-12">
             {activeTab === 'crew' && <DoorStaffTab />}
             {activeTab === 'live' && <DoorDashboardTab />}
+            {activeTab === 'audit' && <DoorAuditLog />}
           </div>
         </div>
       </div>

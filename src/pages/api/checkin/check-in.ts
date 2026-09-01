@@ -38,7 +38,7 @@ export default async function handler(
     return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
   }
 
-  const { scannedId, station, occurredAt } = parsed.data;
+  const { scannedId, station, occurredAt, occasion } = parsed.data;
 
   try {
     const result = await doorCheckIn({
@@ -46,6 +46,9 @@ export default async function handler(
       staffId: guard.staff.id,
       station,
       occurredAt,
+      // The volunteer's deliberate day choice, already narrowed to the enum by
+      // the schema. Absent, the database falls back to its own clock.
+      occasion,
     });
 
     // Every outcome — including denied and not_found — is already recorded in

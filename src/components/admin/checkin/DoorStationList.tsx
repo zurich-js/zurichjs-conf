@@ -6,7 +6,7 @@ import type { DoorStationStat, DoorVolunteerStat } from '@/lib/checkin/dashboard
 export interface DoorStationListProps {
   stations: DoorStationStat[];
   volunteers: DoorVolunteerStat[];
-  /** How long without an action before a station is called quiet. */
+  /** How long without an action before someone is called quiet. */
   quietAfterMs?: number;
   className?: string;
 }
@@ -14,15 +14,20 @@ export interface DoorStationListProps {
 const DEFAULT_QUIET_AFTER_MS = 10 * 60 * 1000;
 
 /**
- * Per-station and per-volunteer activity.
+ * Per-volunteer activity — the primary breakdown.
  *
- * The column that matters is "last seen". A station with a recent action is
- * working; one silent for ten minutes may have a flat battery, a lost session or
- * a volunteer who wandered off — and a cumulative admitted count cannot tell
- * those apart from a lane that is simply between attendees.
+ * The person scanning IS the pressure point: stations are no longer collected
+ * (the door-label field was dropped from the station), so "which lane is
+ * backing up" is answered by whose phone is doing the admitting. The column
+ * that matters is "last seen": a volunteer with a recent action is working; one
+ * silent for ten minutes may have a flat battery, a lost session or a queue
+ * problem — a cumulative count cannot tell those apart from a lull.
  *
  * Volunteer figures exist to spot someone who needs help, not to rank anyone,
  * so they are labelled that way and carry no ordering prize.
+ *
+ * The per-station section renders only for older rows that still carry a
+ * label, so historical data stays readable without resurrecting the concept.
  */
 export const DoorStationList: React.FC<DoorStationListProps> = ({
   stations,
@@ -39,15 +44,64 @@ export const DoorStationList: React.FC<DoorStationListProps> = ({
   }
 
   return (
-    <div className={`grid gap-4 lg:grid-cols-2 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <section className="rounded-xl border border-gray-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-600">
-          Lanes
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-600">
+          Scans per person
         </h2>
+        <p className="mb-3 text-xs text-gray-500">
+          For spotting someone who needs a hand, not a leaderboard.
+        </p>
         <ul className="space-y-2">
-          {stations.map((station) => {
-            const quiet = isQuiet(station.lastSeenAt, quietAfterMs);
+          {volunteers.map((volunteer) => {
+            const quiet = isQuiet(volunteer.lastSeenAt, quietAfterMs);
             return (
+              <li
+                key={volunteer.staffEmail}
+                className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-black">{volunteer.staffEmail}</p>
+                  <p className="text-xs text-gray-600">
+                    {DOOR_ROLE_LABELS[volunteer.staffRole] ?? volunteer.staffRole}
+                    {` · ${volunteer.scans} scan${volunteer.scans === 1 ? '' : 's'}`}
+                    {volunteer.manualAdmits > 0 ? ` · ${volunteer.manualAdmits} manual` : ''}
+                    {volunteer.undos > 0 ? ` · ${volunteer.undos} undone` : ''}
+                    {volunteer.badgePickups > 0 ? ` · ${volunteer.badgePickups} badges` : ''}
+                    {volunteer.refusals > 0 ? ` · ${volunteer.refusals} refused` : ''}
+                    {volunteer.duplicates > 0 ? ` · ${volunteer.duplicates} second scans` : ''}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  {quiet ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-700">
+                      <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                      Quiet
+                    </span>
+                  ) : null}
+                  <p className="text-lg font-bold tabular-nums text-black">
+                    {volunteer.admitted}
+                  </p>
+                  <p className="text-xs tabular-nums text-gray-500">
+                    {volunteer.lastSeenAt ? `last ${formatClock(volunteer.lastSeenAt)}` : '—'}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {stations.length > 0 ? (
+        <section className="rounded-xl border border-gray-200 bg-white p-4">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-600">
+            Lanes (older data)
+          </h2>
+          <p className="mb-3 text-xs text-gray-500">
+            Stations stopped being collected — these rows predate that.
+          </p>
+          <ul className="space-y-2">
+            {stations.map((station) => (
               <li
                 key={station.station}
                 className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0 last:pb-0"
@@ -60,51 +114,14 @@ export const DoorStationList: React.FC<DoorStationListProps> = ({
                     {station.duplicates > 0 ? ` · ${station.duplicates} second scans` : ''}
                   </p>
                 </div>
-                <div className="shrink-0 text-right">
-                  {quiet ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-700">
-                      <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                      Quiet
-                    </span>
-                  ) : null}
-                  <p className="text-xs tabular-nums text-gray-500">
-                    {station.lastSeenAt ? formatClock(station.lastSeenAt) : '—'}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
-      <section className="rounded-xl border border-gray-200 bg-white p-4">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-600">
-          Volunteers
-        </h2>
-        <p className="mb-3 text-xs text-gray-500">
-          For spotting someone who needs a hand, not a leaderboard.
-        </p>
-        <ul className="space-y-2">
-          {volunteers.map((volunteer) => (
-            <li
-              key={volunteer.staffEmail}
-              className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0 last:pb-0"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-black">{volunteer.staffEmail}</p>
-                <p className="text-xs text-gray-600">
-                  {DOOR_ROLE_LABELS[volunteer.staffRole] ?? volunteer.staffRole}
-                  {volunteer.manualAdmits > 0 ? ` · ${volunteer.manualAdmits} manual` : ''}
-                  {volunteer.refusals > 0 ? ` · ${volunteer.refusals} refused` : ''}
+                <p className="shrink-0 text-xs tabular-nums text-gray-500">
+                  {station.lastSeenAt ? formatClock(station.lastSeenAt) : '—'}
                 </p>
-              </div>
-              <p className="shrink-0 text-lg font-bold tabular-nums text-black">
-                {volunteer.admitted}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 };

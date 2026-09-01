@@ -11,14 +11,53 @@ import type { DoorCheckInResult, DoorOccasion, DoorResolveHit } from '@/lib/type
 
 export type DoorPanelState = 'admit' | 'admitted' | 'already' | 'refused' | 'unknown';
 
-/** When this attendee was checked in for the occasion being worked, if at all. */
+/** How far through their workshop-day check-ins this person is. */
+export interface WorkshopSeatProgress {
+  total: number;
+  checkedIn: number;
+}
+
+/**
+ * On workshop day the unit of check-in is the SEAT, not the person: someone
+ * attending a morning and an afternoon workshop is checked in twice, once at
+ * each door. This is what the per-seat buttons and the banner both read.
+ */
+export function workshopSeatProgress(
+  attendee: DoorResolveHit,
+  occasion: DoorOccasion
+): WorkshopSeatProgress {
+  if (occasion !== 'workshop_day') return { total: 0, checkedIn: 0 };
+  const held = attendee.workshops.held;
+  return {
+    total: held.length,
+    checkedIn: held.filter((seat) => seat.checkedInAt !== null).length,
+  };
+}
+
+/**
+ * When this attendee was checked in for the occasion being worked, if at all.
+ *
+ * On workshop day, someone holding seats counts as checked in only when EVERY
+ * seat is — the value returned is the latest seat arrival, so "already" can
+ * still say when. Someone with no seats falls back to the person-level
+ * workshop-day arrival (a conference ticket holder helping out, or a seat the
+ * index could not attribute).
+ */
 export function checkedInAtFor(
   attendee: DoorResolveHit,
   occasion: DoorOccasion
 ): string | null {
-  return occasion === 'workshop_day'
-    ? attendee.checkIn.workshopDayAt
-    : attendee.checkIn.conferenceDayAt;
+  if (occasion !== 'workshop_day') return attendee.checkIn.conferenceDayAt;
+
+  const seats = attendee.workshops.held;
+  if (seats.length === 0) return attendee.checkIn.workshopDayAt;
+
+  let latest: string | null = null;
+  for (const seat of seats) {
+    if (!seat.checkedInAt) return null;
+    if (!latest || seat.checkedInAt > latest) latest = seat.checkedInAt;
+  }
+  return latest;
 }
 
 /**
@@ -90,6 +129,17 @@ export function resolveDoorPanelDetail(
     return at ? `Arrived at ${formatDoorTime(at)}` : 'Already recorded for today';
   }
   if (state === 'admitted') return 'Recorded — send them through';
+  if (state === 'admit') {
+    // Someone mid-way through a multi-workshop day: say so, or the second
+    // door's volunteer wonders why a "ready to admit" person claims to be in.
+    const seats = workshopSeatProgress(attendee, occasion);
+    if (seats.total > 0 && seats.checkedIn > 0) {
+      return `${seats.checkedIn} of ${seats.total} workshops checked in`;
+    }
+    if (seats.total > 1) {
+      return `${seats.total} workshops today — check in each one below`;
+    }
+  }
   return undefined;
 }
 

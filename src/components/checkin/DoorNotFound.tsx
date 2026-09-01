@@ -49,7 +49,7 @@ export const DoorNotFound: React.FC<DoorNotFoundProps> = ({
       ) : null}
       {onEscalate ? (
         <Button variant="dark" size="lg" className={canLookUp ? '' : 'flex-1'} onClick={onEscalate}>
-          Get a lead
+          Call a door lead
         </Button>
       ) : null}
     </div>

@@ -1,3 +1,6 @@
+export { DoorAuditLog } from './DoorAuditLog';
+export type { DoorAuditLogProps } from './DoorAuditLog';
+
 export { DoorDashboardTab } from './DoorDashboardTab';
 export type { DoorDashboardTabProps } from './DoorDashboardTab';
 

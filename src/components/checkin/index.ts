@@ -7,6 +7,9 @@ export type { AttendeeIdentityProps } from './AttendeeIdentity';
 export { AttendeePanel } from './AttendeePanel';
 export type { AttendeePanelProps } from './AttendeePanel';
 
+export { BadgeStatus } from './BadgeStatus';
+export type { BadgeStatusProps } from './BadgeStatus';
+
 export { DoorNotice } from './DoorNotice';
 export type { DoorNoticeProps, DoorNoticeTone } from './DoorNotice';
 
@@ -23,7 +26,10 @@ export { ManualAdmit } from './ManualAdmit';
 export type { ManualAdmitProps } from './ManualAdmit';
 
 export { GoodieStatus } from './GoodieStatus';
-export type { GoodieStatusProps } from './GoodieStatus';
+export type { GoodieHandoverPayload, GoodieStatusProps } from './GoodieStatus';
+
+export { MyCheckIns } from './MyCheckIns';
+export type { MyCheckInsProps } from './MyCheckIns';
 
 export { ScanFlash } from './ScanFlash';
 export type { ScanFlashProps } from './ScanFlash';

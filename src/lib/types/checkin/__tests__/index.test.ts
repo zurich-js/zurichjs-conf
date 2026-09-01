@@ -49,10 +49,16 @@ describe('role abilities', () => {
     }
   });
 
-  it('grants a goodie volunteer handover and nothing more', () => {
+  it('grants a goodie volunteer handover, lookup and badge pickup — nothing more', () => {
     expect(roleCan('goodie', 'goodie')).toBe(true);
     const granted = DOOR_ABILITIES.filter((a) => roleCan('goodie', a));
-    expect([...granted].sort()).toEqual(['goodie', 'lookup']);
+    expect([...granted].sort()).toEqual(['badge_pickup', 'goodie', 'lookup']);
+  });
+
+  it('lets every role hand a badge over, since pickup moves no admission state', () => {
+    for (const role of DOOR_ROLES) {
+      expect(roleCan(role, 'badge_pickup')).toBe(true);
+    }
   });
 
   it('names only abilities that exist', () => {
@@ -82,6 +88,7 @@ describe('isDoorResolveHit', () => {
       checkIn: { workshopDayAt: null, conferenceDayAt: null },
       goodie: { entitled: true, handedAt: null, note: null },
       apparel: { tshirtSize: null, hoodieSize: null },
+      badge: { pickedUpAt: null },
       doorNote: null,
       workshops: { held: [], purchasedForOthers: [] },
     };

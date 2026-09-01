@@ -20,12 +20,20 @@
 
 import type { Database } from '@/lib/types/database';
 import type {
+  DoorBadgePickupResult,
   DoorCheckInResult,
   DoorGoodieResult,
   DoorOccasion,
   DoorResolveResult,
 } from '@/lib/types/checkin';
 import type { DoorDashboard } from './dashboard';
+
+/** One badge already handed over, from door_badge_pickups(). */
+export interface DoorBadgePickupRow {
+  /** Ticket id or workshop registration id — the same id space a scan resolves. */
+  subjectId: string;
+  pickedUpAt: string;
+}
 
 // A `type`, not an `interface`: interfaces have no implicit index signature, so
 // an interface here would fail supabase-js's `Record<string, GenericFunction>`
@@ -48,6 +56,18 @@ type DoorFunctions = {
       p_occurred_at?: string | null;
       p_manual?: boolean;
       p_reason?: string | null;
+      p_occasion?: DoorOccasion | null;
+    };
+    Returns: DoorCheckInResult;
+  };
+  door_check_in_undo: {
+    Args: {
+      p_scanned_id: string;
+      p_staff_id: string;
+      p_station?: string | null;
+      p_occurred_at?: string | null;
+      p_reason?: string | null;
+      p_occasion?: DoorOccasion | null;
     };
     Returns: DoorCheckInResult;
   };
@@ -58,8 +78,29 @@ type DoorFunctions = {
       p_station?: string | null;
       p_occurred_at?: string | null;
       p_note?: string | null;
+      p_occasion?: DoorOccasion | null;
+      p_tshirt_size?: string | null;
+      p_hoodie_size?: string | null;
     };
     Returns: DoorGoodieResult;
+  };
+  door_badge_pickup: {
+    Args: {
+      p_scanned_id: string;
+      p_staff_id: string;
+      p_station?: string | null;
+      p_occurred_at?: string | null;
+      p_occasion?: DoorOccasion | null;
+    };
+    Returns: DoorBadgePickupResult;
+  };
+  door_badge_pickups: {
+    Args: Record<PropertyKey, never>;
+    Returns: DoorBadgePickupRow[];
+  };
+  door_events_delete: {
+    Args: { p_ids: string[] };
+    Returns: { deleted: number };
   };
   door_dashboard: {
     Args: { p_occasion?: DoorOccasion | null };

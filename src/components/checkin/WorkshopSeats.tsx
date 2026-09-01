@@ -1,11 +1,20 @@
 import React from 'react';
 import { CheckCircle2, GraduationCap, MapPin, Users } from 'lucide-react';
+import { Button } from '@/components/atoms/Button';
+import { formatDoorTime } from '@/lib/checkin/panel-state';
 import type { DoorHeldWorkshop, DoorPurchasedForOther } from '@/lib/types/checkin';
 
 export interface WorkshopSeatsProps {
   held: DoorHeldWorkshop[];
   /** Seats this person paid for but is not attending — a colleague's seat. */
   purchasedForOthers: DoorPurchasedForOther[];
+  /**
+   * Per-seat check-in, offered on workshop day. Each seat is its own check-in:
+   * a morning and an afternoon workshop are two separate arrivals at two doors.
+   */
+  onCheckInSeat?: (registrationId: string) => void;
+  /** Per-seat undo, for a mis-tap on the wrong workshop. */
+  onUndoSeat?: (registrationId: string) => void;
   className?: string;
 }
 
@@ -21,6 +30,8 @@ export interface WorkshopSeatsProps {
 export const WorkshopSeats: React.FC<WorkshopSeatsProps> = ({
   held,
   purchasedForOthers,
+  onCheckInSeat,
+  onUndoSeat,
   className = '',
 }) => {
   if (held.length === 0 && purchasedForOthers.length === 0) {
@@ -37,6 +48,11 @@ export const WorkshopSeats: React.FC<WorkshopSeatsProps> = ({
               Workshops ({held.length})
             </h3>
           </div>
+          {onCheckInSeat && held.length > 1 ? (
+            <p className="mb-2 text-xs text-text-tertiary">
+              Each workshop is its own check-in — record the one whose door you are on.
+            </p>
+          ) : null}
           <ul className="space-y-2">
             {held.map((workshop) => (
               <li
@@ -50,7 +66,7 @@ export const WorkshopSeats: React.FC<WorkshopSeatsProps> = ({
                   {workshop.checkedInAt ? (
                     <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-success">
                       <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                      In
+                      In at {formatDoorTime(workshop.checkedInAt)}
                     </span>
                   ) : null}
                 </div>
@@ -73,6 +89,28 @@ export const WorkshopSeats: React.FC<WorkshopSeatsProps> = ({
                     <span className="italic">matched by ticket</span>
                   ) : null}
                 </div>
+
+                {!workshop.checkedInAt && onCheckInSeat ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="mt-2 w-full"
+                    onClick={() => onCheckInSeat(workshop.registrationId)}
+                  >
+                    Check in — {workshop.title}
+                  </Button>
+                ) : null}
+
+                {workshop.checkedInAt && onUndoSeat ? (
+                  <Button
+                    variant="dark"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => onUndoSeat(workshop.registrationId)}
+                  >
+                    Undo this check-in
+                  </Button>
+                ) : null}
               </li>
             ))}
           </ul>

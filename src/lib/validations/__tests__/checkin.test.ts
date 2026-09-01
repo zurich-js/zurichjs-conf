@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
+  doorBadgePickupSchema,
   doorCheckInSchema,
+  doorCheckInUndoSchema,
   doorEventQuerySchema,
   doorGoodieHandoverSchema,
   doorManualAdmitSchema,
@@ -30,12 +32,23 @@ describe('doorCheckInSchema', () => {
     expect(doorCheckInSchema.safeParse({ scannedId: UUID }).success).toBe(true);
   });
 
-  // The occasion is derived server-side. Accepting it from a station would let
-  // a device with a wrong date write the wrong day into an append-only table.
-  it('ignores a client-supplied occasion rather than honouring it', () => {
-    const result = doorCheckInSchema.safeParse({ scannedId: UUID, occasion: 'conference_day' });
-    expect(result.success).toBe(true);
-    expect(result.success && 'occasion' in result.data).toBe(false);
+  // The occasion is a deliberate staff choice now (badges are picked up and
+  // workshops rehearsed on other days) — but only the two known values pass.
+  // Free text can never reach the audit table.
+  it('accepts a known occasion as an explicit staff choice', () => {
+    const result = doorCheckInSchema.safeParse({ scannedId: UUID, occasion: 'workshop_day' });
+    expect(result.success && result.data.occasion).toBe('workshop_day');
+  });
+
+  it('rejects an occasion outside the two known days', () => {
+    expect(
+      doorCheckInSchema.safeParse({ scannedId: UUID, occasion: 'community_day' }).success,
+    ).toBe(false);
+  });
+
+  it('still works with no occasion at all — the server clock decides', () => {
+    const result = doorCheckInSchema.safeParse({ scannedId: UUID });
+    expect(result.success && result.data.occasion).toBeUndefined();
   });
 
   it('accepts an offline occurredAt, because queued scans keep their real time', () => {
@@ -108,6 +121,57 @@ describe('doorGoodieHandoverSchema', () => {
     expect(
       doorGoodieHandoverSchema.safeParse({ ticketId: UUID, note: 'x'.repeat(281) }).success,
     ).toBe(false);
+  });
+
+  it('accepts the sizes actually handed over, per item', () => {
+    const result = doorGoodieHandoverSchema.safeParse({
+      ticketId: UUID,
+      tshirtSize: 'M',
+      hoodieSize: 'L',
+    });
+    expect(result.success && result.data.tshirtSize).toBe('M');
+    expect(result.success && result.data.hoodieSize).toBe('L');
+  });
+
+  it('treats an absent size as "that item was not handed", not an error', () => {
+    const result = doorGoodieHandoverSchema.safeParse({ ticketId: UUID, tshirtSize: 'M' });
+    expect(result.success && result.data.hoodieSize).toBeUndefined();
+  });
+
+  it('rejects a size that is clearly not a size', () => {
+    expect(
+      doorGoodieHandoverSchema.safeParse({ ticketId: UUID, tshirtSize: 'x'.repeat(13) }).success,
+    ).toBe(false);
+  });
+});
+
+describe('doorCheckInUndoSchema', () => {
+  it('works with just the scanned id — the reason is optional for an undo', () => {
+    expect(doorCheckInUndoSchema.safeParse({ scannedId: UUID }).success).toBe(true);
+  });
+
+  it('carries the occasion so a queued undo lands on the right day', () => {
+    const result = doorCheckInUndoSchema.safeParse({
+      scannedId: UUID,
+      occasion: 'workshop_day',
+    });
+    expect(result.success && result.data.occasion).toBe('workshop_day');
+  });
+
+  it('rejects an over-long reason', () => {
+    expect(
+      doorCheckInUndoSchema.safeParse({ scannedId: UUID, reason: 'x'.repeat(501) }).success,
+    ).toBe(false);
+  });
+});
+
+describe('doorBadgePickupSchema', () => {
+  it('accepts a scanned id alone', () => {
+    expect(doorBadgePickupSchema.safeParse({ scannedId: UUID }).success).toBe(true);
+  });
+
+  it('rejects a non-UUID code', () => {
+    expect(doorBadgePickupSchema.safeParse({ scannedId: 'nope' }).success).toBe(false);
   });
 });
 

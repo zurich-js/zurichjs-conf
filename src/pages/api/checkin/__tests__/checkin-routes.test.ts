@@ -20,7 +20,9 @@ const mocks = vi.hoisted(() => ({
   getStaffByUserId: vi.fn(),
   doorResolve: vi.fn(),
   doorCheckIn: vi.fn(),
+  doorCheckInUndo: vi.fn(),
   doorGoodieHandover: vi.fn(),
+  doorBadgePickup: vi.fn(),
   doorCurrentOccasion: vi.fn(),
   buildDoorRoster: vi.fn(),
   verifyAdminAccess: vi.fn(),
@@ -33,7 +35,9 @@ vi.mock('@/lib/checkin/staff', () => ({ getStaffByUserId: mocks.getStaffByUserId
 vi.mock('@/lib/checkin/rpc', () => ({
   doorResolve: mocks.doorResolve,
   doorCheckIn: mocks.doorCheckIn,
+  doorCheckInUndo: mocks.doorCheckInUndo,
   doorGoodieHandover: mocks.doorGoodieHandover,
+  doorBadgePickup: mocks.doorBadgePickup,
   doorCurrentOccasion: mocks.doorCurrentOccasion,
 }));
 vi.mock('@/lib/checkin/roster', () => ({ buildDoorRoster: mocks.buildDoorRoster }));
@@ -47,8 +51,10 @@ vi.mock('@/lib/logger', () => ({
 const sessionHandler = (await import('../session')).default;
 const resolveHandler = (await import('../resolve')).default;
 const checkInHandler = (await import('../check-in')).default;
+const undoHandler = (await import('../undo')).default;
 const manualAdmitHandler = (await import('../manual-admit')).default;
 const goodieHandler = (await import('../goodie')).default;
+const badgePickupHandler = (await import('../badge-pickup')).default;
 const rosterHandler = (await import('../roster')).default;
 
 const UUID = 'a1b2c3d4-e5f6-4789-8abc-def012345678';
@@ -67,11 +73,11 @@ function staff(role: 'door_lead' | 'scanner' | 'goodie') {
   };
 }
 
-function mockReqRes(method: string, body: unknown = {}) {
+function mockReqRes(method: string, body: unknown = {}, query: Record<string, string> = {}) {
   const json = vi.fn();
   const setHeader = vi.fn();
   const res = { status: vi.fn(() => ({ json })), setHeader } as unknown as NextApiResponse;
-  const req = { method, body, cookies: {}, headers: {} } as unknown as NextApiRequest;
+  const req = { method, body, query, cookies: {}, headers: {} } as unknown as NextApiRequest;
   return { req, res, json, statusOf: () => (res.status as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] };
 }
 
@@ -88,8 +94,10 @@ describe('method guards', () => {
     ['session', sessionHandler, 'POST'],
     ['resolve', resolveHandler, 'GET'],
     ['check-in', checkInHandler, 'GET'],
+    ['undo', undoHandler, 'GET'],
     ['manual-admit', manualAdmitHandler, 'GET'],
     ['goodie', goodieHandler, 'GET'],
+    ['badge-pickup', badgePickupHandler, 'GET'],
     ['roster', rosterHandler, 'POST'],
   ])('%s rejects the wrong method with 405', async (_name, handler, method) => {
     const { req, res, statusOf } = mockReqRes(method);
@@ -190,12 +198,101 @@ describe('the staff id is never taken from the client', () => {
       expect.objectContaining({ staffId: 'staff-1' }),
     );
   });
+});
 
-  it('ignores a client-supplied occasion', async () => {
-    mocks.doorCheckIn.mockResolvedValue({ outcome: 'applied' });
+describe('the occasion is a validated staff choice', () => {
+  it('passes a known occasion through to the function', async () => {
+    mocks.doorCheckIn.mockResolvedValue({ outcome: 'applied', occasion: 'workshop_day' });
     const { req, res } = mockReqRes('POST', { scannedId: UUID, occasion: 'workshop_day' });
     await checkInHandler(req, res);
-    expect(mocks.doorCheckIn.mock.calls[0][0]).not.toHaveProperty('occasion');
+    expect(mocks.doorCheckIn).toHaveBeenCalledWith(
+      expect.objectContaining({ occasion: 'workshop_day' }),
+    );
+  });
+
+  // Free text can never reach the audit table: anything outside the enum is a
+  // schema failure, not a fallback.
+  it('rejects an occasion outside the two known days with 400', async () => {
+    const { req, res, statusOf } = mockReqRes('POST', {
+      scannedId: UUID,
+      occasion: 'community_day',
+    });
+    await checkInHandler(req, res);
+    expect(statusOf()).toBe(400);
+    expect(mocks.doorCheckIn).not.toHaveBeenCalled();
+  });
+
+  it('omits the occasion when the client sends none, so the server clock decides', async () => {
+    mocks.doorCheckIn.mockResolvedValue({ outcome: 'applied' });
+    const { req, res } = mockReqRes('POST', { scannedId: UUID });
+    await checkInHandler(req, res);
+    expect(mocks.doorCheckIn.mock.calls[0][0].occasion).toBeUndefined();
+  });
+});
+
+describe('undo', () => {
+  it('lets a scanner undo a mis-scan at their own lane', async () => {
+    mocks.doorCheckInUndo.mockResolvedValue({ outcome: 'applied', occasion: 'conference_day' });
+    const { req, res, statusOf } = mockReqRes('POST', { scannedId: UUID });
+    await undoHandler(req, res);
+    expect(statusOf()).toBe(200);
+    expect(mocks.doorCheckInUndo).toHaveBeenCalledWith(
+      expect.objectContaining({ staffId: 'staff-1' }),
+    );
+  });
+
+  it('refuses a goodie volunteer, who cannot check in either', async () => {
+    mocks.getStaffByUserId.mockResolvedValue(staff('goodie'));
+    const { req, res, statusOf } = mockReqRes('POST', { scannedId: UUID });
+    await undoHandler(req, res);
+    expect(statusOf()).toBe(403);
+    expect(mocks.doorCheckInUndo).not.toHaveBeenCalled();
+  });
+
+  // "Nothing to undo" is a fact the volunteer should read, not an error.
+  it('returns duplicate as 200 when there was nothing to undo', async () => {
+    mocks.doorCheckInUndo.mockResolvedValue({ outcome: 'duplicate' });
+    const { req, res, statusOf, json } = mockReqRes('POST', { scannedId: UUID });
+    await undoHandler(req, res);
+    expect(statusOf()).toBe(200);
+    expect(json.mock.calls[0][0].outcome).toBe('duplicate');
+  });
+});
+
+describe('badge pickup', () => {
+  it('lets every role record a pickup, goodie volunteers included', async () => {
+    mocks.getStaffByUserId.mockResolvedValue(staff('goodie'));
+    mocks.doorBadgePickup.mockResolvedValue({ outcome: 'applied' });
+    const { req, res, statusOf } = mockReqRes('POST', { scannedId: UUID });
+    await badgePickupHandler(req, res);
+    expect(statusOf()).toBe(200);
+  });
+
+  it('reports a second pickup as duplicate with the original time', async () => {
+    mocks.doorBadgePickup.mockResolvedValue({
+      outcome: 'duplicate',
+      alreadyPickedUpAt: '2026-09-09T17:03:00.000Z',
+    });
+    const { req, res, statusOf, json } = mockReqRes('POST', { scannedId: UUID });
+    await badgePickupHandler(req, res);
+    expect(statusOf()).toBe(200);
+    expect(json.mock.calls[0][0].alreadyPickedUpAt).toBe('2026-09-09T17:03:00.000Z');
+  });
+});
+
+describe('goodie handover items', () => {
+  it('passes the handed sizes through to the function', async () => {
+    mocks.getStaffByUserId.mockResolvedValue(staff('goodie'));
+    mocks.doorGoodieHandover.mockResolvedValue({ outcome: 'applied' });
+    const { req, res } = mockReqRes('POST', {
+      ticketId: UUID,
+      tshirtSize: 'M',
+      hoodieSize: 'L',
+    });
+    await goodieHandler(req, res);
+    expect(mocks.doorGoodieHandover).toHaveBeenCalledWith(
+      expect.objectContaining({ tshirtSize: 'M', hoodieSize: 'L' }),
+    );
   });
 });
 
@@ -268,6 +365,33 @@ describe('roster', () => {
     const { req, res, statusOf } = mockReqRes('GET');
     await rosterHandler(req, res);
     expect(statusOf()).toBe(200);
+    expect(mocks.buildDoorRoster).toHaveBeenCalledWith('conference_day');
+  });
+
+  it('serves the roster for an explicitly chosen day', async () => {
+    mocks.buildDoorRoster.mockResolvedValue({
+      occasion: 'workshop_day',
+      tickets: [],
+      registrations: [],
+      workshops: [],
+      generatedAt: '2026-09-10T06:00:00.000Z',
+    });
+    const { req, res } = mockReqRes('GET', {}, { occasion: 'workshop_day' });
+    await rosterHandler(req, res);
+    expect(mocks.buildDoorRoster).toHaveBeenCalledWith('workshop_day');
+    expect(mocks.doorCurrentOccasion).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the server clock for a nonsense occasion', async () => {
+    mocks.buildDoorRoster.mockResolvedValue({
+      occasion: 'conference_day',
+      tickets: [],
+      registrations: [],
+      workshops: [],
+      generatedAt: '2026-09-11T06:00:00.000Z',
+    });
+    const { req, res } = mockReqRes('GET', {}, { occasion: 'community_day' });
+    await rosterHandler(req, res);
     expect(mocks.buildDoorRoster).toHaveBeenCalledWith('conference_day');
   });
 

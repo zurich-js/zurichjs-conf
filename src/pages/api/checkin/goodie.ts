@@ -40,7 +40,7 @@ export default async function handler(
     return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
   }
 
-  const { ticketId, station, occurredAt, note } = parsed.data;
+  const { ticketId, station, occurredAt, occasion, note, tshirtSize, hoodieSize } = parsed.data;
 
   try {
     const result = await doorGoodieHandover({
@@ -48,7 +48,12 @@ export default async function handler(
       staffId: guard.staff.id,
       station,
       occurredAt,
+      occasion,
       note,
+      // What actually went over the counter, per item. Absent = not handed;
+      // recorded on the audit row so missing items can be followed up.
+      tshirtSize,
+      hoodieSize,
     });
 
     log.info('Goodie handover', { staffId: guard.staff.id, outcome: result.outcome });

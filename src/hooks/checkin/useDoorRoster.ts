@@ -49,7 +49,14 @@ export function useDoorRoster({ occasion, enabled = true }: UseDoorRosterOptions
   return useQuery({
     // The non-null assertion is safe: `enabled` gates the fetch on the same value.
     queryKey: checkinKeys.roster({ occasion: occasion as DoorOccasion }),
-    queryFn: ({ signal }) => doorFetch<DoorRoster>('/api/checkin/roster', { signal }),
+    // The occasion rides along so a volunteer working the OTHER day (early
+    // badge pickup, a rehearsal) gets a roster whose checked-in flags belong to
+    // the day they chose rather than to the server's idea of today.
+    queryFn: ({ signal }) =>
+      doorFetch<DoorRoster>(
+        `/api/checkin/roster?occasion=${encodeURIComponent(occasion ?? '')}`,
+        { signal }
+      ),
     enabled: enabled && occasion !== undefined,
     // Deliberately long: the station is expected to hold this, and a refetch
     // triggered per scan would undo the entire point of prefetching.
@@ -212,6 +219,35 @@ export function revertRosterGoodie(
     ...roster,
     tickets: roster.tickets.map((ticket) =>
       ticket.id === ticketId ? { ...ticket, goodieHandedAt: null } : ticket
+    ),
+  }));
+}
+
+/** Record an undo locally: the arrival comes back off, for this occasion only. */
+export function patchRosterUndo(
+  queryClient: QueryClient,
+  occasion: DoorOccasion,
+  subjectId: string
+): void {
+  // Identical to reverting an optimistic check-in — the undo IS that revert,
+  // just user-initiated rather than server-refused.
+  revertRosterCheckIn(queryClient, occasion, subjectId);
+}
+
+/** Record a badge handover locally. `subjectId` may be a ticket or a seat id. */
+export function patchRosterBadgePickup(
+  queryClient: QueryClient,
+  occasion: DoorOccasion,
+  subjectId: string,
+  pickedUpAt: string | null
+): void {
+  patchRoster(queryClient, occasion, (roster) => ({
+    ...roster,
+    tickets: roster.tickets.map((ticket) =>
+      ticket.id === subjectId ? { ...ticket, badgePickedUpAt: pickedUpAt } : ticket
+    ),
+    registrations: roster.registrations.map((seat) =>
+      seat.id === subjectId ? { ...seat, badgePickedUpAt: pickedUpAt } : seat
     ),
   }));
 }

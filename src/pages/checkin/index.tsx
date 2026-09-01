@@ -17,7 +17,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { ListChecks, Search } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Button } from '@/components/atoms';
 import {
@@ -26,6 +27,7 @@ import {
   DoorNotFound,
   DoorNotice,
   ManualAdmit,
+  MyCheckIns,
   ScanFlash,
   ScannerViewport,
   StationBar,
@@ -35,17 +37,23 @@ import {
 import { useDoorSession } from '@/hooks/checkin/useDoorSession';
 import { useDoorRosterIndex } from '@/hooks/checkin/useDoorRoster';
 import { useDoorMutationQueue } from '@/hooks/checkin/useDoorMutationQueue';
+import { useDoorMyActivity } from '@/hooks/checkin/useDoorMyActivity';
 import { useDoorScanner } from '@/hooks/checkin/useDoorScanner';
 import { useDoorFeedback } from '@/hooks/checkin/useDoorFeedback';
 import { extractScannedId } from '@/lib/checkin/roster-index';
 import { DoorApiError } from '@/lib/checkin/api-fetch';
 import { readQueue } from '@/lib/checkin/mutation-queue';
+import { checkinKeys } from '@/lib/checkin/query-keys';
 import type { DoorSearchableRecord } from '@/lib/checkin/roster-index';
+import type { GoodieHandoverPayload } from '@/components/checkin';
 import { canOfferCheckIn, checkedInAtFor, toneForOutcome } from '@/lib/checkin/panel-state';
 import { supabase } from '@/lib/supabase/client';
-import { isDoorResolveHit, roleCan, type DoorCheckInResult } from '@/lib/types/checkin';
-
-const STATION_KEY = 'zjs.door.station';
+import {
+  isDoorResolveHit,
+  roleCan,
+  type DoorCheckInResult,
+  type DoorOccasion,
+} from '@/lib/types/checkin';
 
 interface ScanState {
   /** Null when the code carried no id we recognise. */
@@ -56,16 +64,25 @@ interface ScanState {
 
 export default function DoorStationPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const session = useDoorSession();
   const staff = session.data?.staff ?? null;
-  const occasion = session.data?.occasion;
+  const serverOccasion = session.data?.occasion;
 
-  const [station, setStation] = useState('');
+  /**
+   * The day being WORKED, which is not always the day it IS: badges are picked
+   * up on the community day, and a lead may process the other day's list. The
+   * server's clock is the default; the volunteer's explicit choice wins.
+   */
+  const [occasionOverride, setOccasionOverride] = useState<DoorOccasion | null>(null);
+  const occasion = occasionOverride ?? serverOccasion;
+
   const [shiftStarted, setShiftStarted] = useState(false);
   const [scan, setScan] = useState<ScanState | null>(null);
   const [lastResult, setLastResult] = useState<DoorCheckInResult | null>(null);
   const [escalating, setEscalating] = useState(false);
   const [lookupOpen, setLookupOpen] = useState(false);
+  const [myListOpen, setMyListOpen] = useState(false);
   /**
    * Whether the attendee on screen was found by name rather than scanned.
    *
@@ -83,9 +100,9 @@ export default function DoorStationPage() {
 
   /**
    * Starts as soon as the session resolves — which is while the volunteer is
-   * still reading the start screen and typing their door label. By the time they
-   * tap "Start scanning" the roster is usually already in memory, so the first
-   * attendee of the shift is as fast as the hundredth.
+   * still reading the start screen. By the time they tap "Start scanning" the
+   * roster is usually already in memory, so the first attendee of the shift is
+   * as fast as the hundredth. Re-keyed (and re-fetched) when the day changes.
    */
   const roster = useDoorRosterIndex({ occasion });
 
@@ -99,7 +116,6 @@ export default function DoorStationPage() {
   const queue = useDoorMutationQueue({
     staffId: staff?.id,
     occasion,
-    station: station.trim() || undefined,
     // The server's real answer, arriving after the optimistic one. Only acted on
     // when it concerns the attendee still on screen.
     onOutcome: (entry, result) => {
@@ -109,11 +125,17 @@ export default function DoorStationPage() {
       // The optimistic path already said this, so re-announcing it would beep
       // twice for one admission.
       if (result.outcome === 'applied') return;
+      // An undo's echo must not repaint the banner as a check-in verdict.
+      if (entry.payload.kind === 'undo_check_in' || entry.payload.kind === 'badge_pickup') {
+        return;
+      }
 
       setLastResult(result as DoorCheckInResult);
       signalRef.current(toneForOutcome(result.outcome));
     },
   });
+
+  const myActivity = useDoorMyActivity({ occasion, enabled: myListOpen && shiftStarted });
 
   const handleScan = useCallback((raw: string) => {
     const subjectId = extractScannedId(raw);
@@ -127,16 +149,6 @@ export default function DoorStationPage() {
   }, []);
 
   const scanner = useDoorScanner({ onScan: handleScan });
-
-  // Read after mount, never in render: web storage during render is a hydration
-  // mismatch waiting to happen.
-  useEffect(() => {
-    try {
-      setStation(window.localStorage.getItem(STATION_KEY) ?? '');
-    } catch {
-      // Private mode. The label is a convenience; the shift still works.
-    }
-  }, []);
 
   /**
    * Writes this volunteer left behind — a tab the OS recycled mid-shift, or a
@@ -163,9 +175,18 @@ export default function DoorStationPage() {
     session.error instanceof DoorApiError ? session.error.status : null;
   const needsSignIn = session.isError && sessionStatus === 401;
 
+  /**
+   * Fired AT MOST ONCE. The login page redirects signed-in visitors back here,
+   * so two unguarded effects can ping-pong `router.replace` until the browser
+   * throws SecurityError ("history.pushState more than 100 times per 10
+   * seconds") — which is exactly what used to happen right after sign-out.
+   */
+  const redirectedToLogin = useRef(false);
   useEffect(() => {
-    // A 401 is the expected state before sign-in, not an error worth showing.
-    if (needsSignIn) void router.replace('/checkin/login');
+    if (needsSignIn && !redirectedToLogin.current) {
+      redirectedToLogin.current = true;
+      void router.replace('/checkin/login');
+    }
   }, [needsSignIn, router]);
 
   // Flattened once per roster rather than per keystroke. Rebuilding the search
@@ -213,14 +234,19 @@ export default function DoorStationPage() {
    * the element is read.
    */
   const startShift = useCallback(async () => {
-    try {
-      window.localStorage.setItem(STATION_KEY, station.trim());
-    } catch {
-      // Private mode. The label is a convenience, not a requirement.
-    }
     setShiftStarted(true);
     await scanner.start();
-  }, [scanner, station]);
+  }, [scanner]);
+
+  /** Changing the day mid-shift re-keys the roster; the attendee on screen was
+   *  resolved against the OLD day's flags, so it is dismissed rather than lied
+   *  about. Queued writes keep the day they were taken for. */
+  const changeOccasion = useCallback((next: DoorOccasion) => {
+    setOccasionOverride(next);
+    setScan(null);
+    setLastResult(null);
+    setEscalating(false);
+  }, []);
 
   const handleCheckIn = useCallback(() => {
     if (!scan?.subjectId) return;
@@ -231,13 +257,57 @@ export default function DoorStationPage() {
     signal('success');
   }, [queue, scan?.subjectId, signal]);
 
-  const handleGoodie = useCallback(() => {
-    // Entitlement follows the conference ticket, so only a ticket subject reaches
-    // this — a workshop-only attendee has no ticket to key it on.
-    if (!attendee || attendee.subjectKind !== 'ticket') return;
-    queue.submit({ kind: 'goodie', ticketId: attendee.subjectId });
+  /** One workshop seat, on workshop day. The seat id is its own check-in subject. */
+  const handleCheckInSeat = useCallback(
+    (registrationId: string) => {
+      queue.submit({ kind: 'check_in', scannedId: registrationId });
+      // No lastResult: the banner derives from the seats, which the optimistic
+      // roster patch has already advanced.
+      signal('success');
+    },
+    [queue, signal]
+  );
+
+  const handleUndo = useCallback(() => {
+    if (!scan?.subjectId) return;
+    queue.submit({ kind: 'undo_check_in', scannedId: scan.subjectId });
+    // The roster patch has already cleared the arrival; the banner recomputes
+    // to "Ready to admit" on its own. No beep — nothing was admitted.
+    setLastResult(null);
+    // Let the same badge be re-scanned immediately for the corrected person.
+    scanner.clearGate();
+  }, [queue, scan?.subjectId, scanner]);
+
+  const handleUndoSeat = useCallback(
+    (registrationId: string) => {
+      queue.submit({ kind: 'undo_check_in', scannedId: registrationId });
+    },
+    [queue]
+  );
+
+  const handleGoodie = useCallback(
+    (payload: GoodieHandoverPayload) => {
+      // Entitlement follows the conference ticket, so only a ticket subject
+      // reaches this — a workshop-only attendee has no ticket to key it on.
+      const current = scanRef.current;
+      if (!current?.subjectId) return;
+      queue.submit({
+        kind: 'goodie',
+        ticketId: current.subjectId,
+        tshirtSize: payload.tshirtSize ?? undefined,
+        hoodieSize: payload.hoodieSize ?? undefined,
+        note: payload.note,
+      });
+      signal('success');
+    },
+    [queue, signal]
+  );
+
+  const handleBadgePickup = useCallback(() => {
+    if (!scan?.subjectId) return;
+    queue.submit({ kind: 'badge_pickup', scannedId: scan.subjectId });
     signal('success');
-  }, [attendee, queue, signal]);
+  }, [queue, scan?.subjectId, signal]);
 
   const handleManualAdmit = useCallback(
     (reason: string) => {
@@ -284,8 +354,12 @@ export default function DoorStationPage() {
     }
     scanner.stop();
     await supabase.auth.signOut();
+    // Drop the cached door state BEFORE navigating. The login page redirects
+    // anyone with session data back here; leaving a signed-out session in the
+    // cache is what produced the replace() ping-pong and its SecurityError.
+    queryClient.removeQueries({ queryKey: checkinKeys.all });
     void router.replace('/checkin/login');
-  }, [queue, router, scanner]);
+  }, [queue, queryClient, router, scanner]);
 
   const body = (() => {
     if (session.isError) {
@@ -347,7 +421,7 @@ export default function DoorStationPage() {
       );
     }
 
-    if (!staff || !occasion) {
+    if (!staff || !occasion || !serverOccasion) {
       // Reachable only if the session resolved to nothing without erroring.
       // A blank screen at a door is the worst possible answer, so say something.
       return (
@@ -361,11 +435,11 @@ export default function DoorStationPage() {
       return (
         <StationStartGate
           occasion={occasion}
+          serverOccasion={serverOccasion}
+          onOccasionChange={changeOccasion}
           role={staff.role}
           staffName={staff.name}
           support={scanner.support}
-          station={station}
-          onStationChange={setStation}
           onStart={() => void startShift()}
           starting={scanner.status === 'starting'}
           pendingWrites={carriedOver}
@@ -377,8 +451,8 @@ export default function DoorStationPage() {
       <div className="space-y-4">
         <StationBar
           occasion={occasion}
+          onOccasionChange={changeOccasion}
           role={staff.role}
-          station={station}
           rosterSize={roster.index?.size ?? null}
           generatedAt={roster.generatedAt}
           pendingWrites={queue.pending}
@@ -412,21 +486,47 @@ export default function DoorStationPage() {
           torchOn={scanner.torchOn}
           onToggleTorch={() => void scanner.toggleTorch()}
           cameras={scanner.cameras}
+          activeCameraId={scanner.activeCameraId}
           onPickCamera={(deviceId) => void scanner.start(deviceId)}
         />
 
-        {/* Always reachable, not only after a failed scan: a lead working the
-            problem desk searches for people who never got as far as a badge. */}
-        {!lookupOpen && roleCan(staff.role, 'lookup') && roster.index ? (
-          <Button
-            variant="dark"
-            size="lg"
-            className="w-full"
-            onClick={() => setLookupOpen(true)}
-          >
-            <Search className="h-4 w-4" aria-hidden="true" />
-            Find by name
-          </Button>
+        <div className="flex gap-3">
+          {/* Always reachable, not only after a failed scan: a lead working the
+              problem desk searches for people who never got as far as a badge. */}
+          {!lookupOpen && roleCan(staff.role, 'lookup') && roster.index ? (
+            <Button
+              variant="dark"
+              size="lg"
+              className="flex-1"
+              onClick={() => setLookupOpen(true)}
+            >
+              <Search className="h-4 w-4" aria-hidden="true" />
+              Find by name
+            </Button>
+          ) : null}
+
+          {!myListOpen ? (
+            <Button
+              variant="dark"
+              size="lg"
+              className="flex-1"
+              onClick={() => setMyListOpen(true)}
+            >
+              <ListChecks className="h-4 w-4" aria-hidden="true" />
+              My check-ins
+            </Button>
+          ) : null}
+        </div>
+
+        {myListOpen ? (
+          <MyCheckIns
+            events={myActivity.data?.events}
+            isLoading={myActivity.isLoading}
+            isError={myActivity.isError}
+            pendingWrites={queue.pending}
+            onRefresh={() => void myActivity.refetch()}
+            onClose={() => setMyListOpen(false)}
+          />
         ) : null}
 
         {lookupOpen && roster.index ? (
@@ -448,7 +548,11 @@ export default function DoorStationPage() {
               // Omitted on the lookup path: nobody verified a QR there, so the
               // admission is a manual one and must be recorded as such.
               onCheckIn={fromLookup ? undefined : handleCheckIn}
+              onCheckInSeat={fromLookup ? undefined : handleCheckInSeat}
+              onUndo={handleUndo}
+              onUndoSeat={handleUndoSeat}
               onHandOverGoodie={handleGoodie}
+              onHandOverBadge={handleBadgePickup}
               onEscalate={() => setEscalating(true)}
             />
 
@@ -477,18 +581,21 @@ export default function DoorStationPage() {
         {escalating ? (
           <DoorNotice
             tone="info"
-            title="Raise a hand for a door lead"
+            title="Wave a door lead over — they can sort this"
             actionLabel="Dismiss"
             onAction={() => setEscalating(false)}
           >
-            A lead can admit someone without a working code and see contact details.
+            A door lead can admit someone without a working code, look people up with
+            contact details, and settle payment questions at the desk.
             {scan?.subjectId ? (
               <>
                 {' '}
-                Read them this reference:{' '}
+                Show them this screen, or read them this reference:{' '}
                 <span className="font-mono text-text-primary">{scan.subjectId.slice(0, 8)}</span>.
               </>
-            ) : null}
+            ) : (
+              <> Show them this screen so they can pick up where you are.</>
+            )}
           </DoorNotice>
         ) : null}
 

@@ -64,9 +64,9 @@ export const DOOR_ROLE_DESCRIPTIONS: Record<DoorRole, string> = {
  * offering a button that fails.
  */
 export const DOOR_ROLE_ABILITIES = {
-  door_lead: ['check_in', 'goodie', 'manual_admit', 'lookup', 'view_contact'],
-  scanner: ['check_in', 'lookup'],
-  goodie: ['goodie', 'lookup'],
+  door_lead: ['check_in', 'goodie', 'manual_admit', 'lookup', 'view_contact', 'badge_pickup'],
+  scanner: ['check_in', 'lookup', 'badge_pickup'],
+  goodie: ['goodie', 'lookup', 'badge_pickup'],
 } as const satisfies Record<DoorRole, readonly DoorAbility[]>;
 
 export const DOOR_ABILITIES = [
@@ -75,6 +75,7 @@ export const DOOR_ABILITIES = [
   'manual_admit',
   'lookup',
   'view_contact',
+  'badge_pickup',
 ] as const;
 export type DoorAbility = (typeof DOOR_ABILITIES)[number];
 
@@ -126,6 +127,12 @@ export const DOOR_ABILITY_GUIDE: Record<
     withIt: 'Email addresses appear on the attendee panel and in lookup results.',
     withoutIt:
       'Names and companies show, email addresses do not. Enough to confirm who someone is without handing a volunteer the attendee list.',
+  },
+  badge_pickup: {
+    label: 'Hand over badges',
+    withIt:
+      'A "Badge handed over" button records the pickup — including early pickup the day before — without touching any day\'s check-in.',
+    withoutIt: 'Badge pickups cannot be recorded from this account.',
   },
 };
 
@@ -206,6 +213,18 @@ export interface DoorApparel {
 }
 
 /**
+ * Whether the physical badge has been handed over yet.
+ *
+ * Deliberately separate from check-in: badges can be collected early (the
+ * community day before the workshops), and picking one up must not consume the
+ * next morning's arrival. The state lives in `door_events` — the applied
+ * `badge_pickup` row IS the pickup — so it needs no ticket column.
+ */
+export interface DoorBadgeState {
+  pickedUpAt: string | null;
+}
+
+/**
  * Why a workshop seat was attributed to this person.
  *
  * `own_email` is the strong signal. `own_ticket` means the seat carries their
@@ -260,6 +279,7 @@ export interface DoorResolveHit {
   checkIn: DoorCheckInState;
   goodie: DoorGoodieState;
   apparel: DoorApparel;
+  badge: DoorBadgeState;
   doorNote: string | null;
   workshops: DoorWorkshops;
 }
@@ -295,6 +315,14 @@ export interface DoorCheckInResult {
 export interface DoorGoodieResult {
   outcome: DoorOutcome;
   alreadyHandedAt?: string | null;
+  failureReason?: string;
+}
+
+export interface DoorBadgePickupResult {
+  outcome: DoorOutcome;
+  subjectKind?: DoorSubjectKind;
+  /** Present when the outcome is `duplicate`: when the badge actually left the desk. */
+  alreadyPickedUpAt?: string | null;
   failureReason?: string;
 }
 

@@ -24,8 +24,9 @@
 import type { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { DoorRpcError } from './errors';
-import type { DoorDatabase, DoorRpcName } from './door-database';
+import type { DoorBadgePickupRow, DoorDatabase, DoorRpcName } from './door-database';
 import type {
+  DoorBadgePickupResult,
   DoorCheckInResult,
   DoorGoodieResult,
   DoorOccasion,
@@ -78,6 +79,11 @@ export interface DoorCheckInArgs {
   /** Admitting without a working QR. Requires a lead and a reason. */
   manual?: boolean;
   reason?: string;
+  /**
+   * The day the volunteer chose to work. Validated to the enum by the API; the
+   * function falls back to the server clock when it is absent.
+   */
+  occasion?: DoorOccasion;
 }
 
 export async function doorCheckIn(args: DoorCheckInArgs): Promise<DoorCheckInResult> {
@@ -91,6 +97,32 @@ export async function doorCheckIn(args: DoorCheckInArgs): Promise<DoorCheckInRes
       p_occurred_at: args.occurredAt ?? null,
       p_manual: args.manual ?? false,
       p_reason: args.reason ?? null,
+      p_occasion: args.occasion ?? null,
+    })
+  );
+}
+
+export interface DoorCheckInUndoArgs {
+  scannedId: string;
+  staffId: string;
+  station?: string;
+  occurredAt?: string;
+  reason?: string;
+  occasion?: DoorOccasion;
+}
+
+/** Clear a mistaken check-in. `duplicate` means there was nothing to undo. */
+export async function doorCheckInUndo(args: DoorCheckInUndoArgs): Promise<DoorCheckInResult> {
+  const supabase = createDoorClient();
+  return unwrap(
+    'door_check_in_undo',
+    await supabase.rpc('door_check_in_undo', {
+      p_scanned_id: args.scannedId,
+      p_staff_id: args.staffId,
+      p_station: args.station ?? null,
+      p_occurred_at: args.occurredAt ?? null,
+      p_reason: args.reason ?? null,
+      p_occasion: args.occasion ?? null,
     })
   );
 }
@@ -102,6 +134,10 @@ export interface DoorGoodieArgs {
   occurredAt?: string;
   /** Set when only part of the entitlement was handed over. */
   note?: string;
+  occasion?: DoorOccasion;
+  /** Size actually handed over. Absent = that item was NOT handed. */
+  tshirtSize?: string;
+  hoodieSize?: string;
 }
 
 export async function doorGoodieHandover(args: DoorGoodieArgs): Promise<DoorGoodieResult> {
@@ -114,8 +150,48 @@ export async function doorGoodieHandover(args: DoorGoodieArgs): Promise<DoorGood
       p_station: args.station ?? null,
       p_occurred_at: args.occurredAt ?? null,
       p_note: args.note ?? null,
+      p_occasion: args.occasion ?? null,
+      p_tshirt_size: args.tshirtSize ?? null,
+      p_hoodie_size: args.hoodieSize ?? null,
     })
   );
+}
+
+export interface DoorBadgePickupArgs {
+  scannedId: string;
+  staffId: string;
+  station?: string;
+  occurredAt?: string;
+  occasion?: DoorOccasion;
+}
+
+/** Record a badge handover — early pickup included. Never moves check-in state. */
+export async function doorBadgePickup(
+  args: DoorBadgePickupArgs
+): Promise<DoorBadgePickupResult> {
+  const supabase = createDoorClient();
+  return unwrap(
+    'door_badge_pickup',
+    await supabase.rpc('door_badge_pickup', {
+      p_scanned_id: args.scannedId,
+      p_staff_id: args.staffId,
+      p_station: args.station ?? null,
+      p_occurred_at: args.occurredAt ?? null,
+      p_occasion: args.occasion ?? null,
+    })
+  );
+}
+
+/** Every badge already picked up, for the roster prefetch. */
+export async function doorBadgePickups(): Promise<DoorBadgePickupRow[]> {
+  const supabase = createDoorClient();
+  return unwrap('door_badge_pickups', await supabase.rpc('door_badge_pickups', {}));
+}
+
+/** Admin-only removal of audit rows (rehearsal and test data). */
+export async function doorEventsDelete(ids: string[]): Promise<{ deleted: number }> {
+  const supabase = createDoorClient();
+  return unwrap('door_events_delete', await supabase.rpc('door_events_delete', { p_ids: ids }));
 }
 
 /**

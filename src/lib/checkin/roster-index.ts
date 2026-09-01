@@ -109,6 +109,7 @@ function ticketToHit(
       note: ticket.goodieNote,
     },
     apparel: { tshirtSize: ticket.tshirtSize, hoodieSize: ticket.hoodieSize },
+    badge: { pickedUpAt: ticket.badgePickedUpAt },
     doorNote: ticket.doorNote,
     workshops,
   };
@@ -224,6 +225,7 @@ export function buildRosterIndex(roster: DoorRoster): DoorRosterIndex {
         checkIn: { workshopDayAt: registration.checkedInAt, conferenceDayAt: null },
         goodie: { entitled: false, handedAt: null, note: null },
         apparel: { tshirtSize: null, hoodieSize: null },
+        badge: { pickedUpAt: registration.badgePickedUpAt },
         doorNote: null,
         workshops: seats,
       };
