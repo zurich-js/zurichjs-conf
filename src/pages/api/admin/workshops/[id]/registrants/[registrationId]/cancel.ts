@@ -3,24 +3,22 @@
  * POST /api/admin/workshops/[id]/registrants/[registrationId]/cancel
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { ErrorCodes, HttpError, throwIfDbError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
+export default withApiHandler(
+  { scope: 'Cancel Workshop Registration API', methods: ['POST'] },
+  async (req, res) => {
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
     }
 
     const { id, registrationId } = req.query;
     if (typeof id !== 'string' || typeof registrationId !== 'string') {
-      return res.status(400).json({ error: 'Invalid IDs' });
+      throw new HttpError(400, 'Invalid IDs');
     }
 
     const supabase = createServiceRoleClient();
@@ -33,15 +31,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error || !registration) {
-      return res.status(404).json({ error: 'Registration not found' });
+      throw new HttpError(404, 'Registration not found', {
+        code: ErrorCodes.NOT_FOUND,
+        cause: error,
+        context: { workshopId: id, registrationId },
+      });
     }
 
     if (registration.status === 'cancelled' || registration.status === 'refunded') {
-      return res.status(400).json({
-        error: registration.status === 'cancelled'
+      throw new HttpError(
+        400,
+        registration.status === 'cancelled'
           ? 'Registration already cancelled'
-          : 'Refunded registrations cannot be cancelled',
-      });
+          : 'Refunded registrations cannot be cancelled'
+      );
     }
 
     const { error: updateError } = await supabase
@@ -49,9 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .update({ status: 'cancelled' })
       .eq('id', registrationId);
 
-    if (updateError) {
-      return res.status(500).json({ error: 'Failed to cancel registration' });
-    }
+    throwIfDbError(updateError, 'Failed to cancel workshop registration', {
+      context: { workshopId: id, registrationId },
+    });
 
     // enrolled_count is maintained atomically by sync_workshop_enrolled_count_trigger.
 
@@ -59,8 +62,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       message: 'Registration cancelled successfully',
     });
-  } catch (error) {
-    console.error('Cancel registration error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
   }
-}
+);

@@ -10,45 +10,43 @@
  * shared cache would serve one volunteer's roster to whoever asked next.
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { requireDoorStaff } from '@/lib/checkin/guard';
-import { buildDoorRoster, type DoorRoster } from '@/lib/checkin/roster';
+import { buildDoorRoster } from '@/lib/checkin/roster';
 import { doorCurrentOccasion } from '@/lib/checkin/rpc';
-import { logger } from '@/lib/logger';
+import { ErrorCodes, HttpError } from '@/lib/errors';
 
-const log = logger.scope('Door Roster API');
+export default withApiHandler(
+  { scope: 'Door Roster API', methods: ['GET'] },
+  async (req, res, { requestId, log }) => {
+    const guard = await requireDoorStaff(req, res, 'lookup');
+    if (!guard.ok) {
+      throw new HttpError(guard.status, guard.error, {
+        code: guard.status === 401 ? ErrorCodes.AUTH_REQUIRED : ErrorCodes.AUTH_FORBIDDEN,
+      });
+    }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<DoorRoster | { error: string }>
-) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    try {
+      const occasion = await doorCurrentOccasion();
+      const roster = await buildDoorRoster(occasion);
+
+      // Attendee PII must never sit in a shared cache, and a station that asks
+      // again wants fresh state rather than a proxy's copy.
+      res.setHeader('Cache-Control', 'private, no-store');
+
+      log.info('Roster served', {
+        staffId: guard.staff.id,
+        occasion,
+        tickets: roster.tickets.length,
+        registrations: roster.registrations.length,
+      });
+
+      return res.status(200).json(roster);
+    } catch (error) {
+      log.error('Failed to build the roster', error, { staffId: guard.staff.id });
+      return res
+        .status(500)
+        .json({ error: 'Could not load the roster', code: ErrorCodes.INTERNAL, requestId });
+    }
   }
-
-  const guard = await requireDoorStaff(req, res, 'lookup');
-  if (!guard.ok) {
-    return res.status(guard.status).json({ error: guard.error });
-  }
-
-  try {
-    const occasion = await doorCurrentOccasion();
-    const roster = await buildDoorRoster(occasion);
-
-    // Attendee PII must never sit in a shared cache, and a station that asks
-    // again wants fresh state rather than a proxy's copy.
-    res.setHeader('Cache-Control', 'private, no-store');
-
-    log.info('Roster served', {
-      staffId: guard.staff.id,
-      occasion,
-      tickets: roster.tickets.length,
-      registrations: roster.registrations.length,
-    });
-
-    return res.status(200).json(roster);
-  } catch (error) {
-    log.error('Failed to build the roster', error, { staffId: guard.staff.id });
-    return res.status(500).json({ error: 'Could not load the roster' });
-  }
-}
+);

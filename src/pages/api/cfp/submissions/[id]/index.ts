@@ -5,132 +5,121 @@
  * DELETE /api/cfp/submissions/[id] - Delete submission (draft only)
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { createSupabaseApiClient, getSpeakerByUserId } from '@/lib/cfp/auth';
+import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
 import {
   getSubmissionWithDetails,
   updateSubmission,
   deleteSubmission,
 } from '@/lib/cfp/submissions';
+import { ErrorCodes, HttpError } from '@/lib/errors';
 import { updateSubmissionSchema } from '@/lib/validations/cfp';
-import { logger } from '@/lib/logger';
-import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
 
-const log = logger.scope('CFP Submission API');
+export default withApiHandler(
+  { scope: 'CFP Submission API', methods: ['GET', 'PUT', 'DELETE'] },
+  async (req, res, { requestId, log }) => {
+    const { id } = req.query;
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { id } = req.query;
+    if (!id || typeof id !== 'string') {
+      throw new HttpError(400, 'Invalid submission ID');
+    }
 
-  if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid submission ID' });
-  }
+    // Get session
+    const supabase = createSupabaseApiClient(req, res);
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  // Get session
-  const supabase = createSupabaseApiClient(req, res);
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
+    }
 
-  if (sessionError || !session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+    // Get speaker
+    const speaker = await getSpeakerByUserId(session.user.id);
+    if (!speaker) {
+      throw new HttpError(404, 'Speaker profile not found', { code: ErrorCodes.NOT_FOUND });
+    }
 
-  // Get speaker
-  const speaker = await getSpeakerByUserId(session.user.id);
-  if (!speaker) {
-    return res.status(404).json({ error: 'Speaker profile not found' });
-  }
-
-  if (req.method === 'GET') {
-    try {
+    if (req.method === 'GET') {
       const submission = await getSubmissionWithDetails(id);
 
       if (!submission) {
-        return res.status(404).json({ error: 'Submission not found' });
+        throw new HttpError(404, 'Submission not found', { code: ErrorCodes.NOT_FOUND });
       }
 
       // Verify ownership
       if (submission.speaker_id !== speaker.id) {
-        return res.status(403).json({ error: 'Access denied' });
+        throw new HttpError(403, 'Access denied', { code: ErrorCodes.AUTH_FORBIDDEN });
       }
 
       return res.status(200).json({ submission });
-    } catch (error) {
-      log.error('Failed to get submission', error, { submissionId: id, speakerId: speaker.id });
-      return res.status(500).json({ error: 'Internal server error' });
     }
-  }
 
-  if (req.method === 'PUT') {
-    try {
+    if (req.method === 'PUT') {
       const existingSubmission = await getSubmissionWithDetails(id);
       if (!existingSubmission) {
-        return res.status(404).json({ error: 'Submission not found' });
+        throw new HttpError(404, 'Submission not found', { code: ErrorCodes.NOT_FOUND });
       }
       if (existingSubmission.speaker_id !== speaker.id) {
-        return res.status(403).json({ error: 'Access denied' });
+        throw new HttpError(403, 'Access denied', { code: ErrorCodes.AUTH_FORBIDDEN });
       }
       if (isCfpClosed()) {
+        // Clients branch on `code === CFP_CLOSED_ERROR_CODE` — keep this body
+        // hand-rolled so the shape stays byte-identical (plus requestId).
         return res.status(403).json({
           code: CFP_CLOSED_ERROR_CODE,
           error: 'CFP is closed. Draft editing is disabled.',
+          requestId,
         });
       }
 
-      // Validate input
+      // Validate input (PUT only, so not the wrapper's bodySchema)
       const result = updateSubmissionSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({
           error: 'Validation failed',
+          code: ErrorCodes.VALIDATION_FAILED,
           issues: result.error.issues,
+          requestId,
         });
       }
 
       const { submission, error } = await updateSubmission(id, speaker.id, result.data);
 
       if (error) {
-        return res.status(400).json({ error });
+        throw new HttpError(400, error);
       }
 
       if (!submission) {
-        return res.status(404).json({ error: 'Submission not found' });
+        throw new HttpError(404, 'Submission not found', { code: ErrorCodes.NOT_FOUND });
       }
 
       log.info('Submission updated', { submissionId: id, speakerId: speaker.id });
       return res.status(200).json({ submission });
-    } catch (error) {
-      log.error('Failed to update submission', error, { submissionId: id, speakerId: speaker.id });
-      return res.status(500).json({ error: 'Internal server error' });
     }
-  }
 
-  if (req.method === 'DELETE') {
-    try {
-      const existingSubmission = await getSubmissionWithDetails(id);
-      if (!existingSubmission) {
-        return res.status(404).json({ error: 'Submission not found' });
-      }
-      if (existingSubmission.speaker_id !== speaker.id) {
-        return res.status(403).json({ error: 'Access denied' });
-      }
-      if (isCfpClosed()) {
-        return res.status(403).json({
-          code: CFP_CLOSED_ERROR_CODE,
-          error: 'CFP is closed. Draft deletion is disabled.',
-        });
-      }
-
-      const { success, error } = await deleteSubmission(id, speaker.id);
-
-      if (!success) {
-        return res.status(400).json({ error: error || 'Failed to delete submission' });
-      }
-
-      log.info('Submission deleted', { submissionId: id, speakerId: speaker.id });
-      return res.status(200).json({ success: true });
-    } catch (error) {
-      log.error('Failed to delete submission', error, { submissionId: id, speakerId: speaker.id });
-      return res.status(500).json({ error: 'Internal server error' });
+    // DELETE
+    const existingSubmission = await getSubmissionWithDetails(id);
+    if (!existingSubmission) {
+      throw new HttpError(404, 'Submission not found', { code: ErrorCodes.NOT_FOUND });
     }
-  }
+    if (existingSubmission.speaker_id !== speaker.id) {
+      throw new HttpError(403, 'Access denied', { code: ErrorCodes.AUTH_FORBIDDEN });
+    }
+    if (isCfpClosed()) {
+      return res.status(403).json({
+        code: CFP_CLOSED_ERROR_CODE,
+        error: 'CFP is closed. Draft deletion is disabled.',
+        requestId,
+      });
+    }
 
-  return res.status(405).json({ error: 'Method not allowed' });
-}
+    const { success, error } = await deleteSubmission(id, speaker.id);
+
+    if (!success) {
+      throw new HttpError(400, error || 'Failed to delete submission');
+    }
+
+    log.info('Submission deleted', { submissionId: id, speakerId: speaker.id });
+    return res.status(200).json({ success: true });
+  }
+);

@@ -13,42 +13,34 @@
  * consequential action.
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { requireDoorStaff } from '@/lib/checkin/guard';
 import { doorResolve } from '@/lib/checkin/rpc';
+import { ErrorCodes, HttpError } from '@/lib/errors';
 import { doorScanSchema } from '@/lib/validations/checkin';
-import { logger } from '@/lib/logger';
-import type { DoorResolveResult } from '@/lib/types/checkin';
 
-const log = logger.scope('Door Resolve API');
+export default withApiHandler(
+  { scope: 'Door Resolve API', methods: ['POST'], bodySchema: doorScanSchema },
+  async (req, res, { requestId, log, body }) => {
+    const guard = await requireDoorStaff(req, res, 'lookup');
+    if (!guard.ok) {
+      throw new HttpError(guard.status, guard.error, {
+        code: guard.status === 401 ? ErrorCodes.AUTH_REQUIRED : ErrorCodes.AUTH_FORBIDDEN,
+      });
+    }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<DoorResolveResult | { error: string; issues?: unknown }>
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    try {
+      const result = await doorResolve(body.scannedId);
+
+      // A miss is 200, not 404: an unknown code is an expected event at a door and
+      // the station renders a "not in roster, try the desk" panel for it. A 404
+      // would be indistinguishable from the route being wrong.
+      return res.status(200).json(result);
+    } catch (error) {
+      log.error('Failed to resolve a scan', error, { staffId: guard.staff.id });
+      return res
+        .status(500)
+        .json({ error: 'Could not look that code up', code: ErrorCodes.INTERNAL, requestId });
+    }
   }
-
-  const guard = await requireDoorStaff(req, res, 'lookup');
-  if (!guard.ok) {
-    return res.status(guard.status).json({ error: guard.error });
-  }
-
-  const parsed = doorScanSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
-  }
-
-  try {
-    const result = await doorResolve(parsed.data.scannedId);
-
-    // A miss is 200, not 404: an unknown code is an expected event at a door and
-    // the station renders a "not in roster, try the desk" panel for it. A 404
-    // would be indistinguishable from the route being wrong.
-    return res.status(200).json(result);
-  } catch (error) {
-    log.error('Failed to resolve a scan', error, { staffId: guard.staff.id });
-    return res.status(500).json({ error: 'Could not look that code up' });
-  }
-}
+);

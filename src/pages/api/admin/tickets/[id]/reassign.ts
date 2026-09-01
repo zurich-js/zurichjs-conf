@@ -3,37 +3,36 @@
  * POST /api/admin/tickets/[id]/reassign
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { withApiHandler } from '@/lib/api/handler';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { ErrorCodes, HttpError, throwIfDbError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendTicketConfirmationEmail } from '@/lib/email';
 import { getTicketDisplayName } from '@/lib/stripe/ticket-utils';
 import { notifyTicketReassigned } from '@/lib/platform-notifications';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const bodySchema = z.object({
+  email: z.string().email(),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+});
 
-  try {
-    // Verify admin authentication
+export default withApiHandler(
+  { scope: 'Reassign Ticket API', methods: ['POST'], bodySchema },
+  async (req, res, { log, body }) => {
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
     }
 
     const { id } = req.query;
-    const { email, firstName, lastName } = req.body;
-
     if (typeof id !== 'string') {
-      return res.status(400).json({ error: 'Invalid ticket ID' });
+      throw new HttpError(400, 'Invalid ticket ID');
     }
 
-    if (!email || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Email, first name, and last name are required' });
-    }
-
+    const { email, firstName, lastName } = body;
     const supabase = createServiceRoleClient();
 
     // First, get the current ticket to save original owner info
@@ -44,8 +43,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (fetchError || !currentTicket) {
-      console.error('Error fetching ticket:', fetchError);
-      return res.status(404).json({ error: 'Ticket not found' });
+      throw new HttpError(404, 'Ticket not found', {
+        code: ErrorCodes.NOT_FOUND,
+        cause: fetchError,
+        context: { ticketId: id },
+      });
     }
 
     // Update ticket with new owner details and save transfer info
@@ -64,9 +66,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select()
       .single();
 
-    if (updateError || !ticket) {
-      console.error('Error updating ticket:', updateError);
-      return res.status(500).json({ error: 'Failed to reassign ticket' });
+    throwIfDbError(updateError, 'Failed to reassign ticket', {
+      code: ErrorCodes.TICKET_REASSIGN_FAILED,
+      context: { ticketId: id },
+    });
+    if (!ticket) {
+      throw new HttpError(404, 'Ticket not found', {
+        code: ErrorCodes.NOT_FOUND,
+        context: { ticketId: id },
+      });
     }
 
     // Send email to new owner with transfer information
@@ -92,8 +100,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!emailResult.success) {
-      console.error('Failed to send email to new owner:', emailResult.error);
-      // Don't fail the request, ticket was reassigned successfully
+      // The reassignment itself succeeded — don't fail the request, but this
+      // must be visible: the new owner has no ticket email until re-sent.
+      log.error('Ticket reassigned but confirmation email failed', emailResult.error, {
+        code: ErrorCodes.TICKET_EMAIL_FAILED,
+        fingerprint: 'reassign-email-failed',
+        ticketId: ticket.id,
+        newOwnerEmail: email,
+      });
     }
 
     notifyTicketReassigned({
@@ -108,11 +122,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       success: true,
-      message: 'Ticket reassigned successfully',
+      message: emailResult.success
+        ? 'Ticket reassigned successfully'
+        : 'Ticket reassigned, but the confirmation email failed to send — resend it from the ticket page.',
       ticket,
     });
-  } catch (error) {
-    console.error('Reassign ticket error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
   }
-}
+);

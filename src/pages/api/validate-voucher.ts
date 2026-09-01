@@ -3,14 +3,14 @@
  * POST /api/validate-voucher
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
-import { logger } from '@/lib/logger';
+import { z } from 'zod';
+import type { ZodType } from 'zod';
+import { withApiHandler } from '@/lib/api/handler';
+import { HttpError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase/client';
 import { isStatusDiscountCategory, isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
 import { STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE } from '@/lib/cart-operations';
-
-const log = logger.scope('Voucher Validation API');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover',
@@ -27,6 +27,25 @@ export interface ValidateVoucherRequest {
     quantity: number;
   }>;
 }
+
+/** Mirrors `ValidateVoucherRequest` (the exported client contract) and the
+ * route's previous manual checks: non-empty code, non-zero numeric cart
+ * total, at least one price ID. */
+const bodySchema: ZodType<ValidateVoucherRequest> = z.object({
+  code: z.string().min(1, 'Voucher code is required'),
+  cartTotal: z.number().refine((value) => value !== 0, 'Cart total is required'),
+  currency: z.string(),
+  priceIds: z.array(z.string()).min(1, 'Cart items are required'),
+  items: z
+    .array(
+      z.object({
+        priceId: z.string(),
+        kind: z.enum(['ticket', 'workshop']).optional(),
+        quantity: z.number(),
+      })
+    )
+    .optional(),
+});
 
 export interface ValidateVoucherResponse {
   valid: boolean;
@@ -119,39 +138,16 @@ function sanitizeOrFilterValue(value: string): string | null {
 
 /**
  * Validate voucher/promotion code with Stripe
+ *
+ * Voucher rejection reasons are deliberate user-facing messages — the client
+ * (`useVoucherValidation` → CartContext) shows the server's `error` string to
+ * the user verbatim — so rejections throw `HttpError(400, <reason>)` rather
+ * than being collapsed into generic registry text.
  */
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ValidateVoucherResponse>
-) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).json({ valid: false, error: 'Method not allowed' });
-  }
-
-  try {
-    const { code, cartTotal, currency, priceIds, items } = req.body as ValidateVoucherRequest;
-
-    if (!code || typeof code !== 'string') {
-      return res.status(400).json({
-        valid: false,
-        error: 'Voucher code is required',
-      });
-    }
-
-    if (!cartTotal || typeof cartTotal !== 'number') {
-      return res.status(400).json({
-        valid: false,
-        error: 'Cart total is required',
-      });
-    }
-
-    if (!priceIds || !Array.isArray(priceIds) || priceIds.length === 0) {
-      return res.status(400).json({
-        valid: false,
-        error: 'Cart items are required',
-      });
-    }
+export default withApiHandler(
+  { scope: 'Voucher Validation API', methods: ['POST'], bodySchema },
+  async (req, res, { log, body }) => {
+    const { code, cartTotal, currency, priceIds, items } = body;
 
     const trimmedCode = code.trim();
     const normalizedCurrency = currency.toLowerCase();
@@ -212,42 +208,34 @@ export default async function handler(
         hasProductRestrictions: !!(coupon.applies_to?.products?.length),
       });
     } catch (error) {
-      log.error('Error retrieving coupon', error);
-      return res.status(200).json({
-        valid: false,
-        error: 'Invalid voucher code',
+      // Unknown code — expected user traffic, not an incident. The wrapper
+      // logs this once (warn level) with the requestId.
+      throw new HttpError(400, 'Invalid voucher code', {
+        cause: error,
+        context: { voucherCode: trimmedCode },
       });
     }
 
     if (promotionCode) {
       if (!promotionCode.active) {
-        return res.status(200).json({
-          valid: false,
-          error: 'This promo code is no longer active',
-        });
+        throw new HttpError(400, 'This promo code is no longer active');
       }
 
       if (promotionCode.expires_at && promotionCode.expires_at * 1000 < Date.now()) {
-        return res.status(200).json({
-          valid: false,
-          error: 'This promo code has expired',
-        });
+        throw new HttpError(400, 'This promo code has expired');
       }
 
       if (promotionCode.max_redemptions && promotionCode.times_redeemed >= promotionCode.max_redemptions) {
-        return res.status(200).json({
-          valid: false,
-          error: 'This promo code has reached its maximum number of uses',
-        });
+        throw new HttpError(400, 'This promo code has reached its maximum number of uses');
       }
 
       const minimumAmount = promotionCode.restrictions?.minimum_amount;
       const minimumCurrency = promotionCode.restrictions?.minimum_amount_currency;
       if (minimumAmount && minimumCurrency?.toLowerCase() === normalizedCurrency && cartTotal * 100 < minimumAmount) {
-        return res.status(200).json({
-          valid: false,
-          error: `Minimum purchase of ${(minimumAmount / 100).toFixed(2)} ${currency.toUpperCase()} required`,
-        });
+        throw new HttpError(
+          400,
+          `Minimum purchase of ${(minimumAmount / 100).toFixed(2)} ${currency.toUpperCase()} required`
+        );
       }
     }
 
@@ -291,17 +279,14 @@ export default async function handler(
           priceToProductMap.set(item.priceId, price.product);
         }
       } catch (error) {
-        log.error('Error fetching price', { priceId: item.priceId, error });
+        log.error('Error fetching price', error, { priceId: item.priceId });
       }
     }
 
     const missingPriceIds = uniqueCartPriceIds.filter((priceId) => !priceToProductMap.has(priceId));
     if (missingPriceIds.length > 0) {
       log.warn('Unable to resolve all cart prices during promo validation', { missingPriceIds });
-      return res.status(200).json({
-        valid: false,
-        error: 'Unable to validate this promo code for one or more cart items',
-      });
+      throw new HttpError(400, 'Unable to validate this promo code for one or more cart items');
     }
 
     // Student/unemployed tickets are already sold at a status discount, so no
@@ -317,10 +302,7 @@ export default async function handler(
         code: trimmedCode,
         statusDiscountedPriceIds,
       });
-      return res.status(200).json({
-        valid: false,
-        error: STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE,
-      });
+      throw new HttpError(400, STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE);
     }
 
     const inactivePriceIds = Array.from(priceToActiveMap.entries())
@@ -328,10 +310,10 @@ export default async function handler(
       .map(([priceId]) => priceId);
 
     if (inactivePriceIds.length > 0) {
-      return res.status(200).json({
-        valid: false,
-        error: 'This promo code cannot be applied because one or more cart prices are no longer active',
-      });
+      throw new HttpError(
+        400,
+        'This promo code cannot be applied because one or more cart prices are no longer active'
+      );
     }
 
     // Log the price-to-product mapping for debugging
@@ -417,10 +399,7 @@ export default async function handler(
           restrictedToProducts: restrictedProductIds,
           cartProductIds: Array.from(priceToProductMap.values()),
         });
-        return res.status(200).json({
-          valid: false,
-          error: 'This promo code is not applicable to the product type in your cart',
-        });
+        throw new HttpError(400, 'This promo code is not applicable to the product type in your cart');
       }
     }
 
@@ -441,10 +420,10 @@ export default async function handler(
           cartTicketCategories: Array.from(new Set(priceToTicketCategoryMap.values())),
           disallowedApplicablePriceIds,
         });
-        return res.status(200).json({
-          valid: false,
-          error: `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`,
-        });
+        throw new HttpError(
+          400,
+          `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`
+        );
       }
 
       applicablePriceIds = applicablePriceIds.filter((priceId) => {
@@ -455,10 +434,10 @@ export default async function handler(
       });
 
       if (applicablePriceIds.length === 0) {
-        return res.status(200).json({
-          valid: false,
-          error: `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`,
-        });
+        throw new HttpError(
+          400,
+          `This promo code is only valid for ${Array.from(allowedTicketCategories).join(', ')} tickets`
+        );
       }
     }
 
@@ -473,51 +452,33 @@ export default async function handler(
         .filter(Boolean)
     );
     if (applicableKinds.size === 0 || cartKinds.size === 0) {
-      return res.status(200).json({
-        valid: false,
-        error: 'Unable to validate this promo code for the product type in your cart',
-      });
+      throw new HttpError(400, 'Unable to validate this promo code for the product type in your cart');
     }
 
     // Check if coupon is valid
     if (!coupon.valid) {
-      return res.status(200).json({
-        valid: false,
-        error: 'This voucher is no longer valid',
-      });
+      throw new HttpError(400, 'This voucher is no longer valid');
     }
 
     // Check coupon redemption limits
     if (coupon.max_redemptions && coupon.times_redeemed >= coupon.max_redemptions) {
-      return res.status(200).json({
-        valid: false,
-        error: 'This voucher has reached its maximum number of uses',
-      });
+      throw new HttpError(400, 'This voucher has reached its maximum number of uses');
     }
 
     // Check if coupon has expired
     if (coupon.redeem_by && coupon.redeem_by * 1000 < Date.now()) {
-      return res.status(200).json({
-        valid: false,
-        error: 'This voucher has expired',
-      });
+      throw new HttpError(400, 'This voucher has expired');
     }
 
     // Check minimum purchase amount
     if (coupon.amount_off && coupon.currency) {
       if (coupon.currency.toLowerCase() !== normalizedCurrency) {
-        return res.status(200).json({
-          valid: false,
-          error: `This promo code is only valid for ${coupon.currency.toUpperCase()} purchases`,
-        });
+        throw new HttpError(400, `This promo code is only valid for ${coupon.currency.toUpperCase()} purchases`);
       }
 
       // Fixed amount discount
       if (cartTotal <= 0) {
-        return res.status(200).json({
-          valid: false,
-          error: 'Cart total is required',
-        });
+        throw new HttpError(400, 'Cart total is required');
       }
 
       const response = {
@@ -550,16 +511,7 @@ export default async function handler(
       log.info('Returning percentage discount response', response);
       return res.status(200).json(response);
     } else {
-      return res.status(200).json({
-        valid: false,
-        error: 'Invalid voucher configuration',
-      });
+      throw new HttpError(400, 'Invalid voucher configuration');
     }
-  } catch (error) {
-    log.error('Error validating voucher', error);
-    return res.status(500).json({
-      valid: false,
-      error: 'Failed to validate voucher. Please try again.',
-    });
   }
-}
+);

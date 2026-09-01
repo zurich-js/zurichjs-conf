@@ -3,31 +3,26 @@
  * POST /api/admin/tickets/[id]/cancel
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { ErrorCodes, HttpError, throwIfDbError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    // Verify admin authentication
+export default withApiHandler(
+  { scope: 'Cancel Ticket API', methods: ['POST'] },
+  async (req, res) => {
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
     }
 
     const { id } = req.query;
-
     if (typeof id !== 'string') {
-      return res.status(400).json({ error: 'Invalid ticket ID' });
+      throw new HttpError(400, 'Invalid ticket ID');
     }
 
     const supabase = createServiceRoleClient();
 
-    // Get ticket details
     const { data: ticket, error } = await supabase
       .from('tickets')
       .select('*')
@@ -35,33 +30,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error || !ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
+      throw new HttpError(404, 'Ticket not found', {
+        code: ErrorCodes.NOT_FOUND,
+        cause: error,
+        context: { ticketId: id },
+      });
     }
 
     if (ticket.status === 'cancelled') {
-      return res.status(400).json({ error: 'Ticket already cancelled' });
+      throw new HttpError(400, 'Ticket already cancelled');
     }
 
-    // Update ticket status to cancelled
     const { error: updateError } = await supabase
       .from('tickets')
       .update({ status: 'cancelled' })
       .eq('id', id);
 
-    if (updateError) {
-      console.error('Error cancelling ticket:', updateError);
-      return res.status(500).json({ error: 'Failed to cancel ticket' });
-    }
-
-    // TODO: Send cancellation confirmation email
-    // You can add email sending here if needed
+    throwIfDbError(updateError, 'Failed to cancel ticket', {
+      code: ErrorCodes.TICKET_CANCEL_DB_UPDATE_FAILED,
+      context: { ticketId: id },
+    });
 
     return res.status(200).json({
       success: true,
       message: 'Ticket cancelled successfully',
     });
-  } catch (error) {
-    console.error('Cancel ticket error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
   }
-}
+);

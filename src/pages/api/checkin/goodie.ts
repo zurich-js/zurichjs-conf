@@ -13,49 +13,41 @@
  * which is what makes "two lanes both hand over" impossible.
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { requireDoorStaff } from '@/lib/checkin/guard';
 import { doorGoodieHandover } from '@/lib/checkin/rpc';
+import { ErrorCodes, HttpError } from '@/lib/errors';
 import { doorGoodieHandoverSchema } from '@/lib/validations/checkin';
-import { logger } from '@/lib/logger';
-import type { DoorGoodieResult } from '@/lib/types/checkin';
 
-const log = logger.scope('Door Goodie API');
+export default withApiHandler(
+  { scope: 'Door Goodie API', methods: ['POST'], bodySchema: doorGoodieHandoverSchema },
+  async (req, res, { requestId, log, body }) => {
+    const guard = await requireDoorStaff(req, res, 'goodie');
+    if (!guard.ok) {
+      throw new HttpError(guard.status, guard.error, {
+        code: guard.status === 401 ? ErrorCodes.AUTH_REQUIRED : ErrorCodes.AUTH_FORBIDDEN,
+      });
+    }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<DoorGoodieResult | { error: string; issues?: unknown }>
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    const { ticketId, station, occurredAt, note } = body;
+
+    try {
+      const result = await doorGoodieHandover({
+        ticketId,
+        staffId: guard.staff.id,
+        station,
+        occurredAt,
+        note,
+      });
+
+      log.info('Goodie handover', { staffId: guard.staff.id, outcome: result.outcome });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      log.error('Goodie handover failed', error, { staffId: guard.staff.id });
+      return res
+        .status(500)
+        .json({ error: 'Could not record that handover', code: ErrorCodes.INTERNAL, requestId });
+    }
   }
-
-  const guard = await requireDoorStaff(req, res, 'goodie');
-  if (!guard.ok) {
-    return res.status(guard.status).json({ error: guard.error });
-  }
-
-  const parsed = doorGoodieHandoverSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
-  }
-
-  const { ticketId, station, occurredAt, note } = parsed.data;
-
-  try {
-    const result = await doorGoodieHandover({
-      ticketId,
-      staffId: guard.staff.id,
-      station,
-      occurredAt,
-      note,
-    });
-
-    log.info('Goodie handover', { staffId: guard.staff.id, outcome: result.outcome });
-
-    return res.status(200).json(result);
-  } catch (error) {
-    log.error('Goodie handover failed', error, { staffId: guard.staff.id });
-    return res.status(500).json({ error: 'Could not record that handover' });
-  }
-}
+);

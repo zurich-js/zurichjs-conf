@@ -3,27 +3,34 @@
  * PATCH /api/admin/workshops/[id]/registrants/[registrationId]
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+import { withApiHandler } from '@/lib/api/handler';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { ErrorCodes, HttpError, throwIfDbError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'PATCH') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const bodySchema = z.object({
+  first_name: z.string().nullable().optional(),
+  last_name: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  company: z.string().nullable().optional(),
+  job_title: z.string().nullable().optional(),
+});
 
-  try {
+export default withApiHandler(
+  { scope: 'Workshop Registration Details API', methods: ['PATCH'], bodySchema },
+  async (req, res, { body }) => {
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
     }
 
     const { id, registrationId } = req.query;
     if (typeof id !== 'string' || typeof registrationId !== 'string') {
-      return res.status(400).json({ error: 'Invalid IDs' });
+      throw new HttpError(400, 'Invalid IDs');
     }
 
-    const { first_name, last_name, email, company, job_title } = req.body;
+    const { first_name, last_name, email, company, job_title } = body;
 
     const supabase = createServiceRoleClient();
 
@@ -36,7 +43,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (fetchError || !existing) {
-      return res.status(404).json({ error: 'Registration not found' });
+      throw new HttpError(404, 'Registration not found', {
+        code: ErrorCodes.NOT_FOUND,
+        cause: fetchError,
+        context: { workshopId: id, registrationId },
+      });
     }
 
     const updates: {
@@ -53,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (job_title !== undefined) updates.job_title = job_title;
 
     if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
+      throw new HttpError(400, 'No fields to update');
     }
 
     const { error: updateError } = await supabase
@@ -61,16 +72,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .update(updates)
       .eq('id', registrationId);
 
-    if (updateError) {
-      return res.status(500).json({ error: 'Failed to update registration' });
-    }
+    throwIfDbError(updateError, 'Failed to update workshop registration', {
+      context: { workshopId: id, registrationId, fields: Object.keys(updates) },
+    });
 
     return res.status(200).json({
       success: true,
       message: 'Registration updated successfully',
     });
-  } catch (error) {
-    console.error('Update registration error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
   }
-}
+);

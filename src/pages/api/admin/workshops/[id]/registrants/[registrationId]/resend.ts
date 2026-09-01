@@ -3,28 +3,26 @@
  * POST /api/admin/workshops/[id]/registrants/[registrationId]/resend
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { EmailDeliveryError, ErrorCodes, HttpError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { sendWorkshopConfirmationEmail } from '@/lib/email';
 import { fetchPublicSpeakers } from '@/lib/queries/speakers';
 import { generateWorkshopPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateAndStoreWorkshopQRCode, generateTicketQRCode } from '@/lib/qrcode';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
+export default withApiHandler(
+  { scope: 'Resend Workshop Confirmation Email API', methods: ['POST'] },
+  async (req, res, { log }) => {
     const { authorized } = verifyAdminAccess(req);
     if (!authorized) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
     }
 
     const { id, registrationId } = req.query;
     if (typeof id !== 'string' || typeof registrationId !== 'string') {
-      return res.status(400).json({ error: 'Invalid IDs' });
+      throw new HttpError(400, 'Invalid IDs');
     }
 
     const supabase = createServiceRoleClient();
@@ -37,21 +35,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error || !registration) {
-      return res.status(404).json({ error: 'Registration not found' });
+      throw new HttpError(404, 'Registration not found', {
+        code: ErrorCodes.NOT_FOUND,
+        cause: error,
+        context: { workshopId: id, registrationId },
+      });
     }
 
     if (!registration.email) {
-      return res.status(400).json({ error: 'Registration has no email address' });
+      throw new HttpError(400, 'Registration has no email address');
     }
 
-    const { data: workshop } = await supabase
+    const { data: workshop, error: workshopError } = await supabase
       .from('workshops')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (!workshop) {
-      return res.status(404).json({ error: 'Workshop not found' });
+    if (workshopError || !workshop) {
+      throw new HttpError(404, 'Workshop not found', {
+        code: ErrorCodes.NOT_FOUND,
+        cause: workshopError,
+        context: { workshopId: id, registrationId },
+      });
     }
 
     // Resolve instructor name + public workshop page slug
@@ -100,7 +106,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           qrCodeDataUrl: qrDataUrl,
         });
       } catch (pdfError) {
-        console.warn('Failed to generate resent workshop PDF:', pdfError);
+        log.warn('Failed to generate resent workshop PDF', {
+          workshopId: id,
+          registrationId,
+          reason: pdfError instanceof Error ? pdfError.message : String(pdfError),
+        });
       }
     }
 
@@ -121,12 +131,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!emailResult.success) {
-      return res.status(500).json({ error: emailResult.error || 'Failed to send email' });
+      throw new EmailDeliveryError('Failed to resend workshop confirmation email', {
+        cause: emailResult.error,
+        context: { workshopId: id, registrationId, attendeeEmail: registration.email },
+      });
     }
 
     return res.status(200).json({ success: true, message: 'Confirmation email resent successfully' });
-  } catch (error) {
-    console.error('Resend workshop email error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
   }
-}
+);

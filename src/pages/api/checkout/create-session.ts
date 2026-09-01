@@ -3,22 +3,16 @@
  * Handles creating a new checkout session for ticket purchases
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
+import { z } from 'zod';
+import { withApiHandler } from '@/lib/api/handler';
+import { ConfigError, ErrorCodes, HttpError, PaymentError } from '@/lib/errors';
 import { getStripeRedirectUrls } from '@/lib/url';
-import { logger } from '@/lib/logger';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
 
-const log = logger.scope('Checkout Create Session');
-
-/**
- * Response structure for checkout session creation
- */
-interface CheckoutSessionResponse {
-  sessionId?: string;
-  url?: string;
-  error?: string;
-}
+const bodySchema = z.object({
+  priceId: z.string().min(1),
+});
 
 /**
  * Initialize Stripe with secret key
@@ -27,7 +21,7 @@ const getStripeClient = (): Stripe => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
 
   if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
+    throw new ConfigError('STRIPE_SECRET_KEY is not configured in environment variables');
   }
 
   return new Stripe(secretKey, {
@@ -38,27 +32,10 @@ const getStripeClient = (): Stripe => {
 /**
  * API Handler for creating Stripe Checkout Sessions
  */
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<CheckoutSessionResponse>
-): Promise<void> {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    res.status(405).json({
-      error: 'Method not allowed',
-    });
-    return;
-  }
-
-  try {
-    const { priceId } = req.body;
-
-    if (!priceId || typeof priceId !== 'string') {
-      res.status(400).json({
-        error: 'Invalid price ID',
-      });
-      return;
-    }
+export default withApiHandler(
+  { scope: 'Checkout Create Session', methods: ['POST'], bodySchema },
+  async (req, res, { log, body }) => {
+    const { priceId } = body;
 
     const stripe = getStripeClient();
 
@@ -66,52 +43,57 @@ export default async function handler(
     const validation = await validateCheckoutPrices(stripe, [priceId]);
     if (!validation.valid) {
       log.warn('Checkout blocked: price stage mismatch', { priceId, currentStage: validation.currentStage });
-      res.status(400).json({ error: validation.error });
-      return;
+      throw new HttpError(
+        400,
+        validation.error ?? 'Ticket pricing has changed. Please refresh the page and try again.'
+      );
     }
 
     // Get Stripe redirect URLs using centralized utility
     const { successUrl, cancelUrl } = getStripeRedirectUrls(req);
 
     // Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        billing_address_collection: 'required',
+        shipping_address_collection: {
+          allowed_countries: ['CH', 'DE', 'AT', 'FR', 'IT', 'LI'],
         },
-      ],
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      billing_address_collection: 'required',
-      shipping_address_collection: {
-        allowed_countries: ['CH', 'DE', 'AT', 'FR', 'IT', 'LI'],
-      },
-      automatic_tax: {
-        enabled: true,
-      },
-      invoice_creation: {
-        enabled: true,
-        invoice_data: {
-          description: 'ZurichJS Conference 2026 Ticket',
-          footer: 'Thank you for your purchase! We look forward to seeing you at the conference.',
+        automatic_tax: {
+          enabled: true,
         },
-      },
-    });
+        invoice_creation: {
+          enabled: true,
+          invoice_data: {
+            description: 'ZurichJS Conference 2026 Ticket',
+            footer: 'Thank you for your purchase! We look forward to seeing you at the conference.',
+          },
+        },
+      });
+    } catch (error) {
+      // The wrapper maps this to a 500 with the safe registry message —
+      // raw Stripe error text never reaches the browser.
+      throw new PaymentError('Stripe checkout session creation failed', {
+        cause: error,
+        code: ErrorCodes.CHECKOUT_SESSION_FAILED,
+        context: { priceId },
+      });
+    }
 
     // Return both session ID and URL
     res.status(200).json({
       sessionId: session.id,
       url: session.url || undefined,
     });
-  } catch (error) {
-    log.error('Error creating checkout session', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create checkout session';
-
-    res.status(500).json({
-      error: errorMessage,
-    });
   }
-}
+);

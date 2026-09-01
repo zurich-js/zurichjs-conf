@@ -3,11 +3,11 @@
  * Creates a Stripe Checkout session with cart items and customer information
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import type { Cart, CheckoutFormData } from '@/types/cart';
+import { withApiHandler } from '@/lib/api/handler';
+import { ConfigError, ErrorCodes, HttpError, PaymentError } from '@/lib/errors';
 import { getBaseUrl } from '@/lib/url';
-import { logger } from '@/lib/logger';
 import crypto from 'crypto';
 import { validateCheckoutPrices } from '@/lib/stripe/validate-checkout';
 import { isStatusDiscountCategory, isTicketProduct, isWorkshopPrice, parseTicketInfo } from '@/lib/stripe/ticket-utils';
@@ -16,8 +16,6 @@ import { createServiceRoleClient } from '@/lib/supabase';
 import { APPAREL_SIZES, type ApparelSize } from '@/lib/types/ticket-constants';
 import { STATUS_DISCOUNTED_TICKET_VOUCHER_MESSAGE, VIP_WORKSHOP_DISCOUNT_PERCENT } from '@/lib/cart-operations';
 import type { Json } from '@/lib/types/database';
-
-const log = logger.scope('Create Checkout Session');
 
 /**
  * API request body
@@ -28,22 +26,13 @@ interface CheckoutSessionRequest {
 }
 
 /**
- * API response
- */
-interface CheckoutSessionResponse {
-  clientSecret?: string;
-  sessionId?: string;
-  error?: string;
-}
-
-/**
  * Initialize Stripe client
  */
 const getStripeClient = (): Stripe => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
 
   if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
+    throw new ConfigError('STRIPE_SECRET_KEY is not configured in environment variables');
   }
 
   return new Stripe(secretKey, {
@@ -356,34 +345,22 @@ async function deriveVipWorkshopDiscount(
 /**
  * API Handler
  */
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<CheckoutSessionResponse>
-): Promise<void> {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    res.status(405).json({
-      error: 'Method not allowed',
-    });
-    return;
-  }
+export default withApiHandler(
+  { scope: 'Create Checkout Session', methods: ['POST'] },
+  async (req, res, { log }) => {
+    // The two guard messages below are part of the client contract —
+    // `useCheckout` surfaces `data.error` verbatim — so they stay as specific
+    // 4xx HttpErrors instead of a generic Zod "Validation failed". The
+    // Cart/CheckoutFormData payload itself is never trusted: prices, workshop
+    // items, and discounts are all re-validated against Stripe + Supabase below.
+    const { cart, customerInfo } = (req.body ?? {}) as Partial<CheckoutSessionRequest>;
 
-  try {
-    const { cart, customerInfo } = req.body as CheckoutSessionRequest;
-
-    // Validation
     if (!cart || !cart.items || cart.items.length === 0) {
-      res.status(400).json({
-        error: 'Cart is empty',
-      });
-      return;
+      throw new HttpError(400, 'Cart is empty');
     }
 
     if (!customerInfo || !customerInfo.email) {
-      res.status(400).json({
-        error: 'Customer information is required',
-      });
-      return;
+      throw new HttpError(400, 'Customer information is required');
     }
 
     const stripe = getStripeClient();
@@ -393,8 +370,10 @@ export default async function handler(
     const validation = await validateCheckoutPrices(stripe, priceIds);
     if (!validation.valid) {
       log.warn('Checkout blocked: price stage mismatch', { priceIds, currentStage: validation.currentStage });
-      res.status(400).json({ error: validation.error });
-      return;
+      throw new HttpError(
+        400,
+        validation.error ?? 'Ticket pricing has changed. Please refresh the page and try again.'
+      );
     }
 
     // Cross-check every workshop cart item against the DB + Stripe so a user
@@ -405,8 +384,7 @@ export default async function handler(
       log.warn('Checkout blocked: workshop cart validation failed', {
         error: workshopValidation.error,
       });
-      res.status(400).json({ error: workshopValidation.error ?? 'Invalid workshop in cart' });
-      return;
+      throw new HttpError(400, workshopValidation.error ?? 'Invalid workshop in cart');
     }
 
     const discountValidation = await validateDiscountProductsForCheckout(stripe, cart, priceIds);
@@ -416,8 +394,7 @@ export default async function handler(
         couponCode: cart.couponCode,
         promotionCodeId: cart.promotionCodeId,
       });
-      res.status(400).json({ error: discountValidation.error ?? 'Invalid promo code for cart' });
-      return;
+      throw new HttpError(400, discountValidation.error ?? 'Invalid promo code for cart');
     }
 
     // Convert cart items to Stripe line items
@@ -596,7 +573,18 @@ export default async function handler(
 
     log.info('Creating checkout session', { customerId: customer.id, totalItems: cart.totalItems });
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await stripe.checkout.sessions.create(sessionParams);
+    } catch (error) {
+      // The wrapper maps this to a 500 with the safe registry message —
+      // raw Stripe error text never reaches the browser.
+      throw new PaymentError('Stripe checkout session creation failed', {
+        cause: error,
+        code: ErrorCodes.CHECKOUT_SESSION_FAILED,
+        context: { customerId: customer.id, totalItems: cart.totalItems },
+      });
+    }
 
     log.info('Checkout session created', { sessionId: session.id });
 
@@ -637,13 +625,5 @@ export default async function handler(
       clientSecret: session.client_secret || undefined,
       sessionId: session.id,
     });
-  } catch (error) {
-    log.error('Error creating checkout session', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create checkout session';
-
-    res.status(500).json({
-      error: errorMessage,
-    });
   }
-}
+);

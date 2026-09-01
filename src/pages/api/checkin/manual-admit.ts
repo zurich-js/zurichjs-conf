@@ -11,54 +11,46 @@
  * but the database is the authority, and its refusal is audited either way.
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { requireDoorStaff } from '@/lib/checkin/guard';
 import { doorCheckIn } from '@/lib/checkin/rpc';
+import { ErrorCodes, HttpError } from '@/lib/errors';
 import { doorManualAdmitSchema } from '@/lib/validations/checkin';
-import { logger } from '@/lib/logger';
-import type { DoorCheckInResult } from '@/lib/types/checkin';
 
-const log = logger.scope('Door Manual Admit API');
+export default withApiHandler(
+  { scope: 'Door Manual Admit API', methods: ['POST'], bodySchema: doorManualAdmitSchema },
+  async (req, res, { requestId, log, body }) => {
+    const guard = await requireDoorStaff(req, res, 'manual_admit');
+    if (!guard.ok) {
+      throw new HttpError(guard.status, guard.error, {
+        code: guard.status === 401 ? ErrorCodes.AUTH_REQUIRED : ErrorCodes.AUTH_FORBIDDEN,
+      });
+    }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<DoorCheckInResult | { error: string; issues?: unknown }>
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    const { scannedId, station, occurredAt, reason } = body;
+
+    try {
+      const result = await doorCheckIn({
+        scannedId,
+        staffId: guard.staff.id,
+        station,
+        occurredAt,
+        manual: true,
+        reason,
+      });
+
+      log.info('Manual admission', {
+        staffId: guard.staff.id,
+        outcome: result.outcome,
+        occasion: result.occasion,
+      });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      log.error('Manual admission failed', error, { staffId: guard.staff.id });
+      return res
+        .status(500)
+        .json({ error: 'Could not admit that attendee', code: ErrorCodes.INTERNAL, requestId });
+    }
   }
-
-  const guard = await requireDoorStaff(req, res, 'manual_admit');
-  if (!guard.ok) {
-    return res.status(guard.status).json({ error: guard.error });
-  }
-
-  const parsed = doorManualAdmitSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
-  }
-
-  const { scannedId, station, occurredAt, reason } = parsed.data;
-
-  try {
-    const result = await doorCheckIn({
-      scannedId,
-      staffId: guard.staff.id,
-      station,
-      occurredAt,
-      manual: true,
-      reason,
-    });
-
-    log.info('Manual admission', {
-      staffId: guard.staff.id,
-      outcome: result.outcome,
-      occasion: result.occasion,
-    });
-
-    return res.status(200).json(result);
-  } catch (error) {
-    log.error('Manual admission failed', error, { staffId: guard.staff.id });
-    return res.status(500).json({ error: 'Could not admit that attendee' });
-  }
-}
+);

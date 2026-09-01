@@ -19,6 +19,12 @@ const mocks = vi.hoisted(() => ({
   loggerError: vi.fn(),
 }));
 
+vi.mock('@sentry/nextjs', () => ({
+  captureException: vi.fn(),
+  addBreadcrumb: vi.fn(),
+  getIsolationScope: () => ({ setTag: vi.fn() }),
+}));
+
 vi.mock('stripe', () => ({
   default: class MockStripe {
     customers = {
@@ -81,14 +87,20 @@ import handler from '../create-checkout-session';
 interface MockResponse {
   _status: number;
   _json: unknown;
+  _headers: Record<string, string>;
+  headersSent: boolean;
   status: (code: number) => MockResponse;
   json: (data: unknown) => MockResponse;
+  setHeader: (name: string, value: string) => MockResponse;
+  getHeader: (name: string) => string | undefined;
 }
 
 function createResponse(): MockResponse {
   const res: MockResponse = {
     _status: 200,
     _json: undefined,
+    _headers: {},
+    headersSent: false,
     status(code) {
       res._status = code;
       return res;
@@ -97,13 +109,20 @@ function createResponse(): MockResponse {
       res._json = data;
       return res;
     },
+    setHeader(name, value) {
+      res._headers[name.toLowerCase()] = value;
+      return res;
+    },
+    getHeader(name) {
+      return res._headers[name.toLowerCase()];
+    },
   };
   return res;
 }
 
 async function callHandler(req: Partial<NextApiRequest>) {
   const res = createResponse();
-  await handler(req as NextApiRequest, res as unknown as NextApiResponse);
+  await handler({ headers: {}, ...req } as NextApiRequest, res as unknown as NextApiResponse);
   return res;
 }
 
@@ -354,6 +373,8 @@ describe('/api/create-checkout-session', () => {
   });
 
   it('returns validation and Stripe failure paths', async () => {
+    // 4xx messages are user-facing by contract: the specific reason must
+    // survive, now alongside the { error, code, requestId } spine.
     mocks.validateCheckoutPrices.mockResolvedValueOnce({
       valid: false,
       currentStage: 'late_bird',
@@ -361,7 +382,10 @@ describe('/api/create-checkout-session', () => {
     });
     const priceFailure = await callHandler({ method: 'POST', body: { cart: ticketCart, customerInfo } });
     expect(priceFailure._status).toBe(400);
-    expect(priceFailure._json).toEqual({ error: 'Price is no longer valid' });
+    expect(priceFailure._json).toEqual(expect.objectContaining({
+      error: 'Price is no longer valid',
+      requestId: expect.any(String),
+    }));
 
     mocks.validateWorkshopCartItems.mockResolvedValueOnce({
       valid: false,
@@ -369,11 +393,21 @@ describe('/api/create-checkout-session', () => {
     });
     const workshopFailure = await callHandler({ method: 'POST', body: { cart: mixedCart, customerInfo } });
     expect(workshopFailure._status).toBe(400);
-    expect(workshopFailure._json).toEqual({ error: 'Workshop sold out' });
+    expect(workshopFailure._json).toEqual(expect.objectContaining({
+      error: 'Workshop sold out',
+      requestId: expect.any(String),
+    }));
 
+    // 5xx bodies must NEVER leak raw Stripe error text — only the safe
+    // registry message for CHECKOUT_SESSION_FAILED.
     mocks.sessionsCreate.mockRejectedValueOnce(new Error('Stripe unavailable'));
     const stripeFailure = await callHandler({ method: 'POST', body: { cart: ticketCart, customerInfo } });
     expect(stripeFailure._status).toBe(500);
-    expect(stripeFailure._json).toEqual({ error: 'Stripe unavailable' });
+    expect(JSON.stringify(stripeFailure._json)).not.toContain('Stripe unavailable');
+    expect(stripeFailure._json).toEqual({
+      error: 'We could not start the checkout. Please try again in a moment.',
+      code: 'CHECKOUT_SESSION_FAILED',
+      requestId: expect.any(String),
+    });
   });
 });

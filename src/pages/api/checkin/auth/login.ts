@@ -9,45 +9,41 @@
  * from the logs rather than from the response.
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
+import { withApiHandler } from '@/lib/api/handler';
 import { sendDoorMagicLink } from '@/lib/checkin/auth';
-import { logger } from '@/lib/logger';
-
-const log = logger.scope('Door Login API');
+import { ErrorCodes } from '@/lib/errors';
 
 const schema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address').toLowerCase(),
 });
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<{ success: true } | { error: string; issues?: unknown }>
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+// A malformed address IS rejected (400 from the wrapper's schema check): it
+// cannot be anyone's, so saying so leaks nothing and saves the volunteer
+// waiting for a mail that will never come.
+export default withApiHandler(
+  { scope: 'Door Login API', methods: ['POST'], bodySchema: schema },
+  async (req, res, { requestId, log, body }) => {
+    try {
+      const { error } = await sendDoorMagicLink(body.email, req);
 
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    // A malformed address IS rejected: it cannot be anyone's, so saying so leaks
-    // nothing and saves the volunteer waiting for a mail that will never come.
-    return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
-  }
+      if (error) {
+        // A genuine transport failure. Worth reporting, because silence here would
+        // look identical to "you are not on the crew".
+        log.error('Could not send a door sign-in link', new Error(error));
+        return res.status(502).json({
+          error: 'Could not send the sign-in link. Try again.',
+          code: ErrorCodes.EMAIL_SEND_FAILED,
+          requestId,
+        });
+      }
 
-  try {
-    const { error } = await sendDoorMagicLink(parsed.data.email, req);
-
-    if (error) {
-      // A genuine transport failure. Worth reporting, because silence here would
-      // look identical to "you are not on the crew".
-      log.error('Could not send a door sign-in link', new Error(error));
-      return res.status(502).json({ error: 'Could not send the sign-in link. Try again.' });
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      log.error('Door login failed', error);
+      return res
+        .status(500)
+        .json({ error: 'Could not send the sign-in link', code: ErrorCodes.INTERNAL, requestId });
     }
-
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    log.error('Door login failed', error);
-    return res.status(500).json({ error: 'Could not send the sign-in link' });
   }
-}
+);

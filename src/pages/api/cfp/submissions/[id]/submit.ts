@@ -3,63 +3,59 @@
  * POST /api/cfp/submissions/[id]/submit - Submit a draft for review
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { createSupabaseApiClient, getSpeakerByUserId, isSpeakerProfileComplete } from '@/lib/cfp/auth';
-import { submitForReview, getSubmissionById } from '@/lib/cfp/submissions';
-import { logger } from '@/lib/logger';
+import { withApiHandler } from '@/lib/api/handler';
 import { serverAnalytics } from '@/lib/analytics/server';
-import { notifyCfpTalkSubmitted } from '@/lib/platform-notifications';
+import { createSupabaseApiClient, getSpeakerByUserId, isSpeakerProfileComplete } from '@/lib/cfp/auth';
 import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
+import { submitForReview, getSubmissionById } from '@/lib/cfp/submissions';
+import { ErrorCodes, HttpError } from '@/lib/errors';
+import { notifyCfpTalkSubmitted } from '@/lib/platform-notifications';
 
-const log = logger.scope('CFP Submit API');
+export default withApiHandler(
+  { scope: 'CFP Submit API', methods: ['POST'] },
+  async (req, res, { requestId, log }) => {
+    const { id } = req.query;
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+    if (!id || typeof id !== 'string') {
+      throw new HttpError(400, 'Invalid submission ID');
+    }
 
-  const { id } = req.query;
+    // Get session
+    const supabase = createSupabaseApiClient(req, res);
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid submission ID' });
-  }
+    if (sessionError || !session) {
+      throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
+    }
 
-  // Get session
-  const supabase = createSupabaseApiClient(req, res);
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Get speaker
+    const speaker = await getSpeakerByUserId(session.user.id);
+    if (!speaker) {
+      throw new HttpError(404, 'Speaker profile not found', { code: ErrorCodes.NOT_FOUND });
+    }
 
-  if (sessionError || !session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+    // Check if profile is complete
+    if (!isSpeakerProfileComplete(speaker)) {
+      throw new HttpError(400, 'Please complete your profile before submitting');
+    }
 
-  // Get speaker
-  const speaker = await getSpeakerByUserId(session.user.id);
-  if (!speaker) {
-    return res.status(404).json({ error: 'Speaker profile not found' });
-  }
-
-  // Check if profile is complete
-  if (!isSpeakerProfileComplete(speaker)) {
-    return res.status(400).json({
-      error: 'Please complete your profile before submitting',
-    });
-  }
-
-  try {
     // Verify submission exists and belongs to speaker
     const submission = await getSubmissionById(id);
     if (!submission) {
-      return res.status(404).json({ error: 'Submission not found' });
+      throw new HttpError(404, 'Submission not found', { code: ErrorCodes.NOT_FOUND });
     }
 
     if (submission.speaker_id !== speaker.id) {
-      return res.status(403).json({ error: 'Access denied' });
+      throw new HttpError(403, 'Access denied', { code: ErrorCodes.AUTH_FORBIDDEN });
     }
 
     if (isCfpClosed()) {
+      // Clients branch on `code === CFP_CLOSED_ERROR_CODE` — keep this body
+      // hand-rolled so the shape stays byte-identical (plus requestId).
       return res.status(403).json({
         code: CFP_CLOSED_ERROR_CODE,
         error: 'CFP is closed. This submission cannot be submitted for review right now.',
+        requestId,
       });
     }
 
@@ -68,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!success) {
       log.warn('Submission failed', { submissionId: id, speakerId: speaker.id, error });
-      return res.status(400).json({ error: error || 'Failed to submit' });
+      throw new HttpError(400, error || 'Failed to submit');
     }
 
     // Track submission for review
@@ -96,8 +92,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     return res.status(200).json({ success: true });
-  } catch (error) {
-    log.error('Failed to submit', error, { submissionId: id });
-    return res.status(500).json({ error: 'Internal server error' });
   }
-}
+);

@@ -43,6 +43,12 @@ vi.mock('@/lib/logger', () => ({
     scope: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
   },
 }));
+// withApiHandler's respond helper tags the Sentry scope with the request id.
+vi.mock('@sentry/nextjs', () => ({
+  captureException: vi.fn(),
+  addBreadcrumb: vi.fn(),
+  getIsolationScope: () => ({ setTag: vi.fn() }),
+}));
 
 const sessionHandler = (await import('../session')).default;
 const resolveHandler = (await import('../resolve')).default;
@@ -69,8 +75,12 @@ function staff(role: 'door_lead' | 'scanner' | 'goodie') {
 
 function mockReqRes(method: string, body: unknown = {}) {
   const json = vi.fn();
-  const setHeader = vi.fn();
-  const res = { status: vi.fn(() => ({ json })), setHeader } as unknown as NextApiResponse;
+  const headers: Record<string, unknown> = {};
+  const setHeader = vi.fn((name: string, value: unknown) => {
+    headers[name.toLowerCase()] = value;
+  });
+  const getHeader = vi.fn((name: string) => headers[name.toLowerCase()]);
+  const res = { status: vi.fn(() => ({ json })), setHeader, getHeader } as unknown as NextApiResponse;
   const req = { method, body, cookies: {}, headers: {} } as unknown as NextApiRequest;
   return { req, res, json, statusOf: () => (res.status as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] };
 }

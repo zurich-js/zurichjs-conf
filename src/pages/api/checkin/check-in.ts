@@ -11,55 +11,49 @@
  * goodie bag, so reporting a second success is how someone gets two.
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { withApiHandler } from '@/lib/api/handler';
 import { requireDoorStaff } from '@/lib/checkin/guard';
 import { doorCheckIn } from '@/lib/checkin/rpc';
+import { ErrorCodes, HttpError } from '@/lib/errors';
 import { doorCheckInSchema } from '@/lib/validations/checkin';
-import { logger } from '@/lib/logger';
-import type { DoorCheckInResult } from '@/lib/types/checkin';
 
-const log = logger.scope('Door Check-In API');
+export default withApiHandler(
+  { scope: 'Door Check-In API', methods: ['POST'], bodySchema: doorCheckInSchema },
+  async (req, res, { requestId, log, body }) => {
+    const guard = await requireDoorStaff(req, res, 'check_in');
+    if (!guard.ok) {
+      throw new HttpError(guard.status, guard.error, {
+        code: guard.status === 401 ? ErrorCodes.AUTH_REQUIRED : ErrorCodes.AUTH_FORBIDDEN,
+      });
+    }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<DoorCheckInResult | { error: string; issues?: unknown }>
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    const { scannedId, station, occurredAt } = body;
+
+    try {
+      const result = await doorCheckIn({
+        scannedId,
+        staffId: guard.staff.id,
+        station,
+        occurredAt,
+      });
+
+      // Every outcome — including denied and not_found — is already recorded in
+      // door_events by the function, so there is nothing to log for the audit
+      // trail here. This line is operational telemetry only.
+      log.info('Door check-in', {
+        staffId: guard.staff.id,
+        outcome: result.outcome,
+        occasion: result.occasion,
+      });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      // The door message is deliberate — keep it, but carry the request id so a
+      // volunteer's screenshot pins the exact trace.
+      log.error('Check-in failed', error, { staffId: guard.staff.id });
+      return res
+        .status(500)
+        .json({ error: 'Could not check that attendee in', code: ErrorCodes.INTERNAL, requestId });
+    }
   }
-
-  const guard = await requireDoorStaff(req, res, 'check_in');
-  if (!guard.ok) {
-    return res.status(guard.status).json({ error: guard.error });
-  }
-
-  const parsed = doorCheckInSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
-  }
-
-  const { scannedId, station, occurredAt } = parsed.data;
-
-  try {
-    const result = await doorCheckIn({
-      scannedId,
-      staffId: guard.staff.id,
-      station,
-      occurredAt,
-    });
-
-    // Every outcome — including denied and not_found — is already recorded in
-    // door_events by the function, so there is nothing to log for the audit
-    // trail here. This line is operational telemetry only.
-    log.info('Door check-in', {
-      staffId: guard.staff.id,
-      outcome: result.outcome,
-      occasion: result.occasion,
-    });
-
-    return res.status(200).json(result);
-  } catch (error) {
-    log.error('Check-in failed', error, { staffId: guard.staff.id });
-    return res.status(500).json({ error: 'Could not check that attendee in' });
-  }
-}
+);
