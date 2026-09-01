@@ -1,6 +1,8 @@
 /**
  * Sponsorships Admin Dashboard
  * Manage sponsors, sponsorship deals, invoices, and sponsor quotes
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
  */
 
 import { useState } from 'react';
@@ -10,6 +12,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ProspectusManagerModal, SponsorshipsTab } from '@/components/admin/sponsorships';
 import { SponsorQuoteBuilder } from '@/components/admin/sponsorships/quote';
@@ -30,31 +33,33 @@ export default function SponsorshipsDashboard() {
   if (!isAuthenticated) return <AdminLoginForm title="Sponsorships" />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black">
-      <Head>
-        <title>Sponsorships | ZurichJS Admin</title>
-      </Head>
+    <AdminQueryProvider>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black">
+        <Head>
+          <title>Sponsorships | ZurichJS Admin</title>
+        </Head>
 
-      <AdminHeader
-        title="Sponsorships"
-        subtitle="Manage sponsors, deals, and quotes"
-        onLogout={logout}
-      />
+        <AdminHeader
+          title="Sponsorships"
+          subtitle="Manage sponsors, deals, and quotes"
+          onLogout={logout}
+        />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
-        <AdminTabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="pb-12">
-          {activeTab === 'sponsorships' && (
-            <SponsorshipsTab onManageProspectus={() => setIsProspectusModalOpen(true)} />
-          )}
-          {activeTab === 'quotes' && <SponsorQuoteBuilder />}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6">
+          <AdminTabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="pb-12">
+            {activeTab === 'sponsorships' && (
+              <SponsorshipsTab onManageProspectus={() => setIsProspectusModalOpen(true)} />
+            )}
+            {activeTab === 'quotes' && <SponsorQuoteBuilder />}
+          </div>
         </div>
-      </div>
 
-      <ProspectusManagerModal
-        isOpen={isProspectusModalOpen}
-        onClose={() => setIsProspectusModalOpen(false)}
-      />
-    </div>
+        <ProspectusManagerModal
+          isOpen={isProspectusModalOpen}
+          onClose={() => setIsProspectusModalOpen(false)}
+        />
+      </div>
+    </AdminQueryProvider>
   );
 }

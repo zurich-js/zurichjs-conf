@@ -1,6 +1,8 @@
 /**
  * CFP Admin Dashboard
  * Manage submissions, reviewers, and speakers
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -10,6 +12,7 @@ import { useToast } from '@/contexts/ToastContext';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import {
   SubmissionModal,
   ReviewersTab,
@@ -391,7 +394,7 @@ export default function CfpAdminDashboard() {
   if (!isAuthenticated) return <AdminLoginForm title="CFP Admin" />;
 
   return (
-    <>
+    <AdminQueryProvider>
       <Head>
         <title>CFP Admin | ZurichJS</title>
       </Head>
@@ -490,6 +493,6 @@ export default function CfpAdminDashboard() {
           />
         )}
       </div>
-    </>
+    </AdminQueryProvider>
   );
 }
