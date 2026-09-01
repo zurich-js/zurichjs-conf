@@ -57,7 +57,7 @@ export const clientEnv = {
    *
    * That is not just convenience. This module throws at import time when a
    * required variable is missing, so without the fallback a preview build fails
-   * before it renders anything — and it would fail over a variable whose value is
+   * before it renders anything — and it would fail for a variable whose value is
    * WRONG on a preview anyway, since it names the production domain.
    */
   baseUrl: getVercelPreviewUrl() ??
