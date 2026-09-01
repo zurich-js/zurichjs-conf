@@ -244,3 +244,7 @@ The ignored `badge-export/` directory contains `vip.csv`, `attendee.csv`,
 and `manifest.json`. CSV image fields contain absolute local paths. Sponsor names
 come from `contact_name`, and their role is exported as `Sponsor` because the
 sponsor schema has no contact job-title field.
+
+QR and sponsor-logo CSV headers use Illustrator's required `@` linked-file
+prefix. Illustrator removes the prefix in the Variables panel, so `@speaker_qr`
+is displayed and bound as `speaker_qr`.

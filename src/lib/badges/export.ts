@@ -133,9 +133,9 @@ export function categoryCsv(
     `${prefix}_last_name`,
     `${prefix}_role`,
     `${prefix}_company`,
-    `${prefix}_qr`,
+    `@${prefix}_qr`,
   ];
-  if (category === 'sponsor') headers.push('sponsor_logo');
+  if (category === 'sponsor') headers.push('@sponsor_logo');
 
   let csv = csvLine(headers);
   for (const entry of entries.filter((candidate) => candidate.category === category)) {
@@ -162,8 +162,8 @@ export function combinedCsv(
     `${category}_last_name`,
     `${category}_role`,
     `${category}_company`,
-    `${category}_qr`,
-    ...(category === 'sponsor' ? ['sponsor_logo'] : []),
+    `@${category}_qr`,
+    ...(category === 'sponsor' ? ['@sponsor_logo'] : []),
   ]);
 
   let csv = csvLine(fields);
@@ -173,10 +173,10 @@ export function combinedCsv(
       [`${entry.category}_last_name`, entry.lastName],
       [`${entry.category}_role`, entry.role],
       [`${entry.category}_company`, entry.company],
-      [`${entry.category}_qr`, qrPaths.get(entry.id) ?? ''],
+      [`@${entry.category}_qr`, qrPaths.get(entry.id) ?? ''],
     ]);
     if (entry.category === 'sponsor') {
-      values.set('sponsor_logo', logoPaths.get(entry.id) ?? '');
+      values.set('@sponsor_logo', logoPaths.get(entry.id) ?? '');
     }
     csv += csvLine(fields.map((field) => values.get(field) ?? ''));
   }
