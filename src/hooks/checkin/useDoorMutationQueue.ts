@@ -127,9 +127,14 @@ export function useDoorMutationQueue({
           patchRosterBadgePickup(queryClient, occasionOf, payload.scannedId, null);
           break;
         case 'undo_check_in':
-          // Nothing to roll back: the undo cleared a timestamp this station no
-          // longer knows. A refused undo is rare (deactivated volunteer) and
-          // the periodic roster refresh restores the server's truth.
+          // A refused undo (deactivated volunteer) needs to restore the roster
+          // from the server because patchRosterUndo already cleared the cached
+          // arrival time. Invalidate without immediate refetch since the roster
+          // is expensive; the next mutation or visibility change will refetch.
+          void queryClient.invalidateQueries({
+            queryKey: ['checkin', 'roster', { occasion: occasionOf }],
+            refetchType: 'none',
+          });
           break;
         default:
           revertRosterCheckIn(queryClient, occasionOf, payload.scannedId);

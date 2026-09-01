@@ -50,6 +50,16 @@ const occurredAtSchema = z
 /** The staff-chosen day. Optional: omitted means "whatever the server clock says". */
 const occasionSchema = z.enum(DOOR_OCCASIONS).optional();
 
+/** Validates an occasion from a query parameter (string or undefined). */
+export const occasionQuerySchema = z
+  .string()
+  .optional()
+  .transform((value) =>
+    value && (DOOR_OCCASIONS as readonly string[]).includes(value)
+      ? (value as (typeof DOOR_OCCASIONS)[number])
+      : undefined
+  );
+
 export const doorCheckInSchema = z.object({
   scannedId: z.string().uuid('Not a valid code'),
   station: stationSchema,

@@ -82,6 +82,7 @@ export const DoorStationList: React.FC<DoorStationListProps> = ({
                   <p className="text-lg font-bold tabular-nums text-black">
                     {volunteer.admitted}
                   </p>
+                  <p className="text-xs text-gray-500">admitted</p>
                   <p className="text-xs tabular-nums text-gray-500">
                     {volunteer.lastSeenAt ? `last ${formatClock(volunteer.lastSeenAt)}` : '—'}
                   </p>

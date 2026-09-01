@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { RefreshCw, Trash2 } from 'lucide-react';
 import { AdminErrorState } from '@/components/admin/AdminErrorState';
 import { useDeleteDoorEvents, useDoorEvents } from '@/hooks/checkin/useDoorEvents';
+import { useToast } from '@/contexts/ToastContext';
 import { DOOR_OCCASION_LABELS, DOOR_ROLE_LABELS } from '@/lib/types/checkin';
 import type { DoorOccasion, DoorRole } from '@/lib/types/checkin';
 import type { DoorEventRecord } from '@/lib/checkin/events';
@@ -44,6 +45,7 @@ export const DoorAuditLog: React.FC<DoorAuditLogProps> = ({ className = '' }) =>
   const [eventType, setEventType] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const toast = useToast();
 
   const { data, isLoading, isError, refetch, isFetching } = useDoorEvents({
     occasion,
@@ -73,6 +75,10 @@ export const DoorAuditLog: React.FC<DoorAuditLogProps> = ({ className = '' }) =>
     try {
       await deleteEvents.mutateAsync([...selected]);
       setSelected(new Set());
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete the selected rows'
+      );
     } finally {
       setConfirmingDelete(false);
     }
@@ -203,11 +209,7 @@ export const DoorAuditLog: React.FC<DoorAuditLogProps> = ({ className = '' }) =>
                   </td>
                   <td className="px-3 py-2 text-gray-800">{event.attendeeName ?? '—'}</td>
                   <td className="px-3 py-2 text-gray-800">
-                    {event.staffEmail}
-                    <span className="text-xs text-gray-500">
-                      {' '}
-                      · {DOOR_ROLE_LABELS[event.staffRole as DoorRole] ?? event.staffRole}
-                    </span>
+                    {DOOR_ROLE_LABELS[event.staffRole as DoorRole] ?? event.staffRole}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-gray-700">
                     {DOOR_OCCASION_LABELS[event.occasion]}

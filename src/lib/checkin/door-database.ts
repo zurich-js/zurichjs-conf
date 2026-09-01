@@ -41,7 +41,7 @@ export interface DoorBadgePickupRow {
 type DoorFunctions = {
   /** RETURNS TEXT — narrowed to DoorOccasion at runtime by the wrapper. */
   door_current_occasion: {
-    Args: Record<PropertyKey, never>;
+    Args: never;
     Returns: string;
   };
   door_resolve: {
@@ -52,11 +52,11 @@ type DoorFunctions = {
     Args: {
       p_scanned_id: string;
       p_staff_id: string;
-      p_station?: string | null;
-      p_occurred_at?: string | null;
+      p_station?: string;
+      p_occurred_at?: string;
       p_manual?: boolean;
-      p_reason?: string | null;
-      p_occasion?: DoorOccasion | null;
+      p_reason?: string;
+      p_occasion?: DoorOccasion;
     };
     Returns: DoorCheckInResult;
   };
@@ -64,10 +64,10 @@ type DoorFunctions = {
     Args: {
       p_scanned_id: string;
       p_staff_id: string;
-      p_station?: string | null;
-      p_occurred_at?: string | null;
-      p_reason?: string | null;
-      p_occasion?: DoorOccasion | null;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_reason?: string;
+      p_occasion?: DoorOccasion;
     };
     Returns: DoorCheckInResult;
   };
@@ -75,12 +75,12 @@ type DoorFunctions = {
     Args: {
       p_ticket_id: string;
       p_staff_id: string;
-      p_station?: string | null;
-      p_occurred_at?: string | null;
-      p_note?: string | null;
-      p_occasion?: DoorOccasion | null;
-      p_tshirt_size?: string | null;
-      p_hoodie_size?: string | null;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_note?: string;
+      p_occasion?: DoorOccasion;
+      p_tshirt_size?: string;
+      p_hoodie_size?: string;
     };
     Returns: DoorGoodieResult;
   };
@@ -88,14 +88,14 @@ type DoorFunctions = {
     Args: {
       p_scanned_id: string;
       p_staff_id: string;
-      p_station?: string | null;
-      p_occurred_at?: string | null;
-      p_occasion?: DoorOccasion | null;
+      p_station?: string;
+      p_occurred_at?: string;
+      p_occasion?: DoorOccasion;
     };
     Returns: DoorBadgePickupResult;
   };
   door_badge_pickups: {
-    Args: Record<PropertyKey, never>;
+    Args: never;
     Returns: DoorBadgePickupRow[];
   };
   door_events_delete: {
@@ -103,7 +103,7 @@ type DoorFunctions = {
     Returns: { deleted: number };
   };
   door_dashboard: {
-    Args: { p_occasion?: DoorOccasion | null };
+    Args: { p_occasion?: DoorOccasion };
     Returns: DoorDashboard;
   };
 };

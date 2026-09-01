@@ -28,6 +28,5 @@ export function useDoorMyActivity(options: {
       ),
     enabled: enabled && occasion !== undefined,
     staleTime: 15_000,
-    placeholderData: (previous) => previous,
   });
 }

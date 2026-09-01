@@ -93,11 +93,11 @@ export async function doorCheckIn(args: DoorCheckInArgs): Promise<DoorCheckInRes
     await supabase.rpc('door_check_in', {
       p_scanned_id: args.scannedId,
       p_staff_id: args.staffId,
-      p_station: args.station ?? null,
-      p_occurred_at: args.occurredAt ?? null,
+      p_station: args.station,
+      p_occurred_at: args.occurredAt,
       p_manual: args.manual ?? false,
-      p_reason: args.reason ?? null,
-      p_occasion: args.occasion ?? null,
+      p_reason: args.reason,
+      p_occasion: args.occasion,
     })
   );
 }
@@ -119,10 +119,10 @@ export async function doorCheckInUndo(args: DoorCheckInUndoArgs): Promise<DoorCh
     await supabase.rpc('door_check_in_undo', {
       p_scanned_id: args.scannedId,
       p_staff_id: args.staffId,
-      p_station: args.station ?? null,
-      p_occurred_at: args.occurredAt ?? null,
-      p_reason: args.reason ?? null,
-      p_occasion: args.occasion ?? null,
+      p_station: args.station,
+      p_occurred_at: args.occurredAt,
+      p_reason: args.reason,
+      p_occasion: args.occasion,
     })
   );
 }
@@ -147,12 +147,12 @@ export async function doorGoodieHandover(args: DoorGoodieArgs): Promise<DoorGood
     await supabase.rpc('door_goodie_handover', {
       p_ticket_id: args.ticketId,
       p_staff_id: args.staffId,
-      p_station: args.station ?? null,
-      p_occurred_at: args.occurredAt ?? null,
-      p_note: args.note ?? null,
-      p_occasion: args.occasion ?? null,
-      p_tshirt_size: args.tshirtSize ?? null,
-      p_hoodie_size: args.hoodieSize ?? null,
+      p_station: args.station,
+      p_occurred_at: args.occurredAt,
+      p_note: args.note,
+      p_occasion: args.occasion,
+      p_tshirt_size: args.tshirtSize,
+      p_hoodie_size: args.hoodieSize,
     })
   );
 }
@@ -175,9 +175,9 @@ export async function doorBadgePickup(
     await supabase.rpc('door_badge_pickup', {
       p_scanned_id: args.scannedId,
       p_staff_id: args.staffId,
-      p_station: args.station ?? null,
-      p_occurred_at: args.occurredAt ?? null,
-      p_occasion: args.occasion ?? null,
+      p_station: args.station,
+      p_occurred_at: args.occurredAt,
+      p_occasion: args.occasion,
     })
   );
 }
@@ -185,7 +185,7 @@ export async function doorBadgePickup(
 /** Every badge already picked up, for the roster prefetch. */
 export async function doorBadgePickups(): Promise<DoorBadgePickupRow[]> {
   const supabase = createDoorClient();
-  return unwrap('door_badge_pickups', await supabase.rpc('door_badge_pickups', {}));
+  return unwrap('door_badge_pickups', await supabase.rpc('door_badge_pickups'));
 }
 
 /** Admin-only removal of audit rows (rehearsal and test data). */
@@ -203,7 +203,7 @@ export async function doorEventsDelete(ids: string[]): Promise<{ deleted: number
  */
 export async function doorCurrentOccasion(): Promise<DoorOccasion> {
   const supabase = createDoorClient();
-  const data = unwrap('door_current_occasion', await supabase.rpc('door_current_occasion', {}));
+  const data = unwrap('door_current_occasion', await supabase.rpc('door_current_occasion'));
 
   // The function RETURNS TEXT; this is the runtime narrowing to the contract.
   if (data !== 'workshop_day' && data !== 'conference_day') {

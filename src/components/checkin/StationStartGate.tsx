@@ -133,15 +133,33 @@ export const StationStartGate: React.FC<StationStartGateProps> = ({
         Checking people in for
       </p>
       <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Day">
-        {DOOR_OCCASIONS.map((option) => {
+        {DOOR_OCCASIONS.map((option, index) => {
           const selected = option === occasion;
+          const handleKeyDown = (event: React.KeyboardEvent) => {
+            const { key } = event;
+            if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) return;
+            event.preventDefault();
+            const nextIndex =
+              key === 'ArrowLeft' || key === 'ArrowUp'
+                ? (index - 1 + DOOR_OCCASIONS.length) % DOOR_OCCASIONS.length
+                : (index + 1) % DOOR_OCCASIONS.length;
+            const nextOption = DOOR_OCCASIONS[nextIndex];
+            onOccasionChange(nextOption);
+            const nextButton = document.querySelector<HTMLButtonElement>(
+              `[data-occasion="${nextOption}"]`
+            );
+            nextButton?.focus();
+          };
           return (
             <button
               key={option}
               type="button"
               role="radio"
               aria-checked={selected}
+              data-occasion={option}
+              tabIndex={selected ? 0 : -1}
               onClick={() => onOccasionChange(option)}
+              onKeyDown={handleKeyDown}
               className={`min-h-16 rounded-xl border-2 px-3 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary ${
                 selected
                   ? 'border-brand-primary bg-brand-primary/10'

@@ -119,6 +119,7 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
       {/* The physical badge: its own fact, because it can be collected early —
           the day before — without consuming any day's check-in. */}
       <BadgeStatus
+        key={`badge-${attendee.subjectId}`}
         pickedUpAt={attendee.badge.pickedUpAt}
         canHandOver={roleCan(role, 'badge_pickup') && attendee.admissible}
         onHandOver={onHandOverBadge}
@@ -136,6 +137,7 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
       ) : null}
 
       <GoodieStatus
+        key={attendee.subjectId}
         entitled={attendee.goodie.entitled}
         handedAt={attendee.goodie.handedAt}
         note={attendee.goodie.note}

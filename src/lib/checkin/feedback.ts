@@ -87,12 +87,12 @@ export function disarmDoorAudio(): void {
   // Nulled first, so a re-arm during the async close never grabs a context
   // that is already on its way down.
   audioContext = null;
-  try {
-    void context.close();
-  } catch {
+  // Handle the Promise rejection explicitly: close() rejects with
+  // InvalidStateError when the context is already closed.
+  context.close().catch(() => {
     // Already closed, or a browser that refuses — either way it is not ours
     // any more.
-  }
+  });
 }
 
 /**

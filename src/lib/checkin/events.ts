@@ -29,7 +29,6 @@ export interface DoorEventRecord {
   eventType: DoorEventType;
   occasion: DoorOccasion;
   outcome: 'applied' | 'duplicate' | 'denied' | 'not_found';
-  staffEmail: string;
   staffRole: string;
   /** Legacy label; new stations no longer send one. */
   station: string | null;
@@ -59,7 +58,6 @@ interface DoorEventRow {
   outcome: string;
   ticket_id: string | null;
   workshop_registration_id: string | null;
-  staff_email: string;
   staff_role: string;
   station: string | null;
   occurred_at: string;
@@ -80,7 +78,7 @@ export async function listDoorEvents(filters: DoorEventFilters): Promise<DoorEve
   let query = supabase
     .from('door_events')
     .select(
-      'id, event_type, occasion, outcome, ticket_id, workshop_registration_id, staff_email, staff_role, station, occurred_at, recorded_at, failure_reason, notes, metadata'
+      'id, event_type, occasion, outcome, ticket_id, workshop_registration_id, staff_role, station, occurred_at, recorded_at, failure_reason, notes, metadata'
     )
     // recorded_at is authoritative for ordering; occurred_at can be an offline
     // claim from earlier in the day.
@@ -149,7 +147,6 @@ export async function listDoorEvents(filters: DoorEventFilters): Promise<DoorEve
       eventType: row.event_type as DoorEventType,
       occasion: row.occasion as DoorOccasion,
       outcome: row.outcome as DoorEventRecord['outcome'],
-      staffEmail: row.staff_email,
       staffRole: row.staff_role,
       station: row.station,
       occurredAt: row.occurred_at,

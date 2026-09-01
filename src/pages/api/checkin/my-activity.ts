@@ -11,7 +11,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { requireDoorStaff } from '@/lib/checkin/guard';
 import { listDoorEvents, type DoorEventRecord } from '@/lib/checkin/events';
-import { DOOR_OCCASIONS, type DoorOccasion } from '@/lib/types/checkin';
+import type { DoorOccasion } from '@/lib/types/checkin';
+import { occasionQuerySchema } from '@/lib/validations/checkin';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('Door My Activity API');
@@ -34,11 +35,8 @@ export default async function handler(
     return res.status(guard.status).json({ error: guard.error });
   }
 
-  const requested = req.query.occasion;
-  const occasion =
-    typeof requested === 'string' && (DOOR_OCCASIONS as readonly string[]).includes(requested)
-      ? (requested as DoorOccasion)
-      : undefined;
+  const requested = typeof req.query.occasion === 'string' ? req.query.occasion : undefined;
+  const occasion = occasionQuerySchema.parse(requested) as DoorOccasion | undefined;
 
   try {
     const events = await listDoorEvents({

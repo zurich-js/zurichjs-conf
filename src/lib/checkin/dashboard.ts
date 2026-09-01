@@ -65,7 +65,7 @@ export async function doorDashboard(occasion?: DoorOccasion): Promise<DoorDashbo
   const supabase = createServiceRoleClient<DoorDatabase>();
 
   const { data, error } = await supabase.rpc('door_dashboard', {
-    p_occasion: occasion ?? null,
+    p_occasion: occasion,
   });
 
   // No logging here: the dashboard route catches and logs, and logging in both
