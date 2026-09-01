@@ -1448,6 +1448,48 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin_staff: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          is_active: boolean
+          name: string | null
+          role: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          is_active?: boolean
+          name?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          is_active?: boolean
+          name?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       checkout_cart_snapshots: {
         Row: {
           cart_items: Json
@@ -1519,6 +1561,82 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      door_events: {
+        Row: {
+          event_type: string
+          failure_reason: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          occasion: string
+          occurred_at: string
+          outcome: string
+          recorded_at: string
+          staff_email: string
+          staff_id: string | null
+          staff_role: string
+          station: string | null
+          ticket_id: string | null
+          workshop_registration_id: string | null
+        }
+        Insert: {
+          event_type: string
+          failure_reason?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          occasion: string
+          occurred_at: string
+          outcome: string
+          recorded_at?: string
+          staff_email: string
+          staff_id?: string | null
+          staff_role: string
+          station?: string | null
+          ticket_id?: string | null
+          workshop_registration_id?: string | null
+        }
+        Update: {
+          event_type?: string
+          failure_reason?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          occasion?: string
+          occurred_at?: string
+          outcome?: string
+          recorded_at?: string
+          staff_email?: string
+          staff_id?: string | null
+          staff_role?: string
+          station?: string | null
+          ticket_id?: string | null
+          workshop_registration_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "door_events_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "checkin_staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_events_workshop_registration_id_fkey"
+            columns: ["workshop_registration_id"]
+            isOneToOne: false
+            referencedRelation: "workshop_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hotel_room_types: {
         Row: {
@@ -2853,13 +2971,21 @@ export type Database = {
           apparel_reminder_sent_at: string | null
           checked_in: boolean | null
           checked_in_at: string | null
+          checked_in_conference_day_at: string | null
+          checked_in_conference_day_by: string | null
+          checked_in_workshop_day_at: string | null
+          checked_in_workshop_day_by: string | null
           company: string | null
           coupon_code: string | null
           created_at: string
           currency: string
           discount_amount: number | null
+          door_note: string | null
           email: string
           first_name: string
+          goodie_handed_at: string | null
+          goodie_handed_by: string | null
+          goodie_note: string | null
           id: string
           job_title: string | null
           last_name: string
@@ -2888,13 +3014,21 @@ export type Database = {
           apparel_reminder_sent_at?: string | null
           checked_in?: boolean | null
           checked_in_at?: string | null
+          checked_in_conference_day_at?: string | null
+          checked_in_conference_day_by?: string | null
+          checked_in_workshop_day_at?: string | null
+          checked_in_workshop_day_by?: string | null
           company?: string | null
           coupon_code?: string | null
           created_at?: string
           currency?: string
           discount_amount?: number | null
+          door_note?: string | null
           email: string
           first_name: string
+          goodie_handed_at?: string | null
+          goodie_handed_by?: string | null
+          goodie_note?: string | null
           id?: string
           job_title?: string | null
           last_name: string
@@ -2923,13 +3057,21 @@ export type Database = {
           apparel_reminder_sent_at?: string | null
           checked_in?: boolean | null
           checked_in_at?: string | null
+          checked_in_conference_day_at?: string | null
+          checked_in_conference_day_by?: string | null
+          checked_in_workshop_day_at?: string | null
+          checked_in_workshop_day_by?: string | null
           company?: string | null
           coupon_code?: string | null
           created_at?: string
           currency?: string
           discount_amount?: number | null
+          door_note?: string | null
           email?: string
           first_name?: string
+          goodie_handed_at?: string | null
+          goodie_handed_by?: string | null
+          goodie_note?: string | null
           id?: string
           job_title?: string | null
           last_name?: string
@@ -2954,6 +3096,27 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_checked_in_conference_day_by_fkey"
+            columns: ["checked_in_conference_day_by"]
+            isOneToOne: false
+            referencedRelation: "checkin_staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_checked_in_workshop_day_by_fkey"
+            columns: ["checked_in_workshop_day_by"]
+            isOneToOne: false
+            referencedRelation: "checkin_staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_goodie_handed_by_fkey"
+            columns: ["goodie_handed_by"]
+            isOneToOne: false
+            referencedRelation: "checkin_staff"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tickets_partnership_coupon_id_fkey"
             columns: ["partnership_coupon_id"]
@@ -3449,6 +3612,7 @@ export type Database = {
           amount_paid: number
           checked_in: boolean
           checked_in_at: string | null
+          checked_in_by: string | null
           company: string | null
           coupon_code: string | null
           created_at: string
@@ -3476,6 +3640,7 @@ export type Database = {
           amount_paid: number
           checked_in?: boolean
           checked_in_at?: string | null
+          checked_in_by?: string | null
           company?: string | null
           coupon_code?: string | null
           created_at?: string
@@ -3503,6 +3668,7 @@ export type Database = {
           amount_paid?: number
           checked_in?: boolean
           checked_in_at?: string | null
+          checked_in_by?: string | null
           company?: string | null
           coupon_code?: string | null
           created_at?: string
@@ -3527,6 +3693,13 @@ export type Database = {
           workshop_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workshop_registrations_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "checkin_staff"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workshop_registrations_partnership_coupon_id_fkey"
             columns: ["partnership_coupon_id"]

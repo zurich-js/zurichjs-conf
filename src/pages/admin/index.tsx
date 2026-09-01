@@ -30,6 +30,7 @@ const TABS: AdminTab<Tab>[] = [
   { id: 'apparel', label: 'Apparel', icon: Shirt },
   { id: 'discount', label: 'Discount', icon: Percent },
   { id: 'cart-builder', label: 'Cart Link', icon: Link2 },
+  // Door check-in lives at /admin/checkin: different audience, different days.
 ];
 
 export default function AdminDashboard() {

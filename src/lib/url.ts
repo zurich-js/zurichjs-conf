@@ -23,9 +23,9 @@ export function getBaseUrl(req?: NextApiRequest | IncomingMessage): string {
   // NEXT_PUBLIC_BASE_URL is normally set once at the project level, so it points
   // at the production domain in every environment. That is actively dangerous on
   // a preview: this value builds the manage-order links emailed to attendees, the
-  // QR payload printed on tickets, and Stripe's return URLs. Anyone following one
-  // from a preview lands on the PRODUCTION app and acts on PRODUCTION data while
-  // believing they are testing.
+  // door staff magic-link redirect, and the QR payload printed on tickets. Anyone
+  // following one from a preview lands on the PRODUCTION app and acts on
+  // PRODUCTION data while believing they are testing.
   //
   // Vercel sets VERCEL_ENV/VERCEL_URL on every deployment, and their
   // NEXT_PUBLIC_ twins when "Automatically expose System Environment Variables"
