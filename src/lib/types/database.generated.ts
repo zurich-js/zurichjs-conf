@@ -2976,6 +2976,7 @@ export type Database = {
           checked_in_workshop_day_at: string | null
           checked_in_workshop_day_by: string | null
           company: string | null
+          confirmation_email_sent_at: string | null
           coupon_code: string | null
           created_at: string
           currency: string
@@ -3019,6 +3020,7 @@ export type Database = {
           checked_in_workshop_day_at?: string | null
           checked_in_workshop_day_by?: string | null
           company?: string | null
+          confirmation_email_sent_at?: string | null
           coupon_code?: string | null
           created_at?: string
           currency?: string
@@ -3062,6 +3064,7 @@ export type Database = {
           checked_in_workshop_day_at?: string | null
           checked_in_workshop_day_by?: string | null
           company?: string | null
+          confirmation_email_sent_at?: string | null
           coupon_code?: string | null
           created_at?: string
           currency?: string
@@ -3604,6 +3607,33 @@ export type Database = {
           summary?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          error: string | null
+          event_id: string
+          processed_at: string | null
+          received_at: string
+          status: string
+          type: string
+        }
+        Insert: {
+          error?: string | null
+          event_id: string
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          type: string
+        }
+        Update: {
+          error?: string | null
+          event_id?: string
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          type?: string
         }
         Relationships: []
       }

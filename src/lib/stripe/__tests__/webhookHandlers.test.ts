@@ -50,6 +50,7 @@ const mocks = vi.hoisted(() => ({
   mockServerAnalyticsError: vi.fn().mockResolvedValue(undefined),
   mockSupabaseEq: vi.fn().mockResolvedValue({ data: [], error: null }),
   mockSupabaseUpsert: vi.fn().mockResolvedValue({ error: null }),
+  mockSupabaseUpdateIn: vi.fn().mockResolvedValue({ error: null }),
   mockGetVipPerkConfig: vi.fn().mockResolvedValue({
     id: 'config_1',
     discount_percent: 20,
@@ -147,6 +148,9 @@ vi.mock('@/lib/supabase', () => ({
         eq: mocks.mockSupabaseEq,
       })),
       upsert: mocks.mockSupabaseUpsert,
+      update: vi.fn(() => ({
+        in: mocks.mockSupabaseUpdateIn,
+      })),
     })),
   })),
 }));
@@ -585,6 +589,8 @@ describe('handleCheckoutSessionCompleted', () => {
     });
 
     mocks.mockSupabaseEq.mockResolvedValue({ data: [], error: null });
+    mocks.mockSupabaseUpdateIn.mockResolvedValue({ error: null });
+    mocks.mockSendTicketConfirmationEmailsQueued.mockResolvedValue([{ success: true }]);
     mocks.mockCustomersCreate.mockResolvedValue({ id: 'cus_created_123' });
   });
 
@@ -1075,6 +1081,98 @@ describe('handleCheckoutSessionCompleted', () => {
       await handleCheckoutSessionCompleted(session);
 
       expect(mocks.mockCreateTicket).not.toHaveBeenCalled();
+    });
+
+    it('aborts (so Stripe retries) when the existing-ticket check fails, instead of creating tickets blind', async () => {
+      mocks.mockSupabaseEq.mockResolvedValue({
+        data: null,
+        error: { message: 'connection reset', code: '08006' },
+      });
+
+      const session = createMockSession();
+
+      await expect(handleCheckoutSessionCompleted(session)).rejects.toThrow(
+        /Failed to check for existing tickets/
+      );
+      expect(mocks.mockCreateTicket).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('webhook retry email healing', () => {
+    // The bug this guards against: a previous run wrote the ticket rows, then
+    // died before emails went out. The old code early-returned on retry and
+    // the paid attendee NEVER received a ticket email.
+    const sentTicket = {
+      id: 'ticket_sent',
+      email: 'sent@example.com',
+      first_name: 'Sent',
+      last_name: 'Already',
+      ticket_type: 'standard',
+      amount_paid: 10000,
+      qr_code_url: 'https://example.com/qr1.png',
+      manage_token_nonce: 'nonce1',
+      confirmation_email_sent_at: '2026-09-01T10:00:00Z',
+    };
+    const unsentTicket = {
+      id: 'ticket_unsent',
+      email: 'unsent@example.com',
+      first_name: 'Never',
+      last_name: 'Emailed',
+      ticket_type: 'standard',
+      amount_paid: 10000,
+      qr_code_url: 'https://example.com/qr2.png',
+      manage_token_nonce: 'nonce2',
+      confirmation_email_sent_at: null,
+    };
+
+    it('resends ONLY the never-sent confirmation emails on retry, exactly once each', async () => {
+      mocks.mockSupabaseEq.mockResolvedValue({ data: [sentTicket, unsentTicket], error: null });
+      mocks.mockSendTicketConfirmationEmailsQueued.mockResolvedValue([
+        { success: true, email: 'unsent@example.com', ticketId: 'ticket_unsent' },
+      ]);
+
+      await handleCheckoutSessionCompleted(createMockSession());
+
+      expect(mocks.mockCreateTicket).not.toHaveBeenCalled();
+      expect(mocks.mockSendTicketConfirmationEmailsQueued).toHaveBeenCalledTimes(1);
+      const sent = mocks.mockSendTicketConfirmationEmailsQueued.mock.calls[0][0];
+      expect(sent).toHaveLength(1);
+      expect(sent[0].to).toBe('unsent@example.com');
+      expect(sent[0].ticketId).toBe('ticket_unsent');
+      // The resent ticket gets stamped so the NEXT retry does nothing.
+      expect(mocks.mockSupabaseUpdateIn).toHaveBeenCalledWith('id', ['ticket_unsent']);
+    });
+
+    it('does nothing on retry when every confirmation email was already sent', async () => {
+      mocks.mockSupabaseEq.mockResolvedValue({
+        data: [sentTicket, { ...unsentTicket, confirmation_email_sent_at: '2026-09-01T10:01:00Z' }],
+        error: null,
+      });
+
+      await handleCheckoutSessionCompleted(createMockSession());
+
+      expect(mocks.mockCreateTicket).not.toHaveBeenCalled();
+      expect(mocks.mockSendTicketConfirmationEmailsQueued).not.toHaveBeenCalled();
+    });
+
+    it('throws when confirmation emails fail, so the webhook 500s and Stripe retries', async () => {
+      mocks.mockSendTicketConfirmationEmailsQueued.mockResolvedValue([
+        { success: false, email: 'test@example.com', ticketId: 'ticket_123', error: 'resend down' },
+      ]);
+
+      await expect(handleCheckoutSessionCompleted(createMockSession())).rejects.toThrow(
+        /ticket confirmation email/
+      );
+    });
+
+    it('stamps confirmation_email_sent_at on the happy path', async () => {
+      mocks.mockSendTicketConfirmationEmailsQueued.mockResolvedValue([
+        { success: true, email: 'test@example.com', ticketId: 'ticket_123' },
+      ]);
+
+      await handleCheckoutSessionCompleted(createMockSession());
+
+      expect(mocks.mockSupabaseUpdateIn).toHaveBeenCalledWith('id', ['ticket_123']);
     });
   });
 

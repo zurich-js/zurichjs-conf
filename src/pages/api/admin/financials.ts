@@ -5,6 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { throwIfDbError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getStripeClient } from '@/lib/stripe/client';
 import { logger } from '@/lib/logger';
@@ -409,10 +410,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get B2B invoice totals for additional context
-    const { data: b2bInvoices } = await supabase
+    const { data: b2bInvoices, error: b2bError } = await supabase
       .from('b2b_invoices')
       .select('id, status, total_amount, payment_method')
       .in('status', ['paid', 'sent', 'draft']);
+
+    // A dropped error here silently rendered zero B2B revenue as if correct.
+    throwIfDbError(b2bError, 'Failed to load B2B invoices for financials');
 
     const b2bSummary = {
       totalInvoices: b2bInvoices?.length || 0,
@@ -424,7 +428,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Get sponsorship revenue data with tier names
-    const { data: sponsorshipDeals } = await supabase
+    const { data: sponsorshipDeals, error: sponsorshipError } = await supabase
       .from('sponsorship_deals')
       .select(`
         id,
@@ -438,6 +442,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         )
       `)
       .neq('status', 'cancelled');
+
+    throwIfDbError(sponsorshipError, 'Failed to load sponsorship deals for financials');
 
     // Calculate sponsorship summary by currency
     const sponsorshipSummary = {

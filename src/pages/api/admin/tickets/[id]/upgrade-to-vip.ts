@@ -11,6 +11,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { throwIfDbError } from '@/lib/errors';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { getStripeClient } from '@/lib/stripe/client';
 import { logger } from '@/lib/logger';
@@ -132,12 +133,18 @@ export default async function handler(
     // Check for existing upgrade (idempotency)
     const idempotencyKey = generateUpgradeIdempotencyKey(ticketId);
 
-    const { data: existingUpgrade } = await supabase
+    const { data: existingUpgrade, error: existingUpgradeError } = await supabase
       .from('ticket_upgrades')
       .select('*')
       .eq('idempotency_key', idempotencyKey)
       .in('status', ['pending_payment', 'pending_bank_transfer', 'completed'])
       .maybeSingle();
+
+    // Abort rather than proceed: a dropped error on this read is what would
+    // let a duplicate (double-charged) upgrade through.
+    throwIfDbError(existingUpgradeError, 'Failed to check for existing VIP upgrade', {
+      context: { ticketId, idempotencyKey },
+    });
 
     if (existingUpgrade) {
       log.warn('Duplicate upgrade attempt blocked', {
@@ -391,17 +398,24 @@ export default async function handler(
       email_sent: emailSent,
     });
 
-    // Fetch updated upgrade record
-    const { data: finalUpgrade } = await supabase
+    // Fetch updated upgrade record (fall back to the pre-update row rather
+    // than responding with null if this read fails — the upgrade succeeded)
+    const { data: finalUpgrade, error: finalUpgradeError } = await supabase
       .from('ticket_upgrades')
       .select('*')
       .eq('id', upgrade.id)
       .single();
+    if (finalUpgradeError) {
+      log.warn('Failed to re-read upgrade record for response', {
+        upgradeId: upgrade.id,
+        reason: finalUpgradeError.message,
+      });
+    }
 
     // Build response
     const response: UpgradeToVipResponse = {
       success: true,
-      upgrade: finalUpgrade as TicketUpgrade,
+      upgrade: (finalUpgrade ?? upgrade) as TicketUpgrade,
       emailSent,
     };
 

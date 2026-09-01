@@ -10,8 +10,16 @@ import type { TicketPurchaseEmailProps } from '@/emails/templates/TicketPurchase
 import { getFirstName } from '@/emails/utils/render';
 import { getZurichJSVenueMapUrl } from '@/lib/venue';
 import { getBaseUrl } from '@/lib/url';
-import { getResendClient, EMAIL_CONFIG, delay, log } from './config';
+import { getResendClient, EMAIL_CONFIG, log } from './config';
+import { ErrorCodes, ExternalServiceError } from '@/lib/errors';
+import { retry } from '@/lib/retry';
 import type { TicketConfirmationData } from './types';
+
+/** Resend surfaces rate limits as a result error, not a throw. */
+function isResendRateLimit(error: { name?: string; message?: string } | null | undefined): boolean {
+  if (!error) return false;
+  return error.name === 'rate_limit_exceeded' || /rate.?limit|too many requests/i.test(error.message ?? '');
+}
 
 /**
  * Send ticket confirmation email
@@ -75,7 +83,7 @@ export async function sendTicketConfirmationEmail(
     );
 
     // Prepare attachments
-    const attachments = [];
+    const attachments: Array<{ filename: string; content: Buffer }> = [];
     if (data.pdfAttachment) {
       attachments.push({
         filename: `${data.conferenceName.replace(/\s+/g, '_')}_Ticket_${ticketIdToUse}.pdf`,
@@ -84,15 +92,34 @@ export async function sendTicketConfirmationEmail(
       log.debug('PDF attachment added to email');
     }
 
-    // Send the email
-    const result = await resend.emails.send({
-      from: EMAIL_CONFIG.from,
-      to: data.to,
-      replyTo: EMAIL_CONFIG.replyTo,
-      subject: `Your ${data.ticketType} ticket for ${data.conferenceName}`,
-      html: emailHtml,
-      attachments: attachments.length > 0 ? attachments : undefined,
-    });
+    // Send the email. Rate limits (2 req/s account-wide) are retried with
+    // backoff instead of pre-emptively slept around — the webhook used to
+    // spend 600ms per attendee sleeping, which timed out multi-seat orders.
+    const result = await retry(
+      async () => {
+        const sendResult = await resend.emails.send({
+          from: EMAIL_CONFIG.from,
+          to: data.to,
+          replyTo: EMAIL_CONFIG.replyTo,
+          subject: `Your ${data.ticketType} ticket for ${data.conferenceName}`,
+          html: emailHtml,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
+        if (sendResult.error && isResendRateLimit(sendResult.error)) {
+          throw new ExternalServiceError('Resend rate limited', {
+            cause: sendResult.error,
+            code: ErrorCodes.RATE_LIMITED,
+          });
+        }
+        return sendResult;
+      },
+      {
+        attempts: 4,
+        baseDelayMs: 700,
+        shouldRetry: (err) => err instanceof ExternalServiceError,
+        label: 'resend-ticket-email',
+      }
+    );
 
     if (result.error) {
       log.error('Error sending email', new Error(result.error.message), { to: data.to });
@@ -109,17 +136,21 @@ export async function sendTicketConfirmationEmail(
 }
 
 /**
- * Send multiple ticket confirmation emails with rate limiting
- * Resend allows max 2 requests/second, so we delay 600ms between each email (1.67 emails/sec)
+ * Send multiple ticket confirmation emails serially.
+ *
+ * Rate limiting is reactive: each send retries with backoff on Resend 429s
+ * (see `sendTicketConfirmationEmail`) instead of a fixed inter-email sleep —
+ * a 10-seat order used to spend ~5.4s asleep inside the Stripe webhook.
  *
  * @param emails Array of email data to send
- * @returns Array of results for each email
+ * @returns Per-email results, carrying `ticketId` so callers can record which
+ *          tickets were actually emailed (webhook retries resend the rest).
  */
 export async function sendTicketConfirmationEmailsQueued(
   emails: TicketConfirmationData[]
-): Promise<Array<{ success: boolean; error?: string; email: string }>> {
-  log.info('Starting to send emails with rate limiting', { count: emails.length });
-  const results: Array<{ success: boolean; error?: string; email: string }> = [];
+): Promise<Array<{ success: boolean; error?: string; email: string; ticketId?: string }>> {
+  log.info('Starting to send emails', { count: emails.length });
+  const results: Array<{ success: boolean; error?: string; email: string; ticketId?: string }> = [];
 
   for (let i = 0; i < emails.length; i++) {
     const emailData = emails[i];
@@ -129,13 +160,8 @@ export async function sendTicketConfirmationEmailsQueued(
     results.push({
       ...result,
       email: emailData.to,
+      ticketId: emailData.ticketId,
     });
-
-    // Add delay between emails (except after the last one)
-    if (i < emails.length - 1) {
-      const delayMs = 600; // 600ms delay = 1.67 emails/second (under 2/sec limit)
-      await delay(delayMs);
-    }
   }
 
   const successCount = results.filter(r => r.success).length;

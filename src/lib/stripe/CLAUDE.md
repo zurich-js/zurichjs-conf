@@ -28,11 +28,22 @@ The single Stripe webhook entry point. Critical rules:
    export const config = { api: { bodyParser: false } };
    ```
 2. **Verify signature** with `stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET)`.
-   Reject with 400 on signature failure — Stripe will retry.
-3. **Idempotency** — every handler in `webhookHandlers.ts` checks for an existing
-   record (by Stripe event id, payment intent id, or session id) before writing.
-   Stripe retries; double-fulfilment is a real risk.
-4. **Service role client** — webhooks are not user-authenticated, so they use
+   Reject with 400 on signature failure — Stripe will NOT retry a 400.
+3. **Idempotency** — two layers, both required:
+   - The route dedupes deliveries by **Stripe event id** via the
+     `webhook_events` ledger table (`processing`/`processed`/`failed`). An
+     already-`processed` event returns 200 immediately; the ledger fails OPEN
+     (processing proceeds if the ledger itself is unreachable).
+   - Every handler in `webhookHandlers.ts` also checks for an existing record
+     (payment intent id, session id, or `(session, workshop, seat_index)`)
+     before writing. Stripe retries; double-fulfilment is a real risk.
+4. **Partial fulfilment must THROW, never swallow.** A 200 tells Stripe the
+   event is done. Ticket emails record `tickets.confirmation_email_sent_at`;
+   a retry resends only never-sent emails. Workshop seat failures throw
+   `FulfillmentError` so the retry (idempotent, see above) can heal them.
+   The one deliberate exception: oversold seats log `WORKSHOP_OVERSOLD`
+   (critical) and continue — a retry cannot create capacity.
+5. **Service role client** — webhooks are not user-authenticated, so they use
    `createServiceRoleClient()` (RLS bypassed). This is one of the few valid uses.
 
 Events handled today: `checkout.session.completed`, `invoice.payment_succeeded`,

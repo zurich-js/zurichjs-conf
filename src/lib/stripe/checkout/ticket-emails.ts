@@ -8,9 +8,11 @@ import {
   sendTicketConfirmationEmailsQueued,
   type TicketConfirmationData,
 } from '@/lib/email';
+import { EmailDeliveryError, ErrorCodes } from '@/lib/errors';
 import { generateTicketPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateOrderUrl } from '@/lib/auth/orderToken';
 import { logger } from '@/lib/logger';
+import { createServiceRoleClient } from '@/lib/supabase';
 import type { TicketCreationResult } from './tickets';
 
 /**
@@ -128,21 +130,45 @@ export async function sendTicketConfirmationEmails(
     }
   }
 
-  if (emailsToSend.length > 0) {
-    const emailResults = await sendTicketConfirmationEmailsQueued(emailsToSend);
+  if (emailsToSend.length === 0) return;
 
-    const successfulEmails = emailResults.filter(r => r.success);
-    const failedEmails = emailResults.filter(r => !r.success);
+  const emailResults = await sendTicketConfirmationEmailsQueued(emailsToSend);
 
-    log.info('Successfully sent ticket emails', { count: successfulEmails.length });
-    if (failedEmails.length > 0) {
-      log.error('Failed to send ticket emails', new Error(`${failedEmails.length} email(s) failed`), {
-        type: 'system',
-        severity: 'medium',
-        code: 'TICKET_EMAIL_FAILED',
-        failedCount: failedEmails.length,
-        failedEmails: failedEmails.map(r => ({ email: r.email, error: r.error })),
+  const successfulEmails = emailResults.filter(r => r.success);
+  const failedEmails = emailResults.filter(r => !r.success);
+
+  // Record which tickets were actually emailed. This column is what lets a
+  // Stripe webhook retry resend ONLY the missing emails instead of skipping
+  // email dispatch entirely (the old behavior stranded paid attendees with a
+  // DB row and no ticket email).
+  const sentTicketIds = successfulEmails.map(r => r.ticketId).filter((id): id is string => !!id);
+  if (sentTicketIds.length > 0) {
+    const supabase = createServiceRoleClient();
+    const { error: stampError } = await supabase
+      .from('tickets')
+      .update({ confirmation_email_sent_at: new Date().toISOString() })
+      .in('id', sentTicketIds);
+    if (stampError) {
+      // Worst case here is a duplicate email on retry — log, don't fail.
+      log.warn('Failed to record confirmation_email_sent_at', {
+        ticketIds: sentTicketIds,
+        reason: stampError.message,
       });
     }
+  }
+
+  log.info('Successfully sent ticket emails', { count: successfulEmails.length });
+  if (failedEmails.length > 0) {
+    // Throw so the webhook returns 500 and Stripe retries; the retry path
+    // resends only tickets whose confirmation_email_sent_at is still NULL.
+    throw new EmailDeliveryError(`${failedEmails.length} ticket confirmation email(s) failed`, {
+      code: ErrorCodes.TICKET_EMAIL_FAILED,
+      fingerprint: 'ticket-confirmation-email-failed',
+      context: {
+        sessionId: session.id,
+        failedCount: failedEmails.length,
+        failedEmails: failedEmails.map(r => ({ email: r.email, ticketId: r.ticketId, error: r.error })),
+      },
+    });
   }
 }

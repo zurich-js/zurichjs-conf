@@ -22,6 +22,7 @@ import { getOfferingByLookupKey } from '@/lib/workshops/getOfferings';
 import { stripCurrencySuffix } from '../ticket-utils';
 import { extractPartnershipDiscountInfo } from './helpers';
 import { addNewsletterContact, sendWorkshopConfirmationEmail } from '@/lib/email';
+import { ErrorCodes, FulfillmentError } from '@/lib/errors';
 import { notifyWorkshopOversold, notifyWorkshopRegistered } from '@/lib/platform-notifications';
 import { generateWorkshopPDF, imageUrlToDataUrl } from '@/lib/pdf';
 import { generateTicketQRCode } from '@/lib/qrcode';
@@ -210,13 +211,18 @@ export async function processWorkshops(
           instructorName,
         });
 
+        // Deliberately NOT thrown: a retry cannot create capacity, so failing
+        // the webhook would loop forever. Critical + fingerprinted so the
+        // alert fires on the first occurrence; resolution is manual (refund
+        // or seat-add), per the no-auto-refund policy above.
         log.error(
           'Workshop oversold — paid seat skipped and escalated for manual resolution',
           new Error('Workshop capacity exceeded'),
           {
-            type: 'system',
-            severity: 'high',
-            code: 'WORKSHOP_OVERSOLD',
+            type: 'payment',
+            severity: 'critical',
+            code: ErrorCodes.WORKSHOP_OVERSOLD,
+            fingerprint: 'workshop-oversold',
             workshopId,
             sessionId: session.id,
             seatIndex,
@@ -229,19 +235,24 @@ export async function processWorkshops(
       }
 
       if (!result.success) {
-        log.error(
-          'Failed to create workshop registration',
-          new Error(result.error || 'Unknown error'),
-          {
-            type: 'system',
-            severity: 'high',
-            code: 'WORKSHOP_REGISTRATION_FAILED',
+        // Throw so the webhook returns 500 and Stripe RETRIES. The old
+        // log-and-continue returned 200, which told Stripe the event was
+        // handled — a paid seat with no registration row survived only as a
+        // log line. Registration creation is idempotent by
+        // (session, workshop, seat_index), so the retry is safe: seats that
+        // succeeded before the failure come back as `duplicate`.
+        throw new FulfillmentError('Failed to create workshop registration for a paid seat', {
+          cause: new Error(result.error || 'Unknown error'),
+          code: ErrorCodes.WORKSHOP_SEAT_FULFILLMENT_FAILED,
+          fingerprint: 'workshop-seat-fulfillment-failed',
+          context: {
             workshopId,
             sessionId: session.id,
             seatIndex,
-          }
-        );
-        continue;
+            attendeeEmail: seatEmail,
+            amountPaid: amountPaidPerSeat,
+          },
+        });
       }
 
       if (result.duplicate) {

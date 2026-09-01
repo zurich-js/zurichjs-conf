@@ -9,6 +9,8 @@ import { APPAREL_SIZES, type ApparelSize } from '@/lib/types/ticket-constants';
 import { createTicket } from '@/lib/tickets';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { addNewsletterContact } from '@/lib/email';
+import { ErrorCodes, ExternalServiceError, throwIfDbError } from '@/lib/errors';
+import { retry } from '@/lib/retry';
 import { serverAnalytics } from '@/lib/analytics/server';
 import type { EventProperties } from '@/lib/analytics/events';
 import { logger } from '@/lib/logger';
@@ -307,12 +309,26 @@ async function trackTicketPurchasesAndNewsletterSignups(
   for (let i = 0; i < ticketResults.length; i++) {
     const result = ticketResults[i];
     if (result.success && result.attendee.email) {
-      // Rate limit: Resend allows max 2 requests/sec, so wait 600ms between calls
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-      }
       try {
-        const contactResult = await addNewsletterContact(result.attendee.email, 'checkout');
+        // Resend rate limits (2 req/s) are retried with backoff instead of a
+        // fixed 600ms sleep per attendee inside the webhook.
+        const contactResult = await retry(
+          async () => {
+            const r = await addNewsletterContact(result.attendee.email, 'checkout');
+            if (!r.success && /rate.?limit|too many requests/i.test(r.error ?? '')) {
+              throw new ExternalServiceError('Resend rate limited adding newsletter contact', {
+                code: ErrorCodes.RATE_LIMITED,
+              });
+            }
+            return r;
+          },
+          {
+            attempts: 3,
+            baseDelayMs: 700,
+            shouldRetry: (err) => err instanceof ExternalServiceError,
+            label: 'newsletter-contact',
+          }
+        );
         if (!contactResult.success) {
           await serverAnalytics.error(result.attendee.email, `Failed to create newsletter contact: ${contactResult.error}`, {
             type: 'system',
@@ -413,23 +429,58 @@ export async function processTickets(
 
   const { data: existingTickets, error: checkError } = await supabase
     .from('tickets')
-    .select('id, email')
+    .select(
+      'id, email, first_name, last_name, ticket_type, amount_paid, qr_code_url, manage_token_nonce, confirmation_email_sent_at'
+    )
     .eq('stripe_session_id', session.id);
 
-  if (checkError) {
-    log.error('Error checking for existing tickets', checkError, {
-      type: 'system',
-      severity: 'medium',
-      code: 'TICKET_CHECK_ERROR',
-    });
-  }
+  // Abort rather than fall through: creating tickets while the idempotency
+  // read is failing risks duplicates; a thrown error 500s the webhook and
+  // Stripe retries once the database recovers.
+  throwIfDbError(checkError, 'Failed to check for existing tickets', {
+    context: { sessionId: session.id },
+  });
 
   if (existingTickets && existingTickets.length >= attendees.length) {
-    log.warn('All tickets already exist for this session. Skipping ticket creation.', {
+    // Webhook retry after a full (or half-done) previous run. Tickets exist —
+    // but the previous run may have died between the DB writes and the email
+    // dispatch. Resend ONLY the never-sent emails instead of returning early
+    // and stranding paid attendees without a ticket email (the old bug).
+    const unsent = existingTickets.filter(t => !t.confirmation_email_sent_at);
+
+    if (unsent.length === 0) {
+      log.info('All tickets exist and all confirmation emails were sent. Nothing to do.', {
+        existingTicketCount: existingTickets.length,
+        expectedCount: attendees.length,
+      });
+      return;
+    }
+
+    log.warn('Tickets exist but some confirmation emails were never sent — resending', {
+      sessionId: session.id,
+      unsentCount: unsent.length,
       existingTicketCount: existingTickets.length,
-      expectedCount: attendees.length,
-      existingTickets: existingTickets.map(t => ({ id: t.id, email: t.email })),
+      unsentTickets: unsent.map(t => ({ id: t.id, email: t.email })),
     });
+
+    const pendingEmailResults: TicketCreationResult[] = unsent.map(t => ({
+      success: true,
+      ticket: {
+        id: t.id,
+        email: t.email,
+        ticket_type: t.ticket_type,
+        amount_paid: t.amount_paid,
+        qr_code_url: t.qr_code_url ?? undefined,
+        manage_token_nonce: t.manage_token_nonce,
+      },
+      attendee: {
+        firstName: t.first_name,
+        lastName: t.last_name,
+        email: t.email,
+      },
+    }));
+
+    await sendTicketConfirmationEmails(pendingEmailResults, ticketDisplayName, session, log);
     return;
   }
 
