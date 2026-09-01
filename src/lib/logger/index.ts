@@ -184,7 +184,10 @@ function sanitizeForLog(value: string): string {
 
 function safeStringify(value: unknown): string {
   try {
-    return JSON.stringify(value) ?? String(value)
+    // The String() fallback (JSON.stringify returns undefined for functions,
+    // symbols and undefined) is sanitized too — it is the one branch where
+    // tainted text would otherwise reach a log line unescaped.
+    return JSON.stringify(value) ?? sanitizeForLog(String(value))
   } catch {
     // Circular, or a getter that throws. The name is still worth having.
     return Object.prototype.toString.call(value)
