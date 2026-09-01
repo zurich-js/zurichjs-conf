@@ -202,15 +202,30 @@ This is a private conference platform. For questions or issues, contact the deve
 
 Private - All rights reserved
 
-## Illustrator badge export
+## Badge management and print export
 
-Generate QR PNGs and Illustrator-ready CSV data for confirmed VIP attendees,
-other confirmed attendees, the exact public speaker lineup, and every configured
-sponsor. Hidden CFP applicants are never included.
+The dedicated `/admin/badges` panel reviews confirmed VIP attendees, other
+confirmed attendees, the exact public speaker lineup, configured sponsors, and
+organizers. Hidden CFP applicants are never included. Each category can be
+reviewed independently, rows can be excluded from a particular export, and
+persistent manual rows can be added or edited for guests and organizers.
+The export dropdown can download the active tab's aggregate PDF directly, the
+active tab's complete data ZIP, PDFs for every tab, or the complete data ZIP for
+every tab. All four choices respect row exclusions; full-data exports include
+CSV, QR images, relevant sponsor logo assets, manifests, and warnings.
 
-From the deployed application, sign in to `/admin`, open the **Badges** tab, and
-select **Download badge export**. The server builds and returns a ZIP in memory;
-it does not rely on the deployment filesystem.
+The deployed export produces print-ready two-page PDFs from the approved vector
+templates under `assets/badges/templates/`. Text is rendered with the bundled
+Figtree fonts, each person receives their own 30 mm QR, and sponsor color logos
+are contained in the configured logo box. The ZIP also retains CSV, QR PNG, and
+logo assets for auditing or Illustrator use.
+
+On the Sponsors tab, **Attach PNG** can replace the stored color logo for one
+export without uploading or changing anything in Supabase. The panel warns when
+the PNG is under 500 px wide; overrides are limited to 10 MB each and are
+discarded when the page is reloaded.
+Any stored or attached logo that cannot be inspected or is under 500 px wide is
+also listed in `WARNINGS.txt` and `manifest.json` inside the export ZIP.
 
 The equivalent local command is:
 
@@ -234,17 +249,30 @@ The script reads `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY` (or the legac
 the URL encoded in the QR images.
 
 The command is read-only by default. If an attendee or sponsor has never set a
-networking preference, it exits and asks for `--provision-share-ids`. That flag
-only inserts missing `networking_profiles` rows with `enabled=false`; it never
-updates existing visibility or contact settings. It is therefore safe to rerun.
+networking preference, or a subject has no managed badge QR token, it exits and
+asks for `--provision-share-ids`. That flag inserts missing disabled networking
+rows and missing badge-code rows; it never changes existing visibility or
+contact settings and is safe to rerun.
+
+Printed badge tokens redirect to the existing stable networking share page.
+Replacing a QR in `/admin/badges` destructively rotates only the badge token:
+the old printed QR stops resolving immediately, while the attendee/sponsor share
+ID and speaker slug remain unchanged. The UI requires confirmation that the old
+code has not been printed.
 
 The ignored `badge-export/` directory contains `vip.csv`, `attendee.csv`,
-`speaker.csv`, `sponsor.csv`, a sparse `badges.csv` with all variables,
-`qr/*.png`, downloaded color sponsor logos (falling back to the primary logo),
-and `manifest.json`. CSV image fields contain absolute local paths. Sponsor names
-come from `contact_name`, and their role is exported as `Sponsor` because the
-sponsor schema has no contact job-title field.
+`speaker.csv`, `sponsor.csv`, `organizer.csv`, a sparse `badges.csv`,
+`pdf/*-all.pdf`, `qr/*.png`, downloaded color sponsor logos (falling back to the
+primary logo), and `manifest.json`. CSV image fields contain absolute local paths
+for local exports. Sponsor names come from `contact_name`, and their role is
+exported as `Sponsor` because the sponsor schema has no contact job-title field.
 
 QR and sponsor-logo CSV headers use Illustrator's required `@` linked-file
 prefix. Illustrator removes the prefix in the Variables panel, so `@speaker_qr`
 is displayed and bound as `speaker_qr`.
+
+Generate five non-production fixture PDFs for template review with:
+
+```bash
+pnpm badges:sample
+```

@@ -3,6 +3,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  outputFileTracingIncludes: {
+    '/api/admin/badges/export': [
+      './assets/badges/templates/*.pdf',
+      './public/fonts/figtree-400.ttf',
+      './public/fonts/figtree-700.ttf',
+    ],
+  },
 
   // Turbopack: resolve Node.js built-ins to empty modules for browser bundles.
   // The barcode-detector library's WebAssembly loader contains Node.js detection

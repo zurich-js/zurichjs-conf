@@ -1,13 +1,17 @@
-export type BadgeCategory = 'vip' | 'attendee' | 'speaker' | 'sponsor';
+export type BadgeCategory = 'vip' | 'attendee' | 'speaker' | 'sponsor' | 'organizer';
 
 export interface BadgeEntry {
   category: BadgeCategory;
+  source: 'attendee' | 'speaker' | 'sponsor' | 'manual';
+  selectionId: string;
   id: string;
   firstName: string;
   lastName: string;
   role: string;
   company: string;
   publicId: string;
+  badgeCode: string;
+  shareUrl: string;
   qrUrl: string;
   logoUrl: string | null;
 }
@@ -20,6 +24,7 @@ export interface AttendeeBadgeSource {
   job_title: string | null;
   ticket_category: string;
   share_id: string;
+  badge_code: string;
 }
 
 export interface SpeakerBadgeSource {
@@ -29,6 +34,7 @@ export interface SpeakerBadgeSource {
   last_name: string;
   company: string | null;
   job_title: string | null;
+  badge_code: string;
 }
 
 export interface SponsorBadgeSource {
@@ -38,18 +44,36 @@ export interface SponsorBadgeSource {
   logo_url: string | null;
   logo_url_color: string | null;
   share_id: string;
+  badge_code: string;
+}
+
+export interface ManualBadgeSource {
+  id: string;
+  category: BadgeCategory;
+  first_name: string;
+  last_name: string;
+  role: string;
+  company: string;
+  logo_url: string | null;
+  share_id: string;
+  badge_code: string;
 }
 
 export interface BadgeExportSources {
   attendees: AttendeeBadgeSource[];
   speakers: SpeakerBadgeSource[];
   sponsors: SponsorBadgeSource[];
+  manual: ManualBadgeSource[];
 }
 
-const CATEGORIES: BadgeCategory[] = ['vip', 'attendee', 'speaker', 'sponsor'];
+const CATEGORIES: BadgeCategory[] = ['vip', 'attendee', 'speaker', 'sponsor', 'organizer'];
 
-function qrUrl(baseUrl: string, publicId: string): string {
-  const url = new URL(`/share/${publicId}`, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+function publicUrl(baseUrl: string, pathname: string): string {
+  return new URL(pathname, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`).toString();
+}
+
+function qrUrl(baseUrl: string, badgeCode: string): string {
+  const url = new URL(`/b/${badgeCode}`, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
   url.searchParams.set('utm_source', 'offline');
   url.searchParams.set('utm_medium', 'qr_code');
   url.searchParams.set('utm_campaign', 'zurichjs_networking');
@@ -68,13 +92,17 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
     const publicId = `attendee-${attendee.share_id}`;
     return {
       category,
+      source: 'attendee',
+      selectionId: `attendee:${attendee.id}`,
       id: attendee.id,
       firstName: attendee.first_name,
       lastName: attendee.last_name,
       role: attendee.job_title ?? '',
       company: attendee.company ?? '',
       publicId,
-      qrUrl: qrUrl(baseUrl, publicId),
+      badgeCode: attendee.badge_code,
+      shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
+      qrUrl: qrUrl(baseUrl, attendee.badge_code),
       logoUrl: null,
     };
   });
@@ -83,13 +111,17 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
     const publicId = `speaker-${speaker.slug}`;
     return {
       category: 'speaker',
+      source: 'speaker',
+      selectionId: `speaker:${speaker.id}`,
       id: speaker.id,
       firstName: speaker.first_name,
       lastName: speaker.last_name,
       role: speaker.job_title ?? '',
       company: speaker.company ?? '',
       publicId,
-      qrUrl: qrUrl(baseUrl, publicId),
+      badgeCode: speaker.badge_code,
+      shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
+      qrUrl: qrUrl(baseUrl, speaker.badge_code),
       logoUrl: null,
     };
   });
@@ -99,18 +131,41 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
     const publicId = `sponsor-${sponsor.share_id}`;
     return {
       category: 'sponsor',
+      source: 'sponsor',
+      selectionId: `sponsor:${sponsor.id}`,
       id: sponsor.id,
       firstName: contact.firstName,
       lastName: contact.lastName,
       role: 'Sponsor',
       company: sponsor.company_name,
       publicId,
-      qrUrl: qrUrl(baseUrl, publicId),
+      badgeCode: sponsor.badge_code,
+      shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
+      qrUrl: qrUrl(baseUrl, sponsor.badge_code),
       logoUrl: sponsor.logo_url_color ?? sponsor.logo_url,
     };
   });
 
-  return [...attendeeEntries, ...speakerEntries, ...sponsorEntries];
+  const manualEntries = sources.manual.map((entry): BadgeEntry => {
+    const publicId = `badge-${entry.share_id}`;
+    return {
+      category: entry.category,
+      source: 'manual',
+      selectionId: `manual:${entry.id}`,
+      id: entry.id,
+      firstName: entry.first_name,
+      lastName: entry.last_name,
+      role: entry.role,
+      company: entry.company,
+      publicId,
+      badgeCode: entry.badge_code,
+      shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
+      qrUrl: qrUrl(baseUrl, entry.badge_code),
+      logoUrl: entry.logo_url,
+    };
+  });
+
+  return [...attendeeEntries, ...speakerEntries, ...sponsorEntries, ...manualEntries];
 }
 
 function csvCell(value: string): string {
@@ -144,9 +199,9 @@ export function categoryCsv(
       entry.lastName,
       entry.role,
       entry.company,
-      qrPaths.get(entry.id) ?? '',
+      qrPaths.get(entry.selectionId) ?? '',
     ];
-    if (category === 'sponsor') row.push(logoPaths.get(entry.id) ?? '');
+    if (category === 'sponsor') row.push(logoPaths.get(entry.selectionId) ?? '');
     csv += csvLine(row);
   }
   return csv;
@@ -173,10 +228,10 @@ export function combinedCsv(
       [`${entry.category}_last_name`, entry.lastName],
       [`${entry.category}_role`, entry.role],
       [`${entry.category}_company`, entry.company],
-      [`@${entry.category}_qr`, qrPaths.get(entry.id) ?? ''],
+      [`@${entry.category}_qr`, qrPaths.get(entry.selectionId) ?? ''],
     ]);
     if (entry.category === 'sponsor') {
-      values.set('@sponsor_logo', logoPaths.get(entry.id) ?? '');
+      values.set('@sponsor_logo', logoPaths.get(entry.selectionId) ?? '');
     }
     csv += csvLine(fields.map((field) => values.get(field) ?? ''));
   }

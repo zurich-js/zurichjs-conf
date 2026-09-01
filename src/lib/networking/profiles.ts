@@ -28,7 +28,8 @@ const SPEAKER_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type ParsedPublicId =
   | { kind: 'attendee'; shareId: string }
   | { kind: 'sponsor'; shareId: string }
-  | { kind: 'speaker'; slug: string };
+  | { kind: 'speaker'; slug: string }
+  | { kind: 'badge'; shareId: string };
 
 function parsePublicId(publicId: string): ParsedPublicId | null {
   if (publicId.startsWith('attendee-')) {
@@ -44,6 +45,11 @@ function parsePublicId(publicId: string): ParsedPublicId | null {
   if (publicId.startsWith('speaker-')) {
     const slug = publicId.slice('speaker-'.length);
     return slug.length <= 160 && SPEAKER_SLUG_PATTERN.test(slug) ? { kind: 'speaker', slug } : null;
+  }
+
+  if (publicId.startsWith('badge-')) {
+    const shareId = publicId.slice('badge-'.length);
+    return UUID_PATTERN.test(shareId) ? { kind: 'badge', shareId } : null;
   }
 
   return null;
@@ -278,11 +284,47 @@ async function resolveSpeaker(publicId: string, slug: string): Promise<PublicNet
   };
 }
 
+async function resolveManualBadge(publicId: string, shareId: string): Promise<PublicNetworkingProfile | null> {
+  const { data, error } = await createServiceRoleClient()
+    .from('manual_badge_entries')
+    .select('category, first_name, last_name, role, company, logo_url, networking_profile')
+    .eq('share_id', shareId)
+    .eq('networking_enabled', true)
+    .maybeSingle();
+
+  if (error) {
+    log.error('Failed to resolve manual badge networking profile', error, { publicId });
+    return null;
+  }
+  if (!data) return null;
+
+  const profileResult = attendeeNetworkingProfileSchema.safeParse(data.networking_profile);
+  if (!profileResult.success) return null;
+  const links = attendeeLinks(profileResult.data);
+  if (links.length === 0) return null;
+
+  const kind = data.category === 'vip' || data.category === 'attendee' ||
+    data.category === 'speaker' || data.category === 'sponsor' || data.category === 'organizer'
+    ? data.category
+    : 'attendee';
+
+  return {
+    publicId,
+    kind,
+    name: `${data.first_name} ${data.last_name}`.trim(),
+    headline: headline(data.role, data.company),
+    imageUrl: data.logo_url,
+    links,
+    path: `/share/${publicId}`,
+  };
+}
+
 export async function resolvePublicNetworkingProfile(publicId: string): Promise<PublicNetworkingProfile | null> {
   const parsed = parsePublicId(publicId);
   if (!parsed) return null;
 
   if (parsed.kind === 'attendee') return resolveAttendee(publicId, parsed.shareId);
   if (parsed.kind === 'sponsor') return resolveSponsor(publicId, parsed.shareId);
-  return resolveSpeaker(publicId, parsed.slug);
+  if (parsed.kind === 'speaker') return resolveSpeaker(publicId, parsed.slug);
+  return resolveManualBadge(publicId, parsed.shareId);
 }

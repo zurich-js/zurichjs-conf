@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import sharp from 'sharp';
 import { buildBadgeExportFiles } from '../files';
 import { createZip } from '../zip';
 import type { BadgeExportSources } from '../export';
@@ -11,6 +12,9 @@ vi.mock('qrcode', () => ({
   default: {
     toBuffer: vi.fn(async (value: string) => Buffer.from(`png:${value}`)),
   },
+}));
+vi.mock('@/lib/badges/pdf', () => ({
+  buildBadgePdfFiles: vi.fn(async () => [{ name: 'pdf/vip-all.pdf', data: Buffer.from('pdf') }]),
 }));
 
 const sources: BadgeExportSources = {
@@ -21,7 +25,8 @@ const sources: BadgeExportSources = {
     company: 'Engines',
     job_title: 'Programmer',
     ticket_category: 'vip',
-    share_id: '11111111-2222-4333-8444-555555555555',
+  share_id: '11111111-2222-4333-8444-555555555555',
+  badge_code: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   }],
   speakers: [{
     id: 'public-speaker',
@@ -29,7 +34,8 @@ const sources: BadgeExportSources = {
     first_name: 'Public',
     last_name: 'Speaker',
     company: 'ZurichJS',
-    job_title: 'Speaker',
+  job_title: 'Speaker',
+  badge_code: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   }],
   sponsors: [{
     id: 'sponsor-1',
@@ -37,8 +43,10 @@ const sources: BadgeExportSources = {
     contact_name: 'Grace Hopper',
     logo_url: 'https://cdn.example.test/mono.png',
     logo_url_color: 'https://cdn.example.test/color.png',
-    share_id: '22222222-3333-4444-8555-666666666666',
+  share_id: '22222222-3333-4444-8555-666666666666',
+  badge_code: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   }],
+  manual: [],
 };
 
 describe('deployed badge export files', () => {
@@ -76,6 +84,44 @@ describe('deployed badge export files', () => {
     expect(listing).toContain('testing: badges.csv');
     expect(listing).toContain('testing: qr/ada.png');
     expect(listing).toContain('No errors detected');
+  });
+
+  it('can return print PDFs without CSV, QR, logo, or manifest files', async () => {
+    const files = await buildBadgeExportFiles(sources, 'https://conf.example.test', {
+      csvPath: (fileName) => fileName,
+      includeDataFiles: false,
+      fetchLogo: async () => new Response(Buffer.from('logo'), {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    });
+
+    expect(files).toEqual([{ name: 'pdf/vip-all.pdf', data: Buffer.from('pdf') }]);
+  });
+
+  it('uses a one-time sponsor PNG override without downloading or persisting it', async () => {
+    const override = await sharp({
+      create: { width: 320, height: 80, channels: 4, background: '#3366ff' },
+    }).png().toBuffer();
+    const fetchLogo = vi.fn();
+    const onWarning = vi.fn();
+    const files = await buildBadgeExportFiles(sources, 'https://conf.example.test', {
+      csvPath: (fileName) => fileName,
+      fetchLogo,
+      onWarning,
+      logoOverrides: new Map([['sponsor:sponsor-1', {
+        data: override,
+        fileName: 'replacement.png',
+        mimeType: 'image/png' as const,
+      }]]),
+    });
+
+    expect(fetchLogo).not.toHaveBeenCalled();
+    expect(files.find((file) => file.name === 'logos/sponsor-sponsor-1.png')?.data).toEqual(override);
+    expect(onWarning).toHaveBeenCalledWith(expect.stringContaining('only 320px wide'));
+    expect(files.find((file) => file.name === 'WARNINGS.txt')?.data.toString()).toContain(
+      'use at least 500px for print'
+    );
   });
 
   it('rejects unsafe archive paths', () => {

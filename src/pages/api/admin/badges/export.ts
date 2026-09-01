@@ -1,26 +1,37 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { z } from 'zod';
 import { verifyAdminAccess } from '@/lib/admin/auth';
-import { loadBadgeSources } from '@/lib/badges/data';
+import { filterBadgeSources, loadBadgeSources } from '@/lib/badges/data';
 import { buildBadgeExportFiles } from '@/lib/badges/files';
-import type { SpeakerBadgeSource } from '@/lib/badges/export';
+import type { BadgeLogoOverride } from '@/lib/badges/files';
+import { loadPublicBadgeSpeakers } from '@/lib/badges/speakers';
+import { getBadgeBaseUrl } from '@/lib/badges/url';
 import { createZip } from '@/lib/badges/zip';
-import { getVisibleSpeakersForOg } from '@/lib/cfp/speakers';
 import { logger } from '@/lib/logger';
 import { createServiceRoleClient } from '@/lib/supabase';
-import { getBaseUrl } from '@/lib/url';
+import { badgeExportRequestSchema } from '@/lib/validations/badges';
 
 const log = logger.scope('Admin Badge Export API');
-const requestSchema = z.object({
-  provisionShareIds: z.boolean().default(false),
-});
 
 export const config = {
   api: {
+    bodyParser: { sizeLimit: '22mb' },
     responseLimit: false,
   },
   maxDuration: 300,
 };
+
+function decodeLogoOverrides(
+  values: Record<string, { fileName: string; dataUrl: string }>
+): Map<string, BadgeLogoOverride> {
+  return new Map(Object.entries(values).map(([selectionId, value]) => {
+    const data = Buffer.from(value.dataUrl.slice('data:image/png;base64,'.length), 'base64');
+    const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    if (data.byteLength > 10 * 1024 * 1024 || !data.subarray(0, 8).equals(pngSignature)) {
+      throw new Error(`Invalid PNG logo override for ${selectionId}`);
+    }
+    return [selectionId, { data, fileName: value.fileName, mimeType: 'image/png' }];
+  }));
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -36,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const result = requestSchema.safeParse(
+  const result = badgeExportRequestSchema.safeParse(
     req.method === 'GET' ? { provisionShareIds: false } : req.body
   );
   if (!result.success) {
@@ -45,37 +56,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const publicSpeakerRows = await getVisibleSpeakersForOg();
-    if (publicSpeakerRows.length === 0) {
-      throw new Error('The public speaker lineup is empty; refusing to create an incomplete export');
-    }
-    const publicSpeakers: SpeakerBadgeSource[] = publicSpeakerRows.map((speaker) => ({
-      id: speaker.slug,
-      slug: speaker.slug,
-      first_name: speaker.first_name,
-      last_name: speaker.last_name,
-      company: speaker.company,
-      job_title: speaker.job_title,
-    }));
-    const sources = await loadBadgeSources(
+    const sources = filterBadgeSources(await loadBadgeSources(
       createServiceRoleClient(),
-      publicSpeakers,
-      result.data.provisionShareIds
-    );
-    const files = await buildBadgeExportFiles(sources, getBaseUrl(), {
+      await loadPublicBadgeSpeakers(),
+      result.data.provisionShareIds,
+      result.data.includedIds
+    ), result.data.includedIds);
+    const files = await buildBadgeExportFiles(sources, getBadgeBaseUrl(req), {
       csvPath: (fileName) => fileName,
+      includeDataFiles: result.data.mode.endsWith('-data'),
+      logoOverrides: decodeLogoOverrides(result.data.logoOverrides),
       onWarning: (message) => log.warn(message),
     });
-    const archive = createZip(files);
     const date = new Date().toISOString().slice(0, 10);
 
+    if (result.data.mode === 'tab-pdfs') {
+      const pdf = files.find((file) => file.name === `pdf/${result.data.category}-all.pdf`);
+      if (!pdf) {
+        res.status(404).json({ error: `No ${result.data.category} badges were selected` });
+        return;
+      }
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="zurichjs-${result.data.category}-badges-${date}.pdf"`
+      );
+      res.setHeader('Content-Length', pdf.data.length);
+      res.status(200).send(pdf.data);
+      return;
+    }
+
+    const archive = createZip(files);
+    const archiveLabel = result.data.mode === 'all-pdfs'
+      ? 'all-badge-pdfs'
+      : result.data.mode === 'tab-data'
+        ? `${result.data.category}-badge-data`
+        : 'all-badge-data';
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="zurichjs-badges-${date}.zip"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="zurichjs-${archiveLabel}-${date}.zip"`
+    );
     res.setHeader('Content-Length', archive.length);
     res.status(200).send(archive);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create badge export';
-    const missingIds = /need share IDs/.test(message);
+    const missingIds = /need share IDs|need provisioning/.test(message);
     log.error('Failed to create badge export', error);
     res.status(missingIds ? 409 : 500).json({ error: message });
   }

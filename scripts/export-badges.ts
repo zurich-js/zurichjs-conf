@@ -6,7 +6,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { loadBadgeSources } from '@/lib/badges/data';
 import { buildBadgeExportFiles } from '@/lib/badges/files';
-import type { SpeakerBadgeSource } from '@/lib/badges/export';
+import { loadPublicBadgeSpeakers } from '@/lib/badges/speakers';
 
 interface CliOptions {
   outputDir: string;
@@ -31,12 +31,13 @@ Usage:
 Options:
   --output <directory>       Output directory (default: badge-export)
   --base-url <url>           URL encoded in QR codes (default: NEXT_PUBLIC_BASE_URL)
-  --provision-share-ids      Insert missing disabled attendee/sponsor networking rows
+  --provision-share-ids      Insert missing disabled networking rows and badge QR codes
   --help                     Show this help
 
 The command is read-only unless --provision-share-ids is supplied. Provisioning
-only inserts missing rows with enabled=false; existing visibility and profiles
-are never changed. Speakers come from the exact public lineup query.`;
+inserts missing networking rows with enabled=false and missing managed badge QR
+tokens; existing visibility, profiles, and share IDs are never changed. Speakers
+come from the exact public lineup query.`;
 }
 
 export function parseArgs(argv: string[], defaultBaseUrl = ''): CliOptions {
@@ -87,24 +88,10 @@ async function main(): Promise<void> {
     throw new Error('Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY');
   }
 
-  const { getVisibleSpeakersForOg } = await import('@/lib/cfp/speakers');
-  const publicSpeakerRows = await getVisibleSpeakersForOg();
-  if (publicSpeakerRows.length === 0) {
-    throw new Error('The public speaker lineup is empty; refusing to create an incomplete export');
-  }
-  const publicSpeakers: SpeakerBadgeSource[] = publicSpeakerRows.map((speaker) => ({
-    id: speaker.slug,
-    slug: speaker.slug,
-    first_name: speaker.first_name,
-    last_name: speaker.last_name,
-    company: speaker.company,
-    job_title: speaker.job_title,
-  }));
-
   const client = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const sources = await loadBadgeSources(client, publicSpeakers, options.provisionShareIds);
+  const sources = await loadBadgeSources(client, await loadPublicBadgeSpeakers(), options.provisionShareIds);
   const absoluteOutput = path.resolve(options.outputDir);
   const files = await buildBadgeExportFiles(sources, options.baseUrl, {
     csvPath: (fileName) => path.join(absoluteOutput, fileName),

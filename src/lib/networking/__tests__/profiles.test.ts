@@ -44,12 +44,14 @@ describe('public networking profiles', () => {
     expect(isValidNetworkingPublicId(`attendee-${SHARE_ID}`)).toBe(true);
     expect(isValidNetworkingPublicId(`sponsor-${SHARE_ID}`)).toBe(true);
     expect(isValidNetworkingPublicId('speaker-alex-ng')).toBe(true);
+    expect(isValidNetworkingPublicId(`badge-${SHARE_ID}`)).toBe(true);
 
     expect(isValidNetworkingPublicId(SHARE_ID)).toBe(false);
     expect(isValidNetworkingPublicId('attendee-not-a-uuid')).toBe(false);
     expect(isValidNetworkingPublicId('attendee-AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE')).toBe(false);
     expect(isValidNetworkingPublicId('speaker-Alex-Ng')).toBe(false);
     expect(isValidNetworkingPublicId('speaker-alex/ng')).toBe(false);
+    expect(isValidNetworkingPublicId('badge-not-a-uuid')).toBe(false);
     expect(isValidNetworkingPublicId('sponsor-11111111-2222-4333-8444-555555555555?admin=true')).toBe(false);
   });
 
@@ -233,5 +235,47 @@ describe('public networking profiles', () => {
     });
     expect(JSON.stringify(profile)).not.toContain('speaker-private-id');
     expect(JSON.stringify(profile)).not.toContain('speaker-private@example.com');
+  });
+
+  it('resolves an enabled manual organizer without exposing its database ID', async () => {
+    tableResults.set('manual_badge_entries', {
+      data: {
+        category: 'organizer',
+        first_name: 'Ada',
+        last_name: 'Lovelace',
+        role: 'Organizer',
+        company: 'ZurichJS',
+        logo_url: null,
+        networking_profile: {
+          linkedinUrl: 'https://linkedin.com/in/ada',
+          githubUrl: null,
+          xHandle: null,
+          blueskyHandle: null,
+          mastodonHandle: null,
+          websiteUrl: 'https://zurichjs.com',
+        },
+        id: 'private-manual-id',
+      },
+      error: null,
+    });
+
+    const profile = await resolvePublicNetworkingProfile(`badge-${SHARE_ID}`);
+
+    expect(profile).toEqual({
+      publicId: `badge-${SHARE_ID}`,
+      kind: 'organizer',
+      name: 'Ada Lovelace',
+      headline: 'Organizer @ ZurichJS',
+      imageUrl: null,
+      links: [
+        { kind: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/in/ada' },
+        { kind: 'website', label: 'Website', href: 'https://zurichjs.com' },
+      ],
+      path: `/share/badge-${SHARE_ID}`,
+    });
+    expect(JSON.stringify(profile)).not.toContain('private-manual-id');
+    expect(selectCalls.find((call) => call.table === 'manual_badge_entries')?.columns).toBe(
+      'category, first_name, last_name, role, company, logo_url, networking_profile'
+    );
   });
 });

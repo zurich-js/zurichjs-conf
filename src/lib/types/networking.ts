@@ -1,4 +1,4 @@
-export type NetworkingProfileKind = 'attendee' | 'speaker' | 'sponsor';
+export type NetworkingProfileKind = 'attendee' | 'vip' | 'speaker' | 'sponsor' | 'organizer';
 
 export type NetworkingLinkKind =
   | 'linkedin'

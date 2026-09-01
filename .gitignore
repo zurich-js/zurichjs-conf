@@ -66,3 +66,4 @@ supabase/.branches/
 
 # Local Illustrator badge exports (contains attendee data and generated assets)
 /badge-export/
+/output/pdf/badge-samples/

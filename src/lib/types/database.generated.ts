@@ -406,6 +406,33 @@ export type Database = {
         }
         Relationships: []
       }
+      badge_qr_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          subject_key: string
+          target_public_id: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          id?: string
+          subject_key: string
+          target_public_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          subject_key?: string
+          target_public_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cfp_config: {
         Row: {
           id: string
@@ -1717,6 +1744,51 @@ export type Database = {
           metadata?: Json
           name?: string
           notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      manual_badge_entries: {
+        Row: {
+          category: string
+          company: string
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          logo_url: string | null
+          networking_enabled: boolean
+          networking_profile: Json
+          role: string
+          share_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          company?: string
+          created_at?: string
+          first_name: string
+          id?: string
+          last_name?: string
+          logo_url?: string | null
+          networking_enabled?: boolean
+          networking_profile?: Json
+          role?: string
+          share_id?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company?: string
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          logo_url?: string | null
+          networking_enabled?: boolean
+          networking_profile?: Json
+          role?: string
+          share_id?: string
           updated_at?: string
         }
         Relationships: []

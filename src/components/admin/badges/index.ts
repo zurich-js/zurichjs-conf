@@ -1,1 +1,1 @@
-export { BadgeExportTab } from './BadgeExportTab';
+export { BadgeManagementPanel } from './BadgeManagementPanel';

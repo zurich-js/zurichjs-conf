@@ -3,9 +3,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const mockVerifyAdminAccess = vi.fn();
 const mockLoadBadgeSources = vi.fn();
+const mockFilterBadgeSources = vi.fn((sources: unknown, _includedIds?: unknown) => sources);
 const mockBuildBadgeExportFiles = vi.fn();
 const mockCreateZip = vi.fn();
-const mockGetVisibleSpeakers = vi.fn();
+const mockLoadPublicBadgeSpeakers = vi.fn();
 const mockServiceClient = {};
 
 vi.mock('@/lib/admin/auth', () => ({
@@ -13,6 +14,7 @@ vi.mock('@/lib/admin/auth', () => ({
 }));
 vi.mock('@/lib/badges/data', () => ({
   loadBadgeSources: (...args: unknown[]) => mockLoadBadgeSources(...args),
+  filterBadgeSources: (sources: unknown, includedIds: unknown) => mockFilterBadgeSources(sources, includedIds),
 }));
 vi.mock('@/lib/badges/files', () => ({
   buildBadgeExportFiles: (...args: unknown[]) => mockBuildBadgeExportFiles(...args),
@@ -20,8 +22,8 @@ vi.mock('@/lib/badges/files', () => ({
 vi.mock('@/lib/badges/zip', () => ({
   createZip: (...args: unknown[]) => mockCreateZip(...args),
 }));
-vi.mock('@/lib/cfp/speakers', () => ({
-  getVisibleSpeakersForOg: (...args: unknown[]) => mockGetVisibleSpeakers(...args),
+vi.mock('@/lib/badges/speakers', () => ({
+  loadPublicBadgeSpeakers: (...args: unknown[]) => mockLoadPublicBadgeSpeakers(...args),
 }));
 vi.mock('@/lib/supabase', () => ({
   createServiceRoleClient: () => mockServiceClient,
@@ -70,14 +72,15 @@ describe('POST /api/admin/badges/export', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockVerifyAdminAccess.mockReturnValue({ authorized: true, isBot: false });
-    mockGetVisibleSpeakers.mockResolvedValue([{
+    mockLoadPublicBadgeSpeakers.mockResolvedValue([{
+      id: 'public-speaker',
       slug: 'public-speaker',
       first_name: 'Public',
       last_name: 'Speaker',
       company: 'ZurichJS',
       job_title: 'Speaker',
     }]);
-    mockLoadBadgeSources.mockResolvedValue({ attendees: [], speakers: [], sponsors: [] });
+    mockLoadBadgeSources.mockResolvedValue({ attendees: [], speakers: [], sponsors: [], manual: [] });
     mockBuildBadgeExportFiles.mockResolvedValue([{ name: 'badges.csv', data: Buffer.from('csv') }]);
     mockCreateZip.mockReturnValue(Buffer.from('zip'));
   });
@@ -110,7 +113,12 @@ describe('POST /api/admin/badges/export', () => {
     await handler(makeReq('GET', undefined), res);
 
     expect(res.statusCode).toBe(200);
-    expect(mockLoadBadgeSources).toHaveBeenCalledWith(mockServiceClient, expect.any(Array), false);
+    expect(mockLoadBadgeSources).toHaveBeenCalledWith(
+      mockServiceClient,
+      expect.any(Array),
+      false,
+      undefined
+    );
   });
 
   it('uses the exact public lineup rows and returns a ZIP download', async () => {
@@ -118,7 +126,7 @@ describe('POST /api/admin/badges/export', () => {
 
     await handler(makeReq(), res);
 
-    expect(mockGetVisibleSpeakers).toHaveBeenCalledTimes(1);
+    expect(mockLoadPublicBadgeSpeakers).toHaveBeenCalledTimes(1);
     expect(mockLoadBadgeSources).toHaveBeenCalledWith(
       mockServiceClient,
       [{
@@ -129,17 +137,81 @@ describe('POST /api/admin/badges/export', () => {
         company: 'ZurichJS',
         job_title: 'Speaker',
       }],
-      true
+      true,
+      undefined
     );
     expect(mockBuildBadgeExportFiles).toHaveBeenCalledWith(
-      { attendees: [], speakers: [], sponsors: [] },
+      { attendees: [], speakers: [], sponsors: [], manual: [] },
       'https://conf.example.test',
       expect.objectContaining({ csvPath: expect.any(Function) })
     );
     expect(res.statusCode).toBe(200);
     expect(res.headers['Content-Type']).toBe('application/zip');
-    expect(res.headers['Content-Disposition']).toMatch(/^attachment; filename="zurichjs-badges-/);
+    expect(res.headers['Content-Disposition']).toMatch(
+      /^attachment; filename="zurichjs-all-badge-data-/
+    );
     expect(res.body).toEqual(Buffer.from('zip'));
+  });
+
+  it('scopes a tab export and names the archive for that category', async () => {
+    const res = makeRes();
+    const includedIds = ['attendee:ticket-vip'];
+
+    await handler(makeReq('POST', {
+      provisionShareIds: true,
+      mode: 'tab-data',
+      category: 'vip',
+      includedIds,
+    }), res);
+
+    expect(mockLoadBadgeSources).toHaveBeenCalledWith(
+      mockServiceClient,
+      expect.any(Array),
+      true,
+      includedIds
+    );
+    expect(mockFilterBadgeSources).toHaveBeenCalledWith(expect.anything(), includedIds);
+    expect(res.headers['Content-Disposition']).toMatch(
+      /^attachment; filename="zurichjs-vip-badge-data-/
+    );
+  });
+
+  it('returns a tab PDF directly without the data archive', async () => {
+    const pdf = Buffer.from('pdf-only');
+    mockBuildBadgeExportFiles.mockResolvedValue([{ name: 'pdf/vip-all.pdf', data: pdf }]);
+    const res = makeRes();
+
+    await handler(makeReq('POST', {
+      provisionShareIds: true,
+      mode: 'tab-pdfs',
+      category: 'vip',
+      includedIds: ['attendee:ticket-vip'],
+    }), res);
+
+    expect(mockBuildBadgeExportFiles).toHaveBeenCalledWith(
+      expect.anything(),
+      'https://conf.example.test',
+      expect.objectContaining({ includeDataFiles: false })
+    );
+    expect(mockCreateZip).not.toHaveBeenCalled();
+    expect(res.headers['Content-Type']).toBe('application/pdf');
+    expect(res.headers['Content-Disposition']).toMatch(
+      /^attachment; filename="zurichjs-vip-badges-.*\.pdf"$/
+    );
+    expect(res.body).toEqual(pdf);
+  });
+
+  it('requires a category for tab export modes', async () => {
+    const res = makeRes();
+
+    await handler(makeReq('POST', {
+      provisionShareIds: true,
+      mode: 'tab-pdfs',
+      includedIds: ['attendee:ticket-vip'],
+    }), res);
+
+    expect(res.statusCode).toBe(400);
+    expect(mockLoadBadgeSources).not.toHaveBeenCalled();
   });
 
   it('returns a conflict when disabled share IDs must be provisioned', async () => {
