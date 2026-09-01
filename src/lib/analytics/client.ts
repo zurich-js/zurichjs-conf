@@ -10,6 +10,7 @@
  */
 
 import posthog from 'posthog-js'
+import type { ErrorSeverity, ErrorType } from '@/lib/errors'
 import type { EventName, EventProperties } from './events'
 import { sanitizeAnalyticsUrl } from './privacy'
 
@@ -237,8 +238,8 @@ class AnalyticsClient {
     message: string,
     error?: Error,
     context?: {
-      type?: 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
-      severity?: 'low' | 'medium' | 'high' | 'critical'
+      type?: ErrorType
+      severity?: ErrorSeverity
       code?: string
       /** Force PostHog error-tracking grouping ($exception_fingerprint). */
       fingerprint?: string

@@ -8,9 +8,30 @@
  * option — these helpers are for Node/serverless code.
  */
 
+import { ErrorCodes, ExternalServiceError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 
 const log = logger.scope('Retry')
+
+/**
+ * Exhaustion is a terminal, reportable event — the silent `throw lastError`
+ * this replaces never reached error tracking (only per-attempt `warn`s did).
+ * The wrapper groups per label (`retry-exhausted:sendDoorEmail`), keeps the
+ * final failure on `cause`, and lets the caller's ordinary `log.error` produce
+ * a correctly-tagged PostHog/Sentry event with the full chain.
+ */
+function exhausted(error: unknown, label: string | undefined, attempts: number): ExternalServiceError {
+  return new ExternalServiceError(
+    `Retries exhausted after ${attempts} attempt(s)${label ? `: ${label}` : ''}`,
+    {
+      cause: error,
+      code: ErrorCodes.RETRY_EXHAUSTED,
+      severity: 'high',
+      fingerprint: `retry-exhausted:${label ?? 'unlabeled'}`,
+      context: { label, attempts },
+    }
+  )
+}
 
 export interface RetryOptions {
   /** Total attempts including the first try. Default: 3. */
@@ -59,9 +80,13 @@ export async function retry<T>(
       return await fn()
     } catch (error) {
       lastError = error
-      const isLast = attempt === attempts
-      if (isLast || !shouldRetry(error, attempt)) {
+      if (!shouldRetry(error, attempt)) {
+        // Non-transient by the caller's own definition — rethrow untouched so
+        // domain `instanceof` checks upstream keep working.
         throw error
+      }
+      if (attempt === attempts) {
+        throw exhausted(error, label, attempts)
       }
       const delay = computeBackoff(attempt, baseDelayMs, maxDelayMs)
       log.warn('Operation failed, retrying', {
@@ -73,18 +98,24 @@ export async function retry<T>(
       await sleep(delay)
     }
   }
-  throw lastError
+  throw exhausted(lastError, label, attempts)
 }
 
-/** Network-level fetch failure (DNS, TCP reset, TLS, timeout). */
-export function isNetworkError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false
+/**
+ * Network-level fetch failure (DNS, TCP reset, TLS, timeout).
+ *
+ * Walks the `cause` chain (depth-limited) so a network failure stays
+ * recognizable after being wrapped — e.g. the RETRY_EXHAUSTED wrapper thrown
+ * by these helpers, or any domain rethrow that preserved `cause`.
+ */
+export function isNetworkError(error: unknown, depth = 4): boolean {
+  if (depth <= 0 || !(error instanceof Error)) return false
   // Node's undici surfaces transient failures as `TypeError: fetch failed`
   // with a `cause` chain. Cover both the message and common cause codes.
   if (error.name === 'TypeError' && error.message === 'fetch failed') return true
-  const cause = (error as { cause?: { code?: string } }).cause
-  const code = cause?.code
-  return (
+  const cause = (error as { cause?: unknown }).cause
+  const code = (cause as { code?: string } | undefined)?.code
+  if (
     code === 'ECONNRESET' ||
     code === 'ECONNREFUSED' ||
     code === 'ETIMEDOUT' ||
@@ -92,7 +123,10 @@ export function isNetworkError(error: unknown): boolean {
     code === 'ENOTFOUND' ||
     code === 'UND_ERR_SOCKET' ||
     code === 'UND_ERR_CONNECT_TIMEOUT'
-  )
+  ) {
+    return true
+  }
+  return isNetworkError(cause, depth - 1)
 }
 
 export interface FetchWithRetryOptions extends RetryOptions {
@@ -142,9 +176,11 @@ export async function fetchWithRetry(
       await sleep(delay)
     } catch (error) {
       lastError = error
-      const isLast = attempt === attempts
-      if (isLast || !isNetworkError(error)) {
+      if (!isNetworkError(error)) {
         throw error
+      }
+      if (attempt === attempts) {
+        throw exhausted(error, label, attempts)
       }
       const delay = computeBackoff(attempt, baseDelayMs, maxDelayMs)
       log.warn('Fetch threw network error, retrying', {
@@ -156,7 +192,7 @@ export async function fetchWithRetry(
       await sleep(delay)
     }
   }
-  throw lastError
+  throw exhausted(lastError, label, attempts)
 }
 
 function parseRetryAfter(header: string | null): number | null {

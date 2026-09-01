@@ -11,10 +11,18 @@ import {
 } from "./src/lib/analytics/privacy";
 
 Sentry.init({
-  dsn: "https://2ecf4731ccaf3ac40da000ef51dd3fe3@o4510674417483776.ingest.de.sentry.io/4510674435178576",
+  dsn:
+    process.env.SENTRY_DSN ??
+    "https://2ecf4731ccaf3ac40da000ef51dd3fe3@o4510674417483776.ingest.de.sentry.io/4510674435178576",
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  // Local dev stays out of the project entirely; preview deploys report but
+  // are separable from production via the environment tag below.
+  enabled: process.env.NODE_ENV === "production",
+  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+  release: process.env.VERCEL_GIT_COMMIT_SHA,
+
+  // Errors are always sent; traces are sampled.
+  tracesSampleRate: 0.1,
 
   enableLogs: false,
 

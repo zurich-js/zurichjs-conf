@@ -10,6 +10,7 @@
  */
 
 import { PostHog } from 'posthog-node'
+import type { ErrorSeverity, ErrorType } from '@/lib/errors'
 import type { EventName, EventProperties } from './events'
 
 class ServerAnalyticsClient {
@@ -207,8 +208,8 @@ class ServerAnalyticsClient {
     distinctId: string,
     message: string,
     context?: {
-      type?: 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
-      severity?: 'low' | 'medium' | 'high' | 'critical'
+      type?: ErrorType
+      severity?: ErrorSeverity
       code?: string
       stack?: string
       [key: string]: unknown
@@ -259,8 +260,8 @@ class ServerAnalyticsClient {
     error: Error | unknown,
     context?: {
       distinctId?: string
-      type?: 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
-      severity?: 'low' | 'medium' | 'high' | 'critical'
+      type?: ErrorType
+      severity?: ErrorSeverity
       fingerprint?: string
       flow?: string
       action?: string

@@ -11,7 +11,15 @@ import {
 import { isSensitiveRoute } from "@/lib/analytics/sensitive-routes";
 
 Sentry.init({
-  dsn: "https://2ecf4731ccaf3ac40da000ef51dd3fe3@o4510674417483776.ingest.de.sentry.io/4510674435178576",
+  dsn:
+    process.env.NEXT_PUBLIC_SENTRY_DSN ??
+    "https://2ecf4731ccaf3ac40da000ef51dd3fe3@o4510674417483776.ingest.de.sentry.io/4510674435178576",
+
+  // Local dev stays out of the project entirely; preview deploys report but
+  // are separable from production via the environment tag below.
+  enabled: process.env.NODE_ENV === "production",
+  environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
+  release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
 
   // Add optional integrations for additional features.
   // Replay is omitted entirely on door screens: those display attendee names,
@@ -22,8 +30,8 @@ Sentry.init({
     ? []
     : [Sentry.replayIntegration()],
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  // Errors are always sent; traces are sampled.
+  tracesSampleRate: 0.1,
   enableLogs: false,
 
   // Define how likely Replay events are sampled.

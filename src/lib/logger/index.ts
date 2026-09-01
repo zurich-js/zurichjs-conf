@@ -19,6 +19,8 @@
  *   logger.debug('Processing webhook', { eventType: 'checkout.completed' })
  */
 
+import * as Sentry from '@sentry/nextjs'
+
 import { analytics } from '@/lib/analytics/client'
 import { serverAnalytics } from '@/lib/analytics/server'
 import { AppError, type ErrorSeverity, type ErrorType } from '@/lib/errors'
@@ -191,6 +193,32 @@ function safeStringify(value: unknown): string {
   }
 }
 
+/**
+ * Detect the widespread call-signature slip `log.error(msg, { userId, foo })`:
+ * a plain metadata object passed in the ERROR slot. Coercing it (the old
+ * behaviour) produced a stackless "NonError" whose message is the stringified
+ * context — every such call site collapsed into ONE unreadable PostHog issue.
+ * An object with none of message/name/stack is context, not an error; it is
+ * merged into the context argument instead.
+ */
+function isBareContextObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object') return false
+  if (value instanceof Error || Array.isArray(value)) return false
+  const source = value as Record<string, unknown>
+  return (
+    typeof source.message !== 'string' &&
+    typeof source.name !== 'string' &&
+    typeof source.stack !== 'string'
+  )
+}
+
+const SEVERITY_TO_SENTRY_LEVEL: Record<ErrorSeverity, Sentry.SeverityLevel> = {
+  low: 'info',
+  medium: 'warning',
+  high: 'error',
+  critical: 'fatal',
+}
+
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development'
   private isServer = typeof window === 'undefined'
@@ -243,14 +271,21 @@ class Logger {
       severity?: ErrorSeverity
       type?: ErrorType
       code?: string
-      /** Force PostHog error-tracking grouping (maps to $exception_fingerprint). */
+      /** Force error-tracking grouping (PostHog $exception_fingerprint + Sentry fingerprint). */
       fingerprint?: string
     }
   ): void {
+    // `log.error(msg, { userId })` — metadata in the error slot. Re-slot it so
+    // the context is queryable and the issue doesn't group as "NonError".
+    if (isBareContextObject(error)) {
+      context = { ...error, ...context }
+      error = undefined
+    }
+
     const errorObj = toLoggableError(error)
     this.log('error', message, errorObj, context)
 
-    // Track errors in PostHog for monitoring
+    // Track errors in PostHog + Sentry for monitoring
     this.trackError(message, errorObj, context)
   }
 
@@ -291,10 +326,17 @@ class Logger {
     // Output to console
     this.outputToConsole(entry)
 
-    // In production, could also send to external logging service
-    // if (!this.isDevelopment) {
-    //   this.sendToLoggingService(entry)
-    // }
+    // Warnings become Sentry breadcrumbs (free — no quota). When an error IS
+    // eventually captured, it arrives with the warn trail (retries, fallbacks,
+    // rate limits) that led up to it, instead of as an isolated event.
+    if (level === 'warn' && !this.isDevelopment) {
+      Sentry.addBreadcrumb({
+        category: 'logger',
+        level: 'warning',
+        message,
+        data: context,
+      })
+    }
   }
 
   /**
@@ -336,7 +378,9 @@ class Logger {
         error: entry.error,
       }
 
-      logFn(JSON.stringify(logData))
+      // safeStringify: a circular value in context must not take the log line
+      // down with it.
+      logFn(safeStringify(logData))
     }
   }
 
@@ -359,7 +403,12 @@ class Logger {
   }
 
   /**
-   * Track error in PostHog
+   * Track error in PostHog + Sentry.
+   *
+   * ONE taxonomy, BOTH tools: the same `code`, severity and fingerprint go to
+   * PostHog ($exception_fingerprint) and Sentry (fingerprint + tags), so an
+   * incident has one grouped title everywhere and `code:X` / `request_id:Y`
+   * searches work identically in both.
    */
   private trackError(
     message: string,
@@ -380,12 +429,31 @@ class Logger {
     const errorType = context?.type || tagged?.type || this.inferErrorType(message, error)
     const severity = context?.severity || tagged?.severity || this.inferSeverity(errorType)
     const code = context?.code ?? tagged?.code
-    const fingerprint = context?.fingerprint ?? tagged?.fingerprint
+    // Message-only logs group by the log message — without this they all share
+    // one synthetic-Error stack and collapse into a single issue.
+    const fingerprint =
+      context?.fingerprint ?? tagged?.fingerprint ?? (error ? undefined : `log/${message}`)
     const mergedContext = { ...tagged?.context, ...context }
 
     // Error tracking needs an Error even for message-only logs — otherwise the
     // failure never reaches the PostHog error-tracking view at all.
     const exception = error ?? new Error(message)
+
+    // Sentry: everything server-side; client-side only high/critical (quota —
+    // PostHog below receives every client error regardless).
+    if (this.isServer || severity === 'high' || severity === 'critical') {
+      const tags: Record<string, string> = { error_type: errorType, severity }
+      if (code) tags.error_code = code
+      if (typeof mergedContext.module === 'string') tags.module = mergedContext.module
+      if (typeof mergedContext.requestId === 'string') tags.request_id = mergedContext.requestId
+
+      Sentry.captureException(exception, {
+        level: SEVERITY_TO_SENTRY_LEVEL[severity],
+        tags,
+        fingerprint: fingerprint ? [fingerprint] : undefined,
+        extra: { log_message: message, ...mergedContext },
+      })
+    }
 
     if (this.isServer) {
       // Server-side error tracking: a real $exception via the native SDK, so

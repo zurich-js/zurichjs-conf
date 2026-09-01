@@ -239,8 +239,10 @@ export function trackCommunityPartnerClicked(params: {
 // Error Tracking Helpers
 // ============================================================================
 
-export type ErrorType = 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical'
+// Canonical definitions live in @/lib/errors; re-exported so existing imports
+// from this module keep working.
+export type { ErrorSeverity, ErrorType } from '@/lib/errors'
+import type { ErrorSeverity, ErrorType } from '@/lib/errors'
 
 interface CaptureExceptionOptions {
   type?: ErrorType
