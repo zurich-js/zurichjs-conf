@@ -14,6 +14,11 @@ const UTM_TAGS = {
   utm_campaign: 'connections',
 } as const;
 
+function isZurichJsHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/\.$/, '');
+  return normalized === 'zurichjs.com' || normalized.endsWith('.zurichjs.com');
+}
+
 function isAbortError(error: unknown): boolean {
   return (
     typeof error === 'object' &&
@@ -44,7 +49,10 @@ export function addNetworkingUtm(href: string, publicId: string): string {
     return href;
   }
 
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return href;
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    !isZurichJsHost(url.hostname)
+  ) return href;
 
   for (const [key, value] of Object.entries(UTM_TAGS)) {
     if (!url.searchParams.has(key)) url.searchParams.set(key, value);
