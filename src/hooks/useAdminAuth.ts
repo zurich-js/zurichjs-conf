@@ -6,6 +6,7 @@
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { adminKeys } from '@/lib/admin/query-keys';
+import { clearAdminCache } from '@/lib/admin/query-persister';
 
 const ADMIN_AUTH_QUERY_KEY = adminKeys.auth();
 
@@ -49,7 +50,9 @@ export function useAdminAuth() {
     } catch (err) {
       console.error('Logout failed:', err);
     }
+    // Clear both in-memory and persisted cache
     queryClient.clear();
+    await clearAdminCache();
     window.location.reload();
   }, [queryClient]);
 
