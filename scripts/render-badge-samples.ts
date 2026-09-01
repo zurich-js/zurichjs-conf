@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import QRCode from 'qrcode';
 import sharp from 'sharp';
@@ -40,20 +40,23 @@ async function main(): Promise<void> {
     }));
   }
   const sponsor = entries.find((entry) => entry.category === 'sponsor')!;
-  const logo = await sharp({
-    create: { width: 900, height: 180, channels: 4, background: '#2463eb' },
-  }).composite([{
-    input: Buffer.from('<svg width="900" height="180" xmlns="http://www.w3.org/2000/svg"><text x="450" y="120" text-anchor="middle" font-family="sans-serif" font-size="90" font-weight="700" fill="white">SAMPLE LOGO</text></svg>'),
-  }]).png().toBuffer();
+  const logo = await sharp(Buffer.from(
+    '<svg width="900" height="180" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="90" cy="90" r="82" fill="#315fb0"/>' +
+    '<text x="90" y="122" text-anchor="middle" font-family="sans-serif" font-size="94" font-weight="700" fill="white">N</text>' +
+    '<text x="205" y="123" font-family="sans-serif" font-size="104" font-weight="700" fill="white">sample</text>' +
+    '</svg>'
+  )).png().toBuffer();
 
   const files = await buildBadgePdfFiles(entries, {
     qrImages,
     logoImages: new Map([[sponsor.selectionId, logo]]),
   });
   const outputDirectory = path.join(process.cwd(), 'output', 'pdf', 'badge-samples');
+  await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all(files.map((file) => writeFile(
-    path.join(outputDirectory, path.basename(file.name)),
+    path.join(outputDirectory, `${file.name.split('/')[1]}-sample.pdf`),
     file.data
   )));
   process.stdout.write(`Wrote ${files.length} sample badge PDFs to ${outputDirectory}\n`);

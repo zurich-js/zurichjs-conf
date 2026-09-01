@@ -24,11 +24,6 @@ const CATEGORIES: Array<{ id: BadgeCategory; label: string }> = [
   { id: 'organizer', label: 'Organizers' },
 ];
 
-interface LogoOverride {
-  fileName: string;
-  dataUrl: string;
-}
-
 type ExportMode = 'tab-pdfs' | 'tab-data' | 'all-pdfs' | 'all-data';
 
 interface BadgeExportMenuProps {
@@ -102,31 +97,6 @@ function BadgeExportMenu({
   );
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error('Could not read the PNG logo'));
-    reader.readAsDataURL(file);
-  });
-}
-
-function imageWidth(file: File): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(image.naturalWidth);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('The selected file is not a readable PNG image'));
-    };
-    image.src = url;
-  });
-}
-
 async function fetchBadgeRows(): Promise<BadgeReviewResponse> {
   const response = await fetch('/api/admin/badges');
   if (!response.ok) throw new Error('Could not load badge rows');
@@ -145,7 +115,6 @@ export function BadgeManagementPanel() {
   const [provisioning, setProvisioning] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'error' | 'success' | 'warning'; message: string } | null>(null);
-  const [logoOverrides, setLogoOverrides] = useState<Map<string, LogoOverride>>(new Map());
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ['admin', 'badges'], queryFn: fetchBadgeRows });
   const rows = query.data?.rows ?? [];
@@ -230,40 +199,6 @@ export function BadgeManagementPanel() {
     }
   };
 
-  const setLogoOverride = async (row: BadgeReviewRow, file: File | null) => {
-    if (!file) {
-      setLogoOverrides((current) => {
-        const next = new Map(current);
-        next.delete(row.selectionId);
-        return next;
-      });
-      return;
-    }
-    if (file.type !== 'image/png' || !file.name.toLowerCase().endsWith('.png')) {
-      setFeedback({ tone: 'error', message: 'Sponsor logo overrides must be PNG files.' });
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setFeedback({ tone: 'error', message: 'Sponsor logo overrides must be 10 MB or smaller.' });
-      return;
-    }
-    try {
-      const [dataUrl, width] = await Promise.all([readFileAsDataUrl(file), imageWidth(file)]);
-      setLogoOverrides((current) => new Map(current).set(row.selectionId, {
-        fileName: file.name,
-        dataUrl,
-      }));
-      setFeedback({
-        tone: width < 500 ? 'warning' : 'success',
-        message: width < 500
-          ? `${file.name} is only ${width}px wide. It can be exported, but a PNG at least 500px wide is recommended for print.`
-          : `${file.name} (${width}px wide) will replace the stored logo for this export only.`,
-      });
-    } catch (error) {
-      setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Could not attach the logo' });
-    }
-  };
-
   const download = async (mode: ExportMode) => {
     setExporting(true);
     setFeedback(null);
@@ -278,9 +213,6 @@ export function BadgeManagementPanel() {
           mode,
           category: isTabExport ? activeCategory : undefined,
           includedIds,
-          logoOverrides: Object.fromEntries(
-            Array.from(logoOverrides).filter(([selectionId]) => includedIds.includes(selectionId))
-          ),
         }),
       });
       if (!response.ok) {
@@ -363,8 +295,6 @@ export function BadgeManagementPanel() {
           onRotate={rotate}
           onEdit={setModalEntry}
           onDelete={deleteManual}
-          logoOverrideNames={new Map(Array.from(logoOverrides, ([id, value]) => [id, value.fileName]))}
-          onLogoOverride={setLogoOverride}
         />
       )}
 
@@ -373,11 +303,13 @@ export function BadgeManagementPanel() {
           category={modalEntry?.category ?? activeCategory}
           entry={modalEntry ?? undefined}
           onClose={() => setModalEntry(undefined)}
-          onSaved={async () => {
+          onSaved={async (warning) => {
             const edited = Boolean(modalEntry);
             setModalEntry(undefined);
             await refresh();
-            setFeedback({ tone: 'success', message: edited ? 'Updated the manual badge row.' : `Added a manual ${activeCategory} badge row.` });
+            setFeedback(warning
+              ? { tone: 'warning', message: warning }
+              : { tone: 'success', message: edited ? 'Updated the manual badge row.' : `Added a manual ${activeCategory} badge row.` });
           }}
         />
       ) : null}

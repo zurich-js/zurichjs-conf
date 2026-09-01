@@ -175,7 +175,7 @@ describe('public networking profiles', () => {
       kind: 'sponsor',
       name: 'Example Sponsor',
       headline: 'Grace Hopper',
-      imageUrl: 'https://cdn.example.com/logo-color.svg',
+      imageUrl: 'https://cdn.example.com/logo.svg',
     });
     expect(JSON.stringify(profile)).not.toContain(SPONSOR_ID);
     expect(JSON.stringify(profile)).not.toContain('billing-private@example.com');

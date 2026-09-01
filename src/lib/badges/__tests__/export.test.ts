@@ -101,7 +101,7 @@ describe('badge export data', () => {
       lastName: 'Hopper',
       role: 'Sponsor',
       company: 'Color Corp',
-      logoUrl: 'https://cdn.example.test/color.svg',
+      logoUrl: 'https://cdn.example.test/mono.svg',
     });
   });
 

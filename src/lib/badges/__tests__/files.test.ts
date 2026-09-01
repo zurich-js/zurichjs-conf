@@ -14,7 +14,10 @@ vi.mock('qrcode', () => ({
   },
 }));
 vi.mock('@/lib/badges/pdf', () => ({
-  buildBadgePdfFiles: vi.fn(async () => [{ name: 'pdf/vip-all.pdf', data: Buffer.from('pdf') }]),
+  buildBadgePdfFiles: vi.fn(async () => [{
+    name: 'pdf/vip/ada-lovelace-attendee-ticket-1.pdf',
+    data: Buffer.from('pdf'),
+  }]),
 }));
 
 const sources: BadgeExportSources = {
@@ -50,7 +53,7 @@ const sources: BadgeExportSources = {
 };
 
 describe('deployed badge export files', () => {
-  it('builds relative archive paths, public speaker QRs, and color sponsor logos', async () => {
+  it('builds relative archive paths, public speaker QRs, and default sponsor logos', async () => {
     const fetchLogo = vi.fn(async () => new Response(Buffer.from('color-logo'), {
       status: 200,
       headers: { 'Content-Type': 'image/png' },
@@ -62,7 +65,7 @@ describe('deployed badge export files', () => {
 
     expect(files.map((file) => file.name)).toContain('qr/speaker-public-speaker.png');
     expect(files.map((file) => file.name)).toContain('logos/sponsor-sponsor-1.png');
-    expect(fetchLogo).toHaveBeenCalledWith(new URL('https://cdn.example.test/color.png'));
+    expect(fetchLogo).toHaveBeenCalledWith(new URL('https://cdn.example.test/mono.png'));
     expect(files.find((file) => file.name === 'speaker.csv')?.data.toString()).toContain(
       'qr/speaker-public-speaker.png'
     );
@@ -96,7 +99,10 @@ describe('deployed badge export files', () => {
       }),
     });
 
-    expect(files).toEqual([{ name: 'pdf/vip-all.pdf', data: Buffer.from('pdf') }]);
+    expect(files).toEqual([{
+      name: 'pdf/vip/ada-lovelace-attendee-ticket-1.pdf',
+      data: Buffer.from('pdf'),
+    }]);
   });
 
   it('uses a one-time sponsor PNG override without downloading or persisting it', async () => {

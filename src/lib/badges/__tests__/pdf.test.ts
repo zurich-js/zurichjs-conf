@@ -5,8 +5,8 @@ import sharp from 'sharp';
 import type { BadgeCategory, BadgeEntry } from '@/lib/badges/export';
 import { buildBadgePdfFiles } from '@/lib/badges/pdf';
 
-function entry(category: BadgeCategory): BadgeEntry {
-  const id = `11111111-2222-4333-8444-${category.padEnd(12, '0').slice(0, 12)}`;
+function entry(category: BadgeCategory, suffix: string = category): BadgeEntry {
+  const id = `11111111-2222-4333-8444-${suffix.padEnd(12, '0').slice(0, 12)}`;
   return {
     category,
     source: 'manual',
@@ -26,7 +26,9 @@ function entry(category: BadgeCategory): BadgeEntry {
 
 describe('badge PDF renderer', () => {
   it('renders two vector-template pages per person for every category', async () => {
-    const entries = (['vip', 'attendee', 'speaker', 'sponsor', 'organizer'] as BadgeCategory[]).map(entry);
+    const entries = (['vip', 'attendee', 'speaker', 'sponsor', 'organizer'] as BadgeCategory[])
+      .map((category) => entry(category));
+    entries.push({ ...entry('vip', 'vip-second'), firstName: 'Grace', lastName: 'Hopper' });
     const qrImages = new Map<string, Buffer>();
     for (const badge of entries) {
       qrImages.set(badge.selectionId, await QRCode.toBuffer(badge.qrUrl, { width: 400, margin: 2 }));
@@ -38,13 +40,9 @@ describe('badge PDF renderer', () => {
 
     const files = await buildBadgePdfFiles(entries, { qrImages, logoImages });
 
-    expect(files.map((file) => file.name)).toEqual([
-      'pdf/vip-all.pdf',
-      'pdf/attendee-all.pdf',
-      'pdf/speaker-all.pdf',
-      'pdf/sponsor-all.pdf',
-      'pdf/organizer-all.pdf',
-    ]);
+    expect(files).toHaveLength(entries.length);
+    expect(files.filter((file) => file.name.startsWith('pdf/vip/'))).toHaveLength(2);
+    expect(files.every((file) => !file.name.endsWith('-all.pdf'))).toBe(true);
     for (const file of files) {
       const pdf = await PDFDocument.load(file.data);
       expect(pdf.getPageCount()).toBe(2);

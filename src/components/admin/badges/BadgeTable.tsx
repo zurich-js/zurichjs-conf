@@ -1,4 +1,4 @@
-import { ExternalLink, ImageUp, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { ExternalLink, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import type { BadgeReviewRow } from '@/components/admin/badges/types';
 
 interface BadgeTableProps {
@@ -9,8 +9,6 @@ interface BadgeTableProps {
   onRotate: (row: BadgeReviewRow) => void;
   onEdit: (row: BadgeReviewRow) => void;
   onDelete: (row: BadgeReviewRow) => void;
-  logoOverrideNames: ReadonlyMap<string, string>;
-  onLogoOverride: (row: BadgeReviewRow, file: File | null) => void;
 }
 
 export function BadgeTable({
@@ -21,8 +19,6 @@ export function BadgeTable({
   onRotate,
   onEdit,
   onDelete,
-  logoOverrideNames,
-  onLogoOverride,
 }: BadgeTableProps) {
   if (rows.length === 0) {
     return <p className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-600">No rows in this category.</p>;
@@ -40,7 +36,7 @@ export function BadgeTable({
             <th className="px-4 py-3">Role / company</th>
             <th className="px-4 py-3">Share page</th>
             <th className="px-4 py-3">Badge QR</th>
-            {showsLogos ? <th className="px-4 py-3">Logo for this export</th> : null}
+            {showsLogos ? <th className="px-4 py-3">Default logo</th> : null}
             <th className="px-4 py-3 text-right">Actions</th>
           </tr>
         </thead>
@@ -87,23 +83,12 @@ export function BadgeTable({
                 </td>
                 {showsLogos ? (
                   <td className="px-4 py-4 align-top">
-                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-                      <ImageUp className="size-4" aria-hidden="true" />
-                      {logoOverrideNames.has(row.selectionId) ? 'Replace PNG' : 'Attach PNG'}
-                      <input
-                        type="file"
-                        accept="image/png,.png"
-                        className="sr-only"
-                        onChange={(event) => onLogoOverride(row, event.target.files?.[0] ?? null)}
-                      />
-                    </label>
-                    {logoOverrideNames.has(row.selectionId) ? (
-                      <div className="mt-2 flex items-center gap-2 text-xs">
-                        <span className="max-w-40 truncate text-green-700">{logoOverrideNames.get(row.selectionId)}</span>
-                        <button type="button" onClick={() => onLogoOverride(row, null)} className="font-semibold text-red-700 hover:underline">Remove</button>
+                    {row.logoUrl ? (
+                      <div className="inline-flex rounded-lg bg-black p-2">
+                        <img src={row.logoUrl} alt={`${row.company} logo`} className="h-6 max-w-36 object-contain" />
                       </div>
                     ) : (
-                      <p className="mt-1 text-xs text-gray-500">{row.logoUrl ? 'Using stored color logo' : 'No stored logo'}</p>
+                      <p className="text-xs font-medium text-amber-700">Edit this row to upload a logo</p>
                     )}
                   </td>
                 ) : null}

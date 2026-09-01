@@ -134,7 +134,7 @@ export async function buildBadgeExportFiles(
           const metadata = await sharp(data).metadata();
           if (metadata.width && metadata.width < 500) {
             warn(
-              `Logo for ${entry.company} is only ${metadata.width}px wide; use a one-time PNG override of at least 500px for print.`
+              `Logo for ${entry.company} is only ${metadata.width}px wide; upload a replacement default logo of at least 500px for print.`
             );
           }
         } catch {
@@ -181,7 +181,7 @@ export async function buildBadgeExportFiles(
     {
       name: 'README.txt',
       data: Buffer.from(
-        'The pdf/ directory contains print-ready, two-page front/back badge PDFs rendered from the approved templates. ' +
+        'The pdf/ directory contains one print-ready, two-page front/back badge PDF per person, rendered from the approved templates. ' +
         'CSV and image assets remain available for manual review or Illustrator workflows. ' +
         'Extract the complete archive and keep qr/ and logos/ beside the CSV files. ' +
         'Badge QR tokens redirect to stable share pages and can be replaced from /admin/badges before printing.\n',

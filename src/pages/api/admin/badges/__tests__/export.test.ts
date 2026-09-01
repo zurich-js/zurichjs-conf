@@ -176,9 +176,13 @@ describe('POST /api/admin/badges/export', () => {
     );
   });
 
-  it('returns a tab PDF directly without the data archive', async () => {
+  it('returns one PDF per person in a tab-only archive', async () => {
     const pdf = Buffer.from('pdf-only');
-    mockBuildBadgeExportFiles.mockResolvedValue([{ name: 'pdf/vip-all.pdf', data: pdf }]);
+    mockBuildBadgeExportFiles.mockResolvedValue([{
+      name: 'pdf/vip/ada-lovelace-attendee-ticket-vip.pdf',
+      data: pdf,
+    }]);
+    mockCreateZip.mockReturnValue(Buffer.from('pdf-zip'));
     const res = makeRes();
 
     await handler(makeReq('POST', {
@@ -193,12 +197,15 @@ describe('POST /api/admin/badges/export', () => {
       'https://conf.example.test',
       expect.objectContaining({ includeDataFiles: false })
     );
-    expect(mockCreateZip).not.toHaveBeenCalled();
-    expect(res.headers['Content-Type']).toBe('application/pdf');
+    expect(mockCreateZip).toHaveBeenCalledWith([{
+      name: 'pdf/vip/ada-lovelace-attendee-ticket-vip.pdf',
+      data: pdf,
+    }]);
+    expect(res.headers['Content-Type']).toBe('application/zip');
     expect(res.headers['Content-Disposition']).toMatch(
-      /^attachment; filename="zurichjs-vip-badges-.*\.pdf"$/
+      /^attachment; filename="zurichjs-vip-badge-pdfs-.*\.zip"$/
     );
-    expect(res.body).toEqual(pdf);
+    expect(res.body).toEqual(Buffer.from('pdf-zip'));
   });
 
   it('requires a category for tab export modes', async () => {

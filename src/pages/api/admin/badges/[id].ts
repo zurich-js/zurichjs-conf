@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAdminAccess } from '@/lib/admin/auth';
+import { BADGE_LOGO_BUCKET, badgeLogoDirectory } from '@/lib/badges/logo-storage';
 import { logger } from '@/lib/logger';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { manualBadgeEntrySchema } from '@/lib/validations/badges';
@@ -34,6 +35,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .delete()
         .eq('subject_key', `manual:${id}`);
       if (codeError) throw codeError;
+      const logoDirectory = badgeLogoDirectory(id);
+      const { data: logoFiles } = await client.storage.from(BADGE_LOGO_BUCKET).list(logoDirectory);
+      if (logoFiles?.length) {
+        const { error: logoError } = await client.storage.from(BADGE_LOGO_BUCKET)
+          .remove(logoFiles.map((file) => `${logoDirectory}/${file.name}`));
+        if (logoError) log.warn('Manual badge deleted but logo cleanup failed', { id, error: logoError });
+      }
       res.status(204).end();
       return;
     }

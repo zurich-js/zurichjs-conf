@@ -7,12 +7,10 @@ import type {
   BadgeExportSources,
   ManualBadgeSource,
   SpeakerBadgeSource,
-  SponsorBadgeSource,
 } from '@/lib/badges/export';
 
 interface NetworkingRow {
   ticket_id: string | null;
-  sponsor_id: string | null;
   share_id: string;
   enabled: boolean;
 }
@@ -24,7 +22,6 @@ interface BadgeCodeRow {
 }
 
 type AttendeeRow = Omit<AttendeeBadgeSource, 'share_id' | 'badge_code'>;
-type SponsorRow = Omit<SponsorBadgeSource, 'share_id' | 'badge_code'>;
 type PublicSpeakerRow = Omit<SpeakerBadgeSource, 'badge_code'>;
 type ManualRow = Omit<ManualBadgeSource, 'category' | 'badge_code'> & {
   category: string;
@@ -34,7 +31,6 @@ type ManualRow = Omit<ManualBadgeSource, 'category' | 'badge_code'> & {
 
 interface BaseRows {
   tickets: AttendeeRow[];
-  sponsors: SponsorRow[];
   manualRows: ManualRow[];
   networkingRows: NetworkingRow[];
   badgeCodes: BadgeCodeRow[];
@@ -49,7 +45,6 @@ function restrictBaseRows(
   return {
     ...rows,
     tickets: rows.tickets.filter((row) => included.has(`attendee:${row.id}`)),
-    sponsors: rows.sponsors.filter((row) => included.has(`sponsor:${row.id}`)),
     manualRows: rows.manualRows.filter((row) => included.has(`manual:${row.id}`)),
   };
 }
@@ -90,7 +85,7 @@ async function fetchAll<T>(
 }
 
 async function loadBaseRows(client: SupabaseClient): Promise<BaseRows> {
-  const [tickets, sponsors, manualRows, networkingRows, badgeCodes] = await Promise.all([
+  const [tickets, manualRows, networkingRows, badgeCodes] = await Promise.all([
     fetchAll<AttendeeRow>((from, to) => client
       .from('tickets')
       .select('id, first_name, last_name, company, job_title, ticket_category')
@@ -99,14 +94,6 @@ async function loadBaseRows(client: SupabaseClient): Promise<BaseRows> {
       .order('last_name', { ascending: true })
       .range(from, to) as unknown as PromiseLike<{
         data: AttendeeRow[] | null;
-        error: { message: string } | null;
-      }>),
-    fetchAll<SponsorRow>((from, to) => client
-      .from('sponsors')
-      .select('id, company_name, contact_name, logo_url, logo_url_color')
-      .order('company_name', { ascending: true })
-      .range(from, to) as unknown as PromiseLike<{
-        data: SponsorRow[] | null;
         error: { message: string } | null;
       }>),
     fetchAll<ManualRow>((from, to) => client
@@ -121,7 +108,7 @@ async function loadBaseRows(client: SupabaseClient): Promise<BaseRows> {
       }>),
     fetchAll<NetworkingRow>((from, to) => client
       .from('networking_profiles')
-      .select('ticket_id, sponsor_id, share_id, enabled')
+      .select('ticket_id, share_id, enabled')
       .range(from, to) as unknown as PromiseLike<{
         data: NetworkingRow[] | null;
         error: { message: string } | null;
@@ -135,7 +122,7 @@ async function loadBaseRows(client: SupabaseClient): Promise<BaseRows> {
       }>),
   ]);
 
-  return { tickets, sponsors, manualRows, networkingRows, badgeCodes };
+  return { tickets, manualRows, networkingRows, badgeCodes };
 }
 
 function chunks<T>(values: T[]): T[][] {
@@ -148,8 +135,7 @@ function chunks<T>(values: T[]): T[][] {
 
 async function provisionMissingShareRows(
   client: SupabaseClient,
-  ticketIds: string[],
-  sponsorIds: string[]
+  ticketIds: string[]
 ): Promise<void> {
   for (const ids of chunks(ticketIds)) {
     const { error } = await client.from('networking_profiles').upsert(
@@ -157,13 +143,6 @@ async function provisionMissingShareRows(
       { onConflict: 'ticket_id', ignoreDuplicates: true }
     );
     if (error) throw new Error(`Failed to provision attendee share IDs: ${error.message}`);
-  }
-  for (const ids of chunks(sponsorIds)) {
-    const { error } = await client.from('networking_profiles').upsert(
-      ids.map((sponsorId) => ({ subject_type: 'sponsor', sponsor_id: sponsorId, enabled: false })),
-      { onConflict: 'sponsor_id', ignoreDuplicates: true }
-    );
-    if (error) throw new Error(`Failed to provision sponsor share IDs: ${error.message}`);
   }
 }
 
@@ -190,10 +169,6 @@ function subjectTargets(
   const ticketShares = new Map(
     rows.networkingRows.filter((row) => row.ticket_id).map((row) => [row.ticket_id!, row.share_id])
   );
-  const sponsorShares = new Map(
-    rows.networkingRows.filter((row) => row.sponsor_id).map((row) => [row.sponsor_id!, row.share_id])
-  );
-
   return [
     ...rows.tickets.flatMap((ticket) => {
       const shareId = ticketShares.get(ticket.id);
@@ -206,13 +181,6 @@ function subjectTargets(
       subject_key: `speaker:${speaker.id}`,
       target_public_id: `speaker-${speaker.slug}`,
     })),
-    ...rows.sponsors.flatMap((sponsor) => {
-      const shareId = sponsorShares.get(sponsor.id);
-      return shareId ? [{
-        subject_key: `sponsor:${sponsor.id}`,
-        target_public_id: `sponsor-${shareId}`,
-      }] : [];
-    }),
     ...rows.manualRows.map((entry) => ({
       subject_key: `manual:${entry.id}`,
       target_public_id: `badge-${entry.share_id}`,
@@ -233,26 +201,19 @@ export async function loadBadgeSources(
   let ticketShares = new Map(
     rows.networkingRows.filter((row) => row.ticket_id).map((row) => [row.ticket_id!, row.share_id])
   );
-  let sponsorShares = new Map(
-    rows.networkingRows.filter((row) => row.sponsor_id).map((row) => [row.sponsor_id!, row.share_id])
-  );
   const missingTicketIds = rows.tickets.filter((ticket) => !ticketShares.has(ticket.id)).map((ticket) => ticket.id);
-  const missingSponsorIds = rows.sponsors.filter((sponsor) => !sponsorShares.has(sponsor.id)).map((sponsor) => sponsor.id);
 
-  if (missingTicketIds.length || missingSponsorIds.length) {
+  if (missingTicketIds.length) {
     if (!provisionMissing) {
       throw new Error(
-        `${missingTicketIds.length} attendee(s) and ${missingSponsorIds.length} sponsor(s) need share IDs. ` +
+        `${missingTicketIds.length} attendee(s) need share IDs. ` +
         'Allow disabled share-ID and badge-code provisioning and try again.'
       );
     }
-    await provisionMissingShareRows(client, missingTicketIds, missingSponsorIds);
+    await provisionMissingShareRows(client, missingTicketIds);
     rows = restrictBaseRows(await loadBaseRows(client), includedSelectionIds);
     ticketShares = new Map(
       rows.networkingRows.filter((row) => row.ticket_id).map((row) => [row.ticket_id!, row.share_id])
-    );
-    sponsorShares = new Map(
-      rows.networkingRows.filter((row) => row.sponsor_id).map((row) => [row.sponsor_id!, row.share_id])
     );
   }
 
@@ -282,12 +243,6 @@ export async function loadBadgeSources(
     if (!shareId || !badgeCode) throw new Error(`Attendee ${ticket.id} is missing badge identifiers`);
     return { ...ticket, share_id: shareId, badge_code: badgeCode };
   });
-  const sponsors = rows.sponsors.map((sponsor): SponsorBadgeSource => {
-    const shareId = sponsorShares.get(sponsor.id);
-    const badgeCode = finalCodes.get(`sponsor:${sponsor.id}`);
-    if (!shareId || !badgeCode) throw new Error(`Sponsor ${sponsor.id} is missing badge identifiers`);
-    return { ...sponsor, share_id: shareId, badge_code: badgeCode };
-  });
   const speakers = selectedSpeakers.map((speaker): SpeakerBadgeSource => {
     const badgeCode = finalCodes.get(`speaker:${speaker.id}`);
     if (!badgeCode) throw new Error(`Speaker ${speaker.id} is missing a badge QR code`);
@@ -309,7 +264,7 @@ export async function loadBadgeSources(
     };
   });
 
-  return { attendees, speakers, sponsors, manual };
+  return { attendees, speakers, sponsors: [], manual };
 }
 
 export async function loadBadgeReviewRows(
@@ -320,9 +275,6 @@ export async function loadBadgeReviewRows(
   const rows = await loadBaseRows(client);
   const ticketNetworking = new Map(
     rows.networkingRows.filter((row) => row.ticket_id).map((row) => [row.ticket_id!, row])
-  );
-  const sponsorNetworking = new Map(
-    rows.networkingRows.filter((row) => row.sponsor_id).map((row) => [row.sponsor_id!, row])
   );
   const codes = new Map(rows.badgeCodes.map((row) => [row.subject_key, row]));
 
@@ -371,24 +323,6 @@ export async function loadBadgeReviewRows(
       networkingEnabled: true,
       networkingProfile: null,
     }, `speaker:${speaker.id}`)),
-    ...rows.sponsors.map((sponsor) => {
-      const networking = sponsorNetworking.get(sponsor.id);
-      const names = sponsor.contact_name.trim().split(/\s+/);
-      return reviewRow({
-        selectionId: `sponsor:${sponsor.id}`,
-        source: 'sponsor',
-        category: 'sponsor',
-        id: sponsor.id,
-        firstName: names.length > 1 ? names.slice(0, -1).join(' ') : names[0] ?? '',
-        lastName: names.length > 1 ? names.at(-1) ?? '' : '',
-        role: 'Sponsor',
-        company: sponsor.company_name,
-        logoUrl: sponsor.logo_url_color ?? sponsor.logo_url,
-        publicId: networking ? `sponsor-${networking.share_id}` : null,
-        networkingEnabled: networking?.enabled ?? false,
-        networkingProfile: null,
-      }, `sponsor:${sponsor.id}`);
-    }),
     ...rows.manualRows.map((entry) => {
       const profile = attendeeNetworkingProfileSchema.safeParse(entry.networking_profile);
       return reviewRow({

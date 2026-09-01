@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { PDFDocument } from 'pdf-lib';
+import sharp from 'sharp';
+import { BADGE_LOGO_BUCKET, badgeLogoDirectory } from '@/lib/badges/logo-storage';
 import { filterBadgeSources, loadBadgeReviewRows, loadBadgeSources } from '@/lib/badges/data';
 import { buildBadgeExportFiles } from '@/lib/badges/files';
 
@@ -33,6 +35,9 @@ async function main(): Promise<void> {
   });
   let manualId: string | null = null;
   let subjectKey: string | null = null;
+  let sponsorId: string | null = null;
+  let sponsorSubjectKey: string | null = null;
+  let sponsorLogoPath: string | null = null;
 
   try {
     const { data: manual, error: manualError } = await client.from('manual_badge_entries').insert({
@@ -60,6 +65,48 @@ async function main(): Promise<void> {
       target_public_id: `badge-${manual.share_id}`,
     }).select('code').single();
     if (codeError || !code) throw codeError ?? new Error('Badge code insert failed');
+
+    const { data: sponsor, error: sponsorError } = await client.from('manual_badge_entries').insert({
+      category: 'sponsor',
+      first_name: 'Integration',
+      last_name: 'Sponsor',
+      role: 'On-site representative',
+      company: 'Local Sponsor GmbH',
+      networking_enabled: true,
+      networking_profile: {
+        linkedinUrl: 'https://linkedin.com/company/local-sponsor',
+        githubUrl: null,
+        xHandle: null,
+        blueskyHandle: null,
+        mastodonHandle: null,
+        websiteUrl: 'https://example.test',
+      },
+    }).select('id, share_id').single();
+    if (sponsorError || !sponsor) throw sponsorError ?? new Error('Manual sponsor insert failed');
+    sponsorId = sponsor.id;
+    sponsorSubjectKey = `manual:${sponsor.id}`;
+    sponsorLogoPath = `${badgeLogoDirectory(sponsor.id)}/default_integration.png`;
+
+    const sponsorLogo = await sharp(Buffer.from(
+      '<svg width="900" height="180" xmlns="http://www.w3.org/2000/svg">' +
+      '<text x="450" y="125" text-anchor="middle" font-family="sans-serif" font-size="110" font-weight="700" fill="white">LOCAL SPONSOR</text>' +
+      '</svg>'
+    )).png().toBuffer();
+    const { error: logoUploadError } = await client.storage.from(BADGE_LOGO_BUCKET)
+      .upload(sponsorLogoPath, sponsorLogo, { contentType: 'image/png', upsert: false });
+    if (logoUploadError) throw logoUploadError;
+    const { data: logoPublicData } = client.storage.from(BADGE_LOGO_BUCKET)
+      .getPublicUrl(sponsorLogoPath);
+    const { error: logoUrlError } = await client.from('manual_badge_entries')
+      .update({ logo_url: logoPublicData.publicUrl })
+      .eq('id', sponsor.id);
+    if (logoUrlError) throw logoUrlError;
+
+    const { error: sponsorCodeError } = await client.from('badge_qr_codes').insert({
+      subject_key: sponsorSubjectKey,
+      target_public_id: `badge-${sponsor.share_id}`,
+    });
+    if (sponsorCodeError) throw sponsorCodeError;
 
     const { error: staleTargetError } = await client.from('badge_qr_codes')
       .update({ target_public_id: 'badge-00000000-0000-4000-8000-000000000000' })
@@ -90,19 +137,27 @@ async function main(): Promise<void> {
     if (!review || review.category !== 'organizer' || review.badgeCode !== replacementCode) {
       throw new Error('Manual organizer was not returned by badge review');
     }
+    const sponsorReview = reviewRows.find((row) => row.selectionId === sponsorSubjectKey);
+    if (!sponsorReview || sponsorReview.category !== 'sponsor' || sponsorReview.source !== 'manual' || !sponsorReview.logoUrl) {
+      throw new Error('Manual sponsor and its persistent default logo were not returned by badge review');
+    }
 
     const sources = filterBadgeSources(
-      await loadBadgeSources(client, [], true, [subjectKey]),
-      [subjectKey]
+      await loadBadgeSources(client, [], true, [subjectKey, sponsorSubjectKey]),
+      [subjectKey, sponsorSubjectKey]
     );
     const files = await buildBadgeExportFiles(sources, 'http://localhost:3000', {
       csvPath: (name) => name,
     });
-    const organizerPdf = files.find((file) => file.name === 'pdf/organizer-all.pdf');
+    const organizerPdf = files.find((file) => file.name.startsWith('pdf/organizer/'));
     if (!organizerPdf) throw new Error('Organizer PDF was not generated');
     const pdf = await PDFDocument.load(organizerPdf.data);
     if (pdf.getPageCount() !== 2 || Math.abs(pdf.getPage(0).getWidth() - 266.457) > 0.01) {
       throw new Error('Organizer PDF geometry is invalid');
+    }
+    const sponsorPdf = files.find((file) => file.name.startsWith('pdf/sponsor/'));
+    if (!sponsorPdf || (await PDFDocument.load(sponsorPdf.data)).getPageCount() !== 2) {
+      throw new Error('Per-person sponsor PDF was not generated');
     }
 
     const { resolvePublicNetworkingProfile } = await import('@/lib/networking/profiles');
@@ -110,10 +165,17 @@ async function main(): Promise<void> {
     if (publicProfile?.kind !== 'organizer' || publicProfile.name !== 'Integration Organizer') {
       throw new Error('Organizer share page did not resolve');
     }
+    const sponsorProfile = await resolvePublicNetworkingProfile(`badge-${sponsor.share_id}`);
+    if (sponsorProfile?.kind !== 'sponsor' || sponsorProfile.name !== 'Integration Sponsor' || !sponsorProfile.imageUrl) {
+      throw new Error('Manual sponsor share page did not resolve with its logo');
+    }
 
-    process.stdout.write('Local badge integration verified: create, review, rotate, share, render, cleanup.\n');
+    process.stdout.write('Local badge integration verified: attendee-independent manual sponsor, persistent logo, create, review, rotate, share, render, cleanup.\n');
   } finally {
+    if (sponsorLogoPath) await client.storage.from(BADGE_LOGO_BUCKET).remove([sponsorLogoPath]);
+    if (sponsorSubjectKey) await client.from('badge_qr_codes').delete().eq('subject_key', sponsorSubjectKey);
     if (subjectKey) await client.from('badge_qr_codes').delete().eq('subject_key', subjectKey);
+    if (sponsorId) await client.from('manual_badge_entries').delete().eq('id', sponsorId);
     if (manualId) await client.from('manual_badge_entries').delete().eq('id', manualId);
   }
 }

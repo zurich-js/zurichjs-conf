@@ -142,7 +142,7 @@ export function buildBadgeEntries(sources: BadgeExportSources, baseUrl: string):
       badgeCode: sponsor.badge_code,
       shareUrl: publicUrl(baseUrl, `/share/${publicId}`),
       qrUrl: qrUrl(baseUrl, sponsor.badge_code),
-      logoUrl: sponsor.logo_url_color ?? sponsor.logo_url,
+      logoUrl: sponsor.logo_url ?? sponsor.logo_url_color,
     };
   });
 

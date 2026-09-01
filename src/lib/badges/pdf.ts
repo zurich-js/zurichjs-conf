@@ -10,6 +10,9 @@ const MM_TO_POINTS = 72 / 25.4;
 const TEMPLATE_DIRECTORY = path.join(process.cwd(), 'assets', 'badges', 'templates');
 const FONT_DIRECTORY = path.join(process.cwd(), 'public', 'fonts');
 const VARIABLE_WIDTH_MM = 84;
+const SPONSOR_LOGO_BOX_WIDTH_MM = 36;
+const SPONSOR_LOGO_BOX_HEIGHT_MM = 8;
+const SPONSOR_LOGO_TOP_MM = 116;
 
 interface BadgePdfAssets {
   qrImages: ReadonlyMap<string, Buffer>;
@@ -22,6 +25,21 @@ function mm(value: number): number {
 
 function entryAssetKey(entry: BadgeEntry): string {
   return entry.selectionId;
+}
+
+function fileSegment(value: string): string {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'badge';
+}
+
+function entryPdfPath(entry: BadgeEntry): string {
+  const name = fileSegment(`${entry.firstName}-${entry.lastName}`);
+  const identity = fileSegment(`${entry.source}-${entry.id}`);
+  return `pdf/${entry.category}/${name}-${identity}.pdf`;
 }
 
 function copyPageBoxes(target: PDFPage, source: PDFPage): void {
@@ -166,15 +184,15 @@ async function addEntryPages(
     const logoData = assets.logoImages.get(entryAssetKey(entry));
     if (logoData) {
       const logo = await output.embedPng(await rasterizeLogo(logoData));
-      const boxWidth = mm(41.875);
-      const boxHeight = mm(10);
+      const boxWidth = mm(SPONSOR_LOGO_BOX_WIDTH_MM);
+      const boxHeight = mm(SPONSOR_LOGO_BOX_HEIGHT_MM);
       const natural = logo.scale(1);
       const scale = Math.min(boxWidth / natural.width, boxHeight / natural.height);
       const width = natural.width * scale;
       const height = natural.height * scale;
       front.drawImage(logo, {
         x: (front.getWidth() - width) / 2,
-        y: front.getHeight() - mm(118) - (boxHeight + height) / 2,
+        y: front.getHeight() - mm(SPONSOR_LOGO_TOP_MM) - (boxHeight + height) / 2,
         width,
         height,
       });
@@ -203,18 +221,17 @@ export async function buildBadgePdfFiles(
       throw new Error(`${category} badge template must contain exactly two pages`);
     }
 
-    const output = await PDFDocument.create();
-    output.registerFontkit(fontkit);
-    const [regular, bold, frontTemplate, backTemplate] = await Promise.all([
-      output.embedFont(regularBytes, { subset: true }),
-      output.embedFont(boldBytes, { subset: true }),
-      output.embedPage(template.getPage(0)),
-      output.embedPage(template.getPage(1)),
-    ]);
-    output.setTitle(`ZurichJS ${category} badges`);
-    output.setCreator('ZurichJS Conference badge export');
-
     for (const entry of categoryEntries) {
+      const output = await PDFDocument.create();
+      output.registerFontkit(fontkit);
+      const [regular, bold, frontTemplate, backTemplate] = await Promise.all([
+        output.embedFont(regularBytes, { subset: true }),
+        output.embedFont(boldBytes, { subset: true }),
+        output.embedPage(template.getPage(0)),
+        output.embedPage(template.getPage(1)),
+      ]);
+      output.setTitle(`ZurichJS ${category} badge - ${entry.firstName} ${entry.lastName}`.trim());
+      output.setCreator('ZurichJS Conference badge export');
       await addEntryPages(
         output,
         frontTemplate,
@@ -226,11 +243,11 @@ export async function buildBadgePdfFiles(
         regular,
         assets
       );
+      files.push({
+        name: entryPdfPath(entry),
+        data: Buffer.from(await output.save({ useObjectStreams: false })),
+      });
     }
-    files.push({
-      name: `pdf/${category}-all.pdf`,
-      data: Buffer.from(await output.save({ useObjectStreams: false })),
-    });
   }
 
   return files;

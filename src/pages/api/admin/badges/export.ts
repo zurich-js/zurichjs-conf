@@ -71,18 +71,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const date = new Date().toISOString().slice(0, 10);
 
     if (result.data.mode === 'tab-pdfs') {
-      const pdf = files.find((file) => file.name === `pdf/${result.data.category}-all.pdf`);
-      if (!pdf) {
+      const pdfs = files.filter((file) => file.name.startsWith(`pdf/${result.data.category}/`));
+      if (pdfs.length === 0) {
         res.status(404).json({ error: `No ${result.data.category} badges were selected` });
         return;
       }
-      res.setHeader('Content-Type', 'application/pdf');
+      const archive = createZip(pdfs);
+      res.setHeader('Content-Type', 'application/zip');
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="zurichjs-${result.data.category}-badges-${date}.pdf"`
+        `attachment; filename="zurichjs-${result.data.category}-badge-pdfs-${date}.zip"`
       );
-      res.setHeader('Content-Length', pdf.data.length);
-      res.status(200).send(pdf.data);
+      res.setHeader('Content-Length', archive.length);
+      res.status(200).send(archive);
       return;
     }
 

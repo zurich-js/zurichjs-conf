@@ -39,6 +39,13 @@ export const manualBadgeEntrySchema = z
   })
   .strict()
   .superRefine((value, context) => {
+    if (value.category === 'sponsor' && !value.company) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Company is required for sponsor badges',
+        path: ['company'],
+      });
+    }
     if (value.networkingEnabled && !Object.values(value.networkingProfile).some(Boolean)) {
       context.addIssue({
         code: 'custom',

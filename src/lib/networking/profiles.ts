@@ -259,7 +259,7 @@ async function resolveSponsor(publicId: string, shareId: string): Promise<Public
     kind: 'sponsor',
     name: sponsor.company_name,
     headline: profileResult.data.contactName,
-    imageUrl: sponsor.logo_url_color ?? sponsor.logo_url,
+    imageUrl: sponsor.logo_url ?? sponsor.logo_url_color,
     links,
     path: `/share/${publicId}`,
   };

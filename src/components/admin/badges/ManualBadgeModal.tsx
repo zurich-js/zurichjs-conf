@@ -2,12 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { AdminModal } from '@/components/admin/AdminModal';
 import type { BadgeReviewRow } from '@/components/admin/badges/types';
 import type { BadgeCategory } from '@/lib/badges/export';
+import { LOGO_UPLOAD_ACCEPT } from '@/lib/constants/logo-upload';
 
 interface ManualBadgeModalProps {
   category: BadgeCategory;
   entry?: BadgeReviewRow;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (warning?: string) => void;
 }
 
 interface ManualFormState {
@@ -64,6 +65,7 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
   const [form, setForm] = useState<ManualFormState>(() => initialForm(entry));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const update = <K extends keyof ManualFormState>(key: K, value: ManualFormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -71,6 +73,14 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (category === 'sponsor' && !form.company.trim()) {
+      setError('Enter the sponsor company shown on this badge.');
+      return;
+    }
+    if (category === 'sponsor' && !logoFile && !form.logoUrl) {
+      setError('Upload the default/white sponsor logo used on the black badge background.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -95,11 +105,34 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
           },
         }),
       });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({ error: 'Could not add badge row' })) as { error?: string };
+      const body = await response.json().catch(() => ({ error: 'Could not add badge row' })) as {
+        id?: string;
+        error?: string;
+      };
+      if (!response.ok || !body.id) {
         throw new Error(body.error ?? 'Could not add badge row');
       }
-      onSaved();
+
+      let logoWarning: string | undefined;
+      if (category === 'sponsor' && logoFile) {
+        const logoForm = new FormData();
+        logoForm.append('file', logoFile);
+        const logoResponse = await fetch(
+          `/api/admin/badges/${encodeURIComponent(body.id)}/logo`,
+          { method: 'POST', body: logoForm }
+        );
+        const logoBody = await logoResponse.json().catch(() => ({
+          error: 'Could not upload sponsor logo',
+        })) as { error?: string; warning?: string | null };
+        if (!logoResponse.ok) {
+          if (!entry) {
+            await fetch(`/api/admin/badges/${encodeURIComponent(body.id)}`, { method: 'DELETE' });
+          }
+          throw new Error(logoBody.error ?? 'Could not upload sponsor logo');
+        }
+        logoWarning = logoBody.warning ?? undefined;
+      }
+      onSaved(logoWarning);
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'Could not add badge row');
     } finally {
@@ -119,10 +152,32 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
           <TextField label="First name" required value={form.firstName} onChange={(value) => update('firstName', value)} />
           <TextField label="Last name" value={form.lastName} onChange={(value) => update('lastName', value)} />
           <TextField label="Role" value={form.role} onChange={(value) => update('role', value)} />
-          <TextField label="Company" value={form.company} onChange={(value) => update('company', value)} />
+          <TextField
+            label="Company"
+            required={category === 'sponsor'}
+            value={form.company}
+            onChange={(value) => update('company', value)}
+          />
           {category === 'sponsor' ? (
-            <div className="sm:col-span-2">
-              <TextField label="Color logo URL" value={form.logoUrl} onChange={(value) => update('logoUrl', value)} />
+            <div className="sm:col-span-2 rounded-xl border border-gray-200 p-4">
+              <label className="block text-sm font-semibold text-gray-900">
+                Default / white sponsor logo
+                <input
+                  type="file"
+                  accept={LOGO_UPLOAD_ACCEPT}
+                  onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
+                  className="mt-2 block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:font-semibold file:text-gray-800 hover:file:bg-gray-200"
+                />
+              </label>
+              <p className="mt-2 text-xs text-gray-500">
+                Use the default light/white logo intended for a black background. PNG, JPEG, WebP, or SVG; at least 500px wide is recommended for raster files.
+              </p>
+              {logoFile ? <p className="mt-2 text-xs font-medium text-green-700">Selected: {logoFile.name}</p> : null}
+              {form.logoUrl && !logoFile ? (
+                <div className="mt-3 inline-flex rounded-lg bg-black p-3">
+                  <img src={form.logoUrl} alt="Current sponsor logo" className="h-8 max-w-48 object-contain" />
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
