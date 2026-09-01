@@ -15,7 +15,6 @@ const navLinks = [
   { label: "Schedule", href: "/schedule" },
   { label: "Speakers", href: "/speakers" },
   { label: "Workshops", href: "/workshops" },
-  { label: "Volunteer", href: "/volunteer" },
 ];
 
 const socialLinks = [
