@@ -257,7 +257,7 @@ export function BadgeManagementPanel() {
     setFeedback(null);
     try {
       const response = await fetch('/api/admin/badges/provision', { method: 'POST' });
-      if (!response.ok) throw new Error('Could not generate missing share IDs and badge QR codes');
+      if (!response.ok) throw await responseError(response);
       await refresh();
       setFeedback({ tone: 'success', message: 'All missing share IDs and badge QR codes are now provisioned.' });
     } catch (error) {

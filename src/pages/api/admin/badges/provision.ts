@@ -36,6 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     log.error('Failed to provision badge identifiers', error);
-    res.status(500).json({ error: 'Failed to provision badge identifiers' });
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to provision badge identifiers',
+    });
   }
 }

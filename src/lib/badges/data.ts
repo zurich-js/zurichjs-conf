@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AttendeeNetworkingProfile } from '@/lib/types/networking';
 import { attendeeNetworkingProfileSchema } from '@/lib/validations/networking';
@@ -151,11 +152,24 @@ async function provisionBadgeCodes(
   targets: Array<{ subject_key: string; target_public_id: string; code?: string }>
 ): Promise<void> {
   for (const rows of chunks(targets)) {
-    const { error } = await client.from('badge_qr_codes').upsert(rows, {
-      onConflict: 'subject_key',
-    });
+    const { error } = await client.from('badge_qr_codes').upsert(
+      assignMissingBadgeCodes(rows),
+      {
+        onConflict: 'subject_key',
+      }
+    );
     if (error) throw new Error(`Failed to provision badge QR codes: ${error.message}`);
   }
+}
+
+export function assignMissingBadgeCodes(
+  targets: Array<{ subject_key: string; target_public_id: string; code?: string }>,
+  createCode: () => string = randomUUID
+): Array<{ subject_key: string; target_public_id: string; code: string }> {
+  return targets.map((target) => ({
+    ...target,
+    code: target.code ?? createCode(),
+  }));
 }
 
 function publicUrl(baseUrl: string, pathname: string): string {
@@ -285,7 +299,7 @@ export async function loadBadgeReviewRows(
     value: Omit<BadgeReviewRow, 'shareUrl' | 'badgeCode' | 'qrUrl'>,
     subjectKey: string
   ): BadgeReviewRow => {
-    const badgeCode = codes.get(subjectKey)?.code ?? null;
+    const badgeCode = value.publicId ? codes.get(subjectKey)?.code ?? null : null;
     return {
       ...value,
       shareUrl: value.publicId ? publicUrl(baseUrl, `/share/${value.publicId}`) : null,
