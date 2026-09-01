@@ -9,6 +9,14 @@
  *
  * Pitch carries the meaning: a volunteer looking at the attendee rather than the
  * screen still hears the difference between "admitted" and "stop".
+ *
+ * THE MICROPHONE IS NEVER TOUCHED. The beep is a pure OUTPUT oscillator; no
+ * code here (or anywhere at the door — the camera opens with `audio: false`)
+ * captures audio, and /checkin ships a Permissions-Policy header that denies
+ * the microphone outright. The context is also CLOSED when the shift ends
+ * (`disarmDoorAudio`): a page holding a live AudioContext keeps an OS audio
+ * session open, which on iOS is exactly what makes a station look like it is
+ * "using the mic" and duck other audio long after the volunteer signed out.
  */
 
 export type DoorFeedbackTone = 'success' | 'duplicate' | 'refused';
@@ -62,6 +70,29 @@ export function armDoorAudio(): void {
 /** Whether audio is unlocked, so the UI can prompt if it is not. */
 export function isDoorAudioArmed(): boolean {
   return audioContext !== null && audioContext.state === 'running';
+}
+
+/**
+ * Release the audio session when the shift ends.
+ *
+ * Closing (not merely suspending) hands the OS its audio session back, so the
+ * phone stops showing the page as an audio user the moment the volunteer signs
+ * out or leaves the station. Re-arming after this simply creates a fresh
+ * context on the next "start shift" tap.
+ */
+export function disarmDoorAudio(): void {
+  const context = audioContext;
+  if (!context) return;
+
+  // Nulled first, so a re-arm during the async close never grabs a context
+  // that is already on its way down.
+  audioContext = null;
+  try {
+    void context.close();
+  } catch {
+    // Already closed, or a browser that refuses — either way it is not ours
+    // any more.
+  }
 }
 
 /**

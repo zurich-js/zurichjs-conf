@@ -42,6 +42,7 @@ import { useDoorScanner } from '@/hooks/checkin/useDoorScanner';
 import { useDoorFeedback } from '@/hooks/checkin/useDoorFeedback';
 import { extractScannedId } from '@/lib/checkin/roster-index';
 import { DoorApiError } from '@/lib/checkin/api-fetch';
+import { disarmDoorAudio } from '@/lib/checkin/feedback';
 import { readQueue } from '@/lib/checkin/mutation-queue';
 import { checkinKeys } from '@/lib/checkin/query-keys';
 import type { DoorSearchableRecord } from '@/lib/checkin/roster-index';
@@ -353,6 +354,10 @@ export default function DoorStationPage() {
       }
     }
     scanner.stop();
+    // Hand the OS its audio session back with the camera: a page still holding
+    // a live AudioContext is what makes a phone show the station as an audio
+    // user after the shift. The mic itself is never requested anywhere.
+    disarmDoorAudio();
     await supabase.auth.signOut();
     // Drop the cached door state BEFORE navigating. The login page redirects
     // anyone with session data back here; leaving a signed-out session in the
@@ -360,6 +365,10 @@ export default function DoorStationPage() {
     queryClient.removeQueries({ queryKey: checkinKeys.all });
     void router.replace('/checkin/login');
   }, [queue, queryClient, router, scanner]);
+
+  // Release the audio session if the station is left by navigation rather than
+  // sign-out. The scanner hook already releases the camera the same way.
+  useEffect(() => disarmDoorAudio, []);
 
   const body = (() => {
     if (session.isError) {
