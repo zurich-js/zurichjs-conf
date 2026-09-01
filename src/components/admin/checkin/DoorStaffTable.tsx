@@ -34,76 +34,131 @@ export const DoorStaffTable: React.FC<DoorStaffTableProps> = ({
   onSetActive,
   className = '',
 }) => (
-  <div className={`overflow-x-auto rounded-xl border border-gray-200 bg-white ${className}`}>
-    <table className="min-w-full divide-y divide-gray-200">
-      <caption className="sr-only">Door check-in crew</caption>
-      <thead className="bg-gray-50">
-        <tr>
-          <Th>Volunteer</Th>
-          <Th>Role</Th>
-          <Th>Status</Th>
-          <Th>
-            <span className="sr-only">Actions</span>
-          </Th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-100">
-        {staff.map((member) => {
-          const busy = pendingId === member.id;
-          return (
-            <tr key={member.id} className={member.isActive ? '' : 'bg-gray-50/60'}>
-              <td className="px-4 py-3">
-                <p className="font-medium text-black">{member.name || '—'}</p>
-                <p className="text-sm break-all text-gray-600">{member.email}</p>
-              </td>
+  <div className={`rounded-xl border border-gray-200 bg-white ${className}`}>
+    {/* Mobile Card View */}
+    <div className="divide-y divide-gray-200 md:hidden">
+      {staff.map((member) => {
+        const busy = pendingId === member.id;
+        return (
+          <div
+            key={member.id}
+            className={`p-4 ${member.isActive ? '' : 'bg-gray-50/60'}`}
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-black">{member.name || '—'}</p>
+                <p className="truncate text-sm text-gray-600">{member.email}</p>
+              </div>
+              <StaffStatus member={member} />
+            </div>
 
-              <td className="px-4 py-3">
-                <label className="sr-only" htmlFor={`role-${member.id}`}>
-                  Role for {member.name || member.email}
-                </label>
-                <select
-                  id={`role-${member.id}`}
-                  value={member.role}
-                  disabled={busy || !member.isActive}
-                  onChange={(e) => onChangeRole(member.id, e.target.value as DoorRole)}
-                  className="cursor-pointer rounded-lg border border-gray-300 px-2 py-1 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {DOOR_ROLES.map((role) => (
-                    <option key={role} value={role}>
-                      {DOOR_ROLE_LABELS[role]}
-                    </option>
-                  ))}
-                </select>
-                {/* Says what this person is set up to do without making the lead
-                    scroll back to the comparison table. */}
-                <p className="mt-1 max-w-[15rem] text-xs text-gray-600">
-                  {DOOR_ROLE_LANE[member.role]}
-                </p>
-              </td>
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium text-gray-600" htmlFor={`role-mobile-${member.id}`}>
+                Role
+              </label>
+              <select
+                id={`role-mobile-${member.id}`}
+                value={member.role}
+                disabled={busy || !member.isActive}
+                onChange={(e) => onChangeRole(member.id, e.target.value as DoorRole)}
+                className="w-full cursor-pointer rounded-lg border border-gray-300 px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {DOOR_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {DOOR_ROLE_LABELS[role]}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-600">{DOOR_ROLE_LANE[member.role]}</p>
+            </div>
 
-              <td className="px-4 py-3">
-                <StaffStatus member={member} />
-              </td>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onSetActive(member.id, !member.isActive)}
+              className={`w-full cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                member.isActive
+                  ? 'border border-red-200 bg-red-50 text-red-700'
+                  : 'border border-green-200 bg-green-50 text-green-700'
+              }`}
+            >
+              {busy ? '…' : member.isActive ? 'Revoke access' : 'Restore access'}
+            </button>
+          </div>
+        );
+      })}
+    </div>
 
-              <td className="px-4 py-3 text-right">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onSetActive(member.id, !member.isActive)}
-                  className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
-                    member.isActive
-                      ? 'text-red-700 hover:bg-red-50'
-                      : 'text-green-700 hover:bg-green-50'
-                  }`}
-                >
-                  {busy ? '…' : member.isActive ? 'Revoke' : 'Restore'}
-                </button>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    {/* Desktop Table View */}
+    <div className="hidden overflow-x-auto md:block">
+      <table className="min-w-full divide-y divide-gray-200">
+        <caption className="sr-only">Door check-in crew</caption>
+        <thead className="bg-gray-50">
+          <tr>
+            <Th>Volunteer</Th>
+            <Th>Role</Th>
+            <Th>Status</Th>
+            <Th>
+              <span className="sr-only">Actions</span>
+            </Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {staff.map((member) => {
+            const busy = pendingId === member.id;
+            return (
+              <tr key={member.id} className={member.isActive ? '' : 'bg-gray-50/60'}>
+                <td className="px-4 py-3">
+                  <p className="font-medium text-black">{member.name || '—'}</p>
+                  <p className="break-all text-sm text-gray-600">{member.email}</p>
+                </td>
+
+                <td className="px-4 py-3">
+                  <label className="sr-only" htmlFor={`role-${member.id}`}>
+                    Role for {member.name || member.email}
+                  </label>
+                  <select
+                    id={`role-${member.id}`}
+                    value={member.role}
+                    disabled={busy || !member.isActive}
+                    onChange={(e) => onChangeRole(member.id, e.target.value as DoorRole)}
+                    className="cursor-pointer rounded-lg border border-gray-300 px-2 py-1 text-sm text-black focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {DOOR_ROLES.map((role) => (
+                      <option key={role} value={role}>
+                        {DOOR_ROLE_LABELS[role]}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 max-w-[15rem] text-xs text-gray-600">
+                    {DOOR_ROLE_LANE[member.role]}
+                  </p>
+                </td>
+
+                <td className="px-4 py-3">
+                  <StaffStatus member={member} />
+                </td>
+
+                <td className="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onSetActive(member.id, !member.isActive)}
+                    className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+                      member.isActive
+                        ? 'text-red-700 hover:bg-red-50'
+                        : 'text-green-700 hover:bg-green-50'
+                    }`}
+                  >
+                    {busy ? '…' : member.isActive ? 'Revoke' : 'Restore'}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   </div>
 );
 

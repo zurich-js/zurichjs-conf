@@ -52,7 +52,59 @@ export const DoorRoleGuide: React.FC<DoorRoleGuideProps> = ({
       ))}
     </div>
 
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+    {/* Mobile Card View - stacked abilities with inline role permissions */}
+    <div className="space-y-3 md:hidden">
+      {DOOR_ABILITIES.map((ability) => {
+        const guide = DOOR_ABILITY_GUIDE[ability];
+        return (
+          <div
+            key={ability}
+            className="rounded-xl border border-gray-200 bg-white p-4"
+          >
+            <p className="mb-2 text-sm font-medium text-black">{guide.label}</p>
+            <p className="mb-1 text-xs text-gray-700">
+              <span className="font-medium">With it:</span> {guide.withIt}
+            </p>
+            <p className="mb-3 text-xs text-gray-600">
+              <span className="font-medium">Without it:</span> {guide.withoutIt}
+            </p>
+            <div className="flex gap-2">
+              {DOOR_ROLES.map((role) => {
+                const allowed = roleCan(role, ability);
+                return (
+                  <div
+                    key={role}
+                    className={`flex flex-1 flex-col items-center rounded-lg px-2 py-2 ${
+                      highlight === role
+                        ? 'border border-brand-primary bg-yellow-50'
+                        : 'border border-gray-100 bg-gray-50'
+                    }`}
+                  >
+                    <span className="mb-1 text-[10px] font-medium text-gray-600">
+                      {DOOR_ROLE_LABELS[role]}
+                    </span>
+                    {allowed ? (
+                      <span className="inline-flex items-center gap-1 text-green-700">
+                        <Check className="h-4 w-4" aria-hidden="true" />
+                        <span className="text-xs font-medium">Yes</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-gray-400">
+                        <Minus className="h-4 w-4" aria-hidden="true" />
+                        <span className="text-xs font-medium">No</span>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Desktop Table View */}
+    <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white md:block">
       <table className="min-w-full divide-y divide-gray-200">
         <caption className="sr-only">
           What each door role can do, and what the volunteer sees either way
@@ -101,8 +153,6 @@ export const DoorRoleGuide: React.FC<DoorRoleGuideProps> = ({
                         highlight === role ? 'bg-yellow-50' : ''
                       }`}
                     >
-                      {/* Icon plus text, never colour alone: this table is the
-                          basis for a permissions decision. */}
                       {allowed ? (
                         <span className="inline-flex flex-col items-center gap-0.5 text-green-700">
                           <Check className="h-4 w-4" aria-hidden="true" />
