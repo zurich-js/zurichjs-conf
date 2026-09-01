@@ -3,7 +3,7 @@ import { PDFDocument } from 'pdf-lib';
 import QRCode from 'qrcode';
 import sharp from 'sharp';
 import type { BadgeCategory, BadgeEntry } from '@/lib/badges/export';
-import { buildBadgePdfFiles } from '@/lib/badges/pdf';
+import { buildBadgePdfFiles, prepareSponsorLogo } from '@/lib/badges/pdf';
 
 function entry(category: BadgeCategory, suffix: string = category): BadgeEntry {
   const id = `11111111-2222-4333-8444-${suffix.padEnd(12, '0').slice(0, 12)}`;
@@ -25,6 +25,38 @@ function entry(category: BadgeCategory, suffix: string = category): BadgeEntry {
 }
 
 describe('badge PDF renderer', () => {
+  it('centers visible sponsor artwork despite uneven transparent source padding', async () => {
+    const artwork = await sharp({
+      create: { width: 240, height: 80, channels: 4, background: '#ffffff' },
+    }).png().toBuffer();
+    const padded = await sharp({
+      create: { width: 900, height: 300, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    })
+      .composite([{ input: artwork, left: 40, top: 30 }])
+      .png()
+      .toBuffer();
+
+    const prepared = await prepareSponsorLogo(padded);
+    const { data, info } = await sharp(prepared).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    let left = info.width;
+    let right = -1;
+    let top = info.height;
+    let bottom = -1;
+    for (let y = 0; y < info.height; y += 1) {
+      for (let x = 0; x < info.width; x += 1) {
+        if (data[(y * info.width + x) * info.channels + 3] === 0) continue;
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+      }
+    }
+
+    expect({ width: info.width, height: info.height }).toEqual({ width: 1080, height: 240 });
+    expect(Math.abs(left - (info.width - 1 - right))).toBeLessThanOrEqual(1);
+    expect(Math.abs(top - (info.height - 1 - bottom))).toBeLessThanOrEqual(1);
+  });
+
   it('renders two vector-template pages per person for every category', async () => {
     const entries = (['vip', 'attendee', 'speaker', 'sponsor', 'organizer'] as BadgeCategory[])
       .map((category) => entry(category));

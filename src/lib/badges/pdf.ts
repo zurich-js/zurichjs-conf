@@ -13,6 +13,8 @@ const VARIABLE_WIDTH_MM = 84;
 const SPONSOR_LOGO_BOX_WIDTH_MM = 36;
 const SPONSOR_LOGO_BOX_HEIGHT_MM = 8;
 const SPONSOR_LOGO_TOP_MM = 116;
+const SPONSOR_LOGO_CANVAS_WIDTH = 1080;
+const SPONSOR_LOGO_CANVAS_HEIGHT = 240;
 
 interface BadgePdfAssets {
   qrImages: ReadonlyMap<string, Buffer>;
@@ -132,12 +134,19 @@ function drawCenteredWrapped(
   });
 }
 
-async function rasterizeLogo(data: Buffer): Promise<Buffer> {
+export async function prepareSponsorLogo(data: Buffer): Promise<Buffer> {
   return sharp(data, { density: 300 })
     .trim({
       background: { r: 0, g: 0, b: 0, alpha: 0 },
       threshold: 10,
       lineArt: true,
+    })
+    .resize({
+      width: SPONSOR_LOGO_CANVAS_WIDTH,
+      height: SPONSOR_LOGO_CANVAS_HEIGHT,
+      fit: 'contain',
+      position: 'centre',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
     .png()
     .toBuffer();
@@ -190,18 +199,14 @@ async function addEntryPages(
   if (entry.category === 'sponsor') {
     const logoData = assets.logoImages.get(entryAssetKey(entry));
     if (logoData) {
-      const logo = await output.embedPng(await rasterizeLogo(logoData));
+      const logo = await output.embedPng(await prepareSponsorLogo(logoData));
       const boxWidth = mm(SPONSOR_LOGO_BOX_WIDTH_MM);
       const boxHeight = mm(SPONSOR_LOGO_BOX_HEIGHT_MM);
-      const natural = logo.scale(1);
-      const scale = Math.min(boxWidth / natural.width, boxHeight / natural.height);
-      const width = natural.width * scale;
-      const height = natural.height * scale;
       front.drawImage(logo, {
-        x: (front.getWidth() - width) / 2,
-        y: front.getHeight() - mm(SPONSOR_LOGO_TOP_MM) - (boxHeight + height) / 2,
-        width,
-        height,
+        x: (front.getWidth() - boxWidth) / 2,
+        y: front.getHeight() - mm(SPONSOR_LOGO_TOP_MM) - boxHeight,
+        width: boxWidth,
+        height: boxHeight,
       });
     }
   }
