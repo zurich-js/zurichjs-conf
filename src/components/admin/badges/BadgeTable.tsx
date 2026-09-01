@@ -46,6 +46,8 @@ export function BadgeTable({
           {rows.map((row) => {
             const included = !excludedIds.has(row.selectionId);
             const busy = busyId === row.selectionId;
+            const displayName = `${row.firstName} ${row.lastName}`.trim()
+              || `Empty ${row.category} row`;
             return (
               <tr key={row.selectionId} className={included ? '' : 'bg-gray-50 opacity-60'}>
                 <td className="px-4 py-4 align-top">
@@ -53,12 +55,14 @@ export function BadgeTable({
                     type="checkbox"
                     checked={included}
                     onChange={() => onToggle(row.selectionId)}
-                    aria-label={`Include ${row.firstName} ${row.lastName} in export`}
+                    aria-label={`Include ${displayName} in export`}
                     className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
                   />
                 </td>
                 <td className="px-4 py-4 align-top">
-                  <p className="font-semibold text-gray-900">{`${row.firstName} ${row.lastName}`.trim()}</p>
+                  <p className={`font-semibold ${row.firstName || row.lastName ? 'text-gray-900' : 'italic text-gray-500'}`}>
+                    {displayName}
+                  </p>
                   <p className={`mt-1 text-xs ${temporarilyEditedIds.has(row.selectionId) ? 'font-semibold text-blue-700' : 'text-gray-500'}`}>
                     {temporarilyEditedIds.has(row.selectionId)
                       ? 'Temporary export edit'
@@ -108,7 +112,7 @@ export function BadgeTable({
                       className="rounded-lg border border-amber-300 p-2 text-amber-800 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <RotateCcw className={`size-4 ${busy ? 'animate-spin' : ''}`} aria-hidden="true" />
-                      <span className="sr-only">Replace QR for {row.firstName} {row.lastName}</span>
+                      <span className="sr-only">Replace QR for {displayName}</span>
                     </button>
                     <button
                       type="button"
@@ -118,7 +122,7 @@ export function BadgeTable({
                       className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
                     >
                       <Pencil className="size-4" aria-hidden="true" />
-                      <span className="sr-only">Edit {row.firstName} {row.lastName}</span>
+                      <span className="sr-only">Edit {displayName}</span>
                     </button>
                     {row.source === 'manual' ? (
                       <button
@@ -129,7 +133,7 @@ export function BadgeTable({
                         className="rounded-lg border border-red-300 p-2 text-red-700 hover:bg-red-50 disabled:opacity-40"
                       >
                         <Trash2 className="size-4" aria-hidden="true" />
-                        <span className="sr-only">Delete {row.firstName} {row.lastName}</span>
+                        <span className="sr-only">Delete {displayName}</span>
                       </button>
                     ) : null}
                   </div>

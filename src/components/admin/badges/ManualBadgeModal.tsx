@@ -76,14 +76,6 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (category === 'sponsor' && !form.company.trim()) {
-      setError('Enter the sponsor company shown on this badge.');
-      return;
-    }
-    if (category === 'sponsor' && !logoFile && !form.logoUrl) {
-      setError('Upload the default/white sponsor logo used on the black badge background.');
-      return;
-    }
     setSaving(true);
     setError(null);
     try {
@@ -153,12 +145,16 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
     >
       <form onSubmit={submit} className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField label="First name" required value={form.firstName} onChange={(value) => update('firstName', value)} />
+          <TextField
+            label="First name"
+            required={category !== 'sponsor' && category !== 'organizer'}
+            value={form.firstName}
+            onChange={(value) => update('firstName', value)}
+          />
           <TextField label="Last name" value={form.lastName} onChange={(value) => update('lastName', value)} />
           <TextField label="Role" value={form.role} onChange={(value) => update('role', value)} />
           <TextField
             label="Company"
-            required={category === 'sponsor'}
             value={form.company}
             onChange={(value) => update('company', value)}
           />

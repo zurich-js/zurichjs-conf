@@ -152,6 +152,10 @@ function saveDownload(data: Blob, fileName: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+function badgeRowLabel(row: BadgeReviewRow): string {
+  return `${row.firstName} ${row.lastName}`.trim() || `empty ${row.category} row`;
+}
+
 async function validatedZipResponse(response: Response): Promise<Blob> {
   if (!response.headers.get('Content-Type')?.includes('application/zip')) {
     throw new Error('Badge export returned an invalid ZIP response');
@@ -268,7 +272,7 @@ export function BadgeManagementPanel() {
   };
 
   const rotate = async (row: BadgeReviewRow) => {
-    const name = `${row.firstName} ${row.lastName}`.trim();
+    const name = badgeRowLabel(row);
     if (!window.confirm(`Replace the badge QR for ${name}? The existing printed QR will stop working immediately. Only continue if it has not been printed.`)) return;
     setBusyId(row.selectionId);
     setFeedback(null);
@@ -289,7 +293,7 @@ export function BadgeManagementPanel() {
   };
 
   const deleteManual = async (row: BadgeReviewRow) => {
-    const name = `${row.firstName} ${row.lastName}`.trim();
+    const name = badgeRowLabel(row);
     if (!window.confirm(`Delete the manual badge row for ${name}? Its share page and badge QR will stop working.`)) return;
     setBusyId(row.selectionId);
     setFeedback(null);

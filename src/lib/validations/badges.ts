@@ -22,7 +22,7 @@ const nullableLogoUrl = z.preprocess(
 export const manualBadgeEntrySchema = z
   .object({
     category: badgeCategorySchema,
-    firstName: z.string().trim().min(1, 'First name is required').max(120),
+    firstName: optionalText(120),
     lastName: optionalText(120),
     role: optionalText(200),
     company: optionalText(200),
@@ -40,11 +40,11 @@ export const manualBadgeEntrySchema = z
   })
   .strict()
   .superRefine((value, context) => {
-    if (value.category === 'sponsor' && !value.company) {
+    if (!['sponsor', 'organizer'].includes(value.category) && !value.firstName) {
       context.addIssue({
         code: 'custom',
-        message: 'Company is required for sponsor badges',
-        path: ['company'],
+        message: 'First name is required',
+        path: ['firstName'],
       });
     }
     if (value.networkingEnabled && !Object.values(value.networkingProfile).some(Boolean)) {
