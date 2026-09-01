@@ -156,6 +156,10 @@ const mastodonHandleSchema = z.preprocess(
 const nullableTrimmedString = (max: number) =>
   z.preprocess(emptyStringToNull, z.string().trim().max(max).nullable());
 
+const emailSchema = z
+  .preprocess(emptyStringToNull, z.string().trim().email('Enter a valid email').max(254).nullable())
+  .transform((value) => value?.toLowerCase() ?? null);
+
 const phoneSchema = nullableTrimmedString(40).refine((value) => {
   if (value === null || !/^[+()\d\s.-]+$/.test(value)) return value === null;
   const digitCount = value.replace(/\D/g, '').length;
@@ -164,6 +168,7 @@ const phoneSchema = nullableTrimmedString(40).refine((value) => {
 
 export const attendeeNetworkingProfileSchema = z
   .object({
+    email: emailSchema.default(null),
     linkedinUrl: linkedinUrlSchema.default(null),
     githubUrl: githubUrlSchema.default(null),
     xHandle: socialHandleSchema(['x.com', 'twitter.com'], 100).default(null),
@@ -193,10 +198,7 @@ export const attendeeNetworkingUpdateSchema = z
 export const sponsorNetworkingProfileSchema = z
   .object({
     contactName: nullableTrimmedString(120).default(null),
-    email: z
-      .preprocess(emptyStringToNull, z.string().trim().email('Enter a valid email').max(254).nullable())
-      .transform((value) => value?.toLowerCase() ?? null)
-      .default(null),
+    email: emailSchema.default(null),
     phone: phoneSchema.default(null),
     websiteUrl: httpUrlSchema.default(null),
     linkedinUrl: linkedinUrlSchema.default(null),

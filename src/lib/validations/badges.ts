@@ -29,6 +29,7 @@ export const manualBadgeEntrySchema = z
     logoUrl: nullableLogoUrl,
     networkingEnabled: z.boolean().default(false),
     networkingProfile: attendeeNetworkingProfileSchema.default({
+      email: null,
       linkedinUrl: null,
       githubUrl: null,
       xHandle: null,

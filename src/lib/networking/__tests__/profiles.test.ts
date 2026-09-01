@@ -66,6 +66,7 @@ describe('public networking profiles', () => {
       data: {
         ticket_id: TICKET_ID,
         profile: {
+          email: 'networking@example.com',
           linkedinUrl: 'linkedin.com/in/ada',
           githubUrl: 'github.com/ada',
           xHandle: 'ada_dev',
@@ -97,6 +98,7 @@ describe('public networking profiles', () => {
       headline: 'Programmer @ Analytical Engines',
       imageUrl: null,
       links: [
+        { kind: 'email', label: 'Email', href: 'mailto:networking@example.com' },
         { kind: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/in/ada' },
         { kind: 'github', label: 'GitHub', href: 'https://github.com/ada' },
         { kind: 'x', label: 'X', href: 'https://x.com/ada_dev' },
@@ -136,7 +138,7 @@ describe('public networking profiles', () => {
     expect(await resolvePublicNetworkingProfile(`attendee-${SHARE_ID}`)).toBeNull();
 
     tableResults.set('networking_profiles', {
-      data: { ticket_id: TICKET_ID, profile: { email: 'not-public@example.com' } },
+      data: { ticket_id: TICKET_ID, profile: { email: 'not-an-email' } },
       error: null,
     });
     expect(await resolvePublicNetworkingProfile(`attendee-${SHARE_ID}`)).toBeNull();
@@ -247,6 +249,7 @@ describe('public networking profiles', () => {
         company: 'ZurichJS',
         logo_url: null,
         networking_profile: {
+          email: 'organizer@example.com',
           linkedinUrl: 'https://linkedin.com/in/ada',
           githubUrl: null,
           xHandle: null,
@@ -268,6 +271,7 @@ describe('public networking profiles', () => {
       headline: 'Organizer @ ZurichJS',
       imageUrl: null,
       links: [
+        { kind: 'email', label: 'Email', href: 'mailto:organizer@example.com' },
         { kind: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/in/ada' },
         { kind: 'website', label: 'Website', href: 'https://zurichjs.com' },
       ],

@@ -74,6 +74,7 @@ function handleUrl(baseUrl: string, handle: string | null): string | null {
 function attendeeLinks(profile: AttendeeNetworkingProfile): PublicNetworkingLink[] {
   const mastodon = canonicalMastodonUrl(profile.mastodonHandle);
   const links: Array<PublicNetworkingLink | null> = [
+    profile.email ? { kind: 'email', label: 'Email', href: `mailto:${profile.email}` } : null,
     profile.linkedinUrl ? { kind: 'linkedin', label: 'LinkedIn', href: profile.linkedinUrl } : null,
     profile.githubUrl ? { kind: 'github', label: 'GitHub', href: profile.githubUrl } : null,
     handleUrl('https://x.com/', profile.xHandle)

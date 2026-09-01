@@ -18,6 +18,7 @@ interface ManualFormState {
   company: string;
   logoUrl: string;
   networkingEnabled: boolean;
+  email: string;
   linkedinUrl: string;
   githubUrl: string;
   xHandle: string;
@@ -33,6 +34,7 @@ const EMPTY_FORM: ManualFormState = {
   company: '',
   logoUrl: '',
   networkingEnabled: false,
+  email: '',
   linkedinUrl: '',
   githubUrl: '',
   xHandle: '',
@@ -52,6 +54,7 @@ function initialForm(entry: BadgeReviewRow | undefined): ManualFormState {
     company: entry.company,
     logoUrl: entry.logoUrl ?? '',
     networkingEnabled: entry.networkingEnabled,
+    email: entry.networkingProfile?.email ?? '',
     linkedinUrl: entry.networkingProfile?.linkedinUrl ?? '',
     githubUrl: entry.networkingProfile?.githubUrl ?? '',
     xHandle: entry.networkingProfile?.xHandle ?? '',
@@ -96,6 +99,7 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
           logoUrl: form.logoUrl,
           networkingEnabled: form.networkingEnabled,
           networkingProfile: {
+            email: form.email,
             linkedinUrl: form.linkedinUrl,
             githubUrl: form.githubUrl,
             xHandle: form.xHandle,
@@ -194,6 +198,7 @@ export function ManualBadgeModal({ category, entry, onClose, onSaved }: ManualBa
             Enable the share page now. At least one link below is required when enabled.
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
+            <TextField type="email" label="Email" value={form.email} onChange={(value) => update('email', value)} />
             <TextField label="LinkedIn" value={form.linkedinUrl} onChange={(value) => update('linkedinUrl', value)} />
             <TextField label="GitHub" value={form.githubUrl} onChange={(value) => update('githubUrl', value)} />
             <TextField label="Website" value={form.websiteUrl} onChange={(value) => update('websiteUrl', value)} />
@@ -230,15 +235,17 @@ interface TextFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  type?: 'text' | 'email';
   required?: boolean;
 }
 
-function TextField({ label, value, onChange, required = false }: TextFieldProps) {
+function TextField({ label, value, onChange, type = 'text', required = false }: TextFieldProps) {
   return (
     <label className="block text-sm font-medium text-gray-700">
       {label}
       <input
-        type="text"
+        type={type}
+        autoComplete={type === 'email' ? 'email' : 'off'}
         required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}

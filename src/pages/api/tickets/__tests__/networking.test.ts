@@ -25,6 +25,7 @@ const TICKET_ID = 'fdd332be-86c9-4842-912c-e5c1c0968606';
 const MANAGE_TOKEN_NONCE = '9dc7c037-ef40-4ac5-b24c-66ee9e9ee0f9';
 const SHARE_ID = '11111111-2222-4333-8444-555555555555';
 const PROFILE = {
+  email: 'ada@example.com',
   linkedinUrl: 'https://linkedin.com/in/ada',
   githubUrl: 'https://github.com/ada',
   xHandle: '@ada',
@@ -134,7 +135,7 @@ describe('POST /api/tickets/[id]/networking', () => {
     expect(res.statusCode).toBe(200);
     expect(res.jsonBody).toEqual({ shareId: SHARE_ID, enabled: true, profile: PROFILE });
     expect(res.jsonBody).not.toHaveProperty('token');
-    expect(JSON.stringify(res.jsonBody)).not.toContain('email');
+    expect(JSON.stringify(res.jsonBody)).toContain('ada@example.com');
   });
 
   it('accepts an uppercase route UUID and uses its canonical token value', async () => {

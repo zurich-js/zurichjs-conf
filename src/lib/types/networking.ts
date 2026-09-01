@@ -11,6 +11,7 @@ export type NetworkingLinkKind =
   | 'phone';
 
 export interface AttendeeNetworkingProfile {
+  email: string | null;
   linkedinUrl: string | null;
   githubUrl: string | null;
   xHandle: string | null;
