@@ -62,7 +62,74 @@ export function ApparelTicketsTable({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
+      {/* Mobile Select All */}
+      <div className="md:hidden p-3 border-b border-gray-200 bg-gray-50">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={onToggleSelectAll}
+            aria-label="Select all visible tickets"
+            className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
+          />
+          <span className="text-sm text-gray-600">Select all</span>
+        </label>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden divide-y divide-gray-200">
+        {tickets.map((ticket) => {
+          const isVip = ticket.ticket_category === 'vip';
+          return (
+            <div
+              key={ticket.id}
+              className={`p-4 ${selectedIds.has(ticket.id) ? 'bg-blue-50/50' : ''}`}
+            >
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(ticket.id)}
+                  onChange={() => onToggleSelection(ticket.id)}
+                  aria-label={`Select ${ticket.first_name} ${ticket.last_name}`}
+                  className="mt-1 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        {ticket.first_name} {ticket.last_name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{ticket.email}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 capitalize text-sm text-gray-700 flex-shrink-0">
+                      {isVip && <Sparkles className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />}
+                      {ticket.ticket_category}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-gray-500">T-Shirt:</span>
+                      <SizeCell size={ticket.tshirt_size} applicable />
+                    </div>
+                    {isVip && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-500">Hoodie:</span>
+                        <SizeCell size={ticket.hoodie_size} applicable />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Last reminded: {formatReminderDate(ticket.apparel_reminder_sent_at)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>

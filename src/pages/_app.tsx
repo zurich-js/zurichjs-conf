@@ -87,6 +87,10 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
         capture_pageview: false,
         capture_pageleave: true,
         autocapture: false,
+        // Error tracking: capture unhandled exceptions and promise rejections
+        // automatically, so client failures that never pass through
+        // logger.error still land in PostHog error tracking.
+        capture_exceptions: true,
         before_send: (event) => sanitizePostHogEvent(event),
         // Never start a recording on a door screen or other private routes.
         // Attendee names, emails and apparel sizes are on display there, and

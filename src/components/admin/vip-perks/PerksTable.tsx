@@ -59,8 +59,70 @@ export function PerksTable({ perks, onSendEmail, onDeactivate }: PerksTableProps
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="md:hidden divide-y divide-gray-200">
+        {filteredPerks.map((perk) => (
+          <div key={perk.id} className="p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-gray-900 truncate">
+                  {perk.ticket.first_name} {perk.ticket.last_name}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{perk.ticket.email}</p>
+              </div>
+              {perk.is_active ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 flex-shrink-0">
+                  Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 flex-shrink-0">
+                  Inactive
+                </span>
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <code className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{perk.code}</code>
+                <button
+                  onClick={() => handleCopy(perk.code, perk.id)}
+                  className="p-1.5 hover:bg-gray-100 rounded cursor-pointer"
+                  title="Copy code"
+                >
+                  {copiedId === perk.id ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+                {perk.current_redemptions > 0 && (
+                  <span className="text-xs text-green-600 font-medium">Redeemed</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onSendEmail(perk)}
+                  className="p-2 hover:bg-blue-50 rounded text-blue-600 cursor-pointer"
+                  title="Send email"
+                >
+                  <Mail className="h-5 w-5" />
+                </button>
+                {perk.is_active && (
+                  <button
+                    onClick={() => onDeactivate(perk.id)}
+                    className="p-2 hover:bg-red-50 rounded text-red-500 cursor-pointer"
+                    title="Deactivate"
+                  >
+                    <XCircle className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>

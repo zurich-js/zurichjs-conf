@@ -47,9 +47,32 @@ log.error(message: string, error: unknown, context?: Record<string, unknown>);
 
 ## PostHog forwarding
 
-All `log.error()` calls capture a `$exception` event in PostHog via
-`serverAnalytics` / `analytics`. Severity and error type are auto-inferred. Don't
-also call `analytics.capture('error')` — it's a duplicate.
+All `log.error()` calls capture a real `$exception` (via the SDKs' native
+`captureException`) so they appear in PostHog Error Tracking with proper
+grouping, plus the legacy `error_occurred` custom event for existing insights.
+Severity and error type are auto-inferred. Don't also call
+`analytics.capture('error')` — it's a duplicate.
+
+For clean issue titles, throw a named subclass of `AppError` (`@/lib/errors`)
+instead of rethrowing `new Error(message)`:
+
+```typescript
+throw new DoorRpcError('door_resolve', pgError.message, {
+  cause: pgError,          // preserved + serialized as the exception chain
+  code: pgError.code,
+  context: { scannedId },  // forwarded to PostHog automatically
+});
+```
+
+The logger reads `type`, `severity`, `code`, `context`, and `fingerprint`
+straight off an `AppError` — no need to repeat them at the `log.error` call
+site. `fingerprint` (also accepted in `log.error` context) maps to
+`$exception_fingerprint` and forces error-tracking grouping when one logical
+issue would otherwise split into many.
+
+Log each failure ONCE, where it's caught. A lib function that throws a tagged
+`AppError` should not also `log.error` — the API route catching it does that,
+otherwise the same failure shows up twice under two titles.
 
 ## Don'ts
 

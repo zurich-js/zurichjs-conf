@@ -5,12 +5,10 @@
  * poll costs one round trip and a fixed payload.
  */
 
-import type { PostgrestError } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase';
-import { logger } from '@/lib/logger';
+import { DoorRpcError } from './errors';
+import type { DoorDatabase } from './door-database';
 import type { DoorOccasion, DoorRole } from '@/lib/types/checkin';
-
-const log = logger.scope('Door Dashboard');
 
 export interface DoorStationStat {
   station: string;
@@ -52,23 +50,28 @@ export interface DoorDashboard {
 }
 
 export async function doorDashboard(occasion?: DoorOccasion): Promise<DoorDashboard> {
-  const supabase = createServiceRoleClient();
+  // Typed via DoorDatabase (see ./door-database) — door_* is not in the
+  // generated types yet. The rpc call stays ON the client: detaching the
+  // method loses `this` and crashes inside supabase-js.
+  const supabase = createServiceRoleClient<DoorDatabase>();
 
-  // Same cast boundary as src/lib/checkin/rpc.ts — door_* is not in the
-  // generated types yet.
-  const invoke = supabase.rpc as unknown as (
-    name: string,
-    params: Record<string, unknown>
-  ) => PromiseLike<{ data: DoorDashboard | null; error: PostgrestError | null }>;
+  const { data, error } = await supabase.rpc('door_dashboard', {
+    p_occasion: occasion ?? null,
+  });
 
-  const { data, error } = await invoke('door_dashboard', { p_occasion: occasion ?? null });
-
+  // No logging here: the dashboard route catches and logs, and logging in both
+  // layers reports one failure to PostHog twice under two titles.
   if (error) {
-    log.error('door_dashboard failed', error, { occasion });
-    throw new Error(error.message);
+    throw new DoorRpcError('door_dashboard', error.message, {
+      cause: error,
+      code: error.code,
+      context: { occasion },
+    });
   }
   if (!data) {
-    throw new Error('door_dashboard returned no payload');
+    throw new DoorRpcError('door_dashboard', 'returned no payload', {
+      context: { occasion },
+    });
   }
 
   return data;

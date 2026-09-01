@@ -30,10 +30,14 @@ class ServerAnalyticsClient {
       return
     }
 
+    // Serverless-friendly flushing: a Vercel function is frozen the moment the
+    // response is sent, so an event buffered for "20 events or 10 seconds"
+    // usually never leaves the process. Sending each event immediately is what
+    // the PostHog docs prescribe for lambdas — server events are low-volume.
     this.client = new PostHog(key, {
       host: 'https://eu.i.posthog.com',
-      flushAt: 20,
-      flushInterval: 10000,
+      flushAt: 1,
+      flushInterval: 0,
     })
 
     this.initialized = true
@@ -235,20 +239,34 @@ class ServerAnalyticsClient {
   }
 
   /**
-   * Capture an exception for error tracking
-   * Similar to client-side captureException but for server-side use
+   * Capture an exception for PostHog Error Tracking.
+   *
+   * Goes through the SDK's native `captureException`, which builds the
+   * structured `$exception_list` (parsed frames, error name, `cause` chain) that
+   * the error-tracking UI needs for clean issue titles and grouping. The old
+   * hand-rolled `$exception_message`/`$exception_stack_trace_raw` properties
+   * produced issues titled with nothing but the exception class.
+   *
+   * Pass `fingerprint` to force grouping when one logical issue would otherwise
+   * split across many groups.
+   *
+   * Returns a promise that resolves once the event has been handed to the
+   * network. AWAIT it where the runtime allows (e.g. `onRequestError`) so a
+   * serverless function is not frozen before delivery; a synchronous caller
+   * (the logger) may fire-and-forget — the method never rejects.
    */
-  captureException(
+  async captureException(
     error: Error | unknown,
     context?: {
       distinctId?: string
       type?: 'validation' | 'network' | 'payment' | 'auth' | 'system' | 'unknown'
       severity?: 'low' | 'medium' | 'high' | 'critical'
+      fingerprint?: string
       flow?: string
       action?: string
       [key: string]: unknown
     }
-  ): void {
+  ): Promise<void> {
     if (!this.initialized) {
       this.init()
     }
@@ -257,26 +275,42 @@ class ServerAnalyticsClient {
       return
     }
 
-    const errorObj = error instanceof Error ? error : new Error(String(error))
-    const distinctId = context?.distinctId || 'anonymous'
+    const { distinctId, fingerprint, type, severity, ...rest } = context ?? {}
 
-    this.client.capture({
-      distinctId,
-      event: '$exception',
-      properties: {
-        $exception_message: errorObj.message,
-        $exception_type: errorObj.name,
-        $exception_stack_trace_raw: errorObj.stack,
-        error_type: context?.type || 'unknown',
-        error_severity: context?.severity || 'medium',
-        flow: context?.flow,
-        action: context?.action,
-        ...context,
-      },
-    })
+    const properties: Record<string, unknown> = {
+      error_type: type || 'unknown',
+      error_severity: severity || 'medium',
+      ...rest,
+    }
+    if (fingerprint) {
+      properties.$exception_fingerprint = fingerprint
+    }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ServerAnalytics] Exception captured:', errorObj.message, context)
+    try {
+      // `captureExceptionImmediate` sends the request now instead of buffering —
+      // buffered exceptions are routinely lost when the serverless function is
+      // frozen after responding. No distinctId fallback: the SDK generates a
+      // per-event id when it is absent, whereas a shared 'anonymous' id would
+      // merge every unattributed error into one person profile.
+      await this.client.captureExceptionImmediate(error, distinctId, properties)
+
+      if (process.env.NODE_ENV === 'development') {
+        // JSON-encoded so user input echoed in an error message cannot forge
+        // log lines (log injection) — control characters arrive escaped.
+        console.log('[ServerAnalytics] Exception captured:', JSON.stringify({
+          message: error instanceof Error ? error.message : String(error),
+          context,
+        }))
+      }
+    } catch (captureError: unknown) {
+      // Error reporting must never make the route that is already failing
+      // also slower or crashier.
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          '[ServerAnalytics] Failed to capture exception:',
+          JSON.stringify(captureError instanceof Error ? captureError.message : String(captureError))
+        )
+      }
     }
   }
 

@@ -38,6 +38,7 @@ import { useDoorMutationQueue } from '@/hooks/checkin/useDoorMutationQueue';
 import { useDoorScanner } from '@/hooks/checkin/useDoorScanner';
 import { useDoorFeedback } from '@/hooks/checkin/useDoorFeedback';
 import { extractScannedId } from '@/lib/checkin/roster-index';
+import { DoorApiError } from '@/lib/checkin/api-fetch';
 import { readQueue } from '@/lib/checkin/mutation-queue';
 import type { DoorSearchableRecord } from '@/lib/checkin/roster-index';
 import { canOfferCheckIn, checkedInAtFor, toneForOutcome } from '@/lib/checkin/panel-state';
@@ -152,10 +153,20 @@ export default function DoorStationPage() {
     setCarriedOver(readQueue(staff.id).length);
   }, [staff?.id]);
 
+  /**
+   * Only a 401 means "go sign in". Anything else — a 403 (signed in but not on
+   * the crew) or a 500 (the server fell over) — must NOT bounce the volunteer to
+   * the login page: they ARE signed in, and re-authenticating cannot fix it.
+   * That redirect is how a server bug reads as "I keep getting kicked out".
+   */
+  const sessionStatus =
+    session.error instanceof DoorApiError ? session.error.status : null;
+  const needsSignIn = session.isError && sessionStatus === 401;
+
   useEffect(() => {
     // A 401 is the expected state before sign-in, not an error worth showing.
-    if (session.isError) void router.replace('/checkin/login');
-  }, [session.isError, router]);
+    if (needsSignIn) void router.replace('/checkin/login');
+  }, [needsSignIn, router]);
 
   // Flattened once per roster rather than per keystroke. Rebuilding the search
   // index for 300 people is milliseconds; doing it per character would be felt.
@@ -277,6 +288,57 @@ export default function DoorStationPage() {
   }, [queue, router, scanner]);
 
   const body = (() => {
+    if (session.isError) {
+      if (needsSignIn) {
+        // The effect above is already redirecting; this is the frame before
+        // it lands, and a link in case the replace is blocked.
+        return (
+          <p className="py-16 text-center text-text-muted">
+            Taking you to{' '}
+            <Link href="/checkin/login" className="text-brand-primary underline">
+              sign-in
+            </Link>
+            …
+          </p>
+        );
+      }
+
+      if (sessionStatus === 403) {
+        // Signed in, but not on the crew (or revoked). Re-authenticating cannot
+        // fix this, so say what will.
+        return (
+          <div className="py-16">
+            <DoorNotice tone="warning" title="No door access on this account">
+              {session.error instanceof Error
+                ? session.error.message
+                : 'This account is not active door staff.'}{' '}
+              Ask a door lead to invite or re-enable you, or{' '}
+              <Link href="/checkin/login" className="text-brand-primary underline">
+                sign in with a different address
+              </Link>
+              .
+            </DoorNotice>
+          </div>
+        );
+      }
+
+      // A server or network failure. The volunteer is still signed in — offer a
+      // retry instead of silently bouncing them to the login page.
+      return (
+        <div className="py-16">
+          <DoorNotice
+            tone="error"
+            title="Could not start the door session"
+            actionLabel="Try again"
+            onAction={() => void session.refetch()}
+          >
+            This is a problem on our side, not with your sign-in. Retry in a moment,
+            and wave a lead over if it keeps failing.
+          </DoorNotice>
+        </div>
+      );
+    }
+
     if (session.isLoading) {
       return (
         <p className="py-16 text-center text-text-muted" aria-live="polite">
@@ -456,21 +518,7 @@ export default function DoorStationPage() {
       <ScanFlash nonce={feedback?.nonce ?? 0} tone={feedback?.tone ?? null} />
 
       <main className="min-h-screen bg-surface-page px-4 py-4">
-        <div className="mx-auto w-full max-w-lg">
-          {session.isError ? (
-            // The effect above is already redirecting; this is the frame before
-            // it lands, and a link in case the replace is blocked.
-            <p className="py-16 text-center text-text-muted">
-              Taking you to{' '}
-              <Link href="/checkin/login" className="text-brand-primary underline">
-                sign-in
-              </Link>
-              …
-            </p>
-          ) : (
-            body
-          )}
-        </div>
+        <div className="mx-auto w-full max-w-lg">{body}</div>
       </main>
     </>
   );
