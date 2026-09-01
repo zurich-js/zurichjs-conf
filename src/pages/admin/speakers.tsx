@@ -1,3 +1,10 @@
+/**
+ * Program Admin Page
+ * Manage sessions, schedule, speakers, and logistics
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
+ */
+
 import { useState } from 'react';
 import Head from 'next/head';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -5,6 +12,7 @@ import { CalendarDays, ClipboardList, ListChecks, Users } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { AddSpeakerModal, EditSpeakerModal, type SpeakerWithSessions } from '@/components/admin/speakers';
 import {
   ProgramScheduleTab,
@@ -130,7 +138,7 @@ export default function ProgramAdminPage() {
   if (!isAuthenticated) return <AdminLoginForm title="Program Admin" />;
 
   return (
-    <>
+    <AdminQueryProvider>
       <Head>
         <title>Program Admin - ZurichJS</title>
       </Head>
@@ -247,7 +255,7 @@ export default function ProgramAdminPage() {
           />
         ) : null}
       </div>
-    </>
+    </AdminQueryProvider>
   );
 }
 

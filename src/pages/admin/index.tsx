@@ -1,6 +1,8 @@
 /**
  * Admin Dashboard
  * Password-protected admin panel for managing tickets and viewing financials
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
  */
 
 import { useState } from 'react';
@@ -10,6 +12,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
 import { AdminTabBar, type AdminTab } from '@/components/admin/AdminTabBar';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { TicketsTab, IssueTab, FinancialsTab } from '@/components/admin/dashboard';
 import { WorkshopsRegistrantsTab } from '@/components/admin/workshops-registrants';
 import { VipPerksTab } from '@/components/admin/vip-perks';
@@ -124,7 +127,7 @@ export default function AdminDashboard() {
   if (!isAuthenticated) return <AdminLoginForm />;
 
   return (
-    <>
+    <AdminQueryProvider>
       <Head><title>Admin Dashboard - ZurichJS Conference</title></Head>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <AdminHeader title="Admin Dashboard" subtitle="ZurichJS Conference 2026" onLogout={logout} />
@@ -139,6 +142,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </>
+    </AdminQueryProvider>
   );
 }

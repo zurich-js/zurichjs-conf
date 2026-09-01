@@ -12,11 +12,9 @@ export interface NavBarProps {
 }
 
 const navLinks = [
-  { label: "About", href: "/about" },
+  { label: "Schedule", href: "/schedule" },
   { label: "Speakers", href: "/speakers" },
   { label: "Workshops", href: "/workshops" },
-  { label: "Volunteer", href: "/volunteer" },
-  { label: "Sponsor us", href: "/sponsorship" },
 ];
 
 const socialLinks = [

@@ -8,9 +8,11 @@
 		"pnpm": "11.x"
 	},
 	"scripts": {
+		"predev": "pnpm scanner:wasm",
 		"dev": "next dev",
 		"og:generate": "tsx scripts/generate-speaker-og.ts",
-		"prebuild": "pnpm og:generate",
+		"scanner:wasm": "node scripts/copy-scanner-wasm.mjs",
+		"prebuild": "pnpm og:generate && pnpm scanner:wasm",
 		"build": "next build",
 		"build:clean": "rm -rf .next && rm -rf node_modules/.cache && next build",
 		"start": "next start",
@@ -26,7 +28,8 @@
 		"db:seed:cfp-first-stage": "scripts/seed-supabase-phase.sh cfp-first-stage",
 		"db:seed:cfp-admission": "scripts/seed-supabase-phase.sh cfp-admission",
 		"db:seed:cfp-schedule": "scripts/seed-supabase-phase.sh cfp-schedule",
-		"db:seed:workshop-commerce": "scripts/seed-supabase-phase.sh workshop-commerce"
+		"db:seed:workshop-commerce": "scripts/seed-supabase-phase.sh workshop-commerce",
+		"db:seed:door-checkin": "scripts/seed-supabase-phase.sh door-checkin"
 	},
 	"lint-staged": {
 		"*.{ts,tsx,js,jsx}": [
@@ -48,7 +51,9 @@
 		"@supabase/supabase-js": "^2.112.3",
 		"@tailwindcss/oxide": "^4.2.4",
 		"@tanstack/react-query": "^5.100.6",
+		"@tanstack/react-query-persist-client": "^5.102.8",
 		"@types/qrcode": "^1.5.6",
+		"barcode-detector": "^3.2.2",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cookie": "^1.1.1",
@@ -58,6 +63,7 @@
 		"gray-matter": "^4.0.3",
 		"ics": "^3.12.0",
 		"lightningcss": "^1.32.0",
+		"localforage": "^1.10.0",
 		"lucide-react": "^0.553.0",
 		"lz-string": "^1.5.0",
 		"micro": "^10.0.1",

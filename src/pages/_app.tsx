@@ -12,7 +12,7 @@ import { QueryClientProvider, HydrationBoundary, type DehydratedState } from "@t
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { getQueryClient } from "@/lib/query-client";
 import { NuqsAdapter } from "nuqs/adapters/next/pages";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Script from "next/script";
 import posthog from 'posthog-js';
@@ -29,6 +29,7 @@ import {
   sanitizePostHogEvent,
   setSessionRecordingForRoute,
 } from '@/lib/analytics/privacy';
+import { isSensitiveRoute } from '@/lib/analytics/sensitive-routes';
 
 const DiscountContainer = dynamic(
   () => import('@/components/organisms/discount/DiscountContainer').then(mod => mod.DiscountContainer),
@@ -87,7 +88,10 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
         capture_pageleave: true,
         autocapture: false,
         before_send: (event) => sanitizePostHogEvent(event),
-        disable_session_recording: initialRouteIsPrivate,
+        // Never start a recording on a door screen or other private routes.
+        // Attendee names, emails and apparel sizes are on display there, and
+        // the URL carries a ticket UUID that is itself the admission credential.
+        disable_session_recording: initialRouteIsPrivate || isSensitiveRoute(window.location.pathname),
         session_recording: {
           // Keep checkout contact and billing inputs visible in replays; only
           // credential-style fields should be masked automatically.
@@ -117,6 +121,10 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     }
   }, []);
 
+  // True while we have deliberately stopped replay for a door screen, so we
+  // only ever resume a recording we suppressed ourselves.
+  const recordingSuppressed = useRef(isSensitiveRoute(router.pathname));
+
   // Track page views on route changes
   useEffect(() => {
     const handleRouteChangeStart = (url: string) => {
@@ -136,6 +144,21 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     const handleRouteChange = (url: string) => {
       // Only track if PostHog is initialized
       if (posthog.__loaded) {
+        // Stop replay when entering a door screen, and resume only if we are
+        // the ones who stopped it — so ordinary pages keep whatever the init
+        // config chose. disable_session_recording governs only the initial
+        // state, so a client-side navigation into /checkin would otherwise
+        // keep recording.
+        if (isSensitiveRoute(url)) {
+          if (!recordingSuppressed.current) {
+            recordingSuppressed.current = true;
+            posthog.stopSessionRecording();
+          }
+        } else if (recordingSuppressed.current) {
+          recordingSuppressed.current = false;
+          posthog.startSessionRecording();
+        }
+
         posthog.capture('$pageview', {
           $current_url: sanitizeAnalyticsUrl(window.location.origin + url),
           page_path: url.split(/[?#]/)[0],
@@ -158,10 +181,13 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
     initEasterEgg();
   }, []);
 
-  // Internal admin and networking pages render their own compact page header.
+  // Hide NavBar on admin, share (networking), and door pages. Door station is a
+  // single-purpose screen held in one hand; a marketing nav and a shopping cart
+  // are mis-taps waiting to happen.
   const showNavBar =
     !router.pathname.startsWith('/admin') &&
-    !router.pathname.startsWith('/share');
+    !router.pathname.startsWith('/share') &&
+    !isSensitiveRoute(router.pathname);
   const isPrivateRoute = isPrivateAnalyticsRoute(router.pathname);
   const showGoogleAds = !isPrivateRoute;
 

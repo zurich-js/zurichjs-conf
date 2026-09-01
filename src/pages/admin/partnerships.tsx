@@ -1,6 +1,8 @@
 /**
  * Partnerships Dashboard
  * Manage partnerships, coupons, vouchers, and tracking
+ *
+ * Uses AdminQueryProvider for offline caching with localforage
  */
 
 import { useState } from 'react';
@@ -10,6 +12,7 @@ import { Plus, Search, Mail } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { AdminLoginForm } from '@/components/admin/AdminLoginForm';
 import { AdminLoadingScreen } from '@/components/admin/AdminLoadingScreen';
+import { AdminQueryProvider } from '@/components/admin/AdminQueryProvider';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import {
@@ -108,10 +111,11 @@ export default function PartnershipsDashboard() {
   if (!isAuthenticated) return <AdminLoginForm title="Partnerships" />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black">
-      <Head><title>Partnerships | ZurichJS Admin</title></Head>
+    <AdminQueryProvider>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-black">
+        <Head><title>Partnerships | ZurichJS Admin</title></Head>
 
-      <AdminHeader title="Partnerships" subtitle="Manage partners, coupons, and tracking" onLogout={logout} />
+        <AdminHeader title="Partnerships" subtitle="Manage partners, coupons, and tracking" onLogout={logout} />
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <StatsCards
@@ -230,17 +234,18 @@ export default function PartnershipsDashboard() {
         />
       )}
 
-      {emailPartnership && (
-        <SendEmailModal
-          partnership={emailPartnership}
-          isOpen={showEmailModal}
-          onClose={() => {
-            setShowEmailModal(false);
-            setEmailPartnership(null);
-          }}
-          onSend={(options) => sendEmailMutation.mutateAsync({ partnershipId: emailPartnership.id, options })}
-        />
-      )}
-    </div>
+        {emailPartnership && (
+          <SendEmailModal
+            partnership={emailPartnership}
+            isOpen={showEmailModal}
+            onClose={() => {
+              setShowEmailModal(false);
+              setEmailPartnership(null);
+            }}
+            onSend={(options) => sendEmailMutation.mutateAsync({ partnershipId: emailPartnership.id, options })}
+          />
+        )}
+      </div>
+    </AdminQueryProvider>
   );
 }
