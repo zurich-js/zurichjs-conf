@@ -133,7 +133,14 @@ function drawCenteredWrapped(
 }
 
 async function rasterizeLogo(data: Buffer): Promise<Buffer> {
-  return sharp(data, { density: 300 }).png().toBuffer();
+  return sharp(data, { density: 300 })
+    .trim({
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+      threshold: 10,
+      lineArt: true,
+    })
+    .png()
+    .toBuffer();
 }
 
 async function addEntryPages(
