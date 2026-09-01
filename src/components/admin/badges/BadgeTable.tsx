@@ -5,6 +5,7 @@ interface BadgeTableProps {
   rows: BadgeReviewRow[];
   excludedIds: ReadonlySet<string>;
   busyId: string | null;
+  temporarilyEditedIds: ReadonlySet<string>;
   onToggle: (selectionId: string) => void;
   onRotate: (row: BadgeReviewRow) => void;
   onEdit: (row: BadgeReviewRow) => void;
@@ -15,6 +16,7 @@ export function BadgeTable({
   rows,
   excludedIds,
   busyId,
+  temporarilyEditedIds,
   onToggle,
   onRotate,
   onEdit,
@@ -57,7 +59,11 @@ export function BadgeTable({
                 </td>
                 <td className="px-4 py-4 align-top">
                   <p className="font-semibold text-gray-900">{`${row.firstName} ${row.lastName}`.trim()}</p>
-                  <p className="mt-1 text-xs text-gray-500">{row.source === 'manual' ? 'Manual row' : 'Database record'}</p>
+                  <p className={`mt-1 text-xs ${temporarilyEditedIds.has(row.selectionId) ? 'font-semibold text-blue-700' : 'text-gray-500'}`}>
+                    {temporarilyEditedIds.has(row.selectionId)
+                      ? 'Temporary export edit'
+                      : row.source === 'manual' ? 'Stored manual row' : 'Database record'}
+                  </p>
                 </td>
                 <td className="px-4 py-4 align-top text-gray-700">
                   <p>{row.role || '—'}</p>
@@ -104,18 +110,16 @@ export function BadgeTable({
                       <RotateCcw className={`size-4 ${busy ? 'animate-spin' : ''}`} aria-hidden="true" />
                       <span className="sr-only">Replace QR for {row.firstName} {row.lastName}</span>
                     </button>
-                    {row.source === 'manual' ? (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(row)}
-                        disabled={busy}
-                        title="Edit manual row"
-                        className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                      >
-                        <Pencil className="size-4" aria-hidden="true" />
-                        <span className="sr-only">Edit {row.firstName} {row.lastName}</span>
-                      </button>
-                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => onEdit(row)}
+                      disabled={busy}
+                      title={row.source === 'manual' ? 'Edit stored manual row' : 'Edit for this export only'}
+                      className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      <Pencil className="size-4" aria-hidden="true" />
+                      <span className="sr-only">Edit {row.firstName} {row.lastName}</span>
+                    </button>
                     {row.source === 'manual' ? (
                       <button
                         type="button"

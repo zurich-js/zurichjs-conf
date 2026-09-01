@@ -3,6 +3,7 @@ import { verifyAdminAccess } from '@/lib/admin/auth';
 import { filterBadgeSources, loadBadgeSources } from '@/lib/badges/data';
 import { buildBadgeExportFiles } from '@/lib/badges/files';
 import type { BadgeLogoOverride } from '@/lib/badges/files';
+import type { BadgeEntryOverride } from '@/lib/badges/overrides';
 import { loadPublicBadgeSpeakers } from '@/lib/badges/speakers';
 import { getBadgeBaseUrl } from '@/lib/badges/url';
 import { createZip } from '@/lib/badges/zip';
@@ -65,6 +66,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const files = await buildBadgeExportFiles(sources, getBadgeBaseUrl(req), {
       csvPath: (fileName) => fileName,
       includeDataFiles: result.data.mode.endsWith('-data'),
+      entryOverrides: new Map<string, BadgeEntryOverride>(
+        Object.entries(result.data.entryOverrides)
+      ),
       logoOverrides: decodeLogoOverrides(result.data.logoOverrides),
       onWarning: (message) => log.warn(message),
     });

@@ -61,6 +61,17 @@ const badgeSelectionIdSchema = z
   .max(240)
   .regex(/^(attendee|speaker|sponsor|manual):[^:]+$/);
 
+export const badgeEntryOverrideSchema = z.object({
+  firstName: z.string().trim().min(1, 'First name is required').max(120),
+  lastName: z.string().trim().max(120),
+  role: z.string().trim().max(200),
+  company: z.string().trim().max(200),
+}).strict();
+
+const badgeEntryOverridesSchema = z
+  .record(badgeSelectionIdSchema, badgeEntryOverrideSchema)
+  .refine((value) => Object.keys(value).length <= 5_000, 'Too many badge entry overrides');
+
 const exportLogoOverrideSchema = z.object({
   fileName: z.string().trim().min(1).max(255).regex(/\.png$/i, 'Logo override must be a PNG'),
   dataUrl: z
@@ -82,6 +93,7 @@ export const badgeExportRequestSchema = z
     mode: badgeExportModeSchema.default('all-data'),
     category: badgeCategorySchema.optional(),
     includedIds: z.array(badgeSelectionIdSchema).max(5_000).optional(),
+    entryOverrides: badgeEntryOverridesSchema.default({}),
     logoOverrides: z.record(badgeSelectionIdSchema, exportLogoOverrideSchema).default({}),
   })
   .strict()
@@ -105,4 +117,5 @@ export const badgeExportRequestSchema = z
   });
 
 export type BadgeCategoryInput = z.infer<typeof badgeCategorySchema>;
+export type BadgeEntryOverrideInput = z.infer<typeof badgeEntryOverrideSchema>;
 export type ManualBadgeEntryInput = z.infer<typeof manualBadgeEntrySchema>;

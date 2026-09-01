@@ -104,6 +104,20 @@ describe('POST /api/admin/badges/export', () => {
     const bodyRes = makeRes();
     await handler(makeReq('POST', { provisionShareIds: 'yes' }), bodyRes);
     expect(bodyRes.statusCode).toBe(400);
+
+    const overrideRes = makeRes();
+    await handler(makeReq('POST', {
+      provisionShareIds: false,
+      entryOverrides: {
+        'attendee:ticket-vip': {
+          firstName: '',
+          lastName: 'Lovelace',
+          role: 'Programmer',
+          company: 'Analytical Engines',
+        },
+      },
+    }), overrideRes);
+    expect(overrideRes.statusCode).toBe(400);
   });
 
   it('allows a read-only deployed export for authenticated bots', async () => {
@@ -156,21 +170,37 @@ describe('POST /api/admin/badges/export', () => {
   it('scopes a tab export and names the archive for that category', async () => {
     const res = makeRes();
     const includedIds = ['attendee:ticket-vip'];
+    const entryOverrides = {
+      'attendee:ticket-vip': {
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        role: 'Lead programmer',
+        company: 'Analytical Engines',
+      },
+    };
 
     await handler(makeReq('POST', {
-      provisionShareIds: true,
+      provisionShareIds: false,
       mode: 'tab-data',
       category: 'vip',
       includedIds,
+      entryOverrides,
     }), res);
 
     expect(mockLoadBadgeSources).toHaveBeenCalledWith(
       mockServiceClient,
       expect.any(Array),
-      true,
+      false,
       includedIds
     );
     expect(mockFilterBadgeSources).toHaveBeenCalledWith(expect.anything(), includedIds);
+    expect(mockBuildBadgeExportFiles).toHaveBeenCalledWith(
+      expect.anything(),
+      'https://conf.example.test',
+      expect.objectContaining({
+        entryOverrides: new Map(Object.entries(entryOverrides)),
+      })
+    );
     expect(res.headers['Content-Disposition']).toMatch(
       /^attachment; filename="zurichjs-vip-badge-data-/
     );

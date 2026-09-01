@@ -207,7 +207,7 @@ export async function loadBadgeSources(
     if (!provisionMissing) {
       throw new Error(
         `${missingTicketIds.length} attendee(s) need share IDs. ` +
-        'Allow disabled share-ID and badge-code provisioning and try again.'
+        'Run “Generate missing codes” before exporting.'
       );
     }
     await provisionMissingShareRows(client, missingTicketIds);
@@ -230,7 +230,10 @@ export async function loadBadgeSources(
 
   if (missingOrStaleCodes.length) {
     if (!provisionMissing) {
-      throw new Error(`${missingOrStaleCodes.length} badge QR code(s) need provisioning.`);
+      throw new Error(
+        `${missingOrStaleCodes.length} badge QR code(s) need provisioning. ` +
+        'Run “Generate missing codes” before exporting.'
+      );
     }
     await provisionBadgeCodes(client, missingOrStaleCodes);
     rows = restrictBaseRows(await loadBaseRows(client), includedSelectionIds);

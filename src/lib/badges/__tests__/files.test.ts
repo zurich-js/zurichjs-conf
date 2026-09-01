@@ -105,6 +105,30 @@ describe('deployed badge export files', () => {
     }]);
   });
 
+  it('applies temporary entry edits to exports without mutating source records', async () => {
+    const files = await buildBadgeExportFiles(sources, 'https://conf.example.test', {
+      csvPath: (fileName) => fileName,
+      entryOverrides: new Map([['attendee:ticket-1', {
+        firstName: 'Ada',
+        lastName: 'LOVELACE corrected',
+        role: 'Lead programmer',
+        company: 'Analytical Engines',
+      }]]),
+      fetchLogo: async () => new Response(Buffer.from('logo'), {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    });
+
+    const vipCsv = files.find((file) => file.name === 'vip.csv')?.data.toString();
+    expect(vipCsv).toContain('Ada,LOVELACE corrected,Lead programmer,Analytical Engines');
+    expect(sources.attendees[0]).toMatchObject({
+      last_name: 'Lovelace',
+      job_title: 'Programmer',
+      company: 'Engines',
+    });
+  });
+
   it('uses a one-time sponsor PNG override without downloading or persisting it', async () => {
     const override = await sharp({
       create: { width: 320, height: 80, channels: 4, background: '#3366ff' },

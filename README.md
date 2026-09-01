@@ -211,6 +211,11 @@ the commercial sponsor list is not imported into badge exports. Each category
 can be reviewed independently, rows can be excluded from a particular export,
 and persistent manual rows can be added or edited for sponsor representatives
 and organizers.
+Imported attendee and public-speaker names, roles, and companies can be edited
+temporarily for print corrections. These overrides live only in browser
+session storage, are sent directly to the export renderer, and never update the
+source attendee or speaker records. Normal exports are read-only; missing share
+IDs or badge QR codes must be created explicitly with **Generate missing codes**.
 The export dropdown can download a ZIP containing one two-page PDF per person
 for the active tab, the active tab's complete data ZIP, PDFs for every tab, or
 the complete data ZIP for every tab. All four choices respect row exclusions; full-data exports include

@@ -11,10 +11,14 @@ import {
   RefreshCw,
   ShieldCheck,
 } from 'lucide-react';
+import { BadgeExportEditModal } from '@/components/admin/badges/BadgeExportEditModal';
 import { BadgeTable } from '@/components/admin/badges/BadgeTable';
 import { ManualBadgeModal } from '@/components/admin/badges/ManualBadgeModal';
 import type { BadgeReviewResponse, BadgeReviewRow } from '@/components/admin/badges/types';
 import type { BadgeCategory } from '@/lib/badges/export';
+import type { BadgeEntryOverride } from '@/lib/badges/overrides';
+
+const ENTRY_OVERRIDES_STORAGE_KEY = 'zurichjs-badge-export-entry-overrides-v1';
 
 const CATEGORIES: Array<{ id: BadgeCategory; label: string }> = [
   { id: 'vip', label: 'VIP' },
@@ -107,10 +111,55 @@ function responseFileName(value: string | null): string {
   return value?.match(/filename="([^"]+)"/i)?.[1] ?? 'zurichjs-badges.zip';
 }
 
+function readStoredEntryOverrides(): Map<string, BadgeEntryOverride> {
+  try {
+    const stored = window.sessionStorage.getItem(ENTRY_OVERRIDES_STORAGE_KEY);
+    const parsed: unknown = stored ? JSON.parse(stored) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return new Map();
+    const overrides = Object.entries(parsed).flatMap(([selectionId, value]) => {
+      if (!/^(attendee|speaker):[^:]+$/.test(selectionId)) return [];
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+      const candidate = value as Record<string, unknown>;
+      if (
+        typeof candidate.firstName !== 'string' ||
+        typeof candidate.lastName !== 'string' ||
+        typeof candidate.role !== 'string' ||
+        typeof candidate.company !== 'string'
+      ) return [];
+      if (
+        candidate.firstName.trim().length < 1 || candidate.firstName.length > 120 ||
+        candidate.lastName.length > 120 || candidate.role.length > 200 || candidate.company.length > 200
+      ) return [];
+      return [[selectionId, {
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        role: candidate.role,
+        company: candidate.company,
+      }] as const];
+    });
+    return new Map(overrides);
+  } catch {
+    return new Map();
+  }
+}
+
+function storeEntryOverrides(overrides: ReadonlyMap<string, BadgeEntryOverride>): void {
+  try {
+    window.sessionStorage.setItem(
+      ENTRY_OVERRIDES_STORAGE_KEY,
+      JSON.stringify(Object.fromEntries(overrides))
+    );
+  } catch {
+    // The in-memory edit still works when session storage is unavailable.
+  }
+}
+
 export function BadgeManagementPanel() {
   const [activeCategory, setActiveCategory] = useState<BadgeCategory>('vip');
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
   const [modalEntry, setModalEntry] = useState<BadgeReviewRow | null | undefined>(undefined);
+  const [exportEditEntry, setExportEditEntry] = useState<BadgeReviewRow | undefined>();
+  const [entryOverrides, setEntryOverrides] = useState<Map<string, BadgeEntryOverride>>(new Map());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [provisioning, setProvisioning] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -118,7 +167,11 @@ export function BadgeManagementPanel() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ['admin', 'badges'], queryFn: fetchBadgeRows });
   const rows = query.data?.rows ?? [];
-  const visibleRows = rows.filter((row) => row.category === activeCategory);
+  const displayRows = rows.map((row) => ({
+    ...row,
+    ...entryOverrides.get(row.selectionId),
+  }));
+  const visibleRows = displayRows.filter((row) => row.category === activeCategory);
   const tabIncludedIds = visibleRows
     .filter((row) => !excludedIds.has(row.selectionId))
     .map((row) => row.selectionId);
@@ -127,6 +180,10 @@ export function BadgeManagementPanel() {
     .map((row) => row.selectionId);
   const activeCategoryLabel = CATEGORIES.find((category) => category.id === activeCategory)?.label
     ?? activeCategory;
+
+  useEffect(() => {
+    setEntryOverrides(readStoredEntryOverrides());
+  }, []);
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['admin', 'badges'] });
@@ -199,20 +256,54 @@ export function BadgeManagementPanel() {
     }
   };
 
+  const editEntry = (row: BadgeReviewRow) => {
+    const sourceRow = rows.find((candidate) => candidate.selectionId === row.selectionId) ?? row;
+    if (sourceRow.source === 'manual') setModalEntry(sourceRow);
+    else setExportEditEntry(sourceRow);
+  };
+
+  const saveEntryOverride = (selectionId: string, value: BadgeEntryOverride) => {
+    setEntryOverrides((current) => {
+      const next = new Map(current).set(selectionId, value);
+      storeEntryOverrides(next);
+      return next;
+    });
+    setExportEditEntry(undefined);
+    setFeedback({
+      tone: 'success',
+      message: 'Temporary badge edit saved for exports in this browser tab. The database was not changed.',
+    });
+  };
+
+  const resetEntryOverride = (selectionId: string) => {
+    setEntryOverrides((current) => {
+      const next = new Map(current);
+      next.delete(selectionId);
+      storeEntryOverrides(next);
+      return next;
+    });
+    setExportEditEntry(undefined);
+    setFeedback({ tone: 'success', message: 'Temporary badge edit discarded.' });
+  };
+
   const download = async (mode: ExportMode) => {
     setExporting(true);
     setFeedback(null);
     try {
       const isTabExport = mode.startsWith('tab-');
       const includedIds = isTabExport ? tabIncludedIds : allIncludedIds;
+      const includedIdSet = new Set(includedIds);
       const response = await fetch('/api/admin/badges/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          provisionShareIds: true,
+          provisionShareIds: false,
           mode,
           category: isTabExport ? activeCategory : undefined,
           includedIds,
+          entryOverrides: Object.fromEntries(
+            Array.from(entryOverrides).filter(([selectionId]) => includedIdSet.has(selectionId))
+          ),
         }),
       });
       if (!response.ok) {
@@ -241,7 +332,7 @@ export function BadgeManagementPanel() {
         <div className="flex items-start gap-3">
           <ShieldCheck className="mt-0.5 size-5 shrink-0 text-green-700" aria-hidden="true" />
           <p className="text-sm text-green-900">
-            Badge QR tokens redirect to stable networking share pages. Replacing a badge QR does not change the person&apos;s share ID, visibility, or profile settings.
+            Badge QR tokens redirect to stable networking share pages. Temporary attendee and speaker edits affect only exports in this browser tab and never update their database records.
           </p>
         </div>
       </div>
@@ -293,8 +384,9 @@ export function BadgeManagementPanel() {
           busyId={busyId}
           onToggle={toggle}
           onRotate={rotate}
-          onEdit={setModalEntry}
+          onEdit={editEntry}
           onDelete={deleteManual}
+          temporarilyEditedIds={new Set(entryOverrides.keys())}
         />
       )}
 
@@ -311,6 +403,16 @@ export function BadgeManagementPanel() {
               ? { tone: 'warning', message: warning }
               : { tone: 'success', message: edited ? 'Updated the manual badge row.' : `Added a manual ${activeCategory} badge row.` });
           }}
+        />
+      ) : null}
+
+      {exportEditEntry ? (
+        <BadgeExportEditModal
+          entry={exportEditEntry}
+          override={entryOverrides.get(exportEditEntry.selectionId)}
+          onClose={() => setExportEditEntry(undefined)}
+          onReset={() => resetEntryOverride(exportEditEntry.selectionId)}
+          onSave={(value) => saveEntryOverride(exportEditEntry.selectionId, value)}
         />
       ) : null}
     </section>
