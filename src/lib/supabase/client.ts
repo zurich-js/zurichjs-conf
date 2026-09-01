@@ -23,8 +23,13 @@ let browserClientInstance: ReturnType<typeof createSSRBrowserClient<Database>> |
 /**
  * Create a Supabase client with service role privileges
  * This bypasses RLS policies and should only be used on the server
+ *
+ * The schema type defaults to the generated `Database`. A module whose
+ * Postgres functions are not generated yet may pass a hand-written extension
+ * of it (e.g. `DoorDatabase` in `@/lib/checkin/door-database`) so its rpc
+ * calls stay fully typed without casts.
  */
-export function createServiceRoleClient() {
+export function createServiceRoleClient<Schema extends Database = Database>() {
   console.log('[Supabase] Creating service role client');
   console.log('[Supabase] URL:', env.supabase.url);
   console.log('[Supabase] Secret key:', env.supabase.secretKey ? '(present)' : '❌ MISSING');
@@ -37,7 +42,7 @@ export function createServiceRoleClient() {
     throw new Error('[Supabase] ❌ SUPABASE_SECRET_KEY is missing');
   }
 
-  const client = createClient<Database>(
+  const client = createClient<Schema>(
     env.supabase.url,
     env.supabase.secretKey,
     {

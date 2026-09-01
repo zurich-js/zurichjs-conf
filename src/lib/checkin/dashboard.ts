@@ -5,9 +5,9 @@
  * poll costs one round trip and a fixed payload.
  */
 
-import type { PostgrestError } from '@supabase/supabase-js';
 import { createServiceRoleClient } from '@/lib/supabase';
 import { DoorRpcError } from './errors';
+import type { DoorDatabase } from './door-database';
 import type { DoorOccasion, DoorRole } from '@/lib/types/checkin';
 
 export interface DoorStationStat {
@@ -50,17 +50,14 @@ export interface DoorDashboard {
 }
 
 export async function doorDashboard(occasion?: DoorOccasion): Promise<DoorDashboard> {
-  const supabase = createServiceRoleClient();
+  // Typed via DoorDatabase (see ./door-database) — door_* is not in the
+  // generated types yet. The rpc call stays ON the client: detaching the
+  // method loses `this` and crashes inside supabase-js.
+  const supabase = createServiceRoleClient<DoorDatabase>();
 
-  // Same cast boundary as src/lib/checkin/rpc.ts — door_* is not in the
-  // generated types yet. Bound to the client: a detached `supabase.rpc`
-  // loses `this` and crashes inside supabase-js.
-  const invoke = supabase.rpc.bind(supabase) as unknown as (
-    name: string,
-    params: Record<string, unknown>
-  ) => PromiseLike<{ data: DoorDashboard | null; error: PostgrestError | null }>;
-
-  const { data, error } = await invoke('door_dashboard', { p_occasion: occasion ?? null });
+  const { data, error } = await supabase.rpc('door_dashboard', {
+    p_occasion: occasion ?? null,
+  });
 
   // No logging here: the dashboard route catches and logs, and logging in both
   // layers reports one failure to PostHog twice under two titles.

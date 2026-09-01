@@ -15,7 +15,6 @@ minimumReleaseAge: 1440
 
 allowBuilds:
   '@nwpr/airport-codes': true
-  '@posthog/cli': true
   '@sentry/cli': true
   core-js: true
   esbuild: true

@@ -168,6 +168,20 @@ function serializeCauseChain(cause: unknown, depth: number): unknown {
   return serialized
 }
 
+/**
+ * Neutralize log injection (CodeQL js/log-injection).
+ *
+ * Anything interpolated into a plain-text log line could carry user input via
+ * an error message (Postgres errors echo values back). A `\n` in there would
+ * let one request forge extra log entries. Control characters become spaces;
+ * real newlines in the output come only from the formatter itself. The
+ * production path is JSON.stringify'd, which escapes these anyway.
+ */
+function sanitizeForLog(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u001F\u007F\u0085\u2028\u2029]/g, ' ')
+}
+
 function safeStringify(value: unknown): string {
   try {
     return JSON.stringify(value) ?? String(value)
@@ -289,25 +303,27 @@ class Logger {
   private outputToConsole(entry: LogEntry): void {
     const emoji = this.levelEmoji[entry.level]
     const prefix = entry.context?.module
-      ? `[${entry.context.module}]`
+      ? `[${sanitizeForLog(entry.context.module)}]`
       : '[App]'
 
     const logFn = this.getConsoleMethod(entry.level)
 
     if (this.isDevelopment) {
-      // Rich formatting for development
+      // Rich formatting for development. Every interpolated value is either
+      // sanitized or JSON-encoded, so user input echoed back by an error can
+      // never forge additional log lines (log injection) — the newlines below
+      // come only from this formatter.
       const contextStr = entry.context
         ? Object.keys(entry.context)
             .filter((k) => k !== 'module' && k !== 'function')
-            .map((k) => `${k}=${JSON.stringify(entry.context![k])}`)
+            .map((k) => `${sanitizeForLog(k)}=${safeStringify(entry.context![k])}`)
             .join(', ')
         : ''
 
       logFn(
-        `${emoji} ${prefix} ${entry.message}`,
+        `${emoji} ${prefix} ${sanitizeForLog(entry.message)}`,
         contextStr ? `\n  Context: ${contextStr}` : '',
-        entry.error ? `\n  Error:` : '',
-        entry.error || ''
+        entry.error ? `\n  Error: ${safeStringify(entry.error)}` : ''
       )
     } else {
       // JSON format for production (easier to parse)

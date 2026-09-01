@@ -4,15 +4,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
-  // Source maps for PostHog Error Tracking (uploaded and then removed from the
-  // deploy output by scripts/upload-posthog-sourcemaps.mjs in `postbuild`).
-  // Without these, production issues are titled by minified frames like
-  // `_07mq12s._.js:2:2727` and are undebuggable from the error itself.
-  productionBrowserSourceMaps: true,
-  experimental: {
-    serverSourceMaps: true,
-  },
-
   // Turbopack: resolve Node.js built-ins to empty modules for browser bundles.
   // The barcode-detector library's WebAssembly loader contains Node.js detection
   // code that references these modules; they're never actually called in a
