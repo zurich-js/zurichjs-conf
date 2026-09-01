@@ -1,6 +1,6 @@
 # API routes — `src/pages/api/`
 
-Next.js Pages Router API handlers. ~150 routes split across speaker (`/api/cfp/*`),
+Next.js Pages Router API handlers. ~210 routes split across speaker (`/api/cfp/*`),
 admin (`/api/admin/*`), and public/checkout endpoints.
 
 ## Auth — pick the right pattern
@@ -43,46 +43,46 @@ const supabase = createServiceRoleClient();
 Valid uses: Stripe webhook (`/api/webhooks/stripe.ts`), system jobs, admin-only
 operations that explicitly need to ignore RLS.
 
-## Standard handler shape
+## Standard handler shape — `withApiHandler`
+
+New and migrated routes use the wrapper from `@/lib/api/handler`. It provides
+a `requestId` (response header + error bodies + pre-scoped logger + Sentry
+tag), method checking with `Allow`, Zod validation returning the documented
+`{ error, code, issues, requestId }` 400, and a catch-all that maps thrown
+`AppError`/`HttpError`s to safe `{ error, code, requestId }` bodies — raw
+Stripe/Postgres text never reaches the browser on a 5xx.
 
 ```typescript
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { logger } from '@/lib/logger';
-
-const log = logger.scope('My Resource API');
+import { withApiHandler } from '@/lib/api/handler';
+import { ErrorCodes, HttpError, throwIfDbError } from '@/lib/errors';
 
 const bodySchema = z.object({
   title: z.string().min(1),
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // 1. Auth (one of the three patterns above)
+export default withApiHandler(
+  { scope: 'My Resource API', methods: ['POST'], bodySchema },
+  async (req, res, { log, body, requestId }) => {
+    // 1. Auth (one of the three patterns above) — unauthorized:
+    //    throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED });
 
-  // 2. Method check
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+    // 2. Business logic. Throw instead of hand-rolling error responses:
+    //    - 4xx: throw new HttpError(404, 'Not found', { code: ErrorCodes.NOT_FOUND })
+    //      (4xx HttpError messages are user-facing and shown verbatim)
+    //    - Supabase: const { data, error } = await ...;
+    //      throwIfDbError(error, 'Failed to load X', { context: { id } });
+    //    - Anything else thrown → 500 with a safe registry message.
 
-  // 3. Validate
-  const result = bodySchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({
-      error: 'Validation failed',
-      issues: result.error.issues,
-    });
+    res.status(200).json({ ok: true });
   }
-
-  // 4. Business logic
-  try {
-    // ...
-    return res.status(200).json({ ok: true });
-  } catch (err) {
-    log.error('Failed to do thing', err, { /* context */ });
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
+);
 ```
+
+Hand-rolled routes not yet migrated: at minimum use `getRequestId(req, res)` +
+`respondError(res, err, { requestId, log })` from `@/lib/api/respond` in the
+catch block. Machine-readable codes live in `src/lib/errors/codes.ts` — add
+new ones there, never inline strings. Incident mapping: `docs/INCIDENT_RESPONSE.md`.
 
 ## Validation
 

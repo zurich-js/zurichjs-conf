@@ -6,9 +6,20 @@ This document explains the comprehensive analytics and logging system implemente
 
 - **Type-safe analytics tracking** using PostHog
 - **Centralized, structured logging** that replaces console.log
+- **Dual error tracking**: every `log.error()` fans out to PostHog **and**
+  Sentry with one shared taxonomy — the same `code` (from
+  `src/lib/errors/codes.ts`), severity, and fingerprint, so an incident has
+  one grouped title in both tools. `log.warn()` becomes a Sentry breadcrumb.
+- **Request correlation**: API routes wrapped in `withApiHandler` stamp a
+  `requestId` on the response header, error body, every log line, and both
+  trackers — a user screenshot pins the exact trace.
 - **Revenue analytics** for conversion and sales tracking
 - **Error monitoring** with contextual metadata
 - **Extensible event system** that's easy to evolve
+
+**Operating the system in an incident — searches, playbooks per error code,
+alert configuration, conference-day checklist — lives in
+[`docs/INCIDENT_RESPONSE.md`](./INCIDENT_RESPONSE.md).**
 
 ## Table of Contents
 

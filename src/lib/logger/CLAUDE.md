@@ -1,7 +1,9 @@
 # Logger — `src/lib/logger/`
 
 Structured logger. Replaces all `console.log` calls. Errors are forwarded to
-PostHog automatically.
+PostHog AND Sentry automatically with one shared taxonomy (same `code`,
+severity, and fingerprint in both), so an incident has one grouped title
+everywhere. See `docs/INCIDENT_RESPONSE.md` for how to search either tool.
 
 ## Use it
 
@@ -45,13 +47,28 @@ log.error(message: string, error: unknown, context?: Record<string, unknown>);
 - `context` — structured metadata (`userId`, `submissionId`, `orderId`). Forwarded
   to PostHog.
 
-## PostHog forwarding
+## Error-tracking fan-out
 
 All `log.error()` calls capture a real `$exception` (via the SDKs' native
 `captureException`) so they appear in PostHog Error Tracking with proper
 grouping, plus the legacy `error_occurred` custom event for existing insights.
-Severity and error type are auto-inferred. Don't also call
-`analytics.capture('error')` — it's a duplicate.
+The same exception also goes to **Sentry** with matching tags
+(`error_code`, `error_type`, `request_id`, `module`) and the same
+fingerprint; client-side, only `high`/`critical` severities reach Sentry
+(quota) while PostHog receives everything. `log.warn()` additionally leaves a
+Sentry breadcrumb so a later error arrives with the retry/fallback trail.
+Severity and error type are auto-inferred when not tagged. Don't also call
+`analytics.capture('error')` or `Sentry.captureException` yourself — both are
+duplicates.
+
+Include `requestId` in context wherever one exists (API routes get it free
+via `withApiHandler` from `@/lib/api/handler` — its scoped logger carries the
+requestId on every line).
+
+A plain object passed in the error slot (`log.error(msg, { userId })`) is
+detected and re-slotted into context automatically — but pass
+`(message, error, context)` correctly anyway; the detection is a safety net,
+not the API.
 
 For clean issue titles, throw a named subclass of `AppError` (`@/lib/errors`)
 instead of rethrowing `new Error(message)`:

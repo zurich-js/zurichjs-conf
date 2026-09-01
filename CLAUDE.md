@@ -127,7 +127,8 @@ import { createServiceRoleClient } from '@/lib/supabase/client';
 const supabase = createServiceRoleClient();
 ```
 
-Standard handler shape:
+Standard handler shape: use `withApiHandler` from `@/lib/api/handler` (see
+below and `src/pages/api/CLAUDE.md`).
 
 ### Retries & Resilience
 Do NOT write ad-hoc retry loops. Use the shared helpers so backoff, jitter,
@@ -144,25 +145,40 @@ and `Retry-After` handling stay consistent.
 Only retry idempotent operations. For non-idempotent calls (Stripe charges,
 ticket creation, etc.) rely on the provider's idempotency keys instead.
 
-## CFP System
-
-const log = logger.scope('Resource API');
+```typescript
+import { withApiHandler } from '@/lib/api/handler';
+import { ErrorCodes, HttpError, throwIfDbError } from '@/lib/errors';
 
 const schema = z.object({ /* ... */ });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // 1. Auth
-  // 2. Method check
-  // 3. Zod safeParse → 400 with issues
-  // 4. Business logic
-  // 5. try/catch with log.error(message, err, context)
-}
+export default withApiHandler(
+  { scope: 'Resource API', methods: ['POST'], bodySchema: schema },
+  async (req, res, { log, body, requestId }) => {
+    // 1. Auth — throw new HttpError(401, 'Unauthorized', { code: ErrorCodes.AUTH_REQUIRED })
+    // 2. Business logic — throw tagged errors, never hand-roll error responses:
+    //    throwIfDbError(error, 'Failed to load X', { context: { id } })
+    // The wrapper handles: method check + Allow, Zod 400 with issues,
+    // requestId (header + body + logs + Sentry), safe { error, code, requestId } bodies.
+    res.status(200).json({ ok: true });
+  }
+);
 ```
+
+### Errors & error tracking
+- Throw `AppError` subclasses from `@/lib/errors` (DatabaseError, PaymentError,
+  FulfillmentError, HttpError, …) with a `code` from the `ErrorCodes` registry
+  (`src/lib/errors/codes.ts`) and the original failure as `cause`.
+- `log.error()` fans out to PostHog AND Sentry with the same code/severity/
+  fingerprint — one grouped title in both tools. Log each failure once, where
+  it's caught.
+- Every API error response carries `{ error, code, requestId }`; the requestId
+  is also on the `x-request-id` header, every log line, and both trackers.
+- Incident playbooks per code: `docs/INCIDENT_RESPONSE.md`.
 
 ### Logging
 - Always `logger.scope('Module Name')` at file top, never `console.log`.
-- `log.error(message, error, context)` — error and context get serialized for PostHog.
-- Severity is inferred from level; structured metadata: `userId`, `submissionId`, etc.
+- `log.error(message, error, context)` — error and context get serialized for PostHog + Sentry.
+- Severity is inferred from level; structured metadata: `userId`, `submissionId`, `requestId`, etc.
 
 ### State management
 - **Server state:** TanStack Query — hooks in `src/hooks/cfp/` and `src/hooks/`.
@@ -222,5 +238,6 @@ Speaker routes live under `/api/cfp/`. Admin routes under `/api/admin/cfp/`. See
 
 - `docs/AGENT_PLAYBOOKS.md` — recipes for common tasks (new API route, new migration, etc.).
 - `docs/ANALYTICS_AND_LOGGING.md` — full analytics/logging guide.
+- `docs/INCIDENT_RESPONSE.md` — incident runbook: error codes → playbooks, alert config, conference-day checklist.
 - `docs/WORKSHOPS_SUMMARY.md` — workshop subsystem overview.
 - `README.md` — project setup.
