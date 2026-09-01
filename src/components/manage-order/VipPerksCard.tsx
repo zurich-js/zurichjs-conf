@@ -8,7 +8,10 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, CheckCircle2, Copy, Crown, Gift, Mail, PartyPopper, Percent, type LucideIcon } from 'lucide-react';
 import { VIP_BENEFITS, type VipBenefitId } from '@/data/vip-benefits';
+import { logger } from '@/lib/logger';
 import type { VipPerkSummary } from './types';
+
+const log = logger.scope('VipPerksCard');
 
 const BENEFIT_ICONS: Record<VipBenefitId, LucideIcon> = {
   'workshop-discount': Percent,
@@ -124,7 +127,12 @@ function CopyCodeButton({ code }: { code: string }) {
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
+    } catch (err) {
+      // Clipboard API can be unavailable (permissions, insecure context) —
+      // the prompt fallback still lets the user copy manually.
+      log.warn('Clipboard write failed, falling back to prompt', {
+        reason: err instanceof Error ? err.message : String(err),
+      });
       window.prompt('Copy your voucher code:', code);
     }
   };

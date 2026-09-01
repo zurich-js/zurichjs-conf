@@ -1,4 +1,11 @@
 import React from 'react';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('Price');
+
+// This formatter runs during render for every price on the page — warn once
+// per bad currency code instead of on every render.
+const warnedCurrencies = new Set<string>();
 
 export interface PriceProps {
   /**
@@ -34,8 +41,15 @@ const formatSplitPrice = (amount: number, currency: string): string => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  } catch {
+  } catch (err) {
     // Fallback if currency is invalid
+    if (!warnedCurrencies.has(currency)) {
+      warnedCurrencies.add(currency);
+      log.warn('Price formatting fell back to plain number', {
+        reason: err instanceof Error ? err.message : String(err),
+        currency,
+      });
+    }
     return amount.toLocaleString();
   }
 };

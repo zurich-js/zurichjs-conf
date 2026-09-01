@@ -7,17 +7,28 @@ import { buildUrl, defaultApiConfig, type ApiConfig } from './config';
 import { captureException } from '@/lib/analytics/helpers';
 
 /**
- * API error class with structured error information
+ * API error class with structured error information.
+ *
+ * `code` and `requestId` come from the standardized error body
+ * (`{ error, code, requestId }`, see src/lib/api/respond.ts) — surface the
+ * requestId in error UI so a user screenshot pins the exact server trace.
  */
 export class ApiError extends Error {
   constructor(
     message: string,
     public statusCode: number,
     public endpoint: string,
-    public data?: unknown
+    public data?: unknown,
+    public code?: string,
+    public requestId?: string
   ) {
     super(message);
     this.name = 'ApiError';
+  }
+
+  /** Alias so status-based checks (query retry predicate) match this class. */
+  get status(): number {
+    return this.statusCode;
   }
 }
 
@@ -91,7 +102,11 @@ async function fetchApi<T>(
         errorData.error || `Request failed: ${response.statusText}`,
         response.status,
         endpoint,
-        errorData
+        errorData,
+        typeof errorData.code === 'string' ? errorData.code : undefined,
+        typeof errorData.requestId === 'string'
+          ? errorData.requestId
+          : response.headers.get('x-request-id') ?? undefined
       );
 
       // Capture the error to PostHog unless explicitly skipped

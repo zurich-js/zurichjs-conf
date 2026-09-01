@@ -18,6 +18,7 @@ import Script from "next/script";
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import type { Cart } from '@/types/cart';
+import { ErrorBoundary } from '@/components/error';
 import { NavBar } from '@/components/organisms';
 import dynamic from 'next/dynamic';
 import { initEasterEgg } from '@/lib/easter-egg/client';
@@ -254,30 +255,36 @@ export default function App({ Component, pageProps }: AppProps<ExtendedPageProps
           </Script>
         </>
       ) : null}
-      <PostHogProvider client={posthog}>
-        <QueryClientProvider client={queryClient}>
-          <HydrationBoundary state={pageProps.dehydratedState}>
-            <NuqsAdapter>
-              <CurrencyProvider currency={detectedCurrency}>
-                <CartProvider initialCart={pageProps.initialCart}>
-                  <MotionProvider>
-                    <ToastProvider>
-                      <div className={figtree.variable}>
-                        {showNavBar && <NavBar />}
-                        <Component {...pageProps} />
-                        {showDiscount && <DiscountContainer />}
-                      </div>
-                    </ToastProvider>
-                  </MotionProvider>
-                </CartProvider>
-              </CurrencyProvider>
-            </NuqsAdapter>
-          </HydrationBoundary>
-          {process.env.NODE_ENV === 'development' && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
-        </QueryClientProvider>
-      </PostHogProvider>
+      {/* Root boundary: last resort for crashes in the providers themselves. */}
+      <ErrorBoundary boundaryName="root">
+        <PostHogProvider client={posthog}>
+          <QueryClientProvider client={queryClient}>
+            <HydrationBoundary state={pageProps.dehydratedState}>
+              <NuqsAdapter>
+                <CurrencyProvider currency={detectedCurrency}>
+                  <CartProvider initialCart={pageProps.initialCart}>
+                    <MotionProvider>
+                      <ToastProvider>
+                        <div className={figtree.variable}>
+                          {showNavBar && <NavBar />}
+                          {/* Page boundary: a crashing page keeps nav + toasts alive. */}
+                          <ErrorBoundary boundaryName="page">
+                            <Component {...pageProps} />
+                          </ErrorBoundary>
+                          {showDiscount && <DiscountContainer />}
+                        </div>
+                      </ToastProvider>
+                    </MotionProvider>
+                  </CartProvider>
+                </CurrencyProvider>
+              </NuqsAdapter>
+            </HydrationBoundary>
+            {process.env.NODE_ENV === 'development' && (
+              <ReactQueryDevtools initialIsOpen={false} />
+            )}
+          </QueryClientProvider>
+        </PostHogProvider>
+      </ErrorBoundary>
     </>
   );
 }

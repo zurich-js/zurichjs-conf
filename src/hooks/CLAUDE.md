@@ -34,7 +34,6 @@ export function useMyResource(id: string) {
 
 | Hook | What |
 |---|---|
-| `useToast()` | Toast notifications (Context-based) |
 | `useTabs()` | Tab state |
 | `useCountdown()` | Countdown timer with hydration-safe rendering |
 | `useKeyboardShortcuts()` | Keyboard event listeners |
@@ -42,6 +41,9 @@ export function useMyResource(id: string) {
 | `usePrefersReducedMotion()` | A11y preference |
 | `useGridPacker()` | Layout packing |
 | `useFeatureFlags()` | Feature flag checks |
+
+Toast notifications are NOT a hook here — use `useToast()` from
+`@/contexts/ToastContext` (provider mounted globally in `_app.tsx`).
 
 ## Cart / checkout
 

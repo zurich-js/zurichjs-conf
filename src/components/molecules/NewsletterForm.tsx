@@ -1,4 +1,7 @@
 import React, { useState, FormEvent } from 'react';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('NewsletterForm');
 
 export interface NewsletterFormProps {
   ctaLabel?: string;
@@ -66,7 +69,8 @@ export const NewsletterForm: React.FC<NewsletterFormProps> = ({
       setTimeout(() => {
         setIsSuccess(false);
       }, 5000);
-    } catch {
+    } catch (err) {
+      log.error('Newsletter subscribe failed', err, { fingerprint: 'newsletter-form-subscribe' });
       setError('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);

@@ -56,6 +56,7 @@ export type { SpeakerViewedEvent } from './speaker-events';
 // Checkout events
 export type {
   CheckoutStartedEvent,
+  CheckoutSessionFailedEvent,
   CheckoutCompletedEvent,
   CheckoutAbandonedEvent,
   CheckoutFormFieldFocusedEvent,
@@ -186,6 +187,7 @@ import type {
 import type { SpeakerViewedEvent } from './speaker-events';
 import type {
   CheckoutStartedEvent,
+  CheckoutSessionFailedEvent,
   CheckoutCompletedEvent,
   CheckoutAbandonedEvent,
   CheckoutFormFieldFocusedEvent,
@@ -294,6 +296,7 @@ export type AnalyticsEvent =
   | WorkshopRemovedFromCartEvent
   | SpeakerViewedEvent
   | CheckoutStartedEvent
+  | CheckoutSessionFailedEvent
   | CheckoutCompletedEvent
   | CheckoutAbandonedEvent
   | CheckoutFormFieldFocusedEvent

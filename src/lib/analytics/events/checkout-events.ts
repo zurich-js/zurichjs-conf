@@ -29,6 +29,30 @@ export interface CheckoutStartedEvent {
   };
 }
 
+/**
+ * Creating the Stripe checkout session FAILED — the funnel step before
+ * payment. Without this event a broken Stripe key or a validation regression
+ * in /api/create-checkout-session is indistinguishable from users abandoning.
+ */
+export interface CheckoutSessionFailedEvent {
+  event: 'checkout_session_failed';
+  properties: BaseEventProperties &
+    Partial<CartProperties> & {
+      error_message: string;
+      /** Machine-readable code from the API error body (ErrorCodes registry) */
+      error_code?: string;
+      /** Correlation id — matches the server logs and Sentry/PostHog tags */
+      request_id?: string;
+      http_status?: number;
+      cart_total?: number;
+      currency?: string;
+      ticket_count?: number;
+      workshop_count?: number;
+      seat_count?: number;
+      purchase_type?: 'ticket' | 'workshop' | 'mixed';
+    };
+}
+
 export interface CheckoutCompletedEvent {
   event: 'checkout_completed';
   properties: BaseEventProperties &

@@ -27,7 +27,7 @@ import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { AdminModal } from '@/components/admin/AdminModal';
 import { Pill } from '@/components/admin/shared/Pill';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { useToast, type Toast } from '@/hooks/useToast';
+import { useToast } from '@/contexts/ToastContext';
 import { adminKeys } from '@/lib/admin/query-keys';
 import { adminFetch } from '@/lib/admin/api-fetch';
 
@@ -82,7 +82,7 @@ async function fetchVerifications(
 
 export default function VerificationsDashboard() {
   const { isAuthenticated, isLoading: isAuthLoading, logout } = useAdminAuth();
-  const { toasts, showToast, removeToast } = useToast();
+  const { success: toastSuccess, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
@@ -112,12 +112,12 @@ export default function VerificationsDashboard() {
     mutationFn: (id: string) =>
       adminFetch(`/api/admin/verifications/${id}/approve`, { method: 'POST' }),
     onSuccess: () => {
-      showToast('Verification approved and payment link sent', 'success');
+      toastSuccess('Verification approved and payment link sent');
       setSelectedVerification(null);
       queryClient.invalidateQueries({ queryKey: adminKeys.verifications() });
     },
     onError: (err) => {
-      showToast(err instanceof Error && err.message ? err.message : 'Failed to approve', 'error');
+      toastError(err instanceof Error && err.message ? err.message : 'Failed to approve');
     },
   });
 
@@ -125,12 +125,12 @@ export default function VerificationsDashboard() {
     mutationFn: (id: string) =>
       adminFetch(`/api/admin/verifications/${id}/reject`, { method: 'POST' }),
     onSuccess: () => {
-      showToast('Verification rejected', 'success');
+      toastSuccess('Verification rejected');
       setSelectedVerification(null);
       queryClient.invalidateQueries({ queryKey: adminKeys.verifications() });
     },
     onError: (err) => {
-      showToast(err instanceof Error && err.message ? err.message : 'Failed to reject', 'error');
+      toastError(err instanceof Error && err.message ? err.message : 'Failed to reject');
     },
   });
 
@@ -140,7 +140,7 @@ export default function VerificationsDashboard() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    showToast('Copied to clipboard', 'success');
+    toastSuccess('Copied to clipboard');
   };
 
   if (isAuthLoading) return <AdminLoadingScreen />;
@@ -370,24 +370,6 @@ export default function VerificationsDashboard() {
           />
         )}
 
-        {/* Toast notifications */}
-        {toasts.length > 0 && (
-          <div className="fixed bottom-4 right-4 z-50 space-y-2">
-            {toasts.map((t: Toast) => (
-              <div
-                key={t.id}
-                onClick={() => removeToast(t.id)}
-                className={`px-4 py-3 rounded-lg shadow-lg text-sm font-medium cursor-pointer transition-all ${
-                  t.type === 'success'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-red-600 text-white'
-                }`}
-              >
-                {t.message}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </AdminQueryProvider>
   );

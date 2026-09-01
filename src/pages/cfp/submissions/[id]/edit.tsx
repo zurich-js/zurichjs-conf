@@ -15,6 +15,7 @@ import { getSubmissionWithDetails } from '@/lib/cfp/submissions';
 import { getSuggestedTags } from '@/lib/cfp/tags';
 import type { CfpSpeaker, CfpSubmissionWithDetails, CfpSubmissionType, CfpTalkLevel, CfpTag } from '@/lib/types/cfp';
 import { isCfpClosed } from '@/lib/cfp/closure';
+import { extractFieldErrors, hasFieldErrors } from '@/lib/api/validation-errors';
 
 interface EditSubmissionProps {
   speaker: CfpSpeaker;
@@ -107,7 +108,19 @@ export default function EditSubmission({ speaker, submission, suggestedTags }: E
         body: JSON.stringify(data),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to save');
+      if (!response.ok) {
+        // Server-side Zod 400s carry per-field issues — map them onto the
+        // form's field errors so the user sees which field to fix.
+        if (hasFieldErrors(result)) {
+          const { fields, formErrors } = extractFieldErrors(result);
+          setErrors({
+            ...fields,
+            _form: formErrors.join(' ') || 'Please fix the highlighted fields and try again.',
+          });
+          return;
+        }
+        throw new Error(result.error || 'Failed to save');
+      }
       router.push(`/cfp/submissions/${submission.id}`);
     } catch (err) {
       setErrors({ _form: err instanceof Error ? err.message : 'An unexpected error occurred' });

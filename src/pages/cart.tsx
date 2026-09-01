@@ -15,7 +15,7 @@ import { useQueryState } from 'nuqs';
 import { useCart } from '@/contexts/CartContext';
 import { useTicketPricing } from '@/hooks/useTicketPricing';
 import { useCheckout } from '@/hooks/useCheckout';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/contexts/ToastContext';
 import { useCartUrlSync } from '@/hooks/useCartUrlState';
 import { useTeamRequest } from '@/hooks/useTeamRequest';
 import { getVisitCount } from '@/lib/discount';
@@ -32,7 +32,7 @@ import { decodeCartState, createEmptyCart } from '@/lib/cart-url-state';
 import { detectCountryFromRequest } from '@/lib/geo/detect-country';
 import { getCurrencyFromCountry, isSupportedCurrency } from '@/config/currency';
 
-import { ToastContainer, TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm } from '@/components/molecules';
+import { TeamRequestModal, TeamRequestSuccessDialog, AttendeeForm } from '@/components/molecules';
 import { SectionContainer } from '@/components/organisms';
 import {
   EmptyCartState,
@@ -70,7 +70,7 @@ export default function CartPage() {
   const [, saveCartForRecovery] = useLocalStorage('zurichjs_cart_recovery');
   const [savedProgress, saveProgress, clearProgress] = useLocalStorage('zurichjs_checkout_progress');
   const hasRestoredProgress = useRef(false);
-  const { toasts, showToast } = useToast();
+  const toast = useToast();
   const router = useRouter();
   const hasTrackedRecovery = useRef(false);
   // Encoded cart state of the last recovery email we scheduled — prevents the
@@ -103,12 +103,11 @@ export default function CartPage() {
     }
     hasAutoAppliedVoucher.current = true;
     void applyVoucher(code).then((result) => {
-      showToast(
-        result.success
-          ? 'Your discount code has been applied 🎉'
-          : result.error || 'That discount code is no longer valid',
-        result.success ? 'success' : 'error'
-      );
+      if (result.success) {
+        toast.success('Your discount code has been applied 🎉');
+      } else {
+        toast.error(result.error || 'That discount code is no longer valid');
+      }
       if (voucherParam) void setVoucherParam(null);
       // Only clear the parked code when it was the one we tried — a failed
       // URL code must not destroy a different, still-valid parked voucher.
@@ -183,7 +182,7 @@ export default function CartPage() {
     handleSuccess: handleTeamRequestSuccess,
     closeSuccessDialog: closeTeamSuccessDialog,
   } = useTeamRequest({
-    onError: (message) => showToast(message, 'error'),
+    onError: (message) => toast.error(message),
   });
 
   const handleTeamModalOpen = () => {
@@ -200,7 +199,7 @@ export default function CartPage() {
     if (!standardTicketItem) return;
     const vipPlan = ticketPlans.find(plan => plan.id === 'vip');
     if (!vipPlan) {
-      showToast('VIP upgrade not available at this time', 'error');
+      toast.error('VIP upgrade not available at this time');
       return;
     }
 
@@ -214,7 +213,7 @@ export default function CartPage() {
       variant: 'vip',
     }, standardTicketItem.quantity);
 
-    showToast('Upgraded to VIP! 🎉', 'success');
+    toast.success('Upgraded to VIP! 🎉');
   };
 
   const handleAttendeesSubmit = (result: {
@@ -261,7 +260,7 @@ export default function CartPage() {
 
   const requireAttendeeInfoBeforeCheckout = () => {
     if (hasRequiredAttendeeInfo()) return true;
-    showToast('Please add attendee details for every seat before checkout.', 'error');
+    toast.error('Please add attendee details for every seat before checkout.');
     setCurrentStep('attendees');
     return false;
   };
@@ -619,8 +618,6 @@ export default function CartPage() {
             )}
           </AnimatePresence>
         </SectionContainer>
-
-        <ToastContainer toasts={toasts} />
 
         {teamTicketInfo && (
           <TeamRequestModal

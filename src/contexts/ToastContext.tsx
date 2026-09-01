@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, AlertTriangle, Info } from 'lucide-react';
+import { registerToastDispatcher } from '@/lib/toast-bus';
 
 // Toast types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -173,6 +174,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     (title: string, message?: string) => addToast({ type: 'info', title, message }),
     [addToast]
   );
+
+  // Let non-React modules (the query-client's global onError) show toasts.
+  useEffect(() => {
+    registerToastDispatcher(addToast);
+    return () => registerToastDispatcher(null);
+  }, [addToast]);
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast, success, error, warning, info }}>

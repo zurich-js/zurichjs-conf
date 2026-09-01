@@ -4,7 +4,9 @@
  */
 
 import { motion } from 'framer-motion';
-import { TicketXIcon } from 'lucide-react';
+import { AlertCircle, TicketXIcon } from 'lucide-react';
+import { ApiError } from '@/lib/api';
+import { extractFieldErrors, hasFieldErrors } from '@/lib/api/validation-errors';
 import { CartSummary } from '@/components/molecules';
 import { CheckoutForm } from '@/components/organisms';
 import { mapCartItemsToAnalytics } from '@/lib/analytics/helpers';
@@ -46,11 +48,59 @@ export function CheckoutStep({
           {/* Billing Form */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <h1 className="text-xl font-bold text-brand-white mb-6">Complete Registration</h1>
-            {error && (
-              <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                <p className="text-red-400 text-sm">{error.message}</p>
-              </div>
-            )}
+            {error && (() => {
+              // Mirror PaymentStep's failure surface: the real message, a
+              // support path, and the requestId that pins the server trace
+              // when the user screenshots this.
+              const requestId = error instanceof ApiError ? error.requestId : undefined;
+              const mailtoSubject = encodeURIComponent(
+                `Checkout problem${requestId ? ` (ref ${requestId})` : ''}`
+              );
+              // Server-side Zod 400s carry per-field issues — list them so the
+              // user knows WHICH field to fix instead of just "Validation failed".
+              const fieldErrors = hasFieldErrors(error) ? extractFieldErrors(error) : null;
+              return (
+                <div
+                  className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4"
+                  role="alert"
+                >
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <div>
+                      <p className="text-red-400 text-sm font-medium">{error.message}</p>
+                      {fieldErrors && (
+                        <ul className="mt-2 space-y-0.5 text-xs text-red-400/90 list-disc list-inside">
+                          {Object.entries(fieldErrors.fields).map(([field, message]) => (
+                            <li key={field}>
+                              <span className="font-medium">{field}</span>: {message}
+                            </li>
+                          ))}
+                          {fieldErrors.formErrors.map((message) => (
+                            <li key={message}>{message}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <p className="mt-2 text-xs text-brand-gray-light">
+                        You have not been charged. Please try again — if it keeps failing,
+                        contact{' '}
+                        <a
+                          href={`mailto:hello@zurichjs.com?subject=${mailtoSubject}`}
+                          className="underline hover:text-brand-yellow-main"
+                        >
+                          hello@zurichjs.com
+                        </a>
+                        {requestId && (
+                          <>
+                            {' '}and mention reference <span className="font-mono">{requestId}</span>
+                          </>
+                        )}
+                        .
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             <CheckoutForm
               onSubmit={onSubmit}
               apparel={apparel}

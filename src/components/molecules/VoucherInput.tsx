@@ -5,6 +5,9 @@
 
 import React, { useState } from 'react';
 import {Button, Input} from '@/components/atoms';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('VoucherInput');
 
 export interface VoucherInputProps {
   /**
@@ -55,7 +58,8 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
       } else {
         setError(result.error || 'Invalid promo code');
       }
-    } catch {
+    } catch (err) {
+      log.error('Failed to apply promo code', err, { fingerprint: 'voucher-input-apply' });
       setError('Failed to apply promo code');
     } finally {
       setIsApplying(false);

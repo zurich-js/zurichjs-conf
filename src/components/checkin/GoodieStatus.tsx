@@ -1,6 +1,13 @@
 import React from 'react';
 import { Gift, PackageCheck } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
+import { logger } from '@/lib/logger';
+
+const log = logger.scope('GoodieStatus');
+
+// formatTime runs during render — warn once per malformed timestamp value,
+// not on every re-render of the check-in card.
+const warnedTimestamps = new Set<string>();
 
 export interface GoodieStatusProps {
   /** Entitlement follows the conference ticket — false for a workshop-only attendee. */
@@ -101,7 +108,14 @@ function formatTime(iso: string): string {
       minute: '2-digit',
       timeZone: 'Europe/Zurich',
     }).format(new Date(iso));
-  } catch {
+  } catch (err) {
+    if (!warnedTimestamps.has(iso)) {
+      warnedTimestamps.add(iso);
+      log.warn('Goodie handover time formatting fell back to raw value', {
+        reason: err instanceof Error ? err.message : String(err),
+        iso,
+      });
+    }
     return iso;
   }
 }

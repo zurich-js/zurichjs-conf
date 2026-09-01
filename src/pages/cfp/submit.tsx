@@ -17,6 +17,7 @@ import { getSubmissionCount } from '@/lib/cfp/submissions';
 import { SUBMISSION_LIMITS } from '@/lib/cfp/config';
 import { getSuggestedTags } from '@/lib/cfp/tags';
 import { CFP_CLOSED_ERROR_CODE, isCfpClosed } from '@/lib/cfp/closure';
+import { extractFieldErrors, hasFieldErrors } from '@/lib/api/validation-errors';
 import {
   WizardStep,
   FormData,
@@ -169,6 +170,16 @@ export default function SubmitPage({ speaker, suggestedTags, currentSubmissionCo
       if (!response.ok) {
         if (data.code === CFP_CLOSED_ERROR_CODE) {
           toast.warning('CFP is closed', data.error || 'CFP submissions are closed.');
+        }
+        // Server-side Zod 400s carry per-field issues — map them onto the
+        // wizard's field errors so the user sees which field to fix.
+        if (hasFieldErrors(data)) {
+          const { fields, formErrors } = extractFieldErrors(data);
+          setErrors({
+            ...fields,
+            _form: formErrors.join(' ') || 'Please fix the highlighted fields and try again.',
+          });
+          return;
         }
         throw new Error(data.error || 'Failed to create submission');
       }
