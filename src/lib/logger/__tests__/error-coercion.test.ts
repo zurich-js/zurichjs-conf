@@ -90,3 +90,26 @@ describe('logger.error with a non-Error cause', () => {
     expect(output()).toContain('Just a message');
   });
 });
+
+describe('logger.error with a rethrown error', () => {
+  it('serializes the cause chain, which is the half that says what failed', () => {
+    const rethrown = new Error('door_resolve failed', {
+      cause: { message: 'permission denied for table tickets', code: '42501' },
+    });
+
+    logger.error('Failed to resolve badge', rethrown);
+
+    const printed = output();
+    expect(printed).toContain('door_resolve failed');
+    expect(printed).toContain('permission denied for table tickets');
+    expect(printed).toContain('42501');
+  });
+
+  it('survives a self-referencing cause chain', () => {
+    const a = new Error('a');
+    const b = new Error('b', { cause: a });
+    (a as { cause?: unknown }).cause = b;
+
+    expect(() => logger.error('Loop', b)).not.toThrow();
+  });
+});
