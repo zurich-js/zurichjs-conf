@@ -83,13 +83,15 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
   const seats = workshopSeatProgress(attendee, occasion);
   const seatDriven = seats.total > 0;
 
-  // Undo is offered where the mistake shows up: a person-level "already in"
-  // banner. Seat-level undo lives on the seat rows.
+  // Undo is offered immediately after admission and on re-scan. The "wrong
+  // person of a pair" mistake is realised within a second of the tap, so both
+  // 'admitted' (just now) and 'already' (from the roster) show the undo link.
+  // Seat-level undo lives on the seat rows.
   const canUndo =
     roleCan(role, 'check_in') &&
     !seatDriven &&
-    state === 'already' &&
-    checkedInAtFor(attendee, occasion) !== null;
+    ((state === 'already' && checkedInAtFor(attendee, occasion) !== null) ||
+      state === 'admitted');
 
   return (
     <section className={`space-y-4 ${className}`} aria-label="Attendee">
@@ -141,6 +143,8 @@ export const AttendeePanel: React.FC<AttendeePanelProps> = ({
         entitled={attendee.goodie.entitled}
         handedAt={attendee.goodie.handedAt}
         note={attendee.goodie.note}
+        tshirtHandedAt={attendee.goodie.tshirtHandedAt}
+        hoodieHandedAt={attendee.goodie.hoodieHandedAt}
         preferredTshirtSize={attendee.apparel.tshirtSize}
         preferredHoodieSize={attendee.apparel.hoodieSize}
         isVip={attendee.ticket?.isVip ?? false}

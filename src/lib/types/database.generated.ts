@@ -2991,6 +2991,8 @@ export type Database = {
           goodie_handed_at: string | null
           goodie_handed_by: string | null
           goodie_note: string | null
+          hoodie_handed_at: string | null
+          hoodie_handed_by: string | null
           id: string
           job_title: string | null
           last_name: string
@@ -3008,6 +3010,8 @@ export type Database = {
           ticket_category: string
           ticket_stage: string
           ticket_type: Database["public"]["Enums"]["ticket_type"]
+          tshirt_handed_at: string | null
+          tshirt_handed_by: string | null
           transferred_at: string | null
           transferred_from_email: string | null
           transferred_from_name: string | null
@@ -3034,6 +3038,8 @@ export type Database = {
           goodie_handed_at?: string | null
           goodie_handed_by?: string | null
           goodie_note?: string | null
+          hoodie_handed_at?: string | null
+          hoodie_handed_by?: string | null
           id?: string
           job_title?: string | null
           last_name: string
@@ -3051,6 +3057,8 @@ export type Database = {
           ticket_category: string
           ticket_stage: string
           ticket_type: Database["public"]["Enums"]["ticket_type"]
+          tshirt_handed_at?: string | null
+          tshirt_handed_by?: string | null
           transferred_at?: string | null
           transferred_from_email?: string | null
           transferred_from_name?: string | null
@@ -3077,6 +3085,8 @@ export type Database = {
           goodie_handed_at?: string | null
           goodie_handed_by?: string | null
           goodie_note?: string | null
+          hoodie_handed_at?: string | null
+          hoodie_handed_by?: string | null
           id?: string
           job_title?: string | null
           last_name?: string
@@ -3094,6 +3104,8 @@ export type Database = {
           ticket_category?: string
           ticket_stage?: string
           ticket_type?: Database["public"]["Enums"]["ticket_type"]
+          tshirt_handed_at?: string | null
+          tshirt_handed_by?: string | null
           transferred_at?: string | null
           transferred_from_email?: string | null
           transferred_from_name?: string | null

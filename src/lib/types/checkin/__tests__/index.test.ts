@@ -86,7 +86,7 @@ describe('isDoorResolveHit', () => {
       admissible: true,
       refusalReason: null,
       checkIn: { workshopDayAt: null, conferenceDayAt: null },
-      goodie: { entitled: true, handedAt: null, note: null },
+      goodie: { entitled: true, handedAt: null, note: null, tshirtHandedAt: null, hoodieHandedAt: null },
       apparel: { tshirtSize: null, hoodieSize: null },
       badge: { pickedUpAt: null },
       doorNote: null,

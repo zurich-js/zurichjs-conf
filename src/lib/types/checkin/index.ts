@@ -202,9 +202,14 @@ export interface DoorGoodieState {
    * entitled to a goodie bag, so this is false for them by construction.
    */
   entitled: boolean;
+  /** Set when the FULL entitlement (t-shirt and, for VIPs, hoodie) was handed. */
   handedAt: string | null;
   /** Set when only part of the entitlement was handed over. */
   note: string | null;
+  /** When the t-shirt was physically handed over (null = not yet). */
+  tshirtHandedAt: string | null;
+  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  hoodieHandedAt: string | null;
 }
 
 export interface DoorApparel {
@@ -344,6 +349,8 @@ export const DOOR_FAILURE_MESSAGES: Record<string, string> = {
   registration_pending: 'This workshop payment has not settled. Send them to the desk.',
   registration_cancelled: 'This workshop seat was cancelled. Send them to the desk.',
   registration_refunded: 'This workshop seat was refunded. Send them to the desk.',
+  workshop_registration_wrong_day:
+    'Workshop badges cannot be checked in on conference day. Scan their conference ticket instead.',
 };
 
 export function doorFailureMessage(reason: string | undefined): string {

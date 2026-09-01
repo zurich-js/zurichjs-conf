@@ -41,7 +41,7 @@ function hit(overrides: Partial<DoorResolveHit> = {}): DoorResolveHit {
     admissible: true,
     refusalReason: null,
     checkIn: { workshopDayAt: null, conferenceDayAt: null },
-    goodie: { entitled: true, handedAt: null, note: null },
+    goodie: { entitled: true, handedAt: null, note: null, tshirtHandedAt: null, hoodieHandedAt: null },
     apparel: { tshirtSize: 'L', hoodieSize: null },
     badge: { pickedUpAt: null },
     doorNote: null,

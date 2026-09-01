@@ -59,10 +59,12 @@ describe('doorCheckInSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects an occurredAt that predates the event', () => {
+  it('rejects an obviously broken occurredAt — the sanity bound, not the event date', () => {
+    // SQL clamps dates predating the event to NOW(), so Zod only rejects
+    // clearly malformed data (year 2000 or earlier).
     const result = doorCheckInSchema.safeParse({
       scannedId: UUID,
-      occurredAt: '2020-01-01T00:00:00.000Z',
+      occurredAt: '1990-01-01T00:00:00.000Z',
     });
     expect(result.success).toBe(false);
   });

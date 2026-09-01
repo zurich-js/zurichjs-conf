@@ -35,15 +35,17 @@ const stationSchema = z
   .optional();
 
 /**
- * `occurredAt` is bounded on both sides. The lower bound stops a broken client
- * backdating an action to before the event existed; the upper bound is belt and
- * braces, since the database clamps a future timestamp anyway.
+ * `occurredAt` sanity check. The database clamps out-of-range timestamps on
+ * both sides (see door_check_in etc.), so this schema only rejects obviously
+ * broken values — a device with date in year 2000 or 1970 is malformed data,
+ * not a fixable clock skew. Dates predating the event but within reason are
+ * clamped to NOW() in SQL, keeping the check-in rather than losing it.
  */
 const occurredAtSchema = z
   .string()
   .datetime({ message: 'occurredAt must be an ISO 8601 timestamp' })
-  .refine((value) => new Date(value) >= new Date('2026-09-01T00:00:00Z'), {
-    message: 'occurredAt predates the event',
+  .refine((value) => new Date(value) >= new Date('2020-01-01T00:00:00Z'), {
+    message: 'occurredAt is unreasonably old',
   })
   .optional();
 

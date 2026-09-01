@@ -29,6 +29,8 @@ function ticket(overrides: Partial<RosterTicket> = {}): RosterTicket {
     checkedInConferenceDayAt: null,
     goodieHandedAt: null,
     goodieNote: null,
+    tshirtHandedAt: null,
+    hoodieHandedAt: null,
     badgePickedUpAt: null,
     doorNote: null,
     tshirtSize: 'L',

@@ -209,7 +209,9 @@ export const DoorAuditLog: React.FC<DoorAuditLogProps> = ({ className = '' }) =>
                   </td>
                   <td className="px-3 py-2 text-gray-800">{event.attendeeName ?? '—'}</td>
                   <td className="px-3 py-2 text-gray-800">
-                    {DOOR_ROLE_LABELS[event.staffRole as DoorRole] ?? event.staffRole}
+                    <span title={DOOR_ROLE_LABELS[event.staffRole as DoorRole] ?? event.staffRole}>
+                      {event.staffEmail}
+                    </span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-gray-700">
                     {DOOR_OCCASION_LABELS[event.occasion]}

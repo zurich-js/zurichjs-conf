@@ -58,6 +58,10 @@ export interface RosterTicket {
   checkedInConferenceDayAt: string | null;
   goodieHandedAt: string | null;
   goodieNote: string | null;
+  /** When the t-shirt was physically handed over (null = not yet). */
+  tshirtHandedAt: string | null;
+  /** When the hoodie was physically handed over (null = not yet, VIPs only). */
+  hoodieHandedAt: string | null;
   /** When the physical badge was handed over (early pickup included). */
   badgePickedUpAt: string | null;
   doorNote: string | null;
@@ -135,6 +139,8 @@ interface TicketRow {
   checked_in_conference_day_at: string | null;
   goodie_handed_at: string | null;
   goodie_note: string | null;
+  tshirt_handed_at: string | null;
+  hoodie_handed_at: string | null;
   door_note: string | null;
 }
 
@@ -182,7 +188,7 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         supabase
           .from('tickets')
           .select(
-            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, door_note'
+            'id, first_name, last_name, email, company, job_title, ticket_type, ticket_category, ticket_stage, status, transferred_from_name, transferred_from_email, checked_in_workshop_day_at, checked_in_conference_day_at, goodie_handed_at, goodie_note, tshirt_handed_at, hoodie_handed_at, door_note'
           )
           .order('created_at', { ascending: true })
           .range(from, to),
@@ -248,6 +254,8 @@ export async function buildDoorRoster(occasion: DoorOccasion): Promise<DoorRoste
         checkedInConferenceDayAt: t.checked_in_conference_day_at,
         goodieHandedAt: t.goodie_handed_at,
         goodieNote: t.goodie_note,
+        tshirtHandedAt: t.tshirt_handed_at,
+        hoodieHandedAt: t.hoodie_handed_at,
         badgePickedUpAt: badgeBySubject.get(t.id) ?? null,
         doorNote: t.door_note,
         tshirtSize: sizes?.tshirt_size ?? null,
